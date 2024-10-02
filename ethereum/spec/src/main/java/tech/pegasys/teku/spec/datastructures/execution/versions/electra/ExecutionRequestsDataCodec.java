@@ -42,32 +42,26 @@ public class ExecutionRequestsDataCodec {
           // First byte of the data is the type of the execution request
           final byte type = data.get(0);
           switch (type) {
-            case DepositRequest.REQUEST_TYPE:
-              // https://eips.ethereum.org/EIPS/eip-6110
-              executionRequestsBuilder.deposits(
-                  executionRequestsSchema
-                      .getDepositRequestsSchema()
-                      .sszDeserialize(data.slice(1))
-                      .asList());
-              break;
-            case WithdrawalRequest.REQUEST_TYPE:
-              // https://eips.ethereum.org/EIPS/eip-7002
-              executionRequestsBuilder.withdrawals(
-                  executionRequestsSchema
-                      .getWithdrawalRequestsSchema()
-                      .sszDeserialize(data.slice(1))
-                      .asList());
-              break;
-            case ConsolidationRequest.REQUEST_TYPE:
-              // https://eips.ethereum.org/EIPS/eip-7251
-              executionRequestsBuilder.consolidations(
-                  executionRequestsSchema
-                      .getConsolidationRequestsSchema()
-                      .sszDeserialize(data.slice(1))
-                      .asList());
-              break;
-            default:
-              throw new IllegalArgumentException("Invalid execution request type: " + type);
+            case DepositRequest.REQUEST_TYPE ->
+                executionRequestsBuilder.deposits(
+                    executionRequestsSchema
+                        .getDepositRequestsSchema()
+                        .sszDeserialize(data.slice(1))
+                        .asList());
+            case WithdrawalRequest.REQUEST_TYPE ->
+                executionRequestsBuilder.withdrawals(
+                    executionRequestsSchema
+                        .getWithdrawalRequestsSchema()
+                        .sszDeserialize(data.slice(1))
+                        .asList());
+            case ConsolidationRequest.REQUEST_TYPE ->
+                executionRequestsBuilder.consolidations(
+                    executionRequestsSchema
+                        .getConsolidationRequestsSchema()
+                        .sszDeserialize(data.slice(1))
+                        .asList());
+            default ->
+                throw new IllegalArgumentException("Invalid execution request type: " + type);
           }
         });
 

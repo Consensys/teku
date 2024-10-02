@@ -20,9 +20,7 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
-/*
- https://eips.ethereum.org/EIPS/eip-7251
-*/
+// https://eips.ethereum.org/EIPS/eip-7251
 public class ConsolidationRequest
     extends Container3<ConsolidationRequest, SszByteVector, SszPublicKey, SszPublicKey> {
 

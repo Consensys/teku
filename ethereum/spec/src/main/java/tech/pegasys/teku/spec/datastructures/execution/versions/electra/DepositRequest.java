@@ -24,9 +24,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-/*
- https://eips.ethereum.org/EIPS/eip-6110
-*/
+// https://eips.ethereum.org/EIPS/eip-6110
 public class DepositRequest
     extends Container5<
         DepositRequest, SszPublicKey, SszBytes32, SszUInt64, SszSignature, SszUInt64> {

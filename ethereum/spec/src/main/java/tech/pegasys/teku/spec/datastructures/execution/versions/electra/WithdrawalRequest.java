@@ -22,9 +22,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
-/*
- https://eips.ethereum.org/EIPS/eip-7002
-*/
+// https://eips.ethereum.org/EIPS/eip-7002
 public class WithdrawalRequest
     extends Container3<WithdrawalRequest, SszByteVector, SszPublicKey, SszUInt64> {
 
