@@ -675,7 +675,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   }
 
   @Test
-  void shouldFetchMissingBlobSidecarsViaRPC() {
+  void shouldFetchMissingBlobSidecarsViaRPCAfterLocalEL() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
 
     final Set<BlobIdentifier> missingBlobs =
@@ -701,6 +701,44 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
     asyncRunner.executeQueuedActions();
+
+    verify(executionLayer).engineGetBlobs(any(), any());
+
+    assertThat(requiredBlockRootEvents).isEmpty();
+    assertThat(requiredBlockRootDroppedEvents).isEmpty();
+    assertThat(requiredBlobSidecarEvents).containsExactlyElementsOf(missingBlobs);
+    assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
+  }
+
+  @Test
+  void shouldFetchMissingBlobSidecarsViaRPCWhenELLookupFails() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
+
+    final Set<BlobIdentifier> missingBlobs =
+        Set.of(
+            new BlobIdentifier(block.getRoot(), UInt64.ONE),
+            new BlobIdentifier(block.getRoot(), UInt64.ZERO));
+
+    mockedTrackersFactory =
+        Optional.of(
+            (slotAndRoot) -> {
+              BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
+              when(tracker.getMissingBlobSidecars()).thenAnswer(__ -> missingBlobs.stream());
+              when(tracker.getBlock()).thenReturn(Optional.of(block));
+              return tracker;
+            });
+
+    // prepare failure from EL
+    when(executionLayer.engineGetBlobs(any(), any()))
+        .thenReturn(SafeFuture.failedFuture(new RuntimeException("oops")));
+
+    blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
+
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+
+    asyncRunner.executeQueuedActions();
+
+    verify(executionLayer).engineGetBlobs(any(), any());
 
     assertThat(requiredBlockRootEvents).isEmpty();
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
