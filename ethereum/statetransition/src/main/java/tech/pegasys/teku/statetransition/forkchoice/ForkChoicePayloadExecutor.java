@@ -71,11 +71,10 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
       // because it checks the parentRoot matches
       return true;
     }
-
     result =
         Optional.of(
             executionLayer
-                .engineNewPayload(payloadToExecute)
+                .engineNewPayload(payloadToExecute, block.getSlot())
                 .thenCompose(
                     result -> {
                       if (result.hasValidStatus()) {

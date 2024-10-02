@@ -325,7 +325,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<PayloadStatus> engineNewPayload(final NewPayloadRequest newPayloadRequest) {
+  public SafeFuture<PayloadStatus> engineNewPayload(
+      final NewPayloadRequest newPayloadRequest, final UInt64 slot) {
     offlineCheck();
 
     final ExecutionPayload executionPayload = newPayloadRequest.getExecutionPayload();
