@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionclient;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
@@ -77,4 +78,6 @@ public interface ExecutionEngineClient {
   SafeFuture<Response<List<String>>> exchangeCapabilities(List<String> capabilities);
 
   SafeFuture<Response<List<ClientVersionV1>>> getClientVersionV1(ClientVersionV1 clientVersion);
+
+  SafeFuture<Response<List<BlobAndProofV1>>> getBlobsV1(List<VersionedHash> blobVersionedHashes);
 }

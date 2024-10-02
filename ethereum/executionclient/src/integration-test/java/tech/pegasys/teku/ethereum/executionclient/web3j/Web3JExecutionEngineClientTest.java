@@ -48,6 +48,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
+import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
@@ -65,6 +66,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
@@ -353,6 +355,50 @@ public class Web3JExecutionEngineClientTest {
     assertThat(((List<Object>) requestData.get("params")).get(2))
         .asString()
         .isEqualTo(parentBeaconBlockRoot.toHexString());
+  }
+
+  @TestTemplate
+  @SuppressWarnings("unchecked")
+  public void getBlobsV1_shouldBuildRequestAndResponseSuccessfully() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
+    final List<BlobSidecar> blobSidecars =
+        dataStructureUtil.randomBlobSidecars(spec.getMaxBlobsPerBlock().orElseThrow());
+    final List<BlobAndProofV1> blobsAndProofsV1 =
+        blobSidecars.stream()
+            .map(
+                blobSidecar ->
+                    new BlobAndProofV1(
+                        blobSidecar.getBlob().getBytes(),
+                        blobSidecar.getKZGProof().getBytesCompressed()))
+            .toList();
+    final String blobsAndProofsJson =
+        blobSidecars.stream()
+            .map(
+                blobSidecar ->
+                    String.format(
+                        "{ \"blob\": \"%s\", \"proof\": \"%s\" }",
+                        blobSidecar.getBlob().getBytes().toHexString(),
+                        blobSidecar.getKZGProof().getBytesCompressed().toHexString()))
+            .collect(Collectors.joining(", "));
+    final String bodyResponse =
+        "{\"jsonrpc\": \"2.0\", \"id\": 0, \"result\": [" + blobsAndProofsJson + "]}";
+
+    mockSuccessfulResponse(bodyResponse);
+
+    final List<VersionedHash> blobVersionedHashes = dataStructureUtil.randomVersionedHashes(3);
+
+    final SafeFuture<Response<List<BlobAndProofV1>>> futureResponse =
+        eeClient.getBlobsV1(blobVersionedHashes);
+
+    assertThat(futureResponse)
+        .succeedsWithin(1, TimeUnit.SECONDS)
+        .matches(response -> response.getPayload().equals(blobsAndProofsV1));
+
+    final Map<String, Object> requestData = takeRequest();
+    verifyJsonRpcMethodCall(requestData, "engine_getBlobsV1");
+    assertThat(requestData.get("params"))
+        .asInstanceOf(LIST)
+        .containsExactly(blobVersionedHashes.stream().map(VersionedHash::toHexString).toList());
   }
 
   private void mockSuccessfulResponse(final String responseBody) {

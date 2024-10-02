@@ -616,9 +616,17 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       final BlockImportChannel blockImportChannel =
           eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
+      final BlobSidecarGossipChannel blobSidecarGossipChannel =
+          eventChannels.getPublisher(BlobSidecarGossipChannel.class);
       final BlockBlobSidecarsTrackersPoolImpl pool =
           poolFactory.createPoolForBlockBlobSidecarsTrackers(
-              blockImportChannel, spec, timeProvider, beaconAsyncRunner, recentChainData);
+              blockImportChannel,
+              spec,
+              timeProvider,
+              beaconAsyncRunner,
+              recentChainData,
+              executionLayer,
+              blobSidecarGossipChannel::publishBlobSidecar);
       eventChannels.subscribe(FinalizedCheckpointChannel.class, pool);
       blockBlobSidecarsTrackersPool = pool;
 

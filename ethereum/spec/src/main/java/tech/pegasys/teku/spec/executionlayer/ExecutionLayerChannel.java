@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public interface ExecutionLayerChannel extends ChannelInterface {
   String PREVIOUS_STUB_ENDPOINT_PREFIX = "stub";
@@ -77,6 +79,13 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
+        public SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobs(
+            final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
+          return SafeFuture.completedFuture(
+              blobVersionedHashes.stream().map(e -> Optional.<BlobAndProof>empty()).toList());
+        }
+
+        @Override
         public SafeFuture<Void> builderRegisterValidators(
             final SszList<SignedValidatorRegistration> signedValidatorRegistrations,
             final UInt64 slot) {
@@ -115,6 +124,9 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       NewPayloadRequest newPayloadRequest, final UInt64 slot);
 
   SafeFuture<List<ClientVersion>> engineGetClientVersion(ClientVersion clientVersion);
+
+  SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobs(
+      List<VersionedHash> blobVersionedHashes, UInt64 slot);
 
   /**
    * This is low level method, use {@link
