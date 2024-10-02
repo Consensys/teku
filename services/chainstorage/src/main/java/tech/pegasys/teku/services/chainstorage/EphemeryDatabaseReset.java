@@ -37,11 +37,6 @@ public class EphemeryDatabaseReset {
       } else {
         slashProtectionDir = validatorDataDir.resolve("slashprotection");
       }
-
-      System.out.println("beaconDir" + beaconDataDir);
-      System.out.println("networkFile" + networkFile);
-      System.out.println("dbdir" + dbDataDir);
-
       deleteDirectoryRecursively(dbDataDir);
       deleteDirectoryRecursively(networkFile);
       deleteDirectoryRecursively(slashProtectionDir);
