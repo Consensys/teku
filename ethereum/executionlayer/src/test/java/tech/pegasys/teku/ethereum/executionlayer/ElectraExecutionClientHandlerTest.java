@@ -27,7 +27,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
@@ -65,7 +64,7 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
         SafeFuture.completedFuture(
             new Response<>(
                 new GetPayloadV4Response(
-                    ExecutionPayloadV4.fromInternalExecutionPayload(
+                    ExecutionPayloadV3.fromInternalExecutionPayload(
                         dataStructureUtil.randomExecutionPayload()),
                     UInt256.MAX_VALUE,
                     BlobsBundleV1.fromInternalBlobsBundle(dataStructureUtil.randomBlobsBundle()),
