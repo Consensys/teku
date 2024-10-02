@@ -30,6 +30,7 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -558,9 +559,15 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
         .runAfterDelay(
             () ->
                 this.fetchMissingContentFromLocalEL(slotAndBlockRoot)
-                    .alwaysRun(() -> this.fetchMissingContentFromRemotePeers(slotAndBlockRoot)),
+                    .handleException(
+                        error ->
+                            LOG.warn(
+                                "Local EL lookup failed: {}", ExceptionUtils.getMessage(error)))
+                    .thenRun(() -> this.fetchMissingContentFromRemotePeers(slotAndBlockRoot)),
             fetchDelay)
-        .ifExceptionGetsHereRaiseABug();
+        .finish(
+            error ->
+                LOG.error("An error occurred while attempting to fetch missing blobs.", error));
   }
 
   @VisibleForTesting
