@@ -23,7 +23,7 @@ import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexDese
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexSerializer;
 
 public class GetPayloadV4Response {
-  public final ExecutionPayloadV4 executionPayload;
+  public final ExecutionPayloadV3 executionPayload;
 
   @JsonSerialize(using = UInt256AsHexSerializer.class)
   @JsonDeserialize(using = UInt256AsHexDeserializer.class)
@@ -34,7 +34,7 @@ public class GetPayloadV4Response {
   public final boolean shouldOverrideBuilder;
 
   public GetPayloadV4Response(
-      final @JsonProperty("executionPayload") ExecutionPayloadV4 executionPayload,
+      final @JsonProperty("executionPayload") ExecutionPayloadV3 executionPayload,
       final @JsonProperty("blockValue") UInt256 blockValue,
       final @JsonProperty("blobsBundle") BlobsBundleV1 blobsBundle,
       final @JsonProperty("shouldOverrideBuilder") boolean shouldOverrideBuilder) {
