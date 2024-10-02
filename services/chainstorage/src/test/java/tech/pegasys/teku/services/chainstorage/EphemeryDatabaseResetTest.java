@@ -22,15 +22,14 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -49,26 +48,27 @@ class EphemeryDatabaseResetTest {
   private Path beaconDataDir;
   private Path dbDataDir;
   private Path resolvedSlashProtectionDir;
-  private File networkFile;
+  private Path networkFilePath;
   @Mock private Database database;
 
-  @InjectMocks private EphemeryDatabaseReset ephemeryDatabaseReset;
+  @Mock private EphemeryDatabaseReset ephemeryDatabaseReset;
 
   @BeforeEach
   void setUp() throws IOException {
     MockitoAnnotations.openMocks(this);
     ephemeryDatabaseReset = spy(new EphemeryDatabaseReset());
-    beaconDataDir = createTempDirectory("beaconDataDir");
+    beaconDataDir = createTempDirectory("beacon");
     dbDataDir = beaconDataDir.resolve("db");
-    networkFile = new File(beaconDataDir.toFile(), "network.yml");
-    final Path validatorDataDir = createTempDirectory("validatorDataDir");
+    Files.createDirectory(dbDataDir);
+    Path networkFile = beaconDataDir.resolve("network.yml");
+    Files.createFile(networkFile);
+    networkFilePath = networkFile;
+
+    final Path validatorDataDir = createTempDirectory("validator");
     resolvedSlashProtectionDir = validatorDataDir.resolve("slashprotection");
 
     when(serviceConfig.getDataDirLayout()).thenReturn(dataDirLayout);
     when(dataDirLayout.getBeaconDataDirectory()).thenReturn(beaconDataDir);
-    when(dataDirLayout.getBeaconDataDirectory().resolve("db")).thenReturn(dbDataDir);
-    when(dataDirLayout.getBeaconDataDirectory().resolve("network.yml"))
-        .thenReturn(networkFile.toPath());
     when(dataDirLayout.getValidatorDataDirectory()).thenReturn(validatorDataDir);
     when(dataDirLayout.getValidatorDataDirectory().resolve("slashprotection"))
         .thenReturn(resolvedSlashProtectionDir);
@@ -85,8 +85,12 @@ class EphemeryDatabaseResetTest {
 
     final Database result = ephemeryDatabaseReset.resetDatabaseAndCreate(serviceConfig, dbFactory);
     verify(ephemeryDatabaseReset).deleteDirectoryRecursively(dbDataDir);
-    verify(ephemeryDatabaseReset).deleteFile(networkFile.toPath());
+    verify(ephemeryDatabaseReset).deleteDirectoryRecursively(networkFilePath);
     verify(ephemeryDatabaseReset).deleteDirectoryRecursively(resolvedSlashProtectionDir);
+
+    verify(dbFactory).createDatabase();
+    verifyNoMoreInteractions(dbFactory);
+
     assertTrue(Files.exists(kvStoreDir));
     assertTrue(Files.exists(dbVersion));
     assertEquals(database, result);

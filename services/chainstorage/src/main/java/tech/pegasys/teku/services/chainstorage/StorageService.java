@@ -86,14 +86,13 @@ public class StorageService extends Service implements StorageServiceFacade {
                       serviceConfig.getMetricsSystem(),
                       serviceConfig.getDataDirLayout().getBeaconDataDirectory(),
                       config);
-
               try {
                 database = dbFactory.createDatabase();
               } catch (EphemeryException e) {
                 final EphemeryDatabaseReset ephemeryDatabaseReset = new EphemeryDatabaseReset();
-                database = ephemeryDatabaseReset.resetDatabaseAndCreate(serviceConfig, dbFactory);
                 LOG.warn(
                     "Ephemery network deposit contract id has updated, resetting the stored database and slashing protection data.");
+                database = ephemeryDatabaseReset.resetDatabaseAndCreate(serviceConfig, dbFactory);
               }
               final SettableLabelledGauge pruningTimingsLabelledGauge =
                   SettableLabelledGauge.create(

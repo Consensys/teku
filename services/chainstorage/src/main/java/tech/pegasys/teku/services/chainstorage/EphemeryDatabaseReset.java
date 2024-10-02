@@ -27,8 +27,7 @@ public class EphemeryDatabaseReset {
   Database resetDatabaseAndCreate(
       final ServiceConfig serviceConfig, final VersionedDatabaseFactory dbFactory) {
     try {
-      final Path beaconDataDir =
-          serviceConfig.getDataDirLayout().getBeaconDataDirectory().getParent();
+      final Path beaconDataDir = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
       final Path dbDataDir = beaconDataDir.resolve("db");
       final Path networkFile = beaconDataDir.resolve("network.yml");
       final Path validatorDataDir = serviceConfig.getDataDirLayout().getValidatorDataDirectory();
@@ -38,8 +37,13 @@ public class EphemeryDatabaseReset {
       } else {
         slashProtectionDir = validatorDataDir.resolve("slashprotection");
       }
+
+      System.out.println("beaconDir" + beaconDataDir);
+      System.out.println("networkFile" + networkFile);
+      System.out.println("dbdir" + dbDataDir);
+
       deleteDirectoryRecursively(dbDataDir);
-      deleteFile(networkFile);
+      deleteDirectoryRecursively(networkFile);
       deleteDirectoryRecursively(slashProtectionDir);
       return dbFactory.createDatabase();
     } catch (final Exception ex) {
@@ -48,25 +52,27 @@ public class EphemeryDatabaseReset {
     }
   }
 
-  void deleteFile(final Path path) throws IOException {
-    if (Files.exists(path)) {
-      Files.delete(path);
-    }
-  }
-
   void deleteDirectoryRecursively(final Path path) throws IOException {
-    if (Files.isDirectory(path)) {
-      try (var stream = Files.walk(path)) {
-        stream
-            .sorted((o1, o2) -> o2.compareTo(o1))
-            .forEach(
-                p -> {
-                  try {
-                    Files.delete(p);
-                  } catch (IOException e) {
-                    throw new RuntimeException("Failed to delete file: " + p, e);
-                  }
-                });
+    if (Files.exists(path)) {
+      if (Files.isDirectory(path)) {
+        try (var stream = Files.walk(path)) {
+          stream
+              .sorted((o1, o2) -> o2.compareTo(o1))
+              .forEach(
+                  p -> {
+                    try {
+                      Files.delete(p);
+                    } catch (IOException e) {
+                      throw new RuntimeException("Failed to delete file/directory: " + p, e);
+                    }
+                  });
+        }
+      } else {
+        try {
+          Files.delete(path);
+        } catch (IOException e) {
+          throw new RuntimeException("Failed to delete file: " + path, e);
+        }
       }
     }
   }
