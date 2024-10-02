@@ -11,7 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server;
+package tech.pegasys.teku.storage.archive;
+
+import java.io.Closeable;
 
 /**
  * A functional interface to allow storing data that is to be pruned from the Database. If the store
@@ -20,7 +22,7 @@ package tech.pegasys.teku.storage.server;
  *
  * @param <T> the data to be stored.
  */
-@FunctionalInterface
-public interface DatabaseArchiveWriter<T> {
+
+public interface DataArchiveWriter<T> extends Closeable {
   boolean archive(final T data);
 }

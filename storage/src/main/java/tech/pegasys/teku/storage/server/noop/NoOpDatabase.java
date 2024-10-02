@@ -44,7 +44,7 @@ import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.Database;
-import tech.pegasys.teku.storage.server.DatabaseArchiveWriter;
+import tech.pegasys.teku.storage.archive.DataArchiveWriter;
 
 public class NoOpDatabase implements Database {
 
@@ -329,7 +329,7 @@ public class NoOpDatabase implements Database {
   public boolean pruneOldestBlobSidecars(
       final UInt64 lastSlotToPrune,
       final int pruneLimit,
-      final DatabaseArchiveWriter<BlobSidecar> archiveWriter) {
+      final DataArchiveWriter<BlobSidecar> archiveWriter) {
     return false;
   }
 

@@ -11,17 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server;
+package tech.pegasys.teku.storage.archive;
 
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
-public class DatabaseArchiveNoopWriter<T> implements DatabaseArchiveWriter<T> {
+import java.io.IOException;
 
-  public static final DatabaseArchiveNoopWriter<BlobSidecar> NOOP_BLOBSIDECAR_STORE =
-      new DatabaseArchiveNoopWriter<>();
+public class DataArchiveNoopWriter<T> implements DataArchiveWriter<T> {
+
+  public static final DataArchiveNoopWriter<BlobSidecar> NOOP_BLOBSIDECAR_STORE =
+      new DataArchiveNoopWriter<>();
 
   @Override
   public boolean archive(final T data) {
     return true;
   }
+
+  @Override
+  public void close() throws IOException { }
 }

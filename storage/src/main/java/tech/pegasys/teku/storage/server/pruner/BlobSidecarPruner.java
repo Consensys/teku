@@ -34,8 +34,8 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.storage.server.Database;
-import tech.pegasys.teku.storage.server.DatabaseArchiveNoopWriter;
-import tech.pegasys.teku.storage.server.DatabaseArchiveWriter;
+import tech.pegasys.teku.storage.archive.DataArchiveNoopWriter;
+import tech.pegasys.teku.storage.archive.DataArchiveWriter;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 
 public class BlobSidecarPruner extends Service {
@@ -58,7 +58,7 @@ public class BlobSidecarPruner extends Service {
   private final AtomicLong blobColumnSize = new AtomicLong(0);
   private final AtomicLong earliestBlobSidecarSlot = new AtomicLong(-1);
   private final boolean storeNonCanonicalBlobSidecars;
-  private final DatabaseArchiveWriter<BlobSidecar> archiveWriter;
+  private final DataArchiveWriter<BlobSidecar> archiveWriter;
 
   public BlobSidecarPruner(
       final Spec spec,
@@ -85,8 +85,8 @@ public class BlobSidecarPruner extends Service {
     this.pruningActiveLabelledGauge = pruningActiveLabelledGauge;
     this.storeNonCanonicalBlobSidecars = storeNonCanonicalBlobSidecars;
 
-    // To be updated with other implementations. e.g. filesystem or s3
-    this.archiveWriter = DatabaseArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE;
+    // TODO: To be updated with other implementations. e.g. filesystem or s3
+    this.archiveWriter = DataArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE;
 
     if (blobSidecarsStorageCountersEnabled) {
       LabelledGauge labelledGauge =

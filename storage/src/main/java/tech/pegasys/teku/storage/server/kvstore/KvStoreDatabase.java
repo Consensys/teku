@@ -72,8 +72,8 @@ import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.Database;
-import tech.pegasys.teku.storage.server.DatabaseArchiveNoopWriter;
-import tech.pegasys.teku.storage.server.DatabaseArchiveWriter;
+import tech.pegasys.teku.storage.archive.DataArchiveNoopWriter;
+import tech.pegasys.teku.storage.archive.DataArchiveWriter;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.CombinedKvStoreDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao;
@@ -882,7 +882,7 @@ public class KvStoreDatabase implements Database {
   public boolean pruneOldestBlobSidecars(
       final UInt64 lastSlotToPrune,
       final int pruneLimit,
-      final DatabaseArchiveWriter<BlobSidecar> archiveWriter) {
+      final DataArchiveWriter<BlobSidecar> archiveWriter) {
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys =
             streamBlobSidecarKeys(UInt64.ZERO, lastSlotToPrune);
         final FinalizedUpdater updater = finalizedUpdater()) {
@@ -900,7 +900,7 @@ public class KvStoreDatabase implements Database {
           pruneLimit,
           prunableNoncanonicalBlobKeys,
           updater,
-          DatabaseArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE,
+          DataArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE,
           true);
     }
   }
@@ -909,7 +909,7 @@ public class KvStoreDatabase implements Database {
       final int pruneLimit,
       final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys,
       final FinalizedUpdater updater,
-      final DatabaseArchiveWriter<BlobSidecar> archiveWriter,
+      final DataArchiveWriter<BlobSidecar> archiveWriter,
       final boolean nonCanonicalblobSidecars) {
     int remaining = pruneLimit;
     int pruned = 0;

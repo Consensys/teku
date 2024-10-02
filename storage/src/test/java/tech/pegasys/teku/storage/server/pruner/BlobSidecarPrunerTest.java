@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.storage.server.Database;
-import tech.pegasys.teku.storage.server.DatabaseArchiveNoopWriter;
+import tech.pegasys.teku.storage.archive.DataArchiveNoopWriter;
 
 public class BlobSidecarPrunerTest {
   public static final Duration PRUNE_INTERVAL = Duration.ofSeconds(5);
@@ -131,7 +131,7 @@ public class BlobSidecarPrunerTest {
         .pruneOldestBlobSidecars(
             UInt64.valueOf((slotsPerEpoch / 2) - 1),
             PRUNE_LIMIT,
-            DatabaseArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE);
+            DataArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE);
     verify(database)
         .pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
   }
@@ -194,7 +194,7 @@ public class BlobSidecarPrunerTest {
         .pruneOldestBlobSidecars(
             UInt64.valueOf((slotsPerEpoch / 2) - 1),
             PRUNE_LIMIT,
-            DatabaseArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE);
+            DataArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE);
     verify(databaseOverride)
         .pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
   }

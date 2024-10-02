@@ -51,7 +51,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
-import tech.pegasys.teku.storage.server.DatabaseArchiveNoopWriter;
+import tech.pegasys.teku.storage.archive.DataArchiveNoopWriter;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -396,7 +396,7 @@ class StoreTest extends AbstractStoreTest {
     storageSystem
         .database()
         .pruneOldestBlobSidecars(
-            UInt64.valueOf(5), 5, DatabaseArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE);
+            UInt64.valueOf(5), 5, DataArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE);
 
     assertThat(store.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValueMatching(

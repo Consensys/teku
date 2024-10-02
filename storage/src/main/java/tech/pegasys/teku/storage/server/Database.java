@@ -40,6 +40,7 @@ import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
+import tech.pegasys.teku.storage.archive.DataArchiveWriter;
 
 public interface Database extends AutoCloseable {
 
@@ -79,7 +80,7 @@ public interface Database extends AutoCloseable {
   boolean pruneOldestBlobSidecars(
       UInt64 lastSlotToPrune,
       int pruneLimit,
-      final DatabaseArchiveWriter<BlobSidecar> archiveWriter);
+      final DataArchiveWriter<BlobSidecar> archiveWriter);
 
   boolean pruneOldestNonCanonicalBlobSidecars(UInt64 lastSlotToPrune, int pruneLimit);
 
