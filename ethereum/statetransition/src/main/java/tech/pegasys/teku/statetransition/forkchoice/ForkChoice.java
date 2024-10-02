@@ -553,7 +553,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final ExecutionLayerChannel executionLayer) {
     final ForkChoicePayloadExecutorEip7732 payloadExecutor =
-        ForkChoicePayloadExecutorEip7732.create(executionLayer);
+        ForkChoicePayloadExecutorEip7732.create(executionLayer, block.getSlot());
     final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
         blobSidecarManager.createAvailabilityChecker(block);
 

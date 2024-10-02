@@ -17,6 +17,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
@@ -28,15 +29,18 @@ class ForkChoicePayloadExecutorEip7732 implements OptimisticExecutionPayloadExec
   private static final Logger LOG = LogManager.getLogger();
 
   private final ExecutionLayerChannel executionLayer;
+  private final UInt64 slot;
+
   private Optional<SafeFuture<PayloadValidationResult>> result = Optional.empty();
 
-  ForkChoicePayloadExecutorEip7732(final ExecutionLayerChannel executionLayer) {
+  ForkChoicePayloadExecutorEip7732(final ExecutionLayerChannel executionLayer, final UInt64 slot) {
     this.executionLayer = executionLayer;
+    this.slot = slot;
   }
 
   public static ForkChoicePayloadExecutorEip7732 create(
-      final ExecutionLayerChannel executionLayer) {
-    return new ForkChoicePayloadExecutorEip7732(executionLayer);
+      final ExecutionLayerChannel executionLayer, final UInt64 slot) {
+    return new ForkChoicePayloadExecutorEip7732(executionLayer, slot);
   }
 
   public SafeFuture<PayloadValidationResult> getExecutionResult() {
@@ -59,7 +63,7 @@ class ForkChoicePayloadExecutorEip7732 implements OptimisticExecutionPayloadExec
     result =
         Optional.of(
             executionLayer
-                .engineNewPayload(payloadToExecute)
+                .engineNewPayload(payloadToExecute, slot)
                 .thenCompose(
                     result -> SafeFuture.completedFuture(new PayloadValidationResult(result)))
                 .exceptionally(
