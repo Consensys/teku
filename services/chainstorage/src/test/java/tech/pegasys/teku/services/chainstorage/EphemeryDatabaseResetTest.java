@@ -16,6 +16,7 @@ package tech.pegasys.teku.services.chainstorage;
 import static java.nio.file.Files.createTempDirectory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -23,7 +24,9 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,8 +47,9 @@ class EphemeryDatabaseResetTest {
 
   @Mock private DataDirLayout dataDirLayout;
   private Path beaconDataDir;
+  private Path dbDataDir;
   private Path resolvedSlashProtectionDir;
-
+  private File networkFile;
   @Mock private Database database;
 
   @InjectMocks private EphemeryDatabaseReset ephemeryDatabaseReset;
@@ -55,22 +59,36 @@ class EphemeryDatabaseResetTest {
     MockitoAnnotations.openMocks(this);
     ephemeryDatabaseReset = spy(new EphemeryDatabaseReset());
     beaconDataDir = createTempDirectory("beaconDataDir");
+    dbDataDir = beaconDataDir.resolve("db");
+    networkFile = new File(beaconDataDir.toFile(), "network.yml");
     final Path validatorDataDir = createTempDirectory("validatorDataDir");
     resolvedSlashProtectionDir = validatorDataDir.resolve("slashprotection");
+
     when(serviceConfig.getDataDirLayout()).thenReturn(dataDirLayout);
     when(dataDirLayout.getBeaconDataDirectory()).thenReturn(beaconDataDir);
+    when(dataDirLayout.getBeaconDataDirectory().resolve("db")).thenReturn(dbDataDir);
+    when(dataDirLayout.getBeaconDataDirectory().resolve("network.yml"))
+        .thenReturn(networkFile.toPath());
     when(dataDirLayout.getValidatorDataDirectory()).thenReturn(validatorDataDir);
     when(dataDirLayout.getValidatorDataDirectory().resolve("slashprotection"))
         .thenReturn(resolvedSlashProtectionDir);
   }
 
   @Test
-  void shouldResetDirectoriesAndCreateDatabase() throws IOException {
+  void shouldResetSpecificDirectoriesAndCreateDatabase() throws IOException {
+    Path kvStoreDir = beaconDataDir.resolve("kvstore");
+    Files.createDirectory(kvStoreDir);
+    Path dbVersion = beaconDataDir.resolve("db.version");
+    Files.createFile(dbVersion);
+
     when(dbFactory.createDatabase()).thenReturn(database);
+
     final Database result = ephemeryDatabaseReset.resetDatabaseAndCreate(serviceConfig, dbFactory);
-    verify(ephemeryDatabaseReset).deleteDirectoryRecursively(beaconDataDir);
+    verify(ephemeryDatabaseReset).deleteDirectoryRecursively(dbDataDir);
+    verify(ephemeryDatabaseReset).deleteFile(networkFile.toPath());
     verify(ephemeryDatabaseReset).deleteDirectoryRecursively(resolvedSlashProtectionDir);
-    verify(dbFactory).createDatabase();
+    assertTrue(Files.exists(kvStoreDir));
+    assertTrue(Files.exists(dbVersion));
     assertEquals(database, result);
   }
 
@@ -78,7 +96,7 @@ class EphemeryDatabaseResetTest {
   void shouldThrowInvalidConfigurationExceptionWhenDirectoryDeletionFails() throws IOException {
     doThrow(new IOException("Failed to delete directory"))
         .when(ephemeryDatabaseReset)
-        .deleteDirectoryRecursively(beaconDataDir);
+        .deleteDirectoryRecursively(dbDataDir);
     final InvalidConfigurationException exception =
         assertThrows(
             InvalidConfigurationException.class,
@@ -94,7 +112,7 @@ class EphemeryDatabaseResetTest {
 
   @Test
   void shouldThrowInvalidConfigurationExceptionWhenDatabaseCreationFails() throws IOException {
-    doNothing().when(ephemeryDatabaseReset).deleteDirectoryRecursively(beaconDataDir);
+    doNothing().when(ephemeryDatabaseReset).deleteDirectoryRecursively(dbDataDir);
     doNothing().when(ephemeryDatabaseReset).deleteDirectoryRecursively(resolvedSlashProtectionDir);
     when(dbFactory.createDatabase()).thenThrow(new RuntimeException("Database creation failed"));
     final InvalidConfigurationException exception =
@@ -106,7 +124,7 @@ class EphemeryDatabaseResetTest {
     assertEquals(
         "The existing ephemery database was old, and was unable to reset it.",
         exception.getMessage());
-    verify(ephemeryDatabaseReset).deleteDirectoryRecursively(beaconDataDir);
+    verify(ephemeryDatabaseReset).deleteDirectoryRecursively(dbDataDir);
     verify(ephemeryDatabaseReset).deleteDirectoryRecursively(resolvedSlashProtectionDir);
     verify(dbFactory).createDatabase();
   }

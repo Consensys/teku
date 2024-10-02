@@ -27,7 +27,12 @@ public class EphemeryDatabaseReset {
   Database resetDatabaseAndCreate(
       final ServiceConfig serviceConfig, final VersionedDatabaseFactory dbFactory) {
     try {
-      final Path beaconDataDir = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
+      final Path beaconDataDir =
+          serviceConfig.getDataDirLayout().getBeaconDataDirectory().getParent();
+      final Path dbDataDir = beaconDataDir.resolve("db");
+      final Path networkFile = beaconDataDir.resolve("network.yml");
+      System.out.println("dbDataDir" + dbDataDir);
+      System.out.println("networkFile" + networkFile);
       final Path validatorDataDir = serviceConfig.getDataDirLayout().getValidatorDataDirectory();
       final Path slashProtectionDir;
       if (validatorDataDir.endsWith("slashprotection")) {
@@ -35,12 +40,19 @@ public class EphemeryDatabaseReset {
       } else {
         slashProtectionDir = validatorDataDir.resolve("slashprotection");
       }
-      deleteDirectoryRecursively(beaconDataDir);
+      deleteDirectoryRecursively(dbDataDir);
+      deleteFile(networkFile);
       deleteDirectoryRecursively(slashProtectionDir);
       return dbFactory.createDatabase();
     } catch (final Exception ex) {
       throw new InvalidConfigurationException(
           "The existing ephemery database was old, and was unable to reset it.", ex);
+    }
+  }
+
+  void deleteFile(final Path path) throws IOException {
+    if (Files.exists(path)) {
+      Files.delete(path);
     }
   }
 

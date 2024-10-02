@@ -59,7 +59,6 @@ public class StorageService extends Service implements StorageServiceFacade {
   private final boolean depositSnapshotStorageEnabled;
   private final boolean blobSidecarsStorageCountersEnabled;
   private static final Logger LOG = LogManager.getLogger();
-  private final EphemeryDatabaseReset ephemeryDatabaseReset;
 
   public StorageService(
       final ServiceConfig serviceConfig,
@@ -70,7 +69,6 @@ public class StorageService extends Service implements StorageServiceFacade {
     this.config = storageConfiguration;
     this.depositSnapshotStorageEnabled = depositSnapshotStorageEnabled;
     this.blobSidecarsStorageCountersEnabled = blobSidecarsStorageCountersEnabled;
-    this.ephemeryDatabaseReset = new EphemeryDatabaseReset();
   }
 
   @Override
@@ -92,7 +90,10 @@ public class StorageService extends Service implements StorageServiceFacade {
               try {
                 database = dbFactory.createDatabase();
               } catch (EphemeryException e) {
+                final EphemeryDatabaseReset ephemeryDatabaseReset = new EphemeryDatabaseReset();
                 database = ephemeryDatabaseReset.resetDatabaseAndCreate(serviceConfig, dbFactory);
+                LOG.warn(
+                    "Ephemery network deposit contract id has updated, resetting the stored database and slashing protection data.");
               }
               final SettableLabelledGauge pruningTimingsLabelledGauge =
                   SettableLabelledGauge.create(
