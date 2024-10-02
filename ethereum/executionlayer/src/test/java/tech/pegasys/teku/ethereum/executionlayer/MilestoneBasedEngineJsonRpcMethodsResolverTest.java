@@ -227,7 +227,20 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
             "engine_getPayloadV3",
             "engine_forkchoiceUpdatedV3",
             "engine_newPayloadV4",
-            "engine_getPayloadV4",
-            "engine_getBlobsV1");
+            "engine_getPayloadV4");
+  }
+
+  @Test
+  void getsOptionalCapabilities() {
+    final Spec spec =
+        TestSpecFactory.createMinimalWithCapellaDenebAndElectraForkEpoch(
+            UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3));
+
+    final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
+        new MilestoneBasedEngineJsonRpcMethodsResolver(spec, executionEngineClient);
+
+    final Set<String> capabilities = engineMethodsResolver.getOptionalCapabilities();
+
+    assertThat(capabilities).containsExactlyInAnyOrder("engine_getBlobsV1");
   }
 }
