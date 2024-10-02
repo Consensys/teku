@@ -88,12 +88,6 @@ public class EngineGetBlobsV1 extends AbstractEngineJsonRpcMethod<List<BlobAndPr
                     "Response {}(blobVersionedHashes={}) -> {}",
                     getVersionedName(),
                     blobVersionedHashes,
-                    blobsAndProofs))
-        .exceptionally(
-            throwable -> {
-              throw new UnsupportedOperationException(
-                  String.format(
-                      "Call to engineGetBlobsV1 failed. %s", throwable.getCause().getMessage()));
-            });
+                    blobsAndProofs));
   }
 }
