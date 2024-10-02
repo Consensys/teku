@@ -342,7 +342,8 @@ public class BlockBlobSidecarsTracker {
         .add("slotAndBlockRoot", slotAndBlockRoot)
         .add("isBlockPresent", block.get().isPresent())
         .add("isCompleted", isCompleted())
-        .add("fetchTriggered", rpcFetchTriggered)
+        .add("rpcFetchTriggered", rpcFetchTriggered)
+        .add("localElFetchTriggered", localElFetchTriggered)
         .add("blockImportOnCompletionEnabled", blockImportOnCompletionEnabled.get())
         .add(
             "blobSidecars",
