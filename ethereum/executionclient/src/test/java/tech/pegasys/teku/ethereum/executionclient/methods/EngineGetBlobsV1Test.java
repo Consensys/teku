@@ -55,6 +55,7 @@ public class EngineGetBlobsV1Test {
   @Test
   public void shouldReturnExpectedNameAndVersion() {
     assertThat(jsonRpcMethod.getName()).isEqualTo("engine_getBlobs");
+    assertThat(jsonRpcMethod.isOptional()).isTrue();
     assertThat(jsonRpcMethod.getVersion()).isEqualTo(1);
     assertThat(jsonRpcMethod.getVersionedName()).isEqualTo("engine_getBlobsV1");
   }

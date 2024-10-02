@@ -48,6 +48,11 @@ public class EngineGetBlobsV1 extends AbstractEngineJsonRpcMethod<List<BlobAndPr
   }
 
   @Override
+  public boolean isOptional() {
+    return true;
+  }
+
+  @Override
   public SafeFuture<List<BlobAndProof>> execute(final JsonRpcRequestParams params) {
 
     final List<VersionedHash> blobVersionedHashes =
