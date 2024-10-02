@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.statetransition.datacolumns.util.CancelableFuture;
 
 public class DelayedCanonicalBlockResolver implements CanonicalBlockResolver {
 
@@ -39,7 +40,8 @@ public class DelayedCanonicalBlockResolver implements CanonicalBlockResolver {
   }
 
   private <T> SafeFuture<T> delay(Supplier<SafeFuture<T>> futSupplier) {
-    return asyncRunner.getDelayedFuture(delay).thenCompose(__ -> futSupplier.get());
+    return CancelableFuture.of(asyncRunner.getDelayedFuture(delay))
+        .thenComposeCancelable(true, true, __ -> futSupplier.get());
   }
 
   @Override

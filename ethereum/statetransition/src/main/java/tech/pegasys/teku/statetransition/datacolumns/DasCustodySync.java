@@ -13,13 +13,18 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -100,25 +105,29 @@ public class DasCustodySync implements SlotEventsChannel {
 
   private void fillUp() {
     fillingUp = true;
-    int newRequestCount = maxPendingColumnRequests - pendingRequests.size();
-    final SafeFuture<Set<DataColumnSlotAndIdentifier>> missingColumnsToRequestFuture =
-        custody
-            .retrieveMissingColumns()
-            .filter(columnSlotId -> !pendingRequests.containsKey(columnSlotId))
-            .limit(newRequestCount)
-            .collect(new HashSet<>());
+    final SafeFuture<Set<DataColumnSlotAndIdentifier>> missingColumnsFuture =
+        custody.retrieveMissingColumns().limit(maxPendingColumnRequests).collect(new HashSet<>());
 
-    // TODO cancel those which are not missing anymore for whatever reason
-
-    missingColumnsToRequestFuture
-        .thenPeek(
-            missingColumnsToRequest -> {
-              for (DataColumnSlotAndIdentifier missingColumn : missingColumnsToRequest) {
-                addPendingRequest(missingColumn);
+    missingColumnsFuture
+        .thenAccept(
+            missingColumns -> {
+              if (missingColumns.size() < maxPendingColumnRequests) {
+                // we've got all missing columns no need to poll until the next slot
+                coolDownTillNextSlot = true;
               }
 
-              if (missingColumnsToRequest.size() < newRequestCount) {
-                coolDownTillNextSlot = true;
+              Set<DataColumnSlotAndIdentifier> missingColumnsToRequest =
+                  missingColumns.stream()
+                      .filter(columnSlotId -> !pendingRequests.containsKey(columnSlotId))
+                      .collect(Collectors.toSet());
+
+              Collection<PendingRequest> pendingRequestsToCancel =
+                  removeNotMissingPendingRequests(missingColumns);
+              pendingRequestsToCancel.forEach(
+                  pendingRequest -> pendingRequest.columnPromise().cancel(true));
+
+              for (DataColumnSlotAndIdentifier missingColumn : missingColumnsToRequest) {
+                addPendingRequest(missingColumn);
               }
 
               {
@@ -149,6 +158,11 @@ public class DasCustodySync implements SlotEventsChannel {
         response -> onRequestComplete(request, response), err -> onRequestException(request, err));
   }
 
+  private synchronized Collection<PendingRequest> removeNotMissingPendingRequests(
+      Set<DataColumnSlotAndIdentifier> missingColumns) {
+    return removeIf(pendingRequests, id -> !missingColumns.contains(id));
+  }
+
   public void start() {
     started = true;
     fillUp();
@@ -170,4 +184,17 @@ public class DasCustodySync implements SlotEventsChannel {
 
   private record PendingRequest(
       DataColumnSlotAndIdentifier columnId, SafeFuture<DataColumnSidecar> columnPromise) {}
+
+  private static <K, V> List<V> removeIf(Map<K, V> map, Predicate<K> removeFilter) {
+    ArrayList<V> removedValues = new ArrayList<>();
+    Iterator<Map.Entry<K, V>> iterator = map.entrySet().iterator();
+    while (iterator.hasNext()) {
+      Map.Entry<K, V> entry = iterator.next();
+      if (removeFilter.test(entry.getKey())) {
+        removedValues.add(entry.getValue());
+        iterator.remove();
+      }
+    }
+    return removedValues;
+  }
 }

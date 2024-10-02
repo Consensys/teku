@@ -132,4 +132,46 @@ public class RecoveringSidecarRetrieverTest {
     assertThat(res1.get(1, TimeUnit.SECONDS)).isEqualTo(sidecars.get(1));
     assertThat(delegateRetriever.requests).allMatch(r -> r.promise().isDone());
   }
+
+  @Test
+  void cancellingRequestShouldStopRecovery() throws Exception {
+    int blobCount = 3;
+    int columnsInDbCount = 3;
+
+    DataColumnSidecarRetrieverStub delegateRetriever = new DataColumnSidecarRetrieverStub();
+    RecoveringSidecarRetriever recoverRetrievr =
+        new RecoveringSidecarRetriever(
+            delegateRetriever,
+            kzg,
+            miscHelpers,
+            schemaDefinitions,
+            blockResolver,
+            dbAccessor,
+            stubAsyncRunner,
+            Duration.ofSeconds(1),
+            128);
+    List<Blob> blobs =
+        Stream.generate(dataStructureUtil::randomValidBlob).limit(blobCount).toList();
+    BeaconBlock block = blockResolver.addBlock(10, blobCount);
+    List<DataColumnSidecar> sidecars =
+        miscHelpers.constructDataColumnSidecars(createSigned(block), blobs, kzg);
+
+    List<Integer> dbColumnIndexes =
+        IntStream.range(10, Integer.MAX_VALUE).limit(columnsInDbCount).boxed().toList();
+    dbColumnIndexes.forEach(idx -> db.addSidecar(sidecars.get(idx)));
+
+    DataColumnSlotAndIdentifier id0 = createId(block, 0);
+    SafeFuture<DataColumnSidecar> res0 = recoverRetrievr.retrieve(id0);
+
+    assertThat(delegateRetriever.requests).hasSize(1);
+
+    recoverRetrievr.maybeInitiateRecovery(id0, res0);
+    assertThat(delegateRetriever.requests).hasSize(1 + columnCount - columnsInDbCount);
+
+    res0.cancel(true);
+
+    stubAsyncRunner.executeQueuedActions();
+
+    assertThat(delegateRetriever.requests).allMatch(r -> r.promise().isCancelled());
+  }
 }

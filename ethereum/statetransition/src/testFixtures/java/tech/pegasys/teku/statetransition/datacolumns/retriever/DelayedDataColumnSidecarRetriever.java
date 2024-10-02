@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.statetransition.datacolumns.util.CancelableFuture;
 
 public class DelayedDataColumnSidecarRetriever implements DataColumnSidecarRetriever {
   private final DataColumnSidecarRetriever delegate;
@@ -37,7 +38,8 @@ public class DelayedDataColumnSidecarRetriever implements DataColumnSidecarRetri
   }
 
   private <T> SafeFuture<T> delay(Supplier<SafeFuture<T>> futSupplier) {
-    return asyncRunner.getDelayedFuture(delay).thenCompose(__ -> futSupplier.get());
+    return CancelableFuture.of(asyncRunner.getDelayedFuture(delay))
+        .thenComposeCancelable(true, true, __ -> futSupplier.get());
   }
 
   @Override

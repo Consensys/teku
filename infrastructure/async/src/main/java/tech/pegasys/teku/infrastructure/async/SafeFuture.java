@@ -17,7 +17,9 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +30,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 
 public class SafeFuture<T> extends CompletableFuture<T> {
 
@@ -138,7 +141,8 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
-  static <U> void propagateResult(final CompletionStage<U> stage, final SafeFuture<U> safeFuture) {
+  protected static <U> void propagateResult(
+      final CompletionStage<U> stage, final SafeFuture<U> safeFuture) {
     stage.whenComplete(
         (result, error) -> {
           if (error != null) {
@@ -308,6 +312,26 @@ public class SafeFuture<T> extends CompletableFuture<T> {
 
   public void ifExceptionGetsHereRaiseABug() {
     ifExceptionGetsHereRaiseABug(this);
+  }
+
+  public SafeFuture<Void> ignoreCancelException() {
+    return ignoreExceptions(CancellationException.class);
+  }
+
+  @SafeVarargs
+  public final SafeFuture<Void> ignoreExceptions(Class<? extends Throwable>... errors) {
+    return this.exceptionally(
+            err -> {
+              if (ExceptionUtil.hasCause(err, errors)) {
+                return null;
+              } else {
+                switch (err) {
+                  case RuntimeException exception -> throw exception;
+                  default -> throw new CompletionException(err);
+                }
+              }
+            })
+        .thenApply(__ -> null);
   }
 
   public void completeAsync(T value, AsyncRunner asyncRunner) {

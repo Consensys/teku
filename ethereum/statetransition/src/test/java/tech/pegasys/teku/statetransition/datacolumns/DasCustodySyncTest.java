@@ -18,6 +18,7 @@ import static java.time.Duration.ofMinutes;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -267,6 +268,42 @@ public class DasCustodySyncTest {
         await(custodyStand.custody.retrieveMissingColumns().toList());
     assertThat(missingColumns).isEmpty();
     assertAllCustodyColumnsPresent();
+  }
+
+  @Test
+  void shouldCancelRetrieverRequestWhenCanonicalBlockChanges() {
+    custodyStand.setCurrentSlot(0);
+    custodyStand.subscribeToSlotEvents(dasCustodySync);
+    dasCustodySync.start();
+
+    advanceTimeGraduallyUntilAllDone();
+
+    custodyStand.setCurrentSlot(5);
+
+    advanceTimeGraduallyUntilAllDone();
+    assertThat(retrieverStub.requests).isEmpty();
+
+    SignedBeaconBlock block_1_0 = custodyStand.createBlockWithBlobs(1);
+    custodyStand.blockResolver.addBlock(block_1_0.getMessage());
+    custodyStand.setCurrentSlot(6);
+
+    advanceTimeGraduallyUntilAllDone();
+
+    List<DataColumnSidecarRetrieverStub.RetrieveRequest> retrieveRequests_1_0 =
+        new ArrayList<>(retrieverStub.requests);
+    assertThat(retrieveRequests_1_0).isNotEmpty();
+
+    SignedBeaconBlock block_1_1 = custodyStand.createBlockWithBlobs(1);
+    custodyStand.blockResolver.addBlock(block_1_1.getMessage());
+    custodyStand.setCurrentSlot(7);
+
+    advanceTimeGraduallyUntilAllDone();
+    assertThat(retrieveRequests_1_0)
+        .allSatisfy(
+            request_1_0 -> {
+              assertThat(request_1_0.promise()).isCancelled();
+            });
+    assertThat(retrieverStub.requests).hasSize(retrieveRequests_1_0.size() * 2);
   }
 
   private void addBlockAndSidecars(int slot) {

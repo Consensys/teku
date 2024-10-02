@@ -43,8 +43,8 @@ import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
 
-@SuppressWarnings("unused")
-public class SampleSidecarRetrieverTest {
+@SuppressWarnings({"unused", "JavaCase"})
+public class SimpleSidecarRetrieverTest {
   final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(0);
   final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner(stubTimeProvider);
   final DataColumnPeerSearcherStub dataColumnPeerSearcherStub = new DataColumnPeerSearcherStub();
@@ -80,7 +80,7 @@ public class SampleSidecarRetrieverTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
   final CanonicalBlockResolverStub blockResolver = new CanonicalBlockResolverStub(spec);
 
-  public SampleSidecarRetrieverTest() {
+  public SimpleSidecarRetrieverTest() {
     TrustedSetupLoader.loadTrustedSetupForTests(kzg);
   }
 
@@ -205,5 +205,31 @@ public class SampleSidecarRetrieverTest {
     advanceTimeGradually(retrieverRound);
 
     assertThat(allRequestCountsFunc.get()).isEqualTo(List.of(0, 1, 2, 2));
+  }
+
+  @Test
+  void cancellingRequestShouldRemoveItFromPending() {
+    TestPeer custodyPeer =
+        new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100))
+            .currentRequestLimit(1000);
+
+    testPeerManager.connectPeer(custodyPeer);
+
+    DataColumnSlotAndIdentifier id0 =
+        new DataColumnSlotAndIdentifier(UInt64.ONE, Bytes32.ZERO, columnId);
+    SafeFuture<DataColumnSidecar> resp0_0 = simpleSidecarRetriever.retrieve(id0);
+
+    advanceTimeGradually(retrieverRound);
+    assertThat(custodyPeer.getRequests()).hasSize(1);
+    advanceTimeGradually(retrieverRound);
+    assertThat(custodyPeer.getRequests()).hasSize(2);
+
+    resp0_0.cancel(true);
+
+    advanceTimeGradually(retrieverRound);
+    // after original request is cancelled the retriever should stop requesting peer
+    assertThat(custodyPeer.getRequests()).hasSize(2);
+    advanceTimeGradually(retrieverRound);
+    assertThat(custodyPeer.getRequests()).hasSize(2);
   }
 }
