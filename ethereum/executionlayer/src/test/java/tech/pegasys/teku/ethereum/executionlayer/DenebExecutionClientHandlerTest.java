@@ -96,7 +96,8 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
                     ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null)));
     when(executionEngineClient.newPayloadV3(payloadV3, versionedHashes, parentBeaconBlockRoot))
         .thenReturn(dummyResponse);
-    final SafeFuture<PayloadStatus> future = handler.engineNewPayload(newPayloadRequest);
+    final SafeFuture<PayloadStatus> future =
+        handler.engineNewPayload(newPayloadRequest, UInt64.ZERO);
     verify(executionEngineClient).newPayloadV3(payloadV3, versionedHashes, parentBeaconBlockRoot);
     assertThat(future).isCompleted();
   }

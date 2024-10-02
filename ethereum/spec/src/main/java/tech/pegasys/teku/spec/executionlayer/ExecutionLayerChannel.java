@@ -66,7 +66,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
         @Override
         public SafeFuture<PayloadStatus> engineNewPayload(
-            final NewPayloadRequest newPayloadRequest) {
+            final NewPayloadRequest newPayloadRequest, final UInt64 slot) {
           return SafeFuture.completedFuture(PayloadStatus.SYNCING);
         }
 
@@ -111,7 +111,8 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       ForkChoiceState forkChoiceState,
       Optional<PayloadBuildingAttributes> payloadBuildingAttributes);
 
-  SafeFuture<PayloadStatus> engineNewPayload(NewPayloadRequest newPayloadRequest);
+  SafeFuture<PayloadStatus> engineNewPayload(
+      NewPayloadRequest newPayloadRequest, final UInt64 slot);
 
   SafeFuture<List<ClientVersion>> engineGetClientVersion(ClientVersion clientVersion);
 

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ethereum.executionlayer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,9 +24,9 @@ import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
@@ -48,7 +49,6 @@ import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@Disabled("Waiting for https://github.com/Consensys/teku/issues/8620")
 public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTest {
 
   @BeforeEach
@@ -86,20 +86,32 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
   void engineNewPayload_shouldCallNewPayloadV4() {
     final ExecutionClientHandler handler = getHandler();
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
-    final Bytes32 parentBeaconBlockRoot = dataStructureUtil.randomBytes32();
     final List<VersionedHash> versionedHashes = dataStructureUtil.randomVersionedHashes(3);
+    final Bytes32 parentBeaconBlockRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 executionRequestsHash = dataStructureUtil.randomBytes32();
     final NewPayloadRequest newPayloadRequest =
-        new NewPayloadRequest(payload, versionedHashes, parentBeaconBlockRoot);
-    final ExecutionPayloadV4 payloadV4 = ExecutionPayloadV4.fromInternalExecutionPayload(payload);
+        new NewPayloadRequest(
+            payload, versionedHashes, parentBeaconBlockRoot, executionRequestsHash);
+    final ExecutionPayloadV3 payloadV3 = ExecutionPayloadV3.fromInternalExecutionPayload(payload);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
         SafeFuture.completedFuture(
             new Response<>(
                 new PayloadStatusV1(
                     ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null)));
-    when(executionEngineClient.newPayloadV4(payloadV4, versionedHashes, parentBeaconBlockRoot))
+    when(executionEngineClient.newPayloadV4(
+            eq(payloadV3),
+            eq(versionedHashes),
+            eq(parentBeaconBlockRoot),
+            eq(executionRequestsHash)))
         .thenReturn(dummyResponse);
-    final SafeFuture<PayloadStatus> future = handler.engineNewPayload(newPayloadRequest);
-    verify(executionEngineClient).newPayloadV4(payloadV4, versionedHashes, parentBeaconBlockRoot);
+    final SafeFuture<PayloadStatus> future =
+        handler.engineNewPayload(newPayloadRequest, UInt64.ZERO);
+    verify(executionEngineClient)
+        .newPayloadV4(
+            eq(payloadV3),
+            eq(versionedHashes),
+            eq(parentBeaconBlockRoot),
+            eq(executionRequestsHash));
     assertThat(future).isCompleted();
   }
 

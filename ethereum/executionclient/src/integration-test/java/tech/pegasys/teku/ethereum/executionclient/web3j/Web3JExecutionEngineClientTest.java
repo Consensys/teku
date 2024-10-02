@@ -50,7 +50,6 @@ import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
@@ -317,14 +316,16 @@ public class Web3JExecutionEngineClientTest {
     mockSuccessfulResponse(bodyResponse);
 
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
-    final ExecutionPayloadV4 executionPayloadV4 =
-        ExecutionPayloadV4.fromInternalExecutionPayload(executionPayload);
+    final ExecutionPayloadV3 executionPayloadV3 =
+        ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
 
     final List<VersionedHash> blobVersionedHashes = dataStructureUtil.randomVersionedHashes(3);
     final Bytes32 parentBeaconBlockRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 executionRequestHash = dataStructureUtil.randomBytes32();
 
     final SafeFuture<Response<PayloadStatusV1>> futureResponse =
-        eeClient.newPayloadV4(executionPayloadV4, blobVersionedHashes, parentBeaconBlockRoot);
+        eeClient.newPayloadV4(
+            executionPayloadV3, blobVersionedHashes, parentBeaconBlockRoot, executionRequestHash);
 
     assertThat(futureResponse)
         .succeedsWithin(1, TimeUnit.SECONDS)
@@ -335,13 +336,13 @@ public class Web3JExecutionEngineClientTest {
     final Map<String, Object> requestData = takeRequest();
     verifyJsonRpcMethodCall(requestData, "engine_newPayloadV4");
 
-    final Map<String, Object> executionPayloadV4Parameter =
+    final Map<String, Object> executionPayloadV3Parameter =
         (Map<String, Object>) ((List<Object>) requestData.get("params")).get(0);
     // 17 fields in ExecutionPayloadV4
-    assertThat(executionPayloadV4Parameter).hasSize(17);
+    assertThat(executionPayloadV3Parameter).hasSize(17);
     // sanity check
-    assertThat(executionPayloadV4Parameter.get("parentHash"))
-        .isEqualTo(executionPayloadV4.parentHash.toHexString());
+    assertThat(executionPayloadV3Parameter.get("parentHash"))
+        .isEqualTo(executionPayloadV3.parentHash.toHexString());
 
     assertThat(((List<Object>) requestData.get("params")).get(1))
         .asInstanceOf(LIST)
