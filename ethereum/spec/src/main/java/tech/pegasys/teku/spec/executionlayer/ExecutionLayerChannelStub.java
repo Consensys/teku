@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
@@ -69,6 +70,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
 import tech.pegasys.teku.spec.datastructures.util.DepositRequestsUtil;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -347,6 +349,13 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     offlineCheck();
 
     return SafeFuture.completedFuture(List.of(STUB_CLIENT_VERSION));
+  }
+
+  @Override
+  public SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobs(
+      final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
+    return SafeFuture.completedFuture(
+        blobVersionedHashes.stream().map(e -> Optional.<BlobAndProof>empty()).toList());
   }
 
   @Override

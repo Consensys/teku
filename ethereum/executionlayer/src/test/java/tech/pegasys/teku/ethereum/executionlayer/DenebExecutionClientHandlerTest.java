@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
@@ -35,6 +36,8 @@ import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
@@ -132,6 +135,30 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
     final SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> future =
         handler.engineForkChoiceUpdated(forkChoiceState, Optional.of(attributes));
     verify(executionEngineClient).forkChoiceUpdatedV3(forkChoiceStateV1, payloadAttributes);
+    assertThat(future).isCompleted();
+  }
+
+  @Test
+  void engineGetBlobs_shouldCallGetBlobsV1() {
+    final ExecutionClientHandler handler = getHandler();
+    final int maxBlobsPerBlock = spec.getMaxBlobsPerBlock().orElseThrow();
+    final List<VersionedHash> versionedHashes =
+        dataStructureUtil.randomVersionedHashes(maxBlobsPerBlock);
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(maxBlobsPerBlock);
+    final UInt64 slot = dataStructureUtil.randomUInt64(1_000_000);
+    final SafeFuture<Response<List<BlobAndProofV1>>> dummyResponse =
+        SafeFuture.completedFuture(
+            new Response<>(
+                blobSidecars.stream()
+                    .map(
+                        blobSidecar ->
+                            new BlobAndProofV1(
+                                blobSidecar.getBlob().getBytes(),
+                                blobSidecar.getKZGProof().getBytesCompressed()))
+                    .toList()));
+    when(executionEngineClient.getBlobsV1(versionedHashes)).thenReturn(dummyResponse);
+    final SafeFuture<List<BlobAndProof>> future = handler.engineGetBlobs(versionedHashes, slot);
+    verify(executionEngineClient).getBlobsV1(versionedHashes);
     assertThat(future).isCompleted();
   }
 

@@ -25,6 +25,7 @@ import static tech.pegasys.teku.ethereum.executionlayer.EngineCapabilitiesMonito
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
@@ -43,14 +44,18 @@ public class EngineCapabilitiesMonitorTest {
       mock(EngineJsonRpcMethodsResolver.class);
   private final ExecutionEngineClient executionEngineClient = mock(ExecutionEngineClient.class);
 
+  private final List<String> engineCapabilities = List.of("method1", "method2", "method3");
   private final List<String> capabilities = List.of("method1", "method2");
+  private final List<String> optionalCapabilities = List.of("method3");
 
   private EngineCapabilitiesMonitor engineCapabilitiesMonitor;
 
   @BeforeEach
   public void setUp() {
     when(engineMethodsResolver.getCapabilities()).thenReturn(new HashSet<>(capabilities));
-    mockEngineCapabilitiesResponse(capabilities);
+    when(engineMethodsResolver.getOptionalCapabilities())
+        .thenReturn(new HashSet<>(optionalCapabilities));
+    mockEngineCapabilitiesResponse(engineCapabilities);
     engineCapabilitiesMonitor =
         new EngineCapabilitiesMonitor(
             spec, eventLogger, engineMethodsResolver, executionEngineClient);
@@ -64,7 +69,18 @@ public class EngineCapabilitiesMonitorTest {
     // 3rd slot in epoch
     engineCapabilitiesMonitor.onSlot(UInt64.valueOf(2));
 
-    verify(eventLogger).missingEngineApiCapabilities(List.of("method2"));
+    verify(eventLogger).missingEngineApiCapabilities(List.of("method2"), false);
+  }
+
+  @Test
+  public void logsWarningIfEngineDoesNotSupportOptionalCapabilities() {
+    // engine only supports one of the methods
+    mockEngineCapabilitiesResponse(List.of("method1", "method2"));
+
+    // 3rd slot in epoch
+    engineCapabilitiesMonitor.onSlot(UInt64.valueOf(2));
+
+    verify(eventLogger).missingEngineApiCapabilities(List.of("method3"), true);
   }
 
   @Test
@@ -129,7 +145,8 @@ public class EngineCapabilitiesMonitorTest {
   }
 
   private void mockEngineCapabilitiesResponse(final List<String> engineCapabilities) {
-    when(executionEngineClient.exchangeCapabilities(capabilities))
+    when(executionEngineClient.exchangeCapabilities(
+            Stream.concat(capabilities.stream(), optionalCapabilities.stream()).toList()))
         .thenReturn(SafeFuture.completedFuture(new Response<>(engineCapabilities)));
   }
 
