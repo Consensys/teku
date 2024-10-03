@@ -44,9 +44,11 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
@@ -58,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ExecutionLayerManagerImplTest {
@@ -656,6 +659,18 @@ class ExecutionLayerManagerImplTest {
     verifyNoMoreInteractions(executionClientHandler);
   }
 
+  @Test
+  public void engineGetBlobs_shouldReturnGetBlobsResponseViaEngine() {
+    setupDeneb();
+    final List<VersionedHash> versionedHashes =
+        dataStructureUtil.randomVersionedHashes(spec.getMaxBlobsPerBlock().orElseThrow());
+    final UInt64 slot = dataStructureUtil.randomSlot();
+    final List<BlobAndProof> getBlobsResponse =
+        prepareEngineGetBlobsResponse(versionedHashes, slot);
+    assertThat(executionLayerManager.engineGetBlobs(versionedHashes, slot))
+        .isCompletedWithValue(getBlobsResponse.stream().map(Optional::ofNullable).toList());
+  }
+
   private void setupDeneb() {
     spec = TestSpecFactory.createMinimalDeneb();
     dataStructureUtil = new DataStructureUtil(spec);
@@ -784,6 +799,19 @@ class ExecutionLayerManagerImplTest {
     when(executionClientHandler.engineGetPayload(executionPayloadContext, slot))
         .thenReturn(SafeFuture.completedFuture(getPayloadResponse));
     return getPayloadResponse;
+  }
+
+  private List<BlobAndProof> prepareEngineGetBlobsResponse(
+      final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
+    final List<BlobSidecar> blobSidecars =
+        dataStructureUtil.randomBlobSidecars(spec.getMaxBlobsPerBlock().orElseThrow());
+    final List<BlobAndProof> getBlobsResponse =
+        blobSidecars.stream()
+            .map(blobSidecar -> new BlobAndProof(blobSidecar.getBlob(), blobSidecar.getKZGProof()))
+            .toList();
+    when(executionClientHandler.engineGetBlobs(blobVersionedHashes, slot))
+        .thenReturn(SafeFuture.completedFuture(getBlobsResponse));
+    return getBlobsResponse;
   }
 
   private ExecutionLayerManagerImpl createExecutionLayerChannelImpl(

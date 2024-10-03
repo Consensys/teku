@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,49 +23,46 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.InvalidRemoteResponseException;
-import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
-import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-class EngineGetPayloadV4Test {
+public class EngineGetBlobsV1Test {
 
   private final Spec spec = TestSpecFactory.createMinimalElectra();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ExecutionEngineClient executionEngineClient = mock(ExecutionEngineClient.class);
-  private EngineGetPayloadV4 jsonRpcMethod;
+  private EngineGetBlobsV1 jsonRpcMethod;
 
   @BeforeEach
   public void setUp() {
-    jsonRpcMethod = new EngineGetPayloadV4(executionEngineClient, spec);
+    jsonRpcMethod = new EngineGetBlobsV1(executionEngineClient, spec);
   }
 
   @Test
   public void shouldReturnExpectedNameAndVersion() {
-    assertThat(jsonRpcMethod.getName()).isEqualTo("engine_getPayload");
-    assertThat(jsonRpcMethod.getVersion()).isEqualTo(4);
-    assertThat(jsonRpcMethod.getVersionedName()).isEqualTo("engine_getPayloadV4");
+    assertThat(jsonRpcMethod.getName()).isEqualTo("engine_getBlobs");
+    assertThat(jsonRpcMethod.isOptional()).isTrue();
+    assertThat(jsonRpcMethod.getVersion()).isEqualTo(1);
+    assertThat(jsonRpcMethod.getVersionedName()).isEqualTo("engine_getBlobsV1");
   }
 
   @Test
-  public void executionPayloadContextParamIsRequired() {
+  public void blobVersionedHashesParamIsRequired() {
     final JsonRpcRequestParams params = new JsonRpcRequestParams.Builder().build();
 
     assertThatThrownBy(() -> jsonRpcMethod.execute(params))
@@ -77,11 +74,10 @@ class EngineGetPayloadV4Test {
 
   @Test
   public void slotParamIsRequired() {
-    final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtil.randomPayloadExecutionContext(false);
+    final List<VersionedHash> versionedHashes = dataStructureUtil.randomVersionedHashes(4);
 
     final JsonRpcRequestParams params =
-        new JsonRpcRequestParams.Builder().add(executionPayloadContext).build();
+        new JsonRpcRequestParams.Builder().add(versionedHashes).build();
 
     assertThatThrownBy(() -> jsonRpcMethod.execute(params))
         .isInstanceOf(IllegalArgumentException.class)
@@ -92,15 +88,14 @@ class EngineGetPayloadV4Test {
 
   @Test
   public void shouldReturnFailedExecutionWhenEngineClientRequestFails() {
-    final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtil.randomPayloadExecutionContext(false);
+    final List<VersionedHash> versionedHashes = dataStructureUtil.randomVersionedHashes(4);
     final String errorResponseFromClient = "error!";
 
-    when(executionEngineClient.getPayloadV4(any()))
+    when(executionEngineClient.getBlobsV1(any()))
         .thenReturn(dummyFailedResponse(errorResponseFromClient));
 
     final JsonRpcRequestParams params =
-        new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
+        new JsonRpcRequestParams.Builder().add(versionedHashes).add(UInt64.ZERO).build();
 
     assertThat(jsonRpcMethod.execute(params))
         .failsWithin(1, TimeUnit.SECONDS)
@@ -111,44 +106,43 @@ class EngineGetPayloadV4Test {
   }
 
   @Test
-  public void shouldCallGetPayloadV4AndParseResponseSuccessfully() {
-    final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtil.randomPayloadExecutionContext(false);
-    final UInt256 blockValue = UInt256.MAX_VALUE;
-    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
-    final ExecutionPayload executionPayloadElectra = dataStructureUtil.randomExecutionPayload();
-    assertThat(executionPayloadElectra).isInstanceOf(ExecutionPayloadDeneb.class);
+  public void shouldCallGetBlobsV1AndParseResponseSuccessfully() {
+    final List<VersionedHash> versionedHashes = dataStructureUtil.randomVersionedHashes(4);
+    final List<BlobSidecar> blobSidecars =
+        dataStructureUtil.randomBlobSidecars(spec.getMaxBlobsPerBlock().orElseThrow());
 
-    when(executionEngineClient.getPayloadV4(eq(executionPayloadContext.getPayloadId())))
-        .thenReturn(dummySuccessfulResponse(executionPayloadElectra, blockValue, blobsBundle));
+    when(executionEngineClient.getBlobsV1(eq(versionedHashes)))
+        .thenReturn(dummySuccessfulResponse(blobSidecars));
 
     final JsonRpcRequestParams params =
-        new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
+        new JsonRpcRequestParams.Builder().add(versionedHashes).add(UInt64.ZERO).build();
 
-    jsonRpcMethod = new EngineGetPayloadV4(executionEngineClient, spec);
+    jsonRpcMethod = new EngineGetBlobsV1(executionEngineClient, spec);
 
-    final GetPayloadResponse expectedGetPayloadResponse =
-        new GetPayloadResponse(executionPayloadElectra, blockValue, blobsBundle, false);
-    assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedGetPayloadResponse);
+    final List<BlobAndProof> expectedResponse =
+        blobSidecars.stream()
+            .map(blobSidecar -> new BlobAndProof(blobSidecar.getBlob(), blobSidecar.getKZGProof()))
+            .toList();
+    assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedResponse);
 
-    verify(executionEngineClient).getPayloadV4(eq(executionPayloadContext.getPayloadId()));
+    verify(executionEngineClient).getBlobsV1(eq(versionedHashes));
     verifyNoMoreInteractions(executionEngineClient);
   }
 
-  private SafeFuture<Response<GetPayloadV4Response>> dummySuccessfulResponse(
-      final ExecutionPayload executionPayload,
-      final UInt256 blockValue,
-      final BlobsBundle blobsBundle) {
+  private SafeFuture<Response<List<BlobAndProofV1>>> dummySuccessfulResponse(
+      final List<BlobSidecar> blobSidecars) {
     return SafeFuture.completedFuture(
         new Response<>(
-            new GetPayloadV4Response(
-                ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload),
-                blockValue,
-                BlobsBundleV1.fromInternalBlobsBundle(blobsBundle),
-                false)));
+            blobSidecars.stream()
+                .map(
+                    blobSidecar ->
+                        new BlobAndProofV1(
+                            blobSidecar.getBlob().getBytes(),
+                            blobSidecar.getKZGProof().getBytesCompressed()))
+                .toList()));
   }
 
-  private SafeFuture<Response<GetPayloadV4Response>> dummyFailedResponse(
+  private SafeFuture<Response<List<BlobAndProofV1>>> dummyFailedResponse(
       final String errorMessage) {
     return SafeFuture.completedFuture(Response.withErrorMessage(errorMessage));
   }
