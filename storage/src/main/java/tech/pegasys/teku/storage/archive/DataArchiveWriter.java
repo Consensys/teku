@@ -22,7 +22,6 @@ import java.io.Closeable;
  *
  * @param <T> the data to be stored.
  */
-
 public interface DataArchiveWriter<T> extends Closeable {
   boolean archive(final T data);
 }

@@ -33,9 +33,9 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.archive.DataArchiveNoopWriter;
 import tech.pegasys.teku.storage.archive.DataArchiveWriter;
+import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 
 public class BlobSidecarPruner extends Service {

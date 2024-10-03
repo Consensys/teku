@@ -82,9 +82,9 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
+import tech.pegasys.teku.storage.archive.DataArchiveNoopWriter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.Database;
-import tech.pegasys.teku.storage.archive.DataArchiveNoopWriter;
 import tech.pegasys.teku.storage.server.DatabaseContext;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -315,8 +315,7 @@ public class DatabaseTest {
 
     // let's prune up to slot 1 (nothing will be pruned)
     assertThat(
-            database.pruneOldestBlobSidecars(
-                ONE, 10, DataArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE))
+            database.pruneOldestBlobSidecars(ONE, 10, DataArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE))
         .isFalse();
     assertBlobSidecarKeys(
         blobSidecar2_0.getSlot(),

@@ -13,9 +13,8 @@
 
 package tech.pegasys.teku.storage.archive;
 
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-
 import java.io.IOException;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
 public class DataArchiveNoopWriter<T> implements DataArchiveWriter<T> {
 
@@ -28,5 +27,5 @@ public class DataArchiveNoopWriter<T> implements DataArchiveWriter<T> {
   }
 
   @Override
-  public void close() throws IOException { }
+  public void close() throws IOException {}
 }

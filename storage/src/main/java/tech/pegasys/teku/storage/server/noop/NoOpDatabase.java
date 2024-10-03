@@ -43,8 +43,8 @@ import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
-import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.archive.DataArchiveWriter;
+import tech.pegasys.teku.storage.server.Database;
 
 public class NoOpDatabase implements Database {
 
