@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,21 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionclient.methods;
+package tech.pegasys.teku.api.peer;
 
-public enum EngineApiMethod {
-  ENGINE_NEW_PAYLOAD("engine_newPayload"),
-  ENGINE_GET_PAYLOAD("engine_getPayload"),
-  ENGINE_FORK_CHOICE_UPDATED("engine_forkchoiceUpdated"),
-  ENGINE_GET_BLOBS("engine_getBlobs");
+import java.util.Optional;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
-  private final String name;
-
-  EngineApiMethod(final String name) {
-    this.name = name;
-  }
-
-  public String getName() {
-    return name;
-  }
-}
+public record Eth2PeerWithEnr(Eth2Peer peer, Optional<String> enr) {}

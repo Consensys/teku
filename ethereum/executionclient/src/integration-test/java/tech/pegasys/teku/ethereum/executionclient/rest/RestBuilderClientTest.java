@@ -60,7 +60,7 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
-// TODO Re-enable electra as part of https://github.com/Consensys/teku/issues/8620
+// TODO Re-enable electra as part of https://github.com/Consensys/teku/issues/8624
 @TestSpecContext(
     milestone = {BELLATRIX, CAPELLA, DENEB},
     network = Eth2Network.MAINNET)

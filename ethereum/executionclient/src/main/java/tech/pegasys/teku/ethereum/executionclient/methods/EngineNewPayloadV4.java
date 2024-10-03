@@ -19,7 +19,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -51,18 +51,21 @@ public class EngineNewPayloadV4 extends AbstractEngineJsonRpcMethod<PayloadStatu
     final List<VersionedHash> blobVersionedHashes =
         params.getRequiredListParameter(1, VersionedHash.class);
     final Bytes32 parentBeaconBlockRoot = params.getRequiredParameter(2, Bytes32.class);
+    final Bytes32 executionRequestHash = params.getRequiredParameter(3, Bytes32.class);
 
     LOG.trace(
-        "Calling {}(executionPayload={}, blobVersionedHashes={}, parentBeaconBlockRoot={})",
+        "Calling {}(executionPayload={}, blobVersionedHashes={}, parentBeaconBlockRoot={}, executionRequestHash={})",
         getVersionedName(),
         executionPayload,
         blobVersionedHashes,
-        parentBeaconBlockRoot);
+        parentBeaconBlockRoot,
+        executionRequestHash);
 
-    final ExecutionPayloadV4 executionPayloadV4 =
-        ExecutionPayloadV4.fromInternalExecutionPayload(executionPayload);
+    final ExecutionPayloadV3 executionPayloadV3 =
+        ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
     return executionEngineClient
-        .newPayloadV4(executionPayloadV4, blobVersionedHashes, parentBeaconBlockRoot)
+        .newPayloadV4(
+            executionPayloadV3, blobVersionedHashes, parentBeaconBlockRoot, executionRequestHash)
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
         .thenApply(PayloadStatusV1::asInternalExecutionPayload)
         .thenPeek(

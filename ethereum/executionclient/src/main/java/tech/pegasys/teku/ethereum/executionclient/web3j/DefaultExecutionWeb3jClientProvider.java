@@ -58,7 +58,8 @@ public class DefaultExecutionWeb3jClientProvider implements ExecutionWeb3jClient
             .jwtConfigOpt(jwtConfig)
             .timeProvider(timeProvider)
             .executionClientEventsPublisher(executionClientEventsPublisher)
-            .nonCriticalMethods("engine_exchangeCapabilities", "engine_getClientVersionV1")
+            .nonCriticalMethods(
+                "engine_exchangeCapabilities", "engine_getClientVersionV1", "engine_getBlobsV1")
             .build();
     this.alreadyBuilt = true;
   }
