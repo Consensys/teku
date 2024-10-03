@@ -77,7 +77,7 @@ public class FileSystemArchive implements DataArchive {
         return false;
       }
 
-      if (!file.mkdirs()) {
+      if (!file.getParentFile().mkdirs()) {
         LOG.warn("Failed to write BlobSidecar. Could not make directories to: {}", file.toString());
         return false;
       }
@@ -120,10 +120,9 @@ public class FileSystemArchive implements DataArchive {
     // Assume 8000 to 10000 blobs per day. With perfect hash distribution,
     // all directories have one file after a week. After 1 year, expect 50 files in each directory.
     String blockRootString = slotAndBlockRoot.getBlockRoot().toUnprefixedHexString();
-    final String dir1 = blockRootString.substring(0, 1);
-    final String dir2 = blockRootString.substring(2, 3);
-    final String blobSidecarFilename =
-        dir1 + File.pathSeparator + dir2 + File.pathSeparator + blockRootString;
+    final String dir1 = blockRootString.substring(0, 2);
+    final String dir2 = blockRootString.substring(2, 4);
+    final String blobSidecarFilename = dir1 + File.separator + dir2 + File.separator + blockRootString;
     return basePath.resolve(blobSidecarFilename).toFile();
   }
 }
