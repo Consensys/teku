@@ -71,8 +71,8 @@ import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
-import tech.pegasys.teku.storage.archive.DataArchiveNoopWriter;
 import tech.pegasys.teku.storage.archive.DataArchiveWriter;
+import tech.pegasys.teku.storage.archive.nooparchive.DataArchiveNoopWriter;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.CombinedKvStoreDao;
@@ -900,7 +900,7 @@ public class KvStoreDatabase implements Database {
           pruneLimit,
           prunableNoncanonicalBlobKeys,
           updater,
-          DataArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE,
+          new DataArchiveNoopWriter<BlobSidecar>(),
           true);
     }
   }

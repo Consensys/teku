@@ -16,9 +16,9 @@ package tech.pegasys.teku.storage.archive;
 import java.io.Closeable;
 
 /**
- * A functional interface to allow storing data that is to be pruned from the Database. If the store
- * function is successful it returns true, signalling the data can be pruned. If the store function
- * fails, the data was not stored and the data should not be pruned.
+ * An interface to allow storing data that is to be pruned from the Database. If the store function
+ * is successful it returns true, signalling the data can be pruned. If the store function fails,
+ * the data was not stored and the data should not be pruned.
  *
  * @param <T> the data to be stored.
  */

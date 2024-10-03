@@ -23,6 +23,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +39,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.storage.archive.DataArchive;
-import tech.pegasys.teku.storage.archive.DataArchiveNoopWriter;
 import tech.pegasys.teku.storage.archive.nooparchive.NoopDataArchive;
 import tech.pegasys.teku.storage.server.Database;
 
@@ -118,7 +118,7 @@ public class BlobSidecarPrunerTest {
   }
 
   @Test
-  void shouldPruneWhenLatestPrunableSlotIsGreaterThanOldestDAEpoch() {
+  void shouldPruneWhenLatestPrunableSlotIsGreaterThanOldestDAEpoch() throws IOException {
     final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     // set current slot to MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS + 1 epoch + half epoch
@@ -135,13 +135,13 @@ public class BlobSidecarPrunerTest {
         .pruneOldestBlobSidecars(
             UInt64.valueOf((slotsPerEpoch / 2) - 1),
             PRUNE_LIMIT,
-            DataArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE);
+            dataArchive.getBlobSidecarWriter());
     verify(database)
         .pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
   }
 
   @Test
-  void shouldUseEpochsStoreBlobs() {
+  void shouldUseEpochsStoreBlobs() throws IOException {
     final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     final int defaultValue = specConfigDeneb.getMinEpochsForBlobSidecarsRequests();
@@ -199,7 +199,7 @@ public class BlobSidecarPrunerTest {
         .pruneOldestBlobSidecars(
             UInt64.valueOf((slotsPerEpoch / 2) - 1),
             PRUNE_LIMIT,
-            DataArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE);
+            dataArchive.getBlobSidecarWriter());
     verify(databaseOverride)
         .pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
   }

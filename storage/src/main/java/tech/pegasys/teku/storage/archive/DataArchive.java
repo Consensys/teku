@@ -28,7 +28,7 @@ public interface DataArchive {
    * Returns the archive writer capable of storing BlobSidecars.
    *
    * @return a closeable DataArchiveWriter for writing BlobSidecars
-   * @throws IOException
+   * @throws IOException throw exception if it fails to get a writer.
    */
   DataArchiveWriter<BlobSidecar> getBlobSidecarWriter() throws IOException;
 }
