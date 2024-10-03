@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.storage.archive;
 
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+
+import java.io.IOException;
+
 /**
  * Interface for a data archive which stores non-current BlobSidecars and could be extended later to
  * include other data types. It is expected that the DataArchive is on disk or externally stored
@@ -21,5 +25,12 @@ package tech.pegasys.teku.storage.archive;
  */
 public interface DataArchive {
 
-  // public boolean archiveBlobSidecar(final BlobSidecar blobSidecar);
+    /**
+     * Returns the archive writer capable of storing BlobSidecars.
+     *
+     * @return a closeable DataArchiveWriter for writing BlobSidecars
+     * @throws IOException
+     */
+    DataArchiveWriter<BlobSidecar> getBlobSidecarWriter() throws IOException;
+
 }

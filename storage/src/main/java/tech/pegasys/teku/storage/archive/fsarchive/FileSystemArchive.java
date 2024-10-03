@@ -33,8 +33,8 @@ import tech.pegasys.teku.storage.archive.DataArchiveWriterFactory;
  * A file system based implementations of the DataArchive. Writes to a directory using the
  * PathResolver method to decide where to write the files.
  */
-public class FileSystemArchive implements DataArchive, DataArchiveWriterFactory {
-  private static final String INDEX_FILE = "index.txt";
+public class FileSystemArchive implements DataArchive {
+  private static final String INDEX_FILE = "index.dat";
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -46,6 +46,7 @@ public class FileSystemArchive implements DataArchive, DataArchiveWriterFactory 
     this.jsonWriter = new BlobSidecarJsonWriter();
   }
 
+  @Override
   public DataArchiveWriter<BlobSidecar> getBlobSidecarWriter() throws IOException {
 
     try {

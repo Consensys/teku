@@ -37,7 +37,9 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.storage.archive.DataArchive;
 import tech.pegasys.teku.storage.archive.DataArchiveNoopWriter;
+import tech.pegasys.teku.storage.archive.nooparchive.NoopDataArchive;
 import tech.pegasys.teku.storage.server.Database;
 
 public class BlobSidecarPrunerTest {
@@ -55,11 +57,13 @@ public class BlobSidecarPrunerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final Database database = mock(Database.class);
   private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
+  private final DataArchive dataArchive = new NoopDataArchive();
 
   private final BlobSidecarPruner blobsPruner =
       new BlobSidecarPruner(
           spec,
           database,
+          dataArchive,
           stubMetricsSystem,
           asyncRunner,
           timeProvider,
@@ -157,6 +161,7 @@ public class BlobSidecarPrunerTest {
         new BlobSidecarPruner(
             specOverride,
             databaseOverride,
+            dataArchive,
             stubMetricsSystem,
             asyncRunner,
             timeProvider,
@@ -217,6 +222,7 @@ public class BlobSidecarPrunerTest {
         new BlobSidecarPruner(
             specOverride,
             databaseOverride,
+            dataArchive,
             stubMetricsSystem,
             asyncRunner,
             timeProvider,
