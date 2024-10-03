@@ -94,6 +94,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                     "Ephemery network deposit contract id has updated, resetting the stored database and slashing protection data.");
                 database = ephemeryDatabaseReset.resetDatabaseAndCreate(serviceConfig, dbFactory);
               }
+
               final SettableLabelledGauge pruningTimingsLabelledGauge =
                   SettableLabelledGauge.create(
                       serviceConfig.getMetricsSystem(),
