@@ -232,7 +232,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       countBlobSidecar(remoteOrigin);
       newBlobSidecarSubscribers.deliver(NewBlobSidecarSubscriber::onNewBlobSidecar, blobSidecar);
       if (remoteOrigin.equals(LOCAL_EL) && slotAndBlockRoot.getSlot().equals(getCurrentSlot())) {
-        publishBlobSidecar(blobSidecar);
+        publishRecoveredBlobSidecar(blobSidecar);
       }
     } else {
       countDuplicateBlobSidecar(remoteOrigin);
@@ -243,7 +243,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     }
   }
 
-  private void publishBlobSidecar(final BlobSidecar blobSidecar) {
+  private void publishRecoveredBlobSidecar(final BlobSidecar blobSidecar) {
+    LOG.debug("Publishing recovered blob sidecar {}", blobSidecar::toLogString);
     gossipValidatorSupplier.get().markForEquivocation(blobSidecar);
     blobSidecarGossipPublisher.accept(blobSidecar);
   }
