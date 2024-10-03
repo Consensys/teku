@@ -27,7 +27,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.storage.archive.DataArchive;
 import tech.pegasys.teku.storage.archive.DataArchiveWriter;
-import tech.pegasys.teku.storage.archive.DataArchiveWriterFactory;
 
 /**
  * A file system based implementations of the DataArchive. Writes to a directory using the

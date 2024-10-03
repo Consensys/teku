@@ -13,9 +13,8 @@
 
 package tech.pegasys.teku.storage.archive;
 
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-
 import java.io.IOException;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
 /**
  * Interface for a data archive which stores non-current BlobSidecars and could be extended later to
@@ -25,12 +24,11 @@ import java.io.IOException;
  */
 public interface DataArchive {
 
-    /**
-     * Returns the archive writer capable of storing BlobSidecars.
-     *
-     * @return a closeable DataArchiveWriter for writing BlobSidecars
-     * @throws IOException
-     */
-    DataArchiveWriter<BlobSidecar> getBlobSidecarWriter() throws IOException;
-
+  /**
+   * Returns the archive writer capable of storing BlobSidecars.
+   *
+   * @return a closeable DataArchiveWriter for writing BlobSidecars
+   * @throws IOException
+   */
+  DataArchiveWriter<BlobSidecar> getBlobSidecarWriter() throws IOException;
 }

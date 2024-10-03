@@ -148,8 +148,10 @@ public class StorageService extends Service implements StorageServiceFacade {
                 }
               }
 
-              final DataArchive dataArchive = config.getBlobsArchivePath()
-                      .map( path->(DataArchive) new FileSystemArchive(Path.of(path)))
+              final DataArchive dataArchive =
+                  config
+                      .getBlobsArchivePath()
+                      .map(path -> (DataArchive) new FileSystemArchive(Path.of(path)))
                       .orElse(new NoopDataArchive());
 
               if (config.getSpec().isMilestoneSupported(SpecMilestone.DENEB)) {

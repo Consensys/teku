@@ -152,7 +152,9 @@ public class StorageConfiguration {
     return blobsPruningLimit;
   }
 
-  public Optional<String> getBlobsArchivePath() { return Optional.ofNullable(blobsArchivePath); }
+  public Optional<String> getBlobsArchivePath() {
+    return Optional.ofNullable(blobsArchivePath);
+  }
 
   public long getRetainedSlots() {
     return retainedSlots;
@@ -286,7 +288,7 @@ public class StorageConfiguration {
         File file = Path.of(blobsArchivePath).toFile();
         if (!file.exists()) {
           throw new InvalidConfigurationException(
-                  String.format("blobsArchivePath does not exist: '%s'", blobsArchivePath));
+              String.format("blobsArchivePath does not exist: '%s'", blobsArchivePath));
         }
       }
       this.blobsArchivePath = blobsArchivePath;

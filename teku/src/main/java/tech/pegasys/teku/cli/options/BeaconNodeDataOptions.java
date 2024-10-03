@@ -171,13 +171,13 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   private int blobsPruningLimit = StorageConfiguration.DEFAULT_BLOBS_PRUNING_LIMIT;
 
   @CommandLine.Option(
-          names = {"--Xdata-storage-archive-path"},
-          hidden = true,
-          paramLabel = "<STRING>",
-          description = "Path to write pruned blobs",
-          fallbackValue = "true",
-          showDefaultValue = Visibility.ALWAYS,
-          arity = "0..1")
+      names = {"--Xdata-storage-archive-path"},
+      hidden = true,
+      paramLabel = "<STRING>",
+      description = "Path to write pruned blobs",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1")
   private String blobsArchivePath = null;
 
   @Option(
