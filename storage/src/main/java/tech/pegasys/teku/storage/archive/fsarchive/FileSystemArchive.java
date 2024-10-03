@@ -122,7 +122,8 @@ public class FileSystemArchive implements DataArchive {
     String blockRootString = slotAndBlockRoot.getBlockRoot().toUnprefixedHexString();
     final String dir1 = blockRootString.substring(0, 2);
     final String dir2 = blockRootString.substring(2, 4);
-    final String blobSidecarFilename = dir1 + File.separator + dir2 + File.separator + blockRootString;
+    final String blobSidecarFilename =
+        dir1 + File.separator + dir2 + File.separator + blockRootString;
     return basePath.resolve(blobSidecarFilename).toFile();
   }
 }

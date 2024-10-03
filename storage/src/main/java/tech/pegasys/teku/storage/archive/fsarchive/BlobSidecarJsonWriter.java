@@ -13,23 +13,47 @@
 
 package tech.pegasys.teku.storage.archive.fsarchive;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
+
 import java.io.IOException;
 import java.io.OutputStream;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
+import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
 public class BlobSidecarJsonWriter {
 
-  private final ObjectMapper objectMapper;
+  public static final StringValueTypeDefinition<KZGCommitment> KZG_COMMITMENT_TYPE =
+      DeserializableTypeDefinition.string(KZGCommitment.class)
+          .formatter(KZGCommitment::toHexString)
+          .parser(KZGCommitment::fromHexString)
+          .example(
+              "0xb09ce4964278eff81a976fbc552488cb84fc4a102f004c87"
+                  + "179cb912f49904d1e785ecaf5d184522a58e9035875440ef")
+          .description("KZG Commitment")
+          .format("byte")
+          .build();
 
-  public BlobSidecarJsonWriter() {
-    objectMapper = new ObjectMapper();
-    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-  }
+  public static final SerializableTypeDefinition<BlobSidecar> BLOB_SIDECAR_TYPE =
+      SerializableTypeDefinition.object(BlobSidecar.class)
+          .name("BlobSidecar")
+          .withField("index", UINT64_TYPE, BlobSidecar::getIndex)
+          // .withField( "blob", CoreTypes, BlobSidecar::getBlob)
+          .withField("block_root", BYTES32_TYPE, BlobSidecar::getBlockRoot)
+          .withField("slot", UINT64_TYPE, BlobSidecar::getSlot)
+          .withField("kzg_commitment", KZG_COMMITMENT_TYPE, BlobSidecar::getKZGCommitment)
+          .build();
+
+  public BlobSidecarJsonWriter() {}
 
   public void writeBlobSidecar(final OutputStream out, final BlobSidecar blobSidecar)
       throws IOException {
-    objectMapper.writeValue(out, blobSidecar);
+
+    String output = JsonUtil.prettySerialize(blobSidecar, BLOB_SIDECAR_TYPE);
+    System.out.println(output);
   }
 }
