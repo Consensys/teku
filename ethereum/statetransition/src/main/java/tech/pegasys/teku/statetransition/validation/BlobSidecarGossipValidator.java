@@ -262,7 +262,7 @@ public class BlobSidecarGossipValidator {
                * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, blob_sidecar.index)
                *  with valid header signature, sidecar inclusion proof, and kzg proof.
                */
-              if (!markAsSeen(blockHeader, blobSidecar.getIndex())) {
+              if (!markForEquivocation(blockHeader, blobSidecar.getIndex())) {
                 return ignore(
                     "BlobSidecar is not the first valid for its slot and index. It will be dropped.");
               }
@@ -273,14 +273,14 @@ public class BlobSidecarGossipValidator {
             });
   }
 
-  private boolean markAsSeen(final BeaconBlockHeader blockHeader, final UInt64 index) {
+  private boolean markForEquivocation(final BeaconBlockHeader blockHeader, final UInt64 index) {
     return receivedValidBlobSidecarInfoSet.add(
         new SlotProposerIndexAndBlobIndex(
             blockHeader.getSlot(), blockHeader.getProposerIndex(), index));
   }
 
-  public boolean markAsSeen(final BlobSidecar blobSidecar) {
-    return markAsSeen(
+  public boolean markForEquivocation(final BlobSidecar blobSidecar) {
+    return markForEquivocation(
         blobSidecar.getSignedBeaconBlockHeader().getMessage(), blobSidecar.getIndex());
   }
 
@@ -317,7 +317,7 @@ public class BlobSidecarGossipValidator {
      * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, blob_sidecar.index)
      *  with valid header signature, sidecar inclusion proof, and kzg proof.
      */
-    if (!markAsSeen(blockHeader, blobSidecar.getIndex())) {
+    if (!markForEquivocation(blockHeader, blobSidecar.getIndex())) {
       return SafeFuture.completedFuture(
           ignore("BlobSidecar is not the first valid for its slot and index. It will be dropped."));
     }

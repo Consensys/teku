@@ -208,7 +208,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   }
 
   @Test
-  public void onNewBlobSidecar_shouldMarkAsSeenAndPublishWhenOriginIsLocalEL() {
+  public void onNewBlobSidecar_shouldMarkForEquivocationAndPublishWhenOriginIsLocalEL() {
     final BlobSidecar blobSidecar1 =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
@@ -225,7 +225,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot))
             .build();
 
-    when(blobSidecarGossipValidator.markAsSeen(blobSidecar1)).thenReturn(true);
+    when(blobSidecarGossipValidator.markForEquivocation(blobSidecar1)).thenReturn(true);
 
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar1, RemoteOrigin.LOCAL_EL);
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar2, RemoteOrigin.GOSSIP);
@@ -234,12 +234,12 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     assertBlobSidecarsCount(3);
     assertBlobSidecarsTrackersCount(3);
 
-    verify(blobSidecarGossipValidator).markAsSeen(blobSidecar1);
+    verify(blobSidecarGossipValidator).markForEquivocation(blobSidecar1);
     verify(blobSidecarPublisher, times(1)).accept(blobSidecar1);
   }
 
   @Test
-  public void onNewBlobSidecar_shouldNotPublishWhenOriginIsLocalELButAlreadySeen() {
+  public void onNewBlobSidecar_shouldPublishEvenWhenOriginIsLocalELButEquivocating() {
     final BlobSidecar blobSidecar1 =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
@@ -256,7 +256,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot))
             .build();
 
-    when(blobSidecarGossipValidator.markAsSeen(blobSidecar1)).thenReturn(false);
+    when(blobSidecarGossipValidator.markForEquivocation(blobSidecar1)).thenReturn(false);
 
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar1, RemoteOrigin.LOCAL_EL);
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar2, RemoteOrigin.GOSSIP);
@@ -265,8 +265,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     assertBlobSidecarsCount(3);
     assertBlobSidecarsTrackersCount(3);
 
-    verify(blobSidecarGossipValidator).markAsSeen(blobSidecar1);
-    verify(blobSidecarPublisher, never()).accept(blobSidecar1);
+    verify(blobSidecarGossipValidator).markForEquivocation(blobSidecar1);
+    verify(blobSidecarPublisher, times(1)).accept(blobSidecar1);
   }
 
   @Test

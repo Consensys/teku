@@ -244,9 +244,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   }
 
   private void publishBlobSidecar(final BlobSidecar blobSidecar) {
-    if (gossipValidatorSupplier.get().markAsSeen(blobSidecar)) {
-      blobSidecarGossipPublisher.accept(blobSidecar);
-    }
+    gossipValidatorSupplier.get().markForEquivocation(blobSidecar);
+    blobSidecarGossipPublisher.accept(blobSidecar);
   }
 
   private void countBlobSidecar(final RemoteOrigin origin) {

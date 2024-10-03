@@ -279,10 +279,10 @@ public class BlobSidecarGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldMarkAsSeen() {
-    assertThat(blobSidecarValidator.markAsSeen(blobSidecar)).isTrue();
+  void shouldMarkForEquivocation() {
+    assertThat(blobSidecarValidator.markForEquivocation(blobSidecar)).isTrue();
 
-    assertThat(blobSidecarValidator.markAsSeen(blobSidecar)).isFalse();
+    assertThat(blobSidecarValidator.markForEquivocation(blobSidecar)).isFalse();
 
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
