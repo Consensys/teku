@@ -231,7 +231,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       sizeGauge.set(++totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
       countBlobSidecar(remoteOrigin);
       newBlobSidecarSubscribers.deliver(NewBlobSidecarSubscriber::onNewBlobSidecar, blobSidecar);
-      if (remoteOrigin.equals(LOCAL_EL)) {
+      if (remoteOrigin.equals(LOCAL_EL) && slotAndBlockRoot.getSlot().equals(getCurrentSlot())) {
         publishBlobSidecar(blobSidecar);
       }
     } else {

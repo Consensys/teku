@@ -245,28 +245,36 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .createRandomBlobSidecarBuilder()
             .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot))
             .build();
-    final BlobSidecar blobSidecar2 =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot))
-            .build();
-    final BlobSidecar blobSidecar3 =
+
+    when(blobSidecarGossipValidator.markForEquivocation(blobSidecar1)).thenReturn(false);
+
+    blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar1, RemoteOrigin.LOCAL_EL);
+
+    assertBlobSidecarsCount(1);
+    assertBlobSidecarsTrackersCount(1);
+
+    verify(blobSidecarGossipValidator).markForEquivocation(blobSidecar1);
+    verify(blobSidecarPublisher, times(1)).accept(blobSidecar1);
+  }
+
+  @Test
+  public void onNewBlobSidecar_shouldNotPublishWhenOriginIsLocalELIsNotCurrentSlot() {
+    final BlobSidecar blobSidecar1 =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
             .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot))
             .build();
 
     when(blobSidecarGossipValidator.markForEquivocation(blobSidecar1)).thenReturn(false);
+    blockBlobSidecarsTrackersPool.onSlot(currentSlot.plus(1));
 
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar1, RemoteOrigin.LOCAL_EL);
-    blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar2, RemoteOrigin.GOSSIP);
-    blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar3, RemoteOrigin.RPC);
 
-    assertBlobSidecarsCount(3);
-    assertBlobSidecarsTrackersCount(3);
+    assertBlobSidecarsCount(1);
+    assertBlobSidecarsTrackersCount(1);
 
-    verify(blobSidecarGossipValidator).markForEquivocation(blobSidecar1);
-    verify(blobSidecarPublisher, times(1)).accept(blobSidecar1);
+    verify(blobSidecarGossipValidator, never()).markForEquivocation(blobSidecar1);
+    verify(blobSidecarPublisher, never()).accept(blobSidecar1);
   }
 
   @Test
