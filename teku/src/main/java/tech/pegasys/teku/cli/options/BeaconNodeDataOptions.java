@@ -170,6 +170,16 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       arity = "0..1")
   private int blobsPruningLimit = StorageConfiguration.DEFAULT_BLOBS_PRUNING_LIMIT;
 
+  @CommandLine.Option(
+          names = {"--Xdata-storage-archive-path"},
+          hidden = true,
+          paramLabel = "<STRING>",
+          description = "Path to write pruned blobs",
+          fallbackValue = "true",
+          showDefaultValue = Visibility.ALWAYS,
+          arity = "0..1")
+  private String blobsArchivePath = null;
+
   @Option(
       names = {"--Xdata-storage-state-rebuild-timeout-seconds"},
       hidden = true,
@@ -212,6 +222,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .stateRebuildTimeoutSeconds(stateRebuildTimeoutSeconds)
                 .blobsPruningInterval(Duration.ofSeconds(blobsPruningIntervalSeconds))
                 .blobsPruningLimit(blobsPruningLimit)
+                .blobsArchivePath(blobsArchivePath)
                 .retainedSlots(dataStorageRetainedSlots)
                 .statePruningInterval(Duration.ofSeconds(statePruningIntervalSeconds))
                 .statePruningLimit(statePruningLimit));
