@@ -18,6 +18,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 interface DataColumnSidecarCoreDB {
@@ -27,6 +28,14 @@ interface DataColumnSidecarCoreDB {
   SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnSlotAndIdentifier identifier);
 
   SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(UInt64 slot);
+
+  default SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(
+      SlotAndBlockRoot blockId) {
+    return getColumnIdentifiers(blockId.getSlot())
+        .thenApply(
+            ids ->
+                ids.stream().filter(id -> id.blockRoot().equals(blockId.getBlockRoot())).toList());
+  }
 
   // update
   SafeFuture<Void> addSidecar(DataColumnSidecar sidecar);

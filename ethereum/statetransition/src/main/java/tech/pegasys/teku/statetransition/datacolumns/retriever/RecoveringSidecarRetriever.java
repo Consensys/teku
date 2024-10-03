@@ -140,7 +140,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
         recoveryEntry.block.getSlot(),
         recoveryEntry.block.getRoot());
     sidecarDB
-        .getColumnIdentifiers(block.getSlot())
+        .getColumnIdentifiers(block.getSlotAndBlockRoot())
         .thenCompose(
             dataColumnIdentifiers ->
                 SafeFuture.collectAll(
