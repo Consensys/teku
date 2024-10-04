@@ -393,7 +393,9 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(slot);
 
     if (isValidSwitchToCompoundingRequest(state, consolidationRequest)) {
-      LOG.debug("process_consolidation_request: valid switching validator to compounding address");
+      LOG.debug(
+          "process_consolidation_request: switching validator {} to compounding address",
+          consolidationRequest.getSourcePubkey().toAbbreviatedString());
       validatorsUtil
           .getValidatorIndex(state, consolidationRequest.getSourcePubkey())
           .ifPresent(
@@ -523,6 +525,12 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     LOG.debug("process_consolidation_request: created {}", pendingConsolidation);
   }
 
+  /**
+   * Implements function is_valid_switch_to_compounding_request
+   *
+   * @see <a
+   *     href="https://github.com/ethereum/consensus-specs/blob/dev/specs/electra/beacon-chain.md#new-is_valid_switch_to_compounding_request"/>
+   */
   @Override
   public boolean isValidSwitchToCompoundingRequest(
       final BeaconState state, final ConsolidationRequest consolidationRequest) {

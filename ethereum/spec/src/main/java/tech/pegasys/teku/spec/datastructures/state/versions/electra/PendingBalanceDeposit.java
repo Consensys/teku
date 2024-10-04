@@ -36,8 +36,8 @@ public class PendingBalanceDeposit extends Container2<PendingBalanceDeposit, Ssz
       return new PendingBalanceDeposit(this, node);
     }
 
-    public PendingBalanceDeposit create(final SszUInt64 index, final SszUInt64 amount) {
-      return new PendingBalanceDeposit(this, index, amount);
+    public PendingBalanceDeposit create(final UInt64 index, final UInt64 amount) {
+      return new PendingBalanceDeposit(this, SszUInt64.of(index), SszUInt64.of(amount));
     }
 
     public SszUInt64 getIndexSchema() {

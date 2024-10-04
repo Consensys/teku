@@ -15,7 +15,6 @@ package tech.pegasys.teku.api.schema.electra;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
@@ -52,6 +51,6 @@ public class PendingBalanceDeposit {
     return schemaDefinitionsElectra
         .get()
         .getPendingBalanceDepositSchema()
-        .create(SszUInt64.of(UInt64.valueOf(this.index)), SszUInt64.of(this.amount));
+        .create(UInt64.valueOf(this.index), this.amount);
   }
 }

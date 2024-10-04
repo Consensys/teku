@@ -2534,7 +2534,7 @@ public final class DataStructureUtil {
   public PendingBalanceDeposit randomPendingBalanceDeposit() {
     return getElectraSchemaDefinitions(randomSlot())
         .getPendingBalanceDepositSchema()
-        .create(SszUInt64.of(randomUInt64()), SszUInt64.of(randomUInt64()));
+        .create(randomUInt64(), randomUInt64());
   }
 
   public ConsolidationRequest randomConsolidationRequest() {
