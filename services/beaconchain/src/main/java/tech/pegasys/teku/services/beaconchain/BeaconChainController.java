@@ -276,6 +276,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile GossipValidationHelper gossipValidationHelper;
   protected volatile KZG kzg;
   protected volatile BlobSidecarManager blobSidecarManager;
+  protected volatile BlobSidecarGossipValidator blobSidecarValidator;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile ProposersDataManager proposersDataManager;
   protected volatile KeyValueStore<String, Bytes> keyValueStore;
@@ -568,7 +569,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
           LimitedMap.createSynchronizedLRU(500);
       final MiscHelpersDeneb miscHelpers =
           MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers());
-      final BlobSidecarGossipValidator blobSidecarValidator =
+      blobSidecarValidator =
           BlobSidecarGossipValidator.create(
               spec, invalidBlockRoots, gossipValidationHelper, miscHelpers, kzg);
       final BlobSidecarManagerImpl blobSidecarManagerImpl =
@@ -626,6 +627,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               beaconAsyncRunner,
               recentChainData,
               executionLayer,
+              () -> blobSidecarValidator,
               blobSidecarGossipChannel::publishBlobSidecar);
       eventChannels.subscribe(FinalizedCheckpointChannel.class, pool);
       blockBlobSidecarsTrackersPool = pool;

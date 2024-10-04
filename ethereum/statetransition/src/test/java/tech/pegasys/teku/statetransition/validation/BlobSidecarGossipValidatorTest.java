@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
@@ -272,6 +273,16 @@ public class BlobSidecarGossipValidatorTest {
   void shouldTrackValidInfoSet() {
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+
+    SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+  }
+
+  @TestTemplate
+  void shouldMarkForEquivocation() {
+    assertThat(blobSidecarValidator.markForEquivocation(blobSidecar)).isTrue();
+
+    assertThat(blobSidecarValidator.markForEquivocation(blobSidecar)).isFalse();
 
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);

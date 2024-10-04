@@ -65,6 +65,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockBlobSidecarsTrackersPoolImplTest {
@@ -82,6 +83,9 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   @SuppressWarnings("unchecked")
   private final Consumer<BlobSidecar> blobSidecarPublisher = mock(Consumer.class);
 
+  private final BlobSidecarGossipValidator blobSidecarGossipValidator =
+      mock(BlobSidecarGossipValidator.class);
+
   private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
   private final int maxItems = 15;
   private final BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPool =
@@ -93,6 +97,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
               asyncRunner,
               recentChainData,
               executionLayer,
+              () -> blobSidecarGossipValidator,
               blobSidecarPublisher,
               historicalTolerance,
               futureTolerance,
@@ -203,7 +208,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   }
 
   @Test
-  public void onNewBlobSidecar_shouldPublishWhenOriginIsLocalEL() {
+  public void onNewBlobSidecar_shouldMarkForEquivocationAndPublishWhenOriginIsLocalEL() {
     final BlobSidecar blobSidecar1 =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
@@ -220,6 +225,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot))
             .build();
 
+    when(blobSidecarGossipValidator.markForEquivocation(blobSidecar1)).thenReturn(true);
+
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar1, RemoteOrigin.LOCAL_EL);
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar2, RemoteOrigin.GOSSIP);
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar3, RemoteOrigin.RPC);
@@ -227,7 +234,47 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     assertBlobSidecarsCount(3);
     assertBlobSidecarsTrackersCount(3);
 
+    verify(blobSidecarGossipValidator).markForEquivocation(blobSidecar1);
     verify(blobSidecarPublisher, times(1)).accept(blobSidecar1);
+  }
+
+  @Test
+  public void onNewBlobSidecar_shouldPublishWhenOriginIsLocalELAndEquivocating() {
+    final BlobSidecar blobSidecar1 =
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot))
+            .build();
+
+    when(blobSidecarGossipValidator.markForEquivocation(blobSidecar1)).thenReturn(false);
+
+    blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar1, RemoteOrigin.LOCAL_EL);
+
+    assertBlobSidecarsCount(1);
+    assertBlobSidecarsTrackersCount(1);
+
+    verify(blobSidecarGossipValidator).markForEquivocation(blobSidecar1);
+    verify(blobSidecarPublisher, times(1)).accept(blobSidecar1);
+  }
+
+  @Test
+  public void onNewBlobSidecar_shouldNotPublishWhenOriginIsLocalELIsNotCurrentSlot() {
+    final BlobSidecar blobSidecar1 =
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot))
+            .build();
+
+    when(blobSidecarGossipValidator.markForEquivocation(blobSidecar1)).thenReturn(false);
+    blockBlobSidecarsTrackersPool.onSlot(currentSlot.plus(1));
+
+    blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar1, RemoteOrigin.LOCAL_EL);
+
+    assertBlobSidecarsCount(1);
+    assertBlobSidecarsTrackersCount(1);
+
+    verify(blobSidecarGossipValidator, never()).markForEquivocation(blobSidecar1);
+    verify(blobSidecarPublisher, never()).accept(blobSidecar1);
   }
 
   @Test
