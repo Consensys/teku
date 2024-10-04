@@ -153,6 +153,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
       final AsyncBLSSignatureVerifier blsSignatureVerifier) {
 
     if(attestation.isProducedLocally() && !attestation.isAggregate()) {
+      // prepare single attestation so that we will have the right version when we gossip it
       attestation.createSingleAttestation(getValidatorIndexFromAttestation(state, attestation.getAttestation()));
     }
 
