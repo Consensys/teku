@@ -882,7 +882,7 @@ public class KvStoreDatabase implements Database {
   public boolean pruneOldestBlobSidecars(
       final UInt64 lastSlotToPrune,
       final int pruneLimit,
-      final DataArchiveWriter<BlobSidecar> archiveWriter) {
+      final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys =
             streamBlobSidecarKeys(UInt64.ZERO, lastSlotToPrune);
         final FinalizedUpdater updater = finalizedUpdater()) {
@@ -900,7 +900,7 @@ public class KvStoreDatabase implements Database {
           pruneLimit,
           prunableNoncanonicalBlobKeys,
           updater,
-          new DataArchiveNoopWriter<BlobSidecar>(),
+          new DataArchiveNoopWriter<List<BlobSidecar>>(),
           true);
     }
   }
@@ -909,34 +909,64 @@ public class KvStoreDatabase implements Database {
       final int pruneLimit,
       final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys,
       final FinalizedUpdater updater,
-      final DataArchiveWriter<BlobSidecar> archiveWriter,
+      final DataArchiveWriter<List<BlobSidecar>> archiveWriter,
       final boolean nonCanonicalblobSidecars) {
     int remaining = pruneLimit;
     int pruned = 0;
     Optional<UInt64> earliestBlobSidecarSlot = Optional.empty();
+
+    UInt64 currentSlot = ZERO;
+    ArrayList<BlobSidecar> blobSidecars = new ArrayList<>();
+    ArrayList<SlotAndBlockRootAndBlobIndex> keys = new ArrayList<>();
+
     for (final Iterator<SlotAndBlockRootAndBlobIndex> it = prunableBlobKeys.iterator();
         it.hasNext(); ) {
+
+      //
       --remaining;
       final boolean finished = remaining < 0;
       final SlotAndBlockRootAndBlobIndex key = it.next();
+
       // Before we finish we should check that there are no BlobSidecars left in the same slot
       if (finished && key.getBlobIndex().equals(ZERO)) {
         break;
       }
-      // Attempt to archive the BlobSidecar if present. If there's no BlobSidecar return true.
-      final boolean blobSidecarArchived =
-          getBlobSidecar(key).map(archiveWriter::archive).orElse(Boolean.TRUE);
-      if (!blobSidecarArchived) {
-        LOG.warn("Failed to archive BlobSidecar for slot:{}. Stopping pruning", key.getSlot());
-        break;
-      }
-      if (nonCanonicalblobSidecars) {
-        updater.removeNonCanonicalBlobSidecar(key);
+
+      // Once a slot group is ready, we can archive and prune it.
+      if (!key.getSlot().equals(currentSlot)) {
+        if (!keys.isEmpty()) {
+          earliestBlobSidecarSlot =
+              archiveAndPruneBlobSideCars(
+                  updater, archiveWriter, keys, blobSidecars, nonCanonicalblobSidecars);
+          if (earliestBlobSidecarSlot.isEmpty()) {
+            LOG.warn("Failed to archive BlobSidecars. Stopping pruning");
+            break;
+          }
+          pruned += keys.size();
+        }
+        blobSidecars.clear();
+        keys.clear();
+        currentSlot = key.getSlot();
       } else {
-        earliestBlobSidecarSlot = Optional.of(key.getSlot().plus(1));
-        updater.removeBlobSidecar(key);
+        // collect keys and blobSidecars
+        keys.add(key);
+        if (getBlobSidecar(key).map(blobSidecars::add).orElse(false)) {
+          LOG.warn("Failed to retrieve BlobSidecar for key:{}", key);
+          // TODO: Should we continue or stop pruning?
+          break;
+        }
       }
-      ++pruned;
+    }
+
+    // Archive and prune the last slot group
+    if (!keys.isEmpty()) {
+      earliestBlobSidecarSlot =
+          archiveAndPruneBlobSideCars(
+              updater, archiveWriter, keys, blobSidecars, nonCanonicalblobSidecars);
+      if (earliestBlobSidecarSlot.isEmpty()) {
+        LOG.warn("Failed to archive BlobSidecars. Stopping pruning");
+      }
+      pruned += keys.size();
     }
 
     if (!nonCanonicalblobSidecars) {
@@ -944,9 +974,32 @@ public class KvStoreDatabase implements Database {
     }
     updater.commit();
 
-    // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar
-    // in a slot
+    // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar in a slot
     return pruned >= pruneLimit;
+  }
+
+  private Optional<UInt64> archiveAndPruneBlobSideCars(
+      final FinalizedUpdater updater,
+      final DataArchiveWriter<List<BlobSidecar>> archiveWriter,
+      final List<SlotAndBlockRootAndBlobIndex> slotBlobIndexes,
+      final List<BlobSidecar> blobSidecars,
+      final boolean nonCanonicalblobSidecars) {
+    Optional<UInt64> earliestBlobSidecarSlot = Optional.empty();
+    // Attempt to archive the BlobSidecars.
+    final boolean blobSidecarArchived = archiveWriter.archive(blobSidecars);
+    if (!blobSidecarArchived) {
+      return earliestBlobSidecarSlot;
+    }
+
+    for (final SlotAndBlockRootAndBlobIndex key : slotBlobIndexes) {
+      if (nonCanonicalblobSidecars) {
+        updater.removeNonCanonicalBlobSidecar(key);
+      } else {
+        earliestBlobSidecarSlot = Optional.of(key.getSlot().plus(1));
+        updater.removeBlobSidecar(key);
+      }
+    }
+    return earliestBlobSidecarSlot;
   }
 
   @MustBeClosed
