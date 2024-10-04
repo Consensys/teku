@@ -21,8 +21,10 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.storage.archive.DataArchive;
@@ -40,13 +42,13 @@ public class FileSystemArchive implements DataArchive {
   private final Path baseDirectory;
   private final BlobSidecarJsonWriter jsonWriter;
 
-  public FileSystemArchive(final Path baseDirectory) {
+  public FileSystemArchive(final Spec spec, final Path baseDirectory) {
     this.baseDirectory = baseDirectory;
-    this.jsonWriter = new BlobSidecarJsonWriter();
+    this.jsonWriter = new BlobSidecarJsonWriter(spec);
   }
 
   @Override
-  public DataArchiveWriter<BlobSidecar> getBlobSidecarWriter() throws IOException {
+  public DataArchiveWriter<List<BlobSidecar>> getBlobSidecarWriter() throws IOException {
 
     try {
       File indexFile = baseDirectory.resolve(INDEX_FILE).toFile();
@@ -57,7 +59,8 @@ public class FileSystemArchive implements DataArchive {
     }
   }
 
-  private class FileSystemBlobSidecarWriter implements DataArchiveWriter<BlobSidecar>, Closeable {
+  private class FileSystemBlobSidecarWriter
+      implements DataArchiveWriter<List<BlobSidecar>>, Closeable {
     final BufferedWriter indexWriter;
 
     public FileSystemBlobSidecarWriter(final File indexFile) throws IOException {
@@ -68,9 +71,12 @@ public class FileSystemArchive implements DataArchive {
     }
 
     @Override
-    public boolean archive(final BlobSidecar blobSidecar) {
+    public boolean archive(final List<BlobSidecar> blobSidecars) {
+      if (blobSidecars == null || blobSidecars.isEmpty()) {
+        return true;
+      }
 
-      SlotAndBlockRoot slotAndBlockRoot = blobSidecar.getSlotAndBlockRoot();
+      SlotAndBlockRoot slotAndBlockRoot = blobSidecars.getFirst().getSlotAndBlockRoot();
       File file = resolve(baseDirectory, slotAndBlockRoot);
       if (file.exists()) {
         LOG.warn("Failed to write BlobSidecar. File exists: {}", file.toString());
@@ -83,7 +89,7 @@ public class FileSystemArchive implements DataArchive {
       }
 
       try (FileOutputStream output = new FileOutputStream(file)) {
-        jsonWriter.writeBlobSidecar(output, blobSidecar);
+        jsonWriter.writeSlotBlobSidecars(output, blobSidecars);
         indexWriter.write(formatIndexOutput(slotAndBlockRoot));
         indexWriter.newLine();
         return true;

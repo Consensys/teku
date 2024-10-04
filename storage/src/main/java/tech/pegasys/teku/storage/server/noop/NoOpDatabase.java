@@ -329,7 +329,7 @@ public class NoOpDatabase implements Database {
   public boolean pruneOldestBlobSidecars(
       final UInt64 lastSlotToPrune,
       final int pruneLimit,
-      final DataArchiveWriter<BlobSidecar> archiveWriter) {
+      final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
     return false;
   }
 

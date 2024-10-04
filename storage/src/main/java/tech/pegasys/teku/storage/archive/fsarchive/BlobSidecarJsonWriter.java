@@ -13,47 +13,36 @@
 
 package tech.pegasys.teku.storage.archive.fsarchive;
 
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
-import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class BlobSidecarJsonWriter {
 
-  public static final StringValueTypeDefinition<KZGCommitment> KZG_COMMITMENT_TYPE =
-      DeserializableTypeDefinition.string(KZGCommitment.class)
-          .formatter(KZGCommitment::toHexString)
-          .parser(KZGCommitment::fromHexString)
-          .example(
-              "0xb09ce4964278eff81a976fbc552488cb84fc4a102f004c87"
-                  + "179cb912f49904d1e785ecaf5d184522a58e9035875440ef")
-          .description("KZG Commitment")
-          .format("byte")
-          .build();
+  private final SchemaDefinitionCache schemaCache;
 
-  public static final SerializableTypeDefinition<BlobSidecar> BLOB_SIDECAR_TYPE =
-      SerializableTypeDefinition.object(BlobSidecar.class)
-          .name("BlobSidecar")
-          .withField("index", UINT64_TYPE, BlobSidecar::getIndex)
-          // .withField( "blob", CoreTypes, BlobSidecar::getBlob)
-          .withField("block_root", BYTES32_TYPE, BlobSidecar::getBlockRoot)
-          .withField("slot", UINT64_TYPE, BlobSidecar::getSlot)
-          .withField("kzg_commitment", KZG_COMMITMENT_TYPE, BlobSidecar::getKZGCommitment)
-          .build();
+  public BlobSidecarJsonWriter(final Spec spec) {
+    this.schemaCache = new SchemaDefinitionCache(spec);
+  }
 
-  public BlobSidecarJsonWriter() {}
-
-  public void writeBlobSidecar(final OutputStream out, final BlobSidecar blobSidecar)
+  public void writeSlotBlobSidecars(final OutputStream out, final List<BlobSidecar> blobSidecar)
       throws IOException {
 
-    String output = JsonUtil.prettySerialize(blobSidecar, BLOB_SIDECAR_TYPE);
+    final DeserializableTypeDefinition<BlobSidecar> blobSidecarType =
+        SchemaDefinitionsDeneb.required(schemaCache.getSchemaDefinition(SpecMilestone.DENEB))
+            .getBlobSidecarSchema()
+            .getJsonTypeDefinition();
+
+    String output = JsonUtil.prettySerialize(blobSidecar, listOf(blobSidecarType));
     System.out.println(output);
   }
 }

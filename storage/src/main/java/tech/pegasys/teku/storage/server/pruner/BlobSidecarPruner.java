@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server.pruner;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -152,7 +153,7 @@ public class BlobSidecarPruner extends Service {
       return;
     }
     LOG.debug("Pruning blobs up to slot {}, limit {}", latestPrunableSlot, pruneLimit);
-    try (DataArchiveWriter<BlobSidecar> archiveWriter = dataArchive.getBlobSidecarWriter()) {
+    try (DataArchiveWriter<List<BlobSidecar>> archiveWriter = dataArchive.getBlobSidecarWriter()) {
       final long blobsPruningStart = System.currentTimeMillis();
       final boolean blobsPruningLimitReached =
           database.pruneOldestBlobSidecars(latestPrunableSlot, pruneLimit, archiveWriter);

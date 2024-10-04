@@ -19,6 +19,8 @@ import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSI
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -45,7 +47,8 @@ public class FileSystemArchiveTest {
           Bytes32.fromHexString(
               "0x391610cf24e7c540192b80ddcfea77b0d3912d94e922682f3b286eee041e6f76"));
 
-  private final Spec spec = TestSpecFactory.createMinimalDeneb();
+  private static final Spec spec = TestSpecFactory.createMinimalDeneb();
+
   private final Predicates predicates = new Predicates(spec.getGenesisSpecConfig());
   private final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
       SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions());
@@ -61,7 +64,7 @@ public class FileSystemArchiveTest {
   @BeforeAll
   static void beforeEach() throws IOException {
     Path temp = Files.createTempDirectory("blobs");
-    dataArchive = new FileSystemArchive(temp);
+    dataArchive = new FileSystemArchive(spec, temp);
   }
 
   BlobSidecar createBlobSidecar() {
@@ -75,7 +78,9 @@ public class FileSystemArchiveTest {
 
   @Test
   void testWriteBlobSidecar() throws IOException {
-    DataArchiveWriter<BlobSidecar> blobWriter = dataArchive.getBlobSidecarWriter();
-    assertTrue(blobWriter.archive(createBlobSidecar()));
+    DataArchiveWriter<List<BlobSidecar>> blobWriter = dataArchive.getBlobSidecarWriter();
+    ArrayList<BlobSidecar> list = new ArrayList<>();
+    list.add(createBlobSidecar());
+    assertTrue(blobWriter.archive(list));
   }
 }

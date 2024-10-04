@@ -78,7 +78,9 @@ public interface Database extends AutoCloseable {
    * @return true if number of pruned blobs reached the pruneLimit, false otherwise
    */
   boolean pruneOldestBlobSidecars(
-      UInt64 lastSlotToPrune, int pruneLimit, final DataArchiveWriter<BlobSidecar> archiveWriter);
+      UInt64 lastSlotToPrune,
+      int pruneLimit,
+      final DataArchiveWriter<List<BlobSidecar>> archiveWriter);
 
   boolean pruneOldestNonCanonicalBlobSidecars(UInt64 lastSlotToPrune, int pruneLimit);
 

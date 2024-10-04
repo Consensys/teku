@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.archive;
 
 import java.io.IOException;
+import java.util.List;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
 /**
@@ -30,5 +31,5 @@ public interface DataArchive {
    * @return a closeable DataArchiveWriter for writing BlobSidecars
    * @throws IOException throw exception if it fails to get a writer.
    */
-  DataArchiveWriter<BlobSidecar> getBlobSidecarWriter() throws IOException;
+  DataArchiveWriter<List<BlobSidecar>> getBlobSidecarWriter() throws IOException;
 }
