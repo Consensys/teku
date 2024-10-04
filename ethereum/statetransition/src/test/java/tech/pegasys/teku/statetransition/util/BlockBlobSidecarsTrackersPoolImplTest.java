@@ -239,7 +239,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   }
 
   @Test
-  public void onNewBlobSidecar_shouldPublishEvenWhenOriginIsLocalELButEquivocating() {
+  public void onNewBlobSidecar_shouldPublishWhenOriginIsLocalELAndEquivocating() {
     final BlobSidecar blobSidecar1 =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
