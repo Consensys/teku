@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.electra.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -125,11 +126,23 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
       return indexedAttestationSchema.create(
           indexedAttestationSchema
               .getAttestingIndicesSchema()
-              .of(attestation.getValidatorIndex().orElseThrow()),
+              .of(attestation.getValidatorIndexRequired()),
           attestation.getData(),
           attestation.getAggregateSignature());
     }
     return super.getIndexedAttestation(state, attestation);
+  }
+
+  public IndexedAttestation getIndexedAttestationFromSingleAttestation(final SingleAttestation attestation) {
+    final IndexedAttestationSchema<?> indexedAttestationSchema =
+            schemaDefinitions.getIndexedAttestationSchema();
+
+    return indexedAttestationSchema.create(
+            indexedAttestationSchema
+                    .getAttestingIndicesSchema()
+                    .of(attestation.getValidatorIndexRequired()),
+            attestation.getData(),
+            attestation.getSignature());
   }
 
   @Override
@@ -138,6 +151,10 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
       final BeaconState state,
       final ValidatableAttestation attestation,
       final AsyncBLSSignatureVerifier blsSignatureVerifier) {
+
+    if(attestation.isProducedLocally() && !attestation.isAggregate()) {
+      attestation.createSingleAttestation(getValidatorIndexFromAttestation(state, attestation.getAttestation()));
+    }
 
     if (!attestation.getAttestation().isSingleAttestation()) {
       return super.isValidIndexedAttestationAsync(fork, state, attestation, blsSignatureVerifier);
@@ -148,21 +165,23 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
     // 1. verify signature first
     // 2. verify call getSingleAttestationAggregationBits which also validates the validatorIndex
     // and the committee against the state
-    // 3. set the indexed attestation into ValidatableAttestation and mark it as valid
-    // 4. convert attestation inside ValidatableAttestation to AttestationElectra
+    // 3. convert attestation inside ValidatableAttestation to AttestationElectra
+    // 4. set the indexed attestation into ValidatableAttestation
+    // 5. set the attestation as valid indexed attestation
 
-    return isValidSingleAttestation(
-            fork, state, (SingleAttestation) attestation.getAttestation(), blsSignatureVerifier)
+    return validateSingleAttestationSignature(
+            fork, state, attestation.getAttestation().toSingleAttestationRequired(), blsSignatureVerifier)
         .thenApply(
             result -> {
               if (result.isSuccessful()) {
+                final SszBitlist singleAttestationAggregationBits =
+                        getSingleAttestationAggregationBits(state, attestation.getAttestation());
+                attestation.convertFromSingleAttestation(singleAttestationAggregationBits);
+
                 final IndexedAttestation indexedAttestation =
-                    getIndexedAttestation(state, attestation.getAttestation());
+                        getIndexedAttestationFromSingleAttestation(attestation.getAttestation().toSingleAttestationRequired());
                 attestation.setIndexedAttestation(indexedAttestation);
                 attestation.setValidIndexedAttestation();
-                final SszBitlist singleAttestationAggregationBits =
-                    getSingleAttestationAggregationBits(state, attestation.getAttestation());
-                attestation.convertFromSingleAttestation(singleAttestationAggregationBits);
               }
               return result;
             })
@@ -178,21 +197,21 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
             });
   }
 
-  private SafeFuture<AttestationProcessingResult> isValidSingleAttestation(
+  private SafeFuture<AttestationProcessingResult> validateSingleAttestationSignature(
       final Fork fork,
       final BeaconState state,
       final SingleAttestation singleAttestation,
       final AsyncBLSSignatureVerifier signatureVerifier) {
     final Optional<BLSPublicKey> pubkey =
         beaconStateAccessors.getValidatorPubKey(
-            state, singleAttestation.getValidatorIndex().orElseThrow());
+            state, singleAttestation.getValidatorIndexRequired());
 
     if (pubkey.isEmpty()) {
       return completedFuture(
           AttestationProcessingResult.invalid("Attesting index include non-existent validator"));
     }
 
-    final BLSSignature signature = singleAttestation.getAggregateSignature();
+    final BLSSignature signature = singleAttestation.getSignature();
     final Bytes32 domain =
         beaconStateAccessors.getDomain(
             Domain.BEACON_ATTESTER,
@@ -221,7 +240,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
         beaconStateAccessors.getBeaconCommittee(
             state, attestation.getData().getSlot(), attestation.getFirstCommitteeIndex());
 
-    int validatorIndex = attestation.getValidatorIndex().orElseThrow().intValue();
+    int validatorIndex = attestation.getValidatorIndexRequired().intValue();
 
     int validatorCommitteeBit = committee.indexOf(validatorIndex);
 
@@ -232,5 +251,17 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
         attestation.getFirstCommitteeIndex());
 
     return attestation.getSchema().createAggregationBitsOf(validatorCommitteeBit);
+  }
+
+  private UInt64 getValidatorIndexFromAttestation(final BeaconState state, final Attestation attestation) {
+    final IntList committee =
+            beaconStateAccessors.getBeaconCommittee(
+                    state, attestation.getData().getSlot(), attestation.getFirstCommitteeIndex());
+    final IntList validatorIndices = attestation.getAggregationBits().getAllSetBits();
+    checkState(
+            validatorIndices.size() == 1,
+            "Expected a single validator to be attesting but found %s",
+            validatorIndices.size());
+    return UInt64.valueOf(committee.getInt(validatorIndices.getInt(0)));
   }
 }

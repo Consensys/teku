@@ -59,6 +59,10 @@ public interface AttestationSchema<T extends Attestation> extends SszContainerSc
     return Optional.empty();
   }
 
+  default SingleAttestationSchema toSingleAttestationSchemaRequired() {
+    throw new UnsupportedOperationException("Not a SingleAttestationSchema");
+  }
+
   SszBitlistSchema<?> getAggregationBitsSchema();
 
   Optional<SszBitvectorSchema<?>> getCommitteeBitsSchema();

@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
@@ -44,6 +45,14 @@ public class SingleAttestationSchema
     return new SingleAttestation(this, node);
   }
 
+  public SingleAttestation create(
+      final UInt64 committeeIndex,
+      final UInt64 attesterIndex,
+      final AttestationData data,
+      final BLSSignature signature) {
+    return new SingleAttestation(this, committeeIndex, attesterIndex, data, signature);
+  }
+
   @Override
   public Attestation create(
       final SszBitlist aggregationBits,
@@ -62,6 +71,12 @@ public class SingleAttestationSchema
   public Optional<SszBitvectorSchema<?>> getCommitteeBitsSchema() {
     return Optional.empty();
   }
+
+  @Override
+  public SingleAttestationSchema toSingleAttestationSchemaRequired() {
+    return this;
+  }
+
 
   @Override
   public boolean requiresCommitteeBits() {

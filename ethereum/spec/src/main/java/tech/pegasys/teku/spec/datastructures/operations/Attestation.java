@@ -75,7 +75,11 @@ public interface Attestation extends SszContainer {
     return false;
   }
 
-  default Optional<UInt64> getValidatorIndex() {
-    return Optional.empty();
+  default SingleAttestation toSingleAttestationRequired() {
+    throw new UnsupportedOperationException("Not a SingleAttestation");
+  }
+
+  default UInt64 getValidatorIndexRequired() {
+    throw new UnsupportedOperationException("Not a SingleAttestation");
   }
 }

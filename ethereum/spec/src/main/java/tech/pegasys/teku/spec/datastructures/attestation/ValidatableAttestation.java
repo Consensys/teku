@@ -52,10 +52,12 @@ public class ValidatableAttestation {
   private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
   private volatile Optional<Bytes32> committeeShufflingSeed = Optional.empty();
   private volatile Optional<Int2IntMap> committeesSize = Optional.empty();
+  private volatile Optional<Attestation> singleAttestation = Optional.empty();
 
   public void convertFromSingleAttestation(final SszBitlist singleAttestationAggregationBits) {
     final Attestation localAttestation = attestation;
     checkState(localAttestation.isSingleAttestation());
+    singleAttestation = Optional.of(localAttestation.toSingleAttestationRequired());
 
     final AttestationElectraSchema attestationElectraSchema =
         spec.atSlot(localAttestation.getData().getSlot())
@@ -73,6 +75,25 @@ public class ValidatableAttestation {
                 .getCommitteeBitsSchema()
                 .orElseThrow()
                 .ofBits(localAttestation.getFirstCommitteeIndex().intValue()));
+  }
+
+  public void createSingleAttestation(final UInt64 validatorIndex) {
+
+
+   spec.atSlot(attestation.getData().getSlot())
+            .getSchemaDefinitions()
+            .toVersionElectra().ifPresent(
+                    schemaDefinitionsElectra -> {
+
+                            checkState(attestation.getCommitteeBitsRequired().getBitCount() == 1);
+
+                            singleAttestation = Optional.of(
+                            schemaDefinitionsElectra.getSingleAttestationSchema().toSingleAttestationSchemaRequired().create(
+                                    attestation.getFirstCommitteeIndex(),
+                                    validatorIndex,
+                                    attestation.getData(),
+                                    attestation.getAggregateSignature()));
+                    });
   }
 
   public static ValidatableAttestation from(final Spec spec, final Attestation attestation) {
@@ -244,6 +265,10 @@ public class ValidatableAttestation {
 
   public Attestation getAttestation() {
     return attestation;
+  }
+
+  public Attestation getSingleAttestation() {
+    return singleAttestation.orElse(attestation);
   }
 
   public SignedAggregateAndProof getSignedAggregateAndProof() {
