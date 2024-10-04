@@ -77,7 +77,6 @@ public class SingleAttestationSchema
     return this;
   }
 
-
   @Override
   public boolean requiresCommitteeBits() {
     return false;
