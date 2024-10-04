@@ -42,7 +42,6 @@ public class BlobSidecarJsonWriter {
             .getBlobSidecarSchema()
             .getJsonTypeDefinition();
 
-    String output = JsonUtil.prettySerialize(blobSidecar, listOf(blobSidecarType));
-    System.out.println(output);
+    JsonUtil.serializeToBytes(blobSidecar, listOf(blobSidecarType), out);
   }
 }
