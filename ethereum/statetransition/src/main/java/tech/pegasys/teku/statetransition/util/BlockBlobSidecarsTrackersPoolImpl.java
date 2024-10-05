@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -63,6 +64,7 @@ import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHistoricalSlot
@@ -98,6 +100,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
   private final ExecutionLayerChannel executionLayer;
+  private final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier;
   private final Consumer<BlobSidecar> blobSidecarGossipPublisher;
   private final int maxTrackers;
 
@@ -129,6 +132,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
+      final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
       final Consumer<BlobSidecar> blobSidecarGossipPublisher,
       final UInt64 historicalSlotTolerance,
       final UInt64 futureSlotTolerance,
@@ -140,6 +144,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.executionLayer = executionLayer;
+    this.gossipValidatorSupplier = gossipValidatorSupplier;
     this.blobSidecarGossipPublisher = blobSidecarGossipPublisher;
     this.maxTrackers = maxTrackers;
     this.sizeGauge = sizeGauge;
@@ -159,6 +164,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
+      final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
       final Consumer<BlobSidecar> blobSidecarGossipPublisher,
       final UInt64 historicalSlotTolerance,
       final UInt64 futureSlotTolerance,
@@ -171,6 +177,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.executionLayer = executionLayer;
+    this.gossipValidatorSupplier = gossipValidatorSupplier;
     this.blobSidecarGossipPublisher = blobSidecarGossipPublisher;
     this.maxTrackers = maxTrackers;
     this.sizeGauge = sizeGauge;
@@ -224,8 +231,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       sizeGauge.set(++totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
       countBlobSidecar(remoteOrigin);
       newBlobSidecarSubscribers.deliver(NewBlobSidecarSubscriber::onNewBlobSidecar, blobSidecar);
-      if (remoteOrigin.equals(LOCAL_EL)) {
-        blobSidecarGossipPublisher.accept(blobSidecar);
+      if (remoteOrigin.equals(LOCAL_EL) && slotAndBlockRoot.getSlot().equals(getCurrentSlot())) {
+        publishRecoveredBlobSidecar(blobSidecar);
       }
     } else {
       countDuplicateBlobSidecar(remoteOrigin);
@@ -234,6 +241,12 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     if (orderedBlobSidecarsTrackers.add(slotAndBlockRoot)) {
       sizeGauge.set(orderedBlobSidecarsTrackers.size(), GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
     }
+  }
+
+  private void publishRecoveredBlobSidecar(final BlobSidecar blobSidecar) {
+    LOG.debug("Publishing recovered blob sidecar {}", blobSidecar::toLogString);
+    gossipValidatorSupplier.get().markForEquivocation(blobSidecar);
+    blobSidecarGossipPublisher.accept(blobSidecar);
   }
 
   private void countBlobSidecar(final RemoteOrigin origin) {

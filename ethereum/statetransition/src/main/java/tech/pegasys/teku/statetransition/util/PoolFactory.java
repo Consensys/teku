@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.util;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class PoolFactory {
@@ -117,6 +119,7 @@ public class PoolFactory {
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
+      final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
       final Consumer<BlobSidecar> blobSidecarGossipPublisher) {
     return createPoolForBlockBlobSidecarsTrackers(
         blockImportChannel,
@@ -125,6 +128,7 @@ public class PoolFactory {
         asyncRunner,
         recentChainData,
         executionLayer,
+        gossipValidatorSupplier,
         blobSidecarGossipPublisher,
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
@@ -138,6 +142,7 @@ public class PoolFactory {
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
+      final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
       final Consumer<BlobSidecar> blobSidecarGossipPublisher,
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
@@ -151,6 +156,7 @@ public class PoolFactory {
         asyncRunner,
         recentChainData,
         executionLayer,
+        gossipValidatorSupplier,
         blobSidecarGossipPublisher,
         historicalBlockTolerance,
         futureBlockTolerance,
@@ -165,6 +171,7 @@ public class PoolFactory {
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
+      final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
       final Consumer<BlobSidecar> blobSidecarGossipPublisher,
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
@@ -179,6 +186,7 @@ public class PoolFactory {
         asyncRunner,
         recentChainData,
         executionLayer,
+        gossipValidatorSupplier,
         blobSidecarGossipPublisher,
         historicalBlockTolerance,
         futureBlockTolerance,
