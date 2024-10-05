@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.spec.datastructures.state.versions.electra;
 
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container5;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema5;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -92,11 +95,23 @@ public class PendingDeposit
     super(type, publicKey, withdrawalCredentials, amount, signature, slot);
   }
 
-  public int getIndex() {
-    return ((SszUInt64) get(0)).get().intValue();
+  public BLSPublicKey getPublicKey() {
+    return ((SszPublicKey) get(0)).getBLSPublicKey();
+  }
+
+  public Bytes32 getWithdrawalCredentials() {
+    return ((SszBytes32) get(1)).get();
   }
 
   public UInt64 getAmount() {
-    return ((SszUInt64) get(1)).get();
+    return ((SszUInt64) get(2)).get();
+  }
+
+  public BLSSignature getSignature() {
+    return ((SszSignature) get(3)).getSignature();
+  }
+
+  public UInt64 getSlot() {
+    return ((SszUInt64) get(4)).get();
   }
 }
