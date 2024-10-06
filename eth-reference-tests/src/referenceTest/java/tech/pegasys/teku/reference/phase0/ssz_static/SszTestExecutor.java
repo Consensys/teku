@@ -211,6 +211,10 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas ->
                       SchemaDefinitionsElectra.required(schemas).getPendingBalanceDepositSchema()))
           .put(
+              "ssz_static/PendingDeposit",
+              new SszTestExecutor<>(
+                  schemas -> SchemaDefinitionsElectra.required(schemas).getPendingDepositSchema()))
+          .put(
               "ssz_static/PendingConsolidation",
               new SszTestExecutor<>(
                   schemas ->
