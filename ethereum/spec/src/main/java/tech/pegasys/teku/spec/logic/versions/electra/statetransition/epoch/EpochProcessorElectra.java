@@ -321,17 +321,14 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
         break;
       }
 
-      // TODO-lucas What is the impact of doing this? Should we use the transition cache?
-      final Optional<Validator> maybeValidator =
-          state.getValidators().stream()
-              .filter(v -> v.getPublicKey().equals(deposit.getPublicKey()))
-              .findFirst();
-
+      final Optional<Integer> maybeValidatorIndex =
+          validatorsUtil.getValidatorIndex(state, deposit.getPublicKey());
       boolean isValidatorExited = false;
       boolean isValidatorWithdrawn = false;
-      if (maybeValidator.isPresent()) {
-        isValidatorExited = maybeValidator.get().getExitEpoch().isLessThan(FAR_FUTURE_EPOCH);
-        isValidatorWithdrawn = maybeValidator.get().getWithdrawableEpoch().isLessThan(nextEpoch);
+      if (maybeValidatorIndex.isPresent()) {
+        Validator validator = state.getValidators().get(maybeValidatorIndex.get());
+        isValidatorExited = validator.getExitEpoch().isLessThan(FAR_FUTURE_EPOCH);
+        isValidatorWithdrawn = validator.getWithdrawableEpoch().isLessThan(nextEpoch);
       }
 
       if (isValidatorWithdrawn) {
