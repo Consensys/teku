@@ -20,7 +20,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,18 +36,20 @@ import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTest {
@@ -60,28 +61,31 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
   }
 
   @Test
-  void engineGetPayload_shouldCallGetPayloadV4() throws ExecutionException, InterruptedException {
+  void engineGetPayload_shouldCallGetPayloadV4() {
     final ExecutionClientHandler handler = getHandler();
     final ExecutionPayloadContext context = randomContext();
+    final GetPayloadV4Response responseData =
+        new GetPayloadV4Response(
+            ExecutionPayloadV3.fromInternalExecutionPayload(
+                dataStructureUtil.randomExecutionPayload()),
+            UInt256.MAX_VALUE,
+            BlobsBundleV1.fromInternalBlobsBundle(dataStructureUtil.randomBlobsBundle()),
+            true);
     final SafeFuture<Response<GetPayloadV4Response>> dummyResponse =
-        SafeFuture.completedFuture(
-            new Response<>(
-                new GetPayloadV4Response(
-                    ExecutionPayloadV3.fromInternalExecutionPayload(
-                        dataStructureUtil.randomExecutionPayload()),
-                    UInt256.MAX_VALUE,
-                    BlobsBundleV1.fromInternalBlobsBundle(dataStructureUtil.randomBlobsBundle()),
-                    true)));
+        SafeFuture.completedFuture(new Response<>(responseData));
     when(executionEngineClient.getPayloadV4(context.getPayloadId())).thenReturn(dummyResponse);
 
     final UInt64 slot = dataStructureUtil.randomUInt64(1_000_000);
     final SafeFuture<GetPayloadResponse> future = handler.engineGetPayload(context, slot);
     verify(executionEngineClient).getPayloadV4(context.getPayloadId());
-    assertThat(future).isCompleted();
-    assertThat(future.get().getExecutionPayload()).isInstanceOf(ExecutionPayloadDeneb.class);
-    assertThat(future.get().getExecutionPayloadValue()).isEqualTo(UInt256.MAX_VALUE);
-    assertThat(future.get().getBlobsBundle()).isPresent();
-    assertThat(future.get().getShouldOverrideBuilder()).isTrue();
+    final SchemaDefinitionsElectra schemaDefinitionElectra =
+        spec.atSlot(slot).getSchemaDefinitions().toVersionElectra().orElseThrow();
+    final ExecutionPayloadSchema<?> executionPayloadSchema =
+        schemaDefinitionElectra.getExecutionPayloadSchema();
+    final BlobSchema blobSchema = schemaDefinitionElectra.getBlobSchema();
+    assertThat(future)
+        .isCompletedWithValue(
+            responseData.asInternalGetPayloadResponse(executionPayloadSchema, blobSchema));
   }
 
   @Test
@@ -95,11 +99,11 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
         new NewPayloadRequest(
             payload, versionedHashes, parentBeaconBlockRoot, executionRequestsHash);
     final ExecutionPayloadV3 payloadV3 = ExecutionPayloadV3.fromInternalExecutionPayload(payload);
+    final PayloadStatusV1 responseData =
+        new PayloadStatusV1(
+            ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
-        SafeFuture.completedFuture(
-            new Response<>(
-                new PayloadStatusV1(
-                    ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null)));
+        SafeFuture.completedFuture(new Response<>(responseData));
     when(executionEngineClient.newPayloadV4(
             eq(payloadV3),
             eq(versionedHashes),
@@ -114,7 +118,7 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
             eq(versionedHashes),
             eq(parentBeaconBlockRoot),
             eq(executionRequestsHash));
-    assertThat(future).isCompleted();
+    assertThat(future).isCompletedWithValue(responseData.asInternalExecutionPayload());
   }
 
   @Test
@@ -135,19 +139,19 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
             dataStructureUtil.randomBytes32());
     final Optional<PayloadAttributesV3> payloadAttributes =
         PayloadAttributesV3.fromInternalPayloadBuildingAttributesV3(Optional.of(attributes));
+    final ForkChoiceUpdatedResult responseData =
+        new ForkChoiceUpdatedResult(
+            new PayloadStatusV1(
+                ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), ""),
+            dataStructureUtil.randomBytes8());
     final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
-        SafeFuture.completedFuture(
-            new Response<>(
-                new ForkChoiceUpdatedResult(
-                    new PayloadStatusV1(
-                        ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), ""),
-                    dataStructureUtil.randomBytes8())));
+        SafeFuture.completedFuture(new Response<>(responseData));
     when(executionEngineClient.forkChoiceUpdatedV3(forkChoiceStateV1, payloadAttributes))
         .thenReturn(dummyResponse);
     final SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> future =
         handler.engineForkChoiceUpdated(forkChoiceState, Optional.of(attributes));
     verify(executionEngineClient).forkChoiceUpdatedV3(forkChoiceStateV1, payloadAttributes);
-    assertThat(future).isCompleted();
+    assertThat(future).isCompletedWithValue(responseData.asInternalExecutionPayload());
   }
 
   @Test
@@ -158,20 +162,26 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
         dataStructureUtil.randomVersionedHashes(maxBlobsPerBlock);
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(maxBlobsPerBlock);
     final UInt64 slot = dataStructureUtil.randomUInt64(1_000_000);
+    final List<BlobAndProofV1> responseData =
+        blobSidecars.stream()
+            .map(
+                blobSidecar ->
+                    new BlobAndProofV1(
+                        blobSidecar.getBlob().getBytes(),
+                        blobSidecar.getKZGProof().getBytesCompressed()))
+            .toList();
     final SafeFuture<Response<List<BlobAndProofV1>>> dummyResponse =
-        SafeFuture.completedFuture(
-            new Response<>(
-                blobSidecars.stream()
-                    .map(
-                        blobSidecar ->
-                            new BlobAndProofV1(
-                                blobSidecar.getBlob().getBytes(),
-                                blobSidecar.getKZGProof().getBytesCompressed()))
-                    .toList()));
+        SafeFuture.completedFuture(new Response<>(responseData));
     when(executionEngineClient.getBlobsV1(versionedHashes)).thenReturn(dummyResponse);
     final SafeFuture<List<BlobAndProof>> future = handler.engineGetBlobs(versionedHashes, slot);
     verify(executionEngineClient).getBlobsV1(versionedHashes);
-    assertThat(future).isCompleted();
+    final BlobSchema blobSchema =
+        spec.atSlot(slot).getSchemaDefinitions().toVersionDeneb().orElseThrow().getBlobSchema();
+    assertThat(future)
+        .isCompletedWithValue(
+            responseData.stream()
+                .map(blobAndProofV1 -> blobAndProofV1.asInternalBlobsAndProofs(blobSchema))
+                .toList());
   }
 
   private ExecutionPayloadContext randomContext() {
