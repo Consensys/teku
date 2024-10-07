@@ -328,8 +328,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return pendingDepositSchema;
   }
 
-  public SszListSchema<PendingBalanceDeposit, ?> getPendingBalanceDepositsSchema() {
-    return beaconStateSchema.getPendingBalanceDepositsSchema();
+  public SszListSchema<PendingDeposit, ?> getPendingDepositsSchema() {
+    return beaconStateSchema.getPendingDepositsSchema();
   }
 
   public SszListSchema<PendingConsolidation, ?> getPendingConsolidationsSchema() {
