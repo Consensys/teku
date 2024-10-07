@@ -19,8 +19,8 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.EARLIEST_CONSOLIDATION_EPOCH;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.EARLIEST_EXIT_EPOCH;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.EXIT_BALANCE_TO_CONSUME;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_BALANCE_DEPOSITS;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_CONSOLIDATIONS;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_DEPOSITS;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS;
 
 import com.google.common.base.MoreObjects;
@@ -31,8 +31,8 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public interface BeaconStateElectra extends BeaconStateDeneb {
@@ -63,7 +63,7 @@ public interface BeaconStateElectra extends BeaconStateDeneb {
     stringBuilder.add("earliest_exit_epoch", state.getEarliestExitEpoch());
     stringBuilder.add("consolidation_balance_to_consume", state.getConsolidationBalanceToConsume());
     stringBuilder.add("earliest_consolidation_epoch", state.getEarliestConsolidationEpoch());
-    addItems(stringBuilder, "pending_balance_deposits", state.getPendingBalanceDeposits());
+    addItems(stringBuilder, "pending_deposits", state.getPendingDeposits());
     addItems(stringBuilder, "pending_partial_withdrawals", state.getPendingPartialWithdrawals());
     addItems(stringBuilder, "pending_consolidations", state.getPendingConsolidations());
   }
@@ -114,8 +114,8 @@ public interface BeaconStateElectra extends BeaconStateDeneb {
     return ((SszUInt64) get(index)).get();
   }
 
-  default SszList<PendingBalanceDeposit> getPendingBalanceDeposits() {
-    final int index = getSchema().getFieldIndex(PENDING_BALANCE_DEPOSITS);
+  default SszList<PendingDeposit> getPendingDeposits() {
+    final int index = getSchema().getFieldIndex(PENDING_DEPOSITS);
     return getAny(index);
   }
 

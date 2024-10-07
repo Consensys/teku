@@ -14,13 +14,12 @@
 package tech.pegasys.teku.spec.propertytest.suppliers.state;
 
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class PendingBalanceDepositSupplier
-    extends DataStructureUtilSupplier<PendingBalanceDeposit> {
-  public PendingBalanceDepositSupplier() {
-    super(DataStructureUtil::randomPendingBalanceDeposit, SpecMilestone.ELECTRA);
+public class PendingDepositSupplier extends DataStructureUtilSupplier<PendingDeposit> {
+  public PendingDepositSupplier() {
+    super(DataStructureUtil::randomPendingDeposit, SpecMilestone.ELECTRA);
   }
 }

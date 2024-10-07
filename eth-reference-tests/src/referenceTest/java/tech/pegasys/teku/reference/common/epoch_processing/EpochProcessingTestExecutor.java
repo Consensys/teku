@@ -34,8 +34,7 @@ public class EpochProcessingTestExecutor implements TestExecutor {
       ImmutableMap.<String, TestExecutor>builder()
           .put(
               "epoch_processing/slashings",
-              // TODO: Re-enable these tests as part of https://github.com/Consensys/teku/pull/8612
-              TestExecutor.IGNORE_TESTS)
+              new EpochProcessingTestExecutor(EpochOperation.PROCESS_SLASHINGS))
           .put(
               "epoch_processing/registry_updates",
               new EpochProcessingTestExecutor(EpochOperation.PROCESS_REGISTRY_UPDATES))
@@ -79,12 +78,11 @@ public class EpochProcessingTestExecutor implements TestExecutor {
           .put(
               "epoch_processing/inactivity_updates",
               new EpochProcessingTestExecutor(EpochOperation.INACTIVITY_UPDATES))
+          // TODO re-enable consolidation tests (https://github.com/Consensys/teku/issues/8617)
+          .put("epoch_processing/pending_consolidations", TestExecutor.IGNORE_TESTS)
           .put(
-              "epoch_processing/pending_consolidations",
-              new EpochProcessingTestExecutor(EpochOperation.PENDING_CONSOLIDATIONS))
-          .put(
-              "epoch_processing/pending_balance_deposits",
-              new EpochProcessingTestExecutor(EpochOperation.PENDING_BALANCE_DEPOSITS))
+              "epoch_processing/pending_deposits",
+              new EpochProcessingTestExecutor(EpochOperation.PENDING_DEPOSITS))
           .build();
 
   private final EpochOperation operation;

@@ -19,23 +19,21 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
-import tech.pegasys.teku.spec.propertytest.suppliers.state.PendingBalanceDepositSupplier;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
+import tech.pegasys.teku.spec.propertytest.suppliers.state.PendingDepositSupplier;
 
-public class PendingBalanceDepositPropertyTest {
+public class PendingDepositPropertyTest {
   @Property
   void roundTrip(
-      @ForAll(supplier = PendingBalanceDepositSupplier.class)
-          final PendingBalanceDeposit pendingBalanceDeposit)
+      @ForAll(supplier = PendingDepositSupplier.class) final PendingDeposit pendingDeposit)
       throws JsonProcessingException {
-    assertRoundTrip(pendingBalanceDeposit);
+    assertRoundTrip(pendingDeposit);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = PendingBalanceDepositSupplier.class)
-          final PendingBalanceDeposit pendingBalanceDeposit,
+      @ForAll(supplier = PendingDepositSupplier.class) final PendingDeposit pendingDeposit,
       @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(pendingBalanceDeposit, seed);
+    assertDeserializeMutatedThrowsExpected(pendingDeposit, seed);
   }
 }
