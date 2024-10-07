@@ -14,10 +14,10 @@
 package tech.pegasys.teku.storage.server.kvstore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.stream.Collectors.groupingBy;
 import static tech.pegasys.teku.infrastructure.logging.DbLogger.DB_LOGGER;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -910,96 +910,79 @@ public class KvStoreDatabase implements Database {
       final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys,
       final FinalizedUpdater updater,
       final DataArchiveWriter<List<BlobSidecar>> archiveWriter,
-      final boolean nonCanonicalblobSidecars) {
-    int remaining = pruneLimit;
+      final boolean nonCanonicalBlobSidecars) {
+
     int pruned = 0;
     Optional<UInt64> earliestBlobSidecarSlot = Optional.empty();
 
-    UInt64 currentSlot = ZERO;
-    ArrayList<BlobSidecar> blobSidecars = new ArrayList<>();
-    ArrayList<SlotAndBlockRootAndBlobIndex> keys = new ArrayList<>();
+    // Group the BlobSidecars by slot. Potential for higher memory usage if it hasn't been pruned in
+    // a while
+    Map<UInt64, List<SlotAndBlockRootAndBlobIndex>> prunableMap =
+        prunableBlobKeys.collect(groupingBy(SlotAndBlockRootAndBlobIndex::getSlot));
 
-    for (final Iterator<SlotAndBlockRootAndBlobIndex> it = prunableBlobKeys.iterator();
-        it.hasNext(); ) {
+    // pruneLimit is the number of slots to prune, not the number of BlobSidecars
+    List<UInt64> slots = prunableMap.keySet().stream().sorted().limit(pruneLimit).toList();
+    for (UInt64 slot : slots) {
+      List<SlotAndBlockRootAndBlobIndex> keys = prunableMap.get(slot);
+      List<BlobSidecar> blobSidecars =
+          keys.stream()
+              .map(this::getBlobSidecar)
+              .filter(Optional::isPresent)
+              .map(Optional::get)
+              .toList();
 
-      //
-      --remaining;
-      final boolean finished = remaining < 0;
-      final SlotAndBlockRootAndBlobIndex key = it.next();
-
-      // Before we finish we should check that there are no BlobSidecars left in the same slot
-      if (finished && key.getBlobIndex().equals(ZERO)) {
+      if (keys.size() != blobSidecars.size()) {
+        LOG.warn("Failed to retrieve BlobSidecars for keys:{}", keys);
         break;
       }
 
-      // Once a slot group is ready, we can archive and prune it.
-      if (!key.getSlot().equals(currentSlot)) {
-        if (!keys.isEmpty()) {
-          earliestBlobSidecarSlot =
-              archiveAndPruneBlobSideCars(
-                  updater, archiveWriter, keys, blobSidecars, nonCanonicalblobSidecars);
-          if (earliestBlobSidecarSlot.isEmpty()) {
-            LOG.warn("Failed to archive BlobSidecars. Stopping pruning");
-            break;
-          }
-          pruned += keys.size();
-        }
-        blobSidecars.clear();
-        keys.clear();
-        currentSlot = key.getSlot();
-      } else {
-        // collect keys and blobSidecars
-        keys.add(key);
-        if (getBlobSidecar(key).map(blobSidecars::add).orElse(false)) {
-          LOG.warn("Failed to retrieve BlobSidecar for key:{}", key);
-          // TODO: Should we continue or stop pruning?
-          break;
-        }
-      }
-    }
-
-    // Archive and prune the last slot group
-    if (!keys.isEmpty()) {
-      earliestBlobSidecarSlot =
+      boolean archiveAndPruneResult =
           archiveAndPruneBlobSideCars(
-              updater, archiveWriter, keys, blobSidecars, nonCanonicalblobSidecars);
-      if (earliestBlobSidecarSlot.isEmpty()) {
-        LOG.warn("Failed to archive BlobSidecars. Stopping pruning");
+              updater, archiveWriter, keys, blobSidecars, nonCanonicalBlobSidecars);
+      if (!archiveAndPruneResult) {
+        LOG.warn("Failed to archive and prune BlobSidecars. Stopping pruning");
+        break;
       }
-      pruned += keys.size();
+
+      if (!nonCanonicalBlobSidecars) {
+        earliestBlobSidecarSlot = Optional.of(slot.plus(1));
+      }
+
+      pruned++;
     }
 
-    if (!nonCanonicalblobSidecars) {
+    if (!nonCanonicalBlobSidecars) {
       earliestBlobSidecarSlot.ifPresent(updater::setEarliestBlobSidecarSlot);
+      updater.commit();
     }
-    updater.commit();
 
     // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar in a slot
     return pruned >= pruneLimit;
   }
 
-  private Optional<UInt64> archiveAndPruneBlobSideCars(
+  private boolean archiveAndPruneBlobSideCars(
       final FinalizedUpdater updater,
       final DataArchiveWriter<List<BlobSidecar>> archiveWriter,
       final List<SlotAndBlockRootAndBlobIndex> slotBlobIndexes,
       final List<BlobSidecar> blobSidecars,
-      final boolean nonCanonicalblobSidecars) {
-    Optional<UInt64> earliestBlobSidecarSlot = Optional.empty();
+      final boolean nonCanonicalBlobSidecars) {
+
     // Attempt to archive the BlobSidecars.
     final boolean blobSidecarArchived = archiveWriter.archive(blobSidecars);
     if (!blobSidecarArchived) {
-      return earliestBlobSidecarSlot;
+      return false;
     }
 
+    // Remove the BlobSidecars from the database.
     for (final SlotAndBlockRootAndBlobIndex key : slotBlobIndexes) {
-      if (nonCanonicalblobSidecars) {
+      if (nonCanonicalBlobSidecars) {
         updater.removeNonCanonicalBlobSidecar(key);
       } else {
-        earliestBlobSidecarSlot = Optional.of(key.getSlot().plus(1));
         updater.removeBlobSidecar(key);
       }
     }
-    return earliestBlobSidecarSlot;
+
+    return true;
   }
 
   @MustBeClosed
