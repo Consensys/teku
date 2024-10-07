@@ -184,19 +184,16 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
    * @param index validatorIndex
    */
   public void switchToCompoundingValidator(final MutableBeaconStateElectra state, final int index) {
-    if (PredicatesElectra.isEth1WithdrawalCredential(
-        state.getValidators().get(index).getWithdrawalCredentials())) {
-      final byte[] withdrawalCredentialsUpdated =
-          state.getValidators().get(index).getWithdrawalCredentials().toArray();
-      withdrawalCredentialsUpdated[0] = COMPOUNDING_WITHDRAWAL_BYTE;
-      state
-          .getValidators()
-          .update(
-              index,
-              validator ->
-                  validator.withWithdrawalCredentials(Bytes32.wrap(withdrawalCredentialsUpdated)));
-      queueExcessActiveBalance(state, index);
-    }
+    final byte[] withdrawalCredentialsUpdated =
+        state.getValidators().get(index).getWithdrawalCredentials().toArray();
+    withdrawalCredentialsUpdated[0] = COMPOUNDING_WITHDRAWAL_BYTE;
+    state
+        .getValidators()
+        .update(
+            index,
+            validator ->
+                validator.withWithdrawalCredentials(Bytes32.wrap(withdrawalCredentialsUpdated)));
+    queueExcessActiveBalance(state, index);
   }
 
   /**

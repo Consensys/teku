@@ -54,7 +54,6 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.capella.statetransition.epoch.EpochProcessorCapella;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
@@ -63,7 +62,6 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
 
   private final UInt64 minActivationBalance;
   private final BeaconStateAccessorsElectra stateAccessorsElectra;
-  private final BeaconStateMutatorsElectra stateMutatorsElectra;
   private final SchemaDefinitionsElectra schemaDefinitionsElectra;
 
   public EpochProcessorElectra(
@@ -89,7 +87,6 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
     this.minActivationBalance =
         specConfig.toVersionElectra().orElseThrow().getMinActivationBalance();
     this.stateAccessorsElectra = BeaconStateAccessorsElectra.required(beaconStateAccessors);
-    this.stateMutatorsElectra = BeaconStateMutatorsElectra.required(beaconStateMutators);
     this.schemaDefinitionsElectra = SchemaDefinitionsElectra.required(schemaDefinitions);
   }
 
@@ -391,8 +388,6 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
         break;
       }
 
-      stateMutatorsElectra.switchToCompoundingValidator(
-          stateElectra, pendingConsolidation.getTargetIndex());
       final UInt64 activeBalance =
           stateAccessorsElectra.getActiveBalance(state, pendingConsolidation.getSourceIndex());
       beaconStateMutators.decreaseBalance(
