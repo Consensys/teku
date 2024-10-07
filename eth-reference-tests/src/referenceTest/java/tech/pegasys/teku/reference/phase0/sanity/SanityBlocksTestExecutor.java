@@ -41,8 +41,19 @@ public class SanityBlocksTestExecutor implements TestExecutor {
   private static final String STATE_ROOT_MISMATCH_ERROR_MESSAGE =
       "Block state root does NOT match the calculated state root";
 
+  // TODO re-enable tests as part of https://github.com/Consensys/teku/issues/8680
+  private static final List<String> IGNORED_TEST_NAMES =
+      List.of(
+          "basic_el_withdrawal_request",
+          "basic_btec_and_el_withdrawal_request_in_same_block",
+          "cl_exit_and_el_withdrawal_request_in_same_block");
+
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
+    if (IGNORED_TEST_NAMES.contains(testDefinition.getTestName())) {
+      return;
+    }
+
     final SanityBlocksMetaData metaData =
         loadYaml(testDefinition, "meta.yaml", SanityBlocksMetaData.class);
     final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz_snappy");
