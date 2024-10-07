@@ -222,7 +222,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           if (maybeValidatorIndex.isEmpty()) {
             LOG.debug(
                 "process_withdrawal_request: no matching validator for public key {}",
-                withdrawalRequest.getValidatorPublicKey());
+                withdrawalRequest.getValidatorPublicKey().toAbbreviatedString());
             return;
           }
 
@@ -407,7 +407,9 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
 
     // Verify that source != target, so a consolidation cannot be used as an exit
     if (consolidationRequest.getSourcePubkey().equals(consolidationRequest.getTargetPubkey())) {
-      LOG.debug("process_consolidation_request: source_pubkey and target_pubkey must be different");
+      LOG.debug(
+          "process_consolidation_request: source_pubkey and target_pubkey must be different (pubkey = {})",
+          consolidationRequest.getSourcePubkey().toAbbreviatedString());
       return;
     }
 
@@ -433,7 +435,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     if (maybeSourceValidatorIndex.isEmpty()) {
       LOG.debug(
           "process_consolidation_request: source_pubkey {} not found",
-          consolidationRequest.getSourcePubkey());
+          consolidationRequest.getSourcePubkey().toAbbreviatedString());
       return;
     }
 
@@ -443,7 +445,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     if (maybeTargetValidatorIndex.isEmpty()) {
       LOG.debug(
           "process_consolidation_request: target_pubkey {} not found",
-          consolidationRequest.getTargetPubkey());
+          consolidationRequest.getTargetPubkey().toAbbreviatedString());
       return;
     }
 
@@ -474,21 +476,25 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
 
     // Verify the source and the target are active
     if (!predicatesElectra.isActiveValidator(sourceValidator, currentEpoch)) {
-      LOG.debug("process_consolidation_request: source validator is inactive");
+      LOG.debug(
+          "process_consolidation_request: source validator {} is inactive", sourceValidatorIndex);
       return;
     }
     if (!predicatesElectra.isActiveValidator(targetValidator, currentEpoch)) {
-      LOG.debug("process_consolidation_request: target validator is inactive");
+      LOG.debug(
+          "process_consolidation_request: target validator {} is inactive", targetValidatorIndex);
       return;
     }
 
     // Verify exits for source and target have not been initiated
     if (!sourceValidator.getExitEpoch().equals(FAR_FUTURE_EPOCH)) {
-      LOG.debug("process_consolidation_request: source validator is exiting");
+      LOG.debug(
+          "process_consolidation_request: source validator {} is exiting", sourceValidatorIndex);
       return;
     }
     if (!targetValidator.getExitEpoch().equals(FAR_FUTURE_EPOCH)) {
-      LOG.debug("process_consolidation_request: target validator is exiting");
+      LOG.debug(
+          "process_consolidation_request: target validator {} is exiting", targetValidatorIndex);
       return;
     }
 
