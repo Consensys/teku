@@ -21,8 +21,10 @@ import tech.pegasys.teku.storage.archive.DataArchiveWriter;
 
 public class NoopDataArchive implements DataArchive {
 
+  private final DataArchiveWriter<List<BlobSidecar>> BLOB_SIDECAR_WRITER = new DataArchiveNoopWriter<>();
+
   @Override
   public DataArchiveWriter<List<BlobSidecar>> getBlobSidecarWriter() throws IOException {
-    return new DataArchiveNoopWriter<>();
+    return BLOB_SIDECAR_WRITER;
   }
 }
