@@ -14,14 +14,12 @@
 package tech.pegasys.teku.storage.archive.fsarchive;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -33,38 +31,29 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
-import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.archive.DataArchive;
 import tech.pegasys.teku.storage.archive.DataArchiveWriter;
 
 public class FileSystemArchiveTest {
-
-  private static final VersionedHash VERSIONED_HASH =
-      VersionedHash.create(
-          VERSIONED_HASH_VERSION_KZG,
-          Bytes32.fromHexString(
-              "0x391610cf24e7c540192b80ddcfea77b0d3912d94e922682f3b286eee041e6f76"));
-
-  private static final Spec spec = TestSpecFactory.createMinimalDeneb();
-
-  private final Predicates predicates = new Predicates(spec.getGenesisSpecConfig());
+  private static final Spec SPEC = TestSpecFactory.createMinimalDeneb();
+  private final Predicates predicates = new Predicates(SPEC.getGenesisSpecConfig());
   private final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
-      SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions());
+      SchemaDefinitionsDeneb.required(SPEC.getGenesisSchemaDefinitions());
   private final MiscHelpersDeneb miscHelpersDeneb =
       new MiscHelpersDeneb(
-          spec.getGenesisSpecConfig().toVersionDeneb().orElseThrow(),
+          SPEC.getGenesisSpecConfig().toVersionDeneb().orElseThrow(),
           predicates,
           schemaDefinitionsDeneb);
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(SPEC);
 
   static DataArchive dataArchive;
 
   @BeforeAll
   static void beforeEach() throws IOException {
     Path temp = Files.createTempDirectory("blobs");
-    dataArchive = new FileSystemArchive(spec, temp);
+    dataArchive = new FileSystemArchive(SPEC, temp);
   }
 
   BlobSidecar createBlobSidecar() {
