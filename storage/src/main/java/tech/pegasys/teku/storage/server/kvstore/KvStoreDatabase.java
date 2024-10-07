@@ -926,7 +926,10 @@ public class KvStoreDatabase implements Database {
       List<SlotAndBlockRootAndBlobIndex> keys = prunableMap.get(slot);
       List<BlobSidecar> blobSidecars =
           keys.stream()
-              .map(this::getBlobSidecar)
+              .map(
+                  nonCanonicalBlobSidecars
+                      ? this::getNonCanonicalBlobSidecar
+                      : this::getBlobSidecar)
               .filter(Optional::isPresent)
               .map(Optional::get)
               .toList();
@@ -953,8 +956,9 @@ public class KvStoreDatabase implements Database {
 
     if (!nonCanonicalBlobSidecars) {
       earliestBlobSidecarSlot.ifPresent(updater::setEarliestBlobSidecarSlot);
-      updater.commit();
     }
+
+    updater.commit();
 
     // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar in a slot
     return pruned >= pruneLimit;

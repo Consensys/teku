@@ -73,7 +73,7 @@ public interface Database extends AutoCloseable {
    * of pruneLimit is to softly cap DB operation time.
    *
    * @param lastSlotToPrune inclusive, not reached if limit happens first
-   * @param pruneLimit soft BlobSidecars (not slots) limit
+   * @param pruneLimit maximum number of slots to prune.
    * @param archiveWriter write BlobSidecars to archive when pruning.
    * @return true if number of pruned blobs reached the pruneLimit, false otherwise
    */
