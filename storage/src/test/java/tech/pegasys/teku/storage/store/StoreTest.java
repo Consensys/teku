@@ -395,7 +395,7 @@ class StoreTest extends AbstractStoreTest {
 
     storageSystem
         .database()
-        .pruneOldestBlobSidecars(UInt64.valueOf(5), 5, new DataArchiveNoopWriter<>());
+        .pruneOldestBlobSidecars(UInt64.valueOf(5), 3, new DataArchiveNoopWriter<>());
 
     assertThat(store.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValueMatching(
