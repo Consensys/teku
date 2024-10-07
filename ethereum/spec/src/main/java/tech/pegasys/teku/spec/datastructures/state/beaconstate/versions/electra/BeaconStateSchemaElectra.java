@@ -128,8 +128,7 @@ public class BeaconStateSchemaElectra
             BeaconStateFields.PENDING_BALANCE_DEPOSITS,
             () ->
                 SszListSchema.create(
-                    pendingBalanceDepositSchema,
-                    specConfigElectra.getPendingBalanceDepositsLimit()));
+                    pendingBalanceDepositSchema, specConfigElectra.getPendingDepositsLimit()));
     final SszField pendingPartialWithdrawalsField =
         new SszField(
             PENDING_PARTIAL_WITHDRAWALS_INDEX,

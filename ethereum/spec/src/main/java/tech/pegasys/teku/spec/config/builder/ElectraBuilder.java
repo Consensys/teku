@@ -34,7 +34,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   private UInt64 minPerEpochChurnLimitElectra;
   private UInt64 minActivationBalance;
   private UInt64 maxEffectiveBalanceElectra;
-  private Integer pendingBalanceDepositsLimit;
+  private Integer pendingDepositsLimit;
   private Integer pendingPartialWithdrawalsLimit;
   private Integer pendingConsolidationsLimit;
   private Integer minSlashingPenaltyQuotientElectra;
@@ -45,6 +45,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   private Integer maxDepositRequestsPerPayload;
   private Integer maxWithdrawalRequestsPerPayload;
   private Integer maxPendingPartialsPerWithdrawalsSweep;
+  private Integer maxPendingDepositsPerEpoch;
 
   ElectraBuilder() {}
 
@@ -57,7 +58,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
         minPerEpochChurnLimitElectra,
         minActivationBalance,
         maxEffectiveBalanceElectra,
-        pendingBalanceDepositsLimit,
+        pendingDepositsLimit,
         pendingPartialWithdrawalsLimit,
         pendingConsolidationsLimit,
         minSlashingPenaltyQuotientElectra,
@@ -67,7 +68,8 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
         maxConsolidationRequestsPerPayload,
         maxDepositRequestsPerPayload,
         maxWithdrawalRequestsPerPayload,
-        maxPendingPartialsPerWithdrawalsSweep);
+        maxPendingPartialsPerWithdrawalsSweep,
+        maxPendingDepositsPerEpoch);
   }
 
   public ElectraBuilder electraForkEpoch(final UInt64 electraForkEpoch) {
@@ -100,9 +102,9 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     return this;
   }
 
-  public ElectraBuilder pendingBalanceDepositsLimit(final Integer pendingBalanceDepositsLimit) {
-    checkNotNull(pendingBalanceDepositsLimit);
-    this.pendingBalanceDepositsLimit = pendingBalanceDepositsLimit;
+  public ElectraBuilder pendingDepositsLimit(final Integer pendingDepositsLimit) {
+    checkNotNull(pendingDepositsLimit);
+    this.pendingDepositsLimit = pendingDepositsLimit;
     return this;
   }
 
@@ -172,6 +174,12 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     return this;
   }
 
+  public ElectraBuilder maxPendingDepositsPerEpoch(final Integer maxPendingDepositsPerEpoch) {
+    checkNotNull(maxPendingDepositsPerEpoch);
+    this.maxPendingDepositsPerEpoch = maxPendingDepositsPerEpoch;
+    return this;
+  }
+
   @Override
   public void validate() {
     if (electraForkEpoch == null) {
@@ -196,7 +204,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     constants.put("minPerEpochChurnLimitElectra", minPerEpochChurnLimitElectra);
     constants.put("minActivationBalance", minActivationBalance);
     constants.put("maxEffectiveBalanceElectra", maxEffectiveBalanceElectra);
-    constants.put("pendingBalanceDepositsLimit", pendingBalanceDepositsLimit);
+    constants.put("pendingDepositsLimit", pendingDepositsLimit);
     constants.put("pendingPartialWithdrawalsLimit", pendingPartialWithdrawalsLimit);
     constants.put("pendingConsolidationsLimit", pendingConsolidationsLimit);
     constants.put("minSlashingPenaltyQuotientElectra", minSlashingPenaltyQuotientElectra);
@@ -207,6 +215,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     constants.put("maxDepositRequestsPerPayload", maxDepositRequestsPerPayload);
     constants.put("maxWithdrawalRequestsPerPayload", maxWithdrawalRequestsPerPayload);
     constants.put("maxPendingPartialsPerWithdrawalsSweep", maxPendingPartialsPerWithdrawalsSweep);
+    constants.put("maxPendingDepositsPerEpoch", maxPendingDepositsPerEpoch);
 
     return constants;
   }
