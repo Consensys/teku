@@ -75,13 +75,10 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
     verify(executionEngineClient).getPayloadV2(context.getPayloadId());
     final SchemaDefinitionsCapella schemaDefinitionCapella =
         spec.atSlot(slot).getSchemaDefinitions().toVersionCapella().orElseThrow();
-    final ExecutionPayloadSchema<?> payloadSchema =
+    final ExecutionPayloadSchema<?> executionPayloadSchema =
         schemaDefinitionCapella.getExecutionPayloadSchema();
     assertThat(future)
-        .isCompletedWithValue(
-            new GetPayloadResponse(
-                responseData.executionPayload.asInternalExecutionPayload(payloadSchema),
-                responseData.blockValue));
+        .isCompletedWithValue(responseData.asInternalGetPayloadResponse(executionPayloadSchema));
   }
 
   @Test

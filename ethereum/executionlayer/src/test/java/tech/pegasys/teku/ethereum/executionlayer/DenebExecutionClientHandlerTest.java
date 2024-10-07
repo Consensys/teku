@@ -79,16 +79,12 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
     verify(executionEngineClient).getPayloadV3(context.getPayloadId());
     final SchemaDefinitionsDeneb schemaDefinitionDeneb =
         spec.atSlot(slot).getSchemaDefinitions().toVersionDeneb().orElseThrow();
-    final ExecutionPayloadSchema<?> payloadSchema =
+    final ExecutionPayloadSchema<?> executionPayloadSchema =
         schemaDefinitionDeneb.getExecutionPayloadSchema();
     final BlobSchema blobSchema = schemaDefinitionDeneb.getBlobSchema();
     assertThat(future)
         .isCompletedWithValue(
-            new GetPayloadResponse(
-                responseData.executionPayload.asInternalExecutionPayload(payloadSchema),
-                responseData.blockValue,
-                responseData.blobsBundle.asInternalBlobsBundle(blobSchema),
-                responseData.shouldOverrideBuilder));
+            responseData.asInternalGetPayloadResponse(executionPayloadSchema, blobSchema));
   }
 
   @Test

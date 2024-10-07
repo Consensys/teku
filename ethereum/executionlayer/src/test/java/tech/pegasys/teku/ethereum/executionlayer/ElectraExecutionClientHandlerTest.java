@@ -80,16 +80,12 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
     verify(executionEngineClient).getPayloadV4(context.getPayloadId());
     final SchemaDefinitionsElectra schemaDefinitionElectra =
         spec.atSlot(slot).getSchemaDefinitions().toVersionElectra().orElseThrow();
-    final ExecutionPayloadSchema<?> payloadSchema =
+    final ExecutionPayloadSchema<?> executionPayloadSchema =
         schemaDefinitionElectra.getExecutionPayloadSchema();
     final BlobSchema blobSchema = schemaDefinitionElectra.getBlobSchema();
     assertThat(future)
         .isCompletedWithValue(
-            new GetPayloadResponse(
-                responseData.executionPayload.asInternalExecutionPayload(payloadSchema),
-                responseData.blockValue,
-                responseData.blobsBundle.asInternalBlobsBundle(blobSchema),
-                responseData.shouldOverrideBuilder));
+            responseData.asInternalGetPayloadResponse(executionPayloadSchema, blobSchema));
   }
 
   @Test
