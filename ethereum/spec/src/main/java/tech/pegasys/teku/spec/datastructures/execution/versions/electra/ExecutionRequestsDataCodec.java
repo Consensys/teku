@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.Comparator;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,6 +26,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsBuilder;
 */
 public class ExecutionRequestsDataCodec {
 
+  private static final int EXPECTED_REQUEST_DATA_ELEMENTS = 3;
+
   private final ExecutionRequestsSchema executionRequestsSchema;
 
   public ExecutionRequestsDataCodec(final ExecutionRequestsSchema executionRequestsSchema) {
@@ -34,36 +35,41 @@ public class ExecutionRequestsDataCodec {
   }
 
   public ExecutionRequests decode(final List<Bytes> executionRequestData) {
+    if (executionRequestData.size() != EXPECTED_REQUEST_DATA_ELEMENTS) {
+      throw new IllegalArgumentException(
+          "Invalid number of execution request data elements: expected "
+              + EXPECTED_REQUEST_DATA_ELEMENTS
+              + ", received "
+              + executionRequestData.size());
+    }
+
     final ExecutionRequestsBuilder executionRequestsBuilder =
         new ExecutionRequestsBuilderElectra(executionRequestsSchema);
 
-    executionRequestData.forEach(
-        data -> {
-          // First byte of the data is the type of the execution request
-          final byte type = data.get(0);
-          switch (type) {
-            case DepositRequest.REQUEST_TYPE ->
-                executionRequestsBuilder.deposits(
-                    executionRequestsSchema
-                        .getDepositRequestsSchema()
-                        .sszDeserialize(data.slice(1))
-                        .asList());
-            case WithdrawalRequest.REQUEST_TYPE ->
-                executionRequestsBuilder.withdrawals(
-                    executionRequestsSchema
-                        .getWithdrawalRequestsSchema()
-                        .sszDeserialize(data.slice(1))
-                        .asList());
-            case ConsolidationRequest.REQUEST_TYPE ->
-                executionRequestsBuilder.consolidations(
-                    executionRequestsSchema
-                        .getConsolidationRequestsSchema()
-                        .sszDeserialize(data.slice(1))
-                        .asList());
-            default ->
-                throw new IllegalArgumentException("Invalid execution request type: " + type);
-          }
-        });
+    for (int index = 0; index < executionRequestData.size(); index++) {
+      // The request type is implicitly defined as the index of the element in executionRequestData
+      switch ((byte) index) {
+        case DepositRequest.REQUEST_TYPE ->
+            executionRequestsBuilder.deposits(
+                executionRequestsSchema
+                    .getDepositRequestsSchema()
+                    .sszDeserialize(executionRequestData.get(index))
+                    .asList());
+        case WithdrawalRequest.REQUEST_TYPE ->
+            executionRequestsBuilder.withdrawals(
+                executionRequestsSchema
+                    .getWithdrawalRequestsSchema()
+                    .sszDeserialize(executionRequestData.get(index))
+                    .asList());
+        case ConsolidationRequest.REQUEST_TYPE ->
+            executionRequestsBuilder.consolidations(
+                executionRequestsSchema
+                    .getConsolidationRequestsSchema()
+                    .sszDeserialize(executionRequestData.get(index))
+                    .asList());
+        default -> throw new IllegalArgumentException("Invalid execution request type: " + index);
+      }
+    }
 
     return executionRequestsBuilder.build();
   }
@@ -96,8 +102,8 @@ public class ExecutionRequestsDataCodec {
   public Bytes32 hash(final ExecutionRequests executionRequests) {
     final Bytes sortedEncodedRequests =
         encode(executionRequests).stream()
-            // Encoded requests are sorted by their type (first byte)
-            .sorted(Comparator.comparingInt(b -> b.get(0)))
+            .map(Hash::sha256)
+            .map(Bytes.class::cast)
             .reduce(Bytes.EMPTY, Bytes::concatenate);
     return Hash.sha256(sortedEncodedRequests);
   }

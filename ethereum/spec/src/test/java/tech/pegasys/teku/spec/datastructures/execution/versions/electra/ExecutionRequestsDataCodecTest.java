@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
@@ -29,28 +28,16 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ExecutionRequestsDataCodecTest {
 
   private final Spec spec = TestSpecFactory.createMinimalElectra();
   private final SpecConfigElectra specConfigElectra =
       SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig());
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ExecutionRequestsSchema executionRequestsSchema =
       new ExecutionRequestsSchema(specConfigElectra);
   private final ExecutionRequestsDataCodec codec =
       new ExecutionRequestsDataCodec(executionRequestsSchema);
-
-  @Test
-  public void encodeDecodeRoundTrip() {
-    final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests();
-
-    final List<Bytes> encodedExecutionRequests = codec.encode(executionRequests);
-    final ExecutionRequests decodedExecutionRequests = codec.decode(encodedExecutionRequests);
-
-    assertEquals(executionRequests, decodedExecutionRequests);
-  }
 
   @Test
   public void decodeExecutionRequestData() {
@@ -69,17 +56,66 @@ class ExecutionRequestsDataCodecTest {
   }
 
   @Test
-  public void decodeInvalidRequestTypeShouldThrowIllegalArgumentException() {
-    final Bytes invalidRequestType = Bytes.of(0xf);
-    // Replace valid 0x0 request type for deposits with invalid 0xf request type
-    final Bytes depositsWithInvalidRequestType =
-        Bytes.concatenate(invalidRequestType, depositRequestListEncoded.slice(1));
+  public void decodeExecutionRequestDataWithAllRequestTypesEmpty() {
+    final List<Bytes> executionRequestsData = List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY);
 
+    final ExecutionRequests executionRequests = codec.decode(executionRequestsData);
+
+    assertThat(executionRequests.getDeposits()).isEmpty();
+    assertThat(executionRequests.getWithdrawals()).isEmpty();
+    assertThat(executionRequests.getConsolidations()).isEmpty();
+  }
+
+  @Test
+  public void decodeExecutionRequestDataWithOneRequestTypeEmpty() {
+    final List<Bytes> executionRequestsData =
+        List.of(depositRequestListEncoded, Bytes.EMPTY, consolidationRequestsListEncoded);
+
+    final ExecutionRequests executionRequests = codec.decode(executionRequestsData);
+
+    assertThat(executionRequests.getDeposits()).containsExactly(depositRequest1, depositRequest2);
+    assertThat(executionRequests.getWithdrawals()).isEmpty();
+    assertThat(executionRequests.getConsolidations()).containsExactly(consolidationRequest1);
+  }
+
+  @Test
+  public void decodeExecutionRequestDataWithMoreElementsThanExpected() {
     final List<Bytes> invalidExecutionRequestsData =
         List.of(
-            depositsWithInvalidRequestType,
+            depositRequestListEncoded,
             withdrawalRequestsListEncoded,
-            consolidationRequestsListEncoded);
+            consolidationRequestsListEncoded,
+            Bytes.random(10));
+
+    assertThatThrownBy(() -> codec.decode(invalidExecutionRequestsData))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void decodeExecutionRequestDataWithLessThanExpectedElements() {
+    final List<Bytes> invalidExecutionRequestsData =
+        List.of(depositRequestListEncoded, withdrawalRequestsListEncoded);
+
+    assertThatThrownBy(() -> codec.decode(invalidExecutionRequestsData))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void decodeExecutionRequestDataWithMoreThanExpectedElements() {
+    final List<Bytes> invalidExecutionRequestsData =
+        List.of(
+            depositRequestListEncoded,
+            withdrawalRequestsListEncoded,
+            consolidationRequestsListEncoded,
+            depositRequestListEncoded);
+
+    assertThatThrownBy(() -> codec.decode(invalidExecutionRequestsData))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void decodeExecutionRequestDataWithZeroElements() {
+    final List<Bytes> invalidExecutionRequestsData = List.of();
 
     assertThatThrownBy(() -> codec.decode(invalidExecutionRequestsData))
         .isInstanceOf(IllegalArgumentException.class);
@@ -98,16 +134,55 @@ class ExecutionRequestsDataCodecTest {
 
     assertThat(encodedRequests)
         .containsExactly(
-            depositRequestListEncoded,
-            withdrawalRequestsListEncoded,
-            consolidationRequestsListEncoded);
+            Bytes.concatenate(Bytes.of(DepositRequest.REQUEST_TYPE), depositRequestListEncoded),
+            Bytes.concatenate(
+                Bytes.of(WithdrawalRequest.REQUEST_TYPE), withdrawalRequestsListEncoded),
+            Bytes.concatenate(
+                Bytes.of(ConsolidationRequest.REQUEST_TYPE), consolidationRequestsListEncoded));
+  }
+
+  @Test
+  public void encodeExecutionRequestsWithOneEmptyRequestList() {
+    final ExecutionRequests executionRequests =
+        new ExecutionRequestsBuilderElectra(executionRequestsSchema)
+            .deposits(List.of(depositRequest1, depositRequest2))
+            .withdrawals(List.of())
+            .consolidations(List.of(consolidationRequest1))
+            .build();
+
+    final List<Bytes> encodedRequests = codec.encode(executionRequests);
+
+    assertThat(encodedRequests)
+        .containsExactly(
+            Bytes.concatenate(Bytes.of(DepositRequest.REQUEST_TYPE), depositRequestListEncoded),
+            Bytes.of(WithdrawalRequest.REQUEST_TYPE),
+            Bytes.concatenate(
+                Bytes.of(ConsolidationRequest.REQUEST_TYPE), consolidationRequestsListEncoded));
+  }
+
+  @Test
+  public void encodeExecutionRequestsWithAllEmptyRequestLists() {
+    final ExecutionRequests executionRequests =
+        new ExecutionRequestsBuilderElectra(executionRequestsSchema)
+            .deposits(List.of())
+            .withdrawals(List.of())
+            .consolidations(List.of())
+            .build();
+
+    final List<Bytes> encodedRequests = codec.encode(executionRequests);
+
+    assertThat(encodedRequests)
+        .containsExactly(
+            Bytes.of(DepositRequest.REQUEST_TYPE),
+            Bytes.of(WithdrawalRequest.REQUEST_TYPE),
+            Bytes.of(ConsolidationRequest.REQUEST_TYPE));
   }
 
   @Test
   public void hashExecutionRequests() {
     // Previously known hash of the encoded execution requests
     final Bytes expectedHash =
-        Bytes.fromHexString("0x9a1d06e635eb434e1ba98b03606ef0d20e87a78811f3d4abd04175e4f39847e3");
+        Bytes.fromHexString("0xc0ff01be6ca468a08f1f5fb1dc83b3d92cc782b47ee567bcf17f925e73ff9c00");
     final ExecutionRequests executionRequests =
         new ExecutionRequestsBuilderElectra(executionRequestsSchema)
             .deposits(List.of(depositRequest1, depositRequest2))
@@ -119,15 +194,27 @@ class ExecutionRequestsDataCodecTest {
     assertThat(codec.hash(executionRequests)).isEqualTo(expectedHash);
   }
 
-  /*
-   Examples taken from https://github.com/ethereum/execution-apis/blob/main/src/engine/openrpc/methods/payload.yaml
+  @Test
+  public void hashExecutionRequestsWithAllEmptyRequestLists() {
+    // Previously known hash of the encoded execution requests
+    final Bytes expectedHash =
+        Bytes.fromHexString("0x6036c41849da9c076ed79654d434017387a88fb833c2856b32e18218b3341c5f");
+    final ExecutionRequests executionRequests =
+        new ExecutionRequestsBuilderElectra(executionRequestsSchema)
+            .deposits(List.of())
+            .withdrawals(List.of())
+            .consolidations(List.of())
+            .build();
 
-   Note: Removed one of the consolidation elements from the list as in Electra the max length for the list is one.
-  */
+    // Hash will only match if elements and order are correct
+    assertThat(codec.hash(executionRequests)).isEqualTo(expectedHash);
+  }
 
+  // Examples taken from
+  // https://github.com/ethereum/execution-apis/blob/main/src/engine/openrpc/methods/payload.yaml
   private final Bytes depositRequestListEncoded =
       Bytes.fromHexString(
-          "0x0096a96086cff07df17668f35f7418ef8798079167e3f4f9b72ecde17b28226137cf454ab1dd20ef5d924786ab3483c2f9003f5102dabe0a27b1746098d1dc17a5d3fbd478759fea9287e4e419b3c3cef20100000000000000b1acdb2c4d3df3f1b8d3bfd33421660df358d84d78d16c4603551935f4b67643373e7eb63dcb16ec359be0ec41fee33b03a16e80745f2374ff1d3c352508ac5d857c6476d3c3bcf7e6ca37427c9209f17be3af5264c0e2132b3dd1156c28b4e9f000000000000000a5c85a60ba2905c215f6a12872e62b1ee037051364244043a5f639aa81b04a204c55e7cc851f29c7c183be253ea1510b001db70c485b6264692f26b8aeaab5b0c384180df8e2184a21a808a3ec8e86ca01000000000000009561731785b48cf1886412234531e4940064584463e96ac63a1a154320227e333fb51addc4a89b7e0d3f862d7c1fd4ea03bd8eb3d8806f1e7daf591cbbbb92b0beb74d13c01617f22c5026b4f9f9f294a8a7c32db895de3b01bee0132c9209e1f100000000000000");
+          "0x96a96086cff07df17668f35f7418ef8798079167e3f4f9b72ecde17b28226137cf454ab1dd20ef5d924786ab3483c2f9003f5102dabe0a27b1746098d1dc17a5d3fbd478759fea9287e4e419b3c3cef20100000000000000b1acdb2c4d3df3f1b8d3bfd33421660df358d84d78d16c4603551935f4b67643373e7eb63dcb16ec359be0ec41fee33b03a16e80745f2374ff1d3c352508ac5d857c6476d3c3bcf7e6ca37427c9209f17be3af5264c0e2132b3dd1156c28b4e9f000000000000000a5c85a60ba2905c215f6a12872e62b1ee037051364244043a5f639aa81b04a204c55e7cc851f29c7c183be253ea1510b001db70c485b6264692f26b8aeaab5b0c384180df8e2184a21a808a3ec8e86ca01000000000000009561731785b48cf1886412234531e4940064584463e96ac63a1a154320227e333fb51addc4a89b7e0d3f862d7c1fd4ea03bd8eb3d8806f1e7daf591cbbbb92b0beb74d13c01617f22c5026b4f9f9f294a8a7c32db895de3b01bee0132c9209e1f100000000000000");
 
   private final DepositRequest depositRequest1 =
       new DepositRequest(
@@ -159,7 +246,7 @@ class ExecutionRequestsDataCodecTest {
 
   private final Bytes withdrawalRequestsListEncoded =
       Bytes.fromHexString(
-          "0x01a94f5374fce5edbc8e2a8697c15331677e6ebf0b85103a5617937691dfeeb89b86a80d5dc9e3c9d3a1a0e7ce311e26e0bb732eabaa47ffa288f0d54de28209a62a7d29d0000000000000000000000000000000000000000000000000000010f698daeed734da114470da559bd4b4c7259e1f7952555241dcbc90cf194a2ef676fc6005f3672fada2a3645edb297a75530100000000000000");
+          "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b85103a5617937691dfeeb89b86a80d5dc9e3c9d3a1a0e7ce311e26e0bb732eabaa47ffa288f0d54de28209a62a7d29d0000000000000000000000000000000000000000000000000000010f698daeed734da114470da559bd4b4c7259e1f7952555241dcbc90cf194a2ef676fc6005f3672fada2a3645edb297a75530100000000000000");
 
   private final WithdrawalRequest withdrawalRequest1 =
       new WithdrawalRequest(
@@ -181,7 +268,7 @@ class ExecutionRequestsDataCodecTest {
 
   private final Bytes consolidationRequestsListEncoded =
       Bytes.fromHexString(
-          "0x02a94f5374fce5edbc8e2a8697c15331677e6ebf0b85103a5617937691dfeeb89b86a80d5dc9e3c9d3a1a0e7ce311e26e0bb732eabaa47ffa288f0d54de28209a62a7d29d098daeed734da114470da559bd4b4c7259e1f7952555241dcbc90cf194a2ef676fc6005f3672fada2a3645edb297a7553");
+          "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b85103a5617937691dfeeb89b86a80d5dc9e3c9d3a1a0e7ce311e26e0bb732eabaa47ffa288f0d54de28209a62a7d29d098daeed734da114470da559bd4b4c7259e1f7952555241dcbc90cf194a2ef676fc6005f3672fada2a3645edb297a7553");
 
   private final ConsolidationRequest consolidationRequest1 =
       new ConsolidationRequest(
