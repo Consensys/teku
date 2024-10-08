@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.crypto.SECP256K1.SecretKey;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.AddressAccessPolicy;
 import org.ethereum.beacon.discovery.DiscoverySystem;
@@ -285,6 +286,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
                   final DiscoveryPeer discoveryPeer =
                       new DiscoveryPeer(
                           (Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1),
+                          nodeRecord.getNodeId(),
                           updAddress,
                           Optional.empty(),
                           currentSchemaDefinitionsSupplier.getAttnetsENRFieldSchema().getDefault(),
@@ -300,6 +302,12 @@ public class DiscV5Service extends Service implements DiscoveryService {
   @Override
   public void updateCustomENRField(final String fieldName, final Bytes value) {
     discoverySystem.updateCustomFieldValue(fieldName, value);
+  }
+
+  @Override
+  public Optional<String> lookupEnr(final UInt256 nodeId) {
+    final Optional<NodeRecord> maybeNodeRecord = discoverySystem.lookupNode(nodeId.toBytes());
+    return maybeNodeRecord.map(NodeRecord::asEnr);
   }
 
   private Stream<NodeRecord> activeNodes() {

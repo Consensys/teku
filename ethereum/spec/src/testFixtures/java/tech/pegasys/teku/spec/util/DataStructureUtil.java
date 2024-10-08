@@ -180,8 +180,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -1017,9 +1017,18 @@ public final class DataStructureUtil {
   }
 
   public SignedBeaconBlock randomSignedBeaconBlockWithCommitments(
+      final UInt64 slot, final int count) {
+    return randomSignedBeaconBlockWithCommitments(slot, randomBlobKzgCommitments(count));
+  }
+
+  public SignedBeaconBlock randomSignedBeaconBlockWithCommitments(
       final SszList<SszKZGCommitment> commitments) {
+    return randomSignedBeaconBlockWithCommitments(randomUInt64(), commitments);
+  }
+
+  public SignedBeaconBlock randomSignedBeaconBlockWithCommitments(
+      final UInt64 slot, final SszList<SszKZGCommitment> commitments) {
     final UInt64 proposerIndex = randomUInt64();
-    final UInt64 slot = randomUInt64();
     final Bytes32 stateRoot = randomBytes32();
     final Bytes32 parentRoot = randomBytes32();
 
@@ -2522,10 +2531,15 @@ public final class DataStructureUtil {
         .create(executionAddress, validator.getPublicKey(), amount);
   }
 
-  public PendingBalanceDeposit randomPendingBalanceDeposit() {
+  public PendingDeposit randomPendingDeposit() {
     return getElectraSchemaDefinitions(randomSlot())
-        .getPendingBalanceDepositSchema()
-        .create(SszUInt64.of(randomUInt64()), SszUInt64.of(randomUInt64()));
+        .getPendingDepositSchema()
+        .create(
+            randomSszPublicKey(),
+            SszBytes32.of(randomEth1WithdrawalCredentials()),
+            SszUInt64.of(randomUInt64()),
+            randomSszSignature(),
+            SszUInt64.of(randomUInt64()));
   }
 
   public ConsolidationRequest randomConsolidationRequest() {

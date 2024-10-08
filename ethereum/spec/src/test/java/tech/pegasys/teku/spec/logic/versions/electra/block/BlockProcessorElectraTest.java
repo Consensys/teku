@@ -140,8 +140,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
     assertThat(state.getDepositRequestsStartIndex())
         .isEqualTo(UInt64.valueOf(firstElectraDepositRequestIndex));
     // verify validators have been added to the state
-    assertThat(state.getValidators().size())
-        .isEqualTo(firstElectraDepositRequestIndex + depositRequestsCount);
+    assertThat(state.getPendingDeposits()).hasSize(depositRequestsCount);
   }
 
   @Test
@@ -429,10 +428,9 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
     assertEquals(knownValidator, postState.getValidators().get(originalValidatorRegistrySize - 1));
     // as of electra, the balance increase is in the queue, and yet to be applied to the validator.
     assertEquals(amount, postState.getBalances().getElement(originalValidatorBalancesSize - 1));
-    assertThat(BeaconStateElectra.required(postState).getPendingBalanceDeposits().get(0).getIndex())
-        .isEqualTo(originalValidatorBalancesSize - 1);
-    assertThat(
-            BeaconStateElectra.required(postState).getPendingBalanceDeposits().get(0).getAmount())
+    assertThat(BeaconStateElectra.required(postState).getPendingDeposits().get(0).getPublicKey())
+        .isEqualTo(postState.getValidators().get(originalValidatorBalancesSize - 1).getPublicKey());
+    assertThat(BeaconStateElectra.required(postState).getPendingDeposits().get(0).getAmount())
         .isEqualTo(UInt64.THIRTY_TWO_ETH);
   }
 

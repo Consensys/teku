@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,10 +31,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class BellatrixExecutionClientHandlerTest extends ExecutionHandlerClientTest {
@@ -43,7 +46,6 @@ class BellatrixExecutionClientHandlerTest extends ExecutionHandlerClientTest {
     dataStructureUtil = new DataStructureUtil(spec);
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
   @Test
   void engineGetPayload_shouldCallGetPayloadV1() {
     final ExecutionClientHandler handler = getHandler();
@@ -54,35 +56,36 @@ class BellatrixExecutionClientHandlerTest extends ExecutionHandlerClientTest {
             dataStructureUtil.randomForkChoiceState(false),
             dataStructureUtil.randomPayloadBuildingAttributes(false));
 
+    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
+    final ExecutionPayloadV1 responseData =
+        ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload);
     final SafeFuture<Response<ExecutionPayloadV1>> dummyResponse =
-        SafeFuture.completedFuture(
-            new Response<>(
-                ExecutionPayloadV1.fromInternalExecutionPayload(
-                    dataStructureUtil.randomExecutionPayload())));
+        SafeFuture.completedFuture(new Response<>(responseData));
     when(executionEngineClient.getPayloadV1(context.getPayloadId())).thenReturn(dummyResponse);
 
-    handler.engineGetPayload(context, slot);
+    final SafeFuture<GetPayloadResponse> future = handler.engineGetPayload(context, slot);
     verify(executionEngineClient).getPayloadV1(context.getPayloadId());
+    assertThat(future).isCompletedWithValue(new GetPayloadResponse(executionPayload));
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
   @Test
   void engineNewPayload_shouldCallNewPayloadV1() {
     final ExecutionClientHandler handler = getHandler();
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
     final NewPayloadRequest newPayloadRequest = new NewPayloadRequest(payload);
     final ExecutionPayloadV1 payloadV1 = ExecutionPayloadV1.fromInternalExecutionPayload(payload);
+    final PayloadStatusV1 responseData =
+        new PayloadStatusV1(
+            ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
-        SafeFuture.completedFuture(
-            new Response<>(
-                new PayloadStatusV1(
-                    ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null)));
+        SafeFuture.completedFuture(new Response<>(responseData));
     when(executionEngineClient.newPayloadV1(payloadV1)).thenReturn(dummyResponse);
-    handler.engineNewPayload(newPayloadRequest);
+    final SafeFuture<PayloadStatus> future =
+        handler.engineNewPayload(newPayloadRequest, UInt64.ZERO);
     verify(executionEngineClient).newPayloadV1(payloadV1);
+    assertThat(future).isCompletedWithValue(responseData.asInternalExecutionPayload());
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
   @Test
   void engineForkChoiceUpdated_shouldCallEngineForkChoiceUpdatedV1() {
     final ExecutionClientHandler handler = getHandler();
@@ -101,16 +104,18 @@ class BellatrixExecutionClientHandlerTest extends ExecutionHandlerClientTest {
             dataStructureUtil.randomBytes32());
     final Optional<PayloadAttributesV1> payloadAttributes =
         PayloadAttributesV1.fromInternalPayloadBuildingAttributes(Optional.of(attributes));
+    final ForkChoiceUpdatedResult responseData =
+        new ForkChoiceUpdatedResult(
+            new PayloadStatusV1(
+                ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), ""),
+            dataStructureUtil.randomBytes8());
     final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
-        SafeFuture.completedFuture(
-            new Response<>(
-                new ForkChoiceUpdatedResult(
-                    new PayloadStatusV1(
-                        ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), ""),
-                    dataStructureUtil.randomBytes8())));
+        SafeFuture.completedFuture(new Response<>(responseData));
     when(executionEngineClient.forkChoiceUpdatedV1(forkChoiceStateV1, payloadAttributes))
         .thenReturn(dummyResponse);
-    handler.engineForkChoiceUpdated(forkChoiceState, Optional.of(attributes));
+    final SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> future =
+        handler.engineForkChoiceUpdated(forkChoiceState, Optional.of(attributes));
     verify(executionEngineClient).forkChoiceUpdatedV1(forkChoiceStateV1, payloadAttributes);
+    assertThat(future).isCompletedWithValue(responseData.asInternalExecutionPayload());
   }
 }

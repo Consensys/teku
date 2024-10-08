@@ -25,11 +25,13 @@ public class NewPayloadRequest {
   private final ExecutionPayload executionPayload;
   private final Optional<List<VersionedHash>> versionedHashes;
   private final Optional<Bytes32> parentBeaconBlockRoot;
+  private final Optional<Bytes32> executionRequestsHash;
 
   public NewPayloadRequest(final ExecutionPayload executionPayload) {
     this.executionPayload = executionPayload;
     this.versionedHashes = Optional.empty();
     this.parentBeaconBlockRoot = Optional.empty();
+    this.executionRequestsHash = Optional.empty();
   }
 
   public NewPayloadRequest(
@@ -39,6 +41,18 @@ public class NewPayloadRequest {
     this.executionPayload = executionPayload;
     this.versionedHashes = Optional.of(versionedHashes);
     this.parentBeaconBlockRoot = Optional.of(parentBeaconBlockRoot);
+    this.executionRequestsHash = Optional.empty();
+  }
+
+  public NewPayloadRequest(
+      final ExecutionPayload executionPayload,
+      final List<VersionedHash> versionedHashes,
+      final Bytes32 parentBeaconBlockRoot,
+      final Bytes32 executionRequestsHash) {
+    this.executionPayload = executionPayload;
+    this.versionedHashes = Optional.of(versionedHashes);
+    this.parentBeaconBlockRoot = Optional.of(parentBeaconBlockRoot);
+    this.executionRequestsHash = Optional.of(executionRequestsHash);
   }
 
   public ExecutionPayload getExecutionPayload() {
@@ -53,6 +67,10 @@ public class NewPayloadRequest {
     return parentBeaconBlockRoot;
   }
 
+  public Optional<Bytes32> getExecutionRequestsHash() {
+    return executionRequestsHash;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -64,12 +82,14 @@ public class NewPayloadRequest {
     final NewPayloadRequest that = (NewPayloadRequest) o;
     return Objects.equals(executionPayload, that.executionPayload)
         && Objects.equals(versionedHashes, that.versionedHashes)
-        && Objects.equals(parentBeaconBlockRoot, that.parentBeaconBlockRoot);
+        && Objects.equals(parentBeaconBlockRoot, that.parentBeaconBlockRoot)
+        && Objects.equals(executionRequestsHash, that.executionRequestsHash);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(executionPayload, versionedHashes, parentBeaconBlockRoot);
+    return Objects.hash(
+        executionPayload, versionedHashes, parentBeaconBlockRoot, executionRequestsHash);
   }
 
   @Override
@@ -78,6 +98,7 @@ public class NewPayloadRequest {
         .add("executionPayload", executionPayload)
         .add("versionedHashes", versionedHashes)
         .add("parentBeaconBlockRoot", parentBeaconBlockRoot)
+        .add("executionRequestsHash", executionRequestsHash)
         .toString();
   }
 }

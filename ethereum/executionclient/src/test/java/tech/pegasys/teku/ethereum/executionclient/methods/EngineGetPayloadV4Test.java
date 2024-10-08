@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.InvalidRemoteResponseException;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -142,7 +142,7 @@ class EngineGetPayloadV4Test {
     return SafeFuture.completedFuture(
         new Response<>(
             new GetPayloadV4Response(
-                ExecutionPayloadV4.fromInternalExecutionPayload(executionPayload),
+                ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload),
                 blockValue,
                 BlobsBundleV1.fromInternalBlobsBundle(blobsBundle),
                 false)));

@@ -46,7 +46,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   @VisibleForTesting static final String STORAGE_MODE_PATH = "data-storage-mode.txt";
   @VisibleForTesting static final String METADATA_FILENAME = "metadata.yml";
   @VisibleForTesting static final String NETWORK_FILENAME = "network.yml";
-
   private final MetricsSystem metricsSystem;
   private final File dataDirectory;
   private final int maxKnownNodeCacheSize;

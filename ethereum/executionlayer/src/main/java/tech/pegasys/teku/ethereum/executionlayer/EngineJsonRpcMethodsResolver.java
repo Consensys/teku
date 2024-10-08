@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
+import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
@@ -24,10 +25,19 @@ public interface EngineJsonRpcMethodsResolver {
   <T> EngineJsonRpcMethod<T> getMethod(
       EngineApiMethod method, Supplier<SpecMilestone> milestoneSupplier, Class<T> resultType);
 
+  <T> EngineJsonRpcMethod<List<T>> getListMethod(
+      EngineApiMethod method, Supplier<SpecMilestone> milestoneSupplier, Class<T> resultType);
+
   /**
    * Get CL capabilities required for the <a
    * href="https://github.com/ethereum/execution-apis/blob/main/src/engine/common.md#engine_exchangecapabilities">engine_exchangeCapabilities</a>
    * request
    */
   Set<String> getCapabilities();
+
+  /**
+   * TODO this optionality notion should be removed once all ELs implement the engine_getBlobsV1 RPC
+   * method. It has been added to ensure a softer and better logging when the method is missing only
+   */
+  Set<String> getOptionalCapabilities();
 }

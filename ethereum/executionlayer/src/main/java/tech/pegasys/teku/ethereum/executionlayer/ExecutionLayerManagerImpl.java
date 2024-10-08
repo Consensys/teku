@@ -47,6 +47,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
@@ -61,6 +62,7 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
@@ -207,15 +209,25 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   @Override
-  public SafeFuture<PayloadStatus> engineNewPayload(final NewPayloadRequest newPayloadRequest) {
+  public SafeFuture<PayloadStatus> engineNewPayload(
+      final NewPayloadRequest newPayloadRequest, final UInt64 slot) {
     LOG.trace("calling engineNewPayload(newPayloadRequest={})", newPayloadRequest);
-    return executionClientHandler.engineNewPayload(newPayloadRequest);
+    return executionClientHandler.engineNewPayload(newPayloadRequest, slot);
   }
 
   @Override
   public SafeFuture<List<ClientVersion>> engineGetClientVersion(final ClientVersion clientVersion) {
     LOG.trace("calling engineGetClientVersion(clientVersion={})", clientVersion);
     return executionClientHandler.engineGetClientVersion(clientVersion);
+  }
+
+  @Override
+  public SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobs(
+      final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
+    LOG.trace("calling engineGetBlobs(blobVersionedHashes={}, slot={})", blobVersionedHashes, slot);
+    return executionClientHandler
+        .engineGetBlobs(blobVersionedHashes, slot)
+        .thenApply(blobsAndProofs -> blobsAndProofs.stream().map(Optional::ofNullable).toList());
   }
 
   @Override

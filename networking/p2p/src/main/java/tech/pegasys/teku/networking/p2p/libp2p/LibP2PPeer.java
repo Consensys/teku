@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.p2p.libp2p;
 import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
+import io.libp2p.core.crypto.PubKey;
 import io.libp2p.protocol.Identify;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,7 @@ public class LibP2PPeer implements Peer {
   private final AtomicBoolean connected = new AtomicBoolean(true);
   private final MultiaddrPeerAddress peerAddress;
   private final PeerId peerId;
+  private final PubKey pubKey;
   private volatile PeerClientType peerClientType = PeerClientType.UNKNOWN;
   private volatile Optional<String> maybeAgentString = Optional.empty();
 
@@ -73,6 +75,7 @@ public class LibP2PPeer implements Peer {
     this.reputationManager = reputationManager;
     this.peerScoreFunction = peerScoreFunction;
     this.peerId = connection.secureSession().getRemoteId();
+    this.pubKey = connection.secureSession().getRemotePubKey();
 
     final NodeId nodeId = new LibP2PNodeId(peerId);
     peerAddress = new MultiaddrPeerAddress(nodeId, connection.remoteAddress());
@@ -108,6 +111,10 @@ public class LibP2PPeer implements Peer {
 
   public Optional<String> getMaybeAgentString() {
     return maybeAgentString;
+  }
+
+  public PubKey getPubKey() {
+    return pubKey;
   }
 
   @Override

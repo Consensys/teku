@@ -358,7 +358,7 @@ class ForkChoiceTest {
     // let's prepare a mocked EL with lazy newPayload
     executionLayer = mock(ExecutionLayerChannelStub.class);
     final SafeFuture<PayloadStatus> payloadStatusSafeFuture = new SafeFuture<>();
-    when(executionLayer.engineNewPayload(any())).thenReturn(payloadStatusSafeFuture);
+    when(executionLayer.engineNewPayload(any(), any())).thenReturn(payloadStatusSafeFuture);
 
     // let's import a valid consensus block
     final SafeFuture<BlockImportResult> importResult =

@@ -15,23 +15,35 @@ package tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
+import static tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor.depositSignatureVerifier;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.impl.BlsException;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
@@ -40,10 +52,9 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProce
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
-import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.logic.versions.capella.statetransition.epoch.EpochProcessorCapella;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
@@ -51,12 +62,11 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
 
   private final UInt64 minActivationBalance;
   private final BeaconStateAccessorsElectra stateAccessorsElectra;
-  private final BeaconStateMutatorsElectra stateMutatorsElectra;
   private final SchemaDefinitionsElectra schemaDefinitionsElectra;
 
   public EpochProcessorElectra(
-      final SpecConfigCapella specConfig,
-      final MiscHelpersAltair miscHelpers,
+      final SpecConfigElectra specConfig,
+      final MiscHelpersElectra miscHelpers,
       final BeaconStateAccessorsAltair beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
       final ValidatorsUtil validatorsUtil,
@@ -77,7 +87,6 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
     this.minActivationBalance =
         specConfig.toVersionElectra().orElseThrow().getMinActivationBalance();
     this.stateAccessorsElectra = BeaconStateAccessorsElectra.required(beaconStateAccessors);
-    this.stateMutatorsElectra = BeaconStateMutatorsElectra.required(beaconStateMutators);
     this.schemaDefinitionsElectra = SchemaDefinitionsElectra.required(schemaDefinitions);
   }
 
@@ -158,7 +167,7 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
     final UInt64 hysteresisDownwardMultiplier = specConfig.getHysteresisDownwardMultiplier();
     final UInt64 hysteresisQuotient = specConfig.getHysteresisQuotient();
     final UInt64 effectiveBalanceIncrement = specConfig.getEffectiveBalanceIncrement();
-    for (int index = 0; index < validators.size(); index++) {
+    for (int index = 0; index < statuses.size(); index++) {
       final ValidatorStatus status = statuses.get(index);
       final UInt64 balance = balances.getElement(index);
 
@@ -186,73 +195,173 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
     }
   }
 
-  /** process_pending_balance_deposits */
+  /** apply_pending_deposit */
   @Override
-  public void processPendingBalanceDeposits(final MutableBeaconState state) {
+  public void applyPendingDeposits(final MutableBeaconState state, final PendingDeposit deposit) {
+    validatorsUtil
+        .getValidatorIndex(state, deposit.getPublicKey())
+        .ifPresentOrElse(
+            validatorIndex ->
+                beaconStateMutators.increaseBalance(state, validatorIndex, deposit.getAmount()),
+            () -> {
+              if (depositSignatureIsValid(deposit)) {
+                addValidatorToRegistry(
+                    state,
+                    deposit.getPublicKey(),
+                    deposit.getWithdrawalCredentials(),
+                    deposit.getAmount());
+              }
+            });
+  }
+
+  // TODO-lucas Duplicates method depositSignatureIsValid from BlockProcessor
+  /** is_valid_deposit_signature */
+  public boolean depositSignatureIsValid(final PendingDeposit deposit) {
+    try {
+      return depositSignatureVerifier.verify(
+          deposit.getPublicKey(),
+          computeDepositSigningRoot(
+              deposit.getPublicKey(), deposit.getWithdrawalCredentials(), deposit.getAmount()),
+          deposit.getSignature());
+    } catch (final BlsException e) {
+      return false;
+    }
+  }
+
+  private Bytes computeDepositSigningRoot(
+      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials, final UInt64 amount) {
+    final Bytes32 domain = miscHelpers.computeDomain(Domain.DEPOSIT);
+    final DepositMessage depositMessage = new DepositMessage(pubkey, withdrawalCredentials, amount);
+    return miscHelpers.computeSigningRoot(depositMessage, domain);
+  }
+
+  // TODO-lucas Duplicates method addValidatorToRegistry from BlockProcessor
+  /** add_validator_to_registry */
+  public void addValidatorToRegistry(
+      final MutableBeaconState state,
+      final BLSPublicKey pubkey,
+      final Bytes32 withdrawalCredentials,
+      final UInt64 amount) {
+    final Validator validator = getValidatorFromDeposit(pubkey, withdrawalCredentials, amount);
+
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
-    final UInt64 nextEpoch = stateAccessorsElectra.getCurrentEpoch(state).plus(1L);
+    stateElectra.getValidators().append(validator);
+    stateElectra.getBalances().appendElement(amount);
+    stateElectra.getPreviousEpochParticipation().append(SszByte.ZERO);
+    stateElectra.getCurrentEpochParticipation().append(SszByte.ZERO);
+    stateElectra.getInactivityScores().append(SszUInt64.ZERO);
+  }
+
+  /** get_validator_from_deposit */
+  private Validator getValidatorFromDeposit(
+      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials, final UInt64 amount) {
+    final Validator validator =
+        new Validator(
+            pubkey,
+            withdrawalCredentials,
+            ZERO,
+            false,
+            FAR_FUTURE_EPOCH,
+            FAR_FUTURE_EPOCH,
+            FAR_FUTURE_EPOCH,
+            FAR_FUTURE_EPOCH);
+
+    final UInt64 maxEffectiveBalance =
+        stateAccessorsElectra.getValidatorMaxEffectiveBalance(validator);
+    final UInt64 validatorEffectiveBalance =
+        amount
+            .minusMinZero(amount.mod(specConfig.getEffectiveBalanceIncrement()))
+            .min(maxEffectiveBalance);
+
+    return validator.withEffectiveBalance(validatorEffectiveBalance);
+  }
+
+  /** process_pending_deposits */
+  @Override
+  public void processPendingDeposits(final MutableBeaconState state) {
+    final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
+
+    final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(UInt64.ONE);
     final UInt64 availableForProcessing =
         stateElectra
             .getDepositBalanceToConsume()
             .plus(stateAccessorsElectra.getActivationExitChurnLimit(stateElectra));
-
     UInt64 processedAmount = UInt64.ZERO;
     int nextDepositIndex = 0;
-    final List<PendingBalanceDeposit> depositsToPostpone = new ArrayList<>();
+    final List<PendingDeposit> depositsToPostpone = new ArrayList<>();
+    boolean isChurnLimitReached = false;
+    final UInt64 finalizedSlot =
+        miscHelpers.computeStartSlotAtEpoch(stateElectra.getFinalizedCheckpoint().getEpoch());
 
-    final SszList<PendingBalanceDeposit> pendingBalanceDeposits =
-        stateElectra.getPendingBalanceDeposits();
-    for (final PendingBalanceDeposit deposit : pendingBalanceDeposits) {
-      final Validator validator = state.getValidators().get(deposit.getIndex());
-
-      if (validator.getExitEpoch().isLessThan(FAR_FUTURE_EPOCH)) {
-        // Validator is exiting, postpone the deposit until after withdrawable epoch
-        if (nextEpoch.isLessThanOrEqualTo(validator.getWithdrawableEpoch())) {
-          depositsToPostpone.add(deposit);
-        } else {
-          // Deposited balance will never become active. Increase balance but do not consume churn
-          stateMutatorsElectra.increaseBalance(state, deposit.getIndex(), deposit.getAmount());
-        }
-      } else {
-        // Validator is not exiting, attempt to process deposit
-        if (processedAmount.plus(deposit.getAmount()).isGreaterThan(availableForProcessing)) {
-          break;
-        }
-
-        // Deposit fits in the churn, process it. Increase balance and consume churn.
-        stateMutatorsElectra.increaseBalance(state, deposit.getIndex(), deposit.getAmount());
-        processedAmount = processedAmount.plus(deposit.getAmount());
+    for (final PendingDeposit deposit : stateElectra.getPendingDeposits()) {
+      // Do not process deposit requests if Eth1 bridge deposits are not yet applied.
+      final boolean isDepositRequest = deposit.getSlot().isGreaterThan(GENESIS_SLOT);
+      final boolean hasPendingEth1BridgeDeposits =
+          stateElectra
+              .getEth1DepositIndex()
+              .isLessThan(stateElectra.getDepositRequestsStartIndex());
+      if (isDepositRequest && hasPendingEth1BridgeDeposits) {
+        break;
       }
 
-      // Regardless of how the deposit was handled, we move on in the queue.
-      nextDepositIndex++;
+      // Check if deposit has been finalized, otherwise stop processing
+      if (deposit.getSlot().isGreaterThan(finalizedSlot)) {
+        break;
+      }
+
+      // Check if number of processed deposits has not reached the limit, otherwise, stop processing
+      if (nextDepositIndex
+          >= SpecConfigElectra.required(specConfig).getMaxPendingDepositsPerEpoch()) {
+        break;
+      }
+
+      final Optional<Integer> maybeValidatorIndex =
+          validatorsUtil.getValidatorIndex(state, deposit.getPublicKey());
+      boolean isValidatorExited = false;
+      boolean isValidatorWithdrawn = false;
+      if (maybeValidatorIndex.isPresent()) {
+        Validator validator = state.getValidators().get(maybeValidatorIndex.get());
+        isValidatorExited = validator.getExitEpoch().isLessThan(FAR_FUTURE_EPOCH);
+        isValidatorWithdrawn = validator.getWithdrawableEpoch().isLessThan(nextEpoch);
+      }
+
+      if (isValidatorWithdrawn) {
+        // Deposited balance will never become active. Increase balance but do not consume churn
+        applyPendingDeposits(state, deposit);
+      } else if (isValidatorExited) {
+        // Validator is exiting, postpone the deposit until after withdrawable epoch
+        depositsToPostpone.add(deposit);
+      } else {
+        // Check if deposit fits in the churn, otherwise, do no more deposit processing in this
+        // epoch
+        isChurnLimitReached =
+            processedAmount.plus(deposit.getAmount()).isGreaterThan(availableForProcessing);
+        if (isChurnLimitReached) {
+          break;
+        }
+        // Consume churn and apply deposit
+        processedAmount = processedAmount.plus(deposit.getAmount());
+        applyPendingDeposits(state, deposit);
+      }
+
+      // Regardless of how the deposit was handled, we move on in the queue
+      nextDepositIndex += 1;
     }
 
-    // Updating state.pending_balance_deposits (removing processed deposits)
-    if (!pendingBalanceDeposits.isEmpty()) {
-      final List<PendingBalanceDeposit> newList =
-          pendingBalanceDeposits.asList().subList(nextDepositIndex, pendingBalanceDeposits.size());
-      stateElectra.setPendingBalanceDeposits(
-          schemaDefinitionsElectra.getPendingBalanceDepositsSchema().createFromElements(newList));
+    final SszMutableList<PendingDeposit> pendingDeposits = stateElectra.getPendingDeposits();
+    final ArrayList<PendingDeposit> newPendingDeposits = new ArrayList<>();
+    IntStream.range(nextDepositIndex, pendingDeposits.size())
+        .sorted()
+        .forEach(index -> newPendingDeposits.add(pendingDeposits.get(index)));
+    newPendingDeposits.addAll(depositsToPostpone);
+    stateElectra.setPendingDeposits(
+        schemaDefinitionsElectra.getPendingDepositsSchema().createFromElements(newPendingDeposits));
+
+    // Accumulate churn only if the churn limit has been hit
+    if (isChurnLimitReached) {
       stateElectra.setDepositBalanceToConsume(availableForProcessing.minusMinZero(processedAmount));
-    }
-
-    // Updating deposit_balance_to_consume
-    if (stateElectra.getPendingBalanceDeposits().isEmpty()) {
-      stateElectra.setDepositBalanceToConsume(UInt64.ZERO);
     } else {
-      stateElectra.setDepositBalanceToConsume(availableForProcessing.minusMinZero(processedAmount));
-    }
-
-    // Adding postponed deposits to pending_balance_deposits
-    if (!depositsToPostpone.isEmpty()) {
-      final ArrayList<PendingBalanceDeposit> newPendingDeposits = new ArrayList<>();
-      newPendingDeposits.addAll(stateElectra.getPendingBalanceDeposits().asList());
-      newPendingDeposits.addAll(depositsToPostpone);
-      stateElectra.setPendingBalanceDeposits(
-          schemaDefinitionsElectra
-              .getPendingBalanceDepositsSchema()
-              .createFromElements(newPendingDeposits));
+      stateElectra.setDepositBalanceToConsume(UInt64.ZERO);
     }
   }
 
@@ -276,8 +385,6 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
         break;
       }
 
-      stateMutatorsElectra.switchToCompoundingValidator(
-          stateElectra, pendingConsolidation.getTargetIndex());
       final UInt64 activeBalance =
           stateAccessorsElectra.getActiveBalance(state, pendingConsolidation.getSourceIndex());
       beaconStateMutators.decreaseBalance(

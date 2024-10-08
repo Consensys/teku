@@ -658,7 +658,7 @@ public class BlockManagerTest {
 
     // let's delay EL so importResult SafeFuture doesn't complete
     final SafeFuture<PayloadStatus> payloadStatusSafeFuture = new SafeFuture<>();
-    doReturn(payloadStatusSafeFuture).when(executionLayer).engineNewPayload(any());
+    doReturn(payloadStatusSafeFuture).when(executionLayer).engineNewPayload(any(), any());
 
     final Optional<ChainHead> preImportHead = localRecentChainData.getChainHead();
 

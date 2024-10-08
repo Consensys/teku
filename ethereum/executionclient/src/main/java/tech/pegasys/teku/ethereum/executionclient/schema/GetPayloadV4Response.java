@@ -21,9 +21,12 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexDeserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexSerializer;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 
 public class GetPayloadV4Response {
-  public final ExecutionPayloadV4 executionPayload;
+  public final ExecutionPayloadV3 executionPayload;
 
   @JsonSerialize(using = UInt256AsHexSerializer.class)
   @JsonDeserialize(using = UInt256AsHexDeserializer.class)
@@ -34,7 +37,7 @@ public class GetPayloadV4Response {
   public final boolean shouldOverrideBuilder;
 
   public GetPayloadV4Response(
-      final @JsonProperty("executionPayload") ExecutionPayloadV4 executionPayload,
+      final @JsonProperty("executionPayload") ExecutionPayloadV3 executionPayload,
       final @JsonProperty("blockValue") UInt256 blockValue,
       final @JsonProperty("blobsBundle") BlobsBundleV1 blobsBundle,
       final @JsonProperty("shouldOverrideBuilder") boolean shouldOverrideBuilder) {
@@ -45,5 +48,14 @@ public class GetPayloadV4Response {
     this.blockValue = blockValue;
     this.blobsBundle = blobsBundle;
     this.shouldOverrideBuilder = shouldOverrideBuilder;
+  }
+
+  public GetPayloadResponse asInternalGetPayloadResponse(
+      final ExecutionPayloadSchema<?> executionPayloadSchema, final BlobSchema blobSchema) {
+    return new GetPayloadResponse(
+        executionPayload.asInternalExecutionPayload(executionPayloadSchema),
+        blockValue,
+        blobsBundle.asInternalBlobsBundle(blobSchema),
+        shouldOverrideBuilder);
   }
 }
