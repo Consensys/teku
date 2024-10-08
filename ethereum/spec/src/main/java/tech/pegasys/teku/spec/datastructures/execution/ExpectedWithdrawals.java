@@ -18,7 +18,6 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -131,10 +130,11 @@ public class ExpectedWithdrawals {
       final MiscHelpersElectra miscHelpers,
       final SpecConfigElectra specConfig,
       final PredicatesElectra predicates) {
-    final Pair<List<Withdrawal>, Integer> pair =
+    final WithdrawalSummary expectedPendingPartialWithdrawals =
         getPendingPartialWithdrawals(preState, schemaDefinitions, miscHelpers, specConfig);
-    final List<Withdrawal> partialPendingWithdrawals = pair.getLeft();
-    final int partialWithdrawalsCount = pair.getRight();
+    final List<Withdrawal> partialPendingWithdrawals =
+        expectedPendingPartialWithdrawals.withdrawalList();
+    final int partialWithdrawalsCount = expectedPendingPartialWithdrawals.partialWithdrawalCount();
     final List<Withdrawal> withdrawals =
         getExpectedWithdrawals(
             preState,
@@ -154,7 +154,7 @@ public class ExpectedWithdrawals {
     return partialWithdrawalCount;
   }
 
-  private static Pair<List<Withdrawal>, Integer> getPendingPartialWithdrawals(
+  private static WithdrawalSummary getPendingPartialWithdrawals(
       final BeaconStateElectra preState,
       final SchemaDefinitionsElectra schemaDefinitions,
       final MiscHelpersElectra miscHelpers,
@@ -200,7 +200,7 @@ public class ExpectedWithdrawals {
       }
       partialWithdrawalsCount++;
     }
-    return Pair.of(partialWithdrawals, partialWithdrawalsCount);
+    return new WithdrawalSummary(partialWithdrawals, partialWithdrawalsCount);
   }
 
   // get_expected_withdrawals
@@ -375,4 +375,6 @@ public class ExpectedWithdrawals {
   private static UInt64 nextWithdrawalAfter(final List<Withdrawal> partialWithdrawals) {
     return partialWithdrawals.getLast().getIndex().increment();
   }
+
+  public record WithdrawalSummary(List<Withdrawal> withdrawalList, int partialWithdrawalCount) {}
 }
