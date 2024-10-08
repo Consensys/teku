@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -30,10 +29,7 @@ import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
-import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.Bytes48KeyDeserializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.BLSPublicKeyDeserializer;
-import tech.pegasys.teku.provider.BLSPublicKeySerializer;
 import tech.pegasys.teku.validator.client.ProposerConfig;
 import tech.pegasys.teku.validator.client.ProposerConfig.BuilderConfig;
 import tech.pegasys.teku.validator.client.ProposerConfig.Config;
@@ -162,12 +158,7 @@ public class ProposerConfigLoaderTest {
     final ProposerConfigLoader loader = new ProposerConfigLoader();
     final ObjectMapper objectMapper = loader.getObjectMapper();
 
-    final SimpleModule module =
-        new SimpleModule("ProposerConfigLoader", new Version(1, 0, 0, null, null, null));
-    module.addDeserializer(BLSPublicKey.class, new BLSPublicKeyDeserializer());
-    module.addSerializer(BLSPublicKey.class, new BLSPublicKeySerializer());
-    module.addKeyDeserializer(Bytes48.class, new Bytes48KeyDeserializer());
-
+    final SimpleModule module = new SimpleModule("ProposerConfigLoader");
     assertThat(objectMapper.getRegisteredModuleIds()).contains(module.getTypeId());
 
     // Can deserialize BLSPublicKey
