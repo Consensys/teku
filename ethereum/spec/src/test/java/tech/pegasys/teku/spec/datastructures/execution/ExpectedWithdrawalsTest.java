@@ -137,4 +137,32 @@ class ExpectedWithdrawalsTest {
     assertThat(mutableBeaconStateElectra.getNextWithdrawalIndex()).isEqualTo(UInt64.ONE);
     assertThat(mutableBeaconStateElectra.getValidators().size()).isEqualTo(3);
   }
+
+  @Test
+  void electraPendingPartialCountsSkippedWithdrawals() {
+    spec = TestSpecFactory.createMinimalElectra();
+    dataStructureUtil = new DataStructureUtil(spec);
+    final SpecConfigElectra specConfigElectra =
+        SpecConfigElectra.required(spec.getGenesisSpec().getConfig());
+    final UInt64 electraMaxBalance = specConfigElectra.getMaxEffectiveBalance();
+    final long partialWithdrawalBalance = 10241024L;
+
+    final BeaconStateElectra preState =
+        BeaconStateElectra.required(
+            new BeaconStateTestBuilder(dataStructureUtil)
+                .activeConsolidatingValidator(electraMaxBalance.plus(partialWithdrawalBalance))
+                .activeConsolidatingValidator(electraMaxBalance.plus(partialWithdrawalBalance + 1))
+                .activeConsolidatingValidator(electraMaxBalance.plus(partialWithdrawalBalance + 2))
+                .pendingPartialWithdrawal(0, electraMaxBalance.plus(partialWithdrawalBalance))
+                .pendingPartialWithdrawal(
+                    1, electraMaxBalance.plus(partialWithdrawalBalance).plus(3))
+                .pendingPartialWithdrawal(
+                    2, electraMaxBalance.plus(partialWithdrawalBalance).plus(3))
+                .build());
+
+    final ExpectedWithdrawals withdrawals =
+        spec.getBlockProcessor(preState.getSlot()).getExpectedWithdrawals(preState);
+
+    assertThat(withdrawals.getPartialWithdrawalCount()).isEqualTo(2);
+  }
 }
