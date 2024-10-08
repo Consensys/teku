@@ -17,13 +17,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.Version;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.io.Resources;
 import java.net.URL;
+import java.util.Map;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.Bytes48KeyDeserializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.provider.BLSPublicKeyDeserializer;
+import tech.pegasys.teku.provider.BLSPublicKeySerializer;
 import tech.pegasys.teku.validator.client.ProposerConfig;
 import tech.pegasys.teku.validator.client.ProposerConfig.BuilderConfig;
 import tech.pegasys.teku.validator.client.ProposerConfig.Config;
@@ -145,6 +155,45 @@ public class ProposerConfigLoaderTest {
         .hasRootCauseInstanceOf(IllegalStateException.class)
         .hasRootCauseMessage(
             "\"publicKey\" is not allowed in \"default_config.builder.registrationOverrides\"");
+  }
+
+  @Test
+  public void shouldRegisterRequiredSerializersAndDeserializers() throws JsonProcessingException {
+    final ProposerConfigLoader loader = new ProposerConfigLoader();
+    final ObjectMapper objectMapper = loader.getObjectMapper();
+
+    final SimpleModule module =
+        new SimpleModule("ProposerConfigLoader", new Version(1, 0, 0, null, null, null));
+    module.addDeserializer(BLSPublicKey.class, new BLSPublicKeyDeserializer());
+    module.addSerializer(BLSPublicKey.class, new BLSPublicKeySerializer());
+    module.addKeyDeserializer(Bytes48.class, new Bytes48KeyDeserializer());
+
+    assertThat(objectMapper.getRegisteredModuleIds()).contains(module.getTypeId());
+
+    // Can deserialize BLSPublicKey
+    final String pubKey =
+        "0xa057816155ad77931185101128655c0191bd0214c201ca48ed887f6c4c6adf334070efcd75140eada5ac83a92506dd7a";
+    final String pubKeyJson = String.format("\"%s\"", pubKey);
+    final BLSPublicKey pubKeyFromJson = objectMapper.readValue(pubKeyJson, BLSPublicKey.class);
+    assertThat(pubKeyFromJson).isNotNull();
+    assertThat(pubKeyFromJson.toString()).isEqualTo(pubKey);
+
+    // Can serialize BLSPublicKey
+    final BLSPublicKey blsPubKey = BLSPublicKey.fromHexString(pubKey);
+    final String jsonFromPubKey = objectMapper.writeValueAsString(blsPubKey);
+    assertThat(jsonFromPubKey).isEqualTo(pubKeyJson);
+
+    // Can deserialize Bytes48 map key
+    final Bytes48 key = Bytes48.fromHexString(pubKey);
+    final Map<Bytes48, String> originalMap = Map.of(key, "value");
+    // Serialize the map to JSON
+    final String json = objectMapper.writeValueAsString(originalMap);
+    // Deserialize the JSON back to a map
+    final Map<Bytes48, String> deserializedMap =
+        objectMapper.readValue(json, new TypeReference<>() {});
+
+    // Verify that the deserialized map matches the original
+    assertThat(deserializedMap).isEqualTo(originalMap);
   }
 
   private void validateContent1(final ProposerConfig config) {
