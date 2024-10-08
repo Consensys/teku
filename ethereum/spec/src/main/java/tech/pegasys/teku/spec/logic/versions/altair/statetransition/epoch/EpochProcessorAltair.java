@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
@@ -133,10 +134,19 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
   }
 
   @Override
-  public void processPendingBalanceDeposits(final MutableBeaconState state) {}
+  public void applyPendingDeposits(final MutableBeaconState state, final PendingDeposit deposit) {
+    // Nothing to do
+  }
 
   @Override
-  public void processPendingConsolidations(final MutableBeaconState state) {}
+  public void processPendingDeposits(final MutableBeaconState state) {
+    // Nothing to do
+  }
+
+  @Override
+  public void processPendingConsolidations(final MutableBeaconState state) {
+    // Nothing to do
+  }
 
   /**
    * Replaces the progressive total balances in the state transition caches with an altair one if

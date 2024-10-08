@@ -182,6 +182,10 @@ public interface BlockProcessor {
       MutableBeaconState state, List<ConsolidationRequest> consolidationRequests)
       throws BlockProcessingException;
 
+  boolean isValidSwitchToCompoundingRequest(
+      BeaconState beaconState, ConsolidationRequest consolidationRequest)
+      throws BlockProcessingException;
+
   ExpectedWithdrawals getExpectedWithdrawals(BeaconState preState);
 
   default Optional<BlockProcessorAltair> toVersionAltair() {

@@ -19,6 +19,8 @@ import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.COMPOUNDING_WI
 
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -27,7 +29,9 @@ import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
+import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
+import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -180,19 +184,16 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
    * @param index validatorIndex
    */
   public void switchToCompoundingValidator(final MutableBeaconStateElectra state, final int index) {
-    if (PredicatesElectra.isEth1WithdrawalCredential(
-        state.getValidators().get(index).getWithdrawalCredentials())) {
-      final byte[] withdrawalCredentialsUpdated =
-          state.getValidators().get(index).getWithdrawalCredentials().toArray();
-      withdrawalCredentialsUpdated[0] = COMPOUNDING_WITHDRAWAL_BYTE;
-      state
-          .getValidators()
-          .update(
-              index,
-              validator ->
-                  validator.withWithdrawalCredentials(Bytes32.wrap(withdrawalCredentialsUpdated)));
-      queueExcessActiveBalance(state, index);
-    }
+    final byte[] withdrawalCredentialsUpdated =
+        state.getValidators().get(index).getWithdrawalCredentials().toArray();
+    withdrawalCredentialsUpdated[0] = COMPOUNDING_WITHDRAWAL_BYTE;
+    state
+        .getValidators()
+        .update(
+            index,
+            validator ->
+                validator.withWithdrawalCredentials(Bytes32.wrap(withdrawalCredentialsUpdated)));
+    queueExcessActiveBalance(state, index);
   }
 
   /**
@@ -207,15 +208,21 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
     final UInt64 minActivationBalance = specConfigElectra.getMinActivationBalance();
 
     if (balance.isGreaterThan(minActivationBalance)) {
-      final UInt64 excessBalance = balance.minus(minActivationBalance);
+      final UInt64 excessBalance = balance.minusMinZero(minActivationBalance);
       state.getBalances().set(validatorIndex, SszUInt64.of(minActivationBalance));
 
-      final PendingBalanceDeposit pendingBalanceDeposit =
+      final Validator validator = state.getValidators().get(validatorIndex);
+      final PendingDeposit deposit =
           schemaDefinitionsElectra
-              .getPendingBalanceDepositSchema()
+              .getPendingDepositSchema()
               .create(
-                  SszUInt64.of(UInt64.fromLongBits(validatorIndex)), SszUInt64.of(excessBalance));
-      state.getPendingBalanceDeposits().append(pendingBalanceDeposit);
+                  new SszPublicKey(validator.getPublicKey()),
+                  SszBytes32.of(validator.getWithdrawalCredentials()),
+                  SszUInt64.of(excessBalance),
+                  new SszSignature(BLSSignature.infinity()),
+                  SszUInt64.of(SpecConfig.GENESIS_SLOT));
+
+      state.getPendingDeposits().append(deposit);
     }
   }
 
@@ -223,26 +230,33 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
    * queue_entire_balance_and_reset_validator
    *
    * @param state beaconState
-   * @param index validatorIndex
+   * @param validatorIndex validatorIndex
    */
   public void queueEntireBalanceAndResetValidator(
-      final MutableBeaconStateElectra state, final int index) {
-    final UInt64 balance = state.getBalances().getElement(index);
-    state.getBalances().set(index, SszUInt64.ZERO);
+      final MutableBeaconStateElectra state, final int validatorIndex) {
+    final UInt64 balance = state.getBalances().getElement(validatorIndex);
+    state.getBalances().set(validatorIndex, SszUInt64.ZERO);
     state
         .getValidators()
         .update(
-            index,
+            validatorIndex,
             validator ->
                 validator
-                    .withActivationEligibilityEpoch(FAR_FUTURE_EPOCH)
-                    .withEffectiveBalance(UInt64.ZERO));
+                    .withEffectiveBalance(UInt64.ZERO)
+                    .withActivationEligibilityEpoch(FAR_FUTURE_EPOCH));
 
-    final PendingBalanceDeposit deposit =
+    final Validator validator = state.getValidators().get(validatorIndex);
+    final PendingDeposit deposit =
         schemaDefinitionsElectra
-            .getPendingBalanceDepositSchema()
-            .create(SszUInt64.of(UInt64.valueOf(index)), SszUInt64.of(balance));
-    state.getPendingBalanceDeposits().append(deposit);
+            .getPendingDepositSchema()
+            .create(
+                new SszPublicKey(validator.getPublicKey()),
+                SszBytes32.of(validator.getWithdrawalCredentials()),
+                SszUInt64.of(balance),
+                new SszSignature(BLSSignature.infinity()),
+                SszUInt64.of(SpecConfig.GENESIS_SLOT));
+
+    state.getPendingDeposits().append(deposit);
   }
 
   @Override

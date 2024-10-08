@@ -37,14 +37,14 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
-import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueueWithPriority;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
@@ -55,13 +55,19 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Contribu
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.signatures.SigningRootUtil;
+import tech.pegasys.teku.validator.api.signer.AggregationSlotWrapper;
+import tech.pegasys.teku.validator.api.signer.RandaoRevealWrapper;
+import tech.pegasys.teku.validator.api.signer.SignType;
+import tech.pegasys.teku.validator.api.signer.SyncAggregatorSelectionDataWrapper;
+import tech.pegasys.teku.validator.api.signer.SyncCommitteeMessageWrapper;
 
 public class ExternalSigner implements Signer {
   public static final String EXTERNAL_SIGNER_ENDPOINT = "/api/v1/eth2/sign";
-  private static final String FORK_INFO = "fork_info";
-  private final JsonProvider jsonProvider = new JsonProvider();
+  public static final String FORK_INFO = "fork_info";
   private final URL signingServiceUrl;
   private final BLSPublicKey blsPublicKey;
   private final Duration timeout;
@@ -69,6 +75,7 @@ public class ExternalSigner implements Signer {
   private final HttpClient httpClient;
   private final ThrottlingTaskQueueWithPriority taskQueue;
   private final SigningRootUtil signingRootUtil;
+  private final SchemaDefinitionCache schemaDefinitionCache;
 
   private final Counter successCounter;
   private final Counter failedCounter;
@@ -99,6 +106,7 @@ public class ExternalSigner implements Signer {
     successCounter = labelledCounter.labels("success");
     failedCounter = labelledCounter.labels("failed");
     timeoutCounter = labelledCounter.labels("timeout");
+    this.schemaDefinitionCache = new SchemaDefinitionCache(spec);
   }
 
   @Override
@@ -109,7 +117,8 @@ public class ExternalSigner implements Signer {
     return sign(
         signingRootUtil.signingRootForRandaoReveal(epoch, forkInfo),
         SignType.RANDAO_REVEAL,
-        Map.of("randao_reveal", Map.of("epoch", epoch), FORK_INFO, forkInfo(forkInfo)),
+        Map.of(
+            SignType.RANDAO_REVEAL.getName(), new RandaoRevealWrapper(epoch), FORK_INFO, forkInfo),
         slashableGenericMessage("randao reveal"));
   }
 
@@ -121,7 +130,7 @@ public class ExternalSigner implements Signer {
     return sign(
         signingRootUtil.signingRootForSignBlock(block, forkInfo),
         blockRequestProvider.getSignType(),
-        blockRequestProvider.getBlockMetadata(Map.of(FORK_INFO, forkInfo(forkInfo))),
+        blockRequestProvider.getBlockMetadata(Map.of(FORK_INFO, forkInfo)),
         slashableBlockMessage(block.getSlot()));
   }
 
@@ -131,11 +140,7 @@ public class ExternalSigner implements Signer {
     return sign(
         signingRootUtil.signingRootForSignAttestationData(attestationData, forkInfo),
         SignType.ATTESTATION,
-        Map.of(
-            "attestation",
-            new tech.pegasys.teku.api.schema.AttestationData(attestationData),
-            FORK_INFO,
-            forkInfo(forkInfo)),
+        Map.of(SignType.ATTESTATION.getName(), attestationData, FORK_INFO, forkInfo),
         slashableAttestationMessage(attestationData));
   }
 
@@ -158,7 +163,11 @@ public class ExternalSigner implements Signer {
             sign(
                 signingRootUtil.signingRootForSignAggregationSlot(slot, forkInfo),
                 SignType.AGGREGATION_SLOT,
-                Map.of("aggregation_slot", Map.of("slot", slot), FORK_INFO, forkInfo(forkInfo)),
+                Map.of(
+                    SignType.AGGREGATION_SLOT.getName(),
+                    new AggregationSlotWrapper(slot),
+                    FORK_INFO,
+                    forkInfo),
                 slashableGenericMessage("aggregation slot")),
         true);
   }
@@ -169,11 +178,7 @@ public class ExternalSigner implements Signer {
     return sign(
         signingRootUtil.signingRootForSignAggregateAndProof(aggregateAndProof, forkInfo),
         SignType.AGGREGATE_AND_PROOF,
-        Map.of(
-            "aggregate_and_proof",
-            new tech.pegasys.teku.api.schema.AggregateAndProof(aggregateAndProof),
-            FORK_INFO,
-            forkInfo(forkInfo)),
+        Map.of(SignType.AGGREGATE_AND_PROOF.getName(), aggregateAndProof, FORK_INFO, forkInfo),
         slashableGenericMessage("aggregate and proof"));
   }
 
@@ -183,11 +188,7 @@ public class ExternalSigner implements Signer {
     return sign(
         signingRootUtil.signingRootForSignVoluntaryExit(voluntaryExit, forkInfo),
         SignType.VOLUNTARY_EXIT,
-        Map.of(
-            "voluntary_exit",
-            new tech.pegasys.teku.api.schema.VoluntaryExit(voluntaryExit),
-            FORK_INFO,
-            forkInfo(forkInfo)),
+        Map.of(SignType.VOLUNTARY_EXIT.getName(), voluntaryExit, FORK_INFO, forkInfo),
         slashableGenericMessage("voluntary exit"));
   }
 
@@ -205,10 +206,10 @@ public class ExternalSigner implements Signer {
                     signingRoot,
                     SignType.SYNC_COMMITTEE_MESSAGE,
                     Map.of(
-                        "sync_committee_message",
-                        Map.of("beacon_block_root", beaconBlockRoot, "slot", slot),
+                        SignType.SYNC_COMMITTEE_MESSAGE.getName(),
+                        new SyncCommitteeMessageWrapper(beaconBlockRoot, slot),
                         FORK_INFO,
-                        forkInfo(forkInfo)),
+                        forkInfo),
                     slashableGenericMessage("sync committee message")));
   }
 
@@ -224,14 +225,11 @@ public class ExternalSigner implements Signer {
                     signingRoot,
                     SignType.SYNC_COMMITTEE_SELECTION_PROOF,
                     Map.of(
-                        "sync_aggregator_selection_data",
-                        Map.of(
-                            "slot",
-                            selectionData.getSlot(),
-                            "subcommittee_index",
-                            selectionData.getSubcommitteeIndex()),
+                        SignType.SYNC_AGGREGATOR_SELECTION_DATA.getName(),
+                        new SyncAggregatorSelectionDataWrapper(
+                            selectionData.getSlot(), selectionData.getSubcommitteeIndex()),
                         FORK_INFO,
-                        forkInfo(forkInfo)),
+                        forkInfo),
                     slashableGenericMessage("sync committee selection proof")));
   }
 
@@ -247,11 +245,10 @@ public class ExternalSigner implements Signer {
                     signingRoot,
                     SignType.SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF,
                     Map.of(
-                        "contribution_and_proof",
-                        new tech.pegasys.teku.api.schema.altair.ContributionAndProof(
-                            contributionAndProof),
+                        SignType.CONTRIBUTION_AND_PROOF.getName(),
+                        contributionAndProof,
                         FORK_INFO,
-                        forkInfo(forkInfo)),
+                        forkInfo),
                     slashableGenericMessage("sync committee contribution and proof")));
   }
 
@@ -263,17 +260,7 @@ public class ExternalSigner implements Signer {
             sign(
                 signingRootUtil.signingRootForValidatorRegistration(validatorRegistration),
                 SignType.VALIDATOR_REGISTRATION,
-                Map.of(
-                    "validator_registration",
-                    Map.of(
-                        "fee_recipient",
-                        validatorRegistration.getFeeRecipient().toHexString(),
-                        "gas_limit",
-                        validatorRegistration.getGasLimit(),
-                        "timestamp",
-                        validatorRegistration.getTimestamp(),
-                        "pubkey",
-                        validatorRegistration.getPublicKey().toString())),
+                Map.of(SignType.VALIDATOR_REGISTRATION.getName(), validatorRegistration),
                 slashableGenericMessage("validator registration")));
   }
 
@@ -285,14 +272,6 @@ public class ExternalSigner implements Signer {
   private SafeFuture<Bytes> signingRootFromSyncCommitteeUtils(
       final UInt64 slot, final Function<SyncCommitteeUtil, Bytes> createSigningRoot) {
     return SafeFuture.of(() -> createSigningRoot.apply(spec.getSyncCommitteeUtilRequired(slot)));
-  }
-
-  private Map<String, Object> forkInfo(final ForkInfo forkInfo) {
-    return Map.of(
-        "fork",
-        new Fork(forkInfo.getFork()),
-        "genesis_validators_root",
-        forkInfo.getGenesisValidatorsRoot());
   }
 
   private SafeFuture<BLSSignature> sign(
@@ -326,10 +305,29 @@ public class ExternalSigner implements Signer {
   private String createSigningRequestBody(
       final Bytes signingRoot, final SignType type, final Map<String, Object> metadata) {
     try {
-      return jsonProvider.objectToJSON(new SigningRequestBody(signingRoot, type, metadata));
+      final SigningRequestBody request = new SigningRequestBody(signingRoot, type, metadata);
+      final SchemaDefinitions schemaDefinitions =
+          getSpecVersionFromForkInfo(Optional.ofNullable((ForkInfo) metadata.get(FORK_INFO)));
+      return JsonUtil.serialize(request, request.getJsonTypeDefinition(schemaDefinitions));
     } catch (final JsonProcessingException e) {
       throw new ExternalSignerException("Unable to create external signing request", e);
     }
+  }
+
+  private SchemaDefinitions getSpecVersionFromForkInfo(final Optional<ForkInfo> maybeForkInfo) {
+    final Optional<Bytes4> maybeFork = maybeForkInfo.map(f -> f.getFork().getCurrentVersion());
+    if (maybeFork.isEmpty()) {
+      return schemaDefinitionCache.getSchemaDefinition(
+          schemaDefinitionCache.getSupportedMilestones().getFirst());
+    }
+    final Bytes4 currentFork = maybeFork.orElseThrow();
+    return spec.getEnabledMilestones().stream()
+        .filter(f -> f.getFork().getCurrentVersion().equals(currentFork))
+        .map(f -> schemaDefinitionCache.getSchemaDefinition(f.getSpecMilestone()))
+        .findFirst()
+        .orElse(
+            schemaDefinitionCache.getSchemaDefinition(
+                schemaDefinitionCache.getSupportedMilestones().getFirst()));
   }
 
   private BLSSignature getBlsSignatureResponder(
@@ -353,11 +351,11 @@ public class ExternalSigner implements Signer {
 
     try {
       final String returnedContentType = response.headers().firstValue("Content-Type").orElse("");
-      final String signatureHexStr =
-          returnedContentType.startsWith("application/json")
-              ? jsonProvider.jsonToObject(response.body(), SigningResponseBody.class).getSignature()
-              : response.body();
-
+      if (returnedContentType.startsWith("application/json")) {
+        return JsonUtil.parse(response.body(), SigningResponseBody.getJsonTypeDefinition())
+            .signature();
+      }
+      final String signatureHexStr = response.body();
       final Bytes signature = Bytes.fromHexString(signatureHexStr);
       return BLSSignature.fromBytesCompressed(signature);
     } catch (final IllegalArgumentException | JsonProcessingException e) {
