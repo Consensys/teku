@@ -13,13 +13,19 @@
 
 package tech.pegasys.teku.storage.archive.fsarchive;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -29,11 +35,11 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.storage.archive.DataArchive;
 import tech.pegasys.teku.storage.archive.DataArchiveWriter;
 
 public class FileSystemArchiveTest {
@@ -48,12 +54,29 @@ public class FileSystemArchiveTest {
           schemaDefinitionsDeneb);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(SPEC);
 
-  static DataArchive dataArchive;
+  static Path testTempDir;
+  static FileSystemArchive dataArchive;
 
   @BeforeAll
   static void beforeEach() throws IOException {
-    Path temp = Files.createTempDirectory("blobs");
-    dataArchive = new FileSystemArchive(SPEC, temp);
+    testTempDir = Files.createTempDirectory("blobs");
+    dataArchive = new FileSystemArchive(SPEC, testTempDir);
+  }
+
+  @AfterEach
+  public void tearDown() throws IOException {
+    // Delete the temporary directory after each test
+    if (Files.exists(testTempDir)) {
+      try (Stream<Path> walk = Files.walk(testTempDir)) {
+        walk.map(Path::toFile)
+            .forEach(
+                file -> {
+                  if (!file.delete()) {
+                    file.deleteOnExit();
+                  }
+                });
+      }
+    }
   }
 
   BlobSidecar createBlobSidecar() {
@@ -66,10 +89,49 @@ public class FileSystemArchiveTest {
   }
 
   @Test
+  void testResolve() {
+    SlotAndBlockRootAndBlobIndex slotAndBlockRootAndBlobIndex =
+        new SlotAndBlockRootAndBlobIndex(
+            UInt64.ONE, dataStructureUtil.randomBytes32(), UInt64.ZERO);
+    File file =
+        dataArchive.resolve(testTempDir, slotAndBlockRootAndBlobIndex.getSlotAndBlockRoot());
+
+    // Check if the file path is correct. Doesn't check the intermediate directories.
+    assertTrue(file.toString().startsWith(testTempDir.toString()));
+    assertTrue(
+        file.toString()
+            .endsWith(slotAndBlockRootAndBlobIndex.getBlockRoot().toUnprefixedHexString()));
+  }
+
+  @Test
   void testWriteBlobSidecar() throws IOException {
+    DataArchiveWriter<List<BlobSidecar>> blobWriter = dataArchive.getBlobSidecarWriter();
+    ArrayList<BlobSidecar> list = new ArrayList<>();
+    BlobSidecar blobSidecar = createBlobSidecar();
+    list.add(blobSidecar);
+    assertTrue(blobWriter.archive(list));
+    blobWriter.close();
+
+    // Check if the file was written
+    FileInputStream fis =
+        new FileInputStream(testTempDir.resolve(FileSystemArchive.INDEX_FILE).toFile());
+    String content = new String(fis.readAllBytes());
+    assertEquals(
+        blobSidecar.getSlot().toString()
+            + " "
+            + blobSidecar.getSlotAndBlockRoot().getBlockRoot().toUnprefixedHexString()
+            + "\n",
+        content);
+  }
+
+  @Test
+  void testFileAlreadyExists() throws IOException {
     DataArchiveWriter<List<BlobSidecar>> blobWriter = dataArchive.getBlobSidecarWriter();
     ArrayList<BlobSidecar> list = new ArrayList<>();
     list.add(createBlobSidecar());
     assertTrue(blobWriter.archive(list));
+    // Try to write the same file again
+    assertFalse(blobWriter.archive(list));
+    blobWriter.close();
   }
 }

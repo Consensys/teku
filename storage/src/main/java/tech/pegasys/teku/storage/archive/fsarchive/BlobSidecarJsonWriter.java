@@ -18,8 +18,9 @@ import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefini
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.Objects;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -28,20 +29,22 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class BlobSidecarJsonWriter {
 
-  private final SchemaDefinitionCache schemaCache;
+  private final SerializableTypeDefinition<List<BlobSidecar>> blobSidecarType;
 
   public BlobSidecarJsonWriter(final Spec spec) {
-    this.schemaCache = new SchemaDefinitionCache(spec);
+    SchemaDefinitionCache schemaCache = new SchemaDefinitionCache(spec);
+    this.blobSidecarType =
+        listOf(
+            SchemaDefinitionsDeneb.required(schemaCache.getSchemaDefinition(SpecMilestone.DENEB))
+                .getBlobSidecarSchema()
+                .getJsonTypeDefinition());
   }
 
   public void writeSlotBlobSidecars(final OutputStream out, final List<BlobSidecar> blobSidecar)
       throws IOException {
+    Objects.requireNonNull(out);
+    Objects.requireNonNull(blobSidecar);
 
-    final DeserializableTypeDefinition<BlobSidecar> blobSidecarType =
-        SchemaDefinitionsDeneb.required(schemaCache.getSchemaDefinition(SpecMilestone.DENEB))
-            .getBlobSidecarSchema()
-            .getJsonTypeDefinition();
-
-    JsonUtil.serializeToBytes(blobSidecar, listOf(blobSidecarType), out);
+    JsonUtil.serializeToBytes(blobSidecar, blobSidecarType, out);
   }
 }

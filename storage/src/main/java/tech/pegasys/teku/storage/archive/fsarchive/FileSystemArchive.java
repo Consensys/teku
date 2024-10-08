@@ -20,6 +20,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
@@ -35,9 +36,8 @@ import tech.pegasys.teku.storage.archive.DataArchiveWriter;
  * PathResolver method to decide where to write the files.
  */
 public class FileSystemArchive implements DataArchive {
-  private static final String INDEX_FILE = "index.dat";
-
-  private static final Logger LOG = LogManager.getLogger();
+  static final String INDEX_FILE = "index.dat";
+  static final Logger LOG = LogManager.getLogger();
 
   private final Path baseDirectory;
   private final BlobSidecarJsonWriter jsonWriter;
@@ -51,7 +51,7 @@ public class FileSystemArchive implements DataArchive {
   public DataArchiveWriter<List<BlobSidecar>> getBlobSidecarWriter() throws IOException {
 
     try {
-      File indexFile = baseDirectory.resolve(INDEX_FILE).toFile();
+      final File indexFile = baseDirectory.resolve(INDEX_FILE).toFile();
       return new FileSystemBlobSidecarWriter(indexFile);
     } catch (IOException e) {
       LOG.warn("Unable to create BlobSidecar archive writer", e);
@@ -72,7 +72,7 @@ public class FileSystemArchive implements DataArchive {
 
     @Override
     public boolean archive(final List<BlobSidecar> blobSidecars) {
-      if (blobSidecars == null || blobSidecars.isEmpty()) {
+      if (blobSidecars == null) {
         return true;
       }
 
@@ -83,8 +83,12 @@ public class FileSystemArchive implements DataArchive {
         return false;
       }
 
-      if (!file.getParentFile().mkdirs()) {
-        LOG.warn("Failed to write BlobSidecar. Could not make directories to: {}", file.toString());
+      try {
+        Files.createDirectories(file.toPath().getParent());
+      } catch (IOException e) {
+        LOG.warn(
+            "Failed to write BlobSidecar. Could not make directories to: {}",
+            file.getParentFile().toString());
         return false;
       }
 
@@ -93,7 +97,7 @@ public class FileSystemArchive implements DataArchive {
         indexWriter.write(formatIndexOutput(slotAndBlockRoot));
         indexWriter.newLine();
         return true;
-      } catch (IOException e) {
+      } catch (IOException | NullPointerException e) {
         LOG.warn("Failed to write BlobSidecar.", e);
         return false;
       }
