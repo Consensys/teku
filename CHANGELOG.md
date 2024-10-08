@@ -11,3 +11,5 @@
 ### Additions and Improvements
 
 ### Bug Fixes
+- Fixed the proposer configuration file loading error at startup
+
