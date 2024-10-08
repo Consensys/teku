@@ -167,9 +167,6 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
     final UInt64 hysteresisDownwardMultiplier = specConfig.getHysteresisDownwardMultiplier();
     final UInt64 hysteresisQuotient = specConfig.getHysteresisQuotient();
     final UInt64 effectiveBalanceIncrement = specConfig.getEffectiveBalanceIncrement();
-    // TODO-lucas Before we were using state.getValidators().size() but it can lead to an
-    // OutOfBoundsException when
-    //  we have new validators being created but not added to ValidatorStatus.
     for (int index = 0; index < statuses.size(); index++) {
       final ValidatorStatus status = statuses.get(index);
       final UInt64 balance = balances.getElement(index);

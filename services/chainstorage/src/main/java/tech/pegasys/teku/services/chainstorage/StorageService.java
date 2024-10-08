@@ -42,6 +42,7 @@ import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.RetryingStorageUpdateChannel;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
+import tech.pegasys.teku.storage.server.network.EphemeryException;
 import tech.pegasys.teku.storage.server.pruner.BlobSidecarPruner;
 import tech.pegasys.teku.storage.server.pruner.BlockPruner;
 import tech.pegasys.teku.storage.server.pruner.StatePruner;
@@ -85,7 +86,14 @@ public class StorageService extends Service implements StorageServiceFacade {
                       serviceConfig.getMetricsSystem(),
                       serviceConfig.getDataDirLayout().getBeaconDataDirectory(),
                       config);
-              database = dbFactory.createDatabase();
+              try {
+                database = dbFactory.createDatabase();
+              } catch (EphemeryException e) {
+                final EphemeryDatabaseReset ephemeryDatabaseReset = new EphemeryDatabaseReset();
+                LOG.warn(
+                    "Ephemery network deposit contract id has updated, resetting the stored database and slashing protection data.");
+                database = ephemeryDatabaseReset.resetDatabaseAndCreate(serviceConfig, dbFactory);
+              }
 
               final SettableLabelledGauge pruningTimingsLabelledGauge =
                   SettableLabelledGauge.create(

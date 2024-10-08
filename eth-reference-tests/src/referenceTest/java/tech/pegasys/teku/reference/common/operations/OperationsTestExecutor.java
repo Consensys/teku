@@ -128,13 +128,10 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               "operations/withdrawal_request",
               new OperationsTestExecutor<>(
                   "withdrawal_request.ssz_snappy", Operation.WITHDRAWAL_REQUEST))
-          // TODO re-enable consolidation tests (https://github.com/Consensys/teku/issues/8617)
           .put(
               "operations/consolidation_request",
-              //              new OperationsTestExecutor<>(
-              //                  "consolidation_request.ssz_snappy",
-              // Operation.CONSOLIDATION_REQUEST))
-              TestExecutor.IGNORE_TESTS)
+              new OperationsTestExecutor<>(
+                  "consolidation_request.ssz_snappy", Operation.CONSOLIDATION_REQUEST))
           .build();
 
   private final String dataFileName;
