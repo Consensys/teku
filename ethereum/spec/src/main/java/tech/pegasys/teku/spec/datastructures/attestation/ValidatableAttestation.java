@@ -78,7 +78,7 @@ public class ValidatableAttestation {
   }
 
   public void createSingleAttestation(final UInt64 validatorIndex) {
-    if(attestation.getCommitteeBits().isEmpty() || singleAttestation.isPresent()) {
+    if (attestation.getCommitteeBits().isEmpty() || singleAttestation.isPresent()) {
       return;
     }
     spec.atSlot(attestation.getData().getSlot())
@@ -329,7 +329,7 @@ public class ValidatableAttestation {
         .add("committeeShufflingSeed", committeeShufflingSeed)
         .add("committeesSize", committeesSize)
         .add("receivedSubnetId", receivedSubnetId)
-            .add("singleAttestation", singleAttestation)
+        .add("singleAttestation", singleAttestation)
         .toString();
   }
 }
