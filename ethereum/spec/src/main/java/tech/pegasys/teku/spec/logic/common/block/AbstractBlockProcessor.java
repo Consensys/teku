@@ -691,6 +691,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     }
   }
 
+  /** process_deposit */
   public void processDeposit(
       final MutableBeaconState state,
       final Deposit deposit,
@@ -727,6 +728,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         signatureAlreadyVerified);
   }
 
+  /** apply_deposit */
   public void applyDeposit(
       final MutableBeaconState state,
       final BLSPublicKey pubkey,
@@ -782,7 +784,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     beaconStateMutators.increaseBalance(state, validatorIndex, amount);
   }
 
-  private void handleInvalidDeposit(
+  protected void handleInvalidDeposit(
       final BLSPublicKey pubkey,
       final Optional<Object2IntMap<BLSPublicKey>> maybePubkeyToIndexMap) {
     LOG.debug("Skipping invalid deposit with pubkey {}", pubkey);
@@ -793,6 +795,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         });
   }
 
+  /** is_valid_deposit_signature */
   protected boolean depositSignatureIsValid(
       final BLSPublicKey pubkey,
       final Bytes32 withdrawalCredentials,
@@ -925,6 +928,14 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final MutableBeaconState state, final List<ConsolidationRequest> consolidationRequests)
       throws BlockProcessingException {
     // No Consolidations until Electra
+  }
+
+  @Override
+  public boolean isValidSwitchToCompoundingRequest(
+      final BeaconState beaconState, final ConsolidationRequest consolidationRequest)
+      throws BlockProcessingException {
+    // No Consolidations until Electra
+    return false;
   }
 
   // Catch generic errors and wrap them in a BlockProcessingException

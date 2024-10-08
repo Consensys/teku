@@ -21,6 +21,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexDeserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexSerializer;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 
 public class GetPayloadV2Response {
   public final ExecutionPayloadV2 executionPayload;
@@ -36,5 +38,11 @@ public class GetPayloadV2Response {
     checkNotNull(blockValue, "blockValue");
     this.executionPayload = executionPayload;
     this.blockValue = blockValue;
+  }
+
+  public GetPayloadResponse asInternalGetPayloadResponse(
+      final ExecutionPayloadSchema<?> executionPayloadSchema) {
+    return new GetPayloadResponse(
+        executionPayload.asInternalExecutionPayload(executionPayloadSchema), blockValue);
   }
 }

@@ -42,7 +42,7 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
 
   UInt64 getMaxEffectiveBalanceElectra();
 
-  int getPendingBalanceDepositsLimit();
+  int getPendingDepositsLimit();
 
   int getPendingPartialWithdrawalsLimit();
 
@@ -63,6 +63,8 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
   int getMaxWithdrawalRequestsPerPayload();
 
   int getMaxPendingPartialsPerWithdrawalsSweep();
+
+  int getMaxPendingDepositsPerEpoch();
 
   @Override
   Optional<SpecConfigElectra> toVersionElectra();
