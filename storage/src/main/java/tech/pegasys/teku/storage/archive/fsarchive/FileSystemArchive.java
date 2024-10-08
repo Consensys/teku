@@ -37,7 +37,7 @@ import tech.pegasys.teku.storage.archive.DataArchiveWriter;
  */
 public class FileSystemArchive implements DataArchive {
   static final String INDEX_FILE = "index.dat";
-  static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Path baseDirectory;
   private final BlobSidecarJsonWriter jsonWriter;

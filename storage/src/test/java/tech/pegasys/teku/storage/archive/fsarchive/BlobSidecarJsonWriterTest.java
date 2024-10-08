@@ -13,10 +13,13 @@
 
 package tech.pegasys.teku.storage.archive.fsarchive;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,8 +46,8 @@ public class BlobSidecarJsonWriterTest {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     List<BlobSidecar> blobSidecars = new ArrayList<>();
     blobSidecarJsonWriter.writeSlotBlobSidecars(out, blobSidecars);
-    String json = out.toString();
-    assert (json.equals("[]"));
+    String json = out.toString(StandardCharsets.UTF_8);
+    assertEquals("[]", json);
   }
 
   @Test
@@ -56,16 +59,16 @@ public class BlobSidecarJsonWriterTest {
             dataStructureUtil.randomSignedBeaconBlock(1), 0);
     blobSidecars.add(blobSidecar);
     blobSidecarJsonWriter.writeSlotBlobSidecars(out, blobSidecars);
-    String json = out.toString();
-    assert (json.contains("index"));
-    assert (json.contains("blob"));
-    assert (json.contains("kzg_commitment"));
-    assert (json.contains("kzg_proof"));
-    assert (json.contains("signed_block_header"));
-    assert (json.contains("parent_root"));
-    assert (json.contains("state_root"));
-    assert (json.contains("body_root"));
-    assert (json.contains("signature"));
+    String json = out.toString(StandardCharsets.UTF_8);
+    assertTrue(json.contains("index"));
+    assertTrue(json.contains("blob"));
+    assertTrue(json.contains("kzg_commitment"));
+    assertTrue(json.contains("kzg_proof"));
+    assertTrue(json.contains("signed_block_header"));
+    assertTrue(json.contains("parent_root"));
+    assertTrue(json.contains("state_root"));
+    assertTrue(json.contains("body_root"));
+    assertTrue(json.contains("signature"));
   }
 
   @Test

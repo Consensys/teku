@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -115,7 +116,7 @@ public class FileSystemArchiveTest {
     // Check if the file was written
     FileInputStream fis =
         new FileInputStream(testTempDir.resolve(FileSystemArchive.INDEX_FILE).toFile());
-    String content = new String(fis.readAllBytes());
+    String content = new String(fis.readAllBytes(), StandardCharsets.UTF_8);
     assertEquals(
         blobSidecar.getSlot().toString()
             + " "
