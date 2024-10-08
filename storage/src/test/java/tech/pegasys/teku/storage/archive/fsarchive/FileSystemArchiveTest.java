@@ -114,15 +114,16 @@ public class FileSystemArchiveTest {
     blobWriter.close();
 
     // Check if the file was written
-    FileInputStream fis =
-        new FileInputStream(testTempDir.resolve(FileSystemArchive.INDEX_FILE).toFile());
-    String content = new String(fis.readAllBytes(), StandardCharsets.UTF_8);
-    assertEquals(
-        blobSidecar.getSlot().toString()
-            + " "
-            + blobSidecar.getSlotAndBlockRoot().getBlockRoot().toUnprefixedHexString()
-            + "\n",
-        content);
+    try (FileInputStream fis =
+        new FileInputStream(testTempDir.resolve(FileSystemArchive.INDEX_FILE).toFile())) {
+      String content = new String(fis.readAllBytes(), StandardCharsets.UTF_8);
+      assertEquals(
+          blobSidecar.getSlot().toString()
+              + " "
+              + blobSidecar.getSlotAndBlockRoot().getBlockRoot().toUnprefixedHexString()
+              + "\n",
+          content);
+    }
   }
 
   @Test
