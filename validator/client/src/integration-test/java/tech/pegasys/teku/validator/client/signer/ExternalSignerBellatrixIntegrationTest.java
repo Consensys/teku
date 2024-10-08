@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.client.signer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
-import static tech.pegasys.teku.validator.client.signer.ExternalSignerTestUtil.createForkInfo;
 import static tech.pegasys.teku.validator.client.signer.ExternalSignerTestUtil.validateMetrics;
 import static tech.pegasys.teku.validator.client.signer.ExternalSignerTestUtil.verifySignRequest;
 
@@ -58,10 +57,13 @@ public class ExternalSignerBellatrixIntegrationTest extends AbstractExternalSign
         new SigningRequestBody(
             blockHeaderSigningRoot,
             externalSignerBlockRequestProvider.getSignType(),
-            externalSignerBlockRequestProvider.getBlockMetadata(
-                Map.of("fork_info", createForkInfo(forkInfo))));
+            externalSignerBlockRequestProvider.getBlockMetadata(Map.of("fork_info", forkInfo)));
 
-    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
+    verifySignRequest(
+        client,
+        KEYPAIR.getPublicKey().toString(),
+        signingRequestBody,
+        getSpec().getGenesisSchemaDefinitions());
 
     validateMetrics(metricsSystem, 1, 0, 0);
   }
