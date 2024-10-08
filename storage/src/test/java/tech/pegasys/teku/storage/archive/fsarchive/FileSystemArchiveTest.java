@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.archive.fsarchive;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -117,12 +116,13 @@ public class FileSystemArchiveTest {
     try (FileInputStream fis =
         new FileInputStream(testTempDir.resolve(FileSystemArchive.INDEX_FILE).toFile())) {
       String content = new String(fis.readAllBytes(), StandardCharsets.UTF_8);
-      assertEquals(
+      String expected =
           blobSidecar.getSlot().toString()
               + " "
-              + blobSidecar.getSlotAndBlockRoot().getBlockRoot().toUnprefixedHexString()
-              + "\n",
-          content);
+              + blobSidecar.getSlotAndBlockRoot().getBlockRoot().toUnprefixedHexString();
+
+      // Windows new lines are different, so don't include new lines in the comparison.
+      assertTrue(content.contains(expected));
     }
   }
 
