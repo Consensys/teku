@@ -27,6 +27,10 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsBuilder;
 public class ExecutionRequestsDataCodec {
 
   private static final int EXPECTED_REQUEST_DATA_ELEMENTS = 3;
+  private static final Bytes DEPOSIT_REQUEST_PREFIX = Bytes.of(DepositRequest.REQUEST_TYPE);
+  private static final Bytes WITHDRAWAL_REQUEST_PREFIX = Bytes.of(WithdrawalRequest.REQUEST_TYPE);
+  private static final Bytes CONSOLIDATION_REQUEST_PREFIX =
+      Bytes.of(ConsolidationRequest.REQUEST_TYPE);
 
   private final ExecutionRequestsSchema executionRequestsSchema;
 
@@ -75,7 +79,7 @@ public class ExecutionRequestsDataCodec {
   }
 
   @VisibleForTesting
-  List<Bytes> encode(final ExecutionRequests executionRequests) {
+  List<Bytes> encodeWithTypePrefix(final ExecutionRequests executionRequests) {
     final SszList<DepositRequest> depositRequestsSszList =
         executionRequestsSchema
             .getDepositRequestsSchema()
@@ -90,18 +94,15 @@ public class ExecutionRequestsDataCodec {
             .createFromElements(executionRequests.getConsolidations());
 
     return List.of(
+        Bytes.concatenate(DEPOSIT_REQUEST_PREFIX, depositRequestsSszList.sszSerialize()),
+        Bytes.concatenate(WITHDRAWAL_REQUEST_PREFIX, withdrawalRequestsSszList.sszSerialize()),
         Bytes.concatenate(
-            Bytes.of(DepositRequest.REQUEST_TYPE), depositRequestsSszList.sszSerialize()),
-        Bytes.concatenate(
-            Bytes.of(WithdrawalRequest.REQUEST_TYPE), withdrawalRequestsSszList.sszSerialize()),
-        Bytes.concatenate(
-            Bytes.of(ConsolidationRequest.REQUEST_TYPE),
-            consolidationRequestsSszList.sszSerialize()));
+            CONSOLIDATION_REQUEST_PREFIX, consolidationRequestsSszList.sszSerialize()));
   }
 
   public Bytes32 hash(final ExecutionRequests executionRequests) {
     final Bytes sortedEncodedRequests =
-        encode(executionRequests).stream()
+        encodeWithTypePrefix(executionRequests).stream()
             .map(Hash::sha256)
             .map(Bytes.class::cast)
             .reduce(Bytes.EMPTY, Bytes::concatenate);

@@ -122,7 +122,7 @@ class ExecutionRequestsDataCodecTest {
   }
 
   @Test
-  public void encodeExecutionRequests() {
+  public void encodeWithTypePrefixExecutionRequests() {
     final ExecutionRequests executionRequests =
         new ExecutionRequestsBuilderElectra(executionRequestsSchema)
             .deposits(List.of(depositRequest1, depositRequest2))
@@ -130,7 +130,7 @@ class ExecutionRequestsDataCodecTest {
             .consolidations(List.of(consolidationRequest1))
             .build();
 
-    final List<Bytes> encodedRequests = codec.encode(executionRequests);
+    final List<Bytes> encodedRequests = codec.encodeWithTypePrefix(executionRequests);
 
     assertThat(encodedRequests)
         .containsExactly(
@@ -142,7 +142,7 @@ class ExecutionRequestsDataCodecTest {
   }
 
   @Test
-  public void encodeExecutionRequestsWithOneEmptyRequestList() {
+  public void encodeWithTypePrefixExecutionRequestsWithOneEmptyRequestList() {
     final ExecutionRequests executionRequests =
         new ExecutionRequestsBuilderElectra(executionRequestsSchema)
             .deposits(List.of(depositRequest1, depositRequest2))
@@ -150,7 +150,7 @@ class ExecutionRequestsDataCodecTest {
             .consolidations(List.of(consolidationRequest1))
             .build();
 
-    final List<Bytes> encodedRequests = codec.encode(executionRequests);
+    final List<Bytes> encodedRequests = codec.encodeWithTypePrefix(executionRequests);
 
     assertThat(encodedRequests)
         .containsExactly(
@@ -161,7 +161,7 @@ class ExecutionRequestsDataCodecTest {
   }
 
   @Test
-  public void encodeExecutionRequestsWithAllEmptyRequestLists() {
+  public void encodeWithTypePrefixExecutionRequestsWithAllEmptyRequestLists() {
     final ExecutionRequests executionRequests =
         new ExecutionRequestsBuilderElectra(executionRequestsSchema)
             .deposits(List.of())
@@ -169,7 +169,7 @@ class ExecutionRequestsDataCodecTest {
             .consolidations(List.of())
             .build();
 
-    final List<Bytes> encodedRequests = codec.encode(executionRequests);
+    final List<Bytes> encodedRequests = codec.encodeWithTypePrefix(executionRequests);
 
     assertThat(encodedRequests)
         .containsExactly(
