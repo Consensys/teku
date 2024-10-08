@@ -186,7 +186,8 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
 
                 final IndexedAttestation indexedAttestation =
                     getIndexedAttestationFromSingleAttestation(
-                        attestation.getAttestation().toSingleAttestationRequired());
+                        attestation.getSingleAttestation().toSingleAttestationRequired());
+                attestation.saveCommitteeShufflingSeedAndCommitteesSize(state);
                 attestation.setIndexedAttestation(indexedAttestation);
                 attestation.setValidIndexedAttestation();
               }
@@ -257,7 +258,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
         validatorIndex,
         attestation.getFirstCommitteeIndex());
 
-    return attestation.getSchema().createAggregationBitsOf(validatorCommitteeBit);
+    return schemaDefinitions.toVersionElectra().orElseThrow().getAttestationSchema().createAggregationBitsOf(validatorCommitteeBit);
   }
 
   private UInt64 getValidatorIndexFromAttestation(
