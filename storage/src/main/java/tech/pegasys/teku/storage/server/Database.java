@@ -82,7 +82,8 @@ public interface Database extends AutoCloseable {
       int pruneLimit,
       final DataArchiveWriter<List<BlobSidecar>> archiveWriter);
 
-  boolean pruneOldestNonCanonicalBlobSidecars(UInt64 lastSlotToPrune, int pruneLimit);
+  boolean pruneOldestNonCanonicalBlobSidecars(
+      UInt64 lastSlotToPrune, int pruneLimit, DataArchiveWriter<List<BlobSidecar>> archiveWriter);
 
   @MustBeClosed
   Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(UInt64 startSlot, UInt64 endSlot);

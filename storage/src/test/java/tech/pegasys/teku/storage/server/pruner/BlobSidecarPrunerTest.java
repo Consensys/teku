@@ -89,7 +89,7 @@ public class BlobSidecarPrunerTest {
 
     verify(database).getGenesisTime();
     verify(database, never()).pruneOldestBlobSidecars(any(), anyInt(), any());
-    verify(database, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt());
+    verify(database, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt(), any());
   }
 
   @Test
@@ -98,7 +98,7 @@ public class BlobSidecarPrunerTest {
 
     verify(database).getGenesisTime();
     verify(database, never()).pruneOldestBlobSidecars(any(), anyInt(), any());
-    verify(database, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt());
+    verify(database, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt(), any());
   }
 
   @Test
@@ -114,7 +114,7 @@ public class BlobSidecarPrunerTest {
 
     asyncRunner.executeDueActions();
     verify(database, never()).pruneOldestBlobSidecars(any(), anyInt(), any());
-    verify(database, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt());
+    verify(database, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt(), any());
   }
 
   @Test
@@ -137,7 +137,10 @@ public class BlobSidecarPrunerTest {
             PRUNE_LIMIT,
             dataArchive.getBlobSidecarWriter());
     verify(database)
-        .pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
+        .pruneOldestNonCanonicalBlobSidecars(
+            UInt64.valueOf((slotsPerEpoch / 2) - 1),
+            PRUNE_LIMIT,
+            dataArchive.getBlobSidecarWriter());
   }
 
   @Test
@@ -201,7 +204,10 @@ public class BlobSidecarPrunerTest {
             PRUNE_LIMIT,
             dataArchive.getBlobSidecarWriter());
     verify(databaseOverride)
-        .pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
+        .pruneOldestNonCanonicalBlobSidecars(
+            UInt64.valueOf((slotsPerEpoch / 2) - 1),
+            PRUNE_LIMIT,
+            dataArchive.getBlobSidecarWriter());
   }
 
   @Test
@@ -245,6 +251,6 @@ public class BlobSidecarPrunerTest {
 
     asyncRunner.executeDueActions();
     verify(databaseOverride, never()).pruneOldestBlobSidecars(any(), anyInt(), any());
-    verify(databaseOverride, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt());
+    verify(databaseOverride, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt(), any());
   }
 }

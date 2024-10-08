@@ -72,7 +72,6 @@ import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.archive.DataArchiveWriter;
-import tech.pegasys.teku.storage.archive.nooparchive.DataArchiveNoopWriter;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.CombinedKvStoreDao;
@@ -892,16 +891,14 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public boolean pruneOldestNonCanonicalBlobSidecars(
-      final UInt64 lastSlotToPrune, final int pruneLimit) {
+      final UInt64 lastSlotToPrune,
+      final int pruneLimit,
+      final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableNoncanonicalBlobKeys =
             streamNonCanonicalBlobSidecarKeys(UInt64.ZERO, lastSlotToPrune);
         final FinalizedUpdater updater = finalizedUpdater()) {
       return pruneBlobSidecars(
-          pruneLimit,
-          prunableNoncanonicalBlobKeys,
-          updater,
-          new DataArchiveNoopWriter<List<BlobSidecar>>(),
-          true);
+          pruneLimit, prunableNoncanonicalBlobKeys, updater, archiveWriter, true);
     }
   }
 
@@ -915,16 +912,18 @@ public class KvStoreDatabase implements Database {
     int pruned = 0;
     Optional<UInt64> earliestBlobSidecarSlot = Optional.empty();
 
-    // Group the BlobSidecars by slot. Potential for higher memory usage if it hasn't been pruned in
-    // a while
-    Map<UInt64, List<SlotAndBlockRootAndBlobIndex>> prunableMap =
+    // Group the BlobSidecars by slot. Potential for higher memory usage
+    // if it hasn't been pruned in a while
+    final Map<UInt64, List<SlotAndBlockRootAndBlobIndex>> prunableMap =
         prunableBlobKeys.collect(groupingBy(SlotAndBlockRootAndBlobIndex::getSlot));
 
     // pruneLimit is the number of slots to prune, not the number of BlobSidecars
-    List<UInt64> slots = prunableMap.keySet().stream().sorted().limit(pruneLimit).toList();
+    final List<UInt64> slots = prunableMap.keySet().stream().sorted().limit(pruneLimit).toList();
     for (UInt64 slot : slots) {
-      List<SlotAndBlockRootAndBlobIndex> keys = prunableMap.get(slot);
-      List<BlobSidecar> blobSidecars =
+      final List<SlotAndBlockRootAndBlobIndex> keys = prunableMap.get(slot);
+
+      // Retrieve the BlobSidecars for archiving.
+      final List<BlobSidecar> blobSidecars =
           keys.stream()
               .map(
                   nonCanonicalBlobSidecars
@@ -934,59 +933,38 @@ public class KvStoreDatabase implements Database {
               .map(Optional::get)
               .toList();
 
+      // Just warn if we failed to find all the BlobSidecars.
       if (keys.size() != blobSidecars.size()) {
         LOG.warn("Failed to retrieve BlobSidecars for keys:{}", keys);
-        break;
       }
 
-      boolean archiveAndPruneResult =
-          archiveAndPruneBlobSideCars(
-              updater, archiveWriter, keys, blobSidecars, nonCanonicalBlobSidecars);
-      if (!archiveAndPruneResult) {
+      // Attempt to archive the BlobSidecars.
+      final boolean blobSidecarArchived = archiveWriter.archive(blobSidecars);
+      if (!blobSidecarArchived) {
         LOG.warn("Failed to archive and prune BlobSidecars. Stopping pruning");
         break;
       }
 
-      if (!nonCanonicalBlobSidecars) {
-        earliestBlobSidecarSlot = Optional.of(slot.plus(1));
+      // Remove the BlobSidecars from the database.
+      for (final SlotAndBlockRootAndBlobIndex key : keys) {
+        if (nonCanonicalBlobSidecars) {
+          updater.removeNonCanonicalBlobSidecar(key);
+        } else {
+          updater.removeBlobSidecar(key);
+          earliestBlobSidecarSlot = Optional.of(slot.plus(1));
+        }
       }
 
-      pruned++;
+      ++pruned;
     }
 
     if (!nonCanonicalBlobSidecars) {
       earliestBlobSidecarSlot.ifPresent(updater::setEarliestBlobSidecarSlot);
     }
-
     updater.commit();
 
     // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar in a slot
     return pruned >= pruneLimit;
-  }
-
-  private boolean archiveAndPruneBlobSideCars(
-      final FinalizedUpdater updater,
-      final DataArchiveWriter<List<BlobSidecar>> archiveWriter,
-      final List<SlotAndBlockRootAndBlobIndex> slotBlobIndexes,
-      final List<BlobSidecar> blobSidecars,
-      final boolean nonCanonicalBlobSidecars) {
-
-    // Attempt to archive the BlobSidecars.
-    final boolean blobSidecarArchived = archiveWriter.archive(blobSidecars);
-    if (!blobSidecarArchived) {
-      return false;
-    }
-
-    // Remove the BlobSidecars from the database.
-    for (final SlotAndBlockRootAndBlobIndex key : slotBlobIndexes) {
-      if (nonCanonicalBlobSidecars) {
-        updater.removeNonCanonicalBlobSidecar(key);
-      } else {
-        updater.removeBlobSidecar(key);
-      }
-    }
-
-    return true;
   }
 
   @MustBeClosed

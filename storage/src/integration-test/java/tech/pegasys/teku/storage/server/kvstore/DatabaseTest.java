@@ -450,7 +450,10 @@ public class DatabaseTest {
             List.of(blobSidecar5_0)));
 
     // Pruning with a prune limit set to 1: Only blobSidecar1 will be pruned
-    assertThat(database.pruneOldestNonCanonicalBlobSidecars(UInt64.MAX_VALUE, 1)).isTrue();
+    assertThat(
+            database.pruneOldestNonCanonicalBlobSidecars(
+                UInt64.MAX_VALUE, 1, dataArchive.getBlobSidecarWriter()))
+        .isTrue();
     assertNonCanonicalBlobSidecarKeys(
         blobSidecar2_0.getSlot(),
         blobSidecar5_0.getSlot(),
@@ -466,7 +469,10 @@ public class DatabaseTest {
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(4L);
 
     // Pruning up to slot 1: No blobs pruned
-    assertThat(database.pruneOldestNonCanonicalBlobSidecars(ONE, 10)).isFalse();
+    assertThat(
+            database.pruneOldestNonCanonicalBlobSidecars(
+                ONE, 10, dataArchive.getBlobSidecarWriter()))
+        .isFalse();
     assertNonCanonicalBlobSidecarKeys(
         blobSidecar2_0.getSlot(),
         blobSidecar5_0.getSlot(),
@@ -482,14 +488,20 @@ public class DatabaseTest {
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(4L);
 
     // Prune blobs up to slot 3
-    assertThat(database.pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf(3), 10)).isFalse();
+    assertThat(
+            database.pruneOldestNonCanonicalBlobSidecars(
+                UInt64.valueOf(3), 10, dataArchive.getBlobSidecarWriter()))
+        .isFalse();
     assertNonCanonicalBlobSidecarKeys(
         blobSidecar1_0.getSlot(), blobSidecar5_0.getSlot(), blobSidecarToKey(blobSidecar5_0));
     assertNonCanonicalBlobSidecars(Map.of(blobSidecar5_0.getSlot(), List.of(blobSidecar5_0)));
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(1L);
 
     // Pruning all blobs
-    assertThat(database.pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf(5), 1)).isTrue();
+    assertThat(
+            database.pruneOldestNonCanonicalBlobSidecars(
+                UInt64.valueOf(5), 1, dataArchive.getBlobSidecarWriter()))
+        .isTrue();
     // No blobs should be left
     assertNonCanonicalBlobSidecarKeys(ZERO, UInt64.valueOf(10));
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(0L);

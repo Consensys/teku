@@ -335,7 +335,9 @@ public class NoOpDatabase implements Database {
 
   @Override
   public boolean pruneOldestNonCanonicalBlobSidecars(
-      final UInt64 lastSlotToPrune, final int pruneLimit) {
+      final UInt64 lastSlotToPrune,
+      final int pruneLimit,
+      final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
     return false;
   }
 

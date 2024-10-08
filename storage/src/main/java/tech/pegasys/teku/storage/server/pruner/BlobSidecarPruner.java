@@ -165,7 +165,8 @@ public class BlobSidecarPruner extends Service {
       if (storeNonCanonicalBlobSidecars) {
         final long nonCanonicalBlobsPruningStart = System.currentTimeMillis();
         final boolean nonCanonicalBlobsLimitReached =
-            database.pruneOldestNonCanonicalBlobSidecars(latestPrunableSlot, pruneLimit);
+            database.pruneOldestNonCanonicalBlobSidecars(
+                latestPrunableSlot, pruneLimit, archiveWriter);
         logPruningResult(
             "Non canonical Blobs pruning finished in {} ms. Limit reached: {}",
             nonCanonicalBlobsPruningStart,
