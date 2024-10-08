@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.client;
 import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EXIT_CODE;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -184,7 +183,7 @@ public class ValidatorClientService extends Service {
           ProposerConfigProvider.create(
               asyncRunner,
               validatorConfig.getRefreshProposerConfigFromSource(),
-              new ProposerConfigLoader(new ObjectMapper()),
+              new ProposerConfigLoader(),
               services.getTimeProvider(),
               validatorConfig.getProposerConfigSource());
 
