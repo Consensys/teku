@@ -41,9 +41,9 @@ public interface AttestationSchema<T extends Attestation> extends SszContainerSc
     return bitsSchema.ofBits(Math.toIntExact(bitsSchema.getMaxLength()));
   }
 
-  default SszBitlist createAggregationBitsOf(final int... indices) {
+  default SszBitlist createAggregationBitsOf(final int size, final int... indices) {
     final SszBitlistSchema<?> bitsSchema = getAggregationBitsSchema();
-    return bitsSchema.ofBits(Math.toIntExact(bitsSchema.getMaxLength()), indices);
+    return bitsSchema.ofBits(size, indices);
   }
 
   default Optional<SszBitvector> createEmptyCommitteeBits() {

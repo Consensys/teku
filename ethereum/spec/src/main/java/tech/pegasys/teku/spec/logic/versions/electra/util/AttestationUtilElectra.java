@@ -262,7 +262,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
         .toVersionElectra()
         .orElseThrow()
         .getAttestationSchema()
-        .createAggregationBitsOf(validatorCommitteeBit);
+        .createAggregationBitsOf(committee.size(), validatorCommitteeBit);
   }
 
   private UInt64 getValidatorIndexFromAttestation(
