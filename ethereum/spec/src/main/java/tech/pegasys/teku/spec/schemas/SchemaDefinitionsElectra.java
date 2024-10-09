@@ -53,6 +53,8 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttesterSlashingElectraSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.IndexedAttestationElectraSchema;
@@ -102,6 +104,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
       pendingPartialWithdrawalSchema;
   private final PendingConsolidation.PendingConsolidationSchema pendingConsolidationSchema;
 
+  private final SingleAttestationSchema singleAttestationSchema;
+
   public SchemaDefinitionsElectra(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
     final SpecConfigElectra specConfig = SpecConfigElectra.required(schemaRegistry.getSpecConfig());
@@ -113,6 +117,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.attesterSlashingSchema =
         new AttesterSlashingElectraSchema(indexedAttestationSchema)
             .castTypeToAttesterSlashingSchema();
+
+    this.singleAttestationSchema = new SingleAttestationSchema();
 
     this.attestationSchema =
         new AttestationElectraSchema(
@@ -331,6 +337,10 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   public SszListSchema<PendingPartialWithdrawal, ?> getPendingPartialWithdrawalsSchema() {
     return beaconStateSchema.getPendingPartialWithdrawalsSchema();
+  }
+
+  public AttestationSchema<SingleAttestation> getSingleAttestationSchema() {
+    return singleAttestationSchema;
   }
 
   public PendingPartialWithdrawal.PendingPartialWithdrawalSchema

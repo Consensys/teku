@@ -41,6 +41,11 @@ public interface AttestationSchema<T extends Attestation> extends SszContainerSc
     return bitsSchema.ofBits(Math.toIntExact(bitsSchema.getMaxLength()));
   }
 
+  default SszBitlist createAggregationBitsOf(final int size, final int... indices) {
+    final SszBitlistSchema<?> bitsSchema = getAggregationBitsSchema();
+    return bitsSchema.ofBits(size, indices);
+  }
+
   default Optional<SszBitvector> createEmptyCommitteeBits() {
     return getCommitteeBitsSchema().map(SszBitvectorSchema::ofBits);
   }
@@ -52,6 +57,10 @@ public interface AttestationSchema<T extends Attestation> extends SszContainerSc
 
   default Optional<AttestationElectraSchema> toVersionElectra() {
     return Optional.empty();
+  }
+
+  default SingleAttestationSchema toSingleAttestationSchemaRequired() {
+    throw new UnsupportedOperationException("Not a SingleAttestationSchema");
   }
 
   SszBitlistSchema<?> getAggregationBitsSchema();
