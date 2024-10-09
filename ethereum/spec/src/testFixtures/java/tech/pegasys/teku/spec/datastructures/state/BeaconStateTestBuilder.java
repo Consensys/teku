@@ -106,6 +106,19 @@ public class BeaconStateTestBuilder {
     return this;
   }
 
+  public BeaconStateTestBuilder activeConsolidatingValidatorQueuedForExit(final UInt64 balance) {
+    validators.add(
+        dataStructureUtil
+            .randomValidator()
+            .withWithdrawalCredentials(dataStructureUtil.randomCompoundingWithdrawalCredentials())
+            .withEffectiveBalance(
+                SpecConfigElectra.required(specConfig).getMaxEffectiveBalanceElectra().min(balance))
+            .withActivationEpoch(UInt64.ZERO)
+            .withExitEpoch(FAR_FUTURE_EPOCH.minus(1)));
+    balances.add(balance);
+    return this;
+  }
+
   public BeaconState build() {
     final SpecVersion specVersion = dataStructureUtil.getSpec().atSlot(slot);
     return specVersion
