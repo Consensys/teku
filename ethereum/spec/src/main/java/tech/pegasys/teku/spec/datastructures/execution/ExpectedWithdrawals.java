@@ -130,10 +130,12 @@ public class ExpectedWithdrawals {
       final MiscHelpersElectra miscHelpers,
       final SpecConfigElectra specConfig,
       final PredicatesElectra predicates) {
-    final List<Withdrawal> partialPendingWithdrawals =
+    final WithdrawalSummary expectedPendingPartialWithdrawals =
         getPendingPartialWithdrawals(preState, schemaDefinitions, miscHelpers, specConfig);
-    final int partialWithdrawalsCount = partialPendingWithdrawals.size();
-    final List<Withdrawal> capellaWithdrawals =
+    final List<Withdrawal> partialPendingWithdrawals =
+        expectedPendingPartialWithdrawals.withdrawalList();
+    final int partialWithdrawalsCount = expectedPendingPartialWithdrawals.partialWithdrawalCount();
+    final List<Withdrawal> withdrawals =
         getExpectedWithdrawals(
             preState,
             schemaDefinitions,
@@ -141,7 +143,7 @@ public class ExpectedWithdrawals {
             specConfig,
             predicates,
             partialPendingWithdrawals);
-    return new ExpectedWithdrawals(capellaWithdrawals, partialWithdrawalsCount, schemaDefinitions);
+    return new ExpectedWithdrawals(withdrawals, partialWithdrawalsCount, schemaDefinitions);
   }
 
   public List<Withdrawal> getWithdrawalList() {
@@ -152,7 +154,7 @@ public class ExpectedWithdrawals {
     return partialWithdrawalCount;
   }
 
-  private static List<Withdrawal> getPendingPartialWithdrawals(
+  private static WithdrawalSummary getPendingPartialWithdrawals(
       final BeaconStateElectra preState,
       final SchemaDefinitionsElectra schemaDefinitions,
       final MiscHelpersElectra miscHelpers,
@@ -162,6 +164,7 @@ public class ExpectedWithdrawals {
     final List<Withdrawal> partialWithdrawals = new ArrayList<>();
     final SszList<PendingPartialWithdrawal> pendingPartialWithdrawals =
         preState.getPendingPartialWithdrawals();
+    int partialWithdrawalsCount = 0;
     UInt64 withdrawalIndex = preState.getNextWithdrawalIndex();
 
     for (int i = 0; i < pendingPartialWithdrawals.size() && i < maxPendingPartialWithdrawals; i++) {
@@ -195,8 +198,9 @@ public class ExpectedWithdrawals {
                     withdrawableBalance));
         withdrawalIndex = withdrawalIndex.increment();
       }
+      partialWithdrawalsCount++;
     }
-    return partialWithdrawals;
+    return new WithdrawalSummary(partialWithdrawals, partialWithdrawalsCount);
   }
 
   // get_expected_withdrawals
@@ -371,4 +375,6 @@ public class ExpectedWithdrawals {
   private static UInt64 nextWithdrawalAfter(final List<Withdrawal> partialWithdrawals) {
     return partialWithdrawals.getLast().getIndex().increment();
   }
+
+  public record WithdrawalSummary(List<Withdrawal> withdrawalList, int partialWithdrawalCount) {}
 }

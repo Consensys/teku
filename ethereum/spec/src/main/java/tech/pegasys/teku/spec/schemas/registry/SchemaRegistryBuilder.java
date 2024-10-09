@@ -26,7 +26,9 @@ public class SchemaRegistryBuilder {
   private final SchemaCache cache;
 
   public static SchemaRegistryBuilder create() {
-    return new SchemaRegistryBuilder();
+    return new SchemaRegistryBuilder()
+        .addProvider(new AttnetsENRFieldSchemaProvider())
+        .addProvider(new AttestationSchemaProvider());
   }
 
   public SchemaRegistryBuilder() {
