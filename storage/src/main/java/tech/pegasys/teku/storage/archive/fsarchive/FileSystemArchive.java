@@ -77,7 +77,7 @@ public class FileSystemArchive implements DataArchive {
       }
 
       SlotAndBlockRoot slotAndBlockRoot = blobSidecars.getFirst().getSlotAndBlockRoot();
-      File file = resolve(baseDirectory, slotAndBlockRoot);
+      File file = resolve(slotAndBlockRoot);
       if (file.exists()) {
         LOG.warn("Failed to write BlobSidecar. File exists: {}", file.toString());
         return false;
@@ -120,11 +120,10 @@ public class FileSystemArchive implements DataArchive {
    * Given a basePath, slot and block root, return where to store/find the BlobSidecar. Initial
    * implementation uses blockRoot as a hex string in the directory of the first two characters.
    *
-   * @param basePath The base directory for the BlobSidecar.
    * @param slotAndBlockRoot The slot and block root.
    * @return a path of where to store or find the BlobSidecar
    */
-  File resolve(final Path basePath, final SlotAndBlockRoot slotAndBlockRoot) {
+  public File resolve(final SlotAndBlockRoot slotAndBlockRoot) {
     // For blockroot 0x1a2bcd...  the directory is basePath/1a/2b/1a2bcd...
     // 256 * 256 directories = 65,536.
     // Assume 8000 to 10000 blobs per day. With perfect hash distribution,
@@ -134,6 +133,6 @@ public class FileSystemArchive implements DataArchive {
     final String dir2 = blockRootString.substring(2, 4);
     final String blobSidecarFilename =
         dir1 + File.separator + dir2 + File.separator + blockRootString;
-    return basePath.resolve(blobSidecarFilename).toFile();
+    return baseDirectory.resolve(blobSidecarFilename).toFile();
   }
 }
