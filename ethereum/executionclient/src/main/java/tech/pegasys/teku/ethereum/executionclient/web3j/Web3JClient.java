@@ -15,7 +15,6 @@ package tech.pegasys.teku.ethereum.executionclient.web3j;
 
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 
-import java.io.IOException;
 import java.net.ConnectException;
 import java.time.Duration;
 import java.util.Collection;
@@ -96,13 +95,14 @@ public abstract class Web3JClient {
             });
   }
 
-  private <T> Response<T> handleException(Throwable exception, boolean isCriticalRequest) {
+  private <T> Response<T> handleException(final Throwable exception, final boolean isCriticalRequest) {
     final boolean couldBeAuthError = isAuthenticationException(exception);
     handleError(isCriticalRequest, exception, couldBeAuthError);
     return Response.withErrorMessage(getMessageOrSimpleName(exception));
   }
 
-  private <T> Response<T> handleJsonRpcError(org.web3j.protocol.core.Response.Error error, boolean isCriticalRequest) {
+  private <T> Response<T> handleJsonRpcError(
+      final org.web3j.protocol.core.Response.Error error, final boolean isCriticalRequest) {
     int errorCode = error.getCode();
     String errorType = JsonRpcErrorCodes.getErrorMessage(errorCode);
     String formattedError = String.format("%s (%d): %s", errorType, errorCode, error.getMessage());
@@ -114,8 +114,8 @@ public abstract class Web3JClient {
     return Response.withErrorMessage(formattedError);
   }
 
-  private void logError(String errorMessage) {
-    eventLog.executionClientRequestFailed(new Exception(errorMessage),false);
+  private void logError(final String errorMessage) {
+    eventLog.executionClientRequestFailed(new Exception(errorMessage), false);
   }
 
   private boolean isCriticalRequest(final Request<?, ?> request) {
