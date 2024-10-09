@@ -34,8 +34,8 @@ abstract class AbstractSchemaProvider<T> implements SchemaProvider<T> {
   protected void addMilestoneMapping(
       final SpecMilestone milestone, final SpecMilestone untilMilestone) {
     checkArgument(
-        untilMilestone.isGreaterThan(milestone),
-        "%s must be earlier than %s",
+        untilMilestone.isGreaterThanOrEqualTo(milestone),
+        "%s must be earlier then or equal to %s",
         milestone,
         untilMilestone);
 

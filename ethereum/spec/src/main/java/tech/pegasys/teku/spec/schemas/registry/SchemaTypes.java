@@ -21,11 +21,16 @@ import java.util.Locale;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 
 public class SchemaTypes {
   // PHASE0
   public static final SchemaId<SszBitvectorSchema<SszBitvector>> ATTNETS_ENR_FIELD_SCHEMA =
       create("ATTNETS_ENR_FIELD_SCHEMA");
+
+  public static final SchemaId<AttestationSchema<Attestation>> ATTESTATION_SCHEMA =
+      create("ATTESTATION_SCHEMA");
 
   // Altair
 
