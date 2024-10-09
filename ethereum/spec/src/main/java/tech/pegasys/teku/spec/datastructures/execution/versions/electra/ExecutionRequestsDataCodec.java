@@ -78,8 +78,17 @@ public class ExecutionRequestsDataCodec {
     return executionRequestsBuilder.build();
   }
 
+  public Bytes32 hash(final ExecutionRequests executionRequests) {
+    final Bytes sortedEncodedRequests =
+        encodeWithTypePrefix(executionRequests).stream()
+            .map(Hash::sha256)
+            .map(Bytes.class::cast)
+            .reduce(Bytes.EMPTY, Bytes::concatenate);
+    return Hash.sha256(sortedEncodedRequests);
+  }
+
   @VisibleForTesting
-  List<Bytes> encodeWithTypePrefix(final ExecutionRequests executionRequests) {
+  public List<Bytes> encodeWithoutTypePrefix(final ExecutionRequests executionRequests) {
     final SszList<DepositRequest> depositRequestsSszList =
         executionRequestsSchema
             .getDepositRequestsSchema()
@@ -94,18 +103,17 @@ public class ExecutionRequestsDataCodec {
             .createFromElements(executionRequests.getConsolidations());
 
     return List.of(
-        Bytes.concatenate(DEPOSIT_REQUEST_PREFIX, depositRequestsSszList.sszSerialize()),
-        Bytes.concatenate(WITHDRAWAL_REQUEST_PREFIX, withdrawalRequestsSszList.sszSerialize()),
-        Bytes.concatenate(
-            CONSOLIDATION_REQUEST_PREFIX, consolidationRequestsSszList.sszSerialize()));
+        depositRequestsSszList.sszSerialize(),
+        withdrawalRequestsSszList.sszSerialize(),
+        consolidationRequestsSszList.sszSerialize());
   }
 
-  public Bytes32 hash(final ExecutionRequests executionRequests) {
-    final Bytes sortedEncodedRequests =
-        encodeWithTypePrefix(executionRequests).stream()
-            .map(Hash::sha256)
-            .map(Bytes.class::cast)
-            .reduce(Bytes.EMPTY, Bytes::concatenate);
-    return Hash.sha256(sortedEncodedRequests);
+  @VisibleForTesting
+  List<Bytes> encodeWithTypePrefix(final ExecutionRequests executionRequests) {
+    final List<Bytes> encodeWithoutTypePrefix = encodeWithoutTypePrefix(executionRequests);
+    return List.of(
+        Bytes.concatenate(DEPOSIT_REQUEST_PREFIX, encodeWithoutTypePrefix.get(0)),
+        Bytes.concatenate(WITHDRAWAL_REQUEST_PREFIX, encodeWithoutTypePrefix.get(1)),
+        Bytes.concatenate(CONSOLIDATION_REQUEST_PREFIX, encodeWithoutTypePrefix.get(2)));
   }
 }
