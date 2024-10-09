@@ -288,7 +288,7 @@ public class StorageConfiguration {
         File file = Path.of(blobsArchivePath).toFile();
         if (!file.exists()) {
           throw new InvalidConfigurationException(
-              String.format("blobsArchivePath does not exist: '%s'", blobsArchivePath));
+              String.format("Blobs archive path does not exist: '%s'", blobsArchivePath));
         }
       }
       this.blobsArchivePath = blobsArchivePath;
