@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.provider;
+package tech.pegasys.teku.validator.client.proposerconfig.loader;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
-public class BLSPublicKeyDeserializer extends JsonDeserializer<BLSPublicKey> {
+class BLSPublicKeyDeserializer extends JsonDeserializer<BLSPublicKey> {
   @Override
   public BLSPublicKey deserialize(final JsonParser p, final DeserializationContext ctxt)
       throws IOException {
