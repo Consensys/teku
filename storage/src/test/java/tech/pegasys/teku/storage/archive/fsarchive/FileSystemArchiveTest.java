@@ -94,7 +94,7 @@ public class FileSystemArchiveTest {
         new SlotAndBlockRootAndBlobIndex(
             UInt64.ONE, dataStructureUtil.randomBytes32(), UInt64.ZERO);
     File file =
-        dataArchive.resolve(testTempDir, slotAndBlockRootAndBlobIndex.getSlotAndBlockRoot());
+        dataArchive.resolve(slotAndBlockRootAndBlobIndex.getSlotAndBlockRoot());
 
     // Check if the file path is correct. Doesn't check the intermediate directories.
     assertTrue(file.toString().startsWith(testTempDir.toString()));
