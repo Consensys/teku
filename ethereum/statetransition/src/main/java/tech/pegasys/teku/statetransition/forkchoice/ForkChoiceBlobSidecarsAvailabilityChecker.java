@@ -378,7 +378,15 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
                         .flatMap(SignedBeaconBlock::getBeaconBlock)
                         .map(BeaconBlock::getBody)
                         .orElseThrow())
-                .getBlobKzgCommitments()
+                .getOptionalBlobKzgCommitments()
+                // ePBS
+                .orElseGet(
+                    () ->
+                        availabilityChecker
+                            .blockBlobSidecarsTracker
+                            .getExecutionPayloadEnvelope()
+                            .orElseThrow()
+                            .getBlobKzgCommitments())
                 .stream()
                 .map(SszKZGCommitment::getKZGCommitment)
                 .toList());
