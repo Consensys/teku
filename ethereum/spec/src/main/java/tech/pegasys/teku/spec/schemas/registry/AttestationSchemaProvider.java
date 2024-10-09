@@ -14,13 +14,9 @@
 package tech.pegasys.teku.spec.schemas.registry;
 
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
-import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_SCHEMA;
 
-import java.util.Set;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
@@ -28,36 +24,21 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.Attestat
 
 public class AttestationSchemaProvider
     extends AbstractSchemaProvider<AttestationSchema<Attestation>> {
-
   public AttestationSchemaProvider() {
-    super(ATTESTATION_SCHEMA);
-    addMilestoneMapping(PHASE0, DENEB);
-    addMilestoneMapping(ELECTRA, SpecMilestone.getHighestMilestone());
-  }
-
-  @Override
-  protected AttestationSchema<Attestation> createSchema(
-      final SchemaRegistry registry,
-      final SpecMilestone effectiveMilestone,
-      final SpecConfig specConfig) {
-    return switch (effectiveMilestone) {
-      case PHASE0 ->
-          new AttestationPhase0Schema(specConfig.getMaxValidatorsPerCommittee())
-              .castTypeToAttestationSchema();
-      case ELECTRA ->
-          new AttestationElectraSchema(
-                  (long) specConfig.getMaxValidatorsPerCommittee()
-                      * specConfig.getMaxCommitteesPerSlot(),
-                  specConfig.getMaxCommitteesPerSlot())
-              .castTypeToAttestationSchema();
-      default ->
-          throw new IllegalArgumentException(
-              "It is not supposed to create a specific version for " + effectiveMilestone);
-    };
-  }
-
-  @Override
-  public Set<SpecMilestone> getSupportedMilestones() {
-    return ALL_MILESTONES;
+    super(
+        ATTESTATION_SCHEMA,
+        milestoneSchema(
+            PHASE0,
+            (registry, specConfig) ->
+                new AttestationPhase0Schema(specConfig.getMaxValidatorsPerCommittee())
+                    .castTypeToAttestationSchema()),
+        milestoneSchema(
+            DENEB,
+            (registry, specConfig) ->
+                new AttestationElectraSchema(
+                        (long) specConfig.getMaxValidatorsPerCommittee()
+                            * specConfig.getMaxCommitteesPerSlot(),
+                        specConfig.getMaxCommitteesPerSlot())
+                    .castTypeToAttestationSchema()));
   }
 }

@@ -16,29 +16,17 @@ package tech.pegasys.teku.spec.schemas.registry;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTNETS_ENR_FIELD_SCHEMA;
 
-import java.util.Set;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfig;
 
 public class AttnetsENRFieldSchemaProvider
     extends AbstractSchemaProvider<SszBitvectorSchema<SszBitvector>> {
   public AttnetsENRFieldSchemaProvider() {
-    super(ATTNETS_ENR_FIELD_SCHEMA);
-    addMilestoneMapping(PHASE0, SpecMilestone.getHighestMilestone());
-  }
-
-  @Override
-  protected SszBitvectorSchema<SszBitvector> createSchema(
-      final SchemaRegistry registry,
-      final SpecMilestone effectiveMilestone,
-      final SpecConfig specConfig) {
-    return SszBitvectorSchema.create(specConfig.getAttestationSubnetCount());
-  }
-
-  @Override
-  public Set<SpecMilestone> getSupportedMilestones() {
-    return ALL_MILESTONES;
+    super(
+        ATTNETS_ENR_FIELD_SCHEMA,
+        milestoneSchema(
+            PHASE0,
+            (registry, specConfig) ->
+                SszBitvectorSchema.create(specConfig.getAttestationSubnetCount())));
   }
 }
