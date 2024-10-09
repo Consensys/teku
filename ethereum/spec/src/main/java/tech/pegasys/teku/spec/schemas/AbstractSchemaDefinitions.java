@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
 public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
   protected SchemaRegistry schemaRegistry;
@@ -39,8 +40,7 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
     this.beaconBlocksByRootRequestMessageSchema =
         new BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema(
             schemaRegistry.getSpecConfig());
-    this.attnetsENRFieldSchema =
-        SszBitvectorSchema.create(schemaRegistry.getSpecConfig().getAttestationSubnetCount());
+    this.attnetsENRFieldSchema = schemaRegistry.get(SchemaTypes.ATTNETS_ENR_FIELD_SCHEMA);
   }
 
   abstract long getMaxValidatorPerAttestation(SpecConfig specConfig);
