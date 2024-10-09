@@ -24,8 +24,8 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.e
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra.EARLIEST_CONSOLIDATION_EPOCH_INDEX;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra.EARLIEST_EXIT_EPOCH_INDEX;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra.EXIT_BALANCE_TO_CONSUME_INDEX;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra.PENDING_BALANCE_DEPOSITS_INDEX;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra.PENDING_CONSOLIDATIONS_INDEX;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra.PENDING_DEPOSITS_INDEX;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra.PENDING_PARTIAL_WITHDRAWALS_INDEX;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -47,8 +47,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBe
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public class BeaconStateSchemaEip7732
@@ -65,8 +65,8 @@ public class BeaconStateSchemaEip7732
   private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
     final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema =
         new HistoricalSummary.HistoricalSummarySchema();
-    final PendingBalanceDeposit.PendingBalanceDepositSchema pendingBalanceDepositSchema =
-        new PendingBalanceDeposit.PendingBalanceDepositSchema();
+    final PendingDeposit.PendingDepositSchema pendingDepositSchema =
+        new PendingDeposit.PendingDepositSchema();
     final PendingPartialWithdrawal.PendingPartialWithdrawalSchema pendingPartialWithdrawalSchema =
         new PendingPartialWithdrawal.PendingPartialWithdrawalSchema();
     final SpecConfigEip7732 specConfigEip7732 = SpecConfigEip7732.required(specConfig);
@@ -127,14 +127,13 @@ public class BeaconStateSchemaEip7732
             EARLIEST_CONSOLIDATION_EPOCH_INDEX,
             BeaconStateFields.EARLIEST_CONSOLIDATION_EPOCH,
             () -> SszPrimitiveSchemas.UINT64_SCHEMA);
-    final SszField pendingBalanceDepositsField =
+    final SszField pendingDepositsField =
         new SszField(
-            PENDING_BALANCE_DEPOSITS_INDEX,
-            BeaconStateFields.PENDING_BALANCE_DEPOSITS,
+            PENDING_DEPOSITS_INDEX,
+            BeaconStateFields.PENDING_DEPOSITS,
             () ->
                 SszListSchema.create(
-                    pendingBalanceDepositSchema,
-                    specConfigEip7732.getPendingBalanceDepositsLimit()));
+                    pendingDepositSchema, specConfigEip7732.getPendingDepositsLimit()));
     final SszField pendingPartialWithdrawalsField =
         new SszField(
             PENDING_PARTIAL_WITHDRAWALS_INDEX,
@@ -179,7 +178,7 @@ public class BeaconStateSchemaEip7732
                 earliestExitEpochField,
                 consolidationBalanceToConsumeField,
                 earliestConsolidationEpochField,
-                pendingBalanceDepositsField,
+                pendingDepositsField,
                 pendingPartialWithdrawalsField,
                 pendingConsolidationsField,
                 latestBlockHashField,
@@ -253,9 +252,9 @@ public class BeaconStateSchemaEip7732
   }
 
   @SuppressWarnings("unchecked")
-  public SszListSchema<PendingBalanceDeposit, ?> getPendingBalanceDepositsSchema() {
-    return (SszListSchema<PendingBalanceDeposit, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_BALANCE_DEPOSITS));
+  public SszListSchema<PendingDeposit, ?> getPendingDepositsSchema() {
+    return (SszListSchema<PendingDeposit, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_DEPOSITS));
   }
 
   @SuppressWarnings("unchecked")

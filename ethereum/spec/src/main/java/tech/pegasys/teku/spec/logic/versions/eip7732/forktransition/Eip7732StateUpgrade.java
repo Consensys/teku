@@ -15,10 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.eip7732.forktransition;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
-import java.util.Comparator;
-import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
@@ -111,31 +108,10 @@ public class Eip7732StateUpgrade implements StateUpgrade<BeaconStateElectra> {
                   beaconStateAccessors.getConsolidationChurnLimit(state));
               state.setEarliestConsolidationEpoch(
                   miscHelpersElectra.computeActivationExitEpoch(epoch));
-
-              final SszMutableList<Validator> validators = state.getValidators();
-
-              // Add validators that are not yet active to pending balance deposits
-              IntStream.range(0, validators.size())
-                  .filter(
-                      index -> validators.get(index).getActivationEpoch().equals(FAR_FUTURE_EPOCH))
-                  .boxed()
-                  .sorted(
-                      Comparator.comparing(
-                          index -> validators.get(index).getActivationEligibilityEpoch()))
-                  .forEach(
-                      index ->
-                          beaconStateMutators.queueEntireBalanceAndResetValidator(state, index));
-
-              // Ensure early adopters of compounding credentials go through the activation churn
-              IntStream.range(0, validators.size())
-                  .forEach(
-                      index -> {
-                        if (predicatesElectra.hasCompoundingWithdrawalCredential(
-                            validators.get(index))) {
-                          beaconStateMutators.queueExcessActiveBalance(state, index);
-                        }
-                      });
-
+              state.setPendingDeposits(preStateElectra.getPendingDeposits());
+              state.setPendingPartialWithdrawals(preStateElectra.getPendingPartialWithdrawals());
+              state.setPendingConsolidations(preStateElectra.getPendingConsolidations());
+              // ePBS
               state.setLatestBlockHash(
                   preStateElectra.getLatestExecutionPayloadHeader().getBlockHash());
               state.setLatestFullSlot(preState.getSlot());
