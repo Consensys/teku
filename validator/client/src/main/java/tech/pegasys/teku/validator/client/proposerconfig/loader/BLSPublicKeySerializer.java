@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.provider;
+package tech.pegasys.teku.validator.client.proposerconfig.loader;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.Locale;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
-public class BLSPublicKeySerializer extends JsonSerializer<BLSPublicKey> {
+class BLSPublicKeySerializer extends JsonSerializer<BLSPublicKey> {
   @Override
   public void serialize(
       final BLSPublicKey value, final JsonGenerator gen, final SerializerProvider serializers)
