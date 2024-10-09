@@ -29,8 +29,8 @@ import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.altair.SyncCommittee;
 import tech.pegasys.teku.api.schema.capella.HistoricalSummary;
-import tech.pegasys.teku.api.schema.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.api.schema.electra.PendingConsolidation;
+import tech.pegasys.teku.api.schema.electra.PendingDeposit;
 import tech.pegasys.teku.api.schema.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -77,8 +77,8 @@ public class BeaconStateEip7732 extends BeaconStateAltair {
   @JsonProperty("earliest_consolidation_epoch")
   public final UInt64 earliestConsolidationEpoch;
 
-  @JsonProperty("pending_balance_deposits")
-  public final List<PendingBalanceDeposit> pendingBalanceDeposits;
+  @JsonProperty("pending_deposits")
+  public final List<PendingDeposit> pendingDeposits;
 
   @JsonProperty("pending_partial_withdrawals")
   public final List<PendingPartialWithdrawal> pendingPartialWithdrawals;
@@ -142,8 +142,7 @@ public class BeaconStateEip7732 extends BeaconStateAltair {
       @JsonProperty("earliest_exit_epoch") final UInt64 earliestExitEpoch,
       @JsonProperty("consolidation_balance_to_consume") final UInt64 consolidationBalanceToConsume,
       @JsonProperty("earliest_consolidation_epoch") final UInt64 earliestConsolidationEpoch,
-      @JsonProperty("pending_balance_deposits")
-          final List<PendingBalanceDeposit> pendingBalanceDeposits,
+      @JsonProperty("pending_deposits") final List<PendingDeposit> pendingDeposits,
       @JsonProperty("pending_partial_withdrawals")
           final List<PendingPartialWithdrawal> pendingPartialWithdrawals,
       @JsonProperty("pending_consolidations")
@@ -186,7 +185,7 @@ public class BeaconStateEip7732 extends BeaconStateAltair {
     this.earliestExitEpoch = earliestExitEpoch;
     this.consolidationBalanceToConsume = consolidationBalanceToConsume;
     this.earliestConsolidationEpoch = earliestConsolidationEpoch;
-    this.pendingBalanceDeposits = pendingBalanceDeposits;
+    this.pendingDeposits = pendingDeposits;
     this.pendingPartialWithdrawals = pendingPartialWithdrawals;
     this.pendingConsolidations = pendingConsolidations;
     this.latestBlockHash = latestBlockHash;
@@ -213,8 +212,7 @@ public class BeaconStateEip7732 extends BeaconStateAltair {
     this.earliestExitEpoch = eip7732.getEarliestExitEpoch();
     this.consolidationBalanceToConsume = eip7732.getConsolidationBalanceToConsume();
     this.earliestConsolidationEpoch = eip7732.getEarliestConsolidationEpoch();
-    this.pendingBalanceDeposits =
-        eip7732.getPendingBalanceDeposits().stream().map(PendingBalanceDeposit::new).toList();
+    this.pendingDeposits = eip7732.getPendingDeposits().stream().map(PendingDeposit::new).toList();
     this.pendingPartialWithdrawals =
         eip7732.getPendingPartialWithdrawals().stream().map(PendingPartialWithdrawal::new).toList();
     this.pendingConsolidations =
@@ -245,7 +243,7 @@ public class BeaconStateEip7732 extends BeaconStateAltair {
                         .getHistoricalSummariesSchema(),
                     BeaconStateSchemaEip7732.required(
                             mutableBeaconStateEip7732.getBeaconStateSchema())
-                        .getPendingBalanceDepositsSchema(),
+                        .getPendingDepositsSchema(),
                     BeaconStateSchemaEip7732.required(
                             mutableBeaconStateEip7732.getBeaconStateSchema())
                         .getPendingPartialWithdrawalsSchema(),
@@ -264,8 +262,8 @@ public class BeaconStateEip7732 extends BeaconStateAltair {
               tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary, ?>
           historicalSummariesSchema,
       final SszListSchema<
-              tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit, ?>
-          pendingBalanceDepositsSchema,
+              tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit, ?>
+          pendingDepositsSchema,
       final SszListSchema<
               tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal,
               ?>
@@ -295,12 +293,10 @@ public class BeaconStateEip7732 extends BeaconStateAltair {
     state.setEarliestExitEpoch(instance.earliestExitEpoch);
     state.setConsolidationBalanceToConsume(instance.consolidationBalanceToConsume);
     state.setEarliestConsolidationEpoch(instance.earliestConsolidationEpoch);
-    state.setPendingBalanceDeposits(
-        pendingBalanceDepositsSchema.createFromElements(
-            instance.pendingBalanceDeposits.stream()
-                .map(
-                    pendingBalanceDeposit ->
-                        pendingBalanceDeposit.asInternalPendingBalanceDeposit(specVersion))
+    state.setPendingDeposits(
+        pendingDepositsSchema.createFromElements(
+            instance.pendingDeposits.stream()
+                .map(pendingDeposit -> pendingDeposit.asInternalPendingDeposit(specVersion))
                 .toList()));
     state.setPendingPartialWithdrawals(
         pendingPartialWithdrawalsSchema.createFromElements(

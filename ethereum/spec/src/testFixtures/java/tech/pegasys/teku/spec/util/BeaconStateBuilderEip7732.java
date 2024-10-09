@@ -30,8 +30,8 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateEip7732;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateSchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.MutableBeaconStateEip7732;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public class BeaconStateBuilderEip7732
@@ -56,7 +56,7 @@ public class BeaconStateBuilderEip7732
 
   private UInt64 earliestConsolidationEpoch;
 
-  private SszList<PendingBalanceDeposit> pendingBalanceDeposits;
+  private SszList<PendingDeposit> pendingDeposits;
   private SszList<PendingPartialWithdrawal> pendingPartialWithdrawals;
   private SszList<PendingConsolidation> pendingConsolidations;
 
@@ -93,7 +93,7 @@ public class BeaconStateBuilderEip7732
     state.setEarliestExitEpoch(earliestExitEpoch);
     state.setConsolidationBalanceToConsume(consolidationBalanceToConsume);
     state.setEarliestConsolidationEpoch(earliestConsolidationEpoch);
-    state.setPendingBalanceDeposits(pendingBalanceDeposits);
+    state.setPendingDeposits(pendingDeposits);
     state.setPendingPartialWithdrawals(pendingPartialWithdrawals);
     state.setPendingConsolidations(pendingConsolidations);
     state.setLatestBlockHash(latestBlockHash);
@@ -180,8 +180,7 @@ public class BeaconStateBuilderEip7732
     this.earliestExitEpoch = UInt64.ZERO;
     this.consolidationBalanceToConsume = UInt64.ZERO;
     this.earliestConsolidationEpoch = UInt64.ZERO;
-    this.pendingBalanceDeposits =
-        schema.getPendingBalanceDepositsSchema().createFromElements(List.of());
+    this.pendingDeposits = schema.getPendingDepositsSchema().createFromElements(List.of());
     this.pendingPartialWithdrawals =
         schema.getPendingPartialWithdrawalsSchema().createFromElements(List.of());
     this.pendingConsolidations =
