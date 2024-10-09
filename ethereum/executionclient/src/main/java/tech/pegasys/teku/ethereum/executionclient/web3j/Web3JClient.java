@@ -86,19 +86,36 @@ public abstract class Web3JClient {
             (response, exception) -> {
               final boolean isCriticalRequest = isCriticalRequest(web3jRequest);
               if (exception != null) {
-                final boolean couldBeAuthError = isAuthenticationException(exception);
-                handleError(isCriticalRequest, exception, couldBeAuthError);
-                return Response.withErrorMessage(getMessageOrSimpleName(exception));
+                return handleException(exception, isCriticalRequest);
               } else if (response.hasError()) {
-                final String errorMessage =
-                    response.getError().getCode() + ": " + response.getError().getMessage();
-                handleError(isCriticalRequest, new IOException(errorMessage), false);
-                return Response.withErrorMessage(errorMessage);
+                return handleJsonRpcError(response.getError(), isCriticalRequest);
               } else {
                 handleSuccess(isCriticalRequest);
                 return new Response<>(response.getResult());
               }
             });
+  }
+
+  private <T> Response<T> handleException(Throwable exception, boolean isCriticalRequest) {
+    final boolean couldBeAuthError = isAuthenticationException(exception);
+    handleError(isCriticalRequest, exception, couldBeAuthError);
+    return Response.withErrorMessage(getMessageOrSimpleName(exception));
+  }
+
+  private <T> Response<T> handleJsonRpcError(org.web3j.protocol.core.Response.Error error, boolean isCriticalRequest) {
+    int errorCode = error.getCode();
+    String errorType = JsonRpcErrorCodes.getErrorMessage(errorCode);
+    String formattedError = String.format("%s (%d): %s", errorType, errorCode, error.getMessage());
+
+    if (isCriticalRequest) {
+      logError(formattedError);
+    }
+
+    return Response.withErrorMessage(formattedError);
+  }
+
+  private void logError(String errorMessage) {
+    eventLog.executionClientRequestFailed(new Exception(errorMessage),false);
   }
 
   private boolean isCriticalRequest(final Request<?, ?> request) {
