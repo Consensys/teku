@@ -51,7 +51,7 @@ public class GetPayloadV4Response {
       final @JsonProperty("blockValue") UInt256 blockValue,
       final @JsonProperty("blobsBundle") BlobsBundleV1 blobsBundle,
       final @JsonProperty("shouldOverrideBuilder") boolean shouldOverrideBuilder,
-      final @JsonProperty("blobs") List<Bytes> executionRequests) {
+      final @JsonProperty("executionRequests") List<Bytes> executionRequests) {
     checkNotNull(executionPayload, "executionPayload");
     checkNotNull(blockValue, "blockValue");
     checkNotNull(blobsBundle, "blobsBundle");
