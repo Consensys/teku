@@ -174,6 +174,11 @@ class BlindedBeaconBlockBodyElectraImpl
   }
 
   @Override
+  public ExecutionRequests getExecutionRequests() {
+    return getField12();
+  }
+
+  @Override
   public BlindedBeaconBlockBodySchemaElectraImpl getSchema() {
     return (BlindedBeaconBlockBodySchemaElectraImpl) super.getSchema();
   }
