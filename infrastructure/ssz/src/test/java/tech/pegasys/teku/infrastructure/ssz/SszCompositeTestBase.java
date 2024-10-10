@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.ssz;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.stream.IntStream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -28,23 +29,33 @@ public interface SszCompositeTestBase extends SszDataTestBase {
   @ParameterizedTest
   default void get_childSchemaMatches(final SszComposite<?> data) {
     SszCompositeSchema<?> schema = data.getSchema();
-    for (int i = 0; i < data.size(); i++) {
-      SszData child = data.get(i);
-      assertThat(child).isNotNull();
-      SszSchema<?> childSchema = child.getSchema();
-      assertThat(childSchema).isNotNull();
-      assertThat(childSchema).isEqualTo(schema.getChildSchema(i));
-    }
+    streamValidIndices(data)
+        .forEach(
+            i -> {
+              SszData child = data.get(i);
+              assertThat(child).as("child %s", i).isNotNull();
+              SszSchema<?> childSchema = child.getSchema();
+              assertThat(childSchema)
+                  .as("child schema %s", i)
+                  .isNotNull()
+                  .isEqualTo(schema.getChildSchema(i));
+            });
+  }
+
+  default IntStream streamOutOfBoundsIndices(final SszComposite<?> data) {
+    return IntStream.of(
+        -1, data.size(), (int) Long.min(Integer.MAX_VALUE, data.getSchema().getMaxLength()));
   }
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
   default void get_throwsOutOfBounds(final SszComposite<?> data) {
-    assertThatThrownBy(() -> data.get(-1)).isInstanceOf(IndexOutOfBoundsException.class);
-    assertThatThrownBy(() -> data.get(data.size())).isInstanceOf(IndexOutOfBoundsException.class);
-    assertThatThrownBy(
-            () -> data.get((int) Long.min(Integer.MAX_VALUE, data.getSchema().getMaxLength())))
-        .isInstanceOf(IndexOutOfBoundsException.class);
+    streamOutOfBoundsIndices(data)
+        .forEach(
+            wrongIndex ->
+                assertThatThrownBy(() -> data.get(wrongIndex))
+                    .as("child %s", wrongIndex)
+                    .isInstanceOf(IndexOutOfBoundsException.class));
   }
 
   @MethodSource("sszDataArguments")
