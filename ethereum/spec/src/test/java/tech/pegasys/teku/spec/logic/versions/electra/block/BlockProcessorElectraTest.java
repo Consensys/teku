@@ -538,7 +538,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
   public void shouldCreateNewPayloadRequestWithExecutionRequestsHash() throws Exception {
     final BeaconState preState = createBeaconState();
     final BeaconBlockBodyElectra blockBody =
-        BeaconBlockBodyElectra.required(dataStructureUtil.randomBeaconBlockBody());
+        BeaconBlockBodyElectra.required(dataStructureUtil.randomBeaconBlockBodyWithCommitments(3));
     final MiscHelpers miscHelpers = spec.atSlot(UInt64.ONE).miscHelpers();
     final List<VersionedHash> expectedVersionedHashes =
         blockBody.getOptionalBlobKzgCommitments().orElseThrow().stream()
