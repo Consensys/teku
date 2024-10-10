@@ -555,7 +555,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final ForkChoicePayloadExecutorEip7732 payloadExecutor =
         ForkChoicePayloadExecutorEip7732.create(executionLayer, block.getSlot());
     final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
-        blobSidecarManager.createAvailabilityChecker(block);
+        blobSidecarManager.createAvailabilityChecker(block, signedEnvelope.getMessage());
 
     blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
 
