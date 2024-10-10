@@ -28,7 +28,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
@@ -38,17 +37,14 @@ public class Eip7732StateUpgrade implements StateUpgrade<BeaconStateElectra> {
   private final SpecConfigEip7732 specConfig;
   private final SchemaDefinitionsEip7732 schemaDefinitions;
   private final BeaconStateAccessorsElectra beaconStateAccessors;
-  private final BeaconStateMutatorsElectra beaconStateMutators;
 
   public Eip7732StateUpgrade(
       final SpecConfigEip7732 specConfig,
       final SchemaDefinitionsEip7732 schemaDefinitions,
-      final BeaconStateAccessorsElectra beaconStateAccessors,
-      final BeaconStateMutatorsElectra beaconStateMutators) {
+      final BeaconStateAccessorsElectra beaconStateAccessors) {
     this.specConfig = specConfig;
     this.schemaDefinitions = schemaDefinitions;
     this.beaconStateAccessors = beaconStateAccessors;
-    this.beaconStateMutators = beaconStateMutators;
   }
 
   @Override

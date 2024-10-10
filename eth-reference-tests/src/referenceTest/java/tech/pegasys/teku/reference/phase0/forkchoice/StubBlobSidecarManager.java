@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
@@ -117,6 +118,12 @@ class StubBlobSidecarManager implements BlobSidecarManager {
         return BlobSidecarsAndValidationResult.validResult(Collections.emptyList());
       }
     };
+  }
+
+  @Override
+  public BlobSidecarsAvailabilityChecker createAvailabilityChecker(
+      final SignedBeaconBlock block, final ExecutionPayloadEnvelope executionPayloadEnvelope) {
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override
