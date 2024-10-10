@@ -16,13 +16,13 @@ package tech.pegasys.teku.spec.schemas.registry;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.MoreObjects;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiFunction;
-import java.util.stream.Stream;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
@@ -36,38 +36,57 @@ abstract class AbstractSchemaProvider<T> implements SchemaProvider<T> {
   protected AbstractSchemaProvider(
       final SchemaId<T> schemaId, final SchemaProviderCreator<T>... schemaProviderCreators) {
     this.schemaId = schemaId;
-    final List<SchemaProviderCreator<T>> creatorsList = Arrays.asList(schemaProviderCreators);
-    checkArgument(!creatorsList.isEmpty(), "There should be at least 1 creator");
+    validateCreators(schemaProviderCreators);
+    final List<SchemaProviderCreator<T>> creatorsList =
+        new ArrayList<>(Arrays.asList(schemaProviderCreators));
 
-    Arrays.stream(schemaProviderCreators)
-        .forEach(
-            creator ->
-                creator
-                    .streamSupporterMilestones()
-                    .forEach(milestone -> putCreatorAtMilestone(milestone, creator)));
-  }
-
-  private void putCreatorAtMilestone(
-      final SpecMilestone milestone, final SchemaProviderCreator<T> creator) {
-    if (!milestoneToSchemaCreator.isEmpty()) {
-      final SpecMilestone lastMilestone = milestoneToSchemaCreator.lastKey();
-      if (lastMilestone.isGreaterThanOrEqualTo(milestone)) {
-        throw new IllegalArgumentException(
-            "Milestones ascending ordering error: from " + lastMilestone + " to " + milestone);
+    SchemaProviderCreator<T> lastCreator = null;
+    for (final SpecMilestone milestone : SpecMilestone.values()) {
+      if (!creatorsList.isEmpty() && creatorsList.getFirst().milestone == milestone) {
+        lastCreator = creatorsList.removeFirst();
       }
 
-      if (lastMilestone != milestone.getPreviousMilestone()) {
-        throw new IllegalArgumentException(
-            "Milestones gap detected: from "
-                + lastMilestone
-                + " to "
-                + milestone.getPreviousMilestone());
+      if (lastCreator != null) {
+        milestoneToSchemaCreator.put(milestone, lastCreator);
+
+        final boolean untilSpecReached =
+            lastCreator
+                .untilMilestone
+                .map(untilMilestone -> untilMilestone == milestone)
+                .orElse(false);
+
+        if (untilSpecReached) {
+          break;
+        }
       }
     }
+  }
 
-    if (milestoneToSchemaCreator.put(milestone, creator) != null) {
-      // this can't happen due to preceded checks
-      throw new IllegalArgumentException("Overlapping creators detected");
+  @SafeVarargs
+  private void validateCreators(final SchemaProviderCreator<T>... schemaProviderCreators) {
+    checkArgument(
+        schemaProviderCreators.length > 0, "There should be at least 1 creator for %s", schemaId);
+    for (int i = 0; i < schemaProviderCreators.length; i++) {
+      final SchemaProviderCreator<T> currentCreator = schemaProviderCreators[i];
+      if (i > 0) {
+        checkArgument(
+            currentCreator.milestone.isGreaterThan(schemaProviderCreators[i - 1].milestone),
+            "Creator's milestones must be in order for %s",
+            schemaId);
+      }
+      final boolean isLast = i == schemaProviderCreators.length - 1;
+      if (isLast) {
+        checkArgument(
+            currentCreator.untilMilestone.isEmpty()
+                || currentCreator.untilMilestone.get().isGreaterThan(currentCreator.milestone),
+            "Last creator untilMilestone must be greater than milestone in %s",
+            schemaId);
+      } else {
+        checkArgument(
+            currentCreator.untilMilestone.isEmpty(),
+            "Only last creator is allowed to use until for %s",
+            schemaId);
+      }
     }
   }
 
@@ -97,8 +116,6 @@ abstract class AbstractSchemaProvider<T> implements SchemaProvider<T> {
       final SpecMilestone milestone,
       final SpecMilestone untilMilestone,
       final BiFunction<SchemaRegistry, SpecConfig, T> creationSchema) {
-    checkArgument(
-        untilMilestone.isGreaterThan(milestone), "untilMilestone should be greater than milestone");
     return new SchemaProviderCreator<>(milestone, Optional.of(untilMilestone), creationSchema);
   }
 
@@ -127,14 +144,6 @@ abstract class AbstractSchemaProvider<T> implements SchemaProvider<T> {
       SpecMilestone milestone,
       Optional<SpecMilestone> untilMilestone,
       BiFunction<SchemaRegistry, SpecConfig, T> creator) {
-    Stream<SpecMilestone> streamSupporterMilestones() {
-      if (untilMilestone.isEmpty()) {
-        return Stream.of(milestone);
-      }
-      return SpecMilestone.getMilestonesUpTo(untilMilestone.get()).stream()
-          .filter(m -> m.isGreaterThanOrEqualTo(milestone));
-    }
-
     @Override
     public String toString() {
       return MoreObjects.toStringHelper(this)
