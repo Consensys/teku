@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -72,6 +73,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   private static final Logger LOG = LogManager.getLogger();
 
   static final String COUNTER_BLOCK_TYPE = "block";
+  static final String COUNTER_EXECUTION_PAYLOAD_ENVELOPE_TYPE = "execution_payload_envelope";
   static final String COUNTER_SIDECAR_TYPE = "blob_sidecar";
 
   static final String COUNTER_GOSSIP_SUBTYPE = "gossip";
@@ -288,6 +290,13 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   public synchronized BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(
       final SignedBeaconBlock block) {
     return internalOnNewBlock(block, Optional.empty());
+  }
+
+  @Override
+  public BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(
+      final SignedBeaconBlock block, final ExecutionPayloadEnvelope executionPayloadEnvelope) {
+    return internalOnNewBlockAndExecutionPayloadEnvelope(
+        block, executionPayloadEnvelope, Optional.empty());
   }
 
   @Override
@@ -511,6 +520,62 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     return tracker;
   }
 
+  private BlockBlobSidecarsTracker internalOnNewBlockAndExecutionPayloadEnvelope(
+      final SignedBeaconBlock block,
+      final ExecutionPayloadEnvelope executionPayloadEnvelope,
+      final Optional<RemoteOrigin> remoteOrigin) {
+    final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
+
+    final BlockBlobSidecarsTracker tracker =
+        getOrCreateBlobSidecarsTracker(
+            slotAndBlockRoot,
+            newTracker -> {
+              newTracker.setBlockAndExecutionPayloadEnvelope(block, executionPayloadEnvelope);
+              countBlock(remoteOrigin);
+              onFirstSeen(slotAndBlockRoot);
+            },
+            existingTracker -> {
+              if (!existingTracker.setBlockAndExecutionPayloadEnvelope(
+                  block, executionPayloadEnvelope)) {
+                // block and execution envelope were already set
+                countDuplicateBlock(remoteOrigin);
+                return;
+              }
+
+              countBlock(remoteOrigin);
+
+              if (existingTracker.isRpcFetchTriggered()) {
+                // block has been set for the first time and we previously triggered fetching of
+                // missing blobSidecars. So we may have requested to fetch more sidecars
+                // than the block actually requires. Let's drop them.
+                existingTracker
+                    .getUnusedBlobSidecarsForBlock()
+                    .forEach(
+                        blobIdentifier ->
+                            requiredBlobSidecarDroppedSubscribers.deliver(
+                                RequiredBlobSidecarDroppedSubscriber::onRequiredBlobSidecarDropped,
+                                blobIdentifier));
+
+                // if we attempted to fetch via RPC, we missed the opportunity to complete the
+                // tracker via local EL (local El fetch requires the block to be known)
+                // Let's try now
+                if (!existingTracker.isLocalElFetchTriggered() && !existingTracker.isCompleted()) {
+                  fetchMissingContentFromLocalEL(slotAndBlockRoot)
+                      .finish(
+                          error ->
+                              LOG.error(
+                                  "An occurred while attempting to fetch blobs via local EL"));
+                }
+              }
+            });
+
+    if (orderedBlobSidecarsTrackers.add(slotAndBlockRoot)) {
+      sizeGauge.set(orderedBlobSidecarsTrackers.size(), GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
+    }
+
+    return tracker;
+  }
+
   private void countBlock(final Optional<RemoteOrigin> maybeRemoteOrigin) {
     maybeRemoteOrigin.ifPresent(
         remoteOrigin -> {
@@ -571,13 +636,13 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     asyncRunner
         .runAfterDelay(
             () ->
-                this.fetchMissingContentFromLocalEL(slotAndBlockRoot)
+                fetchMissingContentFromLocalEL(slotAndBlockRoot)
                     .handleException(
                         error ->
                             LOG.warn(
                                 "Local EL blobs lookup failed: {}",
                                 ExceptionUtils.getMessage(error)))
-                    .thenRun(() -> this.fetchMissingContentFromRemotePeers(slotAndBlockRoot)),
+                    .thenRun(() -> fetchMissingContentFromRemotePeers(slotAndBlockRoot)),
             fetchDelay)
         .finish(
             error ->
@@ -639,9 +704,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
         specVersion.getSchemaDefinitions().toVersionDeneb().orElseThrow().getBlobSidecarSchema();
     final MiscHelpersDeneb miscHelpersDeneb =
         specVersion.miscHelpers().toVersionDeneb().orElseThrow();
-    final SignedBeaconBlockHeader signedBeaconBlockHeader =
-        blockBlobSidecarsTracker.getBlock().get().asHeader();
-    final BeaconBlockBodyDeneb beaconBlockBodyDeneb =
+    final BeaconBlockBodyDeneb beaconBlockBody =
         blockBlobSidecarsTracker
             .getBlock()
             .get()
@@ -649,9 +712,18 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             .getBody()
             .toVersionDeneb()
             .orElseThrow();
+    final SignedBeaconBlockHeader signedBeaconBlockHeader =
+        blockBlobSidecarsTracker.getBlock().get().asHeader();
 
     final SszList<SszKZGCommitment> sszKZGCommitments =
-        beaconBlockBodyDeneb.getBlobKzgCommitments();
+        beaconBlockBody
+            .getOptionalBlobKzgCommitments()
+            .orElseGet(
+                () ->
+                    blockBlobSidecarsTracker
+                        .getExecutionPayloadEnvelope()
+                        .orElseThrow()
+                        .getBlobKzgCommitments());
 
     final List<BlobIdentifier> missingBlobsIdentifiers =
         blockBlobSidecarsTracker.getMissingBlobSidecars().toList();
@@ -687,13 +759,15 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                   continue;
                 }
 
+                final BlobIdentifier blobIdentifier = missingBlobsIdentifiers.get(index);
                 final BlobSidecar blobSidecar =
                     createBlobSidecarFromBlobAndProof(
                         blobSidecarSchema,
                         miscHelpersDeneb,
-                        missingBlobsIdentifiers.get(index),
+                        blobIdentifier,
                         blobAndProof.get(),
-                        beaconBlockBodyDeneb,
+                        sszKZGCommitments.get(blobIdentifier.getIndex().intValue()),
+                        beaconBlockBody,
                         signedBeaconBlockHeader);
 
                 onNewBlobSidecar(blobSidecar, LOCAL_EL);
@@ -706,11 +780,9 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       final MiscHelpersDeneb miscHelpersDeneb,
       final BlobIdentifier blobIdentifier,
       final BlobAndProof blobAndProof,
+      final SszKZGCommitment sszKZGCommitment,
       final BeaconBlockBodyDeneb beaconBlockBodyDeneb,
       final SignedBeaconBlockHeader signedBeaconBlockHeader) {
-
-    final SszKZGCommitment sszKZGCommitment =
-        beaconBlockBodyDeneb.getBlobKzgCommitments().get(blobIdentifier.getIndex().intValue());
 
     return blobSidecarSchema.create(
         blobIdentifier.getIndex(),
