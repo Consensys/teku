@@ -15,59 +15,71 @@ package tech.pegasys.teku.spec.schemas.registry;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.base.MoreObjects;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiFunction;
-import org.apache.commons.lang3.tuple.Triple;
+import java.util.stream.Stream;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
 abstract class AbstractSchemaProvider<T> implements SchemaProvider<T> {
-  private final NavigableMap<SpecMilestone, BiFunction<SchemaRegistry, SpecConfig, T>>
-      milestoneToSchemaCreator = new TreeMap<>();
+  private final TreeMap<SpecMilestone, SchemaProviderCreator<T>> milestoneToSchemaCreator =
+      new TreeMap<>();
   private final SchemaId<T> schemaId;
 
+  @SafeVarargs
   protected AbstractSchemaProvider(
-      final SchemaId<T> schemaId,
-      Triple<SpecMilestone, Optional<SpecMilestone>, BiFunction<SchemaRegistry, SpecConfig, T>>...
-          milestoneCreators) {
+      final SchemaId<T> schemaId, final SchemaProviderCreator<T>... schemaProviderCreators) {
     this.schemaId = schemaId;
-    final List<
-            Triple<
-                SpecMilestone, Optional<SpecMilestone>, BiFunction<SchemaRegistry, SpecConfig, T>>>
-        creatorsList = Arrays.stream(milestoneCreators).toList();
+    final List<SchemaProviderCreator<T>> creatorsList = Arrays.asList(schemaProviderCreators);
     checkArgument(!creatorsList.isEmpty(), "There should be at least 1 creator");
-    checkArgument(
-        creatorsList.size()
-            == new HashSet<>(creatorsList.stream().map(Triple::getLeft).toList()).size(),
-        "There shouldn't be duplicated milestones in boundary start for creator, but were: %s",
-        creatorsList.stream().map(Triple::getLeft).toList());
-    BiFunction<SchemaRegistry, SpecConfig, T> lastCreator = null;
-    // TODO: add optional right bound SpecMilestone checks and logic
-    for (SpecMilestone specMilestone : SpecMilestone.values()) {
-      if (creatorsList.getFirst().getLeft() == specMilestone) {
-        lastCreator = creatorsList.removeFirst().getRight();
-        milestoneToSchemaCreator.put(specMilestone, lastCreator);
-      } else {
-        milestoneToSchemaCreator.put(specMilestone, lastCreator);
+
+    Arrays.stream(schemaProviderCreators)
+        .forEach(
+            creator ->
+                creator
+                    .streamSupporterMilestones()
+                    .forEach(milestone -> putCreatorAtMilestone(milestone, creator)));
+  }
+
+  private void putCreatorAtMilestone(
+      final SpecMilestone milestone, final SchemaProviderCreator<T> creator) {
+    if (!milestoneToSchemaCreator.isEmpty()) {
+      final SpecMilestone lastMilestone = milestoneToSchemaCreator.lastKey();
+      if (lastMilestone.isGreaterThanOrEqualTo(milestone)) {
+        throw new IllegalArgumentException(
+            "Milestones ascending ordering error: from " + lastMilestone + " to " + milestone);
       }
 
-      if (!creatorsList.isEmpty()) {
-        throw new IllegalArgumentException("Overlapping creators detected: " + creatorsList);
+      if (lastMilestone != milestone.getPreviousMilestone()) {
+        throw new IllegalArgumentException(
+            "Milestones gap detected: from "
+                + lastMilestone
+                + " to "
+                + milestone.getPreviousMilestone());
       }
+    }
+
+    if (milestoneToSchemaCreator.put(milestone, creator) != null) {
+      // this can't happen due to preceded checks
+      throw new IllegalArgumentException("Overlapping creators detected");
     }
   }
 
-  // TODO: not needed
   @Override
   public SpecMilestone getEffectiveMilestone(final SpecMilestone milestone) {
-    return milestone;
+    final SchemaProviderCreator<T> maybeSchemaCreator = milestoneToSchemaCreator.get(milestone);
+    if (maybeSchemaCreator == null) {
+      throw new IllegalArgumentException(
+          "It is not supposed to create a specific version for " + milestone);
+    }
+
+    return maybeSchemaCreator.milestone;
   }
 
   @Override
@@ -81,35 +93,55 @@ abstract class AbstractSchemaProvider<T> implements SchemaProvider<T> {
     return schemaId;
   }
 
-  static <T>
-      Triple<SpecMilestone, Optional<SpecMilestone>, BiFunction<SchemaRegistry, SpecConfig, T>>
-          milestoneSchema(
-              SpecMilestone milestone, BiFunction<SchemaRegistry, SpecConfig, T> creationSchema) {
-    return Triple.of(milestone, Optional.empty(), creationSchema);
+  static <T> SchemaProviderCreator<T> schemaCreator(
+      final SpecMilestone milestone,
+      final BiFunction<SchemaRegistry, SpecConfig, T> creationSchema) {
+    return new SchemaProviderCreator<>(milestone, Optional.empty(), creationSchema);
   }
 
-  static <T>
-      Triple<SpecMilestone, Optional<SpecMilestone>, BiFunction<SchemaRegistry, SpecConfig, T>>
-          milestoneSchema(
-              SpecMilestone milestone,
-              SpecMilestone untilMilestone,
-              BiFunction<SchemaRegistry, SpecConfig, T> creationSchema) {
-    return Triple.of(milestone, Optional.of(untilMilestone), creationSchema);
+  static <T> SchemaProviderCreator<T> schemaCreator(
+      final SpecMilestone milestone,
+      final SpecMilestone untilMilestone,
+      final BiFunction<SchemaRegistry, SpecConfig, T> creationSchema) {
+    checkArgument(
+        untilMilestone.isGreaterThan(milestone), "untilMilestone should be greater than milestone");
+    return new SchemaProviderCreator<>(milestone, Optional.of(untilMilestone), creationSchema);
   }
 
   protected T createSchema(
       SchemaRegistry registry, SpecMilestone effectiveMilestone, SpecConfig specConfig) {
-    final BiFunction<SchemaRegistry, SpecConfig, T> maybeSchemaCreator =
+    final SchemaProviderCreator<T> maybeSchemaCreator =
         milestoneToSchemaCreator.get(effectiveMilestone);
     if (maybeSchemaCreator == null) {
       throw new IllegalArgumentException(
           "It is not supposed to create a specific version for " + effectiveMilestone);
     }
-    return maybeSchemaCreator.apply(registry, specConfig);
+    return maybeSchemaCreator.creator.apply(registry, specConfig);
   }
 
   @Override
   public Set<SpecMilestone> getSupportedMilestones() {
-    return milestoneToSchemaCreator.navigableKeySet();
+    return milestoneToSchemaCreator.keySet();
+  }
+
+  protected record SchemaProviderCreator<T>(
+      SpecMilestone milestone,
+      Optional<SpecMilestone> untilMilestone,
+      BiFunction<SchemaRegistry, SpecConfig, T> creator) {
+    Stream<SpecMilestone> streamSupporterMilestones() {
+      if (untilMilestone.isEmpty()) {
+        return Stream.of(milestone);
+      }
+      return SpecMilestone.getMilestonesUpTo(untilMilestone.get()).stream()
+          .filter(m -> m.isGreaterThanOrEqualTo(milestone));
+    }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this)
+          .add("milestone", milestone)
+          .add("untilMilestone", untilMilestone)
+          .toString();
+    }
   }
 }

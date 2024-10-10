@@ -24,7 +24,7 @@ public class AttnetsENRFieldSchemaProvider
   public AttnetsENRFieldSchemaProvider() {
     super(
         ATTNETS_ENR_FIELD_SCHEMA,
-        milestoneSchema(
+        schemaCreator(
             PHASE0,
             (registry, specConfig) ->
                 SszBitvectorSchema.create(specConfig.getAttestationSubnetCount())));
