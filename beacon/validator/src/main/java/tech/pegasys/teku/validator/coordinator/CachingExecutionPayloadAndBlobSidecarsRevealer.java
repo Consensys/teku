@@ -16,11 +16,11 @@ package tech.pegasys.teku.validator.coordinator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGProof;
@@ -35,7 +35,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -47,8 +46,8 @@ public class CachingExecutionPayloadAndBlobSidecarsRevealer
 
   private static final Logger LOG = LogManager.getLogger();
 
-  // EIP7732 TODO: should probably use more optimized data structure
-  private final Map<Bytes32, GetPayloadResponse> committedPayloads = new ConcurrentHashMap<>();
+  private final Map<Bytes32, GetPayloadResponse> committedPayloads =
+      LimitedMap.createSynchronizedLRU(12);
 
   private final Spec spec;
 
@@ -82,15 +81,12 @@ public class CachingExecutionPayloadAndBlobSidecarsRevealer
         schemaDefinitions
             .getBlobKzgCommitmentsSchema()
             .createFromBlobsBundle(getPayloadResponse.getBlobsBundle().orElseThrow());
-    final ExecutionRequestsSchema executionRequestsSchema =
-        schemaDefinitions.getExecutionRequestsSchema();
     final ExecutionPayloadEnvelope executionPayload =
         schemaDefinitions
             .getExecutionPayloadEnvelopeSchema()
             .create(
                 getPayloadResponse.getExecutionPayload(),
-                // EIP7732 TODO: engine-API still in discussion
-                executionRequestsSchema.create(List.of(), List.of(), List.of()),
+                getPayloadResponse.getExecutionRequests().orElseThrow(),
                 committedHeader.getBuilderIndex(),
                 block.getRoot(),
                 blobKzgCommitments,
