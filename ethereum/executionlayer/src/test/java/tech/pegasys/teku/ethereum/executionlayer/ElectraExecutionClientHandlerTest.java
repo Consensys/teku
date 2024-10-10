@@ -70,7 +70,8 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
                 dataStructureUtil.randomExecutionPayload()),
             UInt256.MAX_VALUE,
             BlobsBundleV1.fromInternalBlobsBundle(dataStructureUtil.randomBlobsBundle()),
-            true);
+            true,
+            dataStructureUtil.randomEncodedExecutionRequests());
     final SafeFuture<Response<GetPayloadV4Response>> dummyResponse =
         SafeFuture.completedFuture(new Response<>(responseData));
     when(executionEngineClient.getPayloadV4(context.getPayloadId())).thenReturn(dummyResponse);
@@ -83,9 +84,12 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final ExecutionPayloadSchema<?> executionPayloadSchema =
         schemaDefinitionElectra.getExecutionPayloadSchema();
     final BlobSchema blobSchema = schemaDefinitionElectra.getBlobSchema();
-    assertThat(future)
-        .isCompletedWithValue(
-            responseData.asInternalGetPayloadResponse(executionPayloadSchema, blobSchema));
+    final GetPayloadResponse expectedGetPayloadResponse =
+        responseData.asInternalGetPayloadResponse(
+            executionPayloadSchema,
+            blobSchema,
+            schemaDefinitionElectra.getExecutionRequestsSchema());
+    assertThat(future).isCompletedWithValue(expectedGetPayloadResponse);
   }
 
   @Test

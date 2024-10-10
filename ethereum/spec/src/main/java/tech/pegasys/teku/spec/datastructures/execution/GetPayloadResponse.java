@@ -17,6 +17,7 @@ import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 
 public class GetPayloadResponse {
 
@@ -24,12 +25,14 @@ public class GetPayloadResponse {
   private final UInt256 executionPayloadValue;
   private final Optional<BlobsBundle> blobsBundle;
   private final boolean shouldOverrideBuilder;
+  private final Optional<ExecutionRequests> executionRequests;
 
   public GetPayloadResponse(final ExecutionPayload executionPayload) {
     this.executionPayload = executionPayload;
     this.executionPayloadValue = UInt256.ZERO;
     this.blobsBundle = Optional.empty();
     this.shouldOverrideBuilder = false;
+    this.executionRequests = Optional.empty();
   }
 
   public GetPayloadResponse(
@@ -38,6 +41,7 @@ public class GetPayloadResponse {
     this.executionPayloadValue = executionPayloadValue;
     this.blobsBundle = Optional.empty();
     this.shouldOverrideBuilder = false;
+    this.executionRequests = Optional.empty();
   }
 
   public GetPayloadResponse(
@@ -49,6 +53,20 @@ public class GetPayloadResponse {
     this.executionPayloadValue = executionPayloadValue;
     this.blobsBundle = Optional.of(blobsBundle);
     this.shouldOverrideBuilder = shouldOverrideBuilder;
+    this.executionRequests = Optional.empty();
+  }
+
+  public GetPayloadResponse(
+      final ExecutionPayload executionPayload,
+      final UInt256 executionPayloadValue,
+      final BlobsBundle blobsBundle,
+      final boolean shouldOverrideBuilder,
+      final ExecutionRequests executionRequests) {
+    this.executionPayload = executionPayload;
+    this.executionPayloadValue = executionPayloadValue;
+    this.blobsBundle = Optional.of(blobsBundle);
+    this.shouldOverrideBuilder = shouldOverrideBuilder;
+    this.executionRequests = Optional.of(executionRequests);
   }
 
   public ExecutionPayload getExecutionPayload() {
@@ -67,6 +85,10 @@ public class GetPayloadResponse {
     return shouldOverrideBuilder;
   }
 
+  public Optional<ExecutionRequests> getExecutionRequests() {
+    return executionRequests;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -79,13 +101,18 @@ public class GetPayloadResponse {
     return shouldOverrideBuilder == that.shouldOverrideBuilder
         && Objects.equals(executionPayload, that.executionPayload)
         && Objects.equals(executionPayloadValue, that.executionPayloadValue)
-        && Objects.equals(blobsBundle, that.blobsBundle);
+        && Objects.equals(blobsBundle, that.blobsBundle)
+        && Objects.equals(executionRequests, that.executionRequests);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        executionPayload, executionPayloadValue, blobsBundle, shouldOverrideBuilder);
+        executionPayload,
+        executionPayloadValue,
+        blobsBundle,
+        shouldOverrideBuilder,
+        executionRequests);
   }
 
   @Override
@@ -95,6 +122,7 @@ public class GetPayloadResponse {
         .add("executionPayloadValue", executionPayloadValue)
         .add("blobsBundle", blobsBundle)
         .add("shouldOverrideBuilder", shouldOverrideBuilder)
+        .add("executionRequests", executionRequests)
         .toString();
   }
 }
