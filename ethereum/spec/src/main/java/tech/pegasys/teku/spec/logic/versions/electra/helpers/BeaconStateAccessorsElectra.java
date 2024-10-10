@@ -70,7 +70,7 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
    *
    * @param state The state
    * @param validatorIndex The index of the validator
-   * @return The sum of the withdrawal amounts for the validator in the partial withdrawal queue
+   * @return The sum of the withdrawal amounts for the validator in the partial withdrawal queue.
    */
   public UInt64 getPendingBalanceToWithdraw(
       final BeaconStateElectra state, final int validatorIndex) {
