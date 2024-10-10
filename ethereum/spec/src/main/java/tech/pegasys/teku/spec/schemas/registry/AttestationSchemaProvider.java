@@ -27,12 +27,12 @@ public class AttestationSchemaProvider
   public AttestationSchemaProvider() {
     super(
         ATTESTATION_SCHEMA,
-        milestoneSchema(
+        schemaCreator(
             PHASE0,
             (registry, specConfig) ->
                 new AttestationPhase0Schema(specConfig.getMaxValidatorsPerCommittee())
                     .castTypeToAttestationSchema()),
-        milestoneSchema(
+        schemaCreator(
             DENEB,
             (registry, specConfig) ->
                 new AttestationElectraSchema(
