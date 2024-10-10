@@ -23,6 +23,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -58,8 +59,8 @@ public class SimpleSidecarRetrieverTest {
   final int columnCount = config.getNumberOfColumns();
   final KZG kzg = KZG.getInstance(false);
 
-  final DasPeerCustodyCountSupplier custodyCountSupplier =
-      DasPeerCustodyCountSupplier.createStub(config.getCustodyRequirement());
+  final DasPeerCustodyCountSupplierStub custodyCountSupplier =
+      new DasPeerCustodyCountSupplierStub(config.getCustodyRequirement());
 
   final Duration retrieverRound = Duration.ofSeconds(1);
   final SimpleSidecarRetriever simpleSidecarRetriever =
@@ -231,5 +232,35 @@ public class SimpleSidecarRetrieverTest {
     assertThat(custodyPeer.getRequests()).hasSize(2);
     advanceTimeGradually(retrieverRound);
     assertThat(custodyPeer.getRequests()).hasSize(2);
+  }
+
+  @Test
+  void performanceTest() {
+    List<TestPeer> testNodes =
+        craftNodeIds()
+            .map(
+                nodeId ->
+                    new TestPeer(stubAsyncRunner, nodeId, Duration.ofMillis(100))
+                        .currentRequestLimit(1000))
+            .limit(128)
+            .peek(node -> custodyCountSupplier.addCustomCount(node.getNodeId(), columnCount))
+            .peek(testPeerManager::connectPeer)
+            .toList();
+
+    List<DataColumnSlotAndIdentifier> columnIds =
+        IntStream.range(0, Integer.MAX_VALUE)
+            .mapToObj(UInt64::valueOf)
+            .flatMap(
+                slot ->
+                    IntStream.range(0, columnCount)
+                        .mapToObj(UInt64::valueOf)
+                        .map(colIdx -> new DataColumnSlotAndIdentifier(slot, Bytes32.ZERO, colIdx)))
+            .limit(100_000)
+            .toList();
+
+    List<SafeFuture<DataColumnSidecar>> sidecarFutures =
+        columnIds.stream().map(simpleSidecarRetriever::retrieve).toList();
+
+    Assertions.assertTimeout(Duration.ofSeconds(10), () -> advanceTimeGradually(retrieverRound));
   }
 }
