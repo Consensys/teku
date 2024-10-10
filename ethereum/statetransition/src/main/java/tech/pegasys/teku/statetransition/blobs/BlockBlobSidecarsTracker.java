@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 
@@ -52,6 +53,9 @@ public class BlockBlobSidecarsTracker {
   private final SlotAndBlockRoot slotAndBlockRoot;
 
   private final AtomicReference<Optional<SignedBeaconBlock>> block =
+      new AtomicReference<>(Optional.empty());
+
+  private final AtomicReference<Optional<ExecutionPayloadEnvelope>> executionPayloadEnvelope =
       new AtomicReference<>(Optional.empty());
 
   private final AtomicBoolean blockImportOnCompletionEnabled = new AtomicBoolean(false);
@@ -99,6 +103,10 @@ public class BlockBlobSidecarsTracker {
 
   public Optional<SignedBeaconBlock> getBlock() {
     return block.get();
+  }
+
+  public Optional<ExecutionPayloadEnvelope> getExecutionPayloadEnvelope() {
+    return executionPayloadEnvelope.get();
   }
 
   public boolean containsBlobSidecar(final BlobIdentifier blobIdentifier) {
@@ -168,6 +176,29 @@ public class BlockBlobSidecarsTracker {
     LOG.debug("Block received for {}", slotAndBlockRoot::toLogString);
     maybeDebugTimings.ifPresent(
         debugTimings -> debugTimings.put(BLOCK_ARRIVAL_TIMING_IDX, System.currentTimeMillis()));
+
+    pruneExcessiveBlobSidecars();
+    checkCompletion();
+
+    return true;
+  }
+
+  public boolean setBlockAndExecutionPayloadEnvelope(
+      final SignedBeaconBlock block, final ExecutionPayloadEnvelope executionPayloadEnvelope) {
+    checkArgument(block.getSlotAndBlockRoot().equals(slotAndBlockRoot), "Wrong block");
+    final Optional<SignedBeaconBlock> oldBlock = this.block.getAndSet(Optional.of(block));
+    final Optional<ExecutionPayloadEnvelope> oldExecutionPayloadEnvelope =
+        this.executionPayloadEnvelope.getAndSet(Optional.of(executionPayloadEnvelope));
+    if (oldBlock.isPresent() || oldExecutionPayloadEnvelope.isPresent()) {
+      return false;
+    }
+
+    LOG.debug(
+        "Block and execution payload envelope received for {}", slotAndBlockRoot::toLogString);
+    maybeDebugTimings.ifPresent(
+        debugTimings -> {
+          debugTimings.put(BLOCK_ARRIVAL_TIMING_IDX, System.currentTimeMillis());
+        });
 
     pruneExcessiveBlobSidecars();
     checkCompletion();
@@ -272,7 +303,13 @@ public class BlockBlobSidecarsTracker {
             b ->
                 BeaconBlockBodyDeneb.required(b.getMessage().getBody())
                     .getOptionalBlobKzgCommitments()
-                    .map(SszList::size));
+                    .map(SszList::size))
+        // ePBS
+        .or(
+            () ->
+                executionPayloadEnvelope
+                    .get()
+                    .map(envelope -> envelope.getBlobKzgCommitments().size()));
   }
 
   /**

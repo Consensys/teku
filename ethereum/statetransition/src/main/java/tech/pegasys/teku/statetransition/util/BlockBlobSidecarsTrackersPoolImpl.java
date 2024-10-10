@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -72,6 +73,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   private static final Logger LOG = LogManager.getLogger();
 
   static final String COUNTER_BLOCK_TYPE = "block";
+  static final String COUNTER_EXECUTION_PAYLOAD_ENVELOPE_TYPE = "execution_payload_envelope";
   static final String COUNTER_SIDECAR_TYPE = "blob_sidecar";
 
   static final String COUNTER_GOSSIP_SUBTYPE = "gossip";
@@ -301,6 +303,13 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   public synchronized BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(
       final SignedBeaconBlock block) {
     return internalOnNewBlock(block, Optional.empty());
+  }
+
+  @Override
+  public BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(
+      final SignedBeaconBlock block, final ExecutionPayloadEnvelope executionPayloadEnvelope) {
+    return internalOnNewBlockAndExecutionPayloadEnvelope(
+        block, executionPayloadEnvelope, Optional.empty());
   }
 
   @Override
@@ -669,7 +678,14 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             .orElseThrow();
 
     final SszList<SszKZGCommitment> sszKZGCommitments =
-        beaconBlockBodyDeneb.getBlobKzgCommitments();
+        beaconBlockBody
+            .getOptionalBlobKzgCommitments()
+            .orElseGet(
+                () ->
+                    blockBlobSidecarsTracker
+                        .getExecutionPayloadEnvelope()
+                        .orElseThrow()
+                        .getBlobKzgCommitments());
 
     final List<VersionedHash> versionedHashes =
         missingBlobsIdentifiers.stream()
