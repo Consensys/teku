@@ -314,8 +314,21 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return withdrawalRequestSchema;
   }
 
+  public ConsolidationRequestSchema getConsolidationRequestSchema() {
+    return consolidationRequestSchema;
+  }
+
   public PendingDeposit.PendingDepositSchema getPendingDepositSchema() {
     return pendingDepositSchema;
+  }
+
+  public PendingPartialWithdrawal.PendingPartialWithdrawalSchema
+      getPendingPartialWithdrawalSchema() {
+    return pendingPartialWithdrawalSchema;
+  }
+
+  public PendingConsolidation.PendingConsolidationSchema getPendingConsolidationSchema() {
+    return pendingConsolidationSchema;
   }
 
   public SszListSchema<PendingDeposit, ?> getPendingDepositsSchema() {
@@ -330,22 +343,9 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return beaconStateSchema.getPendingPartialWithdrawalsSchema();
   }
 
-  public PendingPartialWithdrawal.PendingPartialWithdrawalSchema
-      getPendingPartialWithdrawalSchema() {
-    return pendingPartialWithdrawalSchema;
-  }
-
   @Override
   public Optional<SchemaDefinitionsElectra> toVersionElectra() {
     return Optional.of(this);
-  }
-
-  public PendingConsolidation.PendingConsolidationSchema getPendingConsolidationSchema() {
-    return pendingConsolidationSchema;
-  }
-
-  public ConsolidationRequestSchema getConsolidationRequestSchema() {
-    return consolidationRequestSchema;
   }
 
   @Override
