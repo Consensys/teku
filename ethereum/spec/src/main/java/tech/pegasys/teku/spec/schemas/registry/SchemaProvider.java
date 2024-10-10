@@ -13,35 +13,11 @@
 
 package tech.pegasys.teku.spec.schemas.registry;
 
-import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
-import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
-import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
-import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
-
-import java.util.EnumSet;
 import java.util.Set;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
 interface SchemaProvider<T> {
-  Set<SpecMilestone> ALL_MILESTONES = EnumSet.allOf(SpecMilestone.class);
-  Set<SpecMilestone> FROM_BELLATRIX = from(BELLATRIX);
-  Set<SpecMilestone> FROM_CAPELLA = from(CAPELLA);
-  Set<SpecMilestone> FROM_DENEB = from(DENEB);
-  Set<SpecMilestone> FROM_ELECTRA = from(ELECTRA);
-
-  static Set<SpecMilestone> from(final SpecMilestone milestone) {
-    return EnumSet.copyOf(SpecMilestone.getAllMilestonesFrom(milestone));
-  }
-
-  static Set<SpecMilestone> fromTo(
-      final SpecMilestone fromMilestone, final SpecMilestone toMilestone) {
-    return EnumSet.copyOf(
-        SpecMilestone.getAllMilestonesFrom(fromMilestone).stream()
-            .filter(toMilestone::isLessThanOrEqualTo)
-            .toList());
-  }
-
   T getSchema(SchemaRegistry registry);
 
   Set<SpecMilestone> getSupportedMilestones();

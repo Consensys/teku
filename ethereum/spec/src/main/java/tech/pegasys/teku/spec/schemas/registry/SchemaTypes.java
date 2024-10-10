@@ -21,8 +21,13 @@ import java.util.Locale;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 
 public class SchemaTypes {
   // PHASE0
@@ -31,6 +36,12 @@ public class SchemaTypes {
 
   public static final SchemaId<AttestationSchema<Attestation>> ATTESTATION_SCHEMA =
       create("ATTESTATION_SCHEMA");
+
+  public static final SchemaId<ExecutionPayloadHeaderSchema<? extends ExecutionPayloadHeader>>
+      EXECUTION_PAYLOAD_HEADER_SCHEMA = create("EXECUTION_PAYLOAD_HEADER_SCHEMA");
+
+  public static final SchemaId<BeaconStateSchema<BeaconState, MutableBeaconState>>
+      BEACON_STATE_SCHEMA = create("BEACON_STATE_SCHEMA");
 
   // Altair
 
