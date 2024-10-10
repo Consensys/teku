@@ -54,7 +54,20 @@ public class MultiPeersStandAloneVcBlocksAcceptanceTest
 
     firstTekuNode.start();
 
-    firstTekuNode.waitForEpochAtOrAbove(1);
+    final TekuBeaconNode secondBeaconNode =
+            createTekuBeaconNode(
+                    TekuNodeConfigBuilder.createBeaconNode()
+                            .withGenesisTime(genesisTime)
+                            .withNetwork(network)
+                            .withRealNetwork()
+                            .withRealNetwork()
+                            .withAltairEpoch(altairEpoch)
+                            .withPeers(firstTekuNode)
+                            .build());
+
+    secondBeaconNode.start();
+
+    firstTekuNode.waitForEpochAtOrAbove(2);
 
     final int slashedValidatorIndex = 34;
     final BLSKeyPair slashedValidatorKeyPair = getBlsKeyPair(slashedValidatorIndex);
@@ -68,16 +81,6 @@ public class MultiPeersStandAloneVcBlocksAcceptanceTest
         slashedValidatorKeyPair.getSecretKey(),
         slashingEventType);
 
-    final TekuBeaconNode secondBeaconNode =
-        createTekuBeaconNode(
-            TekuNodeConfigBuilder.createBeaconNode()
-                .withGenesisTime(genesisTime)
-                .withNetwork(network)
-                .withRealNetwork()
-                .withAltairEpoch(altairEpoch)
-                .withPeers(firstTekuNode)
-                .build());
-
     final TekuValidatorNode secondValidatorClient =
         createValidatorNode(
             TekuNodeConfigBuilder.createValidatorClient()
@@ -87,8 +90,6 @@ public class MultiPeersStandAloneVcBlocksAcceptanceTest
                 .withInteropValidators(32, 32)
                 .withBeaconNodes(secondBeaconNode)
                 .build());
-
-    secondBeaconNode.start();
 
     secondValidatorClient.start();
 
