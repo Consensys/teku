@@ -241,7 +241,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
               withdrawalRequest.getAmount().equals(FULL_EXIT_REQUEST_AMOUNT);
           final boolean partialWithdrawalsQueueFull =
               state.toVersionElectra().orElseThrow().getPendingPartialWithdrawals().size()
-                  >= specConfigElectra.getPendingPartialWithdrawalsLimit();
+                  == specConfigElectra.getPendingPartialWithdrawalsLimit();
           if (partialWithdrawalsQueueFull && !isFullExitRequest) {
             LOG.debug("process_withdrawal_request: partial withdrawal queue is full");
             return;
@@ -322,8 +322,8 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
 
               beaconStateMutators.initiateValidatorExit(
                   state, validatorIndex, validatorExitContextSupplier);
-              return;
             }
+            return;
           }
 
           final UInt64 validatorBalance = state.getBalances().get(validatorIndex).get();
