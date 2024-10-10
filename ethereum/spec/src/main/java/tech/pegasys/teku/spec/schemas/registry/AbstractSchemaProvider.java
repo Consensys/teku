@@ -73,13 +73,7 @@ abstract class AbstractSchemaProvider<T> implements SchemaProvider<T> {
 
   @Override
   public SpecMilestone getEffectiveMilestone(final SpecMilestone milestone) {
-    final SchemaProviderCreator<T> maybeSchemaCreator = milestoneToSchemaCreator.get(milestone);
-    if (maybeSchemaCreator == null) {
-      throw new IllegalArgumentException(
-          "It is not supposed to create a specific version for " + milestone);
-    }
-
-    return maybeSchemaCreator.milestone;
+    return getSchemaCreator(milestone).milestone;
   }
 
   @Override
@@ -109,14 +103,19 @@ abstract class AbstractSchemaProvider<T> implements SchemaProvider<T> {
   }
 
   protected T createSchema(
-      SchemaRegistry registry, SpecMilestone effectiveMilestone, SpecConfig specConfig) {
-    final SchemaProviderCreator<T> maybeSchemaCreator =
-        milestoneToSchemaCreator.get(effectiveMilestone);
+      final SchemaRegistry registry,
+      final SpecMilestone effectiveMilestone,
+      final SpecConfig specConfig) {
+    return getSchemaCreator(effectiveMilestone).creator.apply(registry, specConfig);
+  }
+
+  private SchemaProviderCreator<T> getSchemaCreator(final SpecMilestone milestone) {
+    final SchemaProviderCreator<T> maybeSchemaCreator = milestoneToSchemaCreator.get(milestone);
     if (maybeSchemaCreator == null) {
       throw new IllegalArgumentException(
-          "It is not supposed to create a specific version for " + effectiveMilestone);
+          "It is not supposed to create a specific version for " + milestone);
     }
-    return maybeSchemaCreator.creator.apply(registry, specConfig);
+    return maybeSchemaCreator;
   }
 
   @Override
