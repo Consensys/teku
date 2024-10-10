@@ -30,6 +30,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
@@ -41,11 +42,14 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
+import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -56,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
@@ -70,6 +75,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.BlockProcessorDeneb;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
@@ -85,6 +91,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   private final BeaconStateMutatorsElectra beaconStateMutatorsElectra;
   private final BeaconStateAccessorsElectra beaconStateAccessorsElectra;
   private final SchemaDefinitionsElectra schemaDefinitionsElectra;
+  private final ExecutionRequestsDataCodec executionRequestsDataCodec;
 
   public BlockProcessorElectra(
       final SpecConfigElectra specConfig,
@@ -117,6 +124,29 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     this.beaconStateMutatorsElectra = beaconStateMutators;
     this.beaconStateAccessorsElectra = beaconStateAccessors;
     this.schemaDefinitionsElectra = schemaDefinitions;
+    this.executionRequestsDataCodec =
+        new ExecutionRequestsDataCodec(schemaDefinitions.getExecutionRequestsSchema());
+  }
+
+  @Override
+  public NewPayloadRequest computeNewPayloadRequest(
+      final BeaconState state, final BeaconBlockBody beaconBlockBody)
+      throws BlockProcessingException {
+    final ExecutionPayload executionPayload = extractExecutionPayload(beaconBlockBody);
+    final SszList<SszKZGCommitment> blobKzgCommitments = extractBlobKzgCommitments(beaconBlockBody);
+    final List<VersionedHash> versionedHashes =
+        blobKzgCommitments.stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .map(miscHelpers::kzgCommitmentToVersionedHash)
+            .toList();
+    final Bytes32 parentBeaconBlockRoot = state.getLatestBlockHeader().getParentRoot();
+    final ExecutionRequests executionRequests =
+        BeaconBlockBodyElectra.required(beaconBlockBody).getExecutionRequests();
+    return new NewPayloadRequest(
+        executionPayload,
+        versionedHashes,
+        parentBeaconBlockRoot,
+        executionRequestsDataCodec.hash(executionRequests));
   }
 
   @Override

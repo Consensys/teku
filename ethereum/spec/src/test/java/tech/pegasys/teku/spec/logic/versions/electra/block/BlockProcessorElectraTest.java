@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.config.SpecConfigElectra.FULL_EXIT_REQUEST_
 
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -28,11 +29,16 @@ import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
+import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -40,10 +46,14 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.BlockProcessorDenebTest;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 class BlockProcessorElectraTest extends BlockProcessorDenebTest {
 
@@ -524,11 +534,52 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
         .isInstanceOf(AttestationUtilElectra.class);
   }
 
+  @Test
+  public void shouldCreateNewPayloadRequestWithExecutionRequestsHash() throws Exception {
+    final BeaconState preState = createBeaconState();
+    final BeaconBlockBodyElectra blockBody =
+        BeaconBlockBodyElectra.required(dataStructureUtil.randomBeaconBlockBodyWithCommitments(3));
+    final MiscHelpers miscHelpers = spec.atSlot(UInt64.ONE).miscHelpers();
+    final List<VersionedHash> expectedVersionedHashes =
+        blockBody.getOptionalBlobKzgCommitments().orElseThrow().stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .map(miscHelpers::kzgCommitmentToVersionedHash)
+            .collect(Collectors.toList());
+    final Bytes32 expectedExecutionRequestsHash =
+        getExecutionRequestsDataCodec().hash(blockBody.getExecutionRequests());
+
+    final NewPayloadRequest newPayloadRequest =
+        spec.getBlockProcessor(UInt64.ONE).computeNewPayloadRequest(preState, blockBody);
+
+    assertThat(newPayloadRequest.getExecutionPayload())
+        .isEqualTo(blockBody.getOptionalExecutionPayload().orElseThrow());
+    assertThat(newPayloadRequest.getVersionedHashes()).isPresent();
+    assertThat(newPayloadRequest.getVersionedHashes().get())
+        .hasSize(3)
+        .allSatisfy(
+            versionedHash ->
+                assertThat(versionedHash.getVersion())
+                    .isEqualTo(SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG))
+        .hasSameElementsAs(expectedVersionedHashes);
+    assertThat(newPayloadRequest.getParentBeaconBlockRoot()).isPresent();
+    assertThat(newPayloadRequest.getParentBeaconBlockRoot().get())
+        .isEqualTo(preState.getLatestBlockHeader().getParentRoot());
+    assertThat(newPayloadRequest.getExecutionRequestsHash())
+        .hasValue(expectedExecutionRequestsHash);
+  }
+
   private Supplier<ValidatorExitContext> validatorExitContextSupplier(final BeaconState state) {
     return spec.getGenesisSpec().beaconStateMutators().createValidatorExitContextSupplier(state);
   }
 
   private BlockProcessorElectra getBlockProcessor(final BeaconState state) {
     return (BlockProcessorElectra) spec.getBlockProcessor(state.getSlot());
+  }
+
+  private ExecutionRequestsDataCodec getExecutionRequestsDataCodec() {
+    return new ExecutionRequestsDataCodec(
+        SchemaDefinitionsElectra.required(
+                spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+            .getExecutionRequestsSchema());
   }
 }
