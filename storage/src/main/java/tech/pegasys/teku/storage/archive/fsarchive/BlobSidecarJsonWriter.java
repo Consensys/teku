@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.archive.fsarchive;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
 
 import java.io.IOException;
@@ -32,7 +33,7 @@ public class BlobSidecarJsonWriter {
 
     // Technically not possible as pruner prunes sidecars and not slots.
     if (blobSidecars.isEmpty()) {
-      out.write("[]".getBytes());
+      out.write("[]".getBytes(UTF_8));
       return;
     }
 
