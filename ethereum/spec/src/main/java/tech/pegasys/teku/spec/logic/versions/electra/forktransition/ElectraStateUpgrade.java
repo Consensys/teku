@@ -17,12 +17,9 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.Comparator;
 import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderDeneb;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -80,37 +77,8 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
                       specConfig.getElectraForkVersion(),
                       epoch));
 
-              final ExecutionPayloadHeaderDeneb denebHeader =
-                  preStateDeneb.getLatestExecutionPayloadHeader().toVersionDeneb().orElseThrow();
-              final ExecutionPayloadHeader upgradedExecutionPayloadHeader =
-                  schemaDefinitions
-                      .getExecutionPayloadHeaderSchema()
-                      .createExecutionPayloadHeader(
-                          builder ->
-                              builder
-                                  .parentHash(denebHeader.getParentHash())
-                                  .feeRecipient(denebHeader.getFeeRecipient())
-                                  .stateRoot(denebHeader.getStateRoot())
-                                  .receiptsRoot(denebHeader.getReceiptsRoot())
-                                  .logsBloom(denebHeader.getLogsBloom())
-                                  .prevRandao(denebHeader.getPrevRandao())
-                                  .blockNumber(denebHeader.getBlockNumber())
-                                  .gasLimit(denebHeader.getGasLimit())
-                                  .gasUsed(denebHeader.getGasUsed())
-                                  .timestamp(denebHeader.getTimestamp())
-                                  .extraData(denebHeader.getExtraData())
-                                  .baseFeePerGas(denebHeader.getBaseFeePerGas())
-                                  .blockHash(denebHeader.getBlockHash())
-                                  .transactionsRoot(denebHeader.getTransactionsRoot())
-                                  .withdrawalsRoot(denebHeader::getWithdrawalsRoot)
-                                  .blobGasUsed(denebHeader::getBlobGasUsed)
-                                  .excessBlobGas(denebHeader::getExcessBlobGas)
-                                  .depositRequestsRoot(() -> Bytes32.ZERO)
-                                  .withdrawalRequestsRoot(() -> Bytes32.ZERO)
-                                  .consolidationRequestsRoot(() -> Bytes32.ZERO));
-
-              state.setLatestExecutionPayloadHeader(upgradedExecutionPayloadHeader);
-
+              state.setLatestExecutionPayloadHeader(
+                  preStateDeneb.getLatestExecutionPayloadHeader());
               state.setNextWithdrawalValidatorIndex(
                   preStateDeneb.getNextWithdrawalValidatorIndex());
               state.setNextWithdrawalIndex(preStateDeneb.getNextWithdrawalIndex());

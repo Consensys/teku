@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.interop;
 
 import java.util.Collections;
-import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.config.GenesisConfigFile;
 import org.hyperledger.besu.config.GenesisConfigOptions;
 import org.hyperledger.besu.datatypes.Wei;
@@ -74,10 +73,6 @@ public class MergedGenesisTestBuilder {
                             .orElseThrow())
                 // New in Deneb
                 .blobGasUsed(() -> UInt64.ZERO)
-                .excessBlobGas(() -> UInt64.ZERO)
-                // New in Electra
-                .depositRequestsRoot(() -> Bytes32.ZERO)
-                .withdrawalRequestsRoot(() -> Bytes32.ZERO)
-                .consolidationRequestsRoot(() -> Bytes32.ZERO));
+                .excessBlobGas(() -> UInt64.ZERO));
   }
 }
