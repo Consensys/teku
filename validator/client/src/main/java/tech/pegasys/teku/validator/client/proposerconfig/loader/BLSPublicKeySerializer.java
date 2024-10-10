@@ -11,18 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.provider;
+package tech.pegasys.teku.validator.client.proposerconfig.loader;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import java.io.IOException;
-import tech.pegasys.teku.api.schema.BLSSignature;
+import java.util.Locale;
+import tech.pegasys.teku.bls.BLSPublicKey;
 
-public class BLSSignatureDeserializer extends JsonDeserializer<BLSSignature> {
+class BLSPublicKeySerializer extends JsonSerializer<BLSPublicKey> {
   @Override
-  public BLSSignature deserialize(final JsonParser p, final DeserializationContext ctxt)
+  public void serialize(
+      final BLSPublicKey value, final JsonGenerator gen, final SerializerProvider serializers)
       throws IOException {
-    return BLSSignature.fromHexString(p.getValueAsString());
+    gen.writeString(value.toHexString().toLowerCase(Locale.ROOT));
   }
 }
