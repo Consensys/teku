@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.storage.archive.fsarchive;
 
-import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
+import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -21,30 +21,23 @@ import java.util.List;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class BlobSidecarJsonWriter {
 
-  private final SerializableTypeDefinition<List<BlobSidecar>> blobSidecarType;
-
-  public BlobSidecarJsonWriter(final Spec spec) {
-    SchemaDefinitionCache schemaCache = new SchemaDefinitionCache(spec);
-    this.blobSidecarType =
-        listOf(
-            SchemaDefinitionsDeneb.required(schemaCache.getSchemaDefinition(SpecMilestone.DENEB))
-                .getBlobSidecarSchema()
-                .getJsonTypeDefinition());
-  }
-
-  public void writeSlotBlobSidecars(final OutputStream out, final List<BlobSidecar> blobSidecar)
+  public void writeSlotBlobSidecars(final OutputStream out, final List<BlobSidecar> blobSidecars)
       throws IOException {
     Objects.requireNonNull(out);
-    Objects.requireNonNull(blobSidecar);
+    Objects.requireNonNull(blobSidecars);
 
-    JsonUtil.serializeToBytes(blobSidecar, blobSidecarType, out);
+    // Technically not possible as pruner prunes sidecars and not slots.
+    if (blobSidecars.isEmpty()) {
+      out.write("[]".getBytes());
+      return;
+    }
+
+    final SerializableTypeDefinition<List<BlobSidecar>> type =
+        listOf(blobSidecars.getFirst().getSchema().getJsonTypeDefinition());
+    JsonUtil.serializeToBytes(blobSidecars, type, out);
   }
 }

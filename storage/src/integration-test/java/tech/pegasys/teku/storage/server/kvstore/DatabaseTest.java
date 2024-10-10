@@ -139,7 +139,7 @@ public class DatabaseTest {
     this.chainProperties = new ChainProperties(spec);
     final Path blobsArchive = Files.createTempDirectory("blobs");
     tmpDirectories.add(blobsArchive.toFile());
-    this.fileSystemDataArchive = new FileSystemArchive(spec, blobsArchive);
+    this.fileSystemDataArchive = new FileSystemArchive(blobsArchive);
     genesisBlockAndState = chainBuilder.generateGenesis(genesisTime, true);
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
     genesisAnchor = AnchorPoint.fromGenesisState(spec, genesisBlockAndState.getState());

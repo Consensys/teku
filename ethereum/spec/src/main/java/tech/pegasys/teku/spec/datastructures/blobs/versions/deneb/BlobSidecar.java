@@ -138,4 +138,9 @@ public class BlobSidecar
         getKZGCommitment().toAbbreviatedString(),
         getKZGProof().toAbbreviatedString());
   }
+
+  @Override
+  public BlobSidecarSchema getSchema() {
+    return (BlobSidecarSchema) super.getSchema();
+  }
 }

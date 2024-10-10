@@ -60,7 +60,7 @@ public class FileSystemArchiveTest {
   @BeforeAll
   static void beforeEach() throws IOException {
     testTempDir = Files.createTempDirectory("blobs");
-    dataArchive = new FileSystemArchive(SPEC, testTempDir);
+    dataArchive = new FileSystemArchive(testTempDir);
   }
 
   @AfterEach
@@ -100,6 +100,21 @@ public class FileSystemArchiveTest {
     assertTrue(
         file.toString()
             .endsWith(slotAndBlockRootAndBlobIndex.getBlockRoot().toUnprefixedHexString()));
+  }
+
+  @Test
+  void testArchiveWithEmptyList() throws IOException {
+    DataArchiveWriter<List<BlobSidecar>> blobWriter = dataArchive.getBlobSidecarWriter();
+    ArrayList<BlobSidecar> list = new ArrayList<>();
+    assertTrue(blobWriter.archive(list));
+    blobWriter.close();
+  }
+
+  @Test
+  void testArchiveWithNullList() throws IOException {
+    DataArchiveWriter<List<BlobSidecar>> blobWriter = dataArchive.getBlobSidecarWriter();
+    assertTrue(blobWriter.archive(null));
+    blobWriter.close();
   }
 
   @Test

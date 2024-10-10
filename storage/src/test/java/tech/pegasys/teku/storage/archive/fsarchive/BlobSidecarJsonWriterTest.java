@@ -37,7 +37,7 @@ public class BlobSidecarJsonWriterTest {
 
   @BeforeEach
   public void test() {
-    this.blobSidecarJsonWriter = new BlobSidecarJsonWriter(SPEC);
+    this.blobSidecarJsonWriter = new BlobSidecarJsonWriter();
     this.dataStructureUtil = new DataStructureUtil(SPEC);
   }
 
