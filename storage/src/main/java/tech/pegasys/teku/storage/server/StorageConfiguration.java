@@ -43,9 +43,9 @@ public class StorageConfiguration {
   public static final long DEFAULT_STORAGE_RETAINED_SLOTS = 0;
   public static final int DEFAULT_STATE_PRUNING_LIMIT = 1;
 
-  // 60/12 = 5 blocks per minute * 6 max blobs per block = 30 blobs per minute at maximum, 15 as
-  // target. Let's configure 48 pruning per minute, so we have some room for catching up.
-  public static final int DEFAULT_BLOBS_PRUNING_LIMIT = 48;
+  // 60/12 = 5 blocks/slots per minute * 6 max blobs per block = 30 blobs per minute at maximum,
+  // This value prunes blobs by slots, using 12 to allow for catch up.
+  public static final int DEFAULT_BLOBS_PRUNING_LIMIT = 12;
 
   // Max limit we have tested so far without seeing perf degradation
   public static final int MAX_STATE_PRUNE_LIMIT = 100;
