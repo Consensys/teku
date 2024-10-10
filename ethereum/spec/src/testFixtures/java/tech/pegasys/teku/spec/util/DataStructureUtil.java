@@ -132,6 +132,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Consolid
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsBuilderElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
@@ -2502,6 +2504,15 @@ public final class DataStructureUtil {
         .withdrawals(randomWithdrawalRequests())
         .consolidations(randomConsolidationRequests())
         .build();
+  }
+
+  public List<Bytes> randomEncodedExecutionRequests() {
+    final ExecutionRequestsSchema executionRequestsSchema =
+        SchemaDefinitionsElectra.required(
+                spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+            .getExecutionRequestsSchema();
+    return new ExecutionRequestsDataCodec(executionRequestsSchema)
+        .encodeWithoutTypePrefix(randomExecutionRequests());
   }
 
   public WithdrawalRequest randomWithdrawalRequest() {
