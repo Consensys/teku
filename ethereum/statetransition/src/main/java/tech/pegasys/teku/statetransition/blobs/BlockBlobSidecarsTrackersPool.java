@@ -22,6 +22,7 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 
@@ -70,6 +71,13 @@ public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
         @Override
         public BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(
             final SignedBeaconBlock block) {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(
+            final SignedBeaconBlock block,
+            final ExecutionPayloadEnvelope executionPayloadEnvelope) {
           throw new UnsupportedOperationException();
         }
 
@@ -126,6 +134,10 @@ public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
   Set<BlobIdentifier> getAllRequiredBlobSidecars();
 
   BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(SignedBeaconBlock block);
+
+  // ePBS
+  BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(
+      SignedBeaconBlock block, ExecutionPayloadEnvelope executionPayloadEnvelope);
 
   Optional<BlockBlobSidecarsTracker> getBlockBlobSidecarsTracker(SignedBeaconBlock block);
 

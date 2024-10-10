@@ -26,6 +26,7 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobSidecarsAvailabilityChecker;
@@ -153,6 +154,17 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
         blockBlobSidecarsTrackersPool.getOrCreateBlockBlobSidecarsTracker(block);
 
     return forkChoiceBlobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker);
+  }
+
+  @Override
+  public BlobSidecarsAvailabilityChecker createAvailabilityChecker(
+      final SignedBeaconBlock block, final ExecutionPayloadEnvelope executionPayloadEnvelope) {
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
+        blockBlobSidecarsTrackersPool.getOrCreateBlockBlobSidecarsTracker(
+            block, executionPayloadEnvelope);
+
+    return new ForkChoiceBlobSidecarsAvailabilityChecker(
+        spec, asyncRunner, recentChainData, blockBlobSidecarsTracker, kzg);
   }
 
   @Override
