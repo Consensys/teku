@@ -55,15 +55,15 @@ public class MultiPeersStandAloneVcBlocksAcceptanceTest
     firstTekuNode.start();
 
     final TekuBeaconNode secondBeaconNode =
-            createTekuBeaconNode(
-                    TekuNodeConfigBuilder.createBeaconNode()
-                            .withGenesisTime(genesisTime)
-                            .withNetwork(network)
-                            .withRealNetwork()
-                            .withRealNetwork()
-                            .withAltairEpoch(altairEpoch)
-                            .withPeers(firstTekuNode)
-                            .build());
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withGenesisTime(genesisTime)
+                .withNetwork(network)
+                .withRealNetwork()
+                .withRealNetwork()
+                .withAltairEpoch(altairEpoch)
+                .withPeers(firstTekuNode)
+                .build());
 
     secondBeaconNode.start();
 
