@@ -23,6 +23,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,8 +38,9 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.storage.archive.DataArchive;
+import tech.pegasys.teku.storage.archive.nooparchive.NoopDataArchive;
 import tech.pegasys.teku.storage.server.Database;
-import tech.pegasys.teku.storage.server.DatabaseArchiveNoopWriter;
 
 public class BlobSidecarPrunerTest {
   public static final Duration PRUNE_INTERVAL = Duration.ofSeconds(5);
@@ -55,11 +57,13 @@ public class BlobSidecarPrunerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final Database database = mock(Database.class);
   private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
+  private final DataArchive dataArchive = new NoopDataArchive();
 
   private final BlobSidecarPruner blobsPruner =
       new BlobSidecarPruner(
           spec,
           database,
+          dataArchive,
           stubMetricsSystem,
           asyncRunner,
           timeProvider,
@@ -85,7 +89,7 @@ public class BlobSidecarPrunerTest {
 
     verify(database).getGenesisTime();
     verify(database, never()).pruneOldestBlobSidecars(any(), anyInt(), any());
-    verify(database, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt());
+    verify(database, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt(), any());
   }
 
   @Test
@@ -94,7 +98,7 @@ public class BlobSidecarPrunerTest {
 
     verify(database).getGenesisTime();
     verify(database, never()).pruneOldestBlobSidecars(any(), anyInt(), any());
-    verify(database, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt());
+    verify(database, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt(), any());
   }
 
   @Test
@@ -110,11 +114,11 @@ public class BlobSidecarPrunerTest {
 
     asyncRunner.executeDueActions();
     verify(database, never()).pruneOldestBlobSidecars(any(), anyInt(), any());
-    verify(database, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt());
+    verify(database, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt(), any());
   }
 
   @Test
-  void shouldPruneWhenLatestPrunableSlotIsGreaterThanOldestDAEpoch() {
+  void shouldPruneWhenLatestPrunableSlotIsGreaterThanOldestDAEpoch() throws IOException {
     final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     // set current slot to MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS + 1 epoch + half epoch
@@ -131,13 +135,16 @@ public class BlobSidecarPrunerTest {
         .pruneOldestBlobSidecars(
             UInt64.valueOf((slotsPerEpoch / 2) - 1),
             PRUNE_LIMIT,
-            DatabaseArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE);
+            dataArchive.getBlobSidecarWriter());
     verify(database)
-        .pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
+        .pruneOldestNonCanonicalBlobSidecars(
+            UInt64.valueOf((slotsPerEpoch / 2) - 1),
+            PRUNE_LIMIT,
+            dataArchive.getBlobSidecarWriter());
   }
 
   @Test
-  void shouldUseEpochsStoreBlobs() {
+  void shouldUseEpochsStoreBlobs() throws IOException {
     final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     final int defaultValue = specConfigDeneb.getMinEpochsForBlobSidecarsRequests();
@@ -157,6 +164,7 @@ public class BlobSidecarPrunerTest {
         new BlobSidecarPruner(
             specOverride,
             databaseOverride,
+            dataArchive,
             stubMetricsSystem,
             asyncRunner,
             timeProvider,
@@ -194,9 +202,12 @@ public class BlobSidecarPrunerTest {
         .pruneOldestBlobSidecars(
             UInt64.valueOf((slotsPerEpoch / 2) - 1),
             PRUNE_LIMIT,
-            DatabaseArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE);
+            dataArchive.getBlobSidecarWriter());
     verify(databaseOverride)
-        .pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
+        .pruneOldestNonCanonicalBlobSidecars(
+            UInt64.valueOf((slotsPerEpoch / 2) - 1),
+            PRUNE_LIMIT,
+            dataArchive.getBlobSidecarWriter());
   }
 
   @Test
@@ -217,6 +228,7 @@ public class BlobSidecarPrunerTest {
         new BlobSidecarPruner(
             specOverride,
             databaseOverride,
+            dataArchive,
             stubMetricsSystem,
             asyncRunner,
             timeProvider,
@@ -239,6 +251,6 @@ public class BlobSidecarPrunerTest {
 
     asyncRunner.executeDueActions();
     verify(databaseOverride, never()).pruneOldestBlobSidecars(any(), anyInt(), any());
-    verify(databaseOverride, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt());
+    verify(databaseOverride, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt(), any());
   }
 }

@@ -19,6 +19,7 @@ import static tech.pegasys.teku.storage.server.StateStorageMode.NOT_SET;
 import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 import static tech.pegasys.teku.storage.server.VersionedDatabaseFactory.STORAGE_MODE_PATH;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Optional;
@@ -42,9 +43,9 @@ public class StorageConfiguration {
   public static final long DEFAULT_STORAGE_RETAINED_SLOTS = 0;
   public static final int DEFAULT_STATE_PRUNING_LIMIT = 1;
 
-  // 60/12 = 5 blocks per minute * 6 max blobs per block = 30 blobs per minute at maximum, 15 as
-  // target. Let's configure 48 pruning per minute, so we have some room for catching up.
-  public static final int DEFAULT_BLOBS_PRUNING_LIMIT = 48;
+  // 60/12 = 5 blocks/slots per minute * 6 max blobs per block = 30 blobs per minute at maximum,
+  // This value prunes blobs by slots, using 12 to allow for catch up.
+  public static final int DEFAULT_BLOBS_PRUNING_LIMIT = 12;
 
   // Max limit we have tested so far without seeing perf degradation
   public static final int MAX_STATE_PRUNE_LIMIT = 100;
@@ -62,6 +63,7 @@ public class StorageConfiguration {
   private final Duration statePruningInterval;
   private final Duration blobsPruningInterval;
   private final int blobsPruningLimit;
+  private final String blobsArchivePath;
   private final long retainedSlots;
   private final int statePruningLimit;
 
@@ -78,6 +80,7 @@ public class StorageConfiguration {
       final int blockPruningLimit,
       final Duration blobsPruningInterval,
       final int blobsPruningLimit,
+      final String blobsArchivePath,
       final int stateRebuildTimeoutSeconds,
       final long retainedSlots,
       final Duration statePruningInterval,
@@ -93,6 +96,7 @@ public class StorageConfiguration {
     this.blockPruningLimit = blockPruningLimit;
     this.blobsPruningInterval = blobsPruningInterval;
     this.blobsPruningLimit = blobsPruningLimit;
+    this.blobsArchivePath = blobsArchivePath;
     this.stateRebuildTimeoutSeconds = stateRebuildTimeoutSeconds;
     this.retainedSlots = retainedSlots;
     this.statePruningInterval = statePruningInterval;
@@ -148,6 +152,10 @@ public class StorageConfiguration {
     return blobsPruningLimit;
   }
 
+  public Optional<String> getBlobsArchivePath() {
+    return Optional.ofNullable(blobsArchivePath);
+  }
+
   public long getRetainedSlots() {
     return retainedSlots;
   }
@@ -178,6 +186,7 @@ public class StorageConfiguration {
     private int blockPruningLimit = DEFAULT_BLOCK_PRUNING_LIMIT;
     private Duration blobsPruningInterval = DEFAULT_BLOBS_PRUNING_INTERVAL;
     private int blobsPruningLimit = DEFAULT_BLOBS_PRUNING_LIMIT;
+    private String blobsArchivePath = null;
     private int stateRebuildTimeoutSeconds = DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS;
     private Duration statePruningInterval = DEFAULT_STATE_PRUNING_INTERVAL;
     private long retainedSlots = DEFAULT_STORAGE_RETAINED_SLOTS;
@@ -274,6 +283,18 @@ public class StorageConfiguration {
       return this;
     }
 
+    public Builder blobsArchivePath(final String blobsArchivePath) {
+      if (blobsArchivePath != null) {
+        File file = Path.of(blobsArchivePath).toFile();
+        if (!file.exists()) {
+          throw new InvalidConfigurationException(
+              String.format("Blobs archive path does not exist: '%s'", blobsArchivePath));
+        }
+      }
+      this.blobsArchivePath = blobsArchivePath;
+      return this;
+    }
+
     public Builder retainedSlots(final long retainedSlots) {
       if (retainedSlots < 0) {
         throw new InvalidConfigurationException(
@@ -319,6 +340,7 @@ public class StorageConfiguration {
           blockPruningLimit,
           blobsPruningInterval,
           blobsPruningLimit,
+          blobsArchivePath,
           stateRebuildTimeoutSeconds,
           retainedSlots,
           statePruningInterval,
