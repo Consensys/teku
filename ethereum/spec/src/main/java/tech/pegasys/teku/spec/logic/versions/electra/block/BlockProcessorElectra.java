@@ -642,7 +642,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       // Verify the deposit signature (proof of possession) which is not checked by the deposit
       // contract
       if (signatureAlreadyVerified
-          || depositSignatureIsValid(pubkey, withdrawalCredentials, amount, signature)) {
+          || isValidDepositSignature(pubkey, withdrawalCredentials, amount, signature)) {
         addValidatorToRegistry(state, pubkey, withdrawalCredentials, ZERO);
         final PendingDeposit deposit =
             schemaDefinitionsElectra
