@@ -130,7 +130,7 @@ class EngineGetPayloadV4Test {
     final ExecutionPayload executionPayloadElectra = dataStructureUtil.randomExecutionPayload();
     final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests();
     final List<Bytes> encodedExecutionRequests =
-        executionRequestsDataCodec.encodeWithoutTypePrefix(executionRequests);
+        executionRequestsDataCodec.encode(executionRequests);
     assertThat(executionPayloadElectra).isInstanceOf(ExecutionPayloadDeneb.class);
 
     when(executionEngineClient.getPayloadV4(eq(executionPayloadContext.getPayloadId())))
