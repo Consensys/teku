@@ -193,14 +193,14 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   void shouldSetBlobsPruningArchivePath() {
     // path needs to exist.
-    String SOME_PATH = Files.temporaryFolderPath();
+    String someTempPath = Files.temporaryFolderPath();
     final TekuConfiguration config =
-        getTekuConfigurationFromArguments("--Xdata-storage-blobs-archive-path=" + SOME_PATH);
+        getTekuConfigurationFromArguments("--Xdata-storage-blobs-archive-path=" + someTempPath);
 
     assertThat(config.storageConfiguration().getBlobsArchivePath())
         .isPresent()
         .get()
-        .isEqualTo(SOME_PATH);
+        .isEqualTo(someTempPath);
   }
 
   @Test
