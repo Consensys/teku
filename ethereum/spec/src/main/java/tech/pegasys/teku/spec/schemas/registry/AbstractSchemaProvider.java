@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
-abstract class AbstractSchemaProvider<T> implements SchemaProvider<T> {
+class AbstractSchemaProvider<T> implements SchemaProvider<T> {
   private final TreeMap<SpecMilestone, SchemaProviderCreator<T>> milestoneToSchemaCreator =
       new TreeMap<>();
   private final SchemaId<T> schemaId;
@@ -78,8 +78,8 @@ abstract class AbstractSchemaProvider<T> implements SchemaProvider<T> {
       if (isLast) {
         checkArgument(
             currentCreator.untilMilestone.isEmpty()
-                || currentCreator.untilMilestone.get().isGreaterThan(currentCreator.milestone),
-            "Last creator untilMilestone must be greater than milestone in %s",
+                || currentCreator.untilMilestone.get().isGreaterThanOrEqualTo(currentCreator.milestone),
+            "Last creator untilMilestone must be greater or equal than milestone in %s",
             schemaId);
       } else {
         checkArgument(
@@ -150,6 +150,36 @@ abstract class AbstractSchemaProvider<T> implements SchemaProvider<T> {
           .add("milestone", milestone)
           .add("untilMilestone", untilMilestone)
           .toString();
+    }
+  }
+
+  static <T> Builder<T> providerBuilder(final SchemaId<T> schemaId) {
+    return new Builder<>(schemaId);
+  }
+
+  static class Builder<T> {
+    private final SchemaId<T> schemaId;
+    final List<SchemaProviderCreator<T>> schemaProviderCreators = new ArrayList<>();
+
+    private Builder(final SchemaId<T> schemaId) {
+      this.schemaId = schemaId;
+    }
+
+    public Builder<T> withCreator(final SpecMilestone milestone,
+                                  final BiFunction<SchemaRegistry, SpecConfig, T> creationSchema) {
+      schemaProviderCreators.add(new SchemaProviderCreator<>(milestone, Optional.empty(), creationSchema));
+      return this;
+    }
+
+    public Builder<T> withCreator(final SpecMilestone milestone,
+                                  final SpecMilestone untilMilestone,
+                                  final BiFunction<SchemaRegistry, SpecConfig, T> creationSchema) {
+      schemaProviderCreators.add(new SchemaProviderCreator<>(milestone, Optional.of(untilMilestone), creationSchema));
+      return this;
+    }
+
+    public AbstractSchemaProvider<T> build() {
+      return new AbstractSchemaProvider<>(schemaId, schemaProviderCreators.toArray(new SchemaProviderCreator[0]));
     }
   }
 }

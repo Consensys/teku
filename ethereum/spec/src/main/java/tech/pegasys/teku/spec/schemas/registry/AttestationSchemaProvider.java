@@ -41,4 +41,5 @@ public class AttestationSchemaProvider
                         specConfig.getMaxCommitteesPerSlot())
                     .castTypeToAttestationSchema()));
   }
+
 }

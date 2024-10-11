@@ -16,9 +16,15 @@ package tech.pegasys.teku.spec.schemas.registry;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.HashSet;
 import java.util.Set;
+
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
+
+import static tech.pegasys.teku.spec.schemas.registry.AbstractSchemaProvider.providerBuilder;
+import static tech.pegasys.teku.spec.schemas.registry.AbstractSchemaProvider.schemaCreator;
 
 public class SchemaRegistryBuilder {
   private final Set<SchemaProvider<?>> providers = new HashSet<>();
@@ -27,9 +33,19 @@ public class SchemaRegistryBuilder {
 
   public static SchemaRegistryBuilder create() {
     return new SchemaRegistryBuilder()
-        .addProvider(new AttnetsENRFieldSchemaProvider())
+        .addProvider(createAttnetsENRFieldSchemaProvider())
         .addProvider(new AttestationSchemaProvider());
   }
+
+  private static SchemaProvider<SszBitvectorSchema<SszBitvector>> createAttnetsENRFieldSchemaProvider() {
+    return providerBuilder(SchemaTypes.ATTNETS_ENR_FIELD_SCHEMA)
+            .withCreator(
+                SpecMilestone.PHASE0,
+                (registry, specConfig) ->
+                    SszBitvectorSchema.create(specConfig.getAttestationSubnetCount()))
+            .build();
+  }
+
 
   public SchemaRegistryBuilder() {
     this.cache = SchemaCache.createDefault();

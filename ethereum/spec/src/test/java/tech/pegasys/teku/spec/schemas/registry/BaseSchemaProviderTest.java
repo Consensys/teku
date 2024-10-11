@@ -83,10 +83,30 @@ class BaseSchemaProviderTest {
   }
 
   @Test
+  void shouldAllowSingleMilestone() {
+    final TestSchemaProvider provider =
+            new TestSchemaProvider(
+                    schemaCreator(ALTAIR, (r, c) -> "TestSchemaAltair"),
+                    schemaCreator(BELLATRIX,CAPELLA, (r, c) -> "TestSchemaBellatrix"));
+
+    when(mockRegistry.getMilestone()).thenReturn(DENEB);
+
+    assertThatThrownBy(() -> provider.getSchema(mockRegistry)).isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("It is not supposed to create a specific version for DENEB");
+  }
+
+  @Test
   void shouldThrowWhenNoCreators() {
     assertThatThrownBy(TestSchemaProvider::new)
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith("There should be at least 1 creator");
+  }
+
+  @Test
+  void shouldThrowWhenAskingForAnUnsupportedMilestone() {
+    assertThatThrownBy(TestSchemaProvider::new)
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageStartingWith("There should be at least 1 creator");
   }
 
   @Test
@@ -132,12 +152,6 @@ class BaseSchemaProviderTest {
 
   @Test
   void shouldThrowWhenWithUntilIsPriorToMilestone() {
-    assertThatThrownBy(
-            () ->
-                new TestSchemaProvider(schemaCreator(BELLATRIX, BELLATRIX, (r, c) -> "TestSchema")))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageStartingWith("Last creator untilMilestone must be greater than milestone in");
-
     assertThatThrownBy(
             () -> new TestSchemaProvider(schemaCreator(CAPELLA, BELLATRIX, (r, c) -> "TestSchema")))
         .isInstanceOf(IllegalArgumentException.class)
