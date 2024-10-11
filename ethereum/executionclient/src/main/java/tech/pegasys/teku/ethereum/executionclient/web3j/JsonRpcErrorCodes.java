@@ -24,7 +24,7 @@ public enum JsonRpcErrorCodes {
   private final int errorCode;
   private final String description;
 
-  JsonRpcErrorCodes(int errorCode, String description) {
+  JsonRpcErrorCodes(final int errorCode, final String description) {
     this.errorCode = errorCode;
     this.description = description;
   }
@@ -37,11 +37,11 @@ public enum JsonRpcErrorCodes {
     return description;
   }
 
-  public static String getErrorMessage(int errorCode) {
+  public static String getErrorMessage(final int errorCode) {
     return fromCode(errorCode).getDescription();
   }
 
-  public static JsonRpcErrorCodes fromCode(int errorCode) {
+  public static JsonRpcErrorCodes fromCode(final int errorCode) {
     for (JsonRpcErrorCodes error : values()) {
       if (error.getErrorCode() == errorCode) {
         return error;
