@@ -152,24 +152,6 @@ public class ExecutionPayloadHeaderBuilderBellatrix implements ExecutionPayloadH
     return this;
   }
 
-  @Override
-  public ExecutionPayloadHeaderBuilder depositRequestsRoot(
-      final Supplier<Bytes32> depositRequestsRootSupplier) {
-    return this;
-  }
-
-  @Override
-  public ExecutionPayloadHeaderBuilder withdrawalRequestsRoot(
-      final Supplier<Bytes32> withdrawalRequestsRootSupplier) {
-    return this;
-  }
-
-  @Override
-  public ExecutionPayloadHeaderBuilder consolidationRequestsRoot(
-      final Supplier<Bytes32> consolidationRequestsRootSupplier) {
-    return this;
-  }
-
   protected void validateSchema() {
     checkNotNull(schema, "schema must be specified");
   }
