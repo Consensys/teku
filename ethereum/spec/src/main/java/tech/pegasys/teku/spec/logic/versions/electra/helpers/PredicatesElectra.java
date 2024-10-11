@@ -108,7 +108,7 @@ public class PredicatesElectra extends Predicates {
    * @param withdrawalCredentials
    * @return
    */
-  public static boolean isCompoundingWithdrawalCredential(final Bytes32 withdrawalCredentials) {
+  public boolean isCompoundingWithdrawalCredential(final Bytes32 withdrawalCredentials) {
     return withdrawalCredentials.get(0) == COMPOUNDING_WITHDRAWAL_BYTE;
   }
 }
