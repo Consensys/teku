@@ -105,7 +105,8 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
       final OperationValidator operationValidator,
-      final SchemaDefinitionsElectra schemaDefinitions) {
+      final SchemaDefinitionsElectra schemaDefinitions,
+      final ExecutionRequestsDataCodec executionRequestsDataCodec) {
     super(
         specConfig,
         predicates,
@@ -124,8 +125,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     this.beaconStateMutatorsElectra = beaconStateMutators;
     this.beaconStateAccessorsElectra = beaconStateAccessors;
     this.schemaDefinitionsElectra = schemaDefinitions;
-    this.executionRequestsDataCodec =
-        new ExecutionRequestsDataCodec(schemaDefinitions.getExecutionRequestsSchema());
+    this.executionRequestsDataCodec = executionRequestsDataCodec;
   }
 
   @Override
@@ -146,7 +146,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         executionPayload,
         versionedHashes,
         parentBeaconBlockRoot,
-        executionRequestsDataCodec.hash(executionRequests));
+        executionRequestsDataCodec.encode(executionRequests));
   }
 
   @Override

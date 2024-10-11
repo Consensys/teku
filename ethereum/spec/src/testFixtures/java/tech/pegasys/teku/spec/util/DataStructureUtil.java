@@ -2509,7 +2509,7 @@ public final class DataStructureUtil {
                 spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
             .getExecutionRequestsSchema();
     return new ExecutionRequestsDataCodec(executionRequestsSchema)
-        .encodeWithoutTypePrefix(randomExecutionRequests());
+        .encode(randomExecutionRequests());
   }
 
   public WithdrawalRequest randomWithdrawalRequest() {
