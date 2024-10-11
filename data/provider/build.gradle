@@ -17,7 +17,7 @@ dependencies {
 
     implementation project(':ethereum:json-types')
 
-    implementation 'org.apache.tuweni:tuweni-units'
+    implementation 'io.tmio:tuweni-units'
 
     testImplementation testFixtures(project(':ethereum:spec'))
     testImplementation testFixtures(project(':infrastructure:async'))
