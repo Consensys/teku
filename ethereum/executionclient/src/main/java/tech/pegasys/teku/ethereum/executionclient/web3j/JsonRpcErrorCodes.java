@@ -13,48 +13,40 @@
 
 package tech.pegasys.teku.ethereum.executionclient.web3j;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+public enum JsonRpcErrorCodes {
+  PARSE_ERROR(-32700, "Parse error"),
+  INVALID_REQUEST(-32600, "Invalid Request"),
+  METHOD_NOT_FOUND(-32601, "Method not found"),
+  INVALID_PARAMS(-32602, "Invalid params"),
+  INTERNAL_ERROR(-32603, "Internal error"),
+  SERVER_ERROR(-32000, "Server error");
 
-public final class JsonRpcErrorCodes {
-  public static final int PARSE_ERROR = -32700;
-  public static final int INVALID_REQUEST = -32600;
-  public static final int METHOD_NOT_FOUND = -32601;
-  public static final int INVALID_PARAMS = -32602;
-  public static final int INTERNAL_ERROR = -32603;
-  public static final int SERVER_ERROR_RANGE_START = -32000;
-  public static final int SERVER_ERROR_RANGE_END = -32099;
+  private final int errorCode;
+  private final String description;
 
-  private static final Map<Integer, String> ERROR_MESSAGES;
-
-  static {
-    Map<Integer, String> messages = new HashMap<>();
-    messages.put(PARSE_ERROR, "Parse error");
-    messages.put(INVALID_REQUEST, "Invalid request");
-    messages.put(METHOD_NOT_FOUND, "Method not found");
-    messages.put(INVALID_PARAMS, "Invalid params");
-    messages.put(INTERNAL_ERROR, "Internal error");
-    messages.put(SERVER_ERROR_RANGE_START, "Server error");
-    ERROR_MESSAGES = Collections.unmodifiableMap(messages);
+  JsonRpcErrorCodes(int errorCode, String description) {
+    this.errorCode = errorCode;
+    this.description = description;
   }
 
-  private JsonRpcErrorCodes() {
-    // Utility class, do not instantiate
+  public int getErrorCode() {
+    return errorCode;
   }
 
-  public static String getErrorMessage(final int errorCode) {
-    if (isServerError(errorCode)) {
-      return ERROR_MESSAGES.get(SERVER_ERROR_RANGE_START);
+  public String getDescription() {
+    return description;
+  }
+
+  public static String getErrorMessage(int errorCode) {
+    return fromCode(errorCode).getDescription();
+  }
+
+  public static JsonRpcErrorCodes fromCode(int errorCode) {
+    for (JsonRpcErrorCodes error : values()) {
+      if (error.getErrorCode() == errorCode) {
+        return error;
+      }
     }
-    return ERROR_MESSAGES.getOrDefault(errorCode, "Unknown error");
-  }
-
-  public static boolean isServerError(final int errorCode) {
-    return errorCode >= SERVER_ERROR_RANGE_END && errorCode <= SERVER_ERROR_RANGE_START;
-  }
-
-  public static boolean isStandardError(final int errorCode) {
-    return ERROR_MESSAGES.containsKey(errorCode) || isServerError(errorCode);
+    return errorCode >= -32099 && errorCode <= -32000 ? SERVER_ERROR : INTERNAL_ERROR;
   }
 }
