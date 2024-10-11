@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionclient.web3j;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+
 public enum JsonRpcErrorCodes {
   PARSE_ERROR(-32700, "Parse error"),
   INVALID_REQUEST(-32600, "Invalid Request"),
@@ -23,6 +25,14 @@ public enum JsonRpcErrorCodes {
 
   private final int errorCode;
   private final String description;
+  private static final Int2ObjectOpenHashMap<JsonRpcErrorCodes> CODE_TO_ERROR_MAP;
+
+  static {
+    CODE_TO_ERROR_MAP = new Int2ObjectOpenHashMap<>();
+    for (JsonRpcErrorCodes error : values()) {
+      CODE_TO_ERROR_MAP.put(error.getErrorCode(), error);
+    }
+  }
 
   JsonRpcErrorCodes(final int errorCode, final String description) {
     this.errorCode = errorCode;
@@ -42,10 +52,9 @@ public enum JsonRpcErrorCodes {
   }
 
   public static JsonRpcErrorCodes fromCode(final int errorCode) {
-    for (JsonRpcErrorCodes error : values()) {
-      if (error.getErrorCode() == errorCode) {
-        return error;
-      }
+    JsonRpcErrorCodes error = CODE_TO_ERROR_MAP.get(errorCode);
+    if (error != null) {
+      return error;
     }
     return errorCode >= -32099 && errorCode <= -32000 ? SERVER_ERROR : INTERNAL_ERROR;
   }
