@@ -777,18 +777,4 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     }
     return Optional.empty();
   }
-
-  protected Validator getValidatorFromDeposit(
-      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials) {
-    final UInt64 effectiveBalance = UInt64.ZERO;
-    return new Validator(
-        pubkey,
-        withdrawalCredentials,
-        effectiveBalance,
-        false,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH);
-  }
 }
