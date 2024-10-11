@@ -603,10 +603,7 @@ public final class DataStructureUtil {
                     .transactionsRoot(randomBytes32())
                     .withdrawalsRoot(() -> withdrawalsRoot)
                     .blobGasUsed(this::randomUInt64)
-                    .excessBlobGas(this::randomUInt64)
-                    .depositRequestsRoot(this::randomBytes32)
-                    .withdrawalRequestsRoot(this::randomBytes32)
-                    .consolidationRequestsRoot(this::randomBytes32));
+                    .excessBlobGas(this::randomUInt64));
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
@@ -2512,7 +2509,7 @@ public final class DataStructureUtil {
                 spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
             .getExecutionRequestsSchema();
     return new ExecutionRequestsDataCodec(executionRequestsSchema)
-        .encodeWithoutTypePrefix(randomExecutionRequests());
+        .encode(randomExecutionRequests());
   }
 
   public WithdrawalRequest randomWithdrawalRequest() {

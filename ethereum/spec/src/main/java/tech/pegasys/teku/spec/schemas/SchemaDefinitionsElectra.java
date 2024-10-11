@@ -314,20 +314,12 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return withdrawalRequestSchema;
   }
 
+  public ConsolidationRequestSchema getConsolidationRequestSchema() {
+    return consolidationRequestSchema;
+  }
+
   public PendingDeposit.PendingDepositSchema getPendingDepositSchema() {
     return pendingDepositSchema;
-  }
-
-  public SszListSchema<PendingDeposit, ?> getPendingDepositsSchema() {
-    return beaconStateSchema.getPendingDepositsSchema();
-  }
-
-  public SszListSchema<PendingConsolidation, ?> getPendingConsolidationsSchema() {
-    return beaconStateSchema.getPendingConsolidationsSchema();
-  }
-
-  public SszListSchema<PendingPartialWithdrawal, ?> getPendingPartialWithdrawalsSchema() {
-    return beaconStateSchema.getPendingPartialWithdrawalsSchema();
   }
 
   public PendingPartialWithdrawal.PendingPartialWithdrawalSchema
@@ -335,17 +327,25 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return pendingPartialWithdrawalSchema;
   }
 
-  @Override
-  public Optional<SchemaDefinitionsElectra> toVersionElectra() {
-    return Optional.of(this);
-  }
-
   public PendingConsolidation.PendingConsolidationSchema getPendingConsolidationSchema() {
     return pendingConsolidationSchema;
   }
 
-  public ConsolidationRequestSchema getConsolidationRequestSchema() {
-    return consolidationRequestSchema;
+  public SszListSchema<PendingDeposit, ?> getPendingDepositsSchema() {
+    return beaconStateSchema.getPendingDepositsSchema();
+  }
+
+  public SszListSchema<PendingPartialWithdrawal, ?> getPendingPartialWithdrawalsSchema() {
+    return beaconStateSchema.getPendingPartialWithdrawalsSchema();
+  }
+
+  public SszListSchema<PendingConsolidation, ?> getPendingConsolidationsSchema() {
+    return beaconStateSchema.getPendingConsolidationsSchema();
+  }
+
+  @Override
+  public Optional<SchemaDefinitionsElectra> toVersionElectra() {
+    return Optional.of(this);
   }
 
   @Override

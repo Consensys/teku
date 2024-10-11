@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionclient.metrics;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
@@ -143,11 +144,11 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
       final ExecutionPayloadV3 executionPayload,
       final List<VersionedHash> blobVersionedHashes,
       final Bytes32 parentBeaconBlockRoot,
-      final Bytes32 executionRequestHash) {
+      final List<Bytes> executionRequests) {
     return countRequest(
         () ->
             delegate.newPayloadV4(
-                executionPayload, blobVersionedHashes, parentBeaconBlockRoot, executionRequestHash),
+                executionPayload, blobVersionedHashes, parentBeaconBlockRoot, executionRequests),
         NEW_PAYLOAD_V4_METHOD);
   }
 
