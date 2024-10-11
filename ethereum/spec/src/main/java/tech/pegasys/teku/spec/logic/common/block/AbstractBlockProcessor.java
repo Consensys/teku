@@ -107,6 +107,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected final ValidatorsUtil validatorsUtil;
   protected final OperationValidator operationValidator;
 
+  protected Supplier<ValidatorExitContext> validatorExitContextSupplier;
+
   protected AbstractBlockProcessor(
       final SpecConfig specConfig,
       final Predicates predicates,
@@ -437,7 +439,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         () -> {
           verifyOutstandingDepositsAreProcessed(state, body);
 
-          final Supplier<ValidatorExitContext> validatorExitContextSupplier =
+          validatorExitContextSupplier =
               beaconStateMutators.createValidatorExitContextSupplier(state);
 
           processProposerSlashingsNoValidation(
@@ -448,7 +450,6 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           processDeposits(state, body.getDeposits());
           processVoluntaryExitsNoValidation(
               state, body.getVoluntaryExits(), validatorExitContextSupplier);
-          processWithdrawalRequests(state, body, validatorExitContextSupplier);
         });
   }
 
