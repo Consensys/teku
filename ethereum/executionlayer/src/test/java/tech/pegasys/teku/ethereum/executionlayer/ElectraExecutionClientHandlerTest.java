@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
@@ -98,10 +99,10 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
     final List<VersionedHash> versionedHashes = dataStructureUtil.randomVersionedHashes(3);
     final Bytes32 parentBeaconBlockRoot = dataStructureUtil.randomBytes32();
-    final Bytes32 executionRequestsHash = dataStructureUtil.randomBytes32();
+    final List<Bytes> encodedExecutionRequests = dataStructureUtil.randomEncodedExecutionRequests();
     final NewPayloadRequest newPayloadRequest =
         new NewPayloadRequest(
-            payload, versionedHashes, parentBeaconBlockRoot, executionRequestsHash);
+            payload, versionedHashes, parentBeaconBlockRoot, encodedExecutionRequests);
     final ExecutionPayloadV3 payloadV3 = ExecutionPayloadV3.fromInternalExecutionPayload(payload);
     final PayloadStatusV1 responseData =
         new PayloadStatusV1(
@@ -112,7 +113,7 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
             eq(payloadV3),
             eq(versionedHashes),
             eq(parentBeaconBlockRoot),
-            eq(executionRequestsHash)))
+            eq(encodedExecutionRequests)))
         .thenReturn(dummyResponse);
     final SafeFuture<PayloadStatus> future =
         handler.engineNewPayload(newPayloadRequest, UInt64.ZERO);
@@ -121,7 +122,7 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
             eq(payloadV3),
             eq(versionedHashes),
             eq(parentBeaconBlockRoot),
-            eq(executionRequestsHash));
+            eq(encodedExecutionRequests));
     assertThat(future).isCompletedWithValue(responseData.asInternalExecutionPayload());
   }
 
