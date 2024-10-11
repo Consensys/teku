@@ -161,7 +161,10 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         () -> {
           final ExecutionRequests executionRequests =
               BeaconBlockBodyElectra.required(body).getExecutionRequests();
+
           this.processDepositRequests(state, executionRequests.getDeposits());
+          this.processWithdrawalRequests(
+              state, executionRequests.getWithdrawals(), validatorExitContextSupplier);
           this.processConsolidationRequests(state, executionRequests.getConsolidations());
         });
   }
