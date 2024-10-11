@@ -40,6 +40,19 @@ class ExecutionRequestsDataCodecTest {
       new ExecutionRequestsDataCodec(executionRequestsSchema);
 
   @Test
+  public void codecRoundTrip() {
+    final List<Bytes> expectedExecutionRequestsData =
+        List.of(
+            depositRequestListEncoded,
+            withdrawalRequestsListEncoded,
+            consolidationRequestsListEncoded);
+
+    final List<Bytes> encodedExecutionRequestData =
+        codec.encode(codec.decode(expectedExecutionRequestsData));
+    assertThat(encodedExecutionRequestData).isEqualTo(expectedExecutionRequestsData);
+  }
+
+  @Test
   public void decodeExecutionRequestData() {
     final List<Bytes> executionRequestsData =
         List.of(
@@ -122,7 +135,7 @@ class ExecutionRequestsDataCodecTest {
   }
 
   @Test
-  public void encodeWithTypePrefixExecutionRequests() {
+  public void encodeExecutionRequests() {
     final ExecutionRequests executionRequests =
         new ExecutionRequestsBuilderElectra(executionRequestsSchema)
             .deposits(List.of(depositRequest1, depositRequest2))
@@ -130,19 +143,17 @@ class ExecutionRequestsDataCodecTest {
             .consolidations(List.of(consolidationRequest1))
             .build();
 
-    final List<Bytes> encodedRequests = codec.encodeWithTypePrefix(executionRequests);
+    final List<Bytes> encodedRequests = codec.encode(executionRequests);
 
     assertThat(encodedRequests)
         .containsExactly(
-            Bytes.concatenate(Bytes.of(DepositRequest.REQUEST_TYPE), depositRequestListEncoded),
-            Bytes.concatenate(
-                Bytes.of(WithdrawalRequest.REQUEST_TYPE), withdrawalRequestsListEncoded),
-            Bytes.concatenate(
-                Bytes.of(ConsolidationRequest.REQUEST_TYPE), consolidationRequestsListEncoded));
+            depositRequestListEncoded,
+            withdrawalRequestsListEncoded,
+            consolidationRequestsListEncoded);
   }
 
   @Test
-  public void encodeWithTypePrefixExecutionRequestsWithOneEmptyRequestList() {
+  public void encodeWithWithOneEmptyRequestList() {
     final ExecutionRequests executionRequests =
         new ExecutionRequestsBuilderElectra(executionRequestsSchema)
             .deposits(List.of(depositRequest1, depositRequest2))
@@ -150,18 +161,14 @@ class ExecutionRequestsDataCodecTest {
             .consolidations(List.of(consolidationRequest1))
             .build();
 
-    final List<Bytes> encodedRequests = codec.encodeWithTypePrefix(executionRequests);
+    final List<Bytes> encodedRequests = codec.encode(executionRequests);
 
     assertThat(encodedRequests)
-        .containsExactly(
-            Bytes.concatenate(Bytes.of(DepositRequest.REQUEST_TYPE), depositRequestListEncoded),
-            Bytes.of(WithdrawalRequest.REQUEST_TYPE),
-            Bytes.concatenate(
-                Bytes.of(ConsolidationRequest.REQUEST_TYPE), consolidationRequestsListEncoded));
+        .containsExactly(depositRequestListEncoded, Bytes.EMPTY, consolidationRequestsListEncoded);
   }
 
   @Test
-  public void encodeWithTypePrefixExecutionRequestsWithAllEmptyRequestLists() {
+  public void encodeWithAllEmptyRequestLists() {
     final ExecutionRequests executionRequests =
         new ExecutionRequestsBuilderElectra(executionRequestsSchema)
             .deposits(List.of())
@@ -169,45 +176,9 @@ class ExecutionRequestsDataCodecTest {
             .consolidations(List.of())
             .build();
 
-    final List<Bytes> encodedRequests = codec.encodeWithTypePrefix(executionRequests);
+    final List<Bytes> encodedRequests = codec.encode(executionRequests);
 
-    assertThat(encodedRequests)
-        .containsExactly(
-            Bytes.of(DepositRequest.REQUEST_TYPE),
-            Bytes.of(WithdrawalRequest.REQUEST_TYPE),
-            Bytes.of(ConsolidationRequest.REQUEST_TYPE));
-  }
-
-  @Test
-  public void hashExecutionRequests() {
-    // Previously known hash of the encoded execution requests
-    final Bytes expectedHash =
-        Bytes.fromHexString("0xc0ff01be6ca468a08f1f5fb1dc83b3d92cc782b47ee567bcf17f925e73ff9c00");
-    final ExecutionRequests executionRequests =
-        new ExecutionRequestsBuilderElectra(executionRequestsSchema)
-            .deposits(List.of(depositRequest1, depositRequest2))
-            .withdrawals(List.of(withdrawalRequest1, withdrawalRequest2))
-            .consolidations(List.of(consolidationRequest1))
-            .build();
-
-    // Hash will only match if elements and order are correct
-    assertThat(codec.hash(executionRequests)).isEqualTo(expectedHash);
-  }
-
-  @Test
-  public void hashExecutionRequestsWithAllEmptyRequestLists() {
-    // Previously known hash of the encoded execution requests
-    final Bytes expectedHash =
-        Bytes.fromHexString("0x6036c41849da9c076ed79654d434017387a88fb833c2856b32e18218b3341c5f");
-    final ExecutionRequests executionRequests =
-        new ExecutionRequestsBuilderElectra(executionRequestsSchema)
-            .deposits(List.of())
-            .withdrawals(List.of())
-            .consolidations(List.of())
-            .build();
-
-    // Hash will only match if elements and order are correct
-    assertThat(codec.hash(executionRequests)).isEqualTo(expectedHash);
+    assertThat(encodedRequests).containsExactly(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY);
   }
 
   // Examples taken from

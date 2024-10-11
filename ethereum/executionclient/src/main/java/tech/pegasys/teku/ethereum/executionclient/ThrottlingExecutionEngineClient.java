@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionclient;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV1;
@@ -112,14 +113,11 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
       final ExecutionPayloadV3 executionPayload,
       final List<VersionedHash> blobVersionedHashes,
       final Bytes32 parentBeaconBlockRoot,
-      final Bytes32 executionRequestHash) {
+      final List<Bytes> executionRequests) {
     return taskQueue.queueTask(
         () ->
             delegate.newPayloadV4(
-                executionPayload,
-                blobVersionedHashes,
-                parentBeaconBlockRoot,
-                executionRequestHash));
+                executionPayload, blobVersionedHashes, parentBeaconBlockRoot, executionRequests));
   }
 
   @Override
