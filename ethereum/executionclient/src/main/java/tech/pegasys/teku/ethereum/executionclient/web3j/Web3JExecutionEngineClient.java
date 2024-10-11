@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.web3j.protocol.core.DefaultBlockParameterName;
@@ -180,7 +181,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
       final ExecutionPayloadV3 executionPayload,
       final List<VersionedHash> blobVersionedHashes,
       final Bytes32 parentBeaconBlockRoot,
-      final Bytes32 executionRequestHash) {
+      final List<Bytes> executionRequests) {
     final List<String> expectedBlobVersionedHashes =
         blobVersionedHashes.stream().map(VersionedHash::toHexString).toList();
     final Request<?, PayloadStatusV1Web3jResponse> web3jRequest =
@@ -190,7 +191,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
                 executionPayload,
                 expectedBlobVersionedHashes,
                 parentBeaconBlockRoot.toHexString(),
-                executionRequestHash.toHexString()),
+                executionRequests),
             web3JClient.getWeb3jService(),
             PayloadStatusV1Web3jResponse.class);
     return web3JClient.doRequest(web3jRequest, EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);
