@@ -49,7 +49,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsBuilderElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -64,7 +64,6 @@ import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
@@ -240,19 +239,11 @@ public class BlockOperationSelectorFactory {
             requestedBuilderBoostFactor,
             blockProductionPerformance);
 
-    // TODO Update as part of Electra Engine API updates
-    // (https://github.com/Consensys/teku/issues/8620)
-    if (bodyBuilder.supportsExecutionRequests()) {
-      bodyBuilder.executionRequests(
-          new ExecutionRequestsBuilderElectra(
-                  SchemaDefinitionsElectra.required(schemaDefinitions).getExecutionRequestsSchema())
-              .build());
-    }
-
     return SafeFuture.allOf(
         cacheExecutionPayloadValue(executionPayloadResult, blockSlotState),
         setPayloadOrPayloadHeader(bodyBuilder, executionPayloadResult),
-        setKzgCommitments(bodyBuilder, schemaDefinitions, executionPayloadResult));
+        setKzgCommitments(bodyBuilder, schemaDefinitions, executionPayloadResult),
+        setExecutionRequests(bodyBuilder, executionPayloadResult));
   }
 
   private SafeFuture<Void> cacheExecutionPayloadValue(
@@ -348,6 +339,29 @@ public class BlockOperationSelectorFactory {
                     .getBlobsBundle()
                     .map(blobKzgCommitmentsSchema::createFromBlobsBundle))
         .orElseThrow();
+  }
+
+  private SafeFuture<Void> setExecutionRequests(
+      final BeaconBlockBodyBuilder bodyBuilder,
+      final ExecutionPayloadResult executionPayloadResult) {
+    if (!bodyBuilder.supportsExecutionRequests()) {
+      return SafeFuture.COMPLETE;
+    }
+
+    final SafeFuture<ExecutionRequests> executionRequestsFuture;
+    if (executionPayloadResult.isFromLocalFlow()) {
+      executionRequestsFuture =
+          executionPayloadResult
+              .getExecutionRequestsFromLocalFlow()
+              .orElseThrow()
+              .thenApply(Optional::orElseThrow);
+    } else {
+      // TODO Add support for builder flow in Electra
+      // (https://github.com/Consensys/teku/issues/8624)
+      executionRequestsFuture = SafeFuture.completedFuture(null);
+    }
+
+    return executionRequestsFuture.thenAccept(bodyBuilder::executionRequests);
   }
 
   public Consumer<SignedBeaconBlockUnblinder> createBlockUnblinderSelector(
