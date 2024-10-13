@@ -172,7 +172,9 @@ public class BlobSidecarPruner extends Service {
             nonCanonicalBlobsPruningStart,
             nonCanonicalBlobsLimitReached);
       }
-    } catch (ShuttingDownException | RejectedExecutionException | IOException ex) {
+    } catch (IOException ex) {
+      LOG.error("Failed to get the BlobSidecar archive writer", ex);
+    } catch (ShuttingDownException | RejectedExecutionException ex) {
       LOG.debug("Shutting down", ex);
     }
   }

@@ -932,13 +932,13 @@ public class KvStoreDatabase implements Database {
 
       // Just warn if we failed to find all the BlobSidecars.
       if (keys.size() != blobSidecars.size()) {
-        LOG.warn("Failed to retrieve BlobSidecars for keys:{}", keys);
+        LOG.warn("Failed to retrieve BlobSidecars for keys: {}", keys);
       }
 
       // Attempt to archive the BlobSidecars.
       final boolean blobSidecarArchived = archiveWriter.archive(blobSidecars);
       if (!blobSidecarArchived) {
-        LOG.warn("Failed to archive and prune BlobSidecars. Stopping pruning");
+        LOG.error("Failed to archive and prune BlobSidecars. Stopping pruning");
         break;
       }
 

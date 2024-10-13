@@ -78,14 +78,14 @@ public class FileSystemArchive implements DataArchive {
       final SlotAndBlockRoot slotAndBlockRoot = blobSidecars.getFirst().getSlotAndBlockRoot();
       final File file = resolve(slotAndBlockRoot);
       if (file.exists()) {
-        LOG.warn("Failed to write BlobSidecar. File exists: {}", file.toString());
+        LOG.error("Failed to write BlobSidecar. File exists: {}", file.toString());
         return false;
       }
 
       try {
         Files.createDirectories(file.toPath().getParent());
       } catch (IOException e) {
-        LOG.warn(
+        LOG.error(
             "Failed to write BlobSidecar. Could not make directories to: {}",
             file.getParentFile().toString());
         return false;
@@ -97,7 +97,7 @@ public class FileSystemArchive implements DataArchive {
         indexWriter.newLine();
         return true;
       } catch (IOException | NullPointerException e) {
-        LOG.warn("Failed to write BlobSidecar.", e);
+        LOG.error("Failed to write BlobSidecar.", e);
         return false;
       }
     }
