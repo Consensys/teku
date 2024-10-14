@@ -107,8 +107,6 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected final ValidatorsUtil validatorsUtil;
   protected final OperationValidator operationValidator;
 
-  protected Supplier<ValidatorExitContext> validatorExitContextSupplier;
-
   protected AbstractBlockProcessor(
       final SpecConfig specConfig,
       final Predicates predicates,
@@ -342,7 +340,13 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     processBlockHeader(state, block);
     processRandaoNoValidation(state, block.getBody());
     processEth1Data(state, block.getBody());
-    processOperationsNoValidation(state, block.getBody(), indexedAttestationCache);
+    processOperationsNoValidation(
+        state, block.getBody(), indexedAttestationCache, getValidatorExitContextSupplier(state));
+  }
+
+  protected Supplier<ValidatorExitContext> getValidatorExitContextSupplier(
+      final MutableBeaconState state) {
+    return beaconStateMutators.createValidatorExitContextSupplier(state);
   }
 
   @Override
@@ -433,14 +437,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected void processOperationsNoValidation(
       final MutableBeaconState state,
       final BeaconBlockBody body,
-      final IndexedAttestationCache indexedAttestationCache)
+      final IndexedAttestationCache indexedAttestationCache,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
     safelyProcess(
         () -> {
           verifyOutstandingDepositsAreProcessed(state, body);
-
-          validatorExitContextSupplier =
-              beaconStateMutators.createValidatorExitContextSupplier(state);
 
           processProposerSlashingsNoValidation(
               state, body.getProposerSlashings(), validatorExitContextSupplier);
@@ -472,7 +474,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     final Supplier<ValidatorExitContext> validatorExitContextSupplier =
-        beaconStateMutators.createValidatorExitContextSupplier(state);
+        getValidatorExitContextSupplier(state);
     processProposerSlashingsNoValidation(state, proposerSlashings, validatorExitContextSupplier);
     final BlockValidationResult validationResult =
         verifyProposerSlashings(state, proposerSlashings, signatureVerifier);
@@ -531,7 +533,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     safelyProcess(
         () -> {
           final Supplier<ValidatorExitContext> validatorExitContextSupplier =
-              beaconStateMutators.createValidatorExitContextSupplier(state);
+              getValidatorExitContextSupplier(state);
           processAttesterSlashings(state, attesterSlashings, validatorExitContextSupplier);
         });
   }
@@ -852,7 +854,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     final Supplier<ValidatorExitContext> validatorExitContextSupplier =
-        beaconStateMutators.createValidatorExitContextSupplier(state);
+        getValidatorExitContextSupplier(state);
     processVoluntaryExitsNoValidation(state, exits, validatorExitContextSupplier);
     BlockValidationResult signaturesValid = verifyVoluntaryExits(state, exits, signatureVerifier);
     if (!signaturesValid.isValid()) {
