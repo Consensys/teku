@@ -45,7 +45,7 @@ public class SchemaRegistryBuilder {
   private static SchemaProvider<SszBitvectorSchema<SszBitvector>>
       createAttnetsENRFieldSchemaProvider() {
     return providerBuilder(ATTNETS_ENR_FIELD_SCHEMA)
-        .constant(true)
+        .constant()
         .withCreator(
             SpecMilestone.PHASE0,
             (registry, specConfig) ->
@@ -55,7 +55,7 @@ public class SchemaRegistryBuilder {
 
   private static SchemaProvider<AttestationSchema<Attestation>> createAttestationSchemaProvider() {
     return providerBuilder(ATTESTATION_SCHEMA)
-        .constant(true)
+        .constant()
         .withCreator(
             SpecMilestone.PHASE0,
             (registry, specConfig) ->

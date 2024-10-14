@@ -134,8 +134,8 @@ class BaseSchemaProvider<T> implements SchemaProvider<T> {
       return this;
     }
 
-    public Builder<T> constant(final boolean isConstant) {
-      this.isConstant = isConstant;
+    public Builder<T> constant() {
+      this.isConstant = true;
       return this;
     }
 

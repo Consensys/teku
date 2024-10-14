@@ -60,7 +60,7 @@ class BaseSchemaProviderTest {
   void shouldSupportContinuousConstantWithUntil() {
     final SchemaProvider<?> provider =
         providerBuilder(STRING_SCHEMA_ID)
-            .constant(true)
+            .constant()
             .withCreator(PHASE0, (r, c) -> "TestSchemaPhase0")
             .withCreator(BELLATRIX, (r, c) -> "TestSchemaBellatrix")
             .until(CAPELLA)
@@ -113,22 +113,6 @@ class BaseSchemaProviderTest {
 
     assertThat(provider.getSupportedMilestones())
         .containsExactly(PHASE0, ALTAIR, BELLATRIX, CAPELLA);
-  }
-
-  @Test
-  void shouldAllowSingleMilestone() {
-    final SchemaProvider<?> provider =
-        providerBuilder(STRING_SCHEMA_ID)
-            .withCreator(ALTAIR, (r, c) -> "TestSchemaAltair")
-            .withCreator(BELLATRIX, (r, c) -> "TestSchemaBellatrix")
-            .until(CAPELLA)
-            .build();
-
-    when(mockRegistry.getMilestone()).thenReturn(DENEB);
-
-    assertThatThrownBy(() -> provider.getSchema(mockRegistry))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("It is not supposed to create a specific version for DENEB");
   }
 
   @Test
