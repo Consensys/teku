@@ -347,21 +347,38 @@ public class BlockOperationSelectorFactory {
     if (!bodyBuilder.supportsExecutionRequests()) {
       return SafeFuture.COMPLETE;
     }
-
-    final SafeFuture<ExecutionRequests> executionRequestsFuture;
+    final SafeFuture<ExecutionRequests> executionRequests;
     if (executionPayloadResult.isFromLocalFlow()) {
-      executionRequestsFuture =
+      // local, non-blinded flow
+      executionRequests =
           executionPayloadResult
-              .getExecutionRequestsFromLocalFlow()
+              .getExecutionRequestsFutureFromLocalFlow()
               .orElseThrow()
               .thenApply(Optional::orElseThrow);
     } else {
-      // TODO Add support for builder flow in Electra
-      // (https://github.com/Consensys/teku/issues/8624)
-      executionRequestsFuture = SafeFuture.completedFuture(null);
+      // builder, blinded flow
+      executionRequests =
+          executionPayloadResult
+              .getBuilderBidOrFallbackDataFuture()
+              .orElseThrow()
+              .thenApply(this::getExecutionRequestsFromBuilderFlow);
     }
 
-    return executionRequestsFuture.thenAccept(bodyBuilder::executionRequests);
+    return executionRequests.thenAccept(bodyBuilder::executionRequests);
+  }
+
+  private ExecutionRequests getExecutionRequestsFromBuilderFlow(
+      final BuilderBidOrFallbackData builderBidOrFallbackData) {
+    return builderBidOrFallbackData
+        .getBuilderBid()
+        // from the builder bid
+        .flatMap(BuilderBid::getOptionalExecutionRequests)
+        // from the local fallback
+        .orElse(
+            builderBidOrFallbackData
+                .getFallbackDataRequired()
+                .getExecutionRequests()
+                .orElseThrow());
   }
 
   public Consumer<SignedBeaconBlockUnblinder> createBlockUnblinderSelector(
