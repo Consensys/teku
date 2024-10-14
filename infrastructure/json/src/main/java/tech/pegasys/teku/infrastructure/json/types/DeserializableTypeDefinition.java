@@ -60,7 +60,12 @@ public interface DeserializableTypeDefinition<TObject> extends SerializableTypeD
 
   static <TObject extends Enum<TObject>> EnumTypeDefinition<TObject> enumOf(
       final Class<TObject> itemType) {
-    return new EnumTypeDefinition.EnumTypeBuilder<>(itemType).build();
+    return new EnumTypeDefinition.EnumTypeBuilder<>(itemType, false).build();
+  }
+
+  static <TObject extends Enum<TObject>> EnumTypeDefinition<TObject> enumOf(
+      final Class<TObject> itemType, final boolean forceLowercase) {
+    return new EnumTypeDefinition.EnumTypeBuilder<>(itemType, forceLowercase).build();
   }
 
   static <TObject> DeserializableObjectTypeDefinitionBuilder<TObject, TObject> object(
