@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -119,7 +120,7 @@ class EngineNewPayloadV4Test {
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
     final List<VersionedHash> blobVersionedHashes = dataStructureUtil.randomVersionedHashes(3);
     final Bytes32 parentBeaconBlockRoot = dataStructureUtil.randomBytes32();
-    final Bytes32 executionRequestHash = dataStructureUtil.randomBytes32();
+    final List<Bytes> executionRequests = dataStructureUtil.randomEncodedExecutionRequests();
     final String errorResponseFromClient = "error!";
 
     when(executionEngineClient.newPayloadV4(any(), any(), any(), any()))
@@ -130,7 +131,7 @@ class EngineNewPayloadV4Test {
             .add(executionPayload)
             .add(blobVersionedHashes)
             .add(parentBeaconBlockRoot)
-            .add(executionRequestHash)
+            .add(executionRequests)
             .build();
 
     assertThat(jsonRpcMethod.execute(params))
@@ -143,7 +144,7 @@ class EngineNewPayloadV4Test {
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
     final List<VersionedHash> blobVersionedHashes = dataStructureUtil.randomVersionedHashes(4);
     final Bytes32 parentBeaconBlockRoot = dataStructureUtil.randomBytes32();
-    final Bytes32 executionRequestHash = dataStructureUtil.randomBytes32();
+    final List<Bytes> executionRequests = dataStructureUtil.randomEncodedExecutionRequests();
 
     final ExecutionPayloadV3 executionPayloadV3 =
         ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
@@ -155,7 +156,7 @@ class EngineNewPayloadV4Test {
             eq(executionPayloadV3),
             eq(blobVersionedHashes),
             eq(parentBeaconBlockRoot),
-            eq(executionRequestHash)))
+            eq(executionRequests)))
         .thenReturn(dummySuccessfulResponse());
 
     final JsonRpcRequestParams params =
@@ -163,7 +164,7 @@ class EngineNewPayloadV4Test {
             .add(executionPayload)
             .add(blobVersionedHashes)
             .add(parentBeaconBlockRoot)
-            .add(executionRequestHash)
+            .add(executionRequests)
             .build();
 
     assertThat(jsonRpcMethod.execute(params)).isCompleted();
@@ -173,7 +174,7 @@ class EngineNewPayloadV4Test {
             eq(executionPayloadV3),
             eq(blobVersionedHashes),
             eq(parentBeaconBlockRoot),
-            eq(executionRequestHash));
+            eq(executionRequests));
     verifyNoMoreInteractions(executionEngineClient);
   }
 

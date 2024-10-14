@@ -84,15 +84,15 @@ public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
         voluntaryExits,
         syncAggregate);
     checkNotNull(
-        executionPayloadHeader, "Execution Payload Header is required for Electra blinded blocks");
+        executionPayloadHeader, "ExecutionPayloadHeader is required for Electra blinded blocks");
     this.executionPayloadHeader = executionPayloadHeader;
     checkNotNull(
-        blsToExecutionChanges, "blsToExecutionChanges is required for Electra blinded blocks");
+        blsToExecutionChanges, "BlsToExecutionChanges is required for Electra blinded blocks");
     this.blsToExecutionChanges = blsToExecutionChanges;
-    checkNotNull(blobKZGCommitments, "blobKZGCommitments is required for Electra blinded blocks");
+    checkNotNull(blobKZGCommitments, "BlobKZGCommitments is required for Electra blinded blocks");
     this.blobKZGCommitments = blobKZGCommitments;
     checkNotNull(
-        executionRequestsRoot, "execution_requests_root is required for Electra blinded blocks");
+        executionRequestsRoot, "ExecutionRequestsRoot is required for Electra blinded blocks");
     this.executionRequestsRoot = executionRequestsRoot;
   }
 

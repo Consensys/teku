@@ -29,9 +29,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 
 public class ExecutionPayloadBuilderBellatrix implements ExecutionPayloadBuilder {
   private ExecutionPayloadSchemaBellatrix schema;
@@ -152,24 +149,6 @@ public class ExecutionPayloadBuilderBellatrix implements ExecutionPayloadBuilder
 
   @Override
   public ExecutionPayloadBuilder excessBlobGas(final Supplier<UInt64> excessBlobGasSupplier) {
-    return this;
-  }
-
-  @Override
-  public ExecutionPayloadBuilder depositRequests(
-      final Supplier<List<DepositRequest>> depositRequestsSupplier) {
-    return this;
-  }
-
-  @Override
-  public ExecutionPayloadBuilder withdrawalRequests(
-      final Supplier<List<WithdrawalRequest>> withdrawalRequestsSupplier) {
-    return this;
-  }
-
-  @Override
-  public ExecutionPayloadBuilder consolidationRequests(
-      final Supplier<List<ConsolidationRequest>> consolidationRequestsSupplier) {
     return this;
   }
 

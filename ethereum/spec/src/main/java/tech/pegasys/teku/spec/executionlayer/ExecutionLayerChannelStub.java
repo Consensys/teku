@@ -65,22 +65,23 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsBuilderElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
-import tech.pegasys.teku.spec.datastructures.util.DepositRequestsUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
+
   private static final Logger LOG = LogManager.getLogger();
   private static final ClientVersion STUB_CLIENT_VERSION =
       new ClientVersion("SB", ExecutionLayerChannel.STUB_ENDPOINT_PREFIX, "0.0.0", Bytes4.ZERO);
-
-  private static final boolean GENERATE_DEPOSIT_REQUESTS = false;
 
   private final TimeProvider timeProvider;
   private final Map<Bytes32, PowBlock> knownBlocks = new ConcurrentHashMap<>();
@@ -90,7 +91,6 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private final Set<Bytes32> requestedPowBlocks = new HashSet<>();
   private final Spec spec;
   private final BlobsUtil blobsUtil;
-  private final DepositRequestsUtil depositRequestsUtil;
   private final Random random = new Random();
 
   private PayloadStatus payloadStatus = PayloadStatus.VALID;
@@ -134,7 +134,6 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       kzg = KZG.NOOP;
     }
     this.blobsUtil = new BlobsUtil(spec, kzg);
-    this.depositRequestsUtil = new DepositRequestsUtil(spec);
   }
 
   public ExecutionLayerChannelStub(
@@ -290,10 +289,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                         .transactions(transactions)
                         .withdrawals(() -> payloadAttributes.getWithdrawals().orElse(List.of()))
                         .blobGasUsed(() -> UInt64.ZERO)
-                        .excessBlobGas(() -> UInt64.ZERO)
-                        .depositRequests(() -> generateDepositRequests(state))
-                        .withdrawalRequests(List::of)
-                        .consolidationRequests(List::of));
+                        .excessBlobGas(() -> UInt64.ZERO));
 
     // we assume all blocks are produced locally
     lastValidBlock =
@@ -312,18 +308,41 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         state.getSlot(),
         executionPayload.getBlockHash());
 
+    final Optional<ExecutionRequests> maybeExecutionRequests = getExecutionRequests(slot);
+
     final GetPayloadResponse getPayloadResponse =
         headAndAttrs
             .currentBlobsBundle
             .map(
                 blobsBundle -> {
                   LOG.info("getPayload: blobsBundle: {}", blobsBundle.toBriefString());
-                  return new GetPayloadResponse(
-                      executionPayload, UInt256.valueOf(424242424242424242L), blobsBundle, false);
+                  if (maybeExecutionRequests.isPresent()) {
+                    return new GetPayloadResponse(
+                        executionPayload,
+                        UInt256.valueOf(424242424242424242L),
+                        blobsBundle,
+                        false,
+                        maybeExecutionRequests.get());
+                  } else {
+                    return new GetPayloadResponse(
+                        executionPayload, UInt256.valueOf(424242424242424242L), blobsBundle, false);
+                  }
                 })
             .orElse(new GetPayloadResponse(executionPayload, UInt256.valueOf(434242424242424242L)));
 
     return SafeFuture.completedFuture(getPayloadResponse);
+  }
+
+  private Optional<ExecutionRequests> getExecutionRequests(final UInt64 slot) {
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      final ExecutionRequestsSchema executionRequestsSchema =
+          SchemaDefinitionsElectra.required(
+                  spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+              .getExecutionRequestsSchema();
+      return Optional.of(new ExecutionRequestsBuilderElectra(executionRequestsSchema).build());
+    } else {
+      return Optional.empty();
+    }
   }
 
   @Override
@@ -459,7 +478,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         executionPayloadHeader
             .hashTreeRoot()
             .equals(lastBuilderPayloadToBeUnblinded.get().hashTreeRoot()),
-        "provided signed blinded block contains an execution payload header not matching the previously retrieved execution payload via getPayloadHeader");
+        "provided signed blinded block contains an execution payload header not matching the previously retrieved "
+            + "execution payload via getPayloadHeader");
 
     LOG.info(
         "proposeBlindedBlock: slot: {} block: {} -> unblinded executionPayload blockHash: {}",
@@ -611,19 +631,5 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     headAndAttrs.currentBlobsBundle = Optional.of(blobsBundle);
 
     return blobsUtil.generateRawBlobTransactionFromKzgCommitments(commitments);
-  }
-
-  private List<DepositRequest> generateDepositRequests(final BeaconState state) {
-    return spec.atSlot(state.getSlot())
-        .getConfig()
-        .toVersionElectra()
-        .map(
-            __ -> {
-              if (GENERATE_DEPOSIT_REQUESTS) {
-                return depositRequestsUtil.generateDepositRequests(state);
-              }
-              return List.<DepositRequest>of();
-            })
-        .orElse(List.of());
   }
 }

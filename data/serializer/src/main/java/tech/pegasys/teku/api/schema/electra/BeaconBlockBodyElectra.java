@@ -79,13 +79,13 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
         deposits,
         voluntaryExits,
         syncAggregate);
-    checkNotNull(executionPayload, "Execution Payload is required for Electra blocks");
+    checkNotNull(executionPayload, "ExecutionPayload is required for Electra blocks");
     this.executionPayload = executionPayload;
     checkNotNull(blsToExecutionChanges, "BlsToExecutionChanges is required for Electra blocks");
     this.blsToExecutionChanges = blsToExecutionChanges;
-    checkNotNull(blobKZGCommitments, "blobKZGCommitments is required for Electra blocks");
+    checkNotNull(blobKZGCommitments, "BlobKZGCommitments is required for Electra blocks");
     this.blobKZGCommitments = blobKZGCommitments;
-    checkNotNull(executionRequests, "Execution Requests is required for Electra blocks");
+    checkNotNull(executionRequests, "ExecutionRequests is required for Electra blocks");
     this.executionRequests = executionRequests;
   }
 
@@ -94,33 +94,22 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
               .BeaconBlockBodyElectra
           message) {
     super(message);
-    checkNotNull(message.getExecutionPayload(), "Execution Payload is required for Electra blocks");
+    checkNotNull(message.getExecutionPayload(), "ExecutionPayload is required for Electra blocks");
     this.executionPayload = new ExecutionPayloadDeneb(message.getExecutionPayload());
     checkNotNull(
-        message.getBlsToExecutionChanges(),
-        "BlsToExecutionChanges are required for Electra blocks");
+        message.getBlsToExecutionChanges(), "BlsToExecutionChanges is required for Electra blocks");
     this.blsToExecutionChanges =
         message.getBlsToExecutionChanges().stream().map(SignedBlsToExecutionChange::new).toList();
     checkNotNull(
-        message.getBlobKzgCommitments(), "BlobKzgCommitments are required for Electra blocks");
+        message.getBlobKzgCommitments(), "BlobKzgCommitments is required for Electra blocks");
     this.blobKZGCommitments =
         message.getBlobKzgCommitments().stream()
             .map(SszKZGCommitment::getKZGCommitment)
             .map(KZGCommitment::new)
             .toList();
-
-    final List<DepositRequest> depositRequests =
-        message.getExecutionRequests().getDeposits().stream().map(DepositRequest::new).toList();
-    final List<WithdrawalRequest> withdrawalRequests =
-        message.getExecutionRequests().getWithdrawals().stream()
-            .map(WithdrawalRequest::new)
-            .toList();
-    final List<ConsolidationRequest> consolidationRequests =
-        message.getExecutionRequests().getConsolidations().stream()
-            .map(ConsolidationRequest::new)
-            .toList();
-    this.executionRequests =
-        new ExecutionRequests(depositRequests, withdrawalRequests, consolidationRequests);
+    checkNotNull(
+        message.getExecutionRequests(), "ExecutionRequests is required for Electra blocks");
+    this.executionRequests = new ExecutionRequests(message.getExecutionRequests());
   }
 
   @Override
