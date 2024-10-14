@@ -158,7 +158,6 @@ public class DebugDbCommand implements Runnable {
       @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
       @Mixin final Eth2NetworkOptions eth2NetworkOptions,
       @Option(
-              required = true,
               names = {"--timed", "-t"},
               description = "Prints the time taken to retrieve the earliest available block slot")
           final boolean verbose)
