@@ -246,7 +246,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
               withdrawalRequest.getAmount().equals(FULL_EXIT_REQUEST_AMOUNT);
           final boolean partialWithdrawalsQueueFull =
               state.toVersionElectra().orElseThrow().getPendingPartialWithdrawals().size()
-                  >= specConfigElectra.getPendingPartialWithdrawalsLimit();
+                  == specConfigElectra.getPendingPartialWithdrawalsLimit();
           if (partialWithdrawalsQueueFull && !isFullExitRequest) {
             LOG.debug("process_withdrawal_request: partial withdrawal queue is full");
             return;
@@ -327,8 +327,8 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
 
               beaconStateMutators.initiateValidatorExit(
                   state, validatorIndex, validatorExitContextSupplier);
-              return;
             }
+            return;
           }
 
           final UInt64 validatorBalance = state.getBalances().get(validatorIndex).get();
@@ -647,7 +647,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       // Verify the deposit signature (proof of possession) which is not checked by the deposit
       // contract
       if (signatureAlreadyVerified
-          || depositSignatureIsValid(pubkey, withdrawalCredentials, amount, signature)) {
+          || isValidDepositSignature(pubkey, withdrawalCredentials, amount, signature)) {
         addValidatorToRegistry(state, pubkey, withdrawalCredentials, ZERO);
         final PendingDeposit deposit =
             schemaDefinitionsElectra
@@ -781,19 +781,5 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       return Optional.of(AttestationInvalidReason.PARTICIPANTS_COUNT_MISMATCH);
     }
     return Optional.empty();
-  }
-
-  protected Validator getValidatorFromDeposit(
-      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials) {
-    final UInt64 effectiveBalance = UInt64.ZERO;
-    return new Validator(
-        pubkey,
-        withdrawalCredentials,
-        effectiveBalance,
-        false,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH);
   }
 }

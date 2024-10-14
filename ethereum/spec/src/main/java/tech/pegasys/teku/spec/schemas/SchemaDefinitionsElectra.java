@@ -37,7 +37,7 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.builder.versions.electra.BuilderBidSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
@@ -146,8 +146,11 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.signedBlindedBeaconBlockSchema =
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockElectra");
     this.builderBidSchemaElectra =
-        new BuilderBidSchemaDeneb(
-            "BuilderBidElectra", getExecutionPayloadHeaderSchema(), getBlobKzgCommitmentsSchema());
+        new BuilderBidSchemaElectra(
+            "BuilderBidElectra",
+            getExecutionPayloadHeaderSchema(),
+            getBlobKzgCommitmentsSchema(),
+            executionRequestsSchema);
     this.signedBuilderBidSchemaElectra =
         new SignedBuilderBidSchema("SignedBuilderBidElectra", builderBidSchemaElectra);
 
@@ -314,20 +317,12 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return withdrawalRequestSchema;
   }
 
+  public ConsolidationRequestSchema getConsolidationRequestSchema() {
+    return consolidationRequestSchema;
+  }
+
   public PendingDeposit.PendingDepositSchema getPendingDepositSchema() {
     return pendingDepositSchema;
-  }
-
-  public SszListSchema<PendingDeposit, ?> getPendingDepositsSchema() {
-    return beaconStateSchema.getPendingDepositsSchema();
-  }
-
-  public SszListSchema<PendingConsolidation, ?> getPendingConsolidationsSchema() {
-    return beaconStateSchema.getPendingConsolidationsSchema();
-  }
-
-  public SszListSchema<PendingPartialWithdrawal, ?> getPendingPartialWithdrawalsSchema() {
-    return beaconStateSchema.getPendingPartialWithdrawalsSchema();
   }
 
   public PendingPartialWithdrawal.PendingPartialWithdrawalSchema
@@ -335,17 +330,25 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return pendingPartialWithdrawalSchema;
   }
 
-  @Override
-  public Optional<SchemaDefinitionsElectra> toVersionElectra() {
-    return Optional.of(this);
-  }
-
   public PendingConsolidation.PendingConsolidationSchema getPendingConsolidationSchema() {
     return pendingConsolidationSchema;
   }
 
-  public ConsolidationRequestSchema getConsolidationRequestSchema() {
-    return consolidationRequestSchema;
+  public SszListSchema<PendingDeposit, ?> getPendingDepositsSchema() {
+    return beaconStateSchema.getPendingDepositsSchema();
+  }
+
+  public SszListSchema<PendingPartialWithdrawal, ?> getPendingPartialWithdrawalsSchema() {
+    return beaconStateSchema.getPendingPartialWithdrawalsSchema();
+  }
+
+  public SszListSchema<PendingConsolidation, ?> getPendingConsolidationsSchema() {
+    return beaconStateSchema.getPendingConsolidationsSchema();
+  }
+
+  @Override
+  public Optional<SchemaDefinitionsElectra> toVersionElectra() {
+    return Optional.of(this);
   }
 
   @Override

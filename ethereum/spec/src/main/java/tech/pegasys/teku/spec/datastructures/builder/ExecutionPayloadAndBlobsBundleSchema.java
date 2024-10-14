@@ -23,9 +23,6 @@ public class ExecutionPayloadAndBlobsBundleSchema
     extends ContainerSchema2<ExecutionPayloadAndBlobsBundle, ExecutionPayload, BlobsBundle>
     implements BuilderPayloadSchema<ExecutionPayloadAndBlobsBundle> {
 
-  // TODO Update as part of Builder API Electra updates
-  // (https://github.com/Consensys/teku/issues/8624)
-
   public ExecutionPayloadAndBlobsBundleSchema(
       final ExecutionPayloadSchema<? extends ExecutionPayload> executionPayloadSchema,
       final BlobsBundleSchema blobsBundleSchema) {

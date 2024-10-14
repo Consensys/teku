@@ -759,7 +759,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       // Verify the deposit signature (proof of possession) which is not checked by the deposit
       // contract
       if (signatureAlreadyVerified
-          || depositSignatureIsValid(pubkey, withdrawalCredentials, amount, signature)) {
+          || isValidDepositSignature(pubkey, withdrawalCredentials, amount, signature)) {
         addValidatorToRegistry(state, pubkey, withdrawalCredentials, amount);
       } else {
         handleInvalidDeposit(pubkey, maybePubkeyToIndexMap);
@@ -799,7 +799,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   /** is_valid_deposit_signature */
-  protected boolean depositSignatureIsValid(
+  protected boolean isValidDepositSignature(
       final BLSPublicKey pubkey,
       final Bytes32 withdrawalCredentials,
       final UInt64 amount,
