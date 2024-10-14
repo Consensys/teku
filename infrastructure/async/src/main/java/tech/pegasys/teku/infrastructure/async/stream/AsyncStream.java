@@ -19,10 +19,16 @@ import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 
 /** Similar to {@link java.util.stream.Stream} but may perform async operations */
-public interface AsyncStream<T> extends AsyncStreamTransform<T>, AsyncStreamReduce<T> {
+public interface AsyncStream<T> extends AsyncStreamTransform<T>, AsyncStreamConsume<T> {
 
   static <T> AsyncStream<T> empty() {
     return of();
+  }
+
+  static <T> AsyncStream<T> exceptional(Throwable error) {
+    AsyncStreamPublisher<T> ret = createPublisher(1);
+    ret.onError(error);
+    return ret;
   }
 
   @SafeVarargs
@@ -40,5 +46,9 @@ public interface AsyncStream<T> extends AsyncStreamTransform<T>, AsyncStreamRedu
 
   static <T> AsyncStream<T> create(CompletionStage<T> future) {
     return new FutureAsyncIteratorImpl<>(future);
+  }
+
+  static <T> AsyncStreamPublisher<T> createPublisher(int maxBufferSize) {
+    return new BufferingStreamPublisher<>(maxBufferSize);
   }
 }

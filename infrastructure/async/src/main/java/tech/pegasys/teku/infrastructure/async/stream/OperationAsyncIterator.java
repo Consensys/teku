@@ -20,11 +20,10 @@ abstract class OperationAsyncIterator<S, T> extends AsyncIterator<T> {
 
   public static <S, T> AsyncIterator<T> create(
       AsyncIterator<S> srcIterator,
-      Function<AsyncIteratorCallback<T>, AsyncIteratorCallback<S>> callbackMapper) {
+      Function<AsyncStreamHandler<T>, AsyncStreamHandler<S>> callbackMapper) {
     return new OperationAsyncIterator<>(srcIterator) {
       @Override
-      protected AsyncIteratorCallback<S> createDelegateCallback(
-          AsyncIteratorCallback<T> sourceCallback) {
+      protected AsyncStreamHandler<S> createDelegateCallback(AsyncStreamHandler<T> sourceCallback) {
         return callbackMapper.apply(sourceCallback);
       }
     };
@@ -34,11 +33,11 @@ abstract class OperationAsyncIterator<S, T> extends AsyncIterator<T> {
     this.delegateIterator = delegateIterator;
   }
 
-  protected abstract AsyncIteratorCallback<S> createDelegateCallback(
-      AsyncIteratorCallback<T> sourceCallback);
+  protected abstract AsyncStreamHandler<S> createDelegateCallback(
+      AsyncStreamHandler<T> sourceCallback);
 
   @Override
-  public void iterate(AsyncIteratorCallback<T> callback) {
+  public void iterate(AsyncStreamHandler<T> callback) {
     delegateIterator.iterate(createDelegateCallback(callback));
   }
 }

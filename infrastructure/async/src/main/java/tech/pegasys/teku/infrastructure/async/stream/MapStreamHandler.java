@@ -13,25 +13,25 @@
 
 package tech.pegasys.teku.infrastructure.async.stream;
 
+import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-class SliceIteratorCallback<T> extends AbstractDelegatingIteratorCallback<T, T> {
+class MapStreamHandler<T, S> extends AbstractDelegatingStreamHandler<T, S> {
 
-  private final BaseAsyncStreamTransform.BaseSlicer<T> slicer;
+  private final Function<S, T> mapper;
 
-  protected SliceIteratorCallback(
-      AsyncIteratorCallback<T> delegate, BaseAsyncStreamTransform.BaseSlicer<T> slicer) {
+  protected MapStreamHandler(AsyncStreamHandler<T> delegate, Function<S, T> mapper) {
     super(delegate);
-    this.slicer = slicer;
+    this.mapper = mapper;
   }
 
   @Override
-  public SafeFuture<Boolean> onNext(T t) {
-    BaseAsyncStreamTransform.SliceResult sliceResult = slicer.slice(t);
-    return switch (sliceResult) {
-      case CONTINUE -> delegate.onNext(t);
-      case SKIP_AND_STOP -> FALSE_FUTURE;
-      case INCLUDE_AND_STOP -> delegate.onNext(t).thenApply(__ -> false);
-    };
+  public SafeFuture<Boolean> onNext(S s) {
+    try {
+      return delegate.onNext(mapper.apply(s));
+    } catch (Exception e) {
+      delegate.onError(e);
+      return FALSE_FUTURE;
+    }
   }
 }

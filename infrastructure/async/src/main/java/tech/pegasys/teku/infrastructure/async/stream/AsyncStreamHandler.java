@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
  * Internal {@link AsyncStream} implementation interface which is analogous to {@link
  * java.util.concurrent.Flow.Subscriber} in RX world
  */
-interface AsyncIteratorCallback<T> {
+public interface AsyncStreamHandler<T> {
 
   SafeFuture<Boolean> TRUE_FUTURE = SafeFuture.completedFuture(true);
   SafeFuture<Boolean> FALSE_FUTURE = SafeFuture.completedFuture(false);

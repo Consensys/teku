@@ -25,7 +25,7 @@ class FutureAsyncIteratorImpl<T> extends AsyncIterator<T> {
   }
 
   @Override
-  public void iterate(AsyncIteratorCallback<T> callback) {
+  public void iterate(AsyncStreamHandler<T> callback) {
     future.finish(
         succ -> callback.onNext(succ).finish(__ -> callback.onComplete(), callback::onError),
         callback::onError);

@@ -15,12 +15,10 @@ package tech.pegasys.teku.infrastructure.async.stream;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collector;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 abstract class AsyncIterator<T> implements AsyncStream<T> {
 
-  abstract void iterate(AsyncIteratorCallback<T> callback);
+  abstract void iterate(AsyncStreamHandler<T> callback);
 
   @Override
   public <R> AsyncIterator<R> flatMap(Function<T, AsyncStream<R>> toStreamMapper) {
@@ -29,30 +27,29 @@ abstract class AsyncIterator<T> implements AsyncStream<T> {
     return OperationAsyncIterator.create(
         this,
         sourceCallback ->
-            new MapIteratorCallback<>(
-                new FlattenIteratorCallback<>(sourceCallback), toIteratorMapper));
+            new MapStreamHandler<>(new FlattenStreamHandler<>(sourceCallback), toIteratorMapper));
   }
 
   @Override
   public <R> AsyncIterator<R> map(Function<T, R> mapper) {
     return OperationAsyncIterator.create(
-        this, sourceCallback -> new MapIteratorCallback<>(sourceCallback, mapper));
+        this, sourceCallback -> new MapStreamHandler<>(sourceCallback, mapper));
   }
 
   @Override
   public AsyncIterator<T> filter(Predicate<T> filter) {
     return OperationAsyncIterator.create(
-        this, sourceCallback -> new FilteringIteratorCallback<>(sourceCallback, filter));
+        this, sourceCallback -> new FilteringStreamHandler<>(sourceCallback, filter));
   }
 
   @Override
-  public <A, R> SafeFuture<R> collect(Collector<T, A, R> collector) {
-    return new AsyncIteratorCollector<>(this).collect(collector);
+  public void consume(AsyncStreamHandler<T> consumer) {
+    iterate(consumer);
   }
 
   @Override
   public AsyncStream<T> slice(BaseSlicer<T> slicer) {
     return OperationAsyncIterator.create(
-        this, sourceCallback -> new SliceIteratorCallback<>(sourceCallback, slicer));
+        this, sourceCallback -> new SliceStreamHandler<>(sourceCallback, slicer));
   }
 }

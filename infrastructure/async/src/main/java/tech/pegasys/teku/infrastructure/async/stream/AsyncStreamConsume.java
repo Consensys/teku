@@ -23,7 +23,14 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-public interface AsyncStreamReduce<T> extends BaseAsyncStreamReduce<T>, AsyncStreamTransform<T> {
+public interface AsyncStreamConsume<T> extends BaseAsyncStreamConsume<T>, AsyncStreamTransform<T> {
+
+  default <A, R> SafeFuture<R> collect(Collector<T, A, R> collector) {
+    AsyncIteratorCollector<T, A, R> asyncIteratorCollector =
+        new AsyncIteratorCollector<>(collector);
+    consume(asyncIteratorCollector);
+    return asyncIteratorCollector.getPromise();
+  }
 
   default SafeFuture<Optional<T>> findFirst() {
     return this.limit(1)

@@ -18,19 +18,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
+import tech.pegasys.teku.infrastructure.async.stream.AsyncStreamHandler;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 
 public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
   private static final Logger LOG = LogManager.getLogger("das-nyota");
 
-  private final BatchDataColumnReqResp batchRpc;
+  private final BatchDataColumnsByRootReqResp batchRpc;
 
-  public DataColumnReqRespBatchingImpl(BatchDataColumnReqResp batchRpc) {
+  public DataColumnReqRespBatchingImpl(BatchDataColumnsByRootReqResp batchRpc) {
     this.batchRpc = batchRpc;
   }
 
@@ -68,42 +72,59 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
         nodeRequests.size(),
         "0x..." + nodeId.toHexString().substring(58),
         nodeRequests.hashCode());
-    SafeFuture<List<DataColumnSidecar>> response =
-        SafeFuture.of(
-            () ->
-                batchRpc.requestDataColumnSidecar(
-                    nodeId, nodeRequests.stream().map(e -> e.columnIdentifier).toList()));
+    AsyncStream<DataColumnSidecar> response =
+        batchRpc.requestDataColumnSidecarsByRoot(
+            nodeId, nodeRequests.stream().map(e -> e.columnIdentifier).toList());
 
-    response.finish(
-        resp -> {
-          LOG.info(
-              "[nyota] Response batch of {} from {}, hash={}",
-              resp.size(),
-              "0x..." + nodeId.toHexString().substring(58),
-              nodeRequests.hashCode());
-          Map<DataColumnIdentifier, DataColumnSidecar> byIds = new HashMap<>();
-          for (DataColumnSidecar sidecar : resp) {
-            byIds.put(DataColumnIdentifier.createFromSidecar(sidecar), sidecar);
-          }
-          for (RequestEntry nodeRequest : nodeRequests) {
-            DataColumnSidecar maybeResponse = byIds.get(nodeRequest.columnIdentifier);
-            if (maybeResponse != null) {
-              nodeRequest.promise().complete(maybeResponse);
+    response.consume(
+        new AsyncStreamHandler<>() {
+          private final AtomicInteger count = new AtomicInteger();
+          private final Map<DataColumnIdentifier, RequestEntry> requestsNyColumnId =
+              nodeRequests.stream()
+                  .collect(Collectors.toMap(RequestEntry::columnIdentifier, req -> req));
+
+          @Override
+          public SafeFuture<Boolean> onNext(DataColumnSidecar dataColumnSidecar) {
+            DataColumnIdentifier colId = DataColumnIdentifier.createFromSidecar(dataColumnSidecar);
+            RequestEntry request = requestsNyColumnId.get(colId);
+            if (request == null) {
+              return SafeFuture.failedFuture(
+                  new IllegalArgumentException(
+                      "Responded data column was not requested: " + colId));
             } else {
-              nodeRequest.promise().completeExceptionally(new DasColumnNotAvailableException());
+              request.promise().complete(dataColumnSidecar);
+              count.incrementAndGet();
+              return TRUE_FUTURE;
             }
           }
-        },
-        err ->
+
+          @Override
+          public void onComplete() {
+            LOG.info(
+                "[nyota] Response batch of {} from {}, hash={}",
+                count,
+                "0x..." + nodeId.toHexString().substring(58),
+                nodeRequests.hashCode());
+            nodeRequests.stream()
+                .filter(req -> !req.promise().isDone())
+                .forEach(
+                    req ->
+                        req.promise().completeExceptionally(new DasColumnNotAvailableException()));
+          }
+
+          @Override
+          public void onError(Throwable err) {
             nodeRequests.forEach(
                 e -> {
                   LOG.info(
                       "[nyota] Error batch from {}, hash={}, err: {}",
-                      nodeId.mod(65536).toHexString(),
+                      "0x..." + nodeId.toHexString().substring(58),
                       nodeRequests.hashCode(),
                       e.toString());
                   e.promise().completeExceptionally(err);
-                }));
+                });
+          }
+        });
   }
 
   @Override

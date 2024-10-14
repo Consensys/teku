@@ -11,18 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.datacolumns.retriever;
+package tech.pegasys.teku.infrastructure.async.stream;
 
-import java.util.List;
-import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+/**
+ * Contains fundamental terminal (reduce or collect) stream methods All other terminal methods are
+ * expressed my means of those methods
+ */
+public interface BaseAsyncStreamConsume<T> {
 
-public interface BatchDataColumnReqResp {
-
-  SafeFuture<List<DataColumnSidecar>> requestDataColumnSidecar(
-      UInt256 nodeId, List<DataColumnIdentifier> columnIdentifiers);
-
-  int getCurrentRequestLimit(UInt256 nodeId);
+  void consume(AsyncStreamHandler<T> consumer);
 }

@@ -13,38 +13,24 @@
 
 package tech.pegasys.teku.infrastructure.async.stream;
 
-import java.util.stream.Collector;
+import java.util.function.Predicate;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-class AsyncIteratorCollector<T, A, R> implements AsyncStreamHandler<T> {
-  private final A accumulator;
-  private final Collector<T, A, R> collector;
+class FilteringStreamHandler<T> extends AbstractDelegatingStreamHandler<T, T> {
 
-  private final SafeFuture<R> promise = new SafeFuture<>();
+  private final Predicate<T> filter;
 
-  public AsyncIteratorCollector(Collector<T, A, R> collector) {
-    this.collector = collector;
-    this.accumulator = collector.supplier().get();
+  protected FilteringStreamHandler(AsyncStreamHandler<T> delegate, Predicate<T> filter) {
+    super(delegate);
+    this.filter = filter;
   }
 
   @Override
   public SafeFuture<Boolean> onNext(T t) {
-    collector.accumulator().accept(accumulator, t);
-    return TRUE_FUTURE;
-  }
-
-  @Override
-  public void onComplete() {
-    R result = collector.finisher().apply(accumulator);
-    promise.complete(result);
-  }
-
-  @Override
-  public void onError(Throwable t) {
-    promise.completeExceptionally(t);
-  }
-
-  public SafeFuture<R> getPromise() {
-    return promise;
+    if (filter.test(t)) {
+      return delegate.onNext(t);
+    } else {
+      return TRUE_FUTURE;
+    }
   }
 }
