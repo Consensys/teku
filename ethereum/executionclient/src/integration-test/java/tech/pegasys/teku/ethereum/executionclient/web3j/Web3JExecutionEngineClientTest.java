@@ -355,6 +355,10 @@ public class Web3JExecutionEngineClientTest {
     assertThat(((List<Object>) requestData.get("params")).get(2))
         .asString()
         .isEqualTo(parentBeaconBlockRoot.toHexString());
+    assertThat(((List<Object>) requestData.get("params")).get(3))
+        .asInstanceOf(LIST)
+        .containsExactlyElementsOf(
+            executionRequests.stream().map(Bytes::toHexString).collect(Collectors.toList()));
   }
 
   @TestTemplate
