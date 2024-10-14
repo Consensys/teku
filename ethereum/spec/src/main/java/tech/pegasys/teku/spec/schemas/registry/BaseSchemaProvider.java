@@ -36,7 +36,6 @@ class BaseSchemaProvider<T> implements SchemaProvider<T> {
       final SpecMilestone untilMilestone,
       final boolean isConstant) {
     this.schemaId = schemaId;
-    //    validateCreators(schemaProviderCreators);
     final List<SchemaProviderCreator<T>> creatorsList = new ArrayList<>(schemaProviderCreators);
 
     SchemaProviderCreator<T> lastCreator = null;
@@ -53,35 +52,6 @@ class BaseSchemaProvider<T> implements SchemaProvider<T> {
     }
   }
 
-  //  private void validateCreators(final List<SchemaProviderCreator<T>> schemaProviderCreators) {
-  //    checkArgument(
-  //        !schemaProviderCreators.isEmpty(), "There should be at least 1 creator for %s",
-  // schemaId);
-  //    for (int i = 0; i < schemaProviderCreators.size(); i++) {
-  //      final SchemaProviderCreator<T> currentCreator = schemaProviderCreators.get(i);
-  //      if (i > 0) {
-  //        checkArgument(
-  //            currentCreator.milestone.isGreaterThan(schemaProviderCreators.get(i - 1).milestone),
-  //            "Creator's milestones must be in order for %s",
-  //            schemaId);
-  //      }
-  //      final boolean isLast = i == schemaProviderCreators.size() - 1;
-  //      if (isLast) {
-  //        checkArgument(
-  //            currentCreator.untilMilestone.isEmpty()
-  //                ||
-  // currentCreator.untilMilestone.get().isGreaterThanOrEqualTo(currentCreator.milestone),
-  //            "Last creator untilMilestone must be greater or equal than milestone in %s",
-  //            schemaId);
-  //      } else {
-  //        checkArgument(
-  //            currentCreator.untilMilestone.isEmpty(),
-  //            "Only last creator is allowed to use until for %s",
-  //            schemaId);
-  //      }
-  //    }
-  //  }
-
   @Override
   public SpecMilestone getEffectiveMilestone(final SpecMilestone milestone) {
     return getSchemaCreator(milestone).milestone;
@@ -97,19 +67,6 @@ class BaseSchemaProvider<T> implements SchemaProvider<T> {
   public SchemaId<T> getSchemaId() {
     return schemaId;
   }
-
-  //  static <T> SchemaProviderCreator<T> schemaCreator(
-  //      final SpecMilestone milestone,
-  //      final BiFunction<SchemaRegistry, SpecConfig, T> creationSchema) {
-  //    return new SchemaProviderCreator<>(milestone, Optional.empty(), creationSchema);
-  //  }
-  //
-  //  static <T> SchemaProviderCreator<T> schemaCreator(
-  //      final SpecMilestone milestone,
-  //      final SpecMilestone untilMilestone,
-  //      final BiFunction<SchemaRegistry, SpecConfig, T> creationSchema) {
-  //    return new SchemaProviderCreator<>(milestone, Optional.of(untilMilestone), creationSchema);
-  //  }
 
   protected T createSchema(
       final SchemaRegistry registry,
