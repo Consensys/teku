@@ -70,14 +70,15 @@ public class ExecutionPayloadResult {
         getPayloadResponse -> getPayloadResponse.thenApply(GetPayloadResponse::getBlobsBundle));
   }
 
-  public Optional<SafeFuture<BuilderBidOrFallbackData>> getBuilderBidOrFallbackDataFuture() {
-    return builderBidOrFallbackDataFuture;
-  }
-
-  public Optional<SafeFuture<Optional<ExecutionRequests>>> getExecutionRequestsFromLocalFlow() {
+  public Optional<SafeFuture<Optional<ExecutionRequests>>>
+      getExecutionRequestsFutureFromLocalFlow() {
     return getPayloadResponseFuture.map(
         getPayloadResponse ->
             getPayloadResponse.thenApply(GetPayloadResponse::getExecutionRequests));
+  }
+
+  public Optional<SafeFuture<BuilderBidOrFallbackData>> getBuilderBidOrFallbackDataFuture() {
+    return builderBidOrFallbackDataFuture;
   }
 
   /**
