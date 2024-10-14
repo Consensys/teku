@@ -47,7 +47,7 @@ enum JsonRpcErrorCodes {
     return description;
   }
 
-  public static String getErrorMessage(final int errorCode) {
+  public static String getDescription(final int errorCode) {
     return fromCode(errorCode).getDescription();
   }
 
