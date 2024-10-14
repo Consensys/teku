@@ -14,9 +14,11 @@
 package tech.pegasys.teku.services.chainstorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -42,7 +44,6 @@ class StorageServiceTest {
   private final StorageConfiguration storageConfiguration = mock(StorageConfiguration.class);
   private final MetricsSystem metricsSystem = mock(MetricsSystem.class);
   private final DataDirLayout dataDirLayout = mock(DataDirLayout.class);
-  private final File file = mock(File.class);
   private final Eth1Address eth1DepositContract = mock(Eth1Address.class);
   private final Spec spec = mock(Spec.class);
   private final EventChannels eventChannels = mock(EventChannels.class);
@@ -61,7 +62,6 @@ class StorageServiceTest {
     when(storageConfiguration.getEth1DepositContract()).thenReturn(eth1DepositContract);
     when(storageConfiguration.isStoreNonCanonicalBlocksEnabled()).thenReturn(false);
     when(storageConfiguration.getSpec()).thenReturn(spec);
-    when(file.toPath()).thenReturn(tempDir);
 
     when(eventChannels.subscribe(any(), any())).thenReturn(eventChannels);
     when(serviceConfig.getEventChannels()).thenReturn(eventChannels);
