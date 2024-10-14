@@ -104,9 +104,10 @@ public abstract class Web3JClient {
 
   private <T> Response<T> handleJsonRpcError(
       final org.web3j.protocol.core.Response.Error error, final boolean isCriticalRequest) {
-    int errorCode = error.getCode();
-    String errorType = JsonRpcErrorCodes.getDescription(errorCode);
-    String formattedError = String.format("%s (%d): %s", errorType, errorCode, error.getMessage());
+    final int errorCode = error.getCode();
+    final String errorType = JsonRpcErrorCodes.getDescription(errorCode);
+    final String formattedError =
+        String.format("JSON-RPC error: %s (%d): %s", errorType, errorCode, error.getMessage());
 
     if (isCriticalRequest) {
       logError(formattedError);

@@ -296,7 +296,7 @@ public class Web3JClientTest {
     assertThat(response.getErrorMessage())
         .isEqualTo(
             String.format(
-                "%s (%d): %s",
+                "JSON-RPC error: %s (%d): %s",
                 JsonRpcErrorCodes.INVALID_PARAMS.getDescription(),
                 JsonRpcErrorCodes.INVALID_PARAMS.getErrorCode(),
                 "Invalid parameters"));
