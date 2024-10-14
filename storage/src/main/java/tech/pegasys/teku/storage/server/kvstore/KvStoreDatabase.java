@@ -323,9 +323,31 @@ public class KvStoreDatabase implements Database {
                 .forEach(updater::addBlobSidecar);
           });
 
+      needToUpdateEarliestBlockSlot(blocks.stream().findFirst())
+          .ifPresent(updater::setEarliestBlockSlot);
       needToUpdateEarliestBlobSidecarSlot(maybeEarliestBlobSidecar)
           .ifPresent(updater::setEarliestBlobSidecarSlot);
       updater.commit();
+    }
+  }
+
+  private Optional<UInt64> needToUpdateEarliestBlockSlot(
+      final Optional<SignedBeaconBlock> maybeNewEarliestBlockSlot) {
+    // New value is absent - not updating
+    if (maybeNewEarliestBlockSlot.isEmpty()) {
+      return Optional.empty();
+    }
+    // New value is present, value from DB is absent - updating
+    final Optional<UInt64> maybeEarliestFinalizedBlockSlotDb = dao.getEarliestFinalizedBlockSlot();
+    if (maybeEarliestFinalizedBlockSlotDb.isEmpty()) {
+      return maybeNewEarliestBlockSlot.map(SignedBeaconBlock::getSlot);
+    }
+    // New value is smaller than value from DB - updating
+    final UInt64 newEarliestBlockSlot = maybeNewEarliestBlockSlot.get().getSlot();
+    if (newEarliestBlockSlot.isLessThan(maybeEarliestFinalizedBlockSlotDb.get())) {
+      return maybeNewEarliestBlockSlot.map(SignedBeaconBlock::getSlot);
+    } else {
+      return Optional.empty();
     }
   }
 
@@ -425,6 +447,8 @@ public class KvStoreDatabase implements Database {
       try (final FinalizedUpdater updater = finalizedUpdater()) {
         blocksToPrune.forEach(
             pair -> updater.deleteFinalizedBlock(pair.getLeft(), pair.getRight()));
+        // update earliest finalized block slot
+        updater.setEarliestBlockSlot(blocksToPrune.getLast().getLeft().plus(ONE));
         updater.commit();
       }
     }
@@ -578,6 +602,7 @@ public class KvStoreDatabase implements Database {
           && spec.atSlot(initialAnchor.getSlot())
               .getMilestone()
               .isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+        updater.setEarliestBlockSlot(initialAnchor.getSlot());
         updater.setEarliestBlobSidecarSlot(initialAnchor.getSlot());
       }
 
