@@ -30,7 +30,7 @@ public class DasPeerCustodyCountSupplierStub implements DasPeerCustodyCountSuppl
     return customCounts.getOrDefault(nodeId, defaultCount);
   }
 
-  public void addCustomCount(UInt256 nodeId, int count) {
+  public void setCustomCount(UInt256 nodeId, int count) {
     customCounts.put(nodeId, count);
   }
 }

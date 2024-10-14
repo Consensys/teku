@@ -273,21 +273,24 @@ public class SimpleSidecarRetriever
 
   private class ConnectedPeer {
     final UInt256 nodeId;
-    final Cache<SpecVersion, Set<UInt64>> custodyIndexesCache = LRUCache.create(2);
+    final Cache<CacheKey, Set<UInt64>> custodyIndexesCache = LRUCache.create(2);
+
+    private record CacheKey(SpecVersion specVersion, int custodyCount) {}
 
     public ConnectedPeer(UInt256 nodeId) {
       this.nodeId = nodeId;
     }
 
-    private Set<UInt64> calcNodeCustodyIndexes(SpecVersion specVersion) {
+    private Set<UInt64> calcNodeCustodyIndexes(CacheKey cacheKey) {
       return new HashSet<>(
-          MiscHelpersEip7594.required(specVersion.miscHelpers())
-              .computeCustodyColumnIndexes(
-                  nodeId, custodyCountSupplier.getCustodyCountForPeer(nodeId)));
+          MiscHelpersEip7594.required(cacheKey.specVersion().miscHelpers())
+              .computeCustodyColumnIndexes(nodeId, cacheKey.custodyCount()));
     }
 
     private Set<UInt64> getNodeCustodyIndexes(SpecVersion specVersion) {
-      return custodyIndexesCache.get(specVersion, this::calcNodeCustodyIndexes);
+      return custodyIndexesCache.get(
+          new CacheKey(specVersion, custodyCountSupplier.getCustodyCountForPeer(nodeId)),
+          this::calcNodeCustodyIndexes);
     }
 
     public boolean isCustodyFor(DataColumnSlotAndIdentifier columnId) {
