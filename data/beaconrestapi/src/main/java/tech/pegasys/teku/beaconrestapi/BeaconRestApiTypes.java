@@ -234,7 +234,7 @@ public class BeaconRestApiTypes {
               "Array of indices for blob sidecars to request for in the specified block. Returns all blob sidecars in the block if not specified."));
 
   private static final EnumTypeDefinition<BroadcastValidationParameter> BROADCAST_VALIDATION_VALUE =
-      new EnumTypeDefinition.EnumTypeBuilder<>(BroadcastValidationParameter.class, false)
+      new EnumTypeDefinition.EnumTypeBuilder<>(BroadcastValidationParameter.class)
           .example("consensus_and_equivocation")
           .description(PARAM_BROADCAST_VALIDATION_DESCRIPTION)
           .format("string")

@@ -135,10 +135,14 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
       this.serializer = serializer;
     }
 
+    public EnumTypeBuilder(final Class<T> itemType) {
+      this(itemType, false);
+    }
+
     public EnumTypeBuilder(final Class<T> itemType, final boolean forceLowercase) {
-      this.itemType = itemType;
-      this.serializer =
-          forceLowercase ? (val) -> val.toString().toLowerCase(Locale.ROOT) : Enum::toString;
+      this(
+          itemType,
+          forceLowercase ? (val) -> val.toString().toLowerCase(Locale.ROOT) : Enum::toString);
     }
 
     public EnumTypeBuilder<T> parser(final Class<T> itemType) {
