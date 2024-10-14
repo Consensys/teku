@@ -374,11 +374,8 @@ public class BlockOperationSelectorFactory {
         // from the builder bid
         .flatMap(BuilderBid::getOptionalExecutionRequests)
         // from the local fallback
-        .orElse(
-            builderBidOrFallbackData
-                .getFallbackDataRequired()
-                .getExecutionRequests()
-                .orElseThrow());
+        .or(() -> builderBidOrFallbackData.getFallbackDataRequired().getExecutionRequests())
+        .orElseThrow();
   }
 
   public Consumer<SignedBeaconBlockUnblinder> createBlockUnblinderSelector(

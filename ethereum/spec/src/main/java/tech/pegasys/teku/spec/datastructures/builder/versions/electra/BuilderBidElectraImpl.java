@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.builder.versions.electra;
 
-import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -52,11 +51,6 @@ public class BuilderBidElectraImpl
   @Override
   public ExecutionPayloadHeader getHeader() {
     return getField0();
-  }
-
-  @Override
-  public Optional<ExecutionRequests> getOptionalExecutionRequests() {
-    return Optional.empty();
   }
 
   @Override

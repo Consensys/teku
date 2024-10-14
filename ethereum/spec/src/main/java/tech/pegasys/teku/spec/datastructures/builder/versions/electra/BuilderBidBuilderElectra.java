@@ -53,6 +53,6 @@ public class BuilderBidBuilderElectra extends BuilderBidBuilderDeneb {
   @Override
   protected void validate() {
     super.validate();
-    checkNotNull(blobKzgCommitments, "blobKzgCommitments must be specified");
+    checkNotNull(executionRequests, "executionRequests must be specified");
   }
 }
