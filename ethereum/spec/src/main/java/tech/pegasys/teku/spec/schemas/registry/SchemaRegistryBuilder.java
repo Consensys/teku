@@ -55,6 +55,7 @@ public class SchemaRegistryBuilder {
 
   private static SchemaProvider<AttestationSchema<Attestation>> createAttestationSchemaProvider() {
     return providerBuilder(ATTESTATION_SCHEMA)
+        .constant(true)
         .withCreator(
             SpecMilestone.PHASE0,
             (registry, specConfig) ->
