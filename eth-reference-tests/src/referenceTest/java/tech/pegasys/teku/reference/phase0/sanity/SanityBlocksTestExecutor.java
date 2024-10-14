@@ -41,7 +41,6 @@ public class SanityBlocksTestExecutor implements TestExecutor {
   private static final String STATE_ROOT_MISMATCH_ERROR_MESSAGE =
       "Block state root does NOT match the calculated state root";
 
-  // TODO re-enable tests as part of https://github.com/Consensys/teku/issues/8680
   private static final List<String> IGNORED_TEST_NAMES = List.of();
 
   @Override
