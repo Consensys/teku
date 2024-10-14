@@ -13,18 +13,22 @@
 
 package tech.pegasys.teku.spec.schemas.registry;
 
+import static tech.pegasys.teku.spec.schemas.registry.BaseSchemaProvider.providerBuilder;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTNETS_ENR_FIELD_SCHEMA;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.util.HashSet;
 import java.util.Set;
-
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
-
-import static tech.pegasys.teku.spec.schemas.registry.AbstractSchemaProvider.providerBuilder;
-import static tech.pegasys.teku.spec.schemas.registry.AbstractSchemaProvider.schemaCreator;
 
 public class SchemaRegistryBuilder {
   private final Set<SchemaProvider<?>> providers = new HashSet<>();
@@ -33,19 +37,39 @@ public class SchemaRegistryBuilder {
 
   public static SchemaRegistryBuilder create() {
     return new SchemaRegistryBuilder()
+        // PHASE0
         .addProvider(createAttnetsENRFieldSchemaProvider())
-        .addProvider(new AttestationSchemaProvider());
+        .addProvider(createAttestationSchemaProvider());
   }
 
-  private static SchemaProvider<SszBitvectorSchema<SszBitvector>> createAttnetsENRFieldSchemaProvider() {
-    return providerBuilder(SchemaTypes.ATTNETS_ENR_FIELD_SCHEMA)
-            .withCreator(
-                SpecMilestone.PHASE0,
-                (registry, specConfig) ->
-                    SszBitvectorSchema.create(specConfig.getAttestationSubnetCount()))
-            .build();
+  private static SchemaProvider<SszBitvectorSchema<SszBitvector>>
+      createAttnetsENRFieldSchemaProvider() {
+    return providerBuilder(ATTNETS_ENR_FIELD_SCHEMA)
+        .constant(true)
+        .withCreator(
+            SpecMilestone.PHASE0,
+            (registry, specConfig) ->
+                SszBitvectorSchema.create(specConfig.getAttestationSubnetCount()))
+        .build();
   }
 
+  private static SchemaProvider<AttestationSchema<Attestation>> createAttestationSchemaProvider() {
+    return providerBuilder(ATTESTATION_SCHEMA)
+        .withCreator(
+            SpecMilestone.PHASE0,
+            (registry, specConfig) ->
+                new AttestationPhase0Schema(specConfig.getMaxValidatorsPerCommittee())
+                    .castTypeToAttestationSchema())
+        .withCreator(
+            SpecMilestone.DENEB,
+            (registry, specConfig) ->
+                new AttestationElectraSchema(
+                        (long) specConfig.getMaxValidatorsPerCommittee()
+                            * specConfig.getMaxCommitteesPerSlot(),
+                        specConfig.getMaxCommitteesPerSlot())
+                    .castTypeToAttestationSchema())
+        .build();
+  }
 
   public SchemaRegistryBuilder() {
     this.cache = SchemaCache.createDefault();
