@@ -92,7 +92,7 @@ class BaseSchemaProvider<T> implements SchemaProvider<T> {
   protected record SchemaProviderCreator<T>(
       SpecMilestone milestone, BiFunction<SchemaRegistry, SpecConfig, T> creator) {
 
-    private SchemaProviderCreator<T> withMilestone(SpecMilestone milestone) {
+    private SchemaProviderCreator<T> withMilestone(final SpecMilestone milestone) {
       return new SchemaProviderCreator<>(milestone, creator);
     }
 
