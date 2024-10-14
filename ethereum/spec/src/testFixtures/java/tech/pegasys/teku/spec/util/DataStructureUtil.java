@@ -636,6 +636,9 @@ public final class DataStructureUtil {
               schemaDefinitions
                   .toVersionDeneb()
                   .ifPresent(__ -> builder.blobKzgCommitments(randomBlobKzgCommitments()));
+              schemaDefinitions
+                  .toVersionElectra()
+                  .ifPresent(__ -> builder.executionRequests(randomExecutionRequests()));
               // 1 ETH is 10^18 wei, Uint256 max is more than 10^77, so just to avoid
               // overflows in
               // computation
@@ -697,10 +700,7 @@ public final class DataStructureUtil {
                       .transactions(randomExecutionPayloadTransactions())
                       .withdrawals(this::randomExecutionPayloadWithdrawals)
                       .blobGasUsed(this::randomUInt64)
-                      .excessBlobGas(this::randomUInt64)
-                      .depositRequests(this::randomDepositRequests)
-                      .withdrawalRequests(this::randomWithdrawalRequests)
-                      .consolidationRequests(this::randomConsolidationRequests);
+                      .excessBlobGas(this::randomUInt64);
               builderModifier.accept(executionPayloadBuilder);
             });
   }
