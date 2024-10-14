@@ -86,6 +86,7 @@ public class EnumTypeDefinitionTest {
     }
   }
 
+  @SuppressWarnings("JavaCase")
   private enum YES_NO {
     YES,
     NO
