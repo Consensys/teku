@@ -19,6 +19,7 @@ import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 
 /**
  * In non-blinded flow, {@link #getPayloadResponseFuture} will be present.
@@ -71,6 +72,12 @@ public class ExecutionPayloadResult {
 
   public Optional<SafeFuture<BuilderBidOrFallbackData>> getBuilderBidOrFallbackDataFuture() {
     return builderBidOrFallbackDataFuture;
+  }
+
+  public Optional<SafeFuture<Optional<ExecutionRequests>>> getExecutionRequestsFromLocalFlow() {
+    return getPayloadResponseFuture.map(
+        getPayloadResponse ->
+            getPayloadResponse.thenApply(GetPayloadResponse::getExecutionRequests));
   }
 
   /**
