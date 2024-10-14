@@ -697,10 +697,7 @@ public final class DataStructureUtil {
                       .transactions(randomExecutionPayloadTransactions())
                       .withdrawals(this::randomExecutionPayloadWithdrawals)
                       .blobGasUsed(this::randomUInt64)
-                      .excessBlobGas(this::randomUInt64)
-                      .depositRequests(this::randomDepositRequests)
-                      .withdrawalRequests(this::randomWithdrawalRequests)
-                      .consolidationRequests(this::randomConsolidationRequests);
+                      .excessBlobGas(this::randomUInt64);
               builderModifier.accept(executionPayloadBuilder);
             });
   }
