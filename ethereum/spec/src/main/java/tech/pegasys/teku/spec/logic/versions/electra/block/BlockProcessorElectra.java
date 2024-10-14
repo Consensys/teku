@@ -105,7 +105,8 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
       final OperationValidator operationValidator,
-      final SchemaDefinitionsElectra schemaDefinitions) {
+      final SchemaDefinitionsElectra schemaDefinitions,
+      final ExecutionRequestsDataCodec executionRequestsDataCodec) {
     super(
         specConfig,
         predicates,
@@ -124,8 +125,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     this.beaconStateMutatorsElectra = beaconStateMutators;
     this.beaconStateAccessorsElectra = beaconStateAccessors;
     this.schemaDefinitionsElectra = schemaDefinitions;
-    this.executionRequestsDataCodec =
-        new ExecutionRequestsDataCodec(schemaDefinitions.getExecutionRequestsSchema());
+    this.executionRequestsDataCodec = executionRequestsDataCodec;
   }
 
   @Override
@@ -146,7 +146,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         executionPayload,
         versionedHashes,
         parentBeaconBlockRoot,
-        executionRequestsDataCodec.hash(executionRequests));
+        executionRequestsDataCodec.encode(executionRequests));
   }
 
   @Override
@@ -642,7 +642,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       // Verify the deposit signature (proof of possession) which is not checked by the deposit
       // contract
       if (signatureAlreadyVerified
-          || depositSignatureIsValid(pubkey, withdrawalCredentials, amount, signature)) {
+          || isValidDepositSignature(pubkey, withdrawalCredentials, amount, signature)) {
         addValidatorToRegistry(state, pubkey, withdrawalCredentials, ZERO);
         final PendingDeposit deposit =
             schemaDefinitionsElectra
@@ -776,19 +776,5 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       return Optional.of(AttestationInvalidReason.PARTICIPANTS_COUNT_MISMATCH);
     }
     return Optional.empty();
-  }
-
-  protected Validator getValidatorFromDeposit(
-      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials) {
-    final UInt64 effectiveBalance = UInt64.ZERO;
-    return new Validator(
-        pubkey,
-        withdrawalCredentials,
-        effectiveBalance,
-        false,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH);
   }
 }

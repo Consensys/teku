@@ -17,6 +17,7 @@ import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
@@ -25,13 +26,13 @@ public class NewPayloadRequest {
   private final ExecutionPayload executionPayload;
   private final Optional<List<VersionedHash>> versionedHashes;
   private final Optional<Bytes32> parentBeaconBlockRoot;
-  private final Optional<Bytes32> executionRequestsHash;
+  private final Optional<List<Bytes>> executionRequests;
 
   public NewPayloadRequest(final ExecutionPayload executionPayload) {
     this.executionPayload = executionPayload;
     this.versionedHashes = Optional.empty();
     this.parentBeaconBlockRoot = Optional.empty();
-    this.executionRequestsHash = Optional.empty();
+    this.executionRequests = Optional.empty();
   }
 
   public NewPayloadRequest(
@@ -41,18 +42,18 @@ public class NewPayloadRequest {
     this.executionPayload = executionPayload;
     this.versionedHashes = Optional.of(versionedHashes);
     this.parentBeaconBlockRoot = Optional.of(parentBeaconBlockRoot);
-    this.executionRequestsHash = Optional.empty();
+    this.executionRequests = Optional.empty();
   }
 
   public NewPayloadRequest(
       final ExecutionPayload executionPayload,
       final List<VersionedHash> versionedHashes,
       final Bytes32 parentBeaconBlockRoot,
-      final Bytes32 executionRequestsHash) {
+      final List<Bytes> executionRequests) {
     this.executionPayload = executionPayload;
     this.versionedHashes = Optional.of(versionedHashes);
     this.parentBeaconBlockRoot = Optional.of(parentBeaconBlockRoot);
-    this.executionRequestsHash = Optional.of(executionRequestsHash);
+    this.executionRequests = Optional.of(executionRequests);
   }
 
   public ExecutionPayload getExecutionPayload() {
@@ -67,8 +68,8 @@ public class NewPayloadRequest {
     return parentBeaconBlockRoot;
   }
 
-  public Optional<Bytes32> getExecutionRequestsHash() {
-    return executionRequestsHash;
+  public Optional<List<Bytes>> getExecutionRequests() {
+    return executionRequests;
   }
 
   @Override
@@ -83,13 +84,13 @@ public class NewPayloadRequest {
     return Objects.equals(executionPayload, that.executionPayload)
         && Objects.equals(versionedHashes, that.versionedHashes)
         && Objects.equals(parentBeaconBlockRoot, that.parentBeaconBlockRoot)
-        && Objects.equals(executionRequestsHash, that.executionRequestsHash);
+        && Objects.equals(executionRequests, that.executionRequests);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        executionPayload, versionedHashes, parentBeaconBlockRoot, executionRequestsHash);
+        executionPayload, versionedHashes, parentBeaconBlockRoot, executionRequests);
   }
 
   @Override
@@ -98,7 +99,7 @@ public class NewPayloadRequest {
         .add("executionPayload", executionPayload)
         .add("versionedHashes", versionedHashes)
         .add("parentBeaconBlockRoot", parentBeaconBlockRoot)
-        .add("executionRequestsHash", executionRequestsHash)
+        .add("executionRequests", executionRequests)
         .toString();
   }
 }

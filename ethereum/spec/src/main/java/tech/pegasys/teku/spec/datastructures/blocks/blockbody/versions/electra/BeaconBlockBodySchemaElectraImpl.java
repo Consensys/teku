@@ -224,6 +224,12 @@ public class BeaconBlockBodySchemaElectraImpl
   }
 
   @Override
+  public ExecutionRequestsSchema getExecutionRequestsSchema() {
+    return (ExecutionRequestsSchema)
+        getChildSchema(getFieldIndex(BlockBodyFields.EXECUTION_REQUESTS));
+  }
+
+  @Override
   public long getBlobKzgCommitmentsGeneralizedIndex() {
     return getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.BLOB_KZG_COMMITMENTS));
   }
@@ -233,10 +239,5 @@ public class BeaconBlockBodySchemaElectraImpl
     return GIndexUtil.gIdxComposeAll(
         getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD)),
         getExecutionPayloadSchema().getBlindedNodeGeneralizedIndices());
-  }
-
-  @Override
-  public ExecutionRequestsSchema getExecutionRequestsSchema() {
-    return (ExecutionRequestsSchema) getFieldSchema12();
   }
 }
