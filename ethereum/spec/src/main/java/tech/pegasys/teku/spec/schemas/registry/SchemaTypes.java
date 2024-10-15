@@ -23,8 +23,10 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchem
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -33,6 +35,13 @@ public class SchemaTypes {
   // PHASE0
   public static final SchemaId<SszBitvectorSchema<SszBitvector>> ATTNETS_ENR_FIELD_SCHEMA =
       create("ATTNETS_ENR_FIELD_SCHEMA");
+  public static final SchemaId<SszBitvectorSchema<SszBitvector>> SYNCNETS_ENR_FIELD_SCHEMA =
+      create("SYNCNETS_ENR_FIELD_SCHEMA");
+  public static final SchemaId<HistoricalBatchSchema> HISTORICAL_BATCH_SCHEMA =
+      create("HISTORICAL_BATCH_SCHEMA");
+  public static final SchemaId<BeaconBlocksByRootRequestMessageSchema>
+      BEACON_BLOCKS_BY_ROOT_REQUEST_MESSAGE_SCHEMA =
+          create("BEACON_BLOCKS_BY_ROOT_REQUEST_MESSAGE_SCHEMA");
 
   public static final SchemaId<AttestationSchema<Attestation>> ATTESTATION_SCHEMA =
       create("ATTESTATION_SCHEMA");

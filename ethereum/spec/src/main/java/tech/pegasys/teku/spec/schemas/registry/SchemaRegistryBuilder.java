@@ -13,21 +13,26 @@
 
 package tech.pegasys.teku.spec.schemas.registry;
 
-import static tech.pegasys.teku.spec.schemas.registry.BaseSchemaProvider.providerBuilder;
+import static tech.pegasys.teku.spec.schemas.registry.BaseSchemaProvider.constantProviderBuilder;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTNETS_ENR_FIELD_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCKS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_BATCH_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SYNCNETS_ENR_FIELD_SCHEMA;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.HashSet;
 import java.util.Set;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.NetworkConstants;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
+import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
 public class SchemaRegistryBuilder {
@@ -39,13 +44,14 @@ public class SchemaRegistryBuilder {
     return new SchemaRegistryBuilder()
         // PHASE0
         .addProvider(createAttnetsENRFieldSchemaProvider())
+        .addProvider(createSyncnetsENRFieldSchemaProvider())
+        .addProvider(createBeaconBlocksByRootRequestMessageSchemaProvider())
+        .addProvider(createHistoricalBatchSchemaProvider())
         .addProvider(createAttestationSchemaProvider());
   }
 
-  private static SchemaProvider<SszBitvectorSchema<SszBitvector>>
-      createAttnetsENRFieldSchemaProvider() {
-    return providerBuilder(ATTNETS_ENR_FIELD_SCHEMA)
-        .constant()
+  private static SchemaProvider<?> createAttnetsENRFieldSchemaProvider() {
+    return constantProviderBuilder(ATTNETS_ENR_FIELD_SCHEMA)
         .withCreator(
             SpecMilestone.PHASE0,
             (registry, specConfig) ->
@@ -53,9 +59,34 @@ public class SchemaRegistryBuilder {
         .build();
   }
 
+  private static SchemaProvider<?> createSyncnetsENRFieldSchemaProvider() {
+    return constantProviderBuilder(SYNCNETS_ENR_FIELD_SCHEMA)
+        .withCreator(
+            SpecMilestone.PHASE0,
+            (registry, specConfig) ->
+                SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT))
+        .build();
+  }
+
+  private static SchemaProvider<?> createBeaconBlocksByRootRequestMessageSchemaProvider() {
+    return constantProviderBuilder(BEACON_BLOCKS_BY_ROOT_REQUEST_MESSAGE_SCHEMA)
+        .withCreator(
+            SpecMilestone.PHASE0,
+            (registry, specConfig) -> new BeaconBlocksByRootRequestMessageSchema(specConfig))
+        .build();
+  }
+
+  private static SchemaProvider<?> createHistoricalBatchSchemaProvider() {
+    return constantProviderBuilder(HISTORICAL_BATCH_SCHEMA)
+        .withCreator(
+            SpecMilestone.PHASE0,
+            (registry, specConfig) ->
+                new HistoricalBatchSchema(specConfig.getSlotsPerHistoricalRoot()))
+        .build();
+  }
+
   private static SchemaProvider<AttestationSchema<Attestation>> createAttestationSchemaProvider() {
-    return providerBuilder(ATTESTATION_SCHEMA)
-        .constant()
+    return constantProviderBuilder(ATTESTATION_SCHEMA)
         .withCreator(
             SpecMilestone.PHASE0,
             (registry, specConfig) ->
