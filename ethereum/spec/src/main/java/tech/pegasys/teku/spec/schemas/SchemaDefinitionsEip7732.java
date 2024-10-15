@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.builder.versions.electra.BuilderBidSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
@@ -158,10 +158,11 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
     this.signedBlindedBeaconBlockSchema =
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockEip7732");
     this.builderBidSchemaElectra =
-        new BuilderBidSchemaDeneb(
-            "BuilderBidEip7732",
+        new BuilderBidSchemaElectra(
+            "BuilderBidElectra",
             executionPayloadHeaderSchemaEip7732,
-            getBlobKzgCommitmentsSchema());
+            getBlobKzgCommitmentsSchema(),
+            getExecutionRequestsSchema());
     this.signedBuilderBidSchemaElectra =
         new SignedBuilderBidSchema("SignedBuilderBidEip7732", builderBidSchemaElectra);
 
