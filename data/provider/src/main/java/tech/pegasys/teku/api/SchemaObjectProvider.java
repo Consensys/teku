@@ -31,7 +31,6 @@ import tech.pegasys.teku.api.schema.deneb.BlindedBeaconBlockBodyDeneb;
 import tech.pegasys.teku.api.schema.deneb.BlindedBlockDeneb;
 import tech.pegasys.teku.api.schema.eip7732.BeaconBlockBodyEip7732;
 import tech.pegasys.teku.api.schema.eip7732.BeaconBlockEip7732;
-import tech.pegasys.teku.api.schema.eip7732.BeaconStateEip7732;
 import tech.pegasys.teku.api.schema.eip7732.BlindedBeaconBlockBodyEip7732;
 import tech.pegasys.teku.api.schema.eip7732.BlindedBlockEip7732;
 import tech.pegasys.teku.api.schema.electra.BeaconBlockBodyElectra;
