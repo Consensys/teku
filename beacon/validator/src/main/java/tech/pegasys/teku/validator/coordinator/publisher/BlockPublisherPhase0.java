@@ -27,7 +27,6 @@ import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class BlockPublisherPhase0 extends AbstractBlockPublisher {
-  private final BlockGossipChannel blockGossipChannel;
 
   public BlockPublisherPhase0(
       final BlockFactory blockFactory,
@@ -35,25 +34,36 @@ public class BlockPublisherPhase0 extends AbstractBlockPublisher {
       final BlockImportChannel blockImportChannel,
       final PerformanceTracker performanceTracker,
       final DutyMetrics dutyMetrics) {
-    super(blockFactory, blockImportChannel, performanceTracker, dutyMetrics);
-    this.blockGossipChannel = blockGossipChannel;
+    super(blockFactory, blockGossipChannel, blockImportChannel, performanceTracker, dutyMetrics);
   }
 
   @Override
-  SafeFuture<BlockImportAndBroadcastValidationResults> importBlockAndBlobSidecars(
+  SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
       final SignedBeaconBlock block,
-      final List<BlobSidecar> blobSidecars,
       final BroadcastValidationLevel broadcastValidationLevel,
       final BlockPublishingPerformance blockPublishingPerformance) {
     return blockImportChannel.importBlock(block, broadcastValidationLevel);
   }
 
   @Override
-  void publishBlockAndBlobSidecars(
-      final SignedBeaconBlock block,
+  void importBlobSidecars(
       final List<BlobSidecar> blobSidecars,
       final BlockPublishingPerformance blockPublishingPerformance) {
+    // No-op for phase 0
+  }
+
+  @Override
+  SafeFuture<Void> publishBlock(
+      final SignedBeaconBlock block, final BlockPublishingPerformance blockPublishingPerformance) {
     blockGossipChannel.publishBlock(block).ifExceptionGetsHereRaiseABug();
     blockPublishingPerformance.blockPublishingInitiated();
+    return SafeFuture.COMPLETE;
+  }
+
+  @Override
+  void publishBlobSidecars(
+      final List<BlobSidecar> blobSidecars,
+      final BlockPublishingPerformance blockPublishingPerformance) {
+    // No-op for phase 0
   }
 }

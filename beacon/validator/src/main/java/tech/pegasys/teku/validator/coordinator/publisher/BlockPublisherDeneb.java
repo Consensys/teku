@@ -15,24 +15,20 @@ package tech.pegasys.teku.validator.coordinator.publisher;
 
 import java.util.List;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
-import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
-public class BlockPublisherDeneb extends AbstractBlockPublisher {
+public class BlockPublisherDeneb extends BlockPublisherPhase0 {
 
-  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
-  private final BlockGossipChannel blockGossipChannel;
-  private final BlobSidecarGossipChannel blobSidecarGossipChannel;
+  protected final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
+  protected final BlobSidecarGossipChannel blobSidecarGossipChannel;
 
   public BlockPublisherDeneb(
       final BlockFactory blockFactory,
@@ -42,30 +38,25 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
       final BlobSidecarGossipChannel blobSidecarGossipChannel,
       final PerformanceTracker performanceTracker,
       final DutyMetrics dutyMetrics) {
-    super(blockFactory, blockImportChannel, performanceTracker, dutyMetrics);
+    super(blockFactory, blockGossipChannel, blockImportChannel, performanceTracker, dutyMetrics);
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
-    this.blockGossipChannel = blockGossipChannel;
     this.blobSidecarGossipChannel = blobSidecarGossipChannel;
   }
 
   @Override
-  SafeFuture<BlockImportAndBroadcastValidationResults> importBlockAndBlobSidecars(
-      final SignedBeaconBlock block,
+  void importBlobSidecars(
       final List<BlobSidecar> blobSidecars,
-      final BroadcastValidationLevel broadcastValidationLevel,
       final BlockPublishingPerformance blockPublishingPerformance) {
-    // provide blobs for the block before importing it
-    blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
-    return blockImportChannel.importBlock(block, broadcastValidationLevel);
+    blobSidecars.forEach(
+        blobSidecar ->
+            blockBlobSidecarsTrackersPool.onNewBlobSidecar(
+                blobSidecar, RemoteOrigin.LOCAL_PROPOSAL));
   }
 
   @Override
-  void publishBlockAndBlobSidecars(
-      final SignedBeaconBlock block,
+  void publishBlobSidecars(
       final List<BlobSidecar> blobSidecars,
       final BlockPublishingPerformance blockPublishingPerformance) {
-    blockGossipChannel.publishBlock(block).ifExceptionGetsHereRaiseABug();
     blobSidecarGossipChannel.publishBlobSidecars(blobSidecars).ifExceptionGetsHereRaiseABug();
-    blockPublishingPerformance.blockAndBlobSidecarsPublishingInitiated();
   }
 }
