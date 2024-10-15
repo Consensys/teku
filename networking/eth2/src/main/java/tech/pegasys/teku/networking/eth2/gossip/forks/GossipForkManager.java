@@ -277,7 +277,7 @@ public class GossipForkManager {
     return activeSubscriptions.contains(subscriptions);
   }
 
-  private synchronized void startSubscriptions(final GossipForkSubscriptions subscription) {
+  private void startSubscriptions(final GossipForkSubscriptions subscription) {
     if (activeSubscriptions.add(subscription)) {
       subscription.startGossip(genesisValidatorsRoot, isHeadOptimistic);
       currentAttestationSubnets.forEach(subscription::subscribeToAttestationSubnetId);
