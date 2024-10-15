@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationData;
@@ -78,7 +79,8 @@ public class BlockProcessorEip7732 extends BlockProcessorElectra {
       final AttestationUtilEip7732 attestationUtil,
       final ValidatorsUtil validatorsUtil,
       final OperationValidator operationValidator,
-      final SchemaDefinitionsEip7732 schemaDefinitions) {
+      final SchemaDefinitionsEip7732 schemaDefinitions,
+      final ExecutionRequestsDataCodec executionRequestsDataCodec) {
     super(
         specConfig,
         predicates,
@@ -91,7 +93,8 @@ public class BlockProcessorEip7732 extends BlockProcessorElectra {
         attestationUtil,
         validatorsUtil,
         operationValidator,
-        schemaDefinitions);
+        schemaDefinitions,
+        executionRequestsDataCodec);
     this.miscHelpersEip7732 = miscHelpers;
     this.beaconStateAccessorsEip7732 = beaconStateAccessors;
     this.predicatesEip7732 = predicates;
@@ -112,9 +115,11 @@ public class BlockProcessorEip7732 extends BlockProcessorElectra {
   protected void processOperationsNoValidation(
       final MutableBeaconState state,
       final BeaconBlockBody body,
-      final IndexedAttestationCache indexedAttestationCache)
+      final IndexedAttestationCache indexedAttestationCache,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
-    super.processOperationsNoValidation(state, body, indexedAttestationCache);
+    super.processOperationsNoValidation(
+        state, body, indexedAttestationCache, validatorExitContextSupplier);
 
     safelyProcess(
         () ->
