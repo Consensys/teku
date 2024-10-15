@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
@@ -56,6 +57,11 @@ public interface BlindedBeaconBlockBodyEip7732 extends BlindedBeaconBlockBodyEle
   @Override
   default SszList<SszKZGCommitment> getBlobKzgCommitments() {
     throw new UnsupportedOperationException("BlobKzgCommitments removed in Eip7732");
+  }
+
+  @Override
+  default ExecutionRequests getExecutionRequests() {
+    throw new UnsupportedOperationException("ExecutionRequests removed in Eip7732");
   }
 
   @Override
