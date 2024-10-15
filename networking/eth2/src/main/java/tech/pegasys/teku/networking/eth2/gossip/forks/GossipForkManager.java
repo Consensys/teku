@@ -29,6 +29,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -56,7 +57,7 @@ public class GossipForkManager {
   private static final Logger LOG = LogManager.getLogger();
   private static final int EPOCHS_PRIOR_TO_FORK_TO_ACTIVATE = 2;
   private final Spec spec;
-  private final RecentChainData recentChainData;
+  private final Bytes32 genesisValidatorsRoot;
   private final NavigableMap<UInt64, GossipForkSubscriptions> forksByActivationEpoch;
   private final Set<GossipForkSubscriptions> activeSubscriptions = new HashSet<>();
   private final IntSet currentAttestationSubnets = new IntOpenHashSet();
@@ -64,13 +65,16 @@ public class GossipForkManager {
   private final IntSet currentDataColumnSidecarSubnets = new IntOpenHashSet();
 
   private Optional<UInt64> currentEpoch = Optional.empty();
+  private boolean isHeadOptimistic;
 
   private GossipForkManager(
       final Spec spec,
-      final RecentChainData recentChainData,
+      final Bytes32 genesisValidatorsRoot,
+      final boolean isHeadOptimistic,
       final NavigableMap<UInt64, GossipForkSubscriptions> forksByActivationEpoch) {
     this.spec = spec;
-    this.recentChainData = recentChainData;
+    this.genesisValidatorsRoot = genesisValidatorsRoot;
+    this.isHeadOptimistic = isHeadOptimistic;
     this.forksByActivationEpoch = forksByActivationEpoch;
   }
 
@@ -142,14 +146,12 @@ public class GossipForkManager {
   }
 
   public synchronized void onOptimisticHeadChanged(final boolean isHeadOptimistic) {
+    this.isHeadOptimistic = isHeadOptimistic;
     if (isHeadOptimistic) {
       activeSubscriptions.forEach(GossipForkSubscriptions::stopGossipForOptimisticSync);
     } else {
       activeSubscriptions.forEach(
-          subscriptions ->
-              subscriptions.startGossip(
-                  recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot(),
-                  false));
+          subscriptions -> subscriptions.startGossip(genesisValidatorsRoot, false));
     }
   }
 
@@ -302,9 +304,7 @@ public class GossipForkManager {
 
   private void startSubscriptions(final GossipForkSubscriptions subscription) {
     if (activeSubscriptions.add(subscription)) {
-      subscription.startGossip(
-          recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot(),
-          recentChainData.isChainHeadOptimistic());
+      subscription.startGossip(genesisValidatorsRoot, isHeadOptimistic);
       currentAttestationSubnets.forEach(subscription::subscribeToAttestationSubnetId);
       currentSyncCommitteeSubnets.forEach(subscription::subscribeToSyncCommitteeSubnet);
       currentDataColumnSidecarSubnets.forEach(subscription::subscribeToDataColumnSidecarSubnet);
@@ -356,7 +356,11 @@ public class GossipForkManager {
       checkNotNull(spec, "Must supply spec");
       checkNotNull(recentChainData, "Must supply recentChainData");
       checkState(!forksByActivationEpoch.isEmpty(), "Must specify at least one fork");
-      return new GossipForkManager(spec, recentChainData, forksByActivationEpoch);
+      return new GossipForkManager(
+          spec,
+          recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot(),
+          recentChainData.isChainHeadOptimistic(),
+          forksByActivationEpoch);
     }
   }
 }

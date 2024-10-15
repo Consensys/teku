@@ -504,6 +504,19 @@ class GossipForkManagerTest {
     verify(subscriptions).startGossip(GENESIS_VALIDATORS_ROOT, true);
   }
 
+  @Test
+  void shouldStartSubscriptionsInNonOptimisticSyncModeWhenSyncStateChangedBeforeStart() {
+    when(recentChainData.isChainHeadOptimistic()).thenReturn(true);
+
+    final GossipForkSubscriptions subscriptions = forkAtEpoch(0);
+    final GossipForkManager manager = managerForForks(subscriptions);
+
+    manager.onOptimisticHeadChanged(false);
+    manager.configureGossipForEpoch(UInt64.ZERO);
+
+    verify(subscriptions).startGossip(GENESIS_VALIDATORS_ROOT, false);
+  }
+
   private GossipForkSubscriptions forkAtEpoch(final long epoch) {
     final GossipForkSubscriptions subscriptions =
         mock(GossipForkSubscriptions.class, "subscriptionsForEpoch" + epoch);
