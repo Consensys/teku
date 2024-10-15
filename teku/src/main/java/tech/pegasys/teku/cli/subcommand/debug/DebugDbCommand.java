@@ -159,7 +159,10 @@ public class DebugDbCommand implements Runnable {
       @Mixin final Eth2NetworkOptions eth2NetworkOptions,
       @Option(
               names = {"--timed", "-t"},
-              description = "Prints the time taken to retrieve the earliest available block slot")
+              description = "Prints the time taken to retrieve the earliest available block slot",
+              defaultValue = "true",
+              fallbackValue = "true",
+              showDefaultValue = Visibility.ALWAYS)
           final boolean verbose)
       throws Exception {
     try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
