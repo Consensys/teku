@@ -499,7 +499,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                       .finish(
                           error ->
                               LOG.error(
-                                  "An occurred while attempting to fetch blobs via local EL"));
+                                  "An error occurred while attempting to fetch blobs via local EL"));
                 }
               }
             });
@@ -575,8 +575,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                     .handleException(
                         error ->
                             LOG.warn(
-                                "Local EL blobs lookup failed: {}",
-                                ExceptionUtils.getMessage(error)))
+                                "Local EL blobs lookup failed, fetching missing blobs from remote peers: {}",
+                                ExceptionUtils.getRootCauseMessage(error)))
                     .thenRun(() -> this.fetchMissingContentFromRemotePeers(slotAndBlockRoot)),
             fetchDelay)
         .finish(
