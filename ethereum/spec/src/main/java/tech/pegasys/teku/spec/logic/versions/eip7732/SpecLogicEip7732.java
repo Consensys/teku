@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.eip7732;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -160,6 +161,8 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
     final LightClientUtil lightClientUtil =
         new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
+    final ExecutionRequestsDataCodec executionRequestsDataCodec =
+        new ExecutionRequestsDataCodec(schemaDefinitions.getExecutionRequestsSchema());
     final BlockProcessorEip7732 blockProcessor =
         new BlockProcessorEip7732(
             config,
@@ -173,7 +176,8 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
             attestationUtil,
             validatorsUtil,
             operationValidator,
-            schemaDefinitions);
+            schemaDefinitions,
+            executionRequestsDataCodec);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtilDeneb(
             config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
@@ -201,7 +205,8 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
             attestationUtil,
             validatorsUtil,
             operationValidator,
-            schemaDefinitions);
+            schemaDefinitions,
+            executionRequestsDataCodec);
     final ExecutionPayloadProcessorEip7732 executionPayloadProcessor =
         new ExecutionPayloadProcessorEip7732(
             config, miscHelpers, beaconStateAccessors, beaconStateMutators, blockProcessorElectra);
