@@ -11,18 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.schemas.registry;
+package tech.pegasys.teku.spec.datastructures.builder.versions.electra;
 
-import java.util.Set;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
+import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 
-interface SchemaProvider<T> {
-  T getSchema(SchemaRegistry registry);
+public interface BuilderBidElectra extends BuilderBidDeneb {
 
-  Set<SpecMilestone> getSupportedMilestones();
+  ExecutionRequests getExecutionRequests();
 
-  SpecMilestone getEffectiveMilestone(SpecMilestone version);
-
-  SchemaId<T> getSchemaId();
+  @Override
+  default Optional<ExecutionRequests> getOptionalExecutionRequests() {
+    return Optional.of(getExecutionRequests());
+  }
 }

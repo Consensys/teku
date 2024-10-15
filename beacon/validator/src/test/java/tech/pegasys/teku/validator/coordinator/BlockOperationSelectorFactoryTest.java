@@ -1020,6 +1020,45 @@ class BlockOperationSelectorFactoryTest {
     assertThat(bodyBuilder.executionRequests).isEqualTo(expectedExecutionRequests);
   }
 
+  @Test
+  void shouldIncludeExecutionRequestsInBlindedBlock() {
+    final UInt64 slot = UInt64.valueOf(2);
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
+
+    final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests();
+
+    final ExecutionPayloadContext executionPayloadContextWithValidatorRegistration =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    when(forkChoiceNotifier.getPayloadId(any(), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(executionPayloadContextWithValidatorRegistration)));
+
+    prepareBlindedBlockWithBlobsAndExecutionRequestsProduction(
+        dataStructureUtil.randomExecutionPayloadHeader(),
+        executionPayloadContextWithValidatorRegistration,
+        blockSlotState,
+        dataStructureUtil.randomBlobKzgCommitments(),
+        executionRequests,
+        dataStructureUtil.randomUInt256());
+
+    final CapturingBeaconBlockBodyBuilder bodyBuilder =
+        new CapturingBeaconBlockBodyBuilder(true, true);
+
+    safeJoin(
+        factory
+            .createSelector(
+                parentRoot,
+                blockSlotState,
+                dataStructureUtil.randomSignature(),
+                Optional.empty(),
+                Optional.empty(),
+                BlockProductionPerformance.NOOP)
+            .apply(bodyBuilder));
+
+    assertThat(bodyBuilder.executionRequests).isEqualTo(executionRequests);
+  }
+
   private void prepareBlockProductionWithPayload(
       final ExecutionPayload executionPayload,
       final ExecutionPayloadContext executionPayloadContext,
@@ -1145,6 +1184,33 @@ class BlockOperationSelectorFactoryTest {
                 builder -> {
                   builder.header(executionPayloadHeader);
                   builder.blobKzgCommitments(blobKzgCommitments);
+                  builder.value(executionPayloadValue);
+                }));
+    when(executionLayer.initiateBlockProduction(
+            executionPayloadContext,
+            blockSlotState,
+            true,
+            Optional.empty(),
+            BlockProductionPerformance.NOOP))
+        .thenReturn(
+            ExecutionPayloadResult.createForBuilderFlow(
+                executionPayloadContext, SafeFuture.completedFuture(builderBidOrFallbackData)));
+  }
+
+  private void prepareBlindedBlockWithBlobsAndExecutionRequestsProduction(
+      final ExecutionPayloadHeader executionPayloadHeader,
+      final ExecutionPayloadContext executionPayloadContext,
+      final BeaconState blockSlotState,
+      final SszList<SszKZGCommitment> blobKzgCommitments,
+      final ExecutionRequests executionRequests,
+      final UInt256 executionPayloadValue) {
+    final BuilderBidOrFallbackData builderBidOrFallbackData =
+        BuilderBidOrFallbackData.create(
+            dataStructureUtil.randomBuilderBid(
+                builder -> {
+                  builder.header(executionPayloadHeader);
+                  builder.blobKzgCommitments(blobKzgCommitments);
+                  builder.executionRequests(executionRequests);
                   builder.value(executionPayloadValue);
                 }));
     when(executionLayer.initiateBlockProduction(

@@ -11,35 +11,41 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix;
+package tech.pegasys.teku.spec.datastructures.builder.versions.electra;
 
-import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container5;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
-public class BuilderBidBellatrix
-    extends Container3<BuilderBidBellatrix, ExecutionPayloadHeader, SszUInt256, SszPublicKey>
-    implements BuilderBid {
+public class BuilderBidElectraImpl
+    extends Container5<
+        BuilderBidElectraImpl,
+        ExecutionPayloadHeader,
+        SszList<SszKZGCommitment>,
+        ExecutionRequests,
+        SszUInt256,
+        SszPublicKey>
+    implements BuilderBidElectra {
 
-  BuilderBidBellatrix(final BuilderBidSchemaBellatrix schema, final TreeNode backingNode) {
+  BuilderBidElectraImpl(final BuilderBidSchemaElectra schema, final TreeNode backingNode) {
     super(schema, backingNode);
   }
 
-  public BuilderBidBellatrix(
-      final BuilderBidSchemaBellatrix schema,
+  public BuilderBidElectraImpl(
+      final BuilderBidSchemaElectra schema,
       final ExecutionPayloadHeader header,
+      final SszList<SszKZGCommitment> blobKzgCommitments,
+      final ExecutionRequests executionRequests,
       final SszUInt256 value,
       final SszPublicKey publicKey) {
-    super(schema, header, value, publicKey);
+    super(schema, header, blobKzgCommitments, executionRequests, value, publicKey);
   }
 
   @Override
@@ -48,27 +54,22 @@ public class BuilderBidBellatrix
   }
 
   @Override
-  public Optional<SszList<SszKZGCommitment>> getOptionalBlobKzgCommitments() {
-    return Optional.empty();
+  public SszList<SszKZGCommitment> getBlobKzgCommitments() {
+    return getField1();
   }
 
   @Override
-  public Optional<ExecutionRequests> getOptionalExecutionRequests() {
-    return Optional.empty();
+  public ExecutionRequests getExecutionRequests() {
+    return getField2();
   }
 
   @Override
   public UInt256 getValue() {
-    return getField1().get();
+    return getField3().get();
   }
 
   @Override
   public BLSPublicKey getPublicKey() {
-    return getField2().getBLSPublicKey();
-  }
-
-  @Override
-  public BuilderBidSchemaBellatrix getSchema() {
-    return (BuilderBidSchemaBellatrix) super.getSchema();
+    return getField4().getBLSPublicKey();
   }
 }
