@@ -244,11 +244,23 @@ public class DebugToolsCommand implements Runnable {
     return 0;
   }
 
-  @Command(name = "get-peer-id", description = "Gets the peerID from private key file.")
+  @Command(
+      name = "get-peer-id",
+      description = "Gets the peerID from private key file.",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
   public int getPeerID(
       @Option(
               names = {"--input", "-i"},
-              description = "File to read the privateKey from")
+              description = "File to read the privateKey from",
+              required = true)
           final Path input) {
     try {
       final Bytes privateKeyBytes = Bytes.wrap(Files.readAllBytes(Paths.get(input.toUri())));
