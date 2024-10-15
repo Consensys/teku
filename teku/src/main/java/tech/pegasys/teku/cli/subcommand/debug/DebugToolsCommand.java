@@ -244,9 +244,7 @@ public class DebugToolsCommand implements Runnable {
     return 0;
   }
 
-  @Command(
-      name = "get-peer-id",
-      description = "Gets the peerID from private key file.")
+  @Command(name = "get-peer-id", description = "Gets the peerID from private key file.")
   public int getPeerID(
       @Option(
               names = {"--input", "-i"},
