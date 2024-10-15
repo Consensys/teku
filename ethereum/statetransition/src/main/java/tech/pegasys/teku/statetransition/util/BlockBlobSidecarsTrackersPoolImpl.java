@@ -575,7 +575,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                     .handleException(
                         error ->
                             LOG.warn(
-                                "Local EL blobs lookup failed, fetching missing blobs from remote peers: {}",
+                                "Local EL blobs lookup failed: {}",
                                 ExceptionUtils.getRootCauseMessage(error)))
                     .thenRun(() -> this.fetchMissingContentFromRemotePeers(slotAndBlockRoot)),
             fetchDelay)
