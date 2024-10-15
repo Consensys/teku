@@ -417,6 +417,12 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withSubscribeAllSubnetsEnabled() {
+    LOG.debug("p2p-subscribe-all-subnets-enabled=true");
+    configMap.put("p2p-subscribe-all-subnets-enabled", true);
+    return this;
+  }
+
   public TekuNodeConfigBuilder withDepositsFrom(final BesuNode eth1Node) {
     mustBe(NodeType.BEACON_NODE);
     configMap.put("Xinterop-enabled", false);
