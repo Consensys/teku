@@ -19,6 +19,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -130,9 +131,11 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   protected void processOperationsNoValidation(
       final MutableBeaconState state,
       final BeaconBlockBody body,
-      final IndexedAttestationCache indexedAttestationCache)
+      final IndexedAttestationCache indexedAttestationCache,
+      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
-    super.processOperationsNoValidation(state, body, indexedAttestationCache);
+    super.processOperationsNoValidation(
+        state, body, indexedAttestationCache, validatorExitContextSupplier);
 
     safelyProcess(
         () ->

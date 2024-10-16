@@ -8,7 +8,7 @@ dependencies {
     implementation 'io.prometheus:simpleclient'
     implementation 'io.vertx:vertx-core'
     implementation 'io.vertx:vertx-web'
-    implementation 'org.apache.tuweni:tuweni-units'
+    implementation 'io.tmio:tuweni-units'
     implementation 'org.hdrhistogram:HdrHistogram'
     implementation 'org.hyperledger.besu.internal:metrics-core'
 

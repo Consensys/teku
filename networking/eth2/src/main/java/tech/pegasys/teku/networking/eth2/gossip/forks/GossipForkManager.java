@@ -63,6 +63,7 @@ public class GossipForkManager {
   private final IntSet currentSyncCommitteeSubnets = new IntOpenHashSet();
 
   private Optional<UInt64> currentEpoch = Optional.empty();
+  private boolean isHeadOptimistic;
 
   private GossipForkManager(
       final Spec spec,
@@ -71,6 +72,7 @@ public class GossipForkManager {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.forksByActivationEpoch = forksByActivationEpoch;
+    this.isHeadOptimistic = recentChainData.isChainHeadOptimistic();
   }
 
   public static GossipForkManager.Builder builder() {
@@ -141,6 +143,7 @@ public class GossipForkManager {
   }
 
   public synchronized void onOptimisticHeadChanged(final boolean isHeadOptimistic) {
+    this.isHeadOptimistic = isHeadOptimistic;
     if (isHeadOptimistic) {
       activeSubscriptions.forEach(GossipForkSubscriptions::stopGossipForOptimisticSync);
     } else {
@@ -279,7 +282,7 @@ public class GossipForkManager {
     if (activeSubscriptions.add(subscription)) {
       subscription.startGossip(
           recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot(),
-          recentChainData.isChainHeadOptimistic());
+          isHeadOptimistic);
       currentAttestationSubnets.forEach(subscription::subscribeToAttestationSubnetId);
       currentSyncCommitteeSubnets.forEach(subscription::subscribeToSyncCommitteeSubnet);
     }

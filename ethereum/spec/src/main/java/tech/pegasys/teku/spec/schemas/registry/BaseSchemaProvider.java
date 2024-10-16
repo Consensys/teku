@@ -102,18 +102,23 @@ class BaseSchemaProvider<T> implements SchemaProvider<T> {
     }
   }
 
-  static <T> Builder<T> providerBuilder(final SchemaId<T> schemaId) {
-    return new Builder<>(schemaId);
+  static <T> Builder<T> constantProviderBuilder(final SchemaId<T> schemaId) {
+    return new Builder<>(schemaId, true);
+  }
+
+  static <T> Builder<T> variableProviderBuilder(final SchemaId<T> schemaId) {
+    return new Builder<>(schemaId, false);
   }
 
   static class Builder<T> {
     private final SchemaId<T> schemaId;
+    private final boolean isConstant;
     final List<SchemaProviderCreator<T>> schemaProviderCreators = new ArrayList<>();
     private SpecMilestone untilMilestone = SpecMilestone.getHighestMilestone();
-    private boolean isConstant = false;
 
-    private Builder(final SchemaId<T> schemaId) {
+    private Builder(final SchemaId<T> schemaId, final boolean isConstant) {
       this.schemaId = schemaId;
+      this.isConstant = isConstant;
     }
 
     public Builder<T> withCreator(
@@ -131,11 +136,6 @@ class BaseSchemaProvider<T> implements SchemaProvider<T> {
 
     public Builder<T> until(final SpecMilestone untilMilestone) {
       this.untilMilestone = untilMilestone;
-      return this;
-    }
-
-    public Builder<T> constant() {
-      this.isConstant = true;
       return this;
     }
 

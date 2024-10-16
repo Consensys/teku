@@ -11,16 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server;
+package tech.pegasys.teku.storage.archive.nooparchive;
 
-/**
- * A functional interface to allow storing data that is to be pruned from the Database. If the store
- * function is successful it returns true, signalling the data can be pruned. If the store function
- * fails, the data was not stored and the data should not be pruned.
- *
- * @param <T> the data to be stored.
- */
-@FunctionalInterface
-public interface DatabaseArchiveWriter<T> {
-  boolean archive(final T data);
+import java.io.IOException;
+import tech.pegasys.teku.storage.archive.DataArchiveWriter;
+
+public class DataArchiveNoopWriter<T> implements DataArchiveWriter<T> {
+
+  @Override
+  public boolean archive(final T data) {
+    return true;
+  }
+
+  @Override
+  public void close() throws IOException {}
 }
