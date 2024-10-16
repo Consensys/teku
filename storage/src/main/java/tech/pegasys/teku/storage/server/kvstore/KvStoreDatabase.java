@@ -419,14 +419,8 @@ public class KvStoreDatabase implements Database {
       // get an extra block to set earliest finalized block slot available after pruning runs
       // ensuring it is an existing block in the DB
       blocksToPrune =
-          stream
-              .limit(pruneLimit + 1)
-              .map(block -> Pair.of(block.getSlot(), block.getRoot()))
-              .toList();
+          stream.limit(pruneLimit).map(block -> Pair.of(block.getSlot(), block.getRoot())).toList();
     }
-
-    final UInt64 ealiestBlockSlotAfterPruning = blocksToPrune.getLast().getLeft();
-    blocksToPrune.removeLast();
 
     if (blocksToPrune.isEmpty()) {
       LOG.debug("No finalized blocks to prune up to {} slot", lastSlotToPrune);
@@ -437,13 +431,12 @@ public class KvStoreDatabase implements Database {
         "Pruning {} finalized blocks, last block slot is {}",
         blocksToPrune.size(),
         lastPrunedBlockSlot);
-    deleteFinalizedBlocks(blocksToPrune, ealiestBlockSlotAfterPruning);
+    deleteFinalizedBlocks(blocksToPrune);
 
     return blocksToPrune.size() < pruneLimit ? lastSlotToPrune : lastPrunedBlockSlot;
   }
 
-  private void deleteFinalizedBlocks(
-      final List<Pair<UInt64, Bytes32>> blocksToPrune, final UInt64 ealiestBlockSlotAfterPruning) {
+  private void deleteFinalizedBlocks(final List<Pair<UInt64, Bytes32>> blocksToPrune) {
     if (blocksToPrune.size() > 0) {
       if (blocksToPrune.size() < 20) {
         LOG.debug(
@@ -456,9 +449,17 @@ public class KvStoreDatabase implements Database {
       try (final FinalizedUpdater updater = finalizedUpdater()) {
         blocksToPrune.forEach(
             pair -> updater.deleteFinalizedBlock(pair.getLeft(), pair.getRight()));
-        // update earliest finalized block slot
-        updater.setEarliestBlockSlot(ealiestBlockSlotAfterPruning);
         updater.commit();
+      }
+      // retrieve ealiest finalized slot left after pruning and set it in the DB
+      final Optional<UInt64> earliestBlockSlot =
+          dao.getEarliestFinalizedBlock().map(SignedBeaconBlock::getSlot);
+
+      if (earliestBlockSlot.isPresent()) {
+        try (final FinalizedUpdater updater = finalizedUpdater()) {
+          updater.setEarliestBlockSlot(earliestBlockSlot.get());
+          updater.commit();
+        }
       }
     }
   }
