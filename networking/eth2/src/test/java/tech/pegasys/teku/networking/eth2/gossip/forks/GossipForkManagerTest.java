@@ -34,6 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -586,6 +587,8 @@ class GossipForkManagerTest {
     final GossipForkSubscriptions subscriptions =
         mock(GossipForkSubscriptions.class, "subscriptionsForEpoch" + epoch);
     when(subscriptions.getActivationEpoch()).thenReturn(UInt64.valueOf(epoch));
+    when(subscriptions.publishBlock(any())).thenReturn(SafeFuture.COMPLETE);
+    when(subscriptions.publishBlobSidecar(any())).thenReturn(SafeFuture.COMPLETE);
     return subscriptions;
   }
 
