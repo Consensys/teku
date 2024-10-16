@@ -14,16 +14,17 @@
 package tech.pegasys.teku.networking.eth2.gossip;
 
 import java.util.List;
-import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
-public interface BlobSidecarGossipChannel extends VoidReturningChannelInterface {
+public interface BlobSidecarGossipChannel extends ChannelInterface {
 
-  BlobSidecarGossipChannel NOOP = blobSidecar -> {};
+  BlobSidecarGossipChannel NOOP = blobSidecar -> SafeFuture.COMPLETE;
 
-  default void publishBlobSidecars(final List<BlobSidecar> blobSidecars) {
-    blobSidecars.forEach(this::publishBlobSidecar);
+  default SafeFuture<Void> publishBlobSidecars(final List<BlobSidecar> blobSidecars) {
+    return SafeFuture.allOf(blobSidecars.stream().map(this::publishBlobSidecar));
   }
 
-  void publishBlobSidecar(BlobSidecar blobSidecar);
+  SafeFuture<Void> publishBlobSidecar(BlobSidecar blobSidecar);
 }

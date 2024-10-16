@@ -95,10 +95,11 @@ public class BlobSidecarGossipManager implements GossipManager {
     this.subnetIdToTopicHandler = subnetIdToTopicHandler;
   }
 
-  public void publishBlobSidecar(final BlobSidecar message) {
+  public SafeFuture<Void> publishBlobSidecar(final BlobSidecar message) {
     final int subnetId = spec.computeSubnetForBlobSidecar(message).intValue();
-    Optional.ofNullable(subnetIdToChannel.get(subnetId))
-        .ifPresent(channel -> channel.gossip(gossipEncoding.encode(message)));
+    return Optional.ofNullable(subnetIdToChannel.get(subnetId))
+        .map(channel -> channel.gossip(gossipEncoding.encode(message)))
+        .orElse(SafeFuture.COMPLETE);
   }
 
   @VisibleForTesting

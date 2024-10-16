@@ -74,24 +74,34 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
     }
     LOG.trace("Received message for topic {}", topic);
 
-    PubsubMessage pubsubMessage = message.getOriginalMessage();
-    if (!(pubsubMessage instanceof PreparedPubsubMessage)) {
+    final PubsubMessage pubsubMessage = message.getOriginalMessage();
+    if (!(pubsubMessage instanceof PreparedPubsubMessage gossipPubsubMessage)) {
       throw new IllegalArgumentException(
           "Don't know this PubsubMessage implementation: " + pubsubMessage.getClass());
     }
-    PreparedPubsubMessage gossipPubsubMessage = (PreparedPubsubMessage) pubsubMessage;
     return handler.handleMessage(gossipPubsubMessage.getPreparedMessage());
   }
 
-  public void gossip(final Bytes bytes) {
+  /**
+   * This method is designed to return a future that completes successfully when
+   *
+   * <p>1. The message is successfully to at least one peer
+   *
+   * <p>2. An error occurred
+   */
+  public SafeFuture<Void> gossip(final Bytes bytes) {
     LOG.trace("Gossiping {}: {} bytes", topic, bytes.size());
-    SafeFuture.of(publisher.publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), topic))
-        .finish(
-            () -> LOG.trace("Successfully gossiped message on {}", topic),
-            err ->
-                LOG.debug(
-                    "Failed to gossip message on {}, {}",
-                    topic,
-                    Throwables.getRootCause(err).getMessage()));
+    return SafeFuture.of(publisher.publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), topic))
+        .handle(
+            (result, error) -> {
+              if (error != null) {
+                LOG.debug("Failed to gossip message on {}, {}",
+                        topic,
+                        Throwables.getRootCause(error).getMessage());
+              } else {
+                LOG.trace("Successfully gossiped message on {}", topic);
+              }
+              return null;
+            });
   }
 }

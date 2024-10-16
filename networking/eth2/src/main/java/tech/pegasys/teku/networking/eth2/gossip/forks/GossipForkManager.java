@@ -26,9 +26,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -163,12 +165,13 @@ public class GossipForkManager {
         GossipForkSubscriptions::publishAttestation);
   }
 
-  public synchronized void publishBlock(final SignedBeaconBlock block) {
-    publishMessage(block.getSlot(), block, "block", GossipForkSubscriptions::publishBlock);
+  public synchronized SafeFuture<Void> publishBlock(final SignedBeaconBlock block) {
+    return publishMessageWithFeedback(
+        block.getSlot(), block, "block", GossipForkSubscriptions::publishBlock);
   }
 
-  public synchronized void publishBlobSidecar(final BlobSidecar blobSidecar) {
-    publishMessage(
+  public synchronized SafeFuture<Void> publishBlobSidecar(final BlobSidecar blobSidecar) {
+    return publishMessageWithFeedback(
         blobSidecar.getSlot(),
         blobSidecar,
         "blob sidecar",
@@ -244,6 +247,23 @@ public class GossipForkManager {
                     "Not publishing {} because no gossip subscriptions are active for slot {}",
                     type,
                     slot));
+  }
+
+  private <T> SafeFuture<Void> publishMessageWithFeedback(
+      final UInt64 slot,
+      final T message,
+      final String type,
+      final BiFunction<GossipForkSubscriptions, T, SafeFuture<Void>> publisher) {
+    final Optional<GossipForkSubscriptions> gossipForkSubscriptions =
+        getSubscriptionActiveAtSlot(slot).filter(this::isActive);
+
+    if (gossipForkSubscriptions.isEmpty()) {
+      LOG.warn(
+          "Not publishing {} because no gossip subscriptions are active for slot {}", type, slot);
+      return SafeFuture.COMPLETE;
+    }
+
+    return publisher.apply(gossipForkSubscriptions.get(), message);
   }
 
   public synchronized void subscribeToAttestationSubnetId(final int subnetId) {
