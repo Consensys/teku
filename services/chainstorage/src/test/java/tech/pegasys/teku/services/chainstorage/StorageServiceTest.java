@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,6 +60,10 @@ class StorageServiceTest {
         .thenReturn(StorageConfiguration.DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE);
     when(storageConfiguration.getDataStorageFrequency())
         .thenReturn(StorageConfiguration.DEFAULT_STORAGE_FREQUENCY);
+    when(storageConfiguration.getStatePruningLimit())
+        .thenReturn(StorageConfiguration.DEFAULT_STATE_PRUNING_LIMIT);
+    when(storageConfiguration.getStatePruningInterval())
+        .thenReturn(StorageConfiguration.DEFAULT_STATE_PRUNING_INTERVAL);
     when(storageConfiguration.getEth1DepositContract()).thenReturn(eth1DepositContract);
     when(storageConfiguration.isStoreNonCanonicalBlocksEnabled()).thenReturn(false);
     when(storageConfiguration.getSpec()).thenReturn(spec);
@@ -80,9 +85,9 @@ class StorageServiceTest {
   void shouldNotSetupStatePrunerWhenArchiveMode() {
     when(storageConfiguration.getDataStorageMode()).thenReturn(StateStorageMode.ARCHIVE);
     final SafeFuture<?> future = storageService.doStart();
-    final Optional<StatePruner> statePruner = storageService.getStatePruner();
+    final Optional<StatePruner> maybeStatePruner = storageService.getStatePruner();
     assertThat(future).isCompleted();
-    assertThat(statePruner).isEmpty();
+    assertThat(maybeStatePruner).isEmpty();
   }
 
   @Test
@@ -90,29 +95,50 @@ class StorageServiceTest {
     when(storageConfiguration.getDataStorageMode()).thenReturn(StateStorageMode.ARCHIVE);
     when(storageConfiguration.getRetainedSlots()).thenReturn(5L);
     final SafeFuture<?> future = storageService.doStart();
-    final Optional<StatePruner> statePruner = storageService.getStatePruner();
+    final Optional<StatePruner> maybeStatePruner = storageService.getStatePruner();
     assertThat(future).isCompleted();
-    assertThat(statePruner).isPresent();
-    assertThat(storageService.getStatePruner().get().isRunning()).isTrue();
+    assertThat(maybeStatePruner).isPresent();
+    final StatePruner statePruner = maybeStatePruner.get();
+    assertThat(statePruner.isRunning()).isTrue();
+    assertThat(statePruner.getPruneInterval())
+        .isEqualTo(StorageConfiguration.DEFAULT_STATE_PRUNING_INTERVAL);
   }
 
   @Test
   void shouldSetupStatePrunerWhenPruneMode() {
     when(storageConfiguration.getDataStorageMode()).thenReturn(StateStorageMode.PRUNE);
     final SafeFuture<?> future = storageService.doStart();
-    final Optional<StatePruner> statePruner = storageService.getStatePruner();
+    final Optional<StatePruner> maybeStatePruner = storageService.getStatePruner();
     assertThat(future).isCompleted();
-    assertThat(statePruner).isPresent();
-    assertThat(storageService.getStatePruner().get().isRunning()).isTrue();
+    assertThat(maybeStatePruner).isPresent();
+    final StatePruner statePruner = maybeStatePruner.get();
+    assertThat(statePruner.isRunning()).isTrue();
+    assertThat(statePruner.getPruneInterval()).isEqualTo(Duration.ofMinutes(1));
   }
 
   @Test
   void shouldSetupStatePrunerWhenMinimalMode() {
     when(storageConfiguration.getDataStorageMode()).thenReturn(StateStorageMode.MINIMAL);
     final SafeFuture<?> future = storageService.doStart();
-    final Optional<StatePruner> statePruner = storageService.getStatePruner();
+    final Optional<StatePruner> maybeStatePruner = storageService.getStatePruner();
     assertThat(future).isCompleted();
-    assertThat(statePruner).isPresent();
-    assertThat(storageService.getStatePruner().get().isRunning()).isTrue();
+    assertThat(maybeStatePruner).isPresent();
+    final StatePruner statePruner = maybeStatePruner.get();
+    assertThat(statePruner.isRunning()).isTrue();
+    assertThat(statePruner.getPruneInterval()).isEqualTo(Duration.ofMinutes(1));
+  }
+
+  @Test
+  void shouldSetupStatePrunerWithCustomInterval() {
+    when(storageConfiguration.getDataStorageMode()).thenReturn(StateStorageMode.MINIMAL);
+    final Duration customPruningInterval = Duration.ofSeconds(8);
+    when(storageConfiguration.getStatePruningInterval()).thenReturn(customPruningInterval);
+    final SafeFuture<?> future = storageService.doStart();
+    final Optional<StatePruner> maybeStatePruner = storageService.getStatePruner();
+    assertThat(future).isCompleted();
+    assertThat(maybeStatePruner).isPresent();
+    final StatePruner statePruner = maybeStatePruner.get();
+    assertThat(statePruner.isRunning()).isTrue();
+    assertThat(statePruner.getPruneInterval()).isEqualTo(customPruningInterval);
   }
 }
