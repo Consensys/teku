@@ -26,6 +26,8 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -104,9 +106,12 @@ class StorageServiceTest {
         .isEqualTo(StorageConfiguration.DEFAULT_STATE_PRUNING_INTERVAL);
   }
 
-  @Test
-  void shouldSetupStatePrunerWhenPruneMode() {
-    when(storageConfiguration.getDataStorageMode()).thenReturn(StateStorageMode.PRUNE);
+  @ParameterizedTest
+  @EnumSource(
+      value = StateStorageMode.class,
+      names = {"PRUNE", "MINIMAL"})
+  void shouldSetupStatePrunerWhenPruneMode(final StateStorageMode stateStorageMode) {
+    when(storageConfiguration.getDataStorageMode()).thenReturn(stateStorageMode);
     final SafeFuture<?> future = storageService.doStart();
     final Optional<StatePruner> maybeStatePruner = storageService.getStatePruner();
     assertThat(future).isCompleted();
@@ -116,21 +121,12 @@ class StorageServiceTest {
     assertThat(statePruner.getPruneInterval()).isEqualTo(StorageService.STATE_PRUNING_INTERVAL);
   }
 
-  @Test
-  void shouldSetupStatePrunerWhenMinimalMode() {
-    when(storageConfiguration.getDataStorageMode()).thenReturn(StateStorageMode.MINIMAL);
-    final SafeFuture<?> future = storageService.doStart();
-    final Optional<StatePruner> maybeStatePruner = storageService.getStatePruner();
-    assertThat(future).isCompleted();
-    assertThat(maybeStatePruner).isPresent();
-    final StatePruner statePruner = maybeStatePruner.get();
-    assertThat(statePruner.isRunning()).isTrue();
-    assertThat(statePruner.getPruneInterval()).isEqualTo(StorageService.STATE_PRUNING_INTERVAL);
-  }
-
-  @Test
-  void shouldSetupStatePrunerWithCustomInterval() {
-    when(storageConfiguration.getDataStorageMode()).thenReturn(StateStorageMode.MINIMAL);
+  @ParameterizedTest
+  @EnumSource(
+      value = StateStorageMode.class,
+      names = {"PRUNE", "MINIMAL"})
+  void shouldSetupStatePrunerWithCustomInterval(final StateStorageMode stateStorageMode) {
+    when(storageConfiguration.getDataStorageMode()).thenReturn(stateStorageMode);
     final Duration customPruningInterval = Duration.ofSeconds(8);
     when(storageConfiguration.getStatePruningInterval()).thenReturn(customPruningInterval);
     final SafeFuture<?> future = storageService.doStart();
