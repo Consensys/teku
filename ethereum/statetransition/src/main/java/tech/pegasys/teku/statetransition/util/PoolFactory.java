@@ -15,6 +15,8 @@ package tech.pegasys.teku.statetransition.util;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -25,9 +27,12 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class PoolFactory {
@@ -112,13 +117,19 @@ public class PoolFactory {
       final Spec spec,
       final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,
-      final RecentChainData recentChainData) {
+      final RecentChainData recentChainData,
+      final ExecutionLayerChannel executionLayer,
+      final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
+      final Consumer<BlobSidecar> blobSidecarGossipPublisher) {
     return createPoolForBlockBlobSidecarsTrackers(
         blockImportChannel,
         spec,
         timeProvider,
         asyncRunner,
         recentChainData,
+        executionLayer,
+        gossipValidatorSupplier,
+        blobSidecarGossipPublisher,
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
         DEFAULT_MAX_BLOCKS);
@@ -130,6 +141,9 @@ public class PoolFactory {
       final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
+      final ExecutionLayerChannel executionLayer,
+      final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
+      final Consumer<BlobSidecar> blobSidecarGossipPublisher,
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
       final int maxTrackers) {
@@ -141,6 +155,9 @@ public class PoolFactory {
         timeProvider,
         asyncRunner,
         recentChainData,
+        executionLayer,
+        gossipValidatorSupplier,
+        blobSidecarGossipPublisher,
         historicalBlockTolerance,
         futureBlockTolerance,
         maxTrackers);
@@ -153,6 +170,9 @@ public class PoolFactory {
       final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
+      final ExecutionLayerChannel executionLayer,
+      final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
+      final Consumer<BlobSidecar> blobSidecarGossipPublisher,
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
       final int maxItems,
@@ -165,6 +185,9 @@ public class PoolFactory {
         timeProvider,
         asyncRunner,
         recentChainData,
+        executionLayer,
+        gossipValidatorSupplier,
+        blobSidecarGossipPublisher,
         historicalBlockTolerance,
         futureBlockTolerance,
         maxItems,

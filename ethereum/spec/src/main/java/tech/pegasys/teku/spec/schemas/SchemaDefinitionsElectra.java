@@ -37,7 +37,7 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.builder.versions.electra.BuilderBidSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
@@ -53,17 +53,17 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttesterSlashingElectraSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.IndexedAttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
 public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
@@ -96,7 +96,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final WithdrawalRequestSchema withdrawalRequestSchema;
   private final ConsolidationRequestSchema consolidationRequestSchema;
 
-  private final PendingBalanceDeposit.PendingBalanceDepositSchema pendingBalanceDepositSchema;
+  private final PendingDeposit.PendingDepositSchema pendingDepositSchema;
 
   private final PendingPartialWithdrawal.PendingPartialWithdrawalSchema
       pendingPartialWithdrawalSchema;
@@ -114,10 +114,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
         new AttesterSlashingElectraSchema(indexedAttestationSchema)
             .castTypeToAttesterSlashingSchema();
 
-    this.attestationSchema =
-        new AttestationElectraSchema(
-                maxValidatorsPerAttestation, specConfig.getMaxCommitteesPerSlot())
-            .castTypeToAttestationSchema();
+    this.attestationSchema = schemaRegistry.get(SchemaTypes.ATTESTATION_SCHEMA);
     this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema);
     this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(aggregateAndProofSchema);
 
@@ -149,8 +146,11 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.signedBlindedBeaconBlockSchema =
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockElectra");
     this.builderBidSchemaElectra =
-        new BuilderBidSchemaDeneb(
-            "BuilderBidElectra", getExecutionPayloadHeaderSchema(), getBlobKzgCommitmentsSchema());
+        new BuilderBidSchemaElectra(
+            "BuilderBidElectra",
+            getExecutionPayloadHeaderSchema(),
+            getBlobKzgCommitmentsSchema(),
+            executionRequestsSchema);
     this.signedBuilderBidSchemaElectra =
         new SignedBuilderBidSchema("SignedBuilderBidElectra", builderBidSchemaElectra);
 
@@ -169,7 +169,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.depositRequestSchema = DepositRequest.SSZ_SCHEMA;
     this.withdrawalRequestSchema = WithdrawalRequest.SSZ_SCHEMA;
     this.consolidationRequestSchema = ConsolidationRequest.SSZ_SCHEMA;
-    this.pendingBalanceDepositSchema = new PendingBalanceDeposit.PendingBalanceDepositSchema();
+    this.pendingDepositSchema = new PendingDeposit.PendingDepositSchema();
     this.pendingPartialWithdrawalSchema =
         new PendingPartialWithdrawal.PendingPartialWithdrawalSchema();
     this.pendingConsolidationSchema = new PendingConsolidation.PendingConsolidationSchema();
@@ -317,20 +317,12 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return withdrawalRequestSchema;
   }
 
-  public PendingBalanceDeposit.PendingBalanceDepositSchema getPendingBalanceDepositSchema() {
-    return pendingBalanceDepositSchema;
+  public ConsolidationRequestSchema getConsolidationRequestSchema() {
+    return consolidationRequestSchema;
   }
 
-  public SszListSchema<PendingBalanceDeposit, ?> getPendingBalanceDepositsSchema() {
-    return beaconStateSchema.getPendingBalanceDepositsSchema();
-  }
-
-  public SszListSchema<PendingConsolidation, ?> getPendingConsolidationsSchema() {
-    return beaconStateSchema.getPendingConsolidationsSchema();
-  }
-
-  public SszListSchema<PendingPartialWithdrawal, ?> getPendingPartialWithdrawalsSchema() {
-    return beaconStateSchema.getPendingPartialWithdrawalsSchema();
+  public PendingDeposit.PendingDepositSchema getPendingDepositSchema() {
+    return pendingDepositSchema;
   }
 
   public PendingPartialWithdrawal.PendingPartialWithdrawalSchema
@@ -338,17 +330,25 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return pendingPartialWithdrawalSchema;
   }
 
-  @Override
-  public Optional<SchemaDefinitionsElectra> toVersionElectra() {
-    return Optional.of(this);
-  }
-
   public PendingConsolidation.PendingConsolidationSchema getPendingConsolidationSchema() {
     return pendingConsolidationSchema;
   }
 
-  public ConsolidationRequestSchema getConsolidationRequestSchema() {
-    return consolidationRequestSchema;
+  public SszListSchema<PendingDeposit, ?> getPendingDepositsSchema() {
+    return beaconStateSchema.getPendingDepositsSchema();
+  }
+
+  public SszListSchema<PendingPartialWithdrawal, ?> getPendingPartialWithdrawalsSchema() {
+    return beaconStateSchema.getPendingPartialWithdrawalsSchema();
+  }
+
+  public SszListSchema<PendingConsolidation, ?> getPendingConsolidationsSchema() {
+    return beaconStateSchema.getPendingConsolidationsSchema();
+  }
+
+  @Override
+  public Optional<SchemaDefinitionsElectra> toVersionElectra() {
+    return Optional.of(this);
   }
 
   @Override

@@ -15,15 +15,16 @@ package tech.pegasys.teku.validator.client.signer;
 
 import java.util.HashMap;
 import java.util.Map;
-import tech.pegasys.teku.api.SchemaObjectProvider;
+import java.util.Optional;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.validator.api.signer.BlockWrapper;
+import tech.pegasys.teku.validator.api.signer.SignType;
 
 public class ExternalSignerBlockRequestProvider {
   private final Spec spec;
-  private final SchemaObjectProvider schemaObjectProvider;
   private final BeaconBlock block;
   private final BeaconBlockHeader blockHeader;
 
@@ -33,7 +34,6 @@ public class ExternalSignerBlockRequestProvider {
     this.spec = spec;
     this.block = block;
     this.blockHeader = BeaconBlockHeader.fromBlock(block);
-    schemaObjectProvider = new SchemaObjectProvider(spec);
     // backward compatible with phase 0
     if (spec.atSlot(block.getSlot()).getMilestone().equals(SpecMilestone.PHASE0)) {
       signType = SignType.BLOCK;
@@ -45,24 +45,21 @@ public class ExternalSignerBlockRequestProvider {
   public Map<String, Object> getBlockMetadata(final Map<String, Object> additionalEntries) {
     final Map<String, Object> metadata = new HashMap<>(additionalEntries);
 
-    final tech.pegasys.teku.api.schema.BeaconBlock beaconBlock =
-        block.getBody().isBlinded()
-            ? schemaObjectProvider.getBlindedBlock(block)
-            : schemaObjectProvider.getBeaconBlock(block);
-    final tech.pegasys.teku.api.schema.BeaconBlockHeader beaconBlockHeader =
-        new tech.pegasys.teku.api.schema.BeaconBlockHeader(blockHeader);
-
     final SpecMilestone milestone = spec.atSlot(block.getSlot()).getMilestone();
     switch (milestone) {
       case PHASE0:
-        metadata.put("block", beaconBlock); // backward compatible with phase0
+        metadata.put(SignType.BLOCK.getName(), block); // backward compatible with phase0
         break;
       case ALTAIR:
-        metadata.put("beacon_block", new BlockRequestBody(milestone, beaconBlock));
+        metadata.put(
+            SignType.BEACON_BLOCK.getName(),
+            new BlockWrapper(milestone, Optional.of(block), Optional.empty()));
         break;
       default:
         // use block header for BELLATRIX and onward milestones
-        metadata.put("beacon_block", new BlockRequestBody(milestone, beaconBlockHeader));
+        metadata.put(
+            SignType.BEACON_BLOCK.getName(),
+            new BlockWrapper(milestone, Optional.empty(), Optional.of(blockHeader)));
     }
 
     return metadata;

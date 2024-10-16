@@ -14,12 +14,14 @@
 package tech.pegasys.teku.ethereum.executionlayer;
 
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_FORK_CHOICE_UPDATED;
+import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_GET_BLOBS;
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_GET_PAYLOAD;
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_NEW_PAYLOAD;
 
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -29,6 +31,7 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV3;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetBlobsV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV3;
@@ -106,6 +109,7 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
     methods.put(ENGINE_NEW_PAYLOAD, new EngineNewPayloadV3(executionEngineClient));
     methods.put(ENGINE_GET_PAYLOAD, new EngineGetPayloadV3(executionEngineClient, spec));
     methods.put(ENGINE_FORK_CHOICE_UPDATED, new EngineForkChoiceUpdatedV3(executionEngineClient));
+    methods.put(ENGINE_GET_BLOBS, new EngineGetBlobsV1(executionEngineClient, spec));
 
     return methods;
   }
@@ -116,6 +120,7 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
     methods.put(ENGINE_NEW_PAYLOAD, new EngineNewPayloadV4(executionEngineClient));
     methods.put(ENGINE_GET_PAYLOAD, new EngineGetPayloadV4(executionEngineClient, spec));
     methods.put(ENGINE_FORK_CHOICE_UPDATED, new EngineForkChoiceUpdatedV3(executionEngineClient));
+    methods.put(ENGINE_GET_BLOBS, new EngineGetBlobsV1(executionEngineClient, spec));
 
     return methods;
   }
@@ -139,9 +144,38 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
   }
 
   @Override
+  @SuppressWarnings({"unchecked", "unused"})
+  public <T> EngineJsonRpcMethod<List<T>> getListMethod(
+      final EngineApiMethod method,
+      final Supplier<SpecMilestone> milestoneSupplier,
+      final Class<T> resultType) {
+    final SpecMilestone milestone = milestoneSupplier.get();
+    final Map<EngineApiMethod, EngineJsonRpcMethod<?>> milestoneMethods =
+        methodsByMilestone.getOrDefault(milestone, Collections.emptyMap());
+    final EngineJsonRpcMethod<List<T>> foundMethod =
+        (EngineJsonRpcMethod<List<T>>) milestoneMethods.get(method);
+    if (foundMethod == null) {
+      throw new IllegalArgumentException(
+          "Can't find method with name " + method.getName() + " for milestone " + milestone);
+    }
+    return foundMethod;
+  }
+
+  @Override
   public Set<String> getCapabilities() {
     return methodsByMilestone.values().stream()
         .flatMap(methods -> methods.values().stream())
+        .filter(method -> !method.isOptional())
+        .filter(method -> !method.isDeprecated())
+        .map(EngineJsonRpcMethod::getVersionedName)
+        .collect(Collectors.toSet());
+  }
+
+  @Override
+  public Set<String> getOptionalCapabilities() {
+    return methodsByMilestone.values().stream()
+        .flatMap(methods -> methods.values().stream())
+        .filter(EngineJsonRpcMethod::isOptional)
         .filter(method -> !method.isDeprecated())
         .map(EngineJsonRpcMethod::getVersionedName)
         .collect(Collectors.toSet());

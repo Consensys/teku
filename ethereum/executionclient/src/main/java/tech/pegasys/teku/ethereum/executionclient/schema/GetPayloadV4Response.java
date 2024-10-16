@@ -18,12 +18,21 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.ethereum.executionclient.serialization.BytesDeserializer;
+import tech.pegasys.teku.ethereum.executionclient.serialization.BytesSerializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexDeserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexSerializer;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 
 public class GetPayloadV4Response {
-  public final ExecutionPayloadV4 executionPayload;
+  public final ExecutionPayloadV3 executionPayload;
 
   @JsonSerialize(using = UInt256AsHexSerializer.class)
   @JsonDeserialize(using = UInt256AsHexDeserializer.class)
@@ -33,17 +42,36 @@ public class GetPayloadV4Response {
 
   public final boolean shouldOverrideBuilder;
 
+  @JsonSerialize(contentUsing = BytesSerializer.class)
+  @JsonDeserialize(contentUsing = BytesDeserializer.class)
+  public final List<Bytes> executionRequests;
+
   public GetPayloadV4Response(
-      final @JsonProperty("executionPayload") ExecutionPayloadV4 executionPayload,
+      final @JsonProperty("executionPayload") ExecutionPayloadV3 executionPayload,
       final @JsonProperty("blockValue") UInt256 blockValue,
       final @JsonProperty("blobsBundle") BlobsBundleV1 blobsBundle,
-      final @JsonProperty("shouldOverrideBuilder") boolean shouldOverrideBuilder) {
+      final @JsonProperty("shouldOverrideBuilder") boolean shouldOverrideBuilder,
+      final @JsonProperty("executionRequests") List<Bytes> executionRequests) {
     checkNotNull(executionPayload, "executionPayload");
     checkNotNull(blockValue, "blockValue");
     checkNotNull(blobsBundle, "blobsBundle");
+    checkNotNull(executionRequests, "executionRequests");
     this.executionPayload = executionPayload;
     this.blockValue = blockValue;
     this.blobsBundle = blobsBundle;
     this.shouldOverrideBuilder = shouldOverrideBuilder;
+    this.executionRequests = executionRequests;
+  }
+
+  public GetPayloadResponse asInternalGetPayloadResponse(
+      final ExecutionPayloadSchema<?> executionPayloadSchema,
+      final BlobSchema blobSchema,
+      final ExecutionRequestsSchema executionRequestsSchema) {
+    return new GetPayloadResponse(
+        executionPayload.asInternalExecutionPayload(executionPayloadSchema),
+        blockValue,
+        blobsBundle.asInternalBlobsBundle(blobSchema),
+        shouldOverrideBuilder,
+        new ExecutionRequestsDataCodec(executionRequestsSchema).decode(executionRequests));
   }
 }

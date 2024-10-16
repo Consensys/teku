@@ -104,6 +104,16 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
   protected void processEpoch(final BeaconState preState, final MutableBeaconState state)
       throws EpochProcessingException {
+    /*
+     WARNING: After Electra, it is possible that the validator set is updated within epoch processing
+     (process_pending_deposits). This means that the validator set in the state can get out of sync with
+     our validatorStatuses cache. This is not a problem for the current epoch processing, but it can cause
+     undesired side effects in the future.
+
+     Up until Electra, the only function that uses validatorStatuses after process_pending_deposits is
+     process_effective_balance_updates, and in this particular case it is ok that we don't have the new validators
+     in validatorStatuses.
+    */
     final ValidatorStatuses validatorStatuses =
         validatorStatusFactory.createValidatorStatuses(preState);
 
@@ -122,7 +132,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processRegistryUpdates(state, validatorStatuses.getStatuses());
     processSlashings(state, validatorStatuses);
     processEth1DataReset(state);
-    processPendingBalanceDeposits(state);
+    processPendingDeposits(state);
     processPendingConsolidations(state);
     processEffectiveBalanceUpdates(state, validatorStatuses.getStatuses());
     processSlashingsReset(state);

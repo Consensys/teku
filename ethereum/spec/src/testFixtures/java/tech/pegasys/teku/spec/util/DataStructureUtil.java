@@ -132,6 +132,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Consolid
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsBuilderElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
@@ -180,8 +182,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -601,10 +603,7 @@ public final class DataStructureUtil {
                     .transactionsRoot(randomBytes32())
                     .withdrawalsRoot(() -> withdrawalsRoot)
                     .blobGasUsed(this::randomUInt64)
-                    .excessBlobGas(this::randomUInt64)
-                    .depositRequestsRoot(this::randomBytes32)
-                    .withdrawalRequestsRoot(this::randomBytes32)
-                    .consolidationRequestsRoot(this::randomBytes32));
+                    .excessBlobGas(this::randomUInt64));
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
@@ -637,6 +636,9 @@ public final class DataStructureUtil {
               schemaDefinitions
                   .toVersionDeneb()
                   .ifPresent(__ -> builder.blobKzgCommitments(randomBlobKzgCommitments()));
+              schemaDefinitions
+                  .toVersionElectra()
+                  .ifPresent(__ -> builder.executionRequests(randomExecutionRequests()));
               // 1 ETH is 10^18 wei, Uint256 max is more than 10^77, so just to avoid
               // overflows in
               // computation
@@ -698,10 +700,7 @@ public final class DataStructureUtil {
                       .transactions(randomExecutionPayloadTransactions())
                       .withdrawals(this::randomExecutionPayloadWithdrawals)
                       .blobGasUsed(this::randomUInt64)
-                      .excessBlobGas(this::randomUInt64)
-                      .depositRequests(this::randomDepositRequests)
-                      .withdrawalRequests(this::randomWithdrawalRequests)
-                      .consolidationRequests(this::randomConsolidationRequests);
+                      .excessBlobGas(this::randomUInt64);
               builderModifier.accept(executionPayloadBuilder);
             });
   }
@@ -1017,9 +1016,18 @@ public final class DataStructureUtil {
   }
 
   public SignedBeaconBlock randomSignedBeaconBlockWithCommitments(
+      final UInt64 slot, final int count) {
+    return randomSignedBeaconBlockWithCommitments(slot, randomBlobKzgCommitments(count));
+  }
+
+  public SignedBeaconBlock randomSignedBeaconBlockWithCommitments(
       final SszList<SszKZGCommitment> commitments) {
+    return randomSignedBeaconBlockWithCommitments(randomUInt64(), commitments);
+  }
+
+  public SignedBeaconBlock randomSignedBeaconBlockWithCommitments(
+      final UInt64 slot, final SszList<SszKZGCommitment> commitments) {
     final UInt64 proposerIndex = randomUInt64();
-    final UInt64 slot = randomUInt64();
     final Bytes32 stateRoot = randomBytes32();
     final Bytes32 parentRoot = randomBytes32();
 
@@ -2495,6 +2503,15 @@ public final class DataStructureUtil {
         .build();
   }
 
+  public List<Bytes> randomEncodedExecutionRequests() {
+    final ExecutionRequestsSchema executionRequestsSchema =
+        SchemaDefinitionsElectra.required(
+                spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+            .getExecutionRequestsSchema();
+    return new ExecutionRequestsDataCodec(executionRequestsSchema)
+        .encode(randomExecutionRequests());
+  }
+
   public WithdrawalRequest randomWithdrawalRequest() {
     return getElectraSchemaDefinitions(randomSlot())
         .getWithdrawalRequestSchema()
@@ -2522,10 +2539,15 @@ public final class DataStructureUtil {
         .create(executionAddress, validator.getPublicKey(), amount);
   }
 
-  public PendingBalanceDeposit randomPendingBalanceDeposit() {
+  public PendingDeposit randomPendingDeposit() {
     return getElectraSchemaDefinitions(randomSlot())
-        .getPendingBalanceDepositSchema()
-        .create(SszUInt64.of(randomUInt64()), SszUInt64.of(randomUInt64()));
+        .getPendingDepositSchema()
+        .create(
+            randomSszPublicKey(),
+            SszBytes32.of(randomEth1WithdrawalCredentials()),
+            SszUInt64.of(randomUInt64()),
+            randomSszSignature(),
+            SszUInt64.of(randomUInt64()));
   }
 
   public ConsolidationRequest randomConsolidationRequest() {

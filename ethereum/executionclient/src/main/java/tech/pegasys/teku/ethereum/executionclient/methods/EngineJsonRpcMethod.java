@@ -28,6 +28,12 @@ public interface EngineJsonRpcMethod<T> {
     return false;
   }
 
+  // TODO should be remove once all ELs implement engine_getBlobsV1. It has been added only to
+  // better handle the use case when the method is missing in the EL side
+  default boolean isOptional() {
+    return false;
+  }
+
   default String getVersionedName() {
     return getVersion() == 0 ? getName() : getName() + "V" + getVersion();
   }

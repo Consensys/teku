@@ -363,7 +363,7 @@ jobs:
           path: build/test-results
 
   acceptanceTests:
-    parallelism: 5
+    parallelism: 4
     executor: machine_large_executor_amd64
     steps:
       - install_java_21

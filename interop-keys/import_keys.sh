@@ -20,9 +20,11 @@ done
 TEMP=`mktemp -d`
 
 function cleanup() {
+    echo "Cleaning up temp folder ${TEMP}."
     rm -rf "${TEMP}"
 }
 trap cleanup EXIT
+echo "TEMP: ${TEMP}"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
@@ -67,12 +69,20 @@ done
 echo "]
 }" >> "${TEMP}/payload.json"
 
+# annoying but AUTHORIZATION_HEADER below seems to be a problem if its empty, so coding with and without
 echo "Sending payload.json to ${SIGNER_URL}/eth/v1/keystores..."
-
-curl --fail -q -X POST ${SIGNER_URL}/eth/v1/keystores \
-     "${AUTHORIZATION_HEADER:-}" \
-     -H "Content-Type: application/json" \
-     -d "@${TEMP}/payload.json" \
-     -o "${TEMP}/result.json"
+if [ ! -z "${AUTHORIZATION_HEADER:-}" ]
+then
+    curl --fail -q -X POST ${SIGNER_URL}/eth/v1/keystores \
+         "${AUTHORIZATION_HEADER:-}" \
+         -H "Content-Type: application/json" \
+         -d "@${TEMP}/payload.json" \
+         -o "${TEMP}/result.json"
+else
+    curl --fail -q -X POST ${SIGNER_URL}/eth/v1/keystores \
+         -H "Content-Type: application/json" \
+         -d "@${TEMP}/payload.json" \
+         -o "${TEMP}/result.json"
+fi
 
  echo "Wrote result to ${TEMP}/result.json."

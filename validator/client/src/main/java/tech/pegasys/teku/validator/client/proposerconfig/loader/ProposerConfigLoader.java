@@ -28,15 +28,13 @@ import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.Bytes48KeyDeserializer;
-import tech.pegasys.teku.provider.BLSPublicKeyDeserializer;
-import tech.pegasys.teku.provider.BLSPublicKeySerializer;
 import tech.pegasys.teku.validator.client.ProposerConfig;
 
 public class ProposerConfigLoader {
-  final ObjectMapper objectMapper;
+  private final ObjectMapper objectMapper;
 
   public ProposerConfigLoader() {
-    this(new ObjectMapper());
+    this.objectMapper = new ObjectMapper();
     addTekuMappers();
   }
 
@@ -50,8 +48,8 @@ public class ProposerConfigLoader {
     objectMapper.registerModule(module);
   }
 
-  public ProposerConfigLoader(final ObjectMapper objectMapper) {
-    this.objectMapper = objectMapper;
+  public ObjectMapper getObjectMapper() {
+    return this.objectMapper;
   }
 
   public ProposerConfig getProposerConfig(final URL source) {
