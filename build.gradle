@@ -425,10 +425,8 @@ task downloadEthRefTestsStable(type: Download) {
 
 task downloadEthRefTests {
   if (nightly) {
-    println "Downloading nightly reference tests"
     dependsOn tasks.findByName("downloadEthRefTestsNightly")
   } else {
-    println "Downloading stable reference tests"
     dependsOn tasks.findByName("downloadEthRefTestsStable")
   }
 }

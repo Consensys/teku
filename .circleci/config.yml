@@ -193,17 +193,17 @@ jobs:
     executor: large_executor
     steps:
       - prepare
-      - run:
+      - run: &assemble
           name: Assemble
           command: |
             ./gradlew --no-daemon --parallel clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compilePropertyTestJava assemble
-      - run:
+      - run: &prep_artifacts
           name: Prep Artifacts
           command: |
             mkdir /tmp/teku-distributions
             cp build/distributions/*.tar.gz /tmp/teku-distributions/
       - notify
-      - save_cache:
+      - save_cache: &save_cache
           name: Caching gradle dependencies
           key: deps-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}-{{ .Branch }}-{{ .Revision }}
           paths:
@@ -213,11 +213,29 @@ jobs:
           root: ~/project
           paths:
             - ./
-      - store_artifacts:
+      - store_artifacts: &store_artifacts
           name: Distribution artifacts
           path:  /tmp/teku-distributions
           destination: distributions
           when: always
+
+  assembleNightly:
+    executor: large_executor
+    steps:
+      - prepare
+      - run:
+          <<: *assemble
+      - run:
+          <<: *prep_artifacts
+      - notify
+      - save_cache:
+          <<: *save_cache
+      - persist_to_workspace:
+          root: ~/project-nightly
+          paths:
+            - ./
+      - store_artifacts:
+          <<: *store_artifacts
 
   windowsBuild:
     executor:
@@ -404,14 +422,14 @@ jobs:
           name: Restore cached reference test downloads
           keys:
             - reftests-{{ checksum "build.gradle" }}
-      - run:
+      - run: &fetch_reference_tests
           name: FetchReferenceTests
           command: |
             if [ ! -d "eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/tests" ]
             then
               ./gradlew --no-daemon expandRefTests
             fi
-      - run:
+      - run: &compile_reference_tests
           # Compile separately so that we have the generated test files for splitting across nodes
           name: CompileReferenceTests
           command: |
@@ -434,7 +452,7 @@ jobs:
       - prepare
       - attach_workspace:
           at: ~/project
-      - run:
+      - run: &run_reference_tests
           name: ReferenceTests
           no_output_timeout: 30m
           command: |
@@ -452,6 +470,36 @@ jobs:
               exit 1
             fi
             ./gradlew --no-daemon --parallel -x generateReferenceTestClasses -x processReferenceTestResources -x cleanReferenceTestClasses referenceTest $GRADLE_ARGS
+      - notify
+      - capture_test_results
+
+  referenceTestsPrepNightly:
+    executor: large_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project-nightly
+      - run:
+          environment:
+            NIGHTLY: "true"
+          <<: *fetch_reference_tests
+      - run:
+          <<: *compile_reference_tests
+      - notify
+      - persist_to_workspace:
+          root: ~/project-nightly
+          paths:
+            - ./eth-reference-tests/
+
+  referenceTestsNightly:
+    parallelism: 6
+    executor: large_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project-nightly
+      - run:
+          <<: *run_reference_tests
       - notify
       - capture_test_results
 
@@ -582,6 +630,10 @@ workflows:
           filters:
             tags: &filters-release-tags
               only: /^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?/
+      - assembleNightly:
+          filters:
+            tags:
+              <<: *filters-release-tags
       - moduleChecks:
           filters:
             tags:
@@ -607,6 +659,19 @@ workflows:
           requires:
             - assemble
             - referenceTestsPrep
+          filters:
+            tags:
+              <<: *filters-release-tags
+      - referenceTestsPrepNightly:
+          requires:
+            - assembleNightly
+          filters:
+            tags:
+              <<: *filters-release-tags
+      - referenceTestsNightly:
+          requires:
+            - assembleNightly
+            - referenceTestsPrepNightly
           filters:
             tags:
               <<: *filters-release-tags
