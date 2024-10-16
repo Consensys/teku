@@ -24,6 +24,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory.Eth2P2PNetworkBuilder;
@@ -39,7 +41,7 @@ import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlsToExecutionChangeGossipIntegrationTest {
-
+  private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
   private final Spec spec = TestSpecFactory.createMinimalCapella();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(3);
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
@@ -102,6 +104,7 @@ public class BlsToExecutionChangeGossipIntegrationTest {
     chainUtil.initializeStorage();
     // Advancing chain to bypass "optimistic genesis" issue that prevents some gossip subscriptions
     chainUtil.createAndImportBlockAtSlot(1);
-    return NodeManager.create(spec, networkFactory, networkBuilder, storageClient, chainUtil);
+    return NodeManager.create(
+        spec, asyncRunner, networkFactory, networkBuilder, storageClient, chainUtil);
   }
 }
