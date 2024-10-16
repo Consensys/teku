@@ -16,6 +16,7 @@ package tech.pegasys.teku.services.chainstorage;
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.STORAGE_QUERY_CHANNEL_PARALLELISM;
 
+import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,6 +34,9 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
+import tech.pegasys.teku.storage.archive.DataArchive;
+import tech.pegasys.teku.storage.archive.fsarchive.FileSystemArchive;
+import tech.pegasys.teku.storage.archive.nooparchive.NoopDataArchive;
 import tech.pegasys.teku.storage.server.BatchingVoteUpdateChannel;
 import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.server.CombinedStorageChannelSplitter;
@@ -149,12 +153,20 @@ public class StorageService extends Service implements StorageServiceFacade {
                               pruningActiveLabelledGauge));
                 }
               }
+
+              final DataArchive dataArchive =
+                  config
+                      .getBlobsArchivePath()
+                      .<DataArchive>map(path -> new FileSystemArchive(Path.of(path)))
+                      .orElse(new NoopDataArchive());
+
               if (config.getSpec().isMilestoneSupported(SpecMilestone.DENEB)) {
                 blobsPruner =
                     Optional.of(
                         new BlobSidecarPruner(
                             config.getSpec(),
                             database,
+                            dataArchive,
                             serviceConfig.getMetricsSystem(),
                             storagePrunerAsyncRunner,
                             serviceConfig.getTimeProvider(),
