@@ -41,11 +41,9 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.electra.BuilderBidSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderSchemaEip7732;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadSchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage.ExecutionPayloadEnvelopesByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -59,7 +57,6 @@ import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttesterSlashingElectraSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.IndexedAttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -67,6 +64,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateSchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.MutableBeaconStateEip7732;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
 public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
   private final IndexedAttestationSchema<IndexedAttestation> indexedAttestationSchema;
@@ -77,7 +75,6 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
 
   private final BeaconStateSchemaEip7732 beaconStateSchema;
 
-  private final ExecutionPayloadSchemaEip7732 executionPayloadSchemaEip7732;
   private final ExecutionPayloadHeaderSchemaEip7732 executionPayloadHeaderSchemaEip7732;
 
   private final BeaconBlockBodySchemaEip7732Impl beaconBlockBodySchema;
@@ -118,14 +115,9 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
         new AttesterSlashingElectraSchema(indexedAttestationSchema)
             .castTypeToAttesterSlashingSchema();
 
-    this.attestationSchema =
-        new AttestationElectraSchema(
-                maxValidatorsPerAttestation, specConfig.getMaxCommitteesPerSlot())
-            .castTypeToAttestationSchema();
+    this.attestationSchema = schemaRegistry.get(SchemaTypes.ATTESTATION_SCHEMA);
     this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema);
     this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(aggregateAndProofSchema);
-
-    this.executionPayloadSchemaEip7732 = new ExecutionPayloadSchemaEip7732(specConfig);
 
     this.beaconStateSchema = BeaconStateSchemaEip7732.create(specConfig);
     this.executionPayloadHeaderSchemaEip7732 =
@@ -181,7 +173,7 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
         new BlobsBundleSchema(
             "BlobsBundleEip7732", getBlobSchema(), getBlobKzgCommitmentsSchema(), specConfig);
     this.executionPayloadAndBlobsBundleSchema =
-        new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaEip7732, blobsBundleSchema);
+        new ExecutionPayloadAndBlobsBundleSchema(getExecutionPayloadSchema(), blobsBundleSchema);
 
     this.indexedPayloadAttestationSchema =
         new IndexedPayloadAttestationSchema(specConfig.getPtcSize());
@@ -189,7 +181,7 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
         new SignedExecutionPayloadHeaderSchema(executionPayloadHeaderSchemaEip7732);
     this.executionPayloadEnvelopeSchema =
         new ExecutionPayloadEnvelopeSchema(
-            executionPayloadSchemaEip7732,
+            getExecutionPayloadSchema(),
             getExecutionRequestsSchema(),
             getBlobKzgCommitmentsSchema());
     this.signedExecutionPayloadEnvelopeSchema =
@@ -291,11 +283,6 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
   @Override
   public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlindedBlockContainerSchema() {
     return getSignedBlindedBeaconBlockSchema().castTypeToSignedBlockContainer();
-  }
-
-  @Override
-  public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
-    return executionPayloadSchemaEip7732;
   }
 
   @Override
