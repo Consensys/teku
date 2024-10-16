@@ -87,6 +87,6 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
     SafeFuture.of(publisher.publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), topic))
         .finish(
             () -> LOG.trace("Successfully gossiped message on {}", topic),
-            err -> LOG.debug("Failed to gossip message on " + topic, err));
+            err -> LOG.debug("Failed to gossip message on {}, {}", topic, err.getMessage()));
   }
 }

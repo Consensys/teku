@@ -42,25 +42,28 @@ public class GossipFailureLogger {
     lastErroredSlot = slot;
     lastRootCause = rootCause;
 
-    if (lastRootCause instanceof MessageAlreadySeenException) {
-      LOG.debug(
-          "Failed to publish {}(s) for slot {} because the message has already been seen",
-          messageType,
-          lastErroredSlot);
-    } else if (lastRootCause instanceof NoPeersForOutboundMessageException
-        || lastRootCause instanceof SemiDuplexNoOutboundStreamException) {
-      LOG.log(
-          suppress ? Level.DEBUG : Level.WARN,
-          "Failed to publish {}(s) for slot {} because no peers were available on the required gossip topic",
-          messageType,
-          lastErroredSlot);
-    } else {
-      LOG.log(
-          suppress ? Level.DEBUG : Level.ERROR,
-          "Failed to publish {}(s) for slot {}",
-          messageType,
-          lastErroredSlot,
-          error);
-    }
+      switch (lastRootCause) {
+          case MessageAlreadySeenException messageAlreadySeenException -> LOG.debug(
+                  "Failed to publish {}(s) for slot {} because the message has already been seen",
+                  messageType,
+                  lastErroredSlot);
+          case NoPeersForOutboundMessageException noPeersForOutboundMessageException -> LOG.log(
+                  Level.DEBUG,
+                  "Failed to publish {}(s) for slot {}; {}",
+                  messageType,
+                  lastErroredSlot,
+                  rootCause.getMessage());
+          case SemiDuplexNoOutboundStreamException semiDuplexNoOutboundStreamException -> LOG.log(
+                  suppress ? Level.DEBUG : Level.WARN,
+                  "Failed to publish {}(s) for slot {} because no peers were available on the required gossip topic",
+                  messageType,
+                  lastErroredSlot);
+          default -> LOG.log(
+                  suppress ? Level.DEBUG : Level.ERROR,
+                  "Failed to publish {}(s) for slot {}",
+                  messageType,
+                  lastErroredSlot,
+                  error);
+      }
   }
 }

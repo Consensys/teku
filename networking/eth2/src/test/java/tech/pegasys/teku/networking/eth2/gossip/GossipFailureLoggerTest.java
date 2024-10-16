@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import io.libp2p.core.SemiDuplexNoOutboundStreamException;
 import io.libp2p.pubsub.MessageAlreadySeenException;
-import io.libp2p.pubsub.NoPeersForOutboundMessageException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -43,7 +43,7 @@ class GossipFailureLoggerTest {
   void shouldLogFirstNoPeersErrorsAtWarningLevel() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
       logger.logWithSuppression(
-          new RuntimeException("Foo", new NoPeersForOutboundMessageException("So Lonely")), SLOT);
+          new RuntimeException("Foo", new SemiDuplexNoOutboundStreamException("So Lonely")), SLOT);
       logCaptor.assertWarnLog(NO_PEERS_MESSAGE);
     }
   }
@@ -52,12 +52,12 @@ class GossipFailureLoggerTest {
   void shouldLogRepeatedNoPeersErrorsAtDebugLevel() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
       logger.logWithSuppression(
-          new RuntimeException("Foo", new NoPeersForOutboundMessageException("So Lonely")), SLOT);
+          new RuntimeException("Foo", new SemiDuplexNoOutboundStreamException("So Lonely")), SLOT);
       logCaptor.clearLogs();
 
       logger.logWithSuppression(
           new IllegalStateException(
-              "Foo", new NoPeersForOutboundMessageException("Not a friend in the world")),
+              "Foo", new SemiDuplexNoOutboundStreamException("Not a friend in the world")),
           SLOT);
       logCaptor.assertDebugLog(NO_PEERS_MESSAGE);
     }
@@ -67,12 +67,12 @@ class GossipFailureLoggerTest {
   void shouldLogNoPeersErrorsWithDifferentSlotsAtWarnLevel() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
       logger.logWithSuppression(
-          new RuntimeException("Foo", new NoPeersForOutboundMessageException("So Lonely")), SLOT);
+          new RuntimeException("Foo", new SemiDuplexNoOutboundStreamException("So Lonely")), SLOT);
       logCaptor.assertWarnLog(NO_PEERS_MESSAGE);
 
       logger.logWithSuppression(
           new IllegalStateException(
-              "Foo", new NoPeersForOutboundMessageException("Not a friend in the world")),
+              "Foo", new SemiDuplexNoOutboundStreamException("Not a friend in the world")),
           UInt64.valueOf(2));
       logCaptor.assertWarnLog(noPeersMessage(2));
     }
@@ -82,7 +82,7 @@ class GossipFailureLoggerTest {
   void shouldLogNoPeersErrorsAtWarnLevelWhenSeparatedByADifferentException() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
       logger.logWithSuppression(
-          new RuntimeException("Foo", new NoPeersForOutboundMessageException("So Lonely")), SLOT);
+          new RuntimeException("Foo", new SemiDuplexNoOutboundStreamException("So Lonely")), SLOT);
       logCaptor.assertWarnLog(NO_PEERS_MESSAGE);
       logCaptor.clearLogs();
 
@@ -90,7 +90,7 @@ class GossipFailureLoggerTest {
 
       logger.logWithSuppression(
           new IllegalStateException(
-              "Foo", new NoPeersForOutboundMessageException("Not a friend in the world")),
+              "Foo", new SemiDuplexNoOutboundStreamException("Not a friend in the world")),
           SLOT);
       logCaptor.assertWarnLog(NO_PEERS_MESSAGE);
     }
