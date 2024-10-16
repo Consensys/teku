@@ -81,6 +81,13 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
     return handler.handleMessage(gossipPubsubMessage.getPreparedMessage());
   }
 
+  /**
+   * This method is designed to return a future that completes successfully when
+   *
+   * <p>1. The message is successfully to at least one peer
+   *
+   * <p>2. An error occurred
+   */
   public SafeFuture<Void> gossip(final Bytes bytes) {
     LOG.trace("Gossiping {}: {} bytes", topic, bytes.size());
     return SafeFuture.of(publisher.publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), topic))

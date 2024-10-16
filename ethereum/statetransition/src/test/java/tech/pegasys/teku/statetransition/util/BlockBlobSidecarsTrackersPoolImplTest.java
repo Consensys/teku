@@ -123,6 +123,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     blockBlobSidecarsTrackersPool.subscribeRequiredBlobSidecarDropped(
         requiredBlobSidecarDroppedEvents::add);
     blockBlobSidecarsTrackersPool.subscribeNewBlobSidecar(newBlobSidecarEvents::add);
+    when(blobSidecarPublisher.apply(any())).thenReturn(SafeFuture.COMPLETE);
     setSlot(currentSlot);
   }
 
