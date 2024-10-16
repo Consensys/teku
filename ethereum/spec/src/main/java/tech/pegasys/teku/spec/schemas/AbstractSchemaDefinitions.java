@@ -13,34 +13,34 @@
 
 package tech.pegasys.teku.spec.schemas;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTNETS_ENR_FIELD_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCKS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_BATCH_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SYNCNETS_ENR_FIELD_SCHEMA;
+
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
-import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
 public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
   protected SchemaRegistry schemaRegistry;
 
   final SszBitvectorSchema<SszBitvector> attnetsENRFieldSchema;
-  final SszBitvectorSchema<SszBitvector> syncnetsENRFieldSchema =
-      SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT);
+  private final SszBitvectorSchema<SszBitvector> syncnetsENRFieldSchema;
   private final HistoricalBatchSchema historicalBatchSchema;
-  private final BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema
-      beaconBlocksByRootRequestMessageSchema;
+  private final BeaconBlocksByRootRequestMessageSchema beaconBlocksByRootRequestMessageSchema;
 
   public AbstractSchemaDefinitions(final SchemaRegistry schemaRegistry) {
     this.schemaRegistry = schemaRegistry;
-    this.historicalBatchSchema =
-        new HistoricalBatchSchema(schemaRegistry.getSpecConfig().getSlotsPerHistoricalRoot());
-
+    this.historicalBatchSchema = schemaRegistry.get(HISTORICAL_BATCH_SCHEMA);
     this.beaconBlocksByRootRequestMessageSchema =
-        new BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema(
-            schemaRegistry.getSpecConfig());
-    this.attnetsENRFieldSchema = schemaRegistry.get(SchemaTypes.ATTNETS_ENR_FIELD_SCHEMA);
+        schemaRegistry.get(BEACON_BLOCKS_BY_ROOT_REQUEST_MESSAGE_SCHEMA);
+    this.syncnetsENRFieldSchema = schemaRegistry.get(SYNCNETS_ENR_FIELD_SCHEMA);
+    this.attnetsENRFieldSchema = schemaRegistry.get(ATTNETS_ENR_FIELD_SCHEMA);
   }
 
   abstract long getMaxValidatorPerAttestation(SpecConfig specConfig);
