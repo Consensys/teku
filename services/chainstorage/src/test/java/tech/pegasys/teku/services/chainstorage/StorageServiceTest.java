@@ -113,7 +113,7 @@ class StorageServiceTest {
     assertThat(maybeStatePruner).isPresent();
     final StatePruner statePruner = maybeStatePruner.get();
     assertThat(statePruner.isRunning()).isTrue();
-    assertThat(statePruner.getPruneInterval()).isEqualTo(Duration.ofMinutes(1));
+    assertThat(statePruner.getPruneInterval()).isEqualTo(StorageService.STATE_PRUNING_INTERVAL);
   }
 
   @Test
@@ -125,7 +125,7 @@ class StorageServiceTest {
     assertThat(maybeStatePruner).isPresent();
     final StatePruner statePruner = maybeStatePruner.get();
     assertThat(statePruner.isRunning()).isTrue();
-    assertThat(statePruner.getPruneInterval()).isEqualTo(Duration.ofMinutes(1));
+    assertThat(statePruner.getPruneInterval()).isEqualTo(StorageService.STATE_PRUNING_INTERVAL);
   }
 
   @Test

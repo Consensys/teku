@@ -54,6 +54,7 @@ import tech.pegasys.teku.storage.server.pruner.BlockPruner;
 import tech.pegasys.teku.storage.server.pruner.StatePruner;
 
 public class StorageService extends Service implements StorageServiceFacade {
+  public static final Duration STATE_PRUNING_INTERVAL = Duration.ofMinutes(1);
   private final StorageConfiguration config;
   private volatile ChainStorage chainStorage;
   private final ServiceConfig serviceConfig;
@@ -143,7 +144,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                     config
                             .getStatePruningInterval()
                             .equals(StorageConfiguration.DEFAULT_STATE_PRUNING_INTERVAL)
-                        ? Duration.ofMinutes(1)
+                        ? STATE_PRUNING_INTERVAL
                         : config.getStatePruningInterval();
                 configureStatePruner(
                     StorageConfiguration.DEFAULT_STORAGE_RETAINED_SLOTS,
