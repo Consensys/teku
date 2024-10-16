@@ -451,7 +451,7 @@ public class KvStoreDatabase implements Database {
             pair -> updater.deleteFinalizedBlock(pair.getLeft(), pair.getRight()));
         updater.commit();
       }
-      // retrieve ealiest finalized slot left after pruning and set it in the DB
+      // retrieve earliest finalized slot left after pruning and set it in the DB
       final Optional<UInt64> earliestBlockSlot =
           dao.getEarliestFinalizedBlock().map(SignedBeaconBlock::getSlot);
 
