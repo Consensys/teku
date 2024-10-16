@@ -367,7 +367,6 @@ def downloadArtifacts(String repo, Long runId, String token, String downloadDir)
   return false
 }
 
-// Function to get the latest run ID
 static def getLatestRunId(String repo, String workflow, String branch, String token) {
   def apiUrl = "https://api.github.com/repos/${repo}/actions/workflows/${workflow}/runs?branch=${branch}&status=success&per_page=1"
   def connection = new URL(apiUrl).openConnection()
