@@ -123,7 +123,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaElectraImpl.create(
             specConfig,
-            getAttesterSlashingSchema(),
+            attesterSlashingSchema,
             getSignedBlsToExecutionChangeSchema(),
             getBlobKzgCommitmentsSchema(),
             getExecutionRequestsSchema(),
@@ -132,7 +132,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaElectraImpl.create(
             specConfig,
-            getAttesterSlashingSchema(),
+            attesterSlashingSchema,
             getSignedBlsToExecutionChangeSchema(),
             getBlobKzgCommitmentsSchema(),
             getExecutionRequestsSchema(),
@@ -148,7 +148,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.builderBidSchemaElectra =
         new BuilderBidSchemaElectra(
             "BuilderBidElectra",
-            getExecutionPayloadHeaderSchema(),
+            super.getExecutionPayloadHeaderSchema(),
             getBlobKzgCommitmentsSchema(),
             executionRequestsSchema);
     this.signedBuilderBidSchemaElectra =
