@@ -2180,6 +2180,30 @@ public class DatabaseTest {
     assertThat(lastPrunedSlot3).isEqualTo(UInt64.valueOf(4));
   }
 
+  @TestTemplate
+  public void pruneFinalizedBlocks_UpdatesEarliestAvailableBlockSlot(final DatabaseContext context)
+      throws Exception {
+    initialize(context, StateStorageMode.ARCHIVE);
+    final List<SignedBlockAndState> blockAndStates = chainBuilder.generateBlocksUpToSlot(5);
+    addBlocks(blockAndStates);
+    // Block 7 skipped simulating it was an empty block
+    final SignedBlockAndState finalizedBlock = chainBuilder.generateBlockAtSlot(7);
+    addBlocks(finalizedBlock);
+    justifyAndFinalizeEpoch(
+        spec.computeEpochAtSlot(finalizedBlock.getSlot()).plus(1), finalizedBlock);
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isEmpty();
+
+    final UInt64 lastPrunedSlot1 = database.pruneFinalizedBlocks(UInt64.valueOf(3), 100);
+    assertThat(lastPrunedSlot1).isEqualTo(UInt64.valueOf(3));
+    assertThat(database.getEarliestAvailableBlockSlot()).isEqualTo(Optional.of(UInt64.valueOf(4)));
+
+    final UInt64 lastPrunedSlot2 = database.pruneFinalizedBlocks(UInt64.valueOf(5), 10);
+    assertThat(lastPrunedSlot2).isEqualTo(UInt64.valueOf(5));
+    // there's no slot 6 because that was purposely skipped so we expect the earliest available
+    // block slot to be 7
+    assertThat(database.getEarliestAvailableBlockSlot()).isEqualTo(Optional.of(UInt64.valueOf(7)));
+  }
+
   private List<Map.Entry<Bytes32, UInt64>> getFinalizedStateRootsList() {
     try (final Stream<Map.Entry<Bytes32, UInt64>> roots = database.getFinalizedStateRoots()) {
       return roots.map(entry -> Map.entry(entry.getKey(), entry.getValue())).collect(toList());
