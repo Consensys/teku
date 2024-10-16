@@ -165,12 +165,13 @@ public class GossipForkManager {
         GossipForkSubscriptions::publishAttestation);
   }
 
-  public synchronized void publishBlock(final SignedBeaconBlock block) {
-    publishMessage(block.getSlot(), block, "block", GossipForkSubscriptions::publishBlock);
+  public synchronized SafeFuture<Void> publishBlock(final SignedBeaconBlock block) {
+    return publishMessageWithFeedback(
+        block.getSlot(), block, "block", GossipForkSubscriptions::publishBlock);
   }
 
-  public synchronized void publishBlobSidecar(final BlobSidecar blobSidecar) {
-    publishMessage(
+  public synchronized SafeFuture<Void> publishBlobSidecar(final BlobSidecar blobSidecar) {
+    return publishMessageWithFeedback(
         blobSidecar.getSlot(),
         blobSidecar,
         "blob sidecar",
@@ -249,15 +250,16 @@ public class GossipForkManager {
   }
 
   private <T> SafeFuture<Void> publishMessageWithFeedback(
-          final UInt64 slot,
-          final T message,
-          final String type,
-          final BiFunction<GossipForkSubscriptions, T, SafeFuture<Void>> publisher) {
-    final Optional<GossipForkSubscriptions> gossipForkSubscriptions = getSubscriptionActiveAtSlot(slot)
-            .filter(this::isActive);
+      final UInt64 slot,
+      final T message,
+      final String type,
+      final BiFunction<GossipForkSubscriptions, T, SafeFuture<Void>> publisher) {
+    final Optional<GossipForkSubscriptions> gossipForkSubscriptions =
+        getSubscriptionActiveAtSlot(slot).filter(this::isActive);
 
-    if(gossipForkSubscriptions.isEmpty()) {
-      LOG.warn("Not publishing {} because no gossip subscriptions are active for slot {}", type, slot);
+    if (gossipForkSubscriptions.isEmpty()) {
+      LOG.warn(
+          "Not publishing {} because no gossip subscriptions are active for slot {}", type, slot);
       return SafeFuture.COMPLETE;
     }
 

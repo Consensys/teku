@@ -24,6 +24,7 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -285,17 +286,17 @@ class GossipForkManagerTest {
     final SignedBeaconBlock thirdForkBlock =
         dataStructureUtil.randomSignedBeaconBlock(spec.computeStartSlotAtEpoch(UInt64.valueOf(2)));
 
-    manager.publishBlock(firstForkBlock);
+    safeJoin(manager.publishBlock(firstForkBlock));
     verify(firstFork).publishBlock(firstForkBlock);
     verify(secondFork, never()).publishBlock(firstForkBlock);
     verify(thirdFork, never()).publishBlock(firstForkBlock);
 
-    manager.publishBlock(secondForkBlock);
+    safeJoin(manager.publishBlock(secondForkBlock));
     verify(firstFork, never()).publishBlock(secondForkBlock);
     verify(secondFork).publishBlock(secondForkBlock);
     verify(thirdFork, never()).publishBlock(secondForkBlock);
 
-    manager.publishBlock(thirdForkBlock);
+    safeJoin(manager.publishBlock(thirdForkBlock));
     verify(firstFork, never()).publishBlock(thirdForkBlock);
     verify(secondFork, never()).publishBlock(thirdForkBlock);
     verify(thirdFork).publishBlock(thirdForkBlock);
