@@ -417,9 +417,17 @@ public class KvStoreDatabase implements Database {
     LOG.debug("Pruning finalized blocks to slot {} (included)", lastSlotToPrune);
     try (final Stream<SignedBeaconBlock> stream =
         dao.streamFinalizedBlocks(UInt64.ZERO, lastSlotToPrune)) {
+      // get an extra block to set earliest finalized block slot available after pruning runs
+      // ensuring it is an existing block in the DB
       blocksToPrune =
-          stream.limit(pruneLimit).map(block -> Pair.of(block.getSlot(), block.getRoot())).toList();
+          stream
+              .limit(pruneLimit + 1)
+              .map(block -> Pair.of(block.getSlot(), block.getRoot()))
+              .toList();
     }
+
+    final UInt64 ealiestBlockSlotAfterPruning = blocksToPrune.getLast().getLeft();
+    blocksToPrune.removeLast();
 
     if (blocksToPrune.isEmpty()) {
       LOG.debug("No finalized blocks to prune up to {} slot", lastSlotToPrune);
@@ -430,12 +438,13 @@ public class KvStoreDatabase implements Database {
         "Pruning {} finalized blocks, last block slot is {}",
         blocksToPrune.size(),
         lastPrunedBlockSlot);
-    deleteFinalizedBlocks(blocksToPrune);
+    deleteFinalizedBlocks(blocksToPrune, ealiestBlockSlotAfterPruning);
 
     return blocksToPrune.size() < pruneLimit ? lastSlotToPrune : lastPrunedBlockSlot;
   }
 
-  private void deleteFinalizedBlocks(final List<Pair<UInt64, Bytes32>> blocksToPrune) {
+  private void deleteFinalizedBlocks(
+      final List<Pair<UInt64, Bytes32>> blocksToPrune, final UInt64 ealiestBlockSlotAfterPruning) {
     if (blocksToPrune.size() > 0) {
       if (blocksToPrune.size() < 20) {
         LOG.debug(
@@ -449,7 +458,7 @@ public class KvStoreDatabase implements Database {
         blocksToPrune.forEach(
             pair -> updater.deleteFinalizedBlock(pair.getLeft(), pair.getRight()));
         // update earliest finalized block slot
-        updater.setEarliestBlockSlot(blocksToPrune.getLast().getLeft().plus(ONE));
+        updater.setEarliestBlockSlot(ealiestBlockSlotAfterPruning);
         updater.commit();
       }
     }
