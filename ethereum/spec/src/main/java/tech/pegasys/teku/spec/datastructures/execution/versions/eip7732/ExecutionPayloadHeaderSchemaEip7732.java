@@ -36,6 +36,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDenebImpl;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
 
 public class ExecutionPayloadHeaderSchemaEip7732
     extends ContainerSchema8<
@@ -65,8 +67,8 @@ public class ExecutionPayloadHeaderSchemaEip7732
         namedSchema(VALUE, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(BLOB_KZG_COMMITMENTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
 
-    final ExecutionPayloadEip7732Impl defaultExecutionPayload =
-        new ExecutionPayloadSchemaEip7732(specConfig).getDefault();
+    final ExecutionPayloadDenebImpl defaultExecutionPayload =
+        new ExecutionPayloadSchemaDeneb(specConfig).getDefault();
 
     this.executionPayloadHeaderOfDefaultPayload =
         createFromExecutionPayload(defaultExecutionPayload);
