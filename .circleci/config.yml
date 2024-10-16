@@ -441,6 +441,26 @@ jobs:
           paths:
             - ./eth-reference-tests/
 
+  referenceTestsPrepNightly:
+    executor: large_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project-nightly
+      # We cannot restore cache because nightly reference tests are not
+      # tied to a specific version. Maybe we could use RunID.
+      - run:
+          environment:
+            NIGHTLY: "true"
+          <<: *fetch_reference_tests
+      - run:
+          <<: *compile_reference_tests
+      - notify
+      - persist_to_workspace:
+          root: ~/project-nightly
+          paths:
+            - ./eth-reference-tests/
+
   referenceTests:
     parallelism: 6
     executor: large_executor
@@ -468,24 +488,6 @@ jobs:
             ./gradlew --no-daemon --parallel -x generateReferenceTestClasses -x processReferenceTestResources -x cleanReferenceTestClasses referenceTest $GRADLE_ARGS
       - notify
       - capture_test_results
-
-  referenceTestsPrepNightly:
-    executor: large_executor
-    steps:
-      - prepare
-      - attach_workspace:
-          at: ~/project-nightly
-      - run:
-          environment:
-            NIGHTLY: "true"
-          <<: *fetch_reference_tests
-      - run:
-          <<: *compile_reference_tests
-      - notify
-      - persist_to_workspace:
-          root: ~/project-nightly
-          paths:
-            - ./eth-reference-tests/
 
   referenceTestsNightly:
     parallelism: 6
@@ -627,6 +629,9 @@ workflows:
             tags: &filters-release-tags
               only: /^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?/
       - assembleNightly:
+          requires:
+            # To use its saved cache
+            - assemble
           filters:
             tags:
               <<: *filters-release-tags
