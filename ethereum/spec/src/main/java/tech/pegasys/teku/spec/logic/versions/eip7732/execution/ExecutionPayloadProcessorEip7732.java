@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadEip7732;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -86,7 +86,7 @@ public class ExecutionPayloadProcessorEip7732 extends AbstractExecutionPayloadPr
       final ExecutionPayloadEnvelope envelope,
       final OptimisticExecutionPayloadExecutor payloadExecutor)
       throws ExecutionPayloadProcessingException {
-    final ExecutionPayloadEip7732 payload = ExecutionPayloadEip7732.required(envelope.getPayload());
+    final ExecutionPayloadCapella payload = ExecutionPayloadCapella.required(envelope.getPayload());
     final Bytes32 previousStateRoot = state.hashTreeRoot();
 
     final BeaconBlockHeader latestBlockHeader = state.getLatestBlockHeader();
