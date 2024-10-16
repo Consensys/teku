@@ -28,7 +28,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadEip7732;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -89,14 +88,13 @@ public class ExecutionPayloadValidator {
                 return InternalValidationResult.reject(
                     "Envelope builder index does not match the committed builder index");
               }
-              final ExecutionPayloadEip7732 payload =
-                  ExecutionPayloadEip7732.required(envelope.getPayload());
+
               /*
                * if envelope.payload_withheld == False then
                * [REJECT] payload.block_hash == header.block_hash
                */
               if (envelope.isPayloadWithheld()
-                  && !payload.getBlockHash().equals(header.getBlockHash())) {
+                  && !envelope.getPayload().getBlockHash().equals(header.getBlockHash())) {
                 return InternalValidationResult.reject(
                     "Payload block hash does not match the committed block hash");
               }
