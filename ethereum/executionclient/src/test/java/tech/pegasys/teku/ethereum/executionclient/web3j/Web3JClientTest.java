@@ -281,8 +281,11 @@ public class Web3JClientTest {
 
     // Create a response with a specific JSON-RPC error
     VoidResponse errorResponse = new VoidResponse();
-    errorResponse.setError(
-        new Error(JsonRpcErrorCodes.INVALID_PARAMS.getErrorCode(), "Invalid parameters"));
+    Error rpcError =
+        new Error(
+            JsonRpcErrorCodes.INVALID_PARAMS.getErrorCode(),
+            "engine_newPayload method has been called with invalid parameters");
+    errorResponse.setError(rpcError);
 
     when(client.getWeb3jService().sendAsync(request, VoidResponse.class))
         .thenReturn(SafeFuture.completedFuture(errorResponse));
@@ -299,7 +302,7 @@ public class Web3JClientTest {
                 "JSON-RPC error: %s (%d): %s",
                 JsonRpcErrorCodes.INVALID_PARAMS.getDescription(),
                 JsonRpcErrorCodes.INVALID_PARAMS.getErrorCode(),
-                "Invalid parameters"));
+                "engine_newPayload method has been called with invalid parameters"));
 
     verify(eventLog).executionClientRequestFailed(any(Exception.class), eq(false));
   }
