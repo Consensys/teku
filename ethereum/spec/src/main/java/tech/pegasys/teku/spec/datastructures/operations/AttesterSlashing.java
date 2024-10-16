@@ -14,16 +14,41 @@
 package tech.pegasys.teku.spec.datastructures.operations;
 
 import java.util.Set;
-import tech.pegasys.teku.infrastructure.ssz.SszContainer;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface AttesterSlashing extends SszContainer {
+public class AttesterSlashing
+    extends Container2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
+  private final IntersectingIndicesCalculator intersectingIndicesCalculator;
+
+  AttesterSlashing(final AttesterSlashingSchema type, final TreeNode backingNode) {
+    super(type, backingNode);
+    this.intersectingIndicesCalculator = new IntersectingIndicesCalculator(this);
+  }
+
+  AttesterSlashing(
+      final AttesterSlashingSchema schema,
+      final IndexedAttestation attestation1,
+      final IndexedAttestation attestation2) {
+    super(schema, attestation1, attestation2);
+    this.intersectingIndicesCalculator = new IntersectingIndicesCalculator(this);
+  }
+
   @Override
-  AttesterSlashingSchema<? extends AttesterSlashing> getSchema();
+  public AttesterSlashingSchema getSchema() {
+    return (AttesterSlashingSchema) super.getSchema();
+  }
 
-  Set<UInt64> getIntersectingValidatorIndices();
+  public Set<UInt64> getIntersectingValidatorIndices() {
+    return intersectingIndicesCalculator.getIntersectingValidatorIndices();
+  }
 
-  IndexedAttestation getAttestation1();
+  public IndexedAttestation getAttestation1() {
+    return getField0();
+  }
 
-  IndexedAttestation getAttestation2();
+  public IndexedAttestation getAttestation2() {
+    return getField1();
+  }
 }

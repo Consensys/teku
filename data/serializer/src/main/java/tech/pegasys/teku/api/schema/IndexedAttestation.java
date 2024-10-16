@@ -61,7 +61,7 @@ public class IndexedAttestation {
 
   public tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation
       asInternalIndexedAttestation(final SpecVersion spec) {
-    final IndexedAttestationSchema<?> indexedAttestationSchema =
+    final IndexedAttestationSchema indexedAttestationSchema =
         spec.getSchemaDefinitions().getIndexedAttestationSchema();
     return indexedAttestationSchema.create(
         indexedAttestationSchema.getAttestingIndicesSchema().of(attesting_indices),
@@ -74,10 +74,9 @@ public class IndexedAttestation {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof IndexedAttestation)) {
+    if (!(o instanceof IndexedAttestation that)) {
       return false;
     }
-    IndexedAttestation that = (IndexedAttestation) o;
     return Objects.equals(attesting_indices, that.attesting_indices)
         && Objects.equals(data, that.data)
         && Objects.equals(signature, that.signature);
