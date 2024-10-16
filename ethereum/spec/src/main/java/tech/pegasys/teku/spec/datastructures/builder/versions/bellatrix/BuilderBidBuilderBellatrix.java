@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
@@ -46,6 +47,11 @@ public class BuilderBidBuilderBellatrix implements BuilderBidBuilder {
 
   @Override
   public BuilderBidBuilder blobKzgCommitments(final SszList<SszKZGCommitment> blobKzgCommitments) {
+    return this;
+  }
+
+  @Override
+  public BuilderBidBuilder executionRequests(final ExecutionRequests executionRequests) {
     return this;
   }
 

@@ -7,7 +7,7 @@ dependencies {
     implementation project(':infrastructure:io')
     implementation project(':infrastructure:exceptions')
     implementation project(':infrastructure:time')
-    implementation 'org.apache.tuweni:tuweni-units'
+    implementation 'io.tmio:tuweni-units'
 
     testImplementation 'tech.pegasys.discovery:discovery'
 
