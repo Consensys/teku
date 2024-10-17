@@ -46,11 +46,17 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final BlobSidecarGossipChannel blobSidecarGossipChannel,
       final PerformanceTracker performanceTracker,
-      final DutyMetrics dutyMetrics) {
+      final DutyMetrics dutyMetrics,
+      final boolean gossipBlobsAfterBlock) {
     this.spec = spec;
     final BlockPublisherPhase0 blockPublisherPhase0 =
         new BlockPublisherPhase0(
-            blockFactory, blockGossipChannel, blockImportChannel, performanceTracker, dutyMetrics);
+            blockFactory,
+            blockGossipChannel,
+            blockImportChannel,
+            performanceTracker,
+            dutyMetrics,
+            gossipBlobsAfterBlock);
 
     // Not needed for all milestones
     final Supplier<BlockPublisherDeneb> blockAndBlobSidecarsPublisherSupplier =
@@ -63,7 +69,8 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
                     blockBlobSidecarsTrackersPool,
                     blobSidecarGossipChannel,
                     performanceTracker,
-                    dutyMetrics));
+                    dutyMetrics,
+                    gossipBlobsAfterBlock));
 
     // Populate forks publishers
     spec.getEnabledMilestones()

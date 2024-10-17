@@ -27,33 +27,50 @@ import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class BlockPublisherPhase0 extends AbstractBlockPublisher {
-  private final BlockGossipChannel blockGossipChannel;
 
   public BlockPublisherPhase0(
       final BlockFactory blockFactory,
       final BlockGossipChannel blockGossipChannel,
       final BlockImportChannel blockImportChannel,
       final PerformanceTracker performanceTracker,
-      final DutyMetrics dutyMetrics) {
-    super(blockFactory, blockImportChannel, performanceTracker, dutyMetrics);
-    this.blockGossipChannel = blockGossipChannel;
+      final DutyMetrics dutyMetrics,
+      final boolean gossipBlobsAfterBlock) {
+    super(
+        blockFactory,
+        blockGossipChannel,
+        blockImportChannel,
+        performanceTracker,
+        dutyMetrics,
+        gossipBlobsAfterBlock);
   }
 
   @Override
-  SafeFuture<BlockImportAndBroadcastValidationResults> importBlockAndBlobSidecars(
+  SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
       final SignedBeaconBlock block,
-      final List<BlobSidecar> blobSidecars,
       final BroadcastValidationLevel broadcastValidationLevel,
       final BlockPublishingPerformance blockPublishingPerformance) {
     return blockImportChannel.importBlock(block, broadcastValidationLevel);
   }
 
   @Override
-  void publishBlockAndBlobSidecars(
-      final SignedBeaconBlock block,
+  void importBlobSidecars(
       final List<BlobSidecar> blobSidecars,
       final BlockPublishingPerformance blockPublishingPerformance) {
+    // No-op for phase 0
+  }
+
+  @Override
+  SafeFuture<Void> publishBlock(
+      final SignedBeaconBlock block, final BlockPublishingPerformance blockPublishingPerformance) {
     blockGossipChannel.publishBlock(block);
     blockPublishingPerformance.blockPublishingInitiated();
+    return SafeFuture.COMPLETE;
+  }
+
+  @Override
+  void publishBlobSidecars(
+      final List<BlobSidecar> blobSidecars,
+      final BlockPublishingPerformance blockPublishingPerformance) {
+    // No-op for phase 0
   }
 }

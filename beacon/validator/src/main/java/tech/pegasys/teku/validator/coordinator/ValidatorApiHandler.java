@@ -173,7 +173,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
       final BlockProductionAndPublishingPerformanceFactory
-          blockProductionAndPublishingPerformanceFactory) {
+          blockProductionAndPublishingPerformanceFactory,
+      final boolean gossipBlobsAfterBlock) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
@@ -203,7 +204,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             blockBlobSidecarsTrackersPool,
             blobSidecarGossipChannel,
             performanceTracker,
-            dutyMetrics);
+            dutyMetrics,
+            gossipBlobsAfterBlock);
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
   }
 

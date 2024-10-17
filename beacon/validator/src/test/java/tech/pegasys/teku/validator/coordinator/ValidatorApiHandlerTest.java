@@ -33,6 +33,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.EQUIVOCATION;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.GOSSIP;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.NOT_REQUIRED;
@@ -220,7 +221,8 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
-            blockProductionPerformanceFactory);
+            blockProductionPerformanceFactory,
+            DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED);
 
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(forkChoiceTrigger.prepareForBlockProduction(any(), any())).thenReturn(SafeFuture.COMPLETE);
@@ -475,7 +477,8 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
-            blockProductionPerformanceFactory);
+            blockProductionPerformanceFactory,
+            DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED);
     // Best state is still in Phase0
     final BeaconState state =
         dataStructureUtil.stateBuilderPhase0().slot(previousEpochStartSlot.minus(1)).build();
@@ -1375,7 +1378,8 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
-            blockProductionPerformanceFactory);
+            blockProductionPerformanceFactory,
+            DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED);
 
     // BlobSidecar builder
     doAnswer(

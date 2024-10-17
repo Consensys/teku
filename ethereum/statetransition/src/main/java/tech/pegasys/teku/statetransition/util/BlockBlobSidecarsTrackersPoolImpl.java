@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin.LOCAL_EL;
+import static tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin.LOCAL_PROPOSAL;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
@@ -76,10 +77,12 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
   static final String COUNTER_GOSSIP_SUBTYPE = "gossip";
   static final String COUNTER_LOCAL_EL_SUBTYPE = "local_el";
+  static final String COUNTER_LOCAL_PROPOSAL_SUBTYPE = "local_proposal";
   static final String COUNTER_RPC_SUBTYPE = "rpc";
   static final String COUNTER_GOSSIP_DUPLICATE_SUBTYPE = "gossip_duplicate";
   static final String COUNTER_RPC_DUPLICATE_SUBTYPE = "rpc_duplicate";
   static final String COUNTER_LOCAL_EL_DUPLICATE_SUBTYPE = "local_el_duplicate";
+  static final String COUNTER_LOCAL_PROPOSAL_DUPLICATE_SUBTYPE = "local_proposal_duplicate";
 
   static final String COUNTER_RPC_FETCH_SUBTYPE = "rpc_fetch";
   static final String COUNTER_LOCAL_EL_FETCH_SUBTYPE = "local_el_fetch";
@@ -225,7 +228,9 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
     final BlockBlobSidecarsTracker blobSidecarsTracker =
         getOrCreateBlobSidecarsTracker(
-            slotAndBlockRoot, newTracker -> onFirstSeen(slotAndBlockRoot), existingTracker -> {});
+            slotAndBlockRoot,
+            newTracker -> onFirstSeen(slotAndBlockRoot, Optional.of(remoteOrigin)),
+            existingTracker -> {});
 
     if (blobSidecarsTracker.add(blobSidecar)) {
       sizeGauge.set(++totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
@@ -255,6 +260,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       case GOSSIP -> poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_GOSSIP_SUBTYPE).inc();
       case LOCAL_EL ->
           poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_LOCAL_EL_SUBTYPE).inc();
+      case LOCAL_PROPOSAL ->
+          poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_LOCAL_PROPOSAL_SUBTYPE).inc();
     }
   }
 
@@ -266,6 +273,10 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
           poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_GOSSIP_DUPLICATE_SUBTYPE).inc();
       case LOCAL_EL ->
           poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_LOCAL_EL_DUPLICATE_SUBTYPE).inc();
+      case LOCAL_PROPOSAL ->
+          poolStatsCounters
+              .labels(COUNTER_SIDECAR_TYPE, COUNTER_LOCAL_PROPOSAL_DUPLICATE_SUBTYPE)
+              .inc();
     }
   }
 
@@ -468,7 +479,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             newTracker -> {
               newTracker.setBlock(block);
               countBlock(remoteOrigin);
-              onFirstSeen(slotAndBlockRoot);
+              onFirstSeen(slotAndBlockRoot, remoteOrigin);
             },
             existingTracker -> {
               if (!existingTracker.setBlock(block)) {
@@ -519,6 +530,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             case GOSSIP ->
                 poolStatsCounters.labels(COUNTER_BLOCK_TYPE, COUNTER_GOSSIP_SUBTYPE).inc();
             case LOCAL_EL -> {} // only possible for blobs
+            case LOCAL_PROPOSAL ->
+                poolStatsCounters.labels(COUNTER_BLOCK_TYPE, COUNTER_LOCAL_PROPOSAL_SUBTYPE).inc();
           }
         });
   }
@@ -532,6 +545,10 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             case GOSSIP ->
                 poolStatsCounters
                     .labels(COUNTER_BLOCK_TYPE, COUNTER_GOSSIP_DUPLICATE_SUBTYPE)
+                    .inc();
+            case LOCAL_PROPOSAL ->
+                poolStatsCounters
+                    .labels(COUNTER_BLOCK_TYPE, COUNTER_LOCAL_PROPOSAL_DUPLICATE_SUBTYPE)
                     .inc();
             case LOCAL_EL -> {} // only possible for blobs
           }
@@ -565,7 +582,14 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     }
   }
 
-  private void onFirstSeen(final SlotAndBlockRoot slotAndBlockRoot) {
+  private void onFirstSeen(
+      final SlotAndBlockRoot slotAndBlockRoot, final Optional<RemoteOrigin> remoteOrigin) {
+    final boolean isLocalBlockProduction =
+        remoteOrigin.map(ro -> ro.equals(LOCAL_PROPOSAL)).orElse(false);
+    if (isLocalBlockProduction) {
+      return;
+    }
+
     final Duration fetchDelay = calculateFetchDelay(slotAndBlockRoot);
 
     asyncRunner
