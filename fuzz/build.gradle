@@ -5,7 +5,7 @@ dependencies {
     implementation project(':infrastructure:bls')
     implementation project(':infrastructure:ssz')
 
-    implementation 'org.apache.tuweni:tuweni-bytes'
+    implementation 'io.tmio:tuweni-bytes'
     implementation 'it.unimi.dsi:fastutil'
 
     testImplementation 'org.xerial.snappy:snappy-java'
