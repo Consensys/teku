@@ -44,7 +44,7 @@ public class DasPreSampler {
         "DasPreSampler: requesting pre-sample for {} (of {} received) blocks: {}",
         blocksToSample.size(),
         blocks.size(),
-        StringifyUtil.toIntRangeString(
+        StringifyUtil.toIntRangeStringWithSize(
             blocksToSample.stream().map(block -> block.getSlot().intValue()).toList()));
 
     blocksToSample.forEach(this::onNewPreImportBlock);

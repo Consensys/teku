@@ -13,44 +13,38 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.Optional;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetSubscriptions;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 
 public class DataColumnSidecarGossipManager implements GossipManager {
-  private static final Logger LOG = LogManager.getLogger();
-
-  private final GossipFailureLogger gossipFailureLogger =
-      new GossipFailureLogger("data column sidecar");
   private final DataColumnSidecarSubnetSubscriptions subnetSubscriptions;
+  private final DasGossipLogger dasGossipLogger;
 
   public DataColumnSidecarGossipManager(
-      final DataColumnSidecarSubnetSubscriptions dataColumnSidecarSubnetSubscriptions) {
+      final DataColumnSidecarSubnetSubscriptions dataColumnSidecarSubnetSubscriptions,
+      DasGossipLogger dasGossipLogger) {
     subnetSubscriptions = dataColumnSidecarSubnetSubscriptions;
+    this.dasGossipLogger = dasGossipLogger;
   }
 
   public void publish(final DataColumnSidecar dataColumnSidecar) {
     subnetSubscriptions
         .gossip(dataColumnSidecar)
         .finish(
-            __ ->
-                LOG.debug(
-                    "Successfully published data column sidecar for slot {}",
-                    dataColumnSidecar::toLogString),
-            error ->
-                gossipFailureLogger.logWithSuppression(
-                    error, dataColumnSidecar.getSlot(), dataColumnSidecar.toLogString()));
+            __ -> dasGossipLogger.onPublish(dataColumnSidecar, Optional.empty()),
+            error -> dasGossipLogger.onPublish(dataColumnSidecar, Optional.of(error)));
   }
 
   public void subscribeToSubnetId(final int subnetId) {
-    LOG.trace("Subscribing to subnet ID {}", subnetId);
     subnetSubscriptions.subscribeToSubnetId(subnetId);
+    dasGossipLogger.onDataColumnSubnetSubscribe(subnetId);
   }
 
   public void unsubscribeFromSubnetId(final int subnetId) {
-    LOG.trace("Unsubscribing to subnet ID {}", subnetId);
     subnetSubscriptions.unsubscribeFromSubnetId(subnetId);
+    dasGossipLogger.onDataColumnSubnetUnsubscribe(subnetId);
   }
 
   @Override

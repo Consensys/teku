@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -26,9 +27,12 @@ public class DataColumnSidecarManagerImpl implements DataColumnSidecarManager {
   private final DataColumnSidecarGossipValidator validator;
   private final Subscribers<ValidDataColumnSidecarsListener> validDataColumnSidecarsSubscribers =
       Subscribers.create(true);
+  private final DasGossipLogger dasGossipLogger;
 
-  public DataColumnSidecarManagerImpl(DataColumnSidecarGossipValidator validator) {
+  public DataColumnSidecarManagerImpl(
+      DataColumnSidecarGossipValidator validator, DasGossipLogger dasGossipLogger) {
     this.validator = validator;
+    this.dasGossipLogger = dasGossipLogger;
   }
 
   @Override
@@ -38,6 +42,7 @@ public class DataColumnSidecarManagerImpl implements DataColumnSidecarManager {
         .validate(dataColumnSidecar)
         .thenPeek(
             res -> {
+              dasGossipLogger.onReceive(dataColumnSidecar, res);
               if (res.isAccept()) {
                 validDataColumnSidecarsSubscribers.forEach(
                     listener -> listener.onNewValidSidecar(dataColumnSidecar));

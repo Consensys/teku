@@ -160,6 +160,8 @@ import tech.pegasys.teku.statetransition.datacolumns.MinCustodyPeriodSlotCalcula
 import tech.pegasys.teku.statetransition.datacolumns.UpdatableDataColumnSidecarCustody;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
+import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipBatchLogger;
+import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DasPeerCustodyCountSupplier;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnPeerSearcher;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp;
@@ -309,6 +311,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ForkChoiceStateProvider forkChoiceStateProvider;
   protected volatile ExecutionLayerChannel executionLayer;
   protected volatile GossipValidationHelper gossipValidationHelper;
+  protected volatile DasGossipLogger dasGossipLogger;
   protected volatile KZG kzg;
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile DataColumnSidecarManager dataColumnSidecarManager;
@@ -373,6 +376,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             "future_items_size",
             "Current number of items held for future slots, labelled by type",
             "type");
+    this.dasGossipLogger = new DasGossipBatchLogger(operationPoolAsyncRunner, timeProvider);
   }
 
   @Override
@@ -653,7 +657,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
               MiscHelpersEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).miscHelpers()),
               kzg,
               metricsSystem);
-      dataColumnSidecarManager = new DataColumnSidecarManagerImpl(dataColumnSidecarGossipValidator);
+      dataColumnSidecarManager =
+          new DataColumnSidecarManagerImpl(dataColumnSidecarGossipValidator, dasGossipLogger);
       eventChannels.subscribe(
           DataColumnSidecarGossipChannel.class,
           dataColumnSidecarManager::onDataColumnSidecarPublish);
@@ -1363,6 +1368,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedSignedContributionAndProofProcessor(syncCommitteeContributionPool::addRemote)
             .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::addRemote)
             .gossipedSignedBlsToExecutionChangeProcessor(blsToExecutionChangePool::addRemote)
+            .gossipDasLogger(dasGossipLogger)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .metricsSystem(metricsSystem)
