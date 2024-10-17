@@ -140,10 +140,30 @@ public abstract class AbstractSszCollectionSchema<
   public int sszSerializeVector(
       final TreeNode vectorNode, final SszWriter writer, final int elementsCount) {
     if (getElementSchema().isFixedSize()) {
+      if (getElementSchema().hasExtraDataInBackingTree()) {
+        return sszSerializeFixedVector(vectorNode, writer, elementsCount);
+      }
       return sszSerializeFixedVectorFast(vectorNode, writer, elementsCount);
     } else {
       return sszSerializeVariableVector(vectorNode, writer, elementsCount);
     }
+  }
+
+  private int sszSerializeFixedVector(
+      final TreeNode vectorNode, final SszWriter writer, final int elementsCount) {
+    if (elementsCount == 0) {
+      return 0;
+    }
+
+    final SszSchema<?> elementType = getElementSchema();
+    final int nodesCount = getChunks(elementsCount);
+    int writtenData = 0;
+    for (int i = 0; i < nodesCount; i++) {
+      TreeNode childSubtree = vectorNode.get(getChildGeneralizedIndex(i));
+      writtenData += elementType.sszSerializeTree(childSubtree, writer);
+    }
+
+    return writtenData;
   }
 
   private int sszSerializeFixedVectorFast(
