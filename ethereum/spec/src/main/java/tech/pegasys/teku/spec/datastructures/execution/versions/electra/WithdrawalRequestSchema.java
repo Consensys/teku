@@ -37,8 +37,8 @@ public class WithdrawalRequestSchema
   }
 
   public WithdrawalRequest create(
-      final Bytes20 sourceAddress, final BLSPublicKey validatorPublicKey, final UInt64 amount) {
-    return new WithdrawalRequest(this, sourceAddress, validatorPublicKey, amount);
+      final Bytes20 sourceAddress, final BLSPublicKey validatorPubkey, final UInt64 amount) {
+    return new WithdrawalRequest(this, sourceAddress, validatorPubkey, amount);
   }
 
   @Override

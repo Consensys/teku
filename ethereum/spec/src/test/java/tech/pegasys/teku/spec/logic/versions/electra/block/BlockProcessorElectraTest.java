@@ -179,7 +179,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
             preState.getValidators().stream()
                 .filter(
                     validator ->
-                        validator.getPublicKey().equals(withdrawalRequest.getValidatorPublicKey())))
+                        validator.getPublicKey().equals(withdrawalRequest.getValidatorPubkey())))
         .isEmpty();
 
     final BeaconStateElectra postState =

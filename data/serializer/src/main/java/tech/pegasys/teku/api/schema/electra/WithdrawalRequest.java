@@ -25,17 +25,17 @@ public class WithdrawalRequest {
   private final Eth1Address sourceAddress;
 
   @JsonProperty("validator_pubkey")
-  private final BLSPublicKey validatorPublicKey;
+  private final BLSPublicKey validatorPubkey;
 
   @JsonProperty("amount")
   private final UInt64 amount;
 
   public WithdrawalRequest(
       @JsonProperty("source_address") final Eth1Address sourceAddress,
-      @JsonProperty("validator_pubkey") final BLSPublicKey validatorPublicKey,
+      @JsonProperty("validator_pubkey") final BLSPublicKey validatorPubkey,
       @JsonProperty("amount") final UInt64 amount) {
     this.sourceAddress = sourceAddress;
-    this.validatorPublicKey = validatorPublicKey;
+    this.validatorPubkey = validatorPubkey;
     this.amount = amount;
   }
 
@@ -44,12 +44,12 @@ public class WithdrawalRequest {
           withdrawalRequest) {
     this.sourceAddress =
         Eth1Address.fromBytes(withdrawalRequest.getSourceAddress().getWrappedBytes());
-    this.validatorPublicKey = withdrawalRequest.getValidatorPublicKey();
+    this.validatorPubkey = withdrawalRequest.getValidatorPubkey();
     this.amount = withdrawalRequest.getAmount();
   }
 
   public final tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest
       asInternalWithdrawalRequest(final WithdrawalRequestSchema schema) {
-    return schema.create(sourceAddress, validatorPublicKey, amount);
+    return schema.create(sourceAddress, validatorPubkey, amount);
   }
 }

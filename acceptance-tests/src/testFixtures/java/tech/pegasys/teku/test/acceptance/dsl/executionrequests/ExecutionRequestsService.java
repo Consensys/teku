@@ -102,7 +102,7 @@ public class ExecutionRequestsService implements AutoCloseable {
   }
 
   public SafeFuture<TransactionReceipt> createConsolidationRequest(
-      final BLSPublicKey sourceValidatorPublicKey, final BLSPublicKey targetValidatorPublicKey) {
+      final BLSPublicKey sourceValidatorPubkey, final BLSPublicKey targetValidatorPubkey) {
     // Sanity check that we can interact with the contract
     Waiter.waitFor(
         () ->
@@ -110,7 +110,7 @@ public class ExecutionRequestsService implements AutoCloseable {
                 .isEqualTo(0));
 
     return consolidationRequestContract
-        .createConsolidationRequest(sourceValidatorPublicKey, targetValidatorPublicKey)
+        .createConsolidationRequest(sourceValidatorPubkey, targetValidatorPubkey)
         .thenCompose(
             response -> {
               final String txHash = response.getResult();
