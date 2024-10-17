@@ -68,6 +68,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.Meta
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
+import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -136,7 +137,8 @@ public class BeaconChainMethods {
       final MetricsSystem metricsSystem,
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
-      final RpcEncoding rpcEncoding) {
+      final RpcEncoding rpcEncoding,
+      final DasReqRespLogger dasLogger) {
     return new BeaconChainMethods(
         createStatus(spec, asyncRunner, statusMessageFactory, peerLookup, rpcEncoding),
         createGoodBye(spec, asyncRunner, metricsSystem, peerLookup, rpcEncoding),
@@ -174,7 +176,8 @@ public class BeaconChainMethods {
             dataColumnSidecarCustody,
             peerLookup,
             rpcEncoding,
-            recentChainData),
+            recentChainData,
+            dasLogger),
         createDataColumnsSidecarsByRange(
             spec,
             metricsSystem,
@@ -182,7 +185,8 @@ public class BeaconChainMethods {
             combinedChainDataClient,
             peerLookup,
             rpcEncoding,
-            recentChainData),
+            recentChainData,
+            dasLogger),
         createMetadata(spec, asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding),
         createPing(spec, asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding));
   }
@@ -391,7 +395,8 @@ public class BeaconChainMethods {
           final DataColumnSidecarByRootCustody dataColumnSidecarCustody,
           final PeerLookup peerLookup,
           final RpcEncoding rpcEncoding,
-          final RecentChainData recentChainData) {
+          final RecentChainData recentChainData,
+          final DasReqRespLogger dasLogger) {
     if (!spec.isMilestoneSupported(SpecMilestone.EIP7594)) {
       return Optional.empty();
     }
@@ -402,7 +407,7 @@ public class BeaconChainMethods {
 
     final DataColumnSidecarsByRootMessageHandler dataColumnSidecarsByRootMessageHandler =
         new DataColumnSidecarsByRootMessageHandler(
-            spec, metricsSystem, combinedChainDataClient, dataColumnSidecarCustody);
+            spec, metricsSystem, combinedChainDataClient, dataColumnSidecarCustody, dasLogger);
     final DataColumnSidecarsByRootRequestMessageSchema
         dataColumnSidecarsByRootRequestMessageSchema =
             SchemaDefinitionsEip7594.required(
@@ -431,7 +436,8 @@ public class BeaconChainMethods {
           final CombinedChainDataClient combinedChainDataClient,
           final PeerLookup peerLookup,
           final RpcEncoding rpcEncoding,
-          final RecentChainData recentChainData) {
+          final RecentChainData recentChainData,
+          final DasReqRespLogger dasLogger) {
 
     if (!spec.isMilestoneSupported(SpecMilestone.EIP7594)) {
       return Optional.empty();
@@ -449,7 +455,7 @@ public class BeaconChainMethods {
 
     final DataColumnSidecarsByRangeMessageHandler dataColumnSidecarsByRangeMessageHandler =
         new DataColumnSidecarsByRangeMessageHandler(
-            spec, getSpecConfigEip7594(spec), metricsSystem, combinedChainDataClient);
+            spec, getSpecConfigEip7594(spec), metricsSystem, combinedChainDataClient, dasLogger);
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(

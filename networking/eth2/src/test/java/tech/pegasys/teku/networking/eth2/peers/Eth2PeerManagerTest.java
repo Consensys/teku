@@ -46,6 +46,7 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
+import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -79,7 +80,8 @@ public class Eth2PeerManagerTest {
           rpcEncoding,
           Eth2P2PNetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL,
           Eth2P2PNetworkBuilder.DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD,
-          Eth2P2PNetworkBuilder.DEFAULT_ETH2_STATUS_UPDATE_INTERVAL);
+          Eth2P2PNetworkBuilder.DEFAULT_ETH2_STATUS_UPDATE_INTERVAL,
+          DasReqRespLogger.NOOP);
 
   @Test
   public void subscribeConnect_singleListener() {

@@ -46,6 +46,9 @@ import tech.pegasys.teku.spec.config.SpecConfigEip7594;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
+import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingPeerId;
+import tech.pegasys.teku.statetransition.datacolumns.log.rpc.ReqRespResponseLogger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
@@ -58,19 +61,20 @@ public class DataColumnSidecarsByRangeMessageHandler
         DataColumnSidecarsByRangeRequestMessage, DataColumnSidecar> {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final Logger LOG_DAS = LogManager.getLogger("das-nyota");
 
   private final Spec spec;
   private final SpecConfigEip7594 specConfigEip7594;
   private final CombinedChainDataClient combinedChainDataClient;
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalDataColumnSidecarsRequestedCounter;
+  private final DasReqRespLogger dasLogger;
 
   public DataColumnSidecarsByRangeMessageHandler(
       final Spec spec,
       final SpecConfigEip7594 specConfigEip7594,
       final MetricsSystem metricsSystem,
-      final CombinedChainDataClient combinedChainDataClient) {
+      final CombinedChainDataClient combinedChainDataClient,
+      final DasReqRespLogger dasLogger) {
     this.spec = spec;
     this.specConfigEip7594 = specConfigEip7594;
     this.combinedChainDataClient = combinedChainDataClient;
@@ -85,6 +89,7 @@ public class DataColumnSidecarsByRangeMessageHandler
             TekuMetricCategory.NETWORK,
             "rpc_data_column_sidecars_by_range_requested_sidecars_total",
             "Total number of data column sidecars requested in accepted blob sidecars by range requests from peers");
+    this.dasLogger = dasLogger;
   }
 
   @Override
@@ -92,29 +97,27 @@ public class DataColumnSidecarsByRangeMessageHandler
       final String protocolId,
       final Eth2Peer peer,
       final DataColumnSidecarsByRangeRequestMessage message,
-      final ResponseCallback<DataColumnSidecar> callback) {
+      final ResponseCallback<DataColumnSidecar> responseCallback) {
     final UInt64 startSlot = message.getStartSlot();
     final UInt64 endSlot = message.getMaxSlot();
     final List<UInt64> columns = message.getColumns();
 
-    LOG.trace(
-        "Peer {} requested {} slots with columns {} of data column sidecars starting at slot {}.",
-        peer.getId(),
-        message.getCount(),
-        columns,
-        startSlot);
-    LOG_DAS.info(
-        "[nyota] DataColumnSidecarsByRangeMessageHandler: REQUEST {} slots with columns {} of data column sidecars starting at slot {} from {}",
-        message.getCount(),
-        columns,
-        startSlot,
-        peer.getId());
+    ReqRespResponseLogger<DataColumnSidecar> responseLogger =
+        dasLogger
+            .getDataColumnSidecarsByRangeLogger()
+            .onInboundRequest(
+                LoggingPeerId.fromPeerAndNodeId(
+                    peer.getId().toBase58(), peer.getDiscoveryNodeId().orElseThrow()),
+                new DasReqRespLogger.ByRangeRequest(
+                    message.getStartSlot(), message.getCount().intValue(), message.getColumns()));
+    LoggingResponseCallback<DataColumnSidecar> responseCallbackWithLogging =
+        new LoggingResponseCallback<>(responseCallback, responseLogger);
 
     final int requestedCount = message.getMaximumResponseChunks();
 
     if (requestedCount > specConfigEip7594.getMaxRequestDataColumnSidecars()) {
       requestCounter.labels("count_too_big").inc();
-      callback.completeWithErrorResponse(
+      responseCallbackWithLogging.completeWithErrorResponse(
           new RpcException(
               INVALID_REQUEST_CODE,
               String.format(
@@ -124,7 +127,7 @@ public class DataColumnSidecarsByRangeMessageHandler
     }
 
     final Optional<RequestApproval> dataColumnSidecarsRequestApproval =
-        peer.approveDataColumnSidecarsRequest(callback, requestedCount);
+        peer.approveDataColumnSidecarsRequest(responseCallbackWithLogging, requestedCount);
 
     if (!peer.approveRequest() || dataColumnSidecarsRequestApproval.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
@@ -171,7 +174,7 @@ public class DataColumnSidecarsByRangeMessageHandler
 
               final RequestState initialState =
                   new RequestState(
-                      callback,
+                      responseCallbackWithLogging,
                       specConfigEip7594.getMaxRequestDataColumnSidecars(),
                       startSlot,
                       endSlot,
@@ -190,21 +193,11 @@ public class DataColumnSidecarsByRangeMessageHandler
                 peer.adjustDataColumnSidecarsRequest(
                     dataColumnSidecarsRequestApproval.get(), sentDataColumnSidecars);
               }
-              LOG.trace(
-                  "Sent {} data column sidecars to peer {}.", sentDataColumnSidecars, peer.getId());
-              LOG_DAS.info(
-                  "[nyota] DataColumnSidecarsByRangeMessageHandler: RESPONSE sent {} sidecars to {}",
-                  sentDataColumnSidecars,
-                  peer.getId());
-              callback.completeSuccessfully();
+              responseCallbackWithLogging.completeSuccessfully();
             },
             error -> {
               peer.adjustDataColumnSidecarsRequest(dataColumnSidecarsRequestApproval.get(), 0);
-              handleProcessingRequestError(error, callback);
-              LOG_DAS.info(
-                  "[nyota] DataColumnSidecarsByRangeMessageHandler: ERROR to {}: {}",
-                  peer.getId(),
-                  error.toString());
+              handleProcessingRequestError(error, responseCallbackWithLogging);
             });
     ;
   }

@@ -51,7 +51,7 @@ public class StringifyUtilTest {
           new TestCase(range(0, 128).limit(64), "[0..63]"),
           new TestCase(
               range(0, 128).filter(i -> i % 3 != 0),
-              "[1,2,4,5,...(77 more)..., 122,124,125,127], bitset: 0xb66ddbb66ddbb66ddbb66ddbb66ddbb6"),
+              "[bitmap: 0xb66ddbb66ddbb66ddbb66ddbb66ddbb6]"),
           new TestCase(
               range(10, 100).filter(i -> !Set.of(14, 16, 18, 98).contains(i)),
               "[10..13,15,17,19..97,99]"));

@@ -162,6 +162,9 @@ import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipBatchLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
+import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
+import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingBatchDataColumnsByRootReqResp;
+import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRootReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DasPeerCustodyCountSupplier;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnPeerSearcher;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp;
@@ -312,10 +315,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ExecutionLayerChannel executionLayer;
   protected volatile GossipValidationHelper gossipValidationHelper;
   protected volatile DasGossipLogger dasGossipLogger;
+  protected volatile DasReqRespLogger dasReqRespLogger;
   protected volatile KZG kzg;
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile DataColumnSidecarManager dataColumnSidecarManager;
-  //  protected volatile DataColumnSidecarCustody dataColumnSidecarCustody;
   protected volatile LateInitDataColumnSidecarCustody dataColumnSidecarCustody =
       new LateInitDataColumnSidecarCustody();
   protected volatile DasCustodySync dasCustodySync;
@@ -377,6 +380,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             "Current number of items held for future slots, labelled by type",
             "type");
     this.dasGossipLogger = new DasGossipBatchLogger(operationPoolAsyncRunner, timeProvider);
+    this.dasReqRespLogger = DasReqRespLogger.create(timeProvider);
   }
 
   @Override
@@ -746,7 +750,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     DataColumnPeerManagerImpl dasPeerManager = new DataColumnPeerManagerImpl();
     p2pNetwork.subscribeConnect(dasPeerManager);
 
-    DataColumnReqResp dasRpc = new DataColumnReqRespBatchingImpl(dasPeerManager);
+    BatchDataColumnsByRootReqResp loggingByRootReqResp =
+        new LoggingBatchDataColumnsByRootReqResp(dasPeerManager, dasReqRespLogger);
+    DataColumnReqResp dasRpc = new DataColumnReqRespBatchingImpl(loggingByRootReqResp);
 
     MetadataDasPeerCustodyTracker peerCustodyTracker = new MetadataDasPeerCustodyTracker();
     p2pNetwork.subscribeConnect(peerCustodyTracker);
@@ -1369,6 +1375,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::addRemote)
             .gossipedSignedBlsToExecutionChangeProcessor(blsToExecutionChangePool::addRemote)
             .gossipDasLogger(dasGossipLogger)
+            .reqRespDasLogger(dasReqRespLogger)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .metricsSystem(metricsSystem)

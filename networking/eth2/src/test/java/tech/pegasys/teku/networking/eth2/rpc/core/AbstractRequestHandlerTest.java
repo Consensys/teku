@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
+import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -70,7 +71,8 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
             new NoOpMetricsSystem(),
             new StatusMessageFactory(recentChainData),
             new MetadataMessagesFactory(),
-            getRpcEncoding());
+            getRpcEncoding(),
+            DasReqRespLogger.NOOP);
 
     reqHandler = createRequestHandler(beaconChainMethods);
 
