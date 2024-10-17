@@ -421,6 +421,11 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
+    public void deleteEarliestBlockSlot() {
+      transaction.delete(schema.getVariableEarliestBlockSlot());
+    }
+
+    @Override
     public void commit() {
       // Commit db updates
       transaction.commit();

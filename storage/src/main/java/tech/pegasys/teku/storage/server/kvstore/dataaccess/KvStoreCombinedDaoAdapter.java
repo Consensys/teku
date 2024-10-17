@@ -594,6 +594,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
+    public void deleteEarliestBlockSlot() {
+      finalizedUpdater.deleteEarliestBlockSlot();
+    }
+
+    @Override
     public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
       hotUpdater.addMinGenesisTimeBlock(event);
     }

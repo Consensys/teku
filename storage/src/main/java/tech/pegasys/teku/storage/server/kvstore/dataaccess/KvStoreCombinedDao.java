@@ -262,6 +262,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void setEarliestBlockSlot(UInt64 slot);
 
+    void deleteEarliestBlockSlot();
+
     void commit();
 
     void cancel();

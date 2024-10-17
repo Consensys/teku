@@ -658,6 +658,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void deleteEarliestBlockSlot() {
+      transaction.delete(schema.getVariableEarliestBlockSlot());
+    }
+
+    @Override
     public void commit() {
       // Commit db updates
       transaction.commit();

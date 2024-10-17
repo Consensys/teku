@@ -2282,6 +2282,24 @@ public class DatabaseTest {
     assertThat(database.getEarliestAvailableBlockSlot()).isEqualTo(Optional.of(UInt64.valueOf(7)));
   }
 
+  @TestTemplate
+  public void pruneFinalizedBlocks_ClearEarliestAvailableBlockSlotVariableWhenNoBlocksLeftAfterPrune(
+          final DatabaseContext context) throws Exception {
+    initialize(context, StateStorageMode.ARCHIVE);
+    final List<SignedBlockAndState> blockAndStates = chainBuilder.generateBlocksUpToSlot(5);
+    addBlocks(blockAndStates);
+    // Block 7 skipped simulating it was an empty block
+    final SignedBlockAndState finalizedBlock = chainBuilder.generateBlockAtSlot(7);
+    addBlocks(finalizedBlock);
+    justifyAndFinalizeEpoch(
+            spec.computeEpochAtSlot(finalizedBlock.getSlot()).plus(1), finalizedBlock);
+
+    final UInt64 lastPrunedSlot1 =
+            database.pruneFinalizedBlocks(UInt64.valueOf(7), 10, UInt64.valueOf(10));
+    assertThat(lastPrunedSlot1).isEqualTo(UInt64.valueOf(7));
+    assertThat(database.getEarliestAvailableBlockSlot()).isEqualTo(Optional.empty());
+  }
+
   private List<Map.Entry<Bytes32, UInt64>> getFinalizedStateRootsList() {
     try (final Stream<Map.Entry<Bytes32, UInt64>> roots = database.getFinalizedStateRoots()) {
       return roots.map(entry -> Map.entry(entry.getKey(), entry.getValue())).collect(toList());
