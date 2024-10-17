@@ -55,15 +55,22 @@ public class PredicatesElectra extends Predicates {
    */
   @Override
   public boolean isPartiallyWithdrawableValidator(final Validator validator, final UInt64 balance) {
-    if (hasExecutionWithdrawalCredential(validator)) {
-      final UInt64 maxEffectiveBalance =
-          hasCompoundingWithdrawalCredential(validator)
-              ? configElectra.getMaxEffectiveBalanceElectra()
-              : configElectra.getMinActivationBalance();
-      return (balance.isGreaterThan(maxEffectiveBalance)
-          && maxEffectiveBalance.equals(validator.getEffectiveBalance()));
-    }
-    return false;
+    return hasExecutionWithdrawalCredential(validator)
+        && isPartiallyWithdrawableValidatorEth1CredentialsChecked(validator, balance);
+  }
+
+  @Override
+  public boolean isPartiallyWithdrawableValidatorEth1CredentialsChecked(
+      final Validator validator, final UInt64 balance) {
+    final UInt64 maxEffectiveBalance =
+        hasCompoundingWithdrawalCredential(validator)
+            ? configElectra.getMaxEffectiveBalanceElectra()
+            : configElectra.getMinActivationBalance();
+    final boolean hasMaxEffectiveBalance =
+        validator.getEffectiveBalance().equals(maxEffectiveBalance);
+    final boolean hasExcessBalance = balance.isGreaterThan(maxEffectiveBalance);
+
+    return hasMaxEffectiveBalance && hasExcessBalance;
   }
 
   /**
