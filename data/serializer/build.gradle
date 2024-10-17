@@ -10,7 +10,7 @@ dependencies {
   implementation project(':infrastructure:jackson')
   implementation project(':infrastructure:async')
 
-  implementation 'org.apache.tuweni:tuweni-units'
+  implementation 'io.tmio:tuweni-units'
 
   testImplementation project(':data:provider')
   testImplementation testFixtures(project(':ethereum:spec'))
