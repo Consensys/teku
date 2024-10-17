@@ -2283,7 +2283,8 @@ public class DatabaseTest {
   }
 
   @TestTemplate
-  public void pruneFinalizedBlocks_ClearEarliestAvailableBlockSlotVariableWhenNoBlocksLeftAfterPrune(
+  public void
+      pruneFinalizedBlocks_ClearEarliestAvailableBlockSlotVariableWhenNoBlocksLeftAfterPrune(
           final DatabaseContext context) throws Exception {
     initialize(context, StateStorageMode.ARCHIVE);
     final List<SignedBlockAndState> blockAndStates = chainBuilder.generateBlocksUpToSlot(5);
@@ -2292,10 +2293,10 @@ public class DatabaseTest {
     final SignedBlockAndState finalizedBlock = chainBuilder.generateBlockAtSlot(7);
     addBlocks(finalizedBlock);
     justifyAndFinalizeEpoch(
-            spec.computeEpochAtSlot(finalizedBlock.getSlot()).plus(1), finalizedBlock);
+        spec.computeEpochAtSlot(finalizedBlock.getSlot()).plus(1), finalizedBlock);
 
     final UInt64 lastPrunedSlot1 =
-            database.pruneFinalizedBlocks(UInt64.valueOf(7), 10, UInt64.valueOf(10));
+        database.pruneFinalizedBlocks(UInt64.valueOf(7), 10, UInt64.valueOf(10));
     assertThat(lastPrunedSlot1).isEqualTo(UInt64.valueOf(7));
     assertThat(database.getEarliestAvailableBlockSlot()).isEqualTo(Optional.empty());
   }
