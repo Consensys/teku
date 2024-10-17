@@ -63,7 +63,6 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
   private final UInt64 minActivationBalance;
   private final BeaconStateAccessorsElectra stateAccessorsElectra;
   private final SchemaDefinitionsElectra schemaDefinitionsElectra;
-  private final MiscHelpersElectra miscHelpersElectra;
 
   public EpochProcessorElectra(
       final SpecConfigElectra specConfig,
@@ -89,7 +88,6 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
         specConfig.toVersionElectra().orElseThrow().getMinActivationBalance();
     this.stateAccessorsElectra = BeaconStateAccessorsElectra.required(beaconStateAccessors);
     this.schemaDefinitionsElectra = SchemaDefinitionsElectra.required(schemaDefinitions);
-    this.miscHelpersElectra = miscHelpers;
   }
 
   /** process_registry_updates */
@@ -155,7 +153,7 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
 
   @Override
   protected UInt64 getEffectiveBalanceLimitForValidator(final Validator validator) {
-    return miscHelpersElectra.getMaxEffectiveBalance(validator);
+    return miscHelpers.getMaxEffectiveBalance(validator);
   }
 
   // process_effective_balance_updates
@@ -268,7 +266,7 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
             FAR_FUTURE_EPOCH,
             FAR_FUTURE_EPOCH);
 
-    final UInt64 maxEffectiveBalance = miscHelpersElectra.getMaxEffectiveBalance(validator);
+    final UInt64 maxEffectiveBalance = miscHelpers.getMaxEffectiveBalance(validator);
     final UInt64 validatorEffectiveBalance =
         amount
             .minusMinZero(amount.mod(specConfig.getEffectiveBalanceIncrement()))

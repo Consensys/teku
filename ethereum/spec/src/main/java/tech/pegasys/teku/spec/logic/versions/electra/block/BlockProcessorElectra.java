@@ -88,7 +88,6 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
 
   private final SpecConfigElectra specConfigElectra;
   private final PredicatesElectra predicatesElectra;
-  private final MiscHelpersElectra miscHelpersElectra;
   private final BeaconStateMutatorsElectra beaconStateMutatorsElectra;
   private final BeaconStateAccessorsElectra beaconStateAccessorsElectra;
   private final SchemaDefinitionsElectra schemaDefinitionsElectra;
@@ -123,7 +122,6 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         schemaDefinitions);
     this.specConfigElectra = specConfig;
     this.predicatesElectra = PredicatesElectra.required(predicates);
-    this.miscHelpersElectra = miscHelpers;
     this.beaconStateMutatorsElectra = beaconStateMutators;
     this.beaconStateAccessorsElectra = beaconStateAccessors;
     this.schemaDefinitionsElectra = schemaDefinitions;
@@ -722,7 +720,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
             FAR_FUTURE_EPOCH,
             FAR_FUTURE_EPOCH);
 
-    final UInt64 maxEffectiveBalance = miscHelpersElectra.getMaxEffectiveBalance(validator);
+    final UInt64 maxEffectiveBalance = miscHelpers.getMaxEffectiveBalance(validator);
     final UInt64 validatorEffectiveBalance =
         amount
             .minusMinZero(amount.mod(specConfig.getEffectiveBalanceIncrement()))
