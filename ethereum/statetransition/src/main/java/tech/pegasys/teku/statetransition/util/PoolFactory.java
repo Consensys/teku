@@ -15,12 +15,13 @@ package tech.pegasys.teku.statetransition.util;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -120,7 +121,7 @@ public class PoolFactory {
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
       final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
-      final Consumer<BlobSidecar> blobSidecarGossipPublisher) {
+      final Function<BlobSidecar, SafeFuture<Void>> blobSidecarGossipPublisher) {
     return createPoolForBlockBlobSidecarsTrackers(
         blockImportChannel,
         spec,
@@ -143,7 +144,7 @@ public class PoolFactory {
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
       final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
-      final Consumer<BlobSidecar> blobSidecarGossipPublisher,
+      final Function<BlobSidecar, SafeFuture<Void>> blobSidecarGossipPublisher,
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
       final int maxTrackers) {
@@ -172,7 +173,7 @@ public class PoolFactory {
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
       final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
-      final Consumer<BlobSidecar> blobSidecarGossipPublisher,
+      final Function<BlobSidecar, SafeFuture<Void>> blobSidecarGossipPublisher,
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
       final int maxItems,

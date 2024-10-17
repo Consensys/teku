@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -76,7 +77,11 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
   }
 
   protected void publishMessage(final T message) {
-    channel.ifPresent(c -> c.gossip(gossipEncoding.encode(message)));
+    channel.ifPresent(c -> c.gossip(gossipEncoding.encode(message)).ifExceptionGetsHereRaiseABug());
+  }
+
+  protected SafeFuture<Void> publishMessageWithFeedback(final T message) {
+    return channel.map(c -> c.gossip(gossipEncoding.encode(message))).orElse(SafeFuture.COMPLETE);
   }
 
   @Override

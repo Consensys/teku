@@ -18,6 +18,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttestationGossipManager;
@@ -235,8 +236,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   }
 
   @Override
-  public void publishBlock(final SignedBeaconBlock block) {
-    blockGossipManager.publishBlock(block);
+  public SafeFuture<Void> publishBlock(final SignedBeaconBlock block) {
+    return blockGossipManager.publishBlock(block);
   }
 
   @Override
