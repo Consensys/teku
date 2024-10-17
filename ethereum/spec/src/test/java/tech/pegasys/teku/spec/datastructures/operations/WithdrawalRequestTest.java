@@ -50,7 +50,7 @@ class WithdrawalRequestTest {
         withdrawalRequestSchema.create(sourceAddress, validatorPublicKey, amount);
 
     assertThat(withdrawalRequest.getSourceAddress()).isEqualTo(sourceAddress);
-    assertThat(withdrawalRequest.getValidatorPublicKey()).isEqualTo(validatorPublicKey);
+    assertThat(withdrawalRequest.getValidatorPubkey()).isEqualTo(validatorPublicKey);
   }
 
   @Test
