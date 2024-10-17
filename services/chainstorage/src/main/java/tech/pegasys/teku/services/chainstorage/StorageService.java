@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.config.Constants.STORAGE_QUERY_CHANNEL_PARA
 
 import com.google.common.annotations.VisibleForTesting;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,6 +54,7 @@ import tech.pegasys.teku.storage.server.pruner.BlockPruner;
 import tech.pegasys.teku.storage.server.pruner.StatePruner;
 
 public class StorageService extends Service implements StorageServiceFacade {
+  public static final Duration STATE_PRUNING_INTERVAL = Duration.ofMinutes(1);
   private final StorageConfiguration config;
   private volatile ChainStorage chainStorage;
   private final ServiceConfig serviceConfig;
@@ -134,12 +136,20 @@ public class StorageService extends Service implements StorageServiceFacade {
                 configureStatePruner(
                     config.getRetainedSlots(),
                     storagePrunerAsyncRunner,
+                    config.getStatePruningInterval(),
                     pruningTimingsLabelledGauge,
                     pruningActiveLabelledGauge);
               } else if (!config.getDataStorageMode().storesFinalizedStates()) {
+                final Duration statePruningInterval =
+                    config
+                            .getStatePruningInterval()
+                            .equals(StorageConfiguration.DEFAULT_STATE_PRUNING_INTERVAL)
+                        ? STATE_PRUNING_INTERVAL
+                        : config.getStatePruningInterval();
                 configureStatePruner(
                     StorageConfiguration.DEFAULT_STORAGE_RETAINED_SLOTS,
                     storagePrunerAsyncRunner,
+                    statePruningInterval,
                     pruningTimingsLabelledGauge,
                     pruningActiveLabelledGauge);
               }
@@ -221,6 +231,7 @@ public class StorageService extends Service implements StorageServiceFacade {
   void configureStatePruner(
       final long slotsToRetain,
       final AsyncRunner storagePrunerAsyncRunner,
+      final Duration pruningInterval,
       final SettableLabelledGauge pruningTimingsLabelledGauge,
       final SettableLabelledGauge pruningActiveLabelledGauge) {
     if (config.getDataStorageCreateDbVersion() == DatabaseVersion.LEVELDB_TREE) {
@@ -240,7 +251,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                 config.getSpec(),
                 database,
                 storagePrunerAsyncRunner,
-                config.getStatePruningInterval(),
+                pruningInterval,
                 slotsToRetain,
                 config.getStatePruningLimit(),
                 "state",
