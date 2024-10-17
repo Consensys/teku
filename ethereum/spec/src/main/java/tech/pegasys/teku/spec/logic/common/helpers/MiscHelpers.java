@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
@@ -384,6 +385,10 @@ public class MiscHelpers {
 
   public UInt64 getMaxRequestBlocks() {
     return UInt64.valueOf(specConfig.getNetworkingConfig().getMaxRequestBlocks());
+  }
+
+  public UInt64 getMaxEffectiveBalance(final Validator validator) {
+    return specConfig.getMaxEffectiveBalance();
   }
 
   public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
