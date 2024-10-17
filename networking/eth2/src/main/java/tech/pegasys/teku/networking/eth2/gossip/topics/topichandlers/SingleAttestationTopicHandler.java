@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidator;
@@ -26,6 +28,7 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SingleAttestationTopicHandler {
+  private static final Logger LOG = LogManager.getLogger();
 
   public static Eth2TopicHandler<?> createHandler(
       final RecentChainData recentChainData,
@@ -41,8 +44,16 @@ public class SingleAttestationTopicHandler {
     final Spec spec = recentChainData.getSpec();
     OperationProcessor<Attestation> convertingProcessor =
         (attMessage, arrivalTimestamp) ->
-            operationProcessor.process(
-                ValidatableAttestation.fromNetwork(spec, attMessage, subnetId), arrivalTimestamp);
+            operationProcessor
+                .process(
+                    ValidatableAttestation.fromNetwork(spec, attMessage, subnetId),
+                    arrivalTimestamp)
+                .thenPeek(
+                    result ->
+                        LOG.trace(
+                            "validate attestation {}; result ({})",
+                            attMessage.hashTreeRoot(),
+                            result.code()));
 
     return new Eth2TopicHandler<>(
         recentChainData,

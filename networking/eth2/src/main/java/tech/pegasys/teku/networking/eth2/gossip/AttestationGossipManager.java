@@ -62,18 +62,26 @@ public class AttestationGossipManager implements GossipManager {
               attestationPublishSuccessCounter.inc();
             },
             error -> {
+              LOG.trace(
+                  "Failed to publish attestation {}{} at slot {}",
+                  attestation.hashTreeRoot(),
+                  attestation
+                      .getCommitteeIndices()
+                      .map(z -> String.format(" for validator %s", z))
+                      .orElse(""),
+                  attestation.getData().getSlot());
               gossipFailureLogger.logWithSuppression(error, attestation.getData().getSlot());
               attestationPublishFailureCounter.inc();
             });
   }
 
   public void subscribeToSubnetId(final int subnetId) {
-    LOG.trace("Subscribing to subnet ID {}", subnetId);
+    LOG.trace("Subscribing to attestation subnet {}", subnetId);
     subnetSubscriptions.subscribeToSubnetId(subnetId);
   }
 
   public void unsubscribeFromSubnetId(final int subnetId) {
-    LOG.trace("Unsubscribing to subnet ID {}", subnetId);
+    LOG.trace("Unsubscribing to attestation subnet {}", subnetId);
     subnetSubscriptions.unsubscribeFromSubnetId(subnetId);
   }
 

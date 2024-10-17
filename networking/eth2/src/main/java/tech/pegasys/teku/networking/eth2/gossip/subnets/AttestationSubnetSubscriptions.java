@@ -15,6 +15,8 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -34,7 +36,7 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions {
-
+  private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
@@ -73,6 +75,11 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
                         + attestation.getData().getSlot()
                         + " because the state was not available");
               }
+              LOG.trace(
+                  "send attestation {} slot {} on subnet {}",
+                  attestation.hashTreeRoot(),
+                  attestation.getData().getSlot(),
+                  subnetId.get());
               final String topic =
                   GossipTopics.getAttestationSubnetTopic(
                       forkInfo.getForkDigest(spec), subnetId.get(), gossipEncoding);
