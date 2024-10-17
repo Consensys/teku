@@ -13,17 +13,11 @@
 
 package tech.pegasys.teku.infrastructure.async.stream;
 
-abstract class AsyncIterator<T> implements AsyncStream<T> {
+public interface AsyncStreamVisitor<T> {
 
-  abstract void iterate(AsyncStreamHandler<T> callback);
+  void onNext(T t);
 
-  @Override
-  public <R> AsyncIterator<R> transform(AsyncStreamTransformer<T, R> transformer) {
-    return new TransformAsyncIterator<>(this, transformer);
-  }
+  void onComplete();
 
-  @Override
-  public void consume(AsyncStreamHandler<T> consumer) {
-    iterate(consumer);
-  }
+  void onError(Throwable t);
 }

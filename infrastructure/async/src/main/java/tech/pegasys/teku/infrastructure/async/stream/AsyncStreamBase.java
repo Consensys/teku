@@ -13,25 +13,9 @@
 
 package tech.pegasys.teku.infrastructure.async.stream;
 
-import java.util.function.Function;
+public interface AsyncStreamBase<T> {
 
-/**
- * Contains fundamental transformation stream methods All other transformations are expressed my
- * means of those methods
- */
-public interface BaseAsyncStreamTransform<T> {
+  <R> AsyncStream<R> transform(AsyncStreamTransformer<T, R> transformer);
 
-  enum SliceResult {
-    CONTINUE,
-    INCLUDE_AND_STOP,
-    SKIP_AND_STOP
-  }
-
-  interface BaseSlicer<T> {
-    SliceResult slice(T element);
-  }
-
-  <R> AsyncStream<R> flatMap(Function<T, AsyncStream<R>> toStreamMapper);
-
-  AsyncStream<T> slice(BaseSlicer<T> slicer);
+  void consume(AsyncStreamHandler<T> consumer);
 }

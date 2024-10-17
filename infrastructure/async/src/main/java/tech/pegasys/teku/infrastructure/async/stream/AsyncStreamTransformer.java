@@ -13,11 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.async.stream;
 
-/**
- * Contains fundamental terminal (reduce or collect) stream methods All other terminal methods are
- * expressed my means of those methods
- */
-public interface BaseAsyncStreamConsume<T> {
+public interface AsyncStreamTransformer<TSource, TTarget> {
 
-  void consume(AsyncStreamHandler<T> consumer);
+  AsyncStreamHandler<TSource> process(AsyncStreamHandler<TTarget> downstreamHandler);
 }

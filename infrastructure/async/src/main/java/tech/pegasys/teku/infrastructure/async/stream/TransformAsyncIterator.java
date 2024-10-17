@@ -13,31 +13,18 @@
 
 package tech.pegasys.teku.infrastructure.async.stream;
 
-import java.util.function.Function;
-
-abstract class OperationAsyncIterator<S, T> extends AsyncIterator<T> {
+class TransformAsyncIterator<S, T> extends AsyncIterator<T> {
   private final AsyncIterator<S> delegateIterator;
+  private final AsyncStreamTransformer<S, T> streamTransformer;
 
-  public static <S, T> AsyncIterator<T> create(
-      AsyncIterator<S> srcIterator,
-      Function<AsyncStreamHandler<T>, AsyncStreamHandler<S>> callbackMapper) {
-    return new OperationAsyncIterator<>(srcIterator) {
-      @Override
-      protected AsyncStreamHandler<S> createDelegateCallback(AsyncStreamHandler<T> sourceCallback) {
-        return callbackMapper.apply(sourceCallback);
-      }
-    };
-  }
-
-  public OperationAsyncIterator(AsyncIterator<S> delegateIterator) {
+  public TransformAsyncIterator(
+      AsyncIterator<S> delegateIterator, AsyncStreamTransformer<S, T> streamTransformer) {
     this.delegateIterator = delegateIterator;
+    this.streamTransformer = streamTransformer;
   }
-
-  protected abstract AsyncStreamHandler<S> createDelegateCallback(
-      AsyncStreamHandler<T> sourceCallback);
 
   @Override
   public void iterate(AsyncStreamHandler<T> callback) {
-    delegateIterator.iterate(createDelegateCallback(callback));
+    delegateIterator.iterate(streamTransformer.process(callback));
   }
 }

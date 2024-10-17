@@ -13,17 +13,31 @@
 
 package tech.pegasys.teku.infrastructure.async.stream;
 
-abstract class AsyncIterator<T> implements AsyncStream<T> {
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-  abstract void iterate(AsyncStreamHandler<T> callback);
+class VisitorHandler<T> extends AbstractDelegatingStreamHandler<T, T> {
+  private final AsyncStreamVisitor<T> visitor;
 
-  @Override
-  public <R> AsyncIterator<R> transform(AsyncStreamTransformer<T, R> transformer) {
-    return new TransformAsyncIterator<>(this, transformer);
+  public VisitorHandler(AsyncStreamHandler<T> delegate, AsyncStreamVisitor<T> visitor) {
+    super(delegate);
+    this.visitor = visitor;
   }
 
   @Override
-  public void consume(AsyncStreamHandler<T> consumer) {
-    iterate(consumer);
+  public void onComplete() {
+    visitor.onComplete();
+    delegate.onComplete();
+  }
+
+  @Override
+  public void onError(Throwable t) {
+    visitor.onError(t);
+    delegate.onError(t);
+  }
+
+  @Override
+  public SafeFuture<Boolean> onNext(T t) {
+    visitor.onNext(t);
+    return delegate.onNext(t);
   }
 }

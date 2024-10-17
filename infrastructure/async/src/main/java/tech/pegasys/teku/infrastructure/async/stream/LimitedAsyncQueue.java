@@ -31,17 +31,23 @@ class LimitedAsyncQueue<T> implements AsyncQueue<T> {
 
   // Adds an item to the queue
   @Override
-  public synchronized void put(T item) {
-    if (!takers.isEmpty()) {
-      // If there are pending takers, complete one with the item
-      CompletableFuture<T> taker = takers.poll();
-      taker.complete(item);
-    } else {
-      // Otherwise, add the item to the items queue
-      if (items.size() >= maxSize) {
-        throw new IllegalStateException("Buffer size overflow: " + maxSize);
+  public void put(T item) {
+    final CompletableFuture<T> maybeTaker;
+    synchronized (this) {
+      if (!takers.isEmpty()) {
+        // If there are pending takers, complete one with the item
+        maybeTaker = takers.poll();
+      } else {
+        // Otherwise, add the item to the items queue
+        if (items.size() >= maxSize) {
+          throw new IllegalStateException("Buffer size overflow: " + maxSize);
+        }
+        items.offer(item);
+        maybeTaker = null;
       }
-      items.offer(item);
+    }
+    if (maybeTaker != null) {
+      maybeTaker.complete(item);
     }
   }
 

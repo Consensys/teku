@@ -13,13 +13,23 @@
 
 package tech.pegasys.teku.infrastructure.async.stream;
 
+import static tech.pegasys.teku.infrastructure.async.stream.Util.noCallBinaryOperator;
+
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 /** Similar to {@link java.util.stream.Stream} but may perform async operations */
-public interface AsyncStream<T> extends AsyncStreamTransform<T>, AsyncStreamConsume<T> {
+public interface AsyncStream<T> extends AsyncStreamBase<T> {
 
   static <T> AsyncStream<T> empty() {
     return of();
@@ -50,5 +60,84 @@ public interface AsyncStream<T> extends AsyncStreamTransform<T>, AsyncStreamCons
 
   static <T> AsyncStreamPublisher<T> createPublisher(int maxBufferSize) {
     return new BufferingStreamPublisher<>(maxBufferSize);
+  }
+
+  // transformation
+
+  default <R> AsyncStream<R> flatMap(Function<T, AsyncStream<R>> toStreamMapper) {
+    return map(toStreamMapper).transform(FlattenStreamHandler::new);
+  }
+
+  default <R> AsyncStream<R> map(Function<T, R> mapper) {
+    return transform(sourceCallback -> new MapStreamHandler<>(sourceCallback, mapper));
+  }
+
+  default AsyncStream<T> filter(Predicate<T> filter) {
+    return transform(sourceCallback -> new FilteringStreamHandler<>(sourceCallback, filter));
+  }
+
+  default AsyncStream<T> peek(AsyncStreamVisitor<T> visitor) {
+    return transform(src -> new VisitorHandler<>(src, visitor));
+  }
+
+  default <R> AsyncStream<R> mapAsync(Function<T, SafeFuture<R>> mapper) {
+    return flatMap(e -> AsyncStream.create(mapper.apply(e)));
+  }
+
+  // slicing
+
+  default AsyncStream<T> slice(AsyncStreamSlicer<T> slicer) {
+    return transform(sourceCallback -> new SliceStreamHandler<>(sourceCallback, slicer));
+  }
+
+  default AsyncStream<T> limit(long count) {
+    return slice(AsyncStreamSlicer.limit(count));
+  }
+
+  default AsyncStream<T> takeWhile(Predicate<T> whileCondition) {
+    return slice(AsyncStreamSlicer.takeWhile(whileCondition));
+  }
+
+  default AsyncStream<T> takeUntil(Predicate<T> untilCondition, boolean includeLast) {
+    AsyncStreamSlicer<T> whileSlicer = AsyncStreamSlicer.takeWhile(untilCondition.negate());
+    AsyncStreamSlicer<T> untilSlicer =
+        includeLast ? whileSlicer.then(AsyncStreamSlicer.limit(1)) : whileSlicer;
+    return slice(untilSlicer);
+  }
+
+  // consuming
+
+  default <A, R> SafeFuture<R> collect(Collector<T, A, R> collector) {
+    AsyncIteratorCollector<T, A, R> asyncIteratorCollector =
+        new AsyncIteratorCollector<>(collector);
+    consume(asyncIteratorCollector);
+    return asyncIteratorCollector.getPromise();
+  }
+
+  default SafeFuture<Optional<T>> findFirst() {
+    return this.limit(1)
+        .toList()
+        .thenApply(l -> l.isEmpty() ? Optional.empty() : Optional.of(l.getFirst()));
+  }
+
+  default SafeFuture<Void> forEach(Consumer<T> consumer) {
+    return collect(Collector.of(() -> null, (a, t) -> consumer.accept(t), noCallBinaryOperator()));
+  }
+
+  default <C extends Collection<T>> SafeFuture<C> collect(C targetCollection) {
+    return collect(Collectors.toCollection(() -> targetCollection));
+  }
+
+  default SafeFuture<List<T>> toList() {
+    return collect(Collectors.toUnmodifiableList());
+  }
+
+  default SafeFuture<Optional<T>> findLast() {
+    return collectLast(1)
+        .thenApply(l -> l.isEmpty() ? Optional.empty() : Optional.of(l.getFirst()));
+  }
+
+  default SafeFuture<List<T>> collectLast(int count) {
+    return collect(CircularBuf.createCollector(count));
   }
 }

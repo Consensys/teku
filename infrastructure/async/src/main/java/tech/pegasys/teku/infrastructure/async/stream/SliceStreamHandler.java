@@ -17,17 +17,16 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 class SliceStreamHandler<T> extends AbstractDelegatingStreamHandler<T, T> {
 
-  private final BaseAsyncStreamTransform.BaseSlicer<T> slicer;
+  private final AsyncStreamSlicer<T> slicer;
 
-  protected SliceStreamHandler(
-      AsyncStreamHandler<T> delegate, BaseAsyncStreamTransform.BaseSlicer<T> slicer) {
+  protected SliceStreamHandler(AsyncStreamHandler<T> delegate, AsyncStreamSlicer<T> slicer) {
     super(delegate);
     this.slicer = slicer;
   }
 
   @Override
   public SafeFuture<Boolean> onNext(T t) {
-    BaseAsyncStreamTransform.SliceResult sliceResult = slicer.slice(t);
+    AsyncStreamSlicer.SliceResult sliceResult = slicer.slice(t);
     return switch (sliceResult) {
       case CONTINUE -> delegate.onNext(t);
       case SKIP_AND_STOP -> {
