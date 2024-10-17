@@ -33,8 +33,15 @@ public class BlockPublisherPhase0 extends AbstractBlockPublisher {
       final BlockGossipChannel blockGossipChannel,
       final BlockImportChannel blockImportChannel,
       final PerformanceTracker performanceTracker,
-      final DutyMetrics dutyMetrics) {
-    super(blockFactory, blockGossipChannel, blockImportChannel, performanceTracker, dutyMetrics);
+      final DutyMetrics dutyMetrics,
+      final boolean gossipBlobsAfterBlock) {
+    super(
+        blockFactory,
+        blockGossipChannel,
+        blockImportChannel,
+        performanceTracker,
+        dutyMetrics,
+        gossipBlobsAfterBlock);
   }
 
   @Override

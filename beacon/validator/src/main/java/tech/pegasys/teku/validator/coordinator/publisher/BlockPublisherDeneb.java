@@ -37,8 +37,15 @@ public class BlockPublisherDeneb extends BlockPublisherPhase0 {
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final BlobSidecarGossipChannel blobSidecarGossipChannel,
       final PerformanceTracker performanceTracker,
-      final DutyMetrics dutyMetrics) {
-    super(blockFactory, blockGossipChannel, blockImportChannel, performanceTracker, dutyMetrics);
+      final DutyMetrics dutyMetrics,
+      final boolean gossipBlobsAfterBlock) {
+    super(
+        blockFactory,
+        blockGossipChannel,
+        blockImportChannel,
+        performanceTracker,
+        dutyMetrics,
+        gossipBlobsAfterBlock);
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.blobSidecarGossipChannel = blobSidecarGossipChannel;
   }
