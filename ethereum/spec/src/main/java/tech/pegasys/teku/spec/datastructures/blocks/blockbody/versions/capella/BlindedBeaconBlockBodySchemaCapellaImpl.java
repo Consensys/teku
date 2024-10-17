@@ -40,10 +40,10 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttesterSlashingPhase0Schema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.IndexedAttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
 public class BlindedBeaconBlockBodySchemaCapellaImpl
     extends ContainerSchema11<
@@ -93,7 +93,8 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
       final SpecConfigCapella specConfig,
       final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema,
       final long maxValidatorsPerAttestation,
-      final String containerName) {
+      final String containerName,
+      final SchemaRegistry schemaRegistry) {
     return new BlindedBeaconBlockBodySchemaCapellaImpl(
         containerName,
         namedSchema(BlockBodyFields.RANDAO_REVEAL, SszSignatureSchema.INSTANCE),
@@ -106,10 +107,7 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
         namedSchema(
             BlockBodyFields.ATTESTER_SLASHINGS,
             SszListSchema.create(
-                new AttesterSlashingPhase0Schema(
-                        new IndexedAttestationPhase0Schema(maxValidatorsPerAttestation)
-                            .castTypeToIndexedAttestationSchema())
-                    .castTypeToAttesterSlashingSchema(),
+                schemaRegistry.get(SchemaTypes.ATTESTER_SLASHING_SCHEMA),
                 specConfig.getMaxAttesterSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTATIONS,

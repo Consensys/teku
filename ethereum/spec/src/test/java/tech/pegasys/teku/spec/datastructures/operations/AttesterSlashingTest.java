@@ -26,7 +26,7 @@ class AttesterSlashingTest {
 
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final AttesterSlashingSchema<?> attesterSlashingSchema =
+  private final AttesterSlashingSchema attesterSlashingSchema =
       spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema();
   private final IndexedAttestation indexedAttestation1 =
       dataStructureUtil.randomIndexedAttestation();

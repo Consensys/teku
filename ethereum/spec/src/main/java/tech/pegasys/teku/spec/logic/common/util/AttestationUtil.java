@@ -100,7 +100,7 @@ public abstract class AttestationUtil {
       final BeaconState state, final Attestation attestation) {
     final List<Integer> attestingIndices = getAttestingIndices(state, attestation);
 
-    final IndexedAttestationSchema<?> indexedAttestationSchema =
+    final IndexedAttestationSchema indexedAttestationSchema =
         schemaDefinitions.getIndexedAttestationSchema();
 
     return indexedAttestationSchema.create(

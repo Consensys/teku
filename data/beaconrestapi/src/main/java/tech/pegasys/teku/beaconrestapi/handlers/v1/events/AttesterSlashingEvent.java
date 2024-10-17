@@ -17,8 +17,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 
 public class AttesterSlashingEvent extends Event<AttesterSlashing> {
   AttesterSlashingEvent(final AttesterSlashing attesterSlashing) {
-    super(
-        attesterSlashing.getSchema().castTypeToAttesterSlashingSchema().getJsonTypeDefinition(),
-        attesterSlashing);
+    super(attesterSlashing.getSchema().getJsonTypeDefinition(), attesterSlashing);
   }
 }

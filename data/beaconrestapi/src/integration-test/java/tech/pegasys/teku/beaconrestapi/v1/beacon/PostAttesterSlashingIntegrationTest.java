@@ -62,9 +62,7 @@ public class PostAttesterSlashingIntegrationTest extends AbstractDataBackedRestA
     final Response response =
         post(
             PostAttesterSlashing.ROUTE,
-            JsonUtil.serialize(
-                slashing,
-                slashing.getSchema().castTypeToAttesterSlashingSchema().getJsonTypeDefinition()));
+            JsonUtil.serialize(slashing, slashing.getSchema().getJsonTypeDefinition()));
     assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
   }
 
@@ -78,9 +76,7 @@ public class PostAttesterSlashingIntegrationTest extends AbstractDataBackedRestA
     final Response response =
         post(
             PostAttesterSlashing.ROUTE,
-            JsonUtil.serialize(
-                slashing,
-                slashing.getSchema().castTypeToAttesterSlashingSchema().getJsonTypeDefinition()));
+            JsonUtil.serialize(slashing, slashing.getSchema().getJsonTypeDefinition()));
 
     verify(attesterSlashingPool).addLocal(slashing);
 

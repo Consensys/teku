@@ -46,7 +46,7 @@ public class AttesterSlashing {
 
   public tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing
       asInternalAttesterSlashing(final SpecVersion spec) {
-    final AttesterSlashingSchema<?> attesterSlashingSchema =
+    final AttesterSlashingSchema attesterSlashingSchema =
         spec.getSchemaDefinitions().getAttesterSlashingSchema();
     return attesterSlashingSchema.create(
         attestation_1.asInternalIndexedAttestation(spec),
@@ -58,10 +58,9 @@ public class AttesterSlashing {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof AttesterSlashing)) {
+    if (!(o instanceof AttesterSlashing that)) {
       return false;
     }
-    AttesterSlashing that = (AttesterSlashing) o;
     return Objects.equals(attestation_1, that.attestation_1)
         && Objects.equals(attestation_2, that.attestation_2);
   }

@@ -14,17 +14,40 @@
 package tech.pegasys.teku.spec.datastructures.operations;
 
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-public interface IndexedAttestation extends SszContainer {
+public class IndexedAttestation
+    extends Container3<IndexedAttestation, SszUInt64List, AttestationData, SszSignature> {
+
+  IndexedAttestation(final IndexedAttestationSchema type, final TreeNode backingNode) {
+    super(type, backingNode);
+  }
+
+  IndexedAttestation(
+      final IndexedAttestationSchema schema,
+      final SszUInt64List attestingIndices,
+      final AttestationData data,
+      final BLSSignature signature) {
+    super(schema, attestingIndices, data, new SszSignature(signature));
+  }
 
   @Override
-  IndexedAttestationSchema<? extends IndexedAttestation> getSchema();
+  public IndexedAttestationSchema getSchema() {
+    return (IndexedAttestationSchema) super.getSchema();
+  }
 
-  SszUInt64List getAttestingIndices();
+  public SszUInt64List getAttestingIndices() {
+    return getField0();
+  }
 
-  AttestationData getData();
+  public AttestationData getData() {
+    return getField1();
+  }
 
-  BLSSignature getSignature();
+  public BLSSignature getSignature() {
+    return getField2().getSignature();
+  }
 }

@@ -1539,7 +1539,7 @@ public final class DataStructureUtil {
 
   public IndexedAttestation randomIndexedAttestation(
       final AttestationData data, final UInt64... attestingIndicesInput) {
-    final IndexedAttestationSchema<?> indexedAttestationSchema =
+    final IndexedAttestationSchema indexedAttestationSchema =
         spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
     final SszUInt64List attestingIndices =
         indexedAttestationSchema.getAttestingIndicesSchema().of(attestingIndicesInput);
