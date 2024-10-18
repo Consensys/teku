@@ -1,5 +1,5 @@
 dependencies {
-    implementation 'org.apache.tuweni:tuweni-bytes'
+    implementation 'io.tmio:tuweni-bytes'
     implementation 'net.java.dev.jna:jna'
     implementation project(':infrastructure:exceptions')
 

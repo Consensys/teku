@@ -80,19 +80,19 @@ public class ValidatorConsolidationAcceptanceTest extends AcceptanceTestBase {
     tekuNode.waitForNewFinalization();
 
     final ValidatorKeys sourceValidator = validatorKeys.getValidatorKeys().get(0);
-    final BLSPublicKey sourceValidatorPublicKey = sourceValidator.getValidatorKey().getPublicKey();
+    final BLSPublicKey sourceValidatorPubkey = sourceValidator.getValidatorKey().getPublicKey();
 
     final ValidatorKeys targetValidator = validatorKeys.getValidatorKeys().get(1);
-    final BLSPublicKey targetValidatorPublicKey = targetValidator.getValidatorKey().getPublicKey();
+    final BLSPublicKey targetValidatorPubkey = targetValidator.getValidatorKey().getPublicKey();
 
     besuNode.createConsolidationRequest(
-        eth1PrivateKey, sourceValidatorPublicKey, targetValidatorPublicKey);
-    waitForValidatorExit(tekuNode, sourceValidatorPublicKey);
+        eth1PrivateKey, sourceValidatorPubkey, targetValidatorPubkey);
+    waitForValidatorExit(tekuNode, sourceValidatorPubkey);
   }
 
   private void waitForValidatorExit(
-      final TekuBeaconNode tekuNode, final BLSPublicKey validatorPublicKey) {
-    final String pubKeySubstring = validatorPublicKey.toHexString().substring(2, 9);
+      final TekuBeaconNode tekuNode, final BLSPublicKey validatorPubkey) {
+    final String pubKeySubstring = validatorPubkey.toHexString().substring(2, 9);
     tekuNode.waitForLogMessageContaining(
         "Validator "
             + pubKeySubstring

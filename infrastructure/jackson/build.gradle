@@ -4,5 +4,5 @@ dependencies {
 
     implementation project(':infrastructure:bytes')
 
-    implementation 'org.apache.tuweni:tuweni-units'
+    implementation 'io.tmio:tuweni-units'
 }

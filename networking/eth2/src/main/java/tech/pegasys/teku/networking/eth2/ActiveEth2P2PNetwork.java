@@ -168,6 +168,8 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
 
   @Override
   public void onSyncStateChanged(final boolean isInSync, final boolean isOptimistic) {
+    gossipForkManager.onOptimisticHeadChanged(isOptimistic);
+
     if (state.get() != State.RUNNING) {
       return;
     }
@@ -176,7 +178,6 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     } else {
       stopGossip();
     }
-    gossipForkManager.onOptimisticHeadChanged(isOptimistic);
   }
 
   @VisibleForTesting
