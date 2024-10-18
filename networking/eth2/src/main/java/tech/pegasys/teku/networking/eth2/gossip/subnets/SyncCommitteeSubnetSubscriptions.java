@@ -64,7 +64,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
 
   public SafeFuture<?> gossip(final SyncCommitteeMessage message, final int subnetId) {
     LOG.trace(
-        "send sync committee message {} validator {}, subnet {} on slot slot {} ",
+        "Send sync committee message {} validator {}, subnet {} on slot slot {} ",
         message.hashTreeRoot(),
         message.getValidatorIndex(),
         subnetId,

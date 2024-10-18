@@ -76,7 +76,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
                         + " because the state was not available");
               }
               LOG.trace(
-                  "send attestation {} slot {} on subnet {}",
+                  "Send attestation {} slot {} on subnet {}",
                   attestation.hashTreeRoot(),
                   attestation.getData().getSlot(),
                   subnetId.get());

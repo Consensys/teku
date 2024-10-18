@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
+import com.google.common.base.Throwables;
 import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
@@ -87,6 +88,10 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
     SafeFuture.of(publisher.publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), topic))
         .finish(
             () -> LOG.trace("Successfully gossiped message on {}", topic),
-            err -> LOG.debug("Failed to gossip message on {}, {}", topic, err.getMessage()));
+            err ->
+                LOG.debug(
+                    "Failed to gossip message on {}, {}",
+                    topic,
+                    Throwables.getRootCause(err).getMessage()));
   }
 }
