@@ -253,11 +253,11 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           }
 
           final Optional<Integer> maybeValidatorIndex =
-              validatorsUtil.getValidatorIndex(state, withdrawalRequest.getValidatorPublicKey());
+              validatorsUtil.getValidatorIndex(state, withdrawalRequest.getValidatorPubkey());
           if (maybeValidatorIndex.isEmpty()) {
             LOG.debug(
                 "process_withdrawal_request: no matching validator for public key {}",
-                withdrawalRequest.getValidatorPublicKey().toAbbreviatedString());
+                withdrawalRequest.getValidatorPubkey().toAbbreviatedString());
             return;
           }
 

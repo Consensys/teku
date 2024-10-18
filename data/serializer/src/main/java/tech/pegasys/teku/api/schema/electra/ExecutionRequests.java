@@ -74,12 +74,12 @@ public class ExecutionRequests {
                 .toList();
     final List<
             tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest>
-        consolidationInternal =
+        consolidationsInternal =
             consolidations.stream()
                 .map(
                     consolidationRequest ->
                         consolidationRequest.asInternalConsolidationRequest(consolidationSchema))
                 .toList();
-    return schema.create(depositsInternal, withdrawalsInternal, consolidationInternal);
+    return schema.create(depositsInternal, withdrawalsInternal, consolidationsInternal);
   }
 }
