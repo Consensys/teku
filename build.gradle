@@ -570,11 +570,11 @@ task autocomplete(type: JavaExec) {
 }
 
 installDist {
-  dependsOn checkLicense, autocomplete
+  dependsOn checkLicense, startScripts, autocomplete
 }
 
 distTar {
-  dependsOn checkLicense, autocomplete
+  dependsOn checkLicense, startScripts, autocomplete
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.tar.gz')
   }
@@ -587,7 +587,7 @@ distTar {
 }
 
 distZip {
-  dependsOn checkLicense, autocomplete
+  dependsOn checkLicense, startScripts, autocomplete
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.zip')
   }
@@ -598,6 +598,8 @@ distZip {
 }
 
 startScripts {
+
+  unixStartScriptGenerator.template = resources.text.fromFile("${projectDir}/teku/src/main/scripts/unixStartScript.txt")
 
   def shortenWindowsClasspath = { line ->
     line = line.replaceAll(/^set CLASSPATH=.*$/, "set CLASSPATH=%APP_HOME%/lib/*")
