@@ -153,7 +153,7 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
 
   @Override
   protected UInt64 getEffectiveBalanceLimitForValidator(final Validator validator) {
-    return stateAccessorsElectra.getValidatorMaxEffectiveBalance(validator);
+    return miscHelpers.getMaxEffectiveBalance(validator);
   }
 
   // process_effective_balance_updates
@@ -266,8 +266,7 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
             FAR_FUTURE_EPOCH,
             FAR_FUTURE_EPOCH);
 
-    final UInt64 maxEffectiveBalance =
-        stateAccessorsElectra.getValidatorMaxEffectiveBalance(validator);
+    final UInt64 maxEffectiveBalance = miscHelpers.getMaxEffectiveBalance(validator);
     final UInt64 validatorEffectiveBalance =
         amount
             .minusMinZero(amount.mod(specConfig.getEffectiveBalanceIncrement()))

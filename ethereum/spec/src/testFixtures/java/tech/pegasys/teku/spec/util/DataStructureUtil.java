@@ -1539,7 +1539,7 @@ public final class DataStructureUtil {
 
   public IndexedAttestation randomIndexedAttestation(
       final AttestationData data, final UInt64... attestingIndicesInput) {
-    final IndexedAttestationSchema<?> indexedAttestationSchema =
+    final IndexedAttestationSchema indexedAttestationSchema =
         spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
     final SszUInt64List attestingIndices =
         indexedAttestationSchema.getAttestingIndicesSchema().of(attestingIndicesInput);
@@ -1783,7 +1783,9 @@ public final class DataStructureUtil {
             ? Optional.of(randomSignedValidatorRegistration())
             : Optional.empty(),
         randomWithdrawalList(),
-        randomBytes32());
+        randomBytes32(),
+        Optional.of(randomUInt64()),
+        Optional.of(randomUInt64()));
   }
 
   public ClientVersion randomClientVersion() {

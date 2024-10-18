@@ -15,19 +15,38 @@ package tech.pegasys.teku.spec.datastructures.operations;
 
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
-public interface IndexedAttestationSchema<T extends IndexedAttestation>
-    extends SszContainerSchema<T> {
+public class IndexedAttestationSchema
+    extends ContainerSchema3<IndexedAttestation, SszUInt64List, AttestationData, SszSignature> {
 
-  @SuppressWarnings("unchecked")
-  default IndexedAttestationSchema<IndexedAttestation> castTypeToIndexedAttestationSchema() {
-    return (IndexedAttestationSchema<IndexedAttestation>) this;
+  public IndexedAttestationSchema(
+      final String containerName, final long maxValidatorsPerIndexedAttestation) {
+    super(
+        containerName,
+        namedSchema(
+            "attesting_indices", SszUInt64ListSchema.create(maxValidatorsPerIndexedAttestation)),
+        namedSchema("data", AttestationData.SSZ_SCHEMA),
+        namedSchema("signature", SszSignatureSchema.INSTANCE));
   }
 
-  SszUInt64ListSchema<?> getAttestingIndicesSchema();
+  public SszUInt64ListSchema<?> getAttestingIndicesSchema() {
+    return (SszUInt64ListSchema<?>) super.getFieldSchema0();
+  }
 
-  IndexedAttestation create(
-      SszUInt64List attestingIndices, AttestationData data, BLSSignature signature);
+  @Override
+  public IndexedAttestation createFromBackingNode(final TreeNode node) {
+    return new IndexedAttestation(this, node);
+  }
+
+  public IndexedAttestation create(
+      final SszUInt64List attestingIndices,
+      final AttestationData data,
+      final BLSSignature signature) {
+    return new IndexedAttestation(this, attestingIndices, data, signature);
+  }
 }
