@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +32,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -115,7 +115,7 @@ public class BlobSidecarGossipManagerTest {
         dataStructureUtil.createRandomBlobSidecarBuilder().index(UInt64.ONE).build();
     final Bytes serialized = gossipEncoding.encode(blobSidecar);
 
-    blobSidecarGossipManager.publishBlobSidecar(blobSidecar);
+    safeJoin(blobSidecarGossipManager.publishBlobSidecar(blobSidecar));
 
     topicChannels.forEach(
         (subnetId, channel) -> {
@@ -133,7 +133,7 @@ public class BlobSidecarGossipManagerTest {
         dataStructureUtil.createRandomBlobSidecarBuilder().index(UInt64.valueOf(10)).build();
     final Bytes serialized = gossipEncoding.encode(blobSidecar);
 
-    blobSidecarGossipManager.publishBlobSidecar(blobSidecar);
+    safeJoin(blobSidecarGossipManager.publishBlobSidecar(blobSidecar));
     final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
 
@@ -170,8 +170,7 @@ public class BlobSidecarGossipManagerTest {
 
     System.out.println(blobSidecar);
     final InternalValidationResult validationResult =
-        SafeFutureAssert.safeJoin(
-            topicHandler.getProcessor().process(blobSidecar, Optional.empty()));
+        safeJoin(topicHandler.getProcessor().process(blobSidecar, Optional.empty()));
 
     assertThat(validationResult).isEqualTo(InternalValidationResult.ACCEPT);
   }
@@ -185,8 +184,7 @@ public class BlobSidecarGossipManagerTest {
     final BlobSidecar blobSidecar =
         dataStructureUtil.createRandomBlobSidecarBuilder().index(UInt64.valueOf(2)).build();
     final InternalValidationResult validationResult =
-        SafeFutureAssert.safeJoin(
-            topicHandler.getProcessor().process(blobSidecar, Optional.empty()));
+        safeJoin(topicHandler.getProcessor().process(blobSidecar, Optional.empty()));
 
     assertThat(validationResult.isReject()).isTrue();
     assertThat(validationResult.getDescription())

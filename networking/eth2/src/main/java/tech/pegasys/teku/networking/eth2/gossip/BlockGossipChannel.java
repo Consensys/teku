@@ -13,9 +13,10 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public interface BlockGossipChannel extends VoidReturningChannelInterface {
-  void publishBlock(SignedBeaconBlock block);
+public interface BlockGossipChannel extends ChannelInterface {
+  SafeFuture<Void> publishBlock(SignedBeaconBlock block);
 }
