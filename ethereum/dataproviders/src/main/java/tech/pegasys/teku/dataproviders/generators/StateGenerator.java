@@ -93,8 +93,6 @@ public class StateGenerator {
         .generateTargetState(blockRoot)
         .thenPeek(
             result ->
-                LOG.info(
-                    "State regeneration took {}ms",
-                    System.currentTimeMillis() - startTime));
+                LOG.info("State regeneration took {}ms", System.currentTimeMillis() - startTime));
   }
 }
