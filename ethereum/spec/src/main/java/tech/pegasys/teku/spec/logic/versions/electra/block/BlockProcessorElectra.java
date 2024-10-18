@@ -725,8 +725,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
             FAR_FUTURE_EPOCH,
             FAR_FUTURE_EPOCH);
 
-    final UInt64 maxEffectiveBalance =
-        beaconStateAccessorsElectra.getValidatorMaxEffectiveBalance(validator);
+    final UInt64 maxEffectiveBalance = miscHelpers.getMaxEffectiveBalance(validator);
     final UInt64 validatorEffectiveBalance =
         amount
             .minusMinZero(amount.mod(specConfig.getEffectiveBalanceIncrement()))

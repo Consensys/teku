@@ -160,16 +160,12 @@ public class Predicates {
 
   public boolean isPartiallyWithdrawableValidatorEth1CredentialsChecked(
       final Validator validator, final UInt64 balance) {
-    final UInt64 maxEffectiveBalance = getValidatorMaxEffectiveBalance(validator);
+    final UInt64 maxEffectiveBalance = specConfig.getMaxEffectiveBalance();
     final boolean hasMaxEffectiveBalance =
         validator.getEffectiveBalance().equals(maxEffectiveBalance);
     final boolean hasExcessBalance = balance.isGreaterThan(maxEffectiveBalance);
 
     return hasMaxEffectiveBalance && hasExcessBalance;
-  }
-
-  public UInt64 getValidatorMaxEffectiveBalance(final Validator validator) {
-    return specConfig.getMaxEffectiveBalance();
   }
 
   public Optional<PredicatesElectra> toVersionElectra() {
