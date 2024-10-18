@@ -33,12 +33,12 @@ public class WithdrawalRequest
   protected WithdrawalRequest(
       final WithdrawalRequestSchema schema,
       final Bytes20 sourceAddress,
-      final BLSPublicKey validatorPublicKey,
+      final BLSPublicKey validatorPubkey,
       final UInt64 amount) {
     super(
         schema,
         SszByteVector.fromBytes(sourceAddress.getWrappedBytes()),
-        new SszPublicKey(validatorPublicKey),
+        new SszPublicKey(validatorPubkey),
         SszUInt64.of(amount));
   }
 
@@ -50,7 +50,7 @@ public class WithdrawalRequest
     return new Bytes20(getField0().getBytes());
   }
 
-  public BLSPublicKey getValidatorPublicKey() {
+  public BLSPublicKey getValidatorPubkey() {
     return getField1().getBLSPublicKey();
   }
 

@@ -63,7 +63,7 @@
                       },
                       "validity" : {
                         "type" : "string",
-                        "enum" : [ "VALID", "INVALID", "OPTIMISTIC" ]
+                        "enum" : [ "valid", "invalid", "optimistic" ]
                       },
                       "execution_block_hash" : {
                         "type" : "string",

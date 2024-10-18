@@ -226,6 +226,7 @@ public class TekuBeaconNode extends TekuNode {
         randomSignedBeaconBlockHeader(slot, index, secretKey, signingRootUtil, forkInfo);
     final SignedBeaconBlockHeader header2 =
         randomSignedBeaconBlockHeader(slot, index, secretKey, signingRootUtil, forkInfo);
+    LOG.debug("Inserting proposer slashing for index {} at slot {}", index, slot);
     final String body =
         JsonUtil.serialize(
             new ProposerSlashing(header1, header2),
@@ -256,6 +257,7 @@ public class TekuBeaconNode extends TekuNode {
         spec.getGenesisSchemaDefinitions()
             .getAttesterSlashingSchema()
             .create(indexedAttestation1, indexedAttestation2);
+    LOG.debug("Inserting attester slashing for index {} at slot {}", slashedIndex, slashingSlot);
     final String body =
         JsonUtil.serialize(
             attesterSlashing,
@@ -282,7 +284,7 @@ public class TekuBeaconNode extends TekuNode {
             secretKey,
             signingRootUtil.signingRootForSignAttestationData(attestationData, forkInfo));
 
-    final IndexedAttestationSchema<?> schema =
+    final IndexedAttestationSchema schema =
         spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
     return schema.create(
         Stream.of(index).collect(schema.getAttestingIndicesSchema().collectorUnboxed()),

@@ -132,6 +132,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Consolid
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsBuilderElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
@@ -601,10 +603,7 @@ public final class DataStructureUtil {
                     .transactionsRoot(randomBytes32())
                     .withdrawalsRoot(() -> withdrawalsRoot)
                     .blobGasUsed(this::randomUInt64)
-                    .excessBlobGas(this::randomUInt64)
-                    .depositRequestsRoot(this::randomBytes32)
-                    .withdrawalRequestsRoot(this::randomBytes32)
-                    .consolidationRequestsRoot(this::randomBytes32));
+                    .excessBlobGas(this::randomUInt64));
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
@@ -637,6 +636,9 @@ public final class DataStructureUtil {
               schemaDefinitions
                   .toVersionDeneb()
                   .ifPresent(__ -> builder.blobKzgCommitments(randomBlobKzgCommitments()));
+              schemaDefinitions
+                  .toVersionElectra()
+                  .ifPresent(__ -> builder.executionRequests(randomExecutionRequests()));
               // 1 ETH is 10^18 wei, Uint256 max is more than 10^77, so just to avoid
               // overflows in
               // computation
@@ -698,10 +700,7 @@ public final class DataStructureUtil {
                       .transactions(randomExecutionPayloadTransactions())
                       .withdrawals(this::randomExecutionPayloadWithdrawals)
                       .blobGasUsed(this::randomUInt64)
-                      .excessBlobGas(this::randomUInt64)
-                      .depositRequests(this::randomDepositRequests)
-                      .withdrawalRequests(this::randomWithdrawalRequests)
-                      .consolidationRequests(this::randomConsolidationRequests);
+                      .excessBlobGas(this::randomUInt64);
               builderModifier.accept(executionPayloadBuilder);
             });
   }
@@ -1540,7 +1539,7 @@ public final class DataStructureUtil {
 
   public IndexedAttestation randomIndexedAttestation(
       final AttestationData data, final UInt64... attestingIndicesInput) {
-    final IndexedAttestationSchema<?> indexedAttestationSchema =
+    final IndexedAttestationSchema indexedAttestationSchema =
         spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
     final SszUInt64List attestingIndices =
         indexedAttestationSchema.getAttestingIndicesSchema().of(attestingIndicesInput);
@@ -1784,7 +1783,9 @@ public final class DataStructureUtil {
             ? Optional.of(randomSignedValidatorRegistration())
             : Optional.empty(),
         randomWithdrawalList(),
-        randomBytes32());
+        randomBytes32(),
+        Optional.of(randomUInt64()),
+        Optional.of(randomUInt64()));
   }
 
   public ClientVersion randomClientVersion() {
@@ -2502,6 +2503,15 @@ public final class DataStructureUtil {
         .withdrawals(randomWithdrawalRequests())
         .consolidations(randomConsolidationRequests())
         .build();
+  }
+
+  public List<Bytes> randomEncodedExecutionRequests() {
+    final ExecutionRequestsSchema executionRequestsSchema =
+        SchemaDefinitionsElectra.required(
+                spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+            .getExecutionRequestsSchema();
+    return new ExecutionRequestsDataCodec(executionRequestsSchema)
+        .encode(randomExecutionRequests());
   }
 
   public WithdrawalRequest randomWithdrawalRequest() {

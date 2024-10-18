@@ -60,7 +60,7 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
    */
   public UInt64 getActiveBalance(final BeaconState state, final int validatorIndex) {
     final Validator validator = state.getValidators().get(validatorIndex);
-    final UInt64 maxEffectiveBalance = predicatesElectra.getValidatorMaxEffectiveBalance(validator);
+    final UInt64 maxEffectiveBalance = miscHelpers.getMaxEffectiveBalance(validator);
     final UInt64 validatorBalance = state.getBalances().get(validatorIndex).get();
     return validatorBalance.min(maxEffectiveBalance);
   }
@@ -70,7 +70,7 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
    *
    * @param state The state
    * @param validatorIndex The index of the validator
-   * @return The sum of the withdrawal amounts for the validator in the partial withdrawal queue
+   * @return The sum of the withdrawal amounts for the validator in the partial withdrawal queue.
    */
   public UInt64 getPendingBalanceToWithdraw(
       final BeaconStateElectra state, final int validatorIndex) {
@@ -113,17 +113,6 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
         BeaconStateAccessorsElectra.class,
         beaconStateAccessors.getClass());
     return (BeaconStateAccessorsElectra) beaconStateAccessors;
-  }
-
-  /**
-   * implements get_validator_max_effective_balance state accessor
-   *
-   * @param validator - a validator from a state.
-   * @return the max effective balance for the specified validator based on its withdrawal
-   *     credentials.
-   */
-  public UInt64 getValidatorMaxEffectiveBalance(final Validator validator) {
-    return predicatesElectra.getValidatorMaxEffectiveBalance(validator);
   }
 
   @Override

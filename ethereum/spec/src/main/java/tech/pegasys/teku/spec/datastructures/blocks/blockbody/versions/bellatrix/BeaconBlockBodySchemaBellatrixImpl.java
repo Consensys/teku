@@ -39,10 +39,10 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttesterSlashingPhase0Schema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.IndexedAttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
 public class BeaconBlockBodySchemaBellatrixImpl
     extends ContainerSchema10<
@@ -88,7 +88,8 @@ public class BeaconBlockBodySchemaBellatrixImpl
   public static BeaconBlockBodySchemaBellatrixImpl create(
       final SpecConfigBellatrix specConfig,
       final long maxValidatorsPerAttestation,
-      final String containerName) {
+      final String containerName,
+      final SchemaRegistry schemaRegistry) {
     final ExecutionPayloadSchemaBellatrix executionPayloadSchemaBellatrix =
         new ExecutionPayloadSchemaBellatrix(specConfig);
     return new BeaconBlockBodySchemaBellatrixImpl(
@@ -103,10 +104,7 @@ public class BeaconBlockBodySchemaBellatrixImpl
         namedSchema(
             BlockBodyFields.ATTESTER_SLASHINGS,
             SszListSchema.create(
-                new AttesterSlashingPhase0Schema(
-                        new IndexedAttestationPhase0Schema(maxValidatorsPerAttestation)
-                            .castTypeToIndexedAttestationSchema())
-                    .castTypeToAttesterSlashingSchema(),
+                schemaRegistry.get(SchemaTypes.ATTESTER_SLASHING_SCHEMA),
                 specConfig.getMaxAttesterSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTATIONS,

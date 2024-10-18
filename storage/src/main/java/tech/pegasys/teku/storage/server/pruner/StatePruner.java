@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.pruner;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
@@ -113,5 +114,10 @@ public class StatePruner extends Service {
     } catch (final ShuttingDownException | RejectedExecutionException ex) {
       LOG.debug("Shutting down", ex);
     }
+  }
+
+  @VisibleForTesting
+  public Duration getPruneInterval() {
+    return pruneInterval;
   }
 }

@@ -119,6 +119,8 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
 
     methods.put(ENGINE_NEW_PAYLOAD, new EngineNewPayloadV4(executionEngineClient));
     methods.put(ENGINE_GET_PAYLOAD, new EngineGetPayloadV4(executionEngineClient, spec));
+    // TODO EIP-7742 Replace with EngineForkChoiceUpdatedV4
+    // (https://github.com/Consensys/teku/issues/8745)
     methods.put(ENGINE_FORK_CHOICE_UPDATED, new EngineForkChoiceUpdatedV3(executionEngineClient));
     methods.put(ENGINE_GET_BLOBS, new EngineGetBlobsV1(executionEngineClient, spec));
 

@@ -19,6 +19,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public interface BuilderBid extends SszContainer {
@@ -26,6 +27,8 @@ public interface BuilderBid extends SszContainer {
   ExecutionPayloadHeader getHeader();
 
   Optional<SszList<SszKZGCommitment>> getOptionalBlobKzgCommitments();
+
+  Optional<ExecutionRequests> getOptionalExecutionRequests();
 
   UInt256 getValue();
 

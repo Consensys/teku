@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,7 +71,8 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
                 dataStructureUtil.randomExecutionPayload()),
             UInt256.MAX_VALUE,
             BlobsBundleV1.fromInternalBlobsBundle(dataStructureUtil.randomBlobsBundle()),
-            true);
+            true,
+            dataStructureUtil.randomEncodedExecutionRequests());
     final SafeFuture<Response<GetPayloadV4Response>> dummyResponse =
         SafeFuture.completedFuture(new Response<>(responseData));
     when(executionEngineClient.getPayloadV4(context.getPayloadId())).thenReturn(dummyResponse);
@@ -83,9 +85,12 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final ExecutionPayloadSchema<?> executionPayloadSchema =
         schemaDefinitionElectra.getExecutionPayloadSchema();
     final BlobSchema blobSchema = schemaDefinitionElectra.getBlobSchema();
-    assertThat(future)
-        .isCompletedWithValue(
-            responseData.asInternalGetPayloadResponse(executionPayloadSchema, blobSchema));
+    final GetPayloadResponse expectedGetPayloadResponse =
+        responseData.asInternalGetPayloadResponse(
+            executionPayloadSchema,
+            blobSchema,
+            schemaDefinitionElectra.getExecutionRequestsSchema());
+    assertThat(future).isCompletedWithValue(expectedGetPayloadResponse);
   }
 
   @Test
@@ -94,10 +99,10 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
     final List<VersionedHash> versionedHashes = dataStructureUtil.randomVersionedHashes(3);
     final Bytes32 parentBeaconBlockRoot = dataStructureUtil.randomBytes32();
-    final Bytes32 executionRequestsHash = dataStructureUtil.randomBytes32();
+    final List<Bytes> encodedExecutionRequests = dataStructureUtil.randomEncodedExecutionRequests();
     final NewPayloadRequest newPayloadRequest =
         new NewPayloadRequest(
-            payload, versionedHashes, parentBeaconBlockRoot, executionRequestsHash);
+            payload, versionedHashes, parentBeaconBlockRoot, encodedExecutionRequests);
     final ExecutionPayloadV3 payloadV3 = ExecutionPayloadV3.fromInternalExecutionPayload(payload);
     final PayloadStatusV1 responseData =
         new PayloadStatusV1(
@@ -108,7 +113,7 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
             eq(payloadV3),
             eq(versionedHashes),
             eq(parentBeaconBlockRoot),
-            eq(executionRequestsHash)))
+            eq(encodedExecutionRequests)))
         .thenReturn(dummyResponse);
     final SafeFuture<PayloadStatus> future =
         handler.engineNewPayload(newPayloadRequest, UInt64.ZERO);
@@ -117,12 +122,13 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
             eq(payloadV3),
             eq(versionedHashes),
             eq(parentBeaconBlockRoot),
-            eq(executionRequestsHash));
+            eq(encodedExecutionRequests));
     assertThat(future).isCompletedWithValue(responseData.asInternalExecutionPayload());
   }
 
   @Test
   void engineForkChoiceUpdated_shouldCallEngineForkChoiceUpdatedV3() {
+    // TODO EIP-7742 should call FcUV4 (https://github.com/Consensys/teku/issues/8745)
     final ExecutionClientHandler handler = getHandler();
     final ForkChoiceState forkChoiceState = dataStructureUtil.randomForkChoiceState(false);
     final ForkChoiceStateV1 forkChoiceStateV1 =

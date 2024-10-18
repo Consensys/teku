@@ -47,7 +47,7 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
   final String slashingActionLog =
       "Validator slashing detection is enabled and validator(s) with public key(s) %s detected as slashed. "
           + "Shutting down...";
-  final int shutdownWaitingSeconds = 60;
+  final int shutdownWaitingSeconds = 90;
 
   enum SlashingEventType {
     PROPOSER_SLASHING,

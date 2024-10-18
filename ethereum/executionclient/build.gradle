@@ -14,7 +14,7 @@ dependencies {
   implementation project(':ethereum:events')
 
   api 'org.web3j:core'
-  implementation 'org.apache.tuweni:tuweni-units'
+  implementation 'io.tmio:tuweni-units'
   implementation 'io.jsonwebtoken:jjwt-api'
 
   runtimeOnly 'io.jsonwebtoken:jjwt-impl'
