@@ -78,9 +78,9 @@ public class ExecutionLayerTriggeredExitAcceptanceTest extends AcceptanceTestBas
     tekuNode.waitForNewFinalization();
 
     final ValidatorKeys validator = validatorKeys.getValidatorKeys().get(0);
-    final BLSPublicKey validatorPublicKey = validator.getValidatorKey().getPublicKey();
+    final BLSPublicKey validatorPubkey = validator.getValidatorKey().getPublicKey();
 
-    besuNode.createWithdrawalRequest(eth1PrivateKey, validatorPublicKey, UInt64.ZERO);
+    besuNode.createWithdrawalRequest(eth1PrivateKey, validatorPubkey, UInt64.ZERO);
 
     // Wait for validator exit confirmation
     tekuNode.waitForLogMessageContaining(

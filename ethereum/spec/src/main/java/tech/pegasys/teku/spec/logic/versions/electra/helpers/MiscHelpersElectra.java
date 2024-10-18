@@ -16,8 +16,10 @@ package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -27,6 +29,8 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class MiscHelpersElectra extends MiscHelpersDeneb {
+  private final SpecConfigElectra specConfigElectra;
+  private final PredicatesElectra predicatesElectra;
 
   public MiscHelpersElectra(
       final SpecConfigElectra specConfig,
@@ -36,6 +40,8 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
         SpecConfigDeneb.required(specConfig),
         predicates,
         SchemaDefinitionsDeneb.required(schemaDefinitions));
+    this.specConfigElectra = SpecConfigElectra.required(specConfig);
+    this.predicatesElectra = PredicatesElectra.required(predicates);
   }
 
   public static MiscHelpersElectra required(final MiscHelpers miscHelpers) {
@@ -56,6 +62,13 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
         indices,
         seed,
         SpecConfigElectra.required(specConfig).getMaxEffectiveBalanceElectra());
+  }
+
+  @Override
+  public UInt64 getMaxEffectiveBalance(final Validator validator) {
+    return predicatesElectra.hasCompoundingWithdrawalCredential(validator)
+        ? specConfigElectra.getMaxEffectiveBalanceElectra()
+        : specConfigElectra.getMinActivationBalance();
   }
 
   @Override

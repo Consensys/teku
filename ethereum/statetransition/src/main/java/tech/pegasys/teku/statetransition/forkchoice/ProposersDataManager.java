@@ -238,6 +238,8 @@ public class ProposersDataManager implements SlotEventsChannel {
 
     final Eth1Address feeRecipient = getFeeRecipient(proposerInfo, blockSlot);
 
+    // TODO EIP-7742 add targetBlobCount and maximumBlobCount
+    // (https://github.com/Consensys/teku/issues/8745)
     return Optional.of(
         new PayloadBuildingAttributes(
             proposerIndex,
@@ -247,7 +249,9 @@ public class ProposersDataManager implements SlotEventsChannel {
             feeRecipient,
             validatorRegistration,
             spec.getExpectedWithdrawals(state),
-            currentHeadBlockRoot));
+            currentHeadBlockRoot,
+            Optional.empty(),
+            Optional.empty()));
   }
 
   // this function MUST return a fee recipient.
