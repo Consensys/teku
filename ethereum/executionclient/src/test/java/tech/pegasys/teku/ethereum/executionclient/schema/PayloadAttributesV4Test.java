@@ -14,7 +14,9 @@
 package tech.pegasys.teku.ethereum.executionclient.schema;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
