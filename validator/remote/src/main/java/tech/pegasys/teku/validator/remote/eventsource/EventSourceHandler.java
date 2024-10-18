@@ -121,10 +121,7 @@ class EventSourceHandler implements BackgroundEventHandler {
 
   private void handleAttesterSlashingEvent(final String data) throws JsonProcessingException {
     final DeserializableTypeDefinition<AttesterSlashing> attesterSlashingTypeDefinition =
-        spec.getGenesisSchemaDefinitions()
-            .getAttesterSlashingSchema()
-            .castTypeToAttesterSlashingSchema()
-            .getJsonTypeDefinition();
+        spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema().getJsonTypeDefinition();
     final AttesterSlashing attesterSlashing = JsonUtil.parse(data, attesterSlashingTypeDefinition);
     validatorTimingChannel.onAttesterSlashing(attesterSlashing);
   }
