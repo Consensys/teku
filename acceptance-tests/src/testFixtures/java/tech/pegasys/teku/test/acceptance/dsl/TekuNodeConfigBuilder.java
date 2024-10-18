@@ -530,6 +530,12 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withBeaconNodeSszBlocksEnabled(final boolean enabled) {
+    LOG.debug("beacon-node-ssz-blocks-enabled={}", enabled);
+    configMap.put("beacon-node-ssz-blocks-enabled", enabled);
+    return this;
+  }
+
   public TekuNodeConfigBuilder withStartupTargetPeerCount(final int startupTargetPeerCount) {
     mustBe(NodeType.BEACON_NODE);
     LOG.debug("Xstartup-target-peer-count={}", startupTargetPeerCount);
