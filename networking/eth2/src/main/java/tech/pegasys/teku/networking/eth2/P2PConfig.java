@@ -38,6 +38,7 @@ public class P2PConfig {
   public static final int DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT = 2;
   public static final boolean DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED = false;
   public static final boolean DEFAULT_GOSSIP_SCORING_ENABLED = true;
+  public static final boolean DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED = false;
   public static final int DEFAULT_BATCH_VERIFY_MAX_THREADS =
       Math.max(2, Runtime.getRuntime().availableProcessors() / 2);
   public static final int DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY = 15_000;
@@ -59,7 +60,7 @@ public class P2PConfig {
   private final int batchVerifyQueueCapacity;
   private final int batchVerifyMaxBatchSize;
   private final boolean batchVerifyStrictThreadLimitEnabled;
-
+  private final boolean isGossipBlobsAfterBlockEnabled;
   private final boolean allTopicsFilterEnabled;
 
   private P2PConfig(
@@ -76,7 +77,8 @@ public class P2PConfig {
       final int batchVerifyQueueCapacity,
       final int batchVerifyMaxBatchSize,
       final boolean batchVerifyStrictThreadLimitEnabled,
-      final boolean allTopicsFilterEnabled) {
+      final boolean allTopicsFilterEnabled,
+      final boolean isGossipBlobsAfterBlockEnabled) {
     this.spec = spec;
     this.networkConfig = networkConfig;
     this.discoveryConfig = discoveryConfig;
@@ -92,6 +94,7 @@ public class P2PConfig {
     this.batchVerifyStrictThreadLimitEnabled = batchVerifyStrictThreadLimitEnabled;
     this.networkingSpecConfig = spec.getNetworkingConfig();
     this.allTopicsFilterEnabled = allTopicsFilterEnabled;
+    this.isGossipBlobsAfterBlockEnabled = isGossipBlobsAfterBlockEnabled;
   }
 
   public static Builder builder() {
@@ -158,6 +161,10 @@ public class P2PConfig {
     return allTopicsFilterEnabled;
   }
 
+  public boolean isGossipBlobsAfterBlockEnabled() {
+    return isGossipBlobsAfterBlockEnabled;
+  }
+
   public static class Builder {
     private final NetworkConfig.Builder networkConfig = NetworkConfig.builder();
     private final DiscoveryConfig.Builder discoveryConfig = DiscoveryConfig.builder();
@@ -176,6 +183,7 @@ public class P2PConfig {
         DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED;
     private boolean allTopicsFilterEnabled = DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED;
     private boolean isFloodPublishEnabled = DEFAULT_FLOOD_PUBLISH_ENABLED;
+    private boolean gossipBlobsAfterBlockEnabled = DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
 
     private Builder() {}
 
@@ -222,7 +230,8 @@ public class P2PConfig {
           batchVerifyQueueCapacity.orElse(DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY),
           batchVerifyMaxBatchSize,
           batchVerifyStrictThreadLimitEnabled,
-          allTopicsFilterEnabled);
+          allTopicsFilterEnabled,
+          gossipBlobsAfterBlockEnabled);
     }
 
     private void validate() {
@@ -287,8 +296,13 @@ public class P2PConfig {
       return this;
     }
 
-    public Builder isFloodPublishEnabled(final boolean floodPublishEnabled) {
+    public Builder floodPublishEnabled(final boolean floodPublishEnabled) {
       this.isFloodPublishEnabled = floodPublishEnabled;
+      return this;
+    }
+
+    public Builder gossipBlobsAfterBlockEnabled(final boolean gossipBlobsAfterBlockEnabled) {
+      this.gossipBlobsAfterBlockEnabled = gossipBlobsAfterBlockEnabled;
       return this;
     }
 
