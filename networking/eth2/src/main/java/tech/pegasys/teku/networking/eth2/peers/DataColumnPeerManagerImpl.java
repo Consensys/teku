@@ -45,8 +45,8 @@ public class DataColumnPeerManagerImpl
 
   private void peerConnected(Eth2Peer peer) {
     UInt256 nodeId = peer.getDiscoveryNodeId().orElseThrow();
-    listeners.forEach(l -> l.peerConnected(nodeId));
     connectedPeers.put(nodeId, peer);
+    listeners.forEach(l -> l.peerConnected(nodeId));
     peer.subscribeDisconnect((__, ___) -> peerDisconnected(peer));
   }
 

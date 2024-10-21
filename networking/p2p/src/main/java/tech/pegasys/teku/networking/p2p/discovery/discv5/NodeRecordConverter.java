@@ -88,7 +88,7 @@ public class NodeRecordConverter {
     try {
       return Optional.ofNullable((Bytes) nodeRecord.get(fieldName)).map(parse);
     } catch (final Exception e) {
-      LOG.debug("Failed to parse ENR field {}", fieldName, e);
+      LOG.debug("Failed to parse ENR field {}: {}", fieldName, e);
       return Optional.empty();
     }
   }

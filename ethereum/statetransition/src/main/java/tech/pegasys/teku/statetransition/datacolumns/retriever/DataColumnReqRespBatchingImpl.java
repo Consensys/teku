@@ -20,8 +20,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
@@ -30,8 +28,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSi
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 
 public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
-  private static final Logger LOG = LogManager.getLogger("das-nyota");
-
   private final BatchDataColumnsByRootReqResp batchRpc;
 
   public DataColumnReqRespBatchingImpl(BatchDataColumnsByRootReqResp batchRpc) {
@@ -67,11 +63,6 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
   }
 
   private void flushForNode(UInt256 nodeId, List<RequestEntry> nodeRequests) {
-    LOG.info(
-        "[nyota] Requesting batch of {} from {}, hash={}",
-        nodeRequests.size(),
-        "0x..." + nodeId.toHexString().substring(58),
-        nodeRequests.hashCode());
     AsyncStream<DataColumnSidecar> response =
         batchRpc.requestDataColumnSidecarsByRoot(
             nodeId, nodeRequests.stream().map(e -> e.columnIdentifier).toList());
@@ -100,11 +91,6 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
 
           @Override
           public void onComplete() {
-            LOG.info(
-                "[nyota] Response batch of {} from {}, hash={}",
-                count,
-                "0x..." + nodeId.toHexString().substring(58),
-                nodeRequests.hashCode());
             nodeRequests.stream()
                 .filter(req -> !req.promise().isDone())
                 .forEach(
@@ -114,15 +100,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
 
           @Override
           public void onError(Throwable err) {
-            nodeRequests.forEach(
-                e -> {
-                  LOG.info(
-                      "[nyota] Error batch from {}, hash={}, err: {}",
-                      "0x..." + nodeId.toHexString().substring(58),
-                      nodeRequests.hashCode(),
-                      e.toString());
-                  e.promise().completeExceptionally(err);
-                });
+            nodeRequests.forEach(e -> e.promise().completeExceptionally(err));
           }
         });
   }

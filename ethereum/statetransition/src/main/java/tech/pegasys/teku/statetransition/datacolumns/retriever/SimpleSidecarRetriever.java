@@ -79,7 +79,7 @@ public class SimpleSidecarRetriever
     this.custodyCountSupplier = custodyCountSupplier;
     this.asyncRunner = asyncRunner;
     this.roundPeriod = roundPeriod;
-    this.reqResp = new DataColumnReqRespImpl(peerManager, reqResp);
+    this.reqResp = reqResp;
     peerManager.addPeerListener(this);
     this.maxRequestCount =
         SpecConfigEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).getConfig())
