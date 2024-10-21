@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -125,7 +126,8 @@ public class ValidatorApiHandlerIntegrationTest {
           syncCommitteeContributionPool,
           syncCommitteeSubscriptionManager,
           new BlockProductionAndPublishingPerformanceFactory(
-              new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0));
+              new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0),
+          DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED);
 
   @BeforeEach
   public void setup() {
