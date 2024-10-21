@@ -67,6 +67,13 @@ public class SendSyncCommitteeMessagesRequestTest extends AbstractTypeDefRequest
   }
 
   @TestTemplate
+  void shouldNotMakeRequestWhenEmptyMessages() {
+    final List<SubmitDataError> response = request.submit(List.of());
+    assertThat(response).isEmpty();
+    assertThat(mockWebServer.getRequestCount()).isZero();
+  }
+
+  @TestTemplate
   void handle400() {
     mockWebServer.enqueue(
         new MockResponse()

@@ -24,6 +24,7 @@ import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
+import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
@@ -36,7 +37,7 @@ public class PostSyncDutiesRequest extends AbstractTypeDefRequest {
       final UInt64 epoch, final Collection<Integer> validatorIndices) {
     return postJson(
         GET_SYNC_COMMITTEE_DUTIES,
-        Map.of("epoch", epoch.toString()),
+        Map.of(RestApiConstants.EPOCH, epoch.toString()),
         validatorIndices.stream().toList(),
         listOf(INTEGER_TYPE, 1),
         new ResponseHandler<>(SYNC_COMMITTEE_DUTIES_TYPE));

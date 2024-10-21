@@ -22,6 +22,7 @@ import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -49,11 +50,11 @@ public class CreateSyncCommitteeContributionRequest extends AbstractTypeDefReque
             .getSyncCommitteeContributionSchema();
     final Map<String, String> queryParams =
         Map.of(
-            "slot",
+            RestApiConstants.SLOT,
             slot.toString(),
-            "subcommittee_index",
+            RestApiConstants.SUBCOMMITTEE_INDEX,
             Integer.toString(subcommitteeIndex),
-            "beacon_block_root",
+            RestApiConstants.BEACON_BLOCK_ROOT,
             beaconBlockRoot.toHexString());
     return get(
         GET_SYNC_COMMITTEE_CONTRIBUTION,

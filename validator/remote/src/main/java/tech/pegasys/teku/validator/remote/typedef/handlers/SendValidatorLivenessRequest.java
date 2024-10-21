@@ -25,6 +25,7 @@ import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
+import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
@@ -38,7 +39,7 @@ public class SendValidatorLivenessRequest extends AbstractTypeDefRequest {
       final UInt64 epoch, final List<UInt64> validatorIndices) {
     return postJson(
         SEND_VALIDATOR_LIVENESS,
-        Map.of("epoch", epoch.toString()),
+        Map.of(RestApiConstants.EPOCH, epoch.toString()),
         Collections.emptyMap(),
         Collections.emptyMap(),
         validatorIndices,

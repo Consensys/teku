@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
@@ -74,6 +75,8 @@ public class SendAggregatesAndProofsRequestTest extends AbstractTypeDefRequestTe
           .contains(ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOFS_V2.getPath(emptyMap()));
       assertThat(recordedRequest.getHeader(RestApiConstants.HEADER_CONSENSUS_VERSION))
           .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
+      assertThat(recordedRequest.getHeader(HEADER_CONSENSUS_VERSION))
+          .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
     } else {
       assertThat(recordedRequest.getPath())
           .contains(ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOFS.getPath(emptyMap()));
@@ -99,8 +102,7 @@ public class SendAggregatesAndProofsRequestTest extends AbstractTypeDefRequestTe
   }
 
   @TestTemplate
-  void shouldUseV2ApiWhenUseAttestationsV2ApisEnabled()
-      throws InterruptedException, JsonProcessingException {
+  void shouldUseV2ApiWhenUseAttestationsV2ApisEnabled() throws InterruptedException {
     this.request =
         new SendAggregateAndProofsRequest(mockWebServer.url("/"), okHttpClient, true, spec);
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
