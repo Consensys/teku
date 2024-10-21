@@ -55,18 +55,25 @@ public class LoggingConfigurator {
 
   @SuppressWarnings("NonFinalStaticField")
   private static LoggingDestination destination;
+
   @SuppressWarnings("NonFinalStaticField")
   private static boolean includeEvents;
+
   @SuppressWarnings("NonFinalStaticField")
   private static boolean includeValidatorDuties;
+
   @SuppressWarnings("NonFinalStaticField")
   private static boolean includeP2pWarnings;
+
   @SuppressWarnings("NonFinalStaticField")
   private static String file;
+
   @SuppressWarnings("NonFinalStaticField")
   private static String filePattern;
+
   @SuppressWarnings("NonFinalStaticField")
   private static Level rootLogLevel = Level.INFO;
+
   @SuppressWarnings("NonFinalStaticField")
   private static int dbOpAlertThresholdMillis;
 
