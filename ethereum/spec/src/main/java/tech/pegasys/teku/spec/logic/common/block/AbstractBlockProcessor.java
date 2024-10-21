@@ -91,6 +91,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
    * Setting to <code>false</code> significantly speeds up state initialization
    */
   @VisibleForTesting
+  @SuppressWarnings("NonFinalStaticField")
   public static BLSSignatureVerifier depositSignatureVerifier = DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
 
   private static final Logger LOG = LogManager.getLogger();

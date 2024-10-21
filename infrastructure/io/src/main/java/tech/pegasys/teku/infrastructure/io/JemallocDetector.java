@@ -23,6 +23,8 @@ import org.apache.logging.log4j.Logger;
 @SuppressWarnings("JavaCase")
 public class JemallocDetector {
   private static final Logger LOG = LogManager.getLogger();
+
+  @SuppressWarnings("NonFinalStaticField")
   private static String _jemalloc;
 
   public static void logJemallocPresence() {
