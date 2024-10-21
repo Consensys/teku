@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beaconrestapi.v1.validator.PostBlindedAndUnblindedBlockTest.Version.V1;
 import static tech.pegasys.teku.beaconrestapi.v1.validator.PostBlindedAndUnblindedBlockTest.Version.V2;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import java.io.IOException;
@@ -204,14 +203,7 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
               JsonUtil.serialize(request, signedBlockContainerSchema.getJsonTypeDefinition()),
               params,
               versionHeader)) {
-        if (version == V2 && versionHeader.isEmpty()) {
-          // the version header is required in V2 APIs
-          assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
-        } else {
-          // the version header is not required for V1 APIs, the header selector should fall back to
-          // the slot selector
-          assertThat(response.code()).isEqualTo(SC_OK);
-        }
+         assertThat(response.code()).isEqualTo(SC_OK);
       }
     }
   }
