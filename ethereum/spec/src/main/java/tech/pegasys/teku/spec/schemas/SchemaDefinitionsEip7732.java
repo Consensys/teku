@@ -48,17 +48,11 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayl
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttesterSlashingElectraSchema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.IndexedAttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateEip7732;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateSchemaEip7732;
@@ -67,8 +61,6 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
 public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
-  private final IndexedAttestationSchema<IndexedAttestation> indexedAttestationSchema;
-  private final AttesterSlashingSchema<AttesterSlashing> attesterSlashingSchema;
   private final AttestationSchema<Attestation> attestationSchema;
   private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
   private final AggregateAndProofSchema aggregateAndProofSchema;
@@ -108,12 +100,6 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
     final SpecConfigEip7732 specConfig = SpecConfigEip7732.required(schemaRegistry.getSpecConfig());
 
     final long maxValidatorsPerAttestation = getMaxValidatorPerAttestation(specConfig);
-    this.indexedAttestationSchema =
-        new IndexedAttestationElectraSchema(maxValidatorsPerAttestation)
-            .castTypeToIndexedAttestationSchema();
-    this.attesterSlashingSchema =
-        new AttesterSlashingElectraSchema(indexedAttestationSchema)
-            .castTypeToAttesterSlashingSchema();
 
     this.attestationSchema = schemaRegistry.get(SchemaTypes.ATTESTATION_SCHEMA);
     this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema);
@@ -127,21 +113,21 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaEip7732Impl.create(
             specConfig,
-            attesterSlashingSchema,
             getSignedBlsToExecutionChangeSchema(),
             maxValidatorsPerAttestation,
             executionPayloadHeaderSchemaEip7732,
             payloadAttestationSchema,
-            "BeaconBlockBodyEip7732");
+            "BeaconBlockBodyEip7732",
+            schemaRegistry);
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaEip7732Impl.create(
             specConfig,
-            attesterSlashingSchema,
             getSignedBlsToExecutionChangeSchema(),
             maxValidatorsPerAttestation,
             executionPayloadHeaderSchemaEip7732,
             payloadAttestationSchema,
-            "BlindedBlockBodyEip7732");
+            "BlindedBlockBodyEip7732",
+            schemaRegistry);
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockEip7732");
     this.blindedBeaconBlockSchema =
         new BeaconBlockSchema(blindedBeaconBlockBodySchema, "BlindedBlockEip7732");
@@ -217,16 +203,6 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
   @Override
   public AttestationSchema<Attestation> getAttestationSchema() {
     return attestationSchema;
-  }
-
-  @Override
-  public IndexedAttestationSchema<IndexedAttestation> getIndexedAttestationSchema() {
-    return indexedAttestationSchema;
-  }
-
-  @Override
-  public AttesterSlashingSchema<AttesterSlashing> getAttesterSlashingSchema() {
-    return attesterSlashingSchema;
   }
 
   @Override
