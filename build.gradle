@@ -263,6 +263,7 @@ allprojects {
       check('RedundantOverride', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('RedundantThrows', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('UnnecessarilyFullyQualified', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('UseCorrectAssertInTests', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('WildcardImport', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
 
     }
