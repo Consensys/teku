@@ -203,7 +203,7 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
               JsonUtil.serialize(request, signedBlockContainerSchema.getJsonTypeDefinition()),
               params,
               versionHeader)) {
-         assertThat(response.code()).isEqualTo(SC_OK);
+        assertThat(response.code()).isEqualTo(SC_OK);
       }
     }
   }
