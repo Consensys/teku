@@ -35,7 +35,6 @@ import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHea
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationSchema;
@@ -47,6 +46,8 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.electra.Attesta
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
 public class BlindedBeaconBlockBodySchemaEip7732Impl
     extends ContainerSchema12<
@@ -97,12 +98,12 @@ public class BlindedBeaconBlockBodySchemaEip7732Impl
 
   public static BlindedBeaconBlockBodySchemaEip7732Impl create(
       final SpecConfigEip7732 specConfig,
-      final AttesterSlashingSchema<?> attesterSlashingSchema,
       final SignedBlsToExecutionChangeSchema blsToExecutionChangeSchema,
       final long maxValidatorsPerAttestation,
       final ExecutionPayloadHeaderSchema<?> executionPayloadHeaderSchema,
       final PayloadAttestationSchema payloadAttestationSchema,
-      final String containerName) {
+      final String containerName,
+      final SchemaRegistry schemaRegistry) {
     return new BlindedBeaconBlockBodySchemaEip7732Impl(
         containerName,
         namedSchema(BlockBodyFields.RANDAO_REVEAL, SszSignatureSchema.INSTANCE),
@@ -115,7 +116,7 @@ public class BlindedBeaconBlockBodySchemaEip7732Impl
         namedSchema(
             BlockBodyFields.ATTESTER_SLASHINGS,
             SszListSchema.create(
-                attesterSlashingSchema.castTypeToAttesterSlashingSchema(),
+                schemaRegistry.get(SchemaTypes.ATTESTER_SLASHING_SCHEMA),
                 specConfig.getMaxAttesterSlashingsElectra())),
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
