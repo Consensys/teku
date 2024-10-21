@@ -31,6 +31,7 @@ final class CKZG4844 implements KZG {
   // used for FK20 proof computations (PeerDAS) so can default to 0 for now
   private static final int PRECOMPUTE_DEFAULT = 0;
 
+  @SuppressWarnings("NonFinalStaticField")
   private static CKZG4844 instance;
 
   static synchronized CKZG4844 getInstance() {

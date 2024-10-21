@@ -259,6 +259,7 @@ allprojects {
       check('InterfaceWithOnlyStatics', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('MissingBraces', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('NonFinalStaticField', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('PackageLocation', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('RedundantOverride', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('RedundantThrows', net.ltgt.gradle.errorprone.CheckSeverity.WARN)

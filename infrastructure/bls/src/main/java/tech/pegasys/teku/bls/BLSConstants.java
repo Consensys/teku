@@ -27,6 +27,7 @@ public class BLSConstants {
   static final BigInteger CURVE_ORDER_BI =
       CURVE_ORDER_BYTES.toUnsignedBigInteger(ByteOrder.BIG_ENDIAN);
 
+  @SuppressWarnings("NonFinalStaticField")
   public static boolean verificationDisabled = false;
 
   public static void disableBLSVerification() {
