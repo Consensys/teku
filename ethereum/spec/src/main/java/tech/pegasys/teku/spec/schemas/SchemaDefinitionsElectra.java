@@ -133,7 +133,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.builderBidSchemaElectra =
         new BuilderBidSchemaElectra(
             "BuilderBidElectra",
-            getExecutionPayloadHeaderSchema(),
+            super.getExecutionPayloadHeaderSchema(),
             getBlobKzgCommitmentsSchema(),
             executionRequestsSchema);
     this.signedBuilderBidSchemaElectra =
