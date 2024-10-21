@@ -47,8 +47,14 @@ public class GossipFailureLogger {
           "Failed to publish {}(s) for slot {} because the message has already been seen",
           messageType,
           lastErroredSlot);
-    } else if (lastRootCause instanceof NoPeersForOutboundMessageException
-        || lastRootCause instanceof SemiDuplexNoOutboundStreamException) {
+    } else if (lastRootCause instanceof NoPeersForOutboundMessageException) {
+      LOG.log(
+          suppress ? Level.DEBUG : Level.WARN,
+          "Failed to publish {}(s) for slot {}; {}",
+          messageType,
+          lastErroredSlot,
+          rootCause.getMessage());
+    } else if (lastRootCause instanceof SemiDuplexNoOutboundStreamException) {
       LOG.log(
           suppress ? Level.DEBUG : Level.WARN,
           "Failed to publish {}(s) for slot {} because no peers were available on the required gossip topic",
