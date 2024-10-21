@@ -284,7 +284,7 @@ public class TekuBeaconNode extends TekuNode {
             secretKey,
             signingRootUtil.signingRootForSignAttestationData(attestationData, forkInfo));
 
-    final IndexedAttestationSchema<?> schema =
+    final IndexedAttestationSchema schema =
         spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
     return schema.create(
         Stream.of(index).collect(schema.getAttestingIndicesSchema().collectorUnboxed()),

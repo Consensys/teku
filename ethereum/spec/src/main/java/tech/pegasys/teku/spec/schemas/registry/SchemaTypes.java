@@ -26,6 +26,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSch
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -42,6 +44,10 @@ public class SchemaTypes {
   public static final SchemaId<BeaconBlocksByRootRequestMessageSchema>
       BEACON_BLOCKS_BY_ROOT_REQUEST_MESSAGE_SCHEMA =
           create("BEACON_BLOCKS_BY_ROOT_REQUEST_MESSAGE_SCHEMA");
+  public static final SchemaId<AttesterSlashingSchema> ATTESTER_SLASHING_SCHEMA =
+      create("ATTESTER_SLASHING_SCHEMA");
+  public static final SchemaId<IndexedAttestationSchema> INDEXED_ATTESTATION_SCHEMA =
+      create("INDEXED_ATTESTATION_SCHEMA");
 
   public static final SchemaId<AttestationSchema<Attestation>> ATTESTATION_SCHEMA =
       create("ATTESTATION_SCHEMA");

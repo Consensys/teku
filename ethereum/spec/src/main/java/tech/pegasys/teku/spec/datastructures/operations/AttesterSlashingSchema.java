@@ -13,15 +13,29 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
-import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_ATTESTATION_SCHEMA;
 
-public interface AttesterSlashingSchema<T extends AttesterSlashing> extends SszContainerSchema<T> {
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
-  @SuppressWarnings("unchecked")
-  default AttesterSlashingSchema<AttesterSlashing> castTypeToAttesterSlashingSchema() {
-    return (AttesterSlashingSchema<AttesterSlashing>) this;
+public class AttesterSlashingSchema
+    extends ContainerSchema2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
+
+  public AttesterSlashingSchema(final String containerName, final SchemaRegistry schemaRegistry) {
+    super(
+        containerName,
+        namedSchema("attestation_1", schemaRegistry.get(INDEXED_ATTESTATION_SCHEMA)),
+        namedSchema("attestation_2", schemaRegistry.get(INDEXED_ATTESTATION_SCHEMA)));
   }
 
-  AttesterSlashing create(
-      final IndexedAttestation attestation1, final IndexedAttestation attestation2);
+  @Override
+  public AttesterSlashing createFromBackingNode(final TreeNode node) {
+    return new AttesterSlashing(this, node);
+  }
+
+  public AttesterSlashing create(
+      final IndexedAttestation attestation1, final IndexedAttestation attestation2) {
+    return new AttesterSlashing(this, attestation1, attestation2);
+  }
 }

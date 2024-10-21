@@ -117,5 +117,7 @@ public class SendSignedAttestationsRequestTest extends AbstractTypeDefRequestTes
     assertThat(recordedRequest.getMethod()).isEqualTo("POST");
     assertThat(recordedRequest.getPath())
         .contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION_V2.getPath(emptyMap()));
+    assertThat(recordedRequest.getHeader(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
   }
 }

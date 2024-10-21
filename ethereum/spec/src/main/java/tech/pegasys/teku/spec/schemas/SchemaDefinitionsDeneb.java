@@ -98,14 +98,16 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
             getSignedBlsToExecutionChangeSchema(),
             blobKzgCommitmentsSchema,
             getMaxValidatorPerAttestation(specConfig),
-            "BeaconBlockBodyDeneb");
+            "BeaconBlockBodyDeneb",
+            schemaRegistry);
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaDenebImpl.create(
             specConfig,
             getSignedBlsToExecutionChangeSchema(),
             blobKzgCommitmentsSchema,
             getMaxValidatorPerAttestation(specConfig),
-            "BlindedBlockBodyDeneb");
+            "BlindedBlockBodyDeneb",
+            schemaRegistry);
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockDeneb");
     this.blindedBeaconBlockSchema =
         new BeaconBlockSchema(blindedBeaconBlockBodySchema, "BlindedBlockDeneb");

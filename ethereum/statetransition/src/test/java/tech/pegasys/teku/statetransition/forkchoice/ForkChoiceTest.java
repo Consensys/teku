@@ -1339,7 +1339,7 @@ class ForkChoiceTest {
                     new Checkpoint(
                         spec.computeEpochAtSlot(updatedAttestationSlot), targetBlock.getRoot())),
                 dataStructureUtil.randomSignature()));
-    final IndexedAttestationSchema<?> indexedAttestationSchema =
+    final IndexedAttestationSchema indexedAttestationSchema =
         spec.atSlot(updatedAttestationSlot).getSchemaDefinitions().getIndexedAttestationSchema();
     updatedVote.setIndexedAttestation(
         indexedAttestationSchema.create(

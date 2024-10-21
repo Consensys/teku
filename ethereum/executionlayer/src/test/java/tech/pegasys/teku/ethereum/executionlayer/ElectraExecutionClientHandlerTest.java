@@ -128,6 +128,7 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
 
   @Test
   void engineForkChoiceUpdated_shouldCallEngineForkChoiceUpdatedV3() {
+    // TODO EIP-7742 should call FcUV4 (https://github.com/Consensys/teku/issues/8745)
     final ExecutionClientHandler handler = getHandler();
     final ForkChoiceState forkChoiceState = dataStructureUtil.randomForkChoiceState(false);
     final ForkChoiceStateV1 forkChoiceStateV1 =
