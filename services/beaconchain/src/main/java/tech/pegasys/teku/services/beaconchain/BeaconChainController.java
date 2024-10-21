@@ -532,6 +532,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initRestAPI();
     initOperationsReOrgManager();
     initValidatorIndexCacheTracker();
+    initEphemeryValidationService();
   }
 
   private void initKeyValueStore() {
@@ -1145,6 +1146,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishVoluntaryExit));
     blsToExecutionChangePool.subscribeOperationAdded(
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishSignedBlsToExecutionChange));
+  }
+
+  protected void initEphemeryValidationService() {
+    final EphemerySlotValidationService slotValidationService =
+        new EphemerySlotValidationService(recentChainData);
+    eventChannels.subscribe(SlotEventsChannel.class, slotValidationService);
   }
 
   protected Eth2P2PNetworkBuilder createEth2P2PNetworkBuilder() {
