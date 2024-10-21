@@ -251,19 +251,19 @@ allprojects {
       check('ExperimentalCliOptionMustBeCorrectlyDisplayed', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
       // These are experimental checks that we want enabled
-      check('MissingBraces', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('InsecureCryptoUsage', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('WildcardImport', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('ClassName', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('DeduplicateConstants', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('FieldCanBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('InitializeInline', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('InsecureCryptoUsage', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('InterfaceWithOnlyStatics', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('MissingBraces', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('PackageLocation', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('RedundantOverride', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('RedundantThrows', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('UnnecessarilyFullyQualified', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('InitializeInline', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('ClassName', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('InterfaceWithOnlyStatics', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('PackageLocation', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('FieldCanBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('WildcardImport', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
 
     }
     options.encoding = 'UTF-8'
