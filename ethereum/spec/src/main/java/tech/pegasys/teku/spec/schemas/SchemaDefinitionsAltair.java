@@ -75,9 +75,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
     final SpecConfigAltair specConfig = SpecConfigAltair.required(schemaRegistry.getSpecConfig());
     this.indexedAttestationSchema = schemaRegistry.get(SchemaTypes.INDEXED_ATTESTATION_SCHEMA);
     this.attesterSlashingSchema = schemaRegistry.get(SchemaTypes.ATTESTER_SLASHING_SCHEMA);
-    this.attestationSchema =
-        new AttestationPhase0Schema(getMaxValidatorPerAttestation(specConfig))
-            .castTypeToAttestationSchema();
+    this.attestationSchema = schemaRegistry.get(SchemaTypes.ATTESTATION_SCHEMA);
     this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema);
     this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(aggregateAndProofSchema);
     this.beaconStateSchema = BeaconStateSchemaAltair.create(specConfig);

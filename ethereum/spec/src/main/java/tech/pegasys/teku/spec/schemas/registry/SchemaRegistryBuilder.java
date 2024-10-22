@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.schemas.registry;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.schemas.registry.BaseSchemaProvider.constantProviderBuilder;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTER_SLASHING_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTNETS_ENR_FIELD_SCHEMA;
@@ -125,7 +126,7 @@ public class SchemaRegistryBuilder {
         .build();
   }
 
-  private static SchemaProvider<AttestationSchema<Attestation>> createAttestationSchemaProvider() {
+  private static SchemaProvider<?> createAttestationSchemaProvider() {
     return constantProviderBuilder(ATTESTATION_SCHEMA)
         .withCreator(
             PHASE0,
@@ -133,7 +134,7 @@ public class SchemaRegistryBuilder {
                 new AttestationPhase0Schema(getMaxValidatorPerAttestationPhase0(specConfig))
                     .castTypeToAttestationSchema())
         .withCreator(
-            SpecMilestone.DENEB,
+            ELECTRA,
             (registry, specConfig) ->
                 new AttestationElectraSchema(
                         getMaxValidatorPerAttestationElectra(specConfig),
@@ -141,6 +142,26 @@ public class SchemaRegistryBuilder {
                     .castTypeToAttestationSchema())
         .build();
   }
+
+  private static SchemaProvider<?> createAggregateAndProofSchemaProvider() {
+    return constantProviderBuilder(AGGREGATE_AND_PROOF_SCHEMA)
+        .withCreator(
+            PHASE0,
+            (registry, specConfig) ->
+                new AggregateAndProofSchema(
+                    AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry.getMilestone()),
+                    getMaxValidatorPerAttestationPhase0(specConfig)))
+        .withCreator(
+            ELECTRA,
+            (registry, specConfig) ->
+                new AggregateAndProofSchema(
+                    AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry.getMilestone()),
+                    getMaxValidatorPerAttestationElectra(specConfig)))
+        .build();
+  }
+
+
+          AGGREGATE_AND_PROOF_SCHEMA
 
   private static long getMaxValidatorPerAttestationPhase0(final SpecConfig specConfig) {
     return specConfig.getMaxValidatorsPerCommittee();
