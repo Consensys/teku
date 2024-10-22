@@ -167,12 +167,14 @@ public class SchemaRegistryBuilder {
             PHASE0,
             (registry, specConfig) ->
                 new SignedAggregateAndProofSchema(
-                    AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry.getMilestone()), registry))
+                    SIGNED_AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry.getMilestone()),
+                    registry))
         .withCreator(
             ELECTRA,
             (registry, specConfig) ->
                 new SignedAggregateAndProofSchema(
-                    AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry.getMilestone()), registry))
+                    SIGNED_AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry.getMilestone()),
+                    registry))
         .build();
   }
 
