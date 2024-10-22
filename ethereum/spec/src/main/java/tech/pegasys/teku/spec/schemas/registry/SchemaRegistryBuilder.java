@@ -16,12 +16,14 @@ package tech.pegasys.teku.spec.schemas.registry;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.schemas.registry.BaseSchemaProvider.constantProviderBuilder;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTER_SLASHING_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTNETS_ENR_FIELD_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCKS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_BATCH_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_ATTESTATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SYNCNETS_ENR_FIELD_SCHEMA;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -32,10 +34,10 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
@@ -55,7 +57,9 @@ public class SchemaRegistryBuilder {
         .addProvider(createHistoricalBatchSchemaProvider())
         .addProvider(createIndexedAttestationSchemaProvider())
         .addProvider(createAttesterSlashingSchemaProvider())
-        .addProvider(createAttestationSchemaProvider());
+        .addProvider(createAttestationSchemaProvider())
+        .addProvider(createAggregateAndProofSchemaProvider())
+        .addProvider(createSignedAggregateAndProofSchemaProvider());
   }
 
   private static SchemaProvider<?> createAttnetsENRFieldSchemaProvider() {
@@ -125,7 +129,7 @@ public class SchemaRegistryBuilder {
         .build();
   }
 
-  private static SchemaProvider<AttestationSchema<Attestation>> createAttestationSchemaProvider() {
+  private static SchemaProvider<?> createAttestationSchemaProvider() {
     return constantProviderBuilder(ATTESTATION_SCHEMA)
         .withCreator(
             PHASE0,
@@ -133,12 +137,44 @@ public class SchemaRegistryBuilder {
                 new AttestationPhase0Schema(getMaxValidatorPerAttestationPhase0(specConfig))
                     .castTypeToAttestationSchema())
         .withCreator(
-            SpecMilestone.DENEB,
+            ELECTRA,
             (registry, specConfig) ->
                 new AttestationElectraSchema(
                         getMaxValidatorPerAttestationElectra(specConfig),
                         specConfig.getMaxCommitteesPerSlot())
                     .castTypeToAttestationSchema())
+        .build();
+  }
+
+  private static SchemaProvider<?> createAggregateAndProofSchemaProvider() {
+    return constantProviderBuilder(AGGREGATE_AND_PROOF_SCHEMA)
+        .withCreator(
+            PHASE0,
+            (registry, specConfig) ->
+                new AggregateAndProofSchema(
+                    AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry.getMilestone()), registry))
+        .withCreator(
+            ELECTRA,
+            (registry, specConfig) ->
+                new AggregateAndProofSchema(
+                    AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry.getMilestone()), registry))
+        .build();
+  }
+
+  private static SchemaProvider<?> createSignedAggregateAndProofSchemaProvider() {
+    return constantProviderBuilder(SIGNED_AGGREGATE_AND_PROOF_SCHEMA)
+        .withCreator(
+            PHASE0,
+            (registry, specConfig) ->
+                new SignedAggregateAndProofSchema(
+                    SIGNED_AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry.getMilestone()),
+                    registry))
+        .withCreator(
+            ELECTRA,
+            (registry, specConfig) ->
+                new SignedAggregateAndProofSchema(
+                    SIGNED_AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry.getMilestone()),
+                    registry))
         .build();
   }
 
