@@ -237,9 +237,11 @@ public interface Database extends AutoCloseable {
    *
    * @param lastSlotToPrune inclusive, not reached if limit happens first
    * @param pruneLimit slots limit
+   * @param checkpointInitialSlot
    * @return actual last pruned slot
    */
-  UInt64 pruneFinalizedBlocks(UInt64 lastSlotToPrune, int pruneLimit);
+  UInt64 pruneFinalizedBlocks(
+      UInt64 lastSlotToPrune, int pruneLimit, final UInt64 checkpointInitialSlot);
 
   Optional<UInt64> pruneFinalizedStates(
       Optional<UInt64> lastPrunedSlot, UInt64 lastSlotToPruneStateFor, long pruneLimit);
