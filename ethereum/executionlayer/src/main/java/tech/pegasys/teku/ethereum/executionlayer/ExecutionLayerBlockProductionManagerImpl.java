@@ -16,12 +16,14 @@ package tech.pegasys.teku.ethereum.executionlayer;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -40,7 +42,7 @@ public class ExecutionLayerBlockProductionManagerImpl
   private final NavigableMap<UInt64, ExecutionPayloadResult> executionResultCache =
       new ConcurrentSkipListMap<>();
 
-  private final NavigableMap<UInt64, BuilderPayloadOrFallbackData> builderResultCache =
+  private final NavigableMap<SlotAndBlockRoot, BuilderPayloadOrFallbackData> builderResultCache =
       new ConcurrentSkipListMap<>();
 
   private final ExecutionLayerChannel executionLayerChannel;
@@ -55,9 +57,9 @@ public class ExecutionLayerBlockProductionManagerImpl
     executionResultCache
         .headMap(slot.minusMinZero(EXECUTION_RESULT_CACHE_RETENTION_SLOTS), false)
         .clear();
-    builderResultCache
-        .headMap(slot.minusMinZero(BUILDER_RESULT_CACHE_RETENTION_SLOTS), false)
-        .clear();
+    SlotAndBlockRoot toSlotAndBlockRoot =
+        new SlotAndBlockRoot(slot.minusMinZero(BUILDER_RESULT_CACHE_RETENTION_SLOTS), Bytes32.ZERO);
+    builderResultCache.headMap(toSlotAndBlockRoot, false).clear();
   }
 
   @Override
@@ -92,13 +94,15 @@ public class ExecutionLayerBlockProductionManagerImpl
         .builderGetPayload(signedBeaconBlock, this::getCachedPayloadResult)
         .thenPeek(
             builderPayloadOrFallbackData ->
-                builderResultCache.put(signedBeaconBlock.getSlot(), builderPayloadOrFallbackData))
+                builderResultCache.put(
+                    signedBeaconBlock.getSlotAndBlockRoot(), builderPayloadOrFallbackData))
         .alwaysRun(blockPublishingPerformance::builderGetPayload);
   }
 
   @Override
-  public Optional<BuilderPayloadOrFallbackData> getCachedUnblindedPayload(final UInt64 slot) {
-    return Optional.ofNullable(builderResultCache.get(slot));
+  public Optional<BuilderPayloadOrFallbackData> getCachedUnblindedPayload(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return Optional.ofNullable(builderResultCache.get(slotAndBlockRoot));
   }
 
   private ExecutionPayloadResult executeLocalFlow(

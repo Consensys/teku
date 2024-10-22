@@ -374,7 +374,8 @@ public abstract class AbstractBlockFactoryTest {
     }
 
     // simulate caching of the builder payload
-    when(executionLayer.getCachedUnblindedPayload(signedBlockContainer.getSlot()))
+    when(executionLayer.getCachedUnblindedPayload(
+            signedBlockContainer.getSignedBlock().getSlotAndBlockRoot()))
         .thenReturn(builderPayload.map(BuilderPayloadOrFallbackData::create));
 
     final List<BlobSidecar> blobSidecars =

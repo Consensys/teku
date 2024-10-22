@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -817,7 +818,7 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomBuilderBlobsBundle(3);
 
     prepareCachedBuilderPayload(
-        signedBlindedBeaconBlock.getSlot(),
+        signedBlindedBeaconBlock.getSlotAndBlockRoot(),
         dataStructureUtil.randomExecutionPayload(),
         blobsBundle);
 
@@ -842,7 +843,7 @@ class BlockOperationSelectorFactoryTest {
     when(blobsBundle.getBlobs()).thenReturn(dataStructureUtil.randomSszBlobs(2));
 
     prepareCachedBuilderPayload(
-        signedBlindedBeaconBlock.getSlot(),
+        signedBlindedBeaconBlock.getSlotAndBlockRoot(),
         dataStructureUtil.randomExecutionPayload(),
         blobsBundle);
 
@@ -867,7 +868,7 @@ class BlockOperationSelectorFactoryTest {
     when(blobsBundle.getProofs()).thenReturn(dataStructureUtil.randomSszKZGProofs(2));
 
     prepareCachedBuilderPayload(
-        signedBlindedBeaconBlock.getSlot(),
+        signedBlindedBeaconBlock.getSlotAndBlockRoot(),
         dataStructureUtil.randomExecutionPayload(),
         blobsBundle);
 
@@ -901,10 +902,14 @@ class BlockOperationSelectorFactoryTest {
                   .toList(),
               blobsBundle.getProofs().stream().map(SszKZGProof::getKZGProof).toList(),
               blobsBundle.getBlobs().stream().toList());
-      prepareCachedFallbackData(slot, executionPayload, localFallbackBlobsBundle);
+      prepareCachedFallbackData(
+          signedBlindedBeaconBlock.getSlotAndBlockRoot(),
+          executionPayload,
+          localFallbackBlobsBundle);
     } else {
 
-      prepareCachedBuilderPayload(slot, executionPayload, blobsBundle);
+      prepareCachedBuilderPayload(
+          signedBlindedBeaconBlock.getSlotAndBlockRoot(), executionPayload, blobsBundle);
     }
 
     final List<BlobSidecar> blobSidecars =
@@ -1281,20 +1286,23 @@ class BlockOperationSelectorFactoryTest {
   }
 
   private void prepareCachedBuilderPayload(
-      final UInt64 slot,
+      final SlotAndBlockRoot slotAndBlockRoot,
       final ExecutionPayload executionPayload,
       final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle) {
     final BuilderPayload builderPayload =
-        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+        SchemaDefinitionsDeneb.required(
+                spec.atSlot(slotAndBlockRoot.getSlot()).getSchemaDefinitions())
             .getExecutionPayloadAndBlobsBundleSchema()
             .create(executionPayload, blobsBundle);
-    when(executionLayer.getCachedUnblindedPayload(slot))
+    when(executionLayer.getCachedUnblindedPayload(slotAndBlockRoot))
         .thenReturn(Optional.of(BuilderPayloadOrFallbackData.create(builderPayload)));
   }
 
   private void prepareCachedFallbackData(
-      final UInt64 slot, final ExecutionPayload executionPayload, final BlobsBundle blobsBundle) {
-    when(executionLayer.getCachedUnblindedPayload(slot))
+      final SlotAndBlockRoot slotAndBlockRoot,
+      final ExecutionPayload executionPayload,
+      final BlobsBundle blobsBundle) {
+    when(executionLayer.getCachedUnblindedPayload(slotAndBlockRoot))
         .thenReturn(
             Optional.of(
                 BuilderPayloadOrFallbackData.create(
