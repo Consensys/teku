@@ -32,7 +32,10 @@ class ConfigProviderTest {
     final Map<String, String> configMap = configProvider.getConfig();
     final SpecConfig specConfig = SpecConfigLoader.loadRemoteConfig(configMap);
     final SpecConfig expectedConfig = spec.getGenesisSpecConfig();
-    assertThat(specConfig).isEqualToComparingFieldByField(expectedConfig);
+    assertThat(specConfig)
+        .usingRecursiveComparison()
+        .ignoringFieldsMatchingRegexes("specConfig.*")
+        .isEqualTo(expectedConfig);
   }
 
   @Test
