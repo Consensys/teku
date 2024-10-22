@@ -26,7 +26,7 @@ import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.junit.jupiter.api.Test;
 
-class MetricsHistogramTest {
+class MetricsQuantileHistogramTest {
 
   private static final TekuMetricCategory CATEGORY = TekuMetricCategory.BEACON;
   private final ObservableMetricsSystem metricsSystem =
@@ -34,8 +34,8 @@ class MetricsHistogramTest {
 
   @Test
   void shouldReportValuesWithNoSpecifiedUpperLimit() {
-    final MetricsHistogram histogram =
-        MetricsHistogram.create(CATEGORY, metricsSystem, "test", "Test help", 3, List.of());
+    final MetricsQuantileHistogram histogram =
+        MetricsQuantileHistogram.create(CATEGORY, metricsSystem, "test", "Test help", 3, List.of());
 
     for (int i = 1; i <= 100; i++) {
       histogram.recordValue(i);
@@ -47,16 +47,17 @@ class MetricsHistogramTest {
             .collect(Collectors.toMap(Observation::getLabels, Observation::getValue));
     assertThat(values)
         .containsOnly(
-            entry(key(List.of(MetricsHistogram.LABEL_50)), 50d),
-            entry(key(List.of(MetricsHistogram.LABEL_95)), 95d),
-            entry(key(List.of(MetricsHistogram.LABEL_99)), 99d),
-            entry(key(List.of(MetricsHistogram.LABEL_1)), 100d));
+            entry(key(List.of(MetricsQuantileHistogram.LABEL_50)), 50d),
+            entry(key(List.of(MetricsQuantileHistogram.LABEL_95)), 95d),
+            entry(key(List.of(MetricsQuantileHistogram.LABEL_99)), 99d),
+            entry(key(List.of(MetricsQuantileHistogram.LABEL_1)), 100d));
   }
 
   @Test
   void shouldReportValuesWithUpperLimit() {
-    final MetricsHistogram histogram =
-        MetricsHistogram.create(CATEGORY, metricsSystem, "test", "Test help", 2, 80, List.of());
+    final MetricsQuantileHistogram histogram =
+        MetricsQuantileHistogram.create(
+            CATEGORY, metricsSystem, "test", "Test help", 2, 80, List.of());
 
     for (int i = 1; i <= 100; i++) {
       histogram.recordValue(i);
@@ -68,15 +69,15 @@ class MetricsHistogramTest {
             .collect(Collectors.toMap(Observation::getLabels, Observation::getValue));
     assertThat(values)
         .containsOnly(
-            entry(key(List.of(MetricsHistogram.LABEL_50)), 50d),
-            entry(key(List.of(MetricsHistogram.LABEL_95)), 80d),
-            entry(key(List.of(MetricsHistogram.LABEL_99)), 80d),
-            entry(key(List.of(MetricsHistogram.LABEL_1)), 80d));
+            entry(key(List.of(MetricsQuantileHistogram.LABEL_50)), 50d),
+            entry(key(List.of(MetricsQuantileHistogram.LABEL_95)), 80d),
+            entry(key(List.of(MetricsQuantileHistogram.LABEL_99)), 80d),
+            entry(key(List.of(MetricsQuantileHistogram.LABEL_1)), 80d));
   }
 
   private static List<String> key(final List<String> labelValues) {
     final List<String> key = new ArrayList<>();
-    key.add(MetricsHistogram.QUANTILE_LABEL);
+    key.add(MetricsQuantileHistogram.QUANTILE_LABEL);
     key.addAll(labelValues);
     return key;
   }

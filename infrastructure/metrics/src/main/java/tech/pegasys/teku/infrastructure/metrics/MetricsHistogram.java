@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,211 +13,66 @@
 
 package tech.pegasys.teku.infrastructure.metrics;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import io.prometheus.client.Collector;
-import io.prometheus.client.Collector.MetricFamilySamples;
-import java.util.Arrays;
-import java.util.Collections;
+import io.prometheus.client.Histogram;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Stream;
-import org.HdrHistogram.SynchronizedHistogram;
+import java.util.Locale;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
-/**
- * A histogram metric that automatically selects bucket sizes based on simple configuration and the
- * values actually received. Only records values when the metrics system is a {@link
- * PrometheusMetricsSystem}.
- *
- * <p>Backing is an HdrHistogram.
- *
- * @see <a href="https://github.com/HdrHistogram/HdrHistogram">HdrHistogram docs</a>
- */
 public class MetricsHistogram {
-  static final String QUANTILE_LABEL = "quantile";
-  static final String LABEL_50 = "0.5";
-  static final String LABEL_95 = "0.95";
-  static final String LABEL_99 = "0.99";
-  static final String LABEL_1 = "1";
+  private static final Logger LOG = LogManager.getLogger();
+  private static final double[] DEFAULT_BUCKETS =
+      new double[] {
+        0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0
+      };
 
-  private final Map<List<String>, SynchronizedHistogram> histogramMap = new ConcurrentHashMap<>();
-  private final List<String> labels;
-  private final Optional<Long> highestTrackableValue;
-  private final int numberOfSignificantValueDigits;
+  private final Histogram histogram;
 
-  protected MetricsHistogram(
-      final int numberOfSignificantValueDigits,
-      final Optional<Long> highestTrackableValue,
-      final List<String> customLabelsNames) {
-    this.numberOfSignificantValueDigits = numberOfSignificantValueDigits;
-    this.highestTrackableValue = highestTrackableValue;
-    this.labels = Stream.concat(customLabelsNames.stream(), Stream.of(QUANTILE_LABEL)).toList();
-  }
-
-  /**
-   * Create a new histogram metric which auto-resizes to fit any values supplied and maintains at
-   * least {@code numberOfSignificantValueDigits} of precision.
-   *
-   * @param category the metrics category
-   * @param metricsSystem the metrics system to register with
-   * @param name the name of the metric
-   * @param help the help text describing the metric
-   * @param numberOfSignificantValueDigits the number of digits of precision to preserve
-   * @return the new metric
-   */
-  public static MetricsHistogram create(
-      final MetricCategory category,
+  public MetricsHistogram(
       final MetricsSystem metricsSystem,
-      final String name,
-      final String help,
-      final int numberOfSignificantValueDigits,
-      final List<String> customLabelsNames) {
-
-    return createMetric(
-        category,
-        metricsSystem,
-        name,
-        help,
-        numberOfSignificantValueDigits,
-        Optional.empty(),
-        customLabelsNames);
-  }
-
-  /**
-   * Create a new histogram metric with a fixed maximum value, maintaining at least {@code
-   * numberOfSignificantValueDigits} of precision.
-   *
-   * <p>Values above the specified highestTrackableValue will be recorded as being equal to that
-   * value.
-   *
-   * @param category the metrics category
-   * @param metricsSystem the metrics system to register with
-   * @param name the name of the metric
-   * @param help the help text describing the metric
-   * @param numberOfSignificantValueDigits the number of digits of precision to preserve
-   * @param highestTrackableValue the highest value that can be recorded by this histogram
-   * @return the new metric
-   */
-  public static MetricsHistogram create(
       final MetricCategory category,
-      final MetricsSystem metricsSystem,
-      final String name,
-      final String help,
-      final int numberOfSignificantValueDigits,
-      final long highestTrackableValue,
-      final List<String> customLabelsNames) {
-
-    return createMetric(
-        category,
-        metricsSystem,
-        name,
-        help,
-        numberOfSignificantValueDigits,
-        Optional.of(highestTrackableValue),
-        customLabelsNames);
-  }
-
-  private static MetricsHistogram createMetric(
-      final MetricCategory category,
-      final MetricsSystem metricsSystem,
-      final String name,
-      final String help,
-      final int numberOfSignificantValueDigits,
-      final Optional<Long> highestTrackableValue,
-      final List<String> customLabelsNames) {
-
-    final MetricsHistogram histogram =
-        new MetricsHistogram(
-            numberOfSignificantValueDigits, highestTrackableValue, customLabelsNames);
+      String name,
+      String help,
+      double... buckets) {
+    this.histogram =
+        Histogram.build()
+            .name(category.getName().toLowerCase(Locale.ROOT) + "_" + name)
+            .help(help)
+            .buckets(buckets.length > 0 ? buckets : DEFAULT_BUCKETS)
+            .register();
     if (metricsSystem instanceof PrometheusMetricsSystem) {
-      ((PrometheusMetricsSystem) metricsSystem)
-          .addCollector(category, () -> histogram.histogramToCollector(category, name, help));
-    }
-    return histogram;
-  }
-
-  public void recordValue(final long value, final String... customLabelValues) {
-    checkArgument(
-        labels.size() == customLabelValues.length + 1,
-        "customLabelsNames and customLabelsValues must have the same size");
-
-    final SynchronizedHistogram histogram =
-        histogramMap.computeIfAbsent(
-            Arrays.asList(customLabelValues),
-            __ ->
-                highestTrackableValue
-                    .map(aLong -> new SynchronizedHistogram(aLong, numberOfSignificantValueDigits))
-                    .orElseGet(() -> new SynchronizedHistogram(numberOfSignificantValueDigits)));
-
-    if (histogram.isAutoResize()) {
-      histogram.recordValue(value);
-    } else {
-      histogram.recordValue(Math.min(histogram.getHighestTrackableValue(), value));
+      try {
+        ((PrometheusMetricsSystem) metricsSystem)
+            .addCollector(category, this::histogramToCollector);
+      } catch (Exception e) {
+        LOG.error("Failed to add collector to PrometheusMetricsSystem", e);
+      }
     }
   }
 
-  protected Collector histogramToCollector(
-      final MetricCategory metricCategory, final String name, final String help) {
+  public record Timer(Histogram.Timer delegate) implements Closeable {
+    @Override
+    public void close() throws IOException {
+      delegate.close();
+    }
+  }
+
+  public Timer startTimer() {
+    return new Timer(histogram.startTimer());
+  }
+
+  protected Collector histogramToCollector() {
     return new Collector() {
-      final String metricName =
-          metricCategory.getApplicationPrefix().orElse("") + metricCategory.getName() + "_" + name;
-
       @Override
       public List<MetricFamilySamples> collect() {
-
-        final List<MetricFamilySamples.Sample> samples =
-            histogramMap.entrySet().stream()
-                .map(
-                    labelsValuesToHistogram ->
-                        List.of(
-                            createSample(
-                                metricName,
-                                LABEL_50,
-                                labelsValuesToHistogram.getKey(),
-                                50d,
-                                labelsValuesToHistogram.getValue()),
-                            createSample(
-                                metricName,
-                                LABEL_95,
-                                labelsValuesToHistogram.getKey(),
-                                95d,
-                                labelsValuesToHistogram.getValue()),
-                            createSample(
-                                metricName,
-                                LABEL_99,
-                                labelsValuesToHistogram.getKey(),
-                                99d,
-                                labelsValuesToHistogram.getValue()),
-                            createSample(
-                                metricName,
-                                LABEL_1,
-                                labelsValuesToHistogram.getKey(),
-                                labelsValuesToHistogram.getValue().getMaxValueAsDouble(),
-                                labelsValuesToHistogram.getValue())))
-                .flatMap(List::stream)
-                .toList();
-
-        return Collections.singletonList(
-            new MetricFamilySamples(metricName, Type.SUMMARY, help, samples));
+        return histogram.collect();
       }
     };
-  }
-
-  private MetricFamilySamples.Sample createSample(
-      final String metricName,
-      final String quantileLabelValue,
-      final List<String> labelValues,
-      double percentile,
-      final SynchronizedHistogram histogram) {
-    return new MetricFamilySamples.Sample(
-        metricName,
-        labels,
-        Stream.concat(labelValues.stream(), Stream.of(quantileLabelValue)).toList(),
-        histogram.getValueAtPercentile(percentile));
   }
 }

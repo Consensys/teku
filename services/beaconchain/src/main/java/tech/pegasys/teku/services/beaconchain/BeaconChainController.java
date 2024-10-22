@@ -662,7 +662,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
               kzg,
               metricsSystem);
       dataColumnSidecarManager =
-          new DataColumnSidecarManagerImpl(dataColumnSidecarGossipValidator, dasGossipLogger);
+          new DataColumnSidecarManagerImpl(
+              dataColumnSidecarGossipValidator, dasGossipLogger, metricsSystem);
       eventChannels.subscribe(
           DataColumnSidecarGossipChannel.class,
           dataColumnSidecarManager::onDataColumnSidecarPublish);

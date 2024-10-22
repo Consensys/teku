@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.interop;
 
-import java.util.Collections;
 import org.hyperledger.besu.config.GenesisConfigFile;
 import org.hyperledger.besu.config.GenesisConfigOptions;
 import org.hyperledger.besu.datatypes.Wei;
@@ -25,6 +24,7 @@ import org.hyperledger.besu.ethereum.core.MiningParameters;
 import org.hyperledger.besu.ethereum.mainnet.MainnetProtocolSchedule;
 import org.hyperledger.besu.ethereum.mainnet.ProtocolSchedule;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
@@ -35,12 +35,16 @@ public class MergedGenesisTestBuilder {
   public static ExecutionPayloadHeader createPayloadForBesuGenesis(
       final SchemaDefinitions schemaDefinitions, final String genesisConfigFile) {
     final GenesisConfigFile configFile = GenesisConfigFile.fromConfig(genesisConfigFile);
-    final GenesisConfigOptions genesisConfigOptions =
-        configFile.getConfigOptions(Collections.emptyMap());
+    final GenesisConfigOptions genesisConfigOptions = configFile.getConfigOptions();
     final BadBlockManager badBlockManager = new BadBlockManager();
+    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
     final ProtocolSchedule protocolSchedule =
         MainnetProtocolSchedule.fromConfig(
-            genesisConfigOptions, MiningParameters.MINING_DISABLED, badBlockManager);
+            genesisConfigOptions,
+            MiningParameters.MINING_DISABLED,
+            badBlockManager,
+            true,
+            metricsSystem);
     final GenesisState genesisState = GenesisState.fromConfig(configFile, protocolSchedule);
     final Block genesisBlock = genesisState.getBlock();
     final BlockHeader header = genesisBlock.getHeader();

@@ -59,6 +59,7 @@ dependencies {
     testFixturesImplementation testFixtures(project(':infrastructure:async'))
     testFixturesImplementation testFixtures(project(':infrastructure:bls'))
     testFixturesImplementation testFixtures(project(':infrastructure:kzg'))
+    testFixturesImplementation testFixtures(project(':infrastructure:metrics'))
 
     testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
     testImplementation 'commons-io:commons-io'

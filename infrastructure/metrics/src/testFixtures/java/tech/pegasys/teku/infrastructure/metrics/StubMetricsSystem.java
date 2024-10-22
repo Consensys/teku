@@ -51,6 +51,19 @@ public class StubMetricsSystem implements MetricsSystem {
   }
 
   @Override
+  public LabelledMetric<OperationTimer> createSimpleLabelledTimer(
+      final MetricCategory category,
+      final String name,
+      final String help,
+      final String... labelNames) {
+    validateMetricName(name);
+    validateLabelName(labelNames);
+    return labelledOperationTimers
+        .computeIfAbsent(category, __ -> new ConcurrentHashMap<>())
+        .computeIfAbsent(name, __ -> new StubLabelledOperationTimer(category, name, help));
+  }
+
+  @Override
   public LabelledGauge createLabelledGauge(
       final MetricCategory category,
       final String name,
