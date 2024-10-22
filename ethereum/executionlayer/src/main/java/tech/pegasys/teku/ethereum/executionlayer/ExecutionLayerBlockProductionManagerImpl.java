@@ -16,7 +16,6 @@ package tech.pegasys.teku.ethereum.executionlayer;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
@@ -57,9 +56,8 @@ public class ExecutionLayerBlockProductionManagerImpl
     executionResultCache
         .headMap(slot.minusMinZero(EXECUTION_RESULT_CACHE_RETENTION_SLOTS), false)
         .clear();
-    SlotAndBlockRoot toSlotAndBlockRoot =
-        new SlotAndBlockRoot(slot.minusMinZero(BUILDER_RESULT_CACHE_RETENTION_SLOTS), Bytes32.ZERO);
-    builderResultCache.headMap(toSlotAndBlockRoot, false).clear();
+    final UInt64 slotMax = slot.minusMinZero(BUILDER_RESULT_CACHE_RETENTION_SLOTS);
+    builderResultCache.keySet().removeIf(key -> key.getSlot().isLessThan(slotMax));
   }
 
   @Override
