@@ -127,8 +127,7 @@ public class PostBlockV2 extends AbstractPostBlockV2 {
             SC_ACCEPTED,
             "Block has been successfully broadcast, but failed validation and has not been imported.")
         .withBadRequestResponse(Optional.of("Unable to parse request body."))
-        .response(
-            SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing.", HTTP_ERROR_RESPONSE_TYPE)
+        .response(SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE, HTTP_ERROR_RESPONSE_TYPE)
         .response(
             SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
         .build();

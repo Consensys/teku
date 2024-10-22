@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.v1.validator;
+package tech.pegasys.teku.beaconrestapi.beacon;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.beaconrestapi.v1.validator.PostBlindedAndUnblindedBlockTest.Version.V1;
-import static tech.pegasys.teku.beaconrestapi.v1.validator.PostBlindedAndUnblindedBlockTest.Version.V2;
+import static tech.pegasys.teku.beaconrestapi.beacon.PostBlindedAndUnblindedBlockTest.Version.V1;
+import static tech.pegasys.teku.beaconrestapi.beacon.PostBlindedAndUnblindedBlockTest.Version.V2;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import java.io.IOException;
@@ -58,22 +58,30 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
         .flatMap(
             route ->
                 Stream.of(
-                    // route, useSsz
-                    Arguments.of(route, false), Arguments.of(route, true)))
+                    // route, useSsz, set consensus header
+                    Arguments.of(route, false, true),
+                    Arguments.of(route, false, false),
+                    Arguments.of(route, true, false),
+                    Arguments.of(route, true, true)))
         .map(
             args -> {
               final String route = (String) args.get()[0];
               final boolean isBlindedBlock = route.contains("blinded");
               final Version version = route.contains("/v2/") ? V2 : V1;
               final boolean useSsz = (boolean) args.get()[1];
-              return Arguments.of(version, isBlindedBlock, route, useSsz);
+              final boolean setConsensusHeader = (boolean) args.get()[2];
+              return Arguments.of(version, isBlindedBlock, route, useSsz, setConsensusHeader);
             });
   }
 
-  @ParameterizedTest(name = "version:{0}_blinded:{1}_ssz:{3}")
+  @ParameterizedTest(name = "version:{0}_blinded:{1}_ssz:{3}_setConsensusHeader:{4}")
   @MethodSource("postBlockCases")
   void preDeneb(
-      final Version version, final boolean isBlindedBlock, final String route, final boolean useSsz)
+      final Version version,
+      final boolean isBlindedBlock,
+      final String route,
+      final boolean useSsz,
+      final boolean setConsensusHeader)
       throws IOException {
 
     startRestAPIAtGenesis(SpecMilestone.BELLATRIX);
@@ -96,21 +104,22 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
 
     prepareResponse(request, version);
 
-    postRequestAndAssert(
-        route,
-        request,
-        signedBeaconBlockSchema,
-        Optional.of(SpecMilestone.BELLATRIX.name()),
-        useSsz,
-        version);
+    final Optional<String> consensusHeader =
+        setConsensusHeader ? Optional.of(SpecMilestone.BELLATRIX.name()) : Optional.empty();
+
+    postRequestAndAssert(route, request, signedBeaconBlockSchema, consensusHeader, useSsz, version);
     postRequestAndAssert(
         route, request, signedBeaconBlockSchema, Optional.empty(), useSsz, version);
   }
 
-  @ParameterizedTest(name = "version:{0}_blinded:{1}_ssz:{3}")
+  @ParameterizedTest(name = "version:{0}_blinded:{1}_ssz:{3}_setConsensusHeader:{4}")
   @MethodSource("postBlockCases")
   void postDeneb(
-      final Version version, final boolean isBlindedBlock, final String route, final boolean useSsz)
+      final Version version,
+      final boolean isBlindedBlock,
+      final String route,
+      final boolean useSsz,
+      final boolean setConsensusHeader)
       throws IOException {
     startRestAPIAtGenesis(SpecMilestone.DENEB);
     dataStructureUtil = new DataStructureUtil(spec);
@@ -132,13 +141,11 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
 
     prepareResponse(request, version);
 
+    final Optional<String> consensusHeader =
+        setConsensusHeader ? Optional.of(SpecMilestone.DENEB.name()) : Optional.empty();
+
     postRequestAndAssert(
-        route,
-        request,
-        signedBlockContainerSchema,
-        Optional.of(SpecMilestone.DENEB.name()),
-        useSsz,
-        version);
+        route, request, signedBlockContainerSchema, consensusHeader, useSsz, version);
     postRequestAndAssert(
         route, request, signedBlockContainerSchema, Optional.empty(), useSsz, version);
   }
