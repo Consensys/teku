@@ -103,7 +103,9 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
                   .boxed()
                   .sorted(
                       Comparator.comparing(
-                          index -> validators.get(index).getActivationEligibilityEpoch()))
+                              (Integer index) ->
+                                  validators.get(index).getActivationEligibilityEpoch())
+                          .thenComparing(index -> index))
                   .forEach(
                       index ->
                           beaconStateMutators.queueEntireBalanceAndResetValidator(state, index));
