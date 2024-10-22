@@ -45,10 +45,6 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositR
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
-import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
@@ -57,13 +53,8 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConso
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
-import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
 public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
-  private final AttestationSchema<Attestation> attestationSchema;
-  private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
-  private final AggregateAndProofSchema aggregateAndProofSchema;
-
   private final BeaconStateSchemaElectra beaconStateSchema;
 
   private final BeaconBlockBodySchemaElectraImpl beaconBlockBodySchema;
@@ -98,10 +89,6 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     final SpecConfigElectra specConfig = SpecConfigElectra.required(schemaRegistry.getSpecConfig());
 
     final long maxValidatorsPerAttestation = getMaxValidatorPerAttestation(specConfig);
-
-    this.attestationSchema = schemaRegistry.get(SchemaTypes.ATTESTATION_SCHEMA);
-    this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema);
-    this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(aggregateAndProofSchema);
 
     this.executionRequestsSchema = new ExecutionRequestsSchema(specConfig);
     this.beaconStateSchema = BeaconStateSchemaElectra.create(specConfig);
@@ -167,21 +154,6 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
         SchemaDefinitionsElectra.class,
         schemaDefinitions.getClass());
     return (SchemaDefinitionsElectra) schemaDefinitions;
-  }
-
-  @Override
-  public SignedAggregateAndProofSchema getSignedAggregateAndProofSchema() {
-    return signedAggregateAndProofSchema;
-  }
-
-  @Override
-  public AggregateAndProofSchema getAggregateAndProofSchema() {
-    return aggregateAndProofSchema;
-  }
-
-  @Override
-  public AttestationSchema<Attestation> getAttestationSchema() {
-    return attestationSchema;
   }
 
   @Override
