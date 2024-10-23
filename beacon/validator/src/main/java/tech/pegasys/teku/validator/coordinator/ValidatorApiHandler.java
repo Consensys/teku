@@ -666,15 +666,15 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer maybeBlindedBlockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
+    final UInt64 slot = maybeBlindedBlockContainer.getSlot();
     final BlockPublishingPerformance blockPublishingPerformance =
-        blockProductionAndPublishingPerformanceFactory.createForPublishing(
-            maybeBlindedBlockContainer.getSlot());
+        blockProductionAndPublishingPerformanceFactory.createForPublishing(slot);
     return blockPublisher
         .sendSignedBlock(
             maybeBlindedBlockContainer,
             // do only EQUIVOCATION validation when GOSSIP validation has been requested and the
             // block has been locally created
-            broadcastValidationLevel == GOSSIP && isLocallyCreatedBlock(maybeBlindedBlockContainer)
+            broadcastValidationLevel == GOSSIP && isLocallyCreatedBlock(slot)
                 ? EQUIVOCATION
                 : broadcastValidationLevel,
             blockPublishingPerformance)
@@ -883,9 +883,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return proposerSlots;
   }
 
-  private boolean isLocallyCreatedBlock(final SignedBlockContainer blockContainer) {
+  private boolean isLocallyCreatedBlock(final UInt64 slot) {
     final SafeFuture<Optional<BlockContainerAndMetaData>> localBlockProduction =
-        localBlockProductionBySlotCache.get(blockContainer.getSlot());
+        localBlockProductionBySlotCache.get(slot);
     if (localBlockProduction == null) {
       return false;
     }
