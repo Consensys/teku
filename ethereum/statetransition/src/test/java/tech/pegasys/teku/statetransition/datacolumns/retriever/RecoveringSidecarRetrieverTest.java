@@ -20,9 +20,11 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
@@ -62,6 +64,7 @@ public class RecoveringSidecarRetrieverTest {
           spec.forMilestone(SpecMilestone.EIP7594).getSchemaDefinitions());
   final int columnCount = config.getNumberOfColumns();
   final KZG kzg = KZG.getInstance(false);
+  private final MetricsSystem metricsSystemStub = new StubMetricsSystem();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
 
@@ -94,7 +97,9 @@ public class RecoveringSidecarRetrieverTest {
             dbAccessor,
             stubAsyncRunner,
             Duration.ofSeconds(1),
-            128);
+            128,
+            metricsSystemStub);
+
     List<Blob> blobs =
         Stream.generate(dataStructureUtil::randomValidBlob).limit(blobCount).toList();
     BeaconBlock block = blockResolver.addBlock(10, blobCount);
@@ -149,7 +154,8 @@ public class RecoveringSidecarRetrieverTest {
             dbAccessor,
             stubAsyncRunner,
             Duration.ofSeconds(1),
-            128);
+            128,
+            metricsSystemStub);
     List<Blob> blobs_10_0 =
         Stream.generate(dataStructureUtil::randomValidBlob).limit(blobCount).toList();
     BeaconBlock block_10_0 = blockResolver.addBlock(10, blobCount);
@@ -202,7 +208,8 @@ public class RecoveringSidecarRetrieverTest {
             dbAccessor,
             stubAsyncRunner,
             Duration.ofSeconds(1),
-            128);
+            128,
+            metricsSystemStub);
     List<Blob> blobs =
         Stream.generate(dataStructureUtil::randomValidBlob).limit(blobCount).toList();
     BeaconBlock block = blockResolver.addBlock(10, blobCount);

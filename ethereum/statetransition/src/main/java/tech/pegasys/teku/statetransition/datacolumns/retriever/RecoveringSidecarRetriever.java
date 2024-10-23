@@ -26,8 +26,12 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
@@ -53,6 +57,8 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   private final Duration recoverInitiationTimeout;
   private final int columnCount;
   private final int recoverColumnCount;
+  private final Counter totalDataAvailabilityReconstructedColumns;
+  private final MetricsHistogram dataAvailabilityReconstructionTimeSeconds;
 
   private final Map<UInt64, RecoveryEntry> recoveryBySlot = new ConcurrentHashMap<>();
 
@@ -65,7 +71,8 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
       DataColumnSidecarDbAccessor sidecarDB,
       AsyncRunner asyncRunner,
       Duration recoverInitiationTimeout,
-      int columnCount) {
+      int columnCount,
+      final MetricsSystem metricsSystem) {
     this.delegate = delegate;
     this.kzg = kzg;
     this.specHelpers = specHelpers;
@@ -76,6 +83,17 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     this.recoverInitiationTimeout = recoverInitiationTimeout;
     this.columnCount = columnCount;
     this.recoverColumnCount = columnCount / 2;
+    this.totalDataAvailabilityReconstructedColumns =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "data_availability_reconstructed_columns_total",
+            "Total count of reconstructed columns");
+    this.dataAvailabilityReconstructionTimeSeconds =
+        new MetricsHistogram(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "data_availability_reconstruction_time_seconds",
+            "Time taken to reconstruct columns");
   }
 
   @Override
@@ -212,14 +230,22 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
         existingSidecarsByColIdx.put(sidecar.getIndex(), sidecar);
         if (existingSidecarsByColIdx.size() >= recoverColumnCount) {
           // TODO: Make it asynchronously as it's heavy CPU operation
-          recover();
-          recoveryComplete();
+          try (MetricsHistogram.Timer ignored =
+              dataAvailabilityReconstructionTimeSeconds.startTimer()) {
+            recover();
+            recoveryComplete();
+          } catch (final Throwable t) {
+            LOG.error(
+                "Failed to reconstruct data column sidecar {}", sidecar::toLogString, () -> t);
+          }
         }
       }
     }
 
     private void recoveryComplete() {
       recovered = true;
+      totalDataAvailabilityReconstructedColumns.inc(
+          promisesByColIdx.values().stream().mapToInt(List::size).sum());
       LOG.info(
           "[nyota] Recovery: completed for the slot {}, requests complete: {}",
           block.getSlot(),
