@@ -19,6 +19,7 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformanc
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
@@ -56,7 +57,8 @@ public interface ExecutionLayerBlockProductionManager {
         }
 
         @Override
-        public Optional<BuilderPayloadOrFallbackData> getCachedUnblindedPayload(final UInt64 slot) {
+        public Optional<BuilderPayloadOrFallbackData> getCachedUnblindedPayload(
+            final SlotAndBlockRoot slotAndBlockRoot) {
           return Optional.empty();
         }
       };
@@ -93,5 +95,6 @@ public interface ExecutionLayerBlockProductionManager {
    * Requires {@link #getUnblindedPayload(SignedBeaconBlock, BlockPublishingPerformance)} to have
    * been called first in order for a value to be present
    */
-  Optional<BuilderPayloadOrFallbackData> getCachedUnblindedPayload(UInt64 slot);
+  Optional<BuilderPayloadOrFallbackData> getCachedUnblindedPayload(
+      SlotAndBlockRoot slotAndBlockRoot);
 }
