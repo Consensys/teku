@@ -886,6 +886,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private boolean isLocallyCreatedBlock(final SignedBlockContainer blockContainer) {
     final SafeFuture<Optional<BlockContainerAndMetaData>> localBlockProduction =
         localBlockProductionBySlotCache.get(blockContainer.getSlot());
+    if (localBlockProduction == null) {
+      return false;
+    }
     return localBlockProduction.isCompletedNormally();
   }
 
