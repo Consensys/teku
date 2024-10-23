@@ -156,7 +156,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     final SignedBlockContainer block = blockAndBlobSidecars.block();
     final List<BlobSidecar> blobSidecars = blockAndBlobSidecars.blobSidecars();
 
-    verify(executionLayer).getCachedUnblindedPayload(block.getSlot());
+    verify(executionLayer).getCachedUnblindedPayload(block.getSlotAndBlockRoot());
 
     final SszList<SszKZGCommitment> expectedCommitments =
         block.getSignedBlock().getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
