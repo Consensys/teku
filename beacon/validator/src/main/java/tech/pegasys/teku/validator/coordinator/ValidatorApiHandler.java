@@ -122,7 +122,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private static final int DUTY_EPOCH_TOLERANCE = 1;
 
   private final Map<UInt64, SafeFuture<Optional<BlockContainerAndMetaData>>>
-      blockProductionFuturesBySlotCache = LimitedMap.createSynchronizedLRU(2);
+      localBlockProductionBySlotCache = LimitedMap.createSynchronizedLRU(2);
 
   private final BlockProductionAndPublishingPerformanceFactory
       blockProductionAndPublishingPerformanceFactory;
@@ -335,13 +335,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
       final Optional<UInt64> requestedBuilderBoostFactor) {
-    final SafeFuture<Optional<BlockContainerAndMetaData>> maybeProcessing =
-        blockProductionFuturesBySlotCache.putIfAbsent(slot, new SafeFuture<>());
-    if (maybeProcessing != null) {
-      return maybeProcessing;
-    }
-    final SafeFuture<Optional<BlockContainerAndMetaData>> blockProductionFuture =
-        blockProductionFuturesBySlotCache.get(slot);
+    return localBlockProductionBySlotCache.computeIfAbsent(
+        slot,
+        __ ->
+            createUnsignedBlockInternal(slot, randaoReveal, graffiti, requestedBuilderBoostFactor));
+  }
+
+  public SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlockInternal(
+      final UInt64 slot,
+      final BLSSignature randaoReveal,
+      final Optional<Bytes32> graffiti,
+      final Optional<UInt64> requestedBuilderBoostFactor) {
     LOG.info("Creating unsigned block for slot {}", slot);
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(slot));
     if (isSyncActive()) {
@@ -349,7 +353,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     }
     final BlockProductionPerformance blockProductionPerformance =
         blockProductionAndPublishingPerformanceFactory.createForProduction(slot);
-    forkChoiceTrigger
+    return forkChoiceTrigger
         .prepareForBlockProduction(slot, blockProductionPerformance)
         .thenCompose(
             __ ->
@@ -365,9 +369,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     requestedBuilderBoostFactor,
                     blockSlotState,
                     blockProductionPerformance))
-        .alwaysRun(blockProductionPerformance::complete)
-        .propagateTo(blockProductionFuture);
-    return blockProductionFuture;
+        .alwaysRun(blockProductionPerformance::complete);
   }
 
   private SafeFuture<Optional<BlockContainerAndMetaData>> createBlock(
@@ -870,7 +872,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private boolean isLocallyCreatedBlock(final SignedBlockContainer blockContainer) {
-    return blockProductionFuturesBySlotCache.containsKey(blockContainer.getSlot());
+    return localBlockProductionBySlotCache.containsKey(blockContainer.getSlot());
   }
 
   @Override
