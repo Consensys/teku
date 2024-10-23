@@ -15,9 +15,11 @@ package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
 
+import com.google.common.base.Suppliers;
 import io.libp2p.core.pubsub.ValidationResult;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -56,6 +58,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   private final OperationMilestoneValidator<MessageT> forkValidator;
   private final NetworkingSpecConfig networkingConfig;
   private final DebugDataDumper debugDataDumper;
+  private final Supplier<String> topicCache;
 
   public Eth2TopicHandler(
       final RecentChainData recentChainData,
@@ -80,6 +83,9 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
         gossipEncoding.createPreparedGossipMessageFactory(
             recentChainData::getMilestoneByForkDigest);
     this.debugDataDumper = debugDataDumper;
+    this.topicCache =
+        Suppliers.memoize(
+            () -> GossipTopics.getTopic(getForkDigest(), getTopicName(), getGossipEncoding()));
   }
 
   public Eth2TopicHandler(
@@ -214,7 +220,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   }
 
   public String getTopic() {
-    return GossipTopics.getTopic(getForkDigest(), getTopicName(), getGossipEncoding());
+    return topicCache.get();
   }
 
   public GossipEncoding getGossipEncoding() {
