@@ -115,12 +115,12 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
   }
 
   public void subscribeToSubnetId(final int subnetId) {
-    LOG.trace("Subscribing to subnet ID {}", subnetId);
+    LOG.trace("Subscribing to sync committee subnet {}", subnetId);
     subnetSubscriptions.subscribeToSubnetId(subnetId);
   }
 
   public void unsubscribeFromSubnetId(final int subnetId) {
-    LOG.trace("Unsubscribing to subnet ID {}", subnetId);
+    LOG.trace("Unsubscribing to sync committee subnet {}", subnetId);
     subnetSubscriptions.unsubscribeFromSubnetId(subnetId);
   }
 
