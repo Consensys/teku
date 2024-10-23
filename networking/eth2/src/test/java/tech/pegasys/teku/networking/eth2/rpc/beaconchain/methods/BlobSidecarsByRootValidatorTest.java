@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @SuppressWarnings("JavaCase")
@@ -49,7 +51,8 @@ public class BlobSidecarsByRootValidatorTest {
   void blobSidecarIsCorrect() {
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
     final BlobIdentifier blobIdentifier1_0 = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
-    final BlobSidecar blobSidecar1_0 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
+    final BlobSidecar blobSidecar1_0 =
+        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);
 
     validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1_0));
     assertDoesNotThrow(() -> validator.validate(blobSidecar1_0));
@@ -60,7 +63,8 @@ public class BlobSidecarsByRootValidatorTest {
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
     final BlobIdentifier blobIdentifier2_0 =
         new BlobIdentifier(dataStructureUtil.randomBytes32(), UInt64.ZERO);
-    final BlobSidecar blobSidecar1_0 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
+    final BlobSidecar blobSidecar1_0 =
+        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);
 
     validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier2_0));
     assertThatThrownBy(() -> validator.validate(blobSidecar1_0))
@@ -76,7 +80,8 @@ public class BlobSidecarsByRootValidatorTest {
     when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(false);
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
     final BlobIdentifier blobIdentifier1_0 = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
-    final BlobSidecar blobSidecar1_0 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
+    final BlobSidecar blobSidecar1_0 =
+        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);
 
     validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1_0));
     assertThatThrownBy(() -> validator.validate(blobSidecar1_0))
@@ -88,10 +93,50 @@ public class BlobSidecarsByRootValidatorTest {
   }
 
   @Test
+  void blobSidecarFailsInclusionProofVerification() {
+    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+    final BlobIdentifier blobIdentifier1_0 = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
+    final BlobSidecar blobSidecar1_0 =
+        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);
+    final BlobSidecar blobSidecar1_0_modified =
+        SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
+            .getBlobSidecarSchema()
+            .create(
+                blobSidecar1_0.getIndex(),
+                blobSidecar1_0.getBlob(),
+                blobSidecar1_0.getKZGCommitment(),
+                blobSidecar1_0.getKZGProof(),
+                blobSidecar1_0.getSignedBeaconBlockHeader(),
+                IntStream.range(0, blobSidecar1_0.getKzgCommitmentInclusionProof().size())
+                    .mapToObj(
+                        index -> {
+                          if (index == 0) {
+                            return blobSidecar1_0
+                                .getKzgCommitmentInclusionProof()
+                                .get(index)
+                                .get()
+                                .not();
+                          } else {
+                            return blobSidecar1_0.getKzgCommitmentInclusionProof().get(index).get();
+                          }
+                        })
+                    .toList());
+
+    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1_0));
+    assertThatThrownBy(() -> validator.validate(blobSidecar1_0_modified))
+        .isExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class)
+        .hasMessageContaining(
+            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
+                .BLOB_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED
+                .describe());
+  }
+
+  @Test
   void blobSidecarResponseWithDuplicateSidecar() {
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
     final BlobIdentifier blobIdentifier1_0 = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
-    final BlobSidecar blobSidecar1_0 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
+    final BlobSidecar blobSidecar1_0 =
+        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);
 
     validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1_0));
     assertDoesNotThrow(() -> validator.validate(blobSidecar1_0));

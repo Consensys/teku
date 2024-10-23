@@ -192,6 +192,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
@@ -2251,6 +2252,23 @@ public final class DataStructureUtil {
         .build();
   }
 
+  public BlobSidecar randomBlobSidecarWithValidInclusionProofForBlock(
+      final SignedBeaconBlock signedBeaconBlock, final int index) {
+    return new RandomBlobSidecarBuilder()
+        .signedBeaconBlockHeader(signedBeaconBlock.asHeader())
+        .index(UInt64.valueOf(index))
+        .kzgCommitment(
+            BeaconBlockBodyDeneb.required(signedBeaconBlock.getMessage().getBody())
+                .getBlobKzgCommitments()
+                .get(index)
+                .getKZGCommitment()
+                .getBytesCompressed())
+        .kzgCommitmentInclusionProof(
+            validKzgCommitmentInclusionProof(
+                UInt64.valueOf(index), signedBeaconBlock.getBeaconBlock().orElseThrow().getBody()))
+        .build();
+  }
+
   public List<Blob> randomBlobs(final int count, final UInt64 slot) {
     final List<Blob> blobs = new ArrayList<>();
     final BlobSchema blobSchema = getDenebSchemaDefinitions(slot).getBlobSchema();
@@ -2481,6 +2499,12 @@ public final class DataStructureUtil {
         SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
             .getKzgCommitmentInclusionProofDepth();
     return IntStream.range(0, depth).mapToObj(__ -> randomBytes32()).toList();
+  }
+
+  public List<Bytes32> validKzgCommitmentInclusionProof(
+      final UInt64 blobIndex, final BeaconBlockBody beaconBlockBody) {
+    return MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers())
+        .computeKzgCommitmentInclusionProof(blobIndex, beaconBlockBody);
   }
 
   public SszList<SszKZGCommitment> randomBlobKzgCommitments() {
