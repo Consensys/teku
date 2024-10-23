@@ -890,7 +890,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return false;
     }
     return localBlockProduction
-        .join()
+        .getImmediately()
         .map(
             blockContainerAndMetaData ->
                 blockContainerAndMetaData
