@@ -329,6 +329,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                                         StateValidatorData::getStatus))));
   }
 
+  /**
+   * Block would be produced only once per slot. Any additional calls to this method for the same
+   * slot would return the same {@link SafeFuture} as the first one.
+   */
   @Override
   public SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       final UInt64 slot,
