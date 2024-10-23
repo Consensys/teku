@@ -47,6 +47,33 @@ public class BlobSidecarsByRootValidatorTest {
     when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(true);
   }
 
+  public static BlobSidecar breakInclusionProof(final Spec spec, final BlobSidecar blobSidecar) {
+    final BlobSidecar blobSidecarModified =
+        SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
+            .getBlobSidecarSchema()
+            .create(
+                blobSidecar.getIndex(),
+                blobSidecar.getBlob(),
+                blobSidecar.getKZGCommitment(),
+                blobSidecar.getKZGProof(),
+                blobSidecar.getSignedBeaconBlockHeader(),
+                IntStream.range(0, blobSidecar.getKzgCommitmentInclusionProof().size())
+                    .mapToObj(
+                        index -> {
+                          if (index == 0) {
+                            return blobSidecar
+                                .getKzgCommitmentInclusionProof()
+                                .get(index)
+                                .get()
+                                .not();
+                          } else {
+                            return blobSidecar.getKzgCommitmentInclusionProof().get(index).get();
+                          }
+                        })
+                    .toList());
+    return blobSidecarModified;
+  }
+
   @Test
   void blobSidecarIsCorrect() {
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
@@ -98,29 +125,7 @@ public class BlobSidecarsByRootValidatorTest {
     final BlobIdentifier blobIdentifier1_0 = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
     final BlobSidecar blobSidecar1_0 =
         dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);
-    final BlobSidecar blobSidecar1_0_modified =
-        SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
-            .getBlobSidecarSchema()
-            .create(
-                blobSidecar1_0.getIndex(),
-                blobSidecar1_0.getBlob(),
-                blobSidecar1_0.getKZGCommitment(),
-                blobSidecar1_0.getKZGProof(),
-                blobSidecar1_0.getSignedBeaconBlockHeader(),
-                IntStream.range(0, blobSidecar1_0.getKzgCommitmentInclusionProof().size())
-                    .mapToObj(
-                        index -> {
-                          if (index == 0) {
-                            return blobSidecar1_0
-                                .getKzgCommitmentInclusionProof()
-                                .get(index)
-                                .get()
-                                .not();
-                          } else {
-                            return blobSidecar1_0.getKzgCommitmentInclusionProof().get(index).get();
-                          }
-                        })
-                    .toList());
+    final BlobSidecar blobSidecar1_0_modified = breakInclusionProof(spec, blobSidecar1_0);
 
     validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1_0));
     assertThatThrownBy(() -> validator.validate(blobSidecar1_0_modified))

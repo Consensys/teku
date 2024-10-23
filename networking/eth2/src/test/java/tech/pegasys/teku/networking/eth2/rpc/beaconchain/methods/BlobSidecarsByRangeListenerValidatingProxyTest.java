@@ -22,8 +22,8 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRootValidatorTest.breakInclusionProof;
 
-import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -35,7 +35,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @SuppressWarnings("JavaCase")
@@ -91,29 +90,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final BlobSidecar blobSidecar1_0 =
         dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(
             dataStructureUtil.randomSignedBeaconBlock(ONE), 0);
-    final BlobSidecar blobSidecar1_0_modified =
-        SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
-            .getBlobSidecarSchema()
-            .create(
-                blobSidecar1_0.getIndex(),
-                blobSidecar1_0.getBlob(),
-                blobSidecar1_0.getKZGCommitment(),
-                blobSidecar1_0.getKZGProof(),
-                blobSidecar1_0.getSignedBeaconBlockHeader(),
-                IntStream.range(0, blobSidecar1_0.getKzgCommitmentInclusionProof().size())
-                    .mapToObj(
-                        index -> {
-                          if (index == 0) {
-                            return blobSidecar1_0
-                                .getKzgCommitmentInclusionProof()
-                                .get(index)
-                                .get()
-                                .not();
-                          } else {
-                            return blobSidecar1_0.getKzgCommitmentInclusionProof().get(index).get();
-                          }
-                        })
-                    .toList());
+    final BlobSidecar blobSidecar1_0_modified = breakInclusionProof(spec, blobSidecar1_0);
 
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar1_0_modified);
     assertThat(result).isCompletedExceptionally();
