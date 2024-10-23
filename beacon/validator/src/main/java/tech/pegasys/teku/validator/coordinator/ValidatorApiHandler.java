@@ -666,15 +666,15 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer maybeBlindedBlockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
-    final UInt64 slot = maybeBlindedBlockContainer.getSlot();
     final BlockPublishingPerformance blockPublishingPerformance =
-        blockProductionAndPublishingPerformanceFactory.createForPublishing(slot);
+        blockProductionAndPublishingPerformanceFactory.createForPublishing(
+            maybeBlindedBlockContainer.getSlot());
     return blockPublisher
         .sendSignedBlock(
             maybeBlindedBlockContainer,
             // do only EQUIVOCATION validation when GOSSIP validation has been requested and the
             // block has been locally created
-            broadcastValidationLevel == GOSSIP && isLocallyCreatedBlock(slot)
+            broadcastValidationLevel == GOSSIP && isLocallyCreatedBlock(maybeBlindedBlockContainer)
                 ? EQUIVOCATION
                 : broadcastValidationLevel,
             blockPublishingPerformance)
@@ -883,13 +883,21 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return proposerSlots;
   }
 
-  private boolean isLocallyCreatedBlock(final UInt64 slot) {
+  private boolean isLocallyCreatedBlock(final SignedBlockContainer signedBlockContainer) {
     final SafeFuture<Optional<BlockContainerAndMetaData>> localBlockProduction =
-        localBlockProductionBySlotCache.get(slot);
-    if (localBlockProduction == null) {
+        localBlockProductionBySlotCache.get(signedBlockContainer.getSlot());
+    if (localBlockProduction == null || !localBlockProduction.isCompletedNormally()) {
       return false;
     }
-    return localBlockProduction.isCompletedNormally();
+    return localBlockProduction
+        .join()
+        .map(
+            blockContainerAndMetaData ->
+                blockContainerAndMetaData
+                    .blockContainer()
+                    .getRoot()
+                    .equals(signedBlockContainer.getRoot()))
+        .orElse(false);
   }
 
   @Override
