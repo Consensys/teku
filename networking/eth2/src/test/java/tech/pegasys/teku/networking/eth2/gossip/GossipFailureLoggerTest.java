@@ -35,7 +35,8 @@ class GossipFailureLoggerTest {
 
   public static final String GENERIC_FAILURE_MESSAGE = genericError(SLOT);
 
-  private final GossipFailureLogger logger = new GossipFailureLogger("thingy");
+  private final GossipFailureLogger logger = new GossipFailureLogger("thingy", true);
+  private final GossipFailureLogger loggerNoSuppression = new GossipFailureLogger("thingy", false);
 
   @Test
   void shouldLogAlreadySeenErrorsAtDebugLevel() {
@@ -73,6 +74,19 @@ class GossipFailureLoggerTest {
       logger.logWithSuppression(
           new IllegalStateException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION), SLOT);
       logCaptor.assertDebugLog(NO_PEERS_MESSAGE);
+    }
+  }
+
+  @Test
+  void shouldLogRepeatedNoPeersErrorsWhenNoSuppression() {
+    try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
+      loggerNoSuppression.logWithSuppression(
+          new RuntimeException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION), SLOT);
+      logCaptor.clearLogs();
+
+      loggerNoSuppression.logWithSuppression(
+          new IllegalStateException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION), SLOT);
+      logCaptor.assertWarnLog(NO_PEERS_MESSAGE);
     }
   }
 

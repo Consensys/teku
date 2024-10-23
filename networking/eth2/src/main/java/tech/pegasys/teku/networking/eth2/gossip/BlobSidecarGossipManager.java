@@ -90,7 +90,7 @@ public class BlobSidecarGossipManager implements GossipManager {
         gossipNetwork,
         gossipEncoding,
         subnetIdToTopicHandler,
-        new GossipFailureLogger("blob sidecar"));
+        new GossipFailureLogger("blob sidecar", false));
   }
 
   private BlobSidecarGossipManager(

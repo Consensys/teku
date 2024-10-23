@@ -39,7 +39,7 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
   private final Counter publishFailureCounter;
 
   private final GossipFailureLogger gossipFailureLogger =
-      new GossipFailureLogger("sync committee message");
+      new GossipFailureLogger("sync committee message", true);
 
   public SyncCommitteeMessageGossipManager(
       final MetricsSystem metricsSystem,

@@ -26,12 +26,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class GossipFailureLogger {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final boolean shouldSuppress;
   private final String messageType;
   private Optional<UInt64> lastErroredSlot;
   private Throwable lastRootCause;
 
-  public GossipFailureLogger(final String messageType) {
+  public GossipFailureLogger(final String messageType, final boolean shouldSuppress) {
     this.messageType = messageType;
+    this.shouldSuppress = shouldSuppress;
   }
 
   public synchronized void logWithSuppression(
@@ -39,12 +41,15 @@ public class GossipFailureLogger {
     final Throwable rootCause = Throwables.getRootCause(error);
 
     final boolean suppress;
-    if (maybeSlot.isEmpty()) {
-      suppress = false;
-    } else {
+
+    // can only try to suppress if we have a slot to compare
+    if (shouldSuppress && maybeSlot.isPresent()) {
       suppress =
           maybeSlot.equals(lastErroredSlot)
               && rootCause.getClass().equals(lastRootCause.getClass());
+
+    } else {
+      suppress = false;
     }
 
     lastErroredSlot = maybeSlot;

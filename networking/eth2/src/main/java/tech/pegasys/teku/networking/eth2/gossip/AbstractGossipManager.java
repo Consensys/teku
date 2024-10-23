@@ -75,7 +75,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
             networkingConfig,
             debugDataDumper);
     this.gossipEncoding = gossipEncoding;
-    this.gossipFailureLogger = new GossipFailureLogger(topicName.toString());
+    this.gossipFailureLogger = new GossipFailureLogger(topicName.toString(), true);
     this.getSlotForMessage = getSlotForMessage;
   }
 

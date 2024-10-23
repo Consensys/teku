@@ -32,7 +32,8 @@ public class AttestationGossipManager implements GossipManager {
   private final Counter attestationPublishSuccessCounter;
   private final Counter attestationPublishFailureCounter;
 
-  private final GossipFailureLogger gossipFailureLogger = new GossipFailureLogger("attestation");
+  private final GossipFailureLogger gossipFailureLogger =
+      new GossipFailureLogger("attestation", true);
 
   public AttestationGossipManager(
       final MetricsSystem metricsSystem,
