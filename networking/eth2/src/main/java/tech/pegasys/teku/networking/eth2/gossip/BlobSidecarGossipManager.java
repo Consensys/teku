@@ -123,7 +123,7 @@ public class BlobSidecarGossipManager implements GossipManager {
                 LOG.trace(
                     "Successfully gossiped blob sidecar {} on {}",
                     () -> message.getSlotAndBlockRoot().toLogString(),
-                    () -> getBlobSidecarSubnetTopicName(subnetId));
+                    () -> subnetIdToTopicHandler.get(subnetId).getTopic());
               }
               return null;
             });
