@@ -108,8 +108,6 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
         setConsensusHeader ? Optional.of(SpecMilestone.BELLATRIX.name()) : Optional.empty();
 
     postRequestAndAssert(route, request, signedBeaconBlockSchema, consensusHeader, useSsz, version);
-    postRequestAndAssert(
-        route, request, signedBeaconBlockSchema, Optional.empty(), useSsz, version);
   }
 
   @ParameterizedTest(name = "version:{0}_blinded:{1}_ssz:{3}_setConsensusHeader:{4}")
@@ -146,8 +144,6 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
 
     postRequestAndAssert(
         route, request, signedBlockContainerSchema, consensusHeader, useSsz, version);
-    postRequestAndAssert(
-        route, request, signedBlockContainerSchema, Optional.empty(), useSsz, version);
   }
 
   private void prepareResponse(final SignedBeaconBlock request, final Version version) {
