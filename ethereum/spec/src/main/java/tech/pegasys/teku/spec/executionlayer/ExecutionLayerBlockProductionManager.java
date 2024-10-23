@@ -19,7 +19,6 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformanc
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
@@ -35,11 +34,6 @@ public interface ExecutionLayerBlockProductionManager {
   ExecutionLayerBlockProductionManager NOOP =
       new ExecutionLayerBlockProductionManager() {
         @Override
-        public Optional<ExecutionPayloadResult> getCachedPayloadResult(final UInt64 slot) {
-          return Optional.empty();
-        }
-
-        @Override
         public ExecutionPayloadResult initiateBlockProduction(
             final ExecutionPayloadContext context,
             final BeaconState blockSlotState,
@@ -50,6 +44,11 @@ public interface ExecutionLayerBlockProductionManager {
         }
 
         @Override
+        public Optional<ExecutionPayloadResult> getCachedPayloadResult(final UInt64 slot) {
+          return Optional.empty();
+        }
+
+        @Override
         public SafeFuture<BuilderPayloadOrFallbackData> getUnblindedPayload(
             final SignedBeaconBlock signedBeaconBlock,
             final BlockPublishingPerformance blockPublishingPerformance) {
@@ -57,8 +56,7 @@ public interface ExecutionLayerBlockProductionManager {
         }
 
         @Override
-        public Optional<BuilderPayloadOrFallbackData> getCachedUnblindedPayload(
-            final SlotAndBlockRoot slotAndBlockRoot) {
+        public Optional<BuilderPayloadOrFallbackData> getCachedUnblindedPayload(final UInt64 slot) {
           return Optional.empty();
         }
       };
@@ -95,6 +93,5 @@ public interface ExecutionLayerBlockProductionManager {
    * Requires {@link #getUnblindedPayload(SignedBeaconBlock, BlockPublishingPerformance)} to have
    * been called first in order for a value to be present
    */
-  Optional<BuilderPayloadOrFallbackData> getCachedUnblindedPayload(
-      SlotAndBlockRoot slotAndBlockRoot);
+  Optional<BuilderPayloadOrFallbackData> getCachedUnblindedPayload(UInt64 slot);
 }
