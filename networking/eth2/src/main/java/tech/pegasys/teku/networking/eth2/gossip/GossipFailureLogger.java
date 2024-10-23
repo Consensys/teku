@@ -50,14 +50,14 @@ public class GossipFailureLogger {
     } else if (lastRootCause instanceof NoPeersForOutboundMessageException) {
       LOG.log(
           suppress ? Level.DEBUG : Level.WARN,
-          "Failed to publish {}(s) for slot {}; {}",
+          "Failed to publish {}(s) for slot {}: {}",
           messageType,
           lastErroredSlot,
           rootCause.getMessage());
     } else if (lastRootCause instanceof SemiDuplexNoOutboundStreamException) {
       LOG.log(
           suppress ? Level.DEBUG : Level.WARN,
-          "Failed to publish {}(s) for slot {} because no peers were available on the required gossip topic",
+          "Failed to publish {}(s) for slot {} because no active outbound stream for the required gossip topic",
           messageType,
           lastErroredSlot);
     } else {
