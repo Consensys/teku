@@ -82,6 +82,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager.SlotAndExecutionBlockHash;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.BlsToExecutionChangesValidator.BlsToExecutionChangeInvalidReason;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.AttesterSlashingValidator.AttesterSlashingInvalidReason;
@@ -741,7 +742,7 @@ class BlockOperationSelectorFactoryTest {
     // the BlobsBundle is stored in the ExecutionPayloadResult
     prepareCachedPayloadResult(
         block.getSlot(),
-        dataStructureUtil.randomExecutionPayload(),
+        block.getBody().getOptionalExecutionPayload().orElseThrow(),
         dataStructureUtil.randomPayloadExecutionContext(false),
         expectedBlobsBundle);
 
@@ -759,7 +760,7 @@ class BlockOperationSelectorFactoryTest {
     // the BlobsBundle is stored in the header with fallback
     prepareCachedPayloadHeaderWithFallbackResult(
         block.getSlot(),
-        dataStructureUtil.randomExecutionPayload(),
+        block.getBody().getOptionalExecutionPayload().orElseThrow(),
         dataStructureUtil.randomPayloadExecutionContext(false),
         expectedBlobsBundle);
 
@@ -1257,7 +1258,8 @@ class BlockOperationSelectorFactoryTest {
       final ExecutionPayload executionPayload,
       final ExecutionPayloadContext executionPayloadContext,
       final BlobsBundle blobsBundle) {
-    when(executionLayer.getCachedPayloadResult(slot))
+    when(executionLayer.getCachedPayloadResult(
+            new SlotAndExecutionBlockHash(slot, executionPayload.getBlockHash())))
         .thenReturn(
             Optional.of(
                 ExecutionPayloadResult.createForLocalFlow(
@@ -1277,7 +1279,8 @@ class BlockOperationSelectorFactoryTest {
             new FallbackData(
                 new GetPayloadResponse(executionPayload, UInt256.ZERO, blobsBundle, false),
                 FallbackReason.SHOULD_OVERRIDE_BUILDER_FLAG_IS_TRUE));
-    when(executionLayer.getCachedPayloadResult(slot))
+    when(executionLayer.getCachedPayloadResult(
+            new SlotAndExecutionBlockHash(slot, executionPayload.getBlockHash())))
         .thenReturn(
             Optional.of(
                 ExecutionPayloadResult.createForBuilderFlow(

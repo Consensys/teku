@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
@@ -60,6 +61,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager.SlotAndExecutionBlockHash;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -240,10 +242,24 @@ public class BlockOperationSelectorFactory {
             blockProductionPerformance);
 
     return SafeFuture.allOf(
+        cacheExecutionPayloadResult(executionPayloadResult, blockSlotState),
         cacheExecutionPayloadValue(executionPayloadResult, blockSlotState),
         setPayloadOrPayloadHeader(bodyBuilder, executionPayloadResult),
         setKzgCommitments(bodyBuilder, schemaDefinitions, executionPayloadResult),
         setExecutionRequests(bodyBuilder, executionPayloadResult));
+  }
+
+  private SafeFuture<Void> cacheExecutionPayloadResult(
+      final ExecutionPayloadResult executionPayloadResult, final BeaconState blockSlotState) {
+    return executionPayloadResult
+        .getExecutionBlockHashFuture()
+        .thenAccept(
+            executionBlockHash -> {
+              final SlotAndExecutionBlockHash key =
+                  new SlotAndExecutionBlockHash(blockSlotState.getSlot(), executionBlockHash);
+              executionLayerBlockProductionManager.cacheExecutionPayloadResult(
+                  key, executionPayloadResult);
+            });
   }
 
   private SafeFuture<Void> cacheExecutionPayloadValue(
@@ -422,13 +438,19 @@ public class BlockOperationSelectorFactory {
   public Function<BeaconBlock, SafeFuture<BlobsBundle>> createBlobsBundleSelector() {
     return block -> {
       final UInt64 slot = block.getSlot();
+      final Bytes32 executionBlockHash =
+          block.getBody().getOptionalExecutionPayload().orElseThrow().getBlockHash();
+      final SlotAndExecutionBlockHash slotAndExecutionBlockHash =
+          new SlotAndExecutionBlockHash(slot, executionBlockHash);
       final ExecutionPayloadResult executionPayloadResult =
           executionLayerBlockProductionManager
-              .getCachedPayloadResult(slot)
+              .getCachedPayloadResult(slotAndExecutionBlockHash)
               .orElseThrow(
                   () ->
                       new IllegalStateException(
-                          "ExecutionPayloadResult hasn't been cached for slot " + slot));
+                          String.format(
+                              "ExecutionPayloadResult hasn't been cached for slot %s and execution block hash %s",
+                              slot, executionBlockHash)));
 
       if (executionPayloadResult.isFromLocalFlow()) {
         // we performed a non-blinded flow, so the bundle must be in
@@ -463,13 +485,16 @@ public class BlockOperationSelectorFactory {
       if (blockContainer.isBlinded()) {
         // need to use the builder BlobsBundle or the local fallback for the blinded flow, because
         // the blobs and the proofs wouldn't be part of the BlockContainer.
+        final Bytes32 blockRoot = block.getRoot();
         final BuilderPayloadOrFallbackData builderPayloadOrFallbackData =
             executionLayerBlockProductionManager
-                .getCachedUnblindedPayload(block.getSlotAndBlockRoot())
+                .getCachedUnblindedPayload(new SlotAndBlockRoot(slot, blockRoot))
                 .orElseThrow(
                     () ->
                         new IllegalStateException(
-                            "BuilderPayloadOrFallbackData hasn't been cached for slot " + slot));
+                            String.format(
+                                "BuilderPayloadOrFallbackData hasn't been cached for slot %s and block root %s",
+                                slot, blockRoot)));
 
         final Optional<BuilderPayload> maybeBuilderPayload =
             builderPayloadOrFallbackData.getBuilderPayload();

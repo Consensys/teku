@@ -71,6 +71,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager.SlotAndExecutionBlockHash;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -451,7 +452,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   @Override
   public SafeFuture<BuilderPayloadOrFallbackData> builderGetPayload(
       final SignedBeaconBlock signedBeaconBlock,
-      final Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
+      final Function<SlotAndExecutionBlockHash, Optional<ExecutionPayloadResult>>
+          getCachedPayloadResultFunction) {
     offlineCheck();
 
     final UInt64 slot = signedBeaconBlock.getSlot();

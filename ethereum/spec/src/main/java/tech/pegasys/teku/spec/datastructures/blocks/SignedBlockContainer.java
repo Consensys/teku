@@ -40,10 +40,6 @@ public interface SignedBlockContainer extends SszData, SszContainer {
     return getSignedBlock().getRoot();
   }
 
-  default SlotAndBlockRoot getSlotAndBlockRoot() {
-    return getSignedBlock().getSlotAndBlockRoot();
-  }
-
   default Optional<SszList<SszKZGProof>> getKzgProofs() {
     return Optional.empty();
   }

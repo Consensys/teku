@@ -58,6 +58,7 @@ import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager.SlotAndExecutionBlockHash;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -239,7 +240,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   @Override
   public SafeFuture<BuilderPayloadOrFallbackData> builderGetPayload(
       final SignedBeaconBlock signedBeaconBlock,
-      final Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
+      final Function<SlotAndExecutionBlockHash, Optional<ExecutionPayloadResult>>
+          getCachedPayloadResultFunction) {
     return executionBuilderModule.builderGetPayload(
         signedBeaconBlock, getCachedPayloadResultFunction);
   }

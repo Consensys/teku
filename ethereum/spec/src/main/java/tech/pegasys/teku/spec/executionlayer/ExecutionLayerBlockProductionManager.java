@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.executionlayer;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -35,11 +36,6 @@ public interface ExecutionLayerBlockProductionManager {
   ExecutionLayerBlockProductionManager NOOP =
       new ExecutionLayerBlockProductionManager() {
         @Override
-        public Optional<ExecutionPayloadResult> getCachedPayloadResult(final UInt64 slot) {
-          return Optional.empty();
-        }
-
-        @Override
         public ExecutionPayloadResult initiateBlockProduction(
             final ExecutionPayloadContext context,
             final BeaconState blockSlotState,
@@ -47,6 +43,17 @@ public interface ExecutionLayerBlockProductionManager {
             final Optional<UInt64> requestedBuilderBoostFactor,
             final BlockProductionPerformance blockProductionPerformance) {
           return null;
+        }
+
+        @Override
+        public void cacheExecutionPayloadResult(
+            final SlotAndExecutionBlockHash slotAndExecutionBlockHash,
+            final ExecutionPayloadResult executionPayloadResult) {}
+
+        @Override
+        public Optional<ExecutionPayloadResult> getCachedPayloadResult(
+            final SlotAndExecutionBlockHash slotAndExecutionBlockHash) {
+          return Optional.empty();
         }
 
         @Override
@@ -81,12 +88,16 @@ public interface ExecutionLayerBlockProductionManager {
       Optional<UInt64> requestedBuilderBoostFactor,
       BlockProductionPerformance blockProductionPerformance);
 
+  void cacheExecutionPayloadResult(
+      SlotAndExecutionBlockHash slotAndExecutionBlockHash,
+      ExecutionPayloadResult executionPayloadResult);
+
   /**
-   * Requires {@link #initiateBlockProduction(ExecutionPayloadContext, BeaconState, boolean,
-   * Optional, BlockProductionPerformance)} to have been called first in order for a value to be
-   * present
+   * Requires {@link #cacheExecutionPayloadResult(SlotAndExecutionBlockHash,
+   * ExecutionPayloadResult)} to have been called first in order for a value to be present
    */
-  Optional<ExecutionPayloadResult> getCachedPayloadResult(UInt64 slot);
+  Optional<ExecutionPayloadResult> getCachedPayloadResult(
+      SlotAndExecutionBlockHash slotAndExecutionBlockHash);
 
   SafeFuture<BuilderPayloadOrFallbackData> getUnblindedPayload(
       SignedBeaconBlock signedBeaconBlock, BlockPublishingPerformance blockPublishingPerformance);
@@ -97,4 +108,6 @@ public interface ExecutionLayerBlockProductionManager {
    */
   Optional<BuilderPayloadOrFallbackData> getCachedUnblindedPayload(
       SlotAndBlockRoot slotAndBlockRoot);
+
+  record SlotAndExecutionBlockHash(UInt64 slot, Bytes32 executionBlockHash) {}
 }

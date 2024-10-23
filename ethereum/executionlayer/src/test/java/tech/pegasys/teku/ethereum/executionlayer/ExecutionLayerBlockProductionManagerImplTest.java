@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_MAX_PROFIT;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,6 +58,7 @@ import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager.SlotAndExecutionBlockHash;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ExecutionLayerBlockProductionManagerImplTest {
@@ -123,10 +125,16 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final FallbackData localFallback =
         verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
 
-    assertThat(blockProductionManager.getCachedPayloadResult(slot))
+    final Bytes32 executionBlockHash = getPayloadResponse.getExecutionPayload().getBlockHash();
+    assertThat(
+            blockProductionManager.getCachedPayloadResult(
+                new SlotAndExecutionBlockHash(slot, executionBlockHash)))
         .contains(executionPayloadResult);
     // wrong slot
-    assertThat(blockProductionManager.getCachedPayloadResult(slot.plus(1))).isEmpty();
+    assertThat(
+        blockProductionManager
+            .getCachedPayloadResult(new SlotAndExecutionBlockHash(slot.plus(1), executionBlockHash))
+            .isEmpty());
 
     final SafeFuture<BuilderPayloadOrFallbackData> unblindedPayload =
         blockProductionManager.getUnblindedPayload(
@@ -230,7 +238,9 @@ class ExecutionLayerBlockProductionManagerImplTest {
         executionPayloadResult.getExecutionPayloadFutureFromLocalFlow().orElseThrow().get();
     assertThat(executionPayload).isEqualTo(getPayloadResponse.getExecutionPayload());
 
-    assertThat(blockProductionManager.getCachedPayloadResult(slot))
+    assertThat(
+            blockProductionManager.getCachedPayloadResult(
+                new SlotAndExecutionBlockHash(slot, executionPayload.getBlockHash())))
         .contains(executionPayloadResult);
 
     // we will hit builder client by this call
@@ -281,7 +291,10 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final FallbackData localFallback =
         verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
 
-    assertThat(blockProductionManager.getCachedPayloadResult(slot))
+    assertThat(
+            blockProductionManager.getCachedPayloadResult(
+                new SlotAndExecutionBlockHash(
+                    slot, getPayloadResponse.getExecutionPayload().getBlockHash())))
         .contains(executionPayloadResult);
 
     final SafeFuture<BuilderPayloadOrFallbackData> unblindedPayload =
@@ -382,7 +395,9 @@ class ExecutionLayerBlockProductionManagerImplTest {
         executionPayloadResult.getBlobsBundleFutureFromLocalFlow().orElseThrow().get();
     assertThat(blobsBundle).isEqualTo(getPayloadResponse.getBlobsBundle());
 
-    assertThat(blockProductionManager.getCachedPayloadResult(slot))
+    assertThat(
+            blockProductionManager.getCachedPayloadResult(
+                new SlotAndExecutionBlockHash(slot, executionPayload.getBlockHash())))
         .contains(executionPayloadResult);
 
     // we will hit builder client by this call
@@ -452,7 +467,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     assertThat(
             executionLayerManager.builderGetPayload(
                 signedBlindedBeaconBlock,
-                (aSlot) ->
+                __ ->
                     Optional.of(
                         ExecutionPayloadResult.createForBuilderFlow(
                             executionPayloadContext,

@@ -29,7 +29,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -153,13 +152,13 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
 
     final BlockAndBlobSidecars blockAndBlobSidecars = createBlockAndBlobSidecars(true, spec);
 
-    final SignedBlockContainer block = blockAndBlobSidecars.block();
+    final SignedBeaconBlock block = blockAndBlobSidecars.block().getSignedBlock();
     final List<BlobSidecar> blobSidecars = blockAndBlobSidecars.blobSidecars();
 
     verify(executionLayer).getCachedUnblindedPayload(block.getSlotAndBlockRoot());
 
     final SszList<SszKZGCommitment> expectedCommitments =
-        block.getSignedBlock().getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
+        block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
 
     assertThat(blobSidecars).hasSize(blobsCount).hasSameSizeAs(expectedCommitments);
 

@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.execution;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
@@ -81,6 +82,16 @@ public class ExecutionPayloadResult {
     return builderBidOrFallbackDataFuture;
   }
 
+  public SafeFuture<Bytes32> getExecutionBlockHashFuture() {
+    return getPayloadResponseFuture
+        .map(
+            getPayloadResponse ->
+                getPayloadResponse
+                    .thenApply(GetPayloadResponse::getExecutionPayload)
+                    .thenApply(ExecutionPayloadSummary::getBlockHash))
+        .orElseGet(this::getExecutionBlockHashFutureFromBuilderFlow);
+  }
+
   /**
    * @return the value from the local payload, the builder bid or the local fallback payload
    */
@@ -111,6 +122,24 @@ public class ExecutionPayloadResult {
                             builderBidOrFallbackData
                                 .getFallbackDataRequired()
                                 .getExecutionPayloadValue()));
+  }
+
+  private SafeFuture<Bytes32> getExecutionBlockHashFutureFromBuilderFlow() {
+    return builderBidOrFallbackDataFuture
+        .orElseThrow()
+        .thenApply(
+            builderBidOrFallbackData ->
+                builderBidOrFallbackData
+                    .getBuilderBid()
+                    // from the builder bid
+                    .map(bid -> bid.getHeader().getBlockHash())
+                    // from the local fallback
+                    .orElseGet(
+                        () ->
+                            builderBidOrFallbackData
+                                .getFallbackDataRequired()
+                                .getExecutionPayload()
+                                .getBlockHash()));
   }
 
   @Override

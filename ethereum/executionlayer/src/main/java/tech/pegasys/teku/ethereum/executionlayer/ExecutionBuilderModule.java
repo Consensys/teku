@@ -24,6 +24,7 @@ import java.util.function.Function;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
@@ -49,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager.SlotAndExecutionBlockHash;
 
 public class ExecutionBuilderModule {
 
@@ -329,27 +331,37 @@ public class ExecutionBuilderModule {
 
   public SafeFuture<BuilderPayloadOrFallbackData> builderGetPayload(
       final SignedBeaconBlock signedBeaconBlock,
-      final Function<UInt64, Optional<ExecutionPayloadResult>> getPayloadResultFunction) {
+      final Function<SlotAndExecutionBlockHash, Optional<ExecutionPayloadResult>>
+          getPayloadResultFunction) {
 
     Preconditions.checkArgument(signedBeaconBlock.isBlinded(), "SignedBeaconBlock must be blind");
 
     final UInt64 slot = signedBeaconBlock.getSlot();
 
-    final Optional<SafeFuture<BuilderBidOrFallbackData>> maybeProcessedSlot =
+    final Bytes32 executionBlockHash =
+        signedBeaconBlock
+            .getMessage()
+            .getBody()
+            .getOptionalExecutionPayloadHeader()
+            .orElseThrow()
+            .getBlockHash();
+
+    final Optional<SafeFuture<BuilderBidOrFallbackData>> maybeProcessed =
         getPayloadResultFunction
-            .apply(slot)
+            .apply(new SlotAndExecutionBlockHash(slot, executionBlockHash))
             .flatMap(ExecutionPayloadResult::getBuilderBidOrFallbackDataFuture);
 
-    if (maybeProcessedSlot.isEmpty()) {
-      LOG.warn(
-          "Blinded block seems to not be built via either builder or local EL. Trying to unblind it via builder endpoint anyway.");
-      return getPayloadFromBuilder(signedBeaconBlock);
-    }
-
-    final SafeFuture<BuilderBidOrFallbackData> builderBidOrFallbackDataFuture =
-        maybeProcessedSlot.get();
-
-    return getPayloadFromBuilderOrFallbackData(signedBeaconBlock, builderBidOrFallbackDataFuture);
+    return maybeProcessed
+        .map(
+            builderBidOrFallbackDataFuture ->
+                getPayloadFromBuilderOrFallbackData(
+                    signedBeaconBlock, builderBidOrFallbackDataFuture))
+        .orElseGet(
+            () -> {
+              LOG.warn(
+                  "Blinded block seems to not be built via either builder or local EL. Trying to unblind it via builder endpoint anyway.");
+              return getPayloadFromBuilder(signedBeaconBlock);
+            });
   }
 
   private boolean isTransitionNotFinalized(final ExecutionPayloadContext executionPayloadContext) {

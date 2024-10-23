@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
-import java.util.NavigableMap;
+import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentHashMap;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
@@ -38,11 +38,11 @@ public class ExecutionLayerBlockProductionManagerImpl
   private static final UInt64 EXECUTION_RESULT_CACHE_RETENTION_SLOTS = UInt64.valueOf(2);
   private static final UInt64 BUILDER_RESULT_CACHE_RETENTION_SLOTS = UInt64.valueOf(2);
 
-  private final NavigableMap<UInt64, ExecutionPayloadResult> executionResultCache =
-      new ConcurrentSkipListMap<>();
+  private final Map<SlotAndExecutionBlockHash, ExecutionPayloadResult> executionResultCache =
+      new ConcurrentHashMap<>();
 
-  private final NavigableMap<SlotAndBlockRoot, BuilderPayloadOrFallbackData> builderResultCache =
-      new ConcurrentSkipListMap<>();
+  private final Map<SlotAndBlockRoot, BuilderPayloadOrFallbackData> builderResultCache =
+      new ConcurrentHashMap<>();
 
   private final ExecutionLayerChannel executionLayerChannel;
 
@@ -54,15 +54,21 @@ public class ExecutionLayerBlockProductionManagerImpl
   @Override
   public void onSlot(final UInt64 slot) {
     executionResultCache
-        .headMap(slot.minusMinZero(EXECUTION_RESULT_CACHE_RETENTION_SLOTS), false)
-        .clear();
-    final UInt64 slotMax = slot.minusMinZero(BUILDER_RESULT_CACHE_RETENTION_SLOTS);
-    builderResultCache.keySet().removeIf(key -> key.getSlot().isLessThan(slotMax));
+        .keySet()
+        .removeIf(
+            key ->
+                key.slot().isLessThan(slot.minusMinZero(EXECUTION_RESULT_CACHE_RETENTION_SLOTS)));
+    builderResultCache
+        .keySet()
+        .removeIf(
+            key ->
+                key.getSlot().isLessThan(slot.minusMinZero(BUILDER_RESULT_CACHE_RETENTION_SLOTS)));
   }
 
   @Override
-  public Optional<ExecutionPayloadResult> getCachedPayloadResult(final UInt64 slot) {
-    return Optional.ofNullable(executionResultCache.get(slot));
+  public Optional<ExecutionPayloadResult> getCachedPayloadResult(
+      final SlotAndExecutionBlockHash slotAndExecutionBlockHash) {
+    return Optional.ofNullable(executionResultCache.get(slotAndExecutionBlockHash));
   }
 
   @Override
@@ -72,16 +78,19 @@ public class ExecutionLayerBlockProductionManagerImpl
       final boolean attemptBuilderFlow,
       final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
-    final ExecutionPayloadResult result;
     if (attemptBuilderFlow) {
-      result =
-          executeBuilderFlow(
-              context, blockSlotState, requestedBuilderBoostFactor, blockProductionPerformance);
+      return executeBuilderFlow(
+          context, blockSlotState, requestedBuilderBoostFactor, blockProductionPerformance);
     } else {
-      result = executeLocalFlow(context, blockSlotState, blockProductionPerformance);
+      return executeLocalFlow(context, blockSlotState, blockProductionPerformance);
     }
-    executionResultCache.put(blockSlotState.getSlot(), result);
-    return result;
+  }
+
+  @Override
+  public void cacheExecutionPayloadResult(
+      final SlotAndExecutionBlockHash slotAndExecutionBlockHash,
+      final ExecutionPayloadResult executionPayloadResult) {
+    executionResultCache.put(slotAndExecutionBlockHash, executionPayloadResult);
   }
 
   @Override

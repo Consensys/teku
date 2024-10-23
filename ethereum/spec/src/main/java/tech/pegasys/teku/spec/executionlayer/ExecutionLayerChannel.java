@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager.SlotAndExecutionBlockHash;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public interface ExecutionLayerChannel extends ChannelInterface {
@@ -95,7 +96,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         @Override
         public SafeFuture<BuilderPayloadOrFallbackData> builderGetPayload(
             final SignedBeaconBlock signedBeaconBlock,
-            final Function<UInt64, Optional<ExecutionPayloadResult>>
+            final Function<SlotAndExecutionBlockHash, Optional<ExecutionPayloadResult>>
                 getCachedPayloadResultFunction) {
           return SafeFuture.completedFuture(null);
         }
@@ -147,7 +148,8 @@ public interface ExecutionLayerChannel extends ChannelInterface {
    */
   SafeFuture<BuilderPayloadOrFallbackData> builderGetPayload(
       SignedBeaconBlock signedBeaconBlock,
-      Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction);
+      Function<SlotAndExecutionBlockHash, Optional<ExecutionPayloadResult>>
+          getCachedPayloadResultFunction);
 
   /**
    * This is low level method, use {@link

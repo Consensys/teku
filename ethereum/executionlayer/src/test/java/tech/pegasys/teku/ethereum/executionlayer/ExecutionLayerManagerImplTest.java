@@ -245,7 +245,7 @@ class ExecutionLayerManagerImplTest {
     // we expect result from the builder
     assertThat(
             executionLayerManager.builderGetPayload(
-                signedBlindedBeaconBlock, (aSlot) -> Optional.empty()))
+                signedBlindedBeaconBlock, __ -> Optional.empty()))
         .isCompletedWithValue(BuilderPayloadOrFallbackData.create(payload));
 
     // we expect both builder and local engine have been called
@@ -287,7 +287,7 @@ class ExecutionLayerManagerImplTest {
     // we expect result from the builder
     assertThat(
             executionLayerManager.builderGetPayload(
-                signedBlindedBeaconBlock, (aSlot) -> Optional.empty()))
+                signedBlindedBeaconBlock, __ -> Optional.empty()))
         .isCompletedWithValue(BuilderPayloadOrFallbackData.create(payload));
 
     // we expect both builder and local engine have been called
@@ -387,7 +387,7 @@ class ExecutionLayerManagerImplTest {
     assertThat(
             executionLayerManager.builderGetPayload(
                 signedBlindedBeaconBlock,
-                (aSlot) ->
+                __ ->
                     Optional.of(
                         ExecutionPayloadResult.createForBuilderFlow(
                             executionPayloadContext, SafeFuture.completedFuture(expectedResult)))))
@@ -651,7 +651,7 @@ class ExecutionLayerManagerImplTest {
     // we expect result from the builder
     assertThat(
             executionLayerManager.builderGetPayload(
-                signedBlindedBeaconBlock, (aSlot) -> Optional.empty()))
+                signedBlindedBeaconBlock, __ -> Optional.empty()))
         .isCompletedWithValue(BuilderPayloadOrFallbackData.create(payload));
 
     // we expect both builder and local engine have been called
@@ -731,7 +731,7 @@ class ExecutionLayerManagerImplTest {
     assertThat(
             executionLayerManager.builderGetPayload(
                 signedBlindedBeaconBlock,
-                (aSlot) ->
+                __ ->
                     Optional.of(
                         ExecutionPayloadResult.createForBuilderFlow(
                             executionPayloadContext,
