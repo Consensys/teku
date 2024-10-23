@@ -465,7 +465,7 @@ public class BlockOperationSelectorFactory {
         // the blobs and the proofs wouldn't be part of the BlockContainer.
         final BuilderPayloadOrFallbackData builderPayloadOrFallbackData =
             executionLayerBlockProductionManager
-                .getCachedUnblindedPayload(block.getSlotAndBlockRoot())
+                .getCachedUnblindedPayload(slot)
                 .orElseThrow(
                     () ->
                         new IllegalStateException(

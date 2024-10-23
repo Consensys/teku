@@ -138,11 +138,6 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
   }
 
   @Override
-  public SlotAndBlockRoot getSlotAndBlockRoot() {
-    return getMessage().getSlotAndBlockRoot();
-  }
-
-  @Override
   public Bytes32 getParentRoot() {
     return getMessage().getParentRoot();
   }
