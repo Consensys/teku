@@ -22,6 +22,7 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformanc
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -40,7 +41,7 @@ public class ExecutionLayerBlockProductionManagerImpl
   private final NavigableMap<UInt64, ExecutionPayloadResult> executionResultCache =
       new ConcurrentSkipListMap<>();
 
-  private final NavigableMap<UInt64, BuilderPayloadOrFallbackData> builderResultCache =
+  private final NavigableMap<SlotAndBlockRoot, BuilderPayloadOrFallbackData> builderResultCache =
       new ConcurrentSkipListMap<>();
 
   private final ExecutionLayerChannel executionLayerChannel;
@@ -55,9 +56,8 @@ public class ExecutionLayerBlockProductionManagerImpl
     executionResultCache
         .headMap(slot.minusMinZero(EXECUTION_RESULT_CACHE_RETENTION_SLOTS), false)
         .clear();
-    builderResultCache
-        .headMap(slot.minusMinZero(BUILDER_RESULT_CACHE_RETENTION_SLOTS), false)
-        .clear();
+    final UInt64 slotMax = slot.minusMinZero(BUILDER_RESULT_CACHE_RETENTION_SLOTS);
+    builderResultCache.keySet().removeIf(key -> key.getSlot().isLessThan(slotMax));
   }
 
   @Override
@@ -92,13 +92,15 @@ public class ExecutionLayerBlockProductionManagerImpl
         .builderGetPayload(signedBeaconBlock, this::getCachedPayloadResult)
         .thenPeek(
             builderPayloadOrFallbackData ->
-                builderResultCache.put(signedBeaconBlock.getSlot(), builderPayloadOrFallbackData))
+                builderResultCache.put(
+                    signedBeaconBlock.getSlotAndBlockRoot(), builderPayloadOrFallbackData))
         .alwaysRun(blockPublishingPerformance::builderGetPayload);
   }
 
   @Override
-  public Optional<BuilderPayloadOrFallbackData> getCachedUnblindedPayload(final UInt64 slot) {
-    return Optional.ofNullable(builderResultCache.get(slot));
+  public Optional<BuilderPayloadOrFallbackData> getCachedUnblindedPayload(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return Optional.ofNullable(builderResultCache.get(slotAndBlockRoot));
   }
 
   private ExecutionPayloadResult executeLocalFlow(

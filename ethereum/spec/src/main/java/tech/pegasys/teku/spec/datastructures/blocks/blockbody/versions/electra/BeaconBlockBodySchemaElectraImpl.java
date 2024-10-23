@@ -38,7 +38,6 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -48,6 +47,8 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.electra.Attesta
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
 public class BeaconBlockBodySchemaElectraImpl
     extends ContainerSchema13<
@@ -101,12 +102,12 @@ public class BeaconBlockBodySchemaElectraImpl
 
   public static BeaconBlockBodySchemaElectraImpl create(
       final SpecConfigElectra specConfig,
-      final AttesterSlashingSchema<?> attesterSlashingSchema,
       final SignedBlsToExecutionChangeSchema blsToExecutionChangeSchema,
       final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema,
       final ExecutionRequestsSchema executionRequestsSchema,
       final long maxValidatorsPerAttestation,
-      final String containerName) {
+      final String containerName,
+      final SchemaRegistry schemaRegistry) {
     return new BeaconBlockBodySchemaElectraImpl(
         containerName,
         namedSchema(BlockBodyFields.RANDAO_REVEAL, SszSignatureSchema.INSTANCE),
@@ -119,7 +120,7 @@ public class BeaconBlockBodySchemaElectraImpl
         namedSchema(
             BlockBodyFields.ATTESTER_SLASHINGS,
             SszListSchema.create(
-                attesterSlashingSchema.castTypeToAttesterSlashingSchema(),
+                schemaRegistry.get(SchemaTypes.ATTESTER_SLASHING_SCHEMA),
                 specConfig.getMaxAttesterSlashingsElectra())),
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
@@ -224,6 +225,12 @@ public class BeaconBlockBodySchemaElectraImpl
   }
 
   @Override
+  public ExecutionRequestsSchema getExecutionRequestsSchema() {
+    return (ExecutionRequestsSchema)
+        getChildSchema(getFieldIndex(BlockBodyFields.EXECUTION_REQUESTS));
+  }
+
+  @Override
   public long getBlobKzgCommitmentsGeneralizedIndex() {
     return getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.BLOB_KZG_COMMITMENTS));
   }
@@ -233,10 +240,5 @@ public class BeaconBlockBodySchemaElectraImpl
     return GIndexUtil.gIdxComposeAll(
         getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD)),
         getExecutionPayloadSchema().getBlindedNodeGeneralizedIndices());
-  }
-
-  @Override
-  public ExecutionRequestsSchema getExecutionRequestsSchema() {
-    return (ExecutionRequestsSchema) getFieldSchema12();
   }
 }

@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionclient;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV1;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -112,14 +114,11 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
       final ExecutionPayloadV3 executionPayload,
       final List<VersionedHash> blobVersionedHashes,
       final Bytes32 parentBeaconBlockRoot,
-      final Bytes32 executionRequestHash) {
+      final List<Bytes> executionRequests) {
     return taskQueue.queueTask(
         () ->
             delegate.newPayloadV4(
-                executionPayload,
-                blobVersionedHashes,
-                parentBeaconBlockRoot,
-                executionRequestHash));
+                executionPayload, blobVersionedHashes, parentBeaconBlockRoot, executionRequests));
   }
 
   @Override
@@ -144,6 +143,14 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
       final Optional<PayloadAttributesV3> payloadAttributes) {
     return taskQueue.queueTask(
         () -> delegate.forkChoiceUpdatedV3(forkChoiceState, payloadAttributes));
+  }
+
+  @Override
+  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV4(
+      final ForkChoiceStateV1 forkChoiceState,
+      final Optional<PayloadAttributesV4> payloadAttributes) {
+    return taskQueue.queueTask(
+        () -> delegate.forkChoiceUpdatedV4(forkChoiceState, payloadAttributes));
   }
 
   @Override

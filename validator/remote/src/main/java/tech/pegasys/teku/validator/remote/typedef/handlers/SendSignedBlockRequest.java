@@ -68,29 +68,31 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
     final SchemaDefinitions schemaDefinitions =
         spec.atSlot(signedBlockContainer.getSlot()).getSchemaDefinitions();
 
+    final SpecMilestone milestone = spec.atSlot(signedBlockContainer.getSlot()).getMilestone();
+    final Map<String, String> headers =
+        Map.of(HEADER_CONSENSUS_VERSION, milestone.name().toLowerCase(Locale.ROOT));
     final DeserializableTypeDefinition<SignedBlockContainer> typeDefinition =
         blinded
             ? schemaDefinitions.getSignedBlindedBlockContainerSchema().getJsonTypeDefinition()
             : schemaDefinitions.getSignedBlockContainerSchema().getJsonTypeDefinition();
-
     return preferSszBlockEncoding.get()
         ? sendSignedBlockAsSszOrFallback(
-            apiMethod, signedBlockContainer, broadcastValidationLevel, typeDefinition)
+            apiMethod, signedBlockContainer, broadcastValidationLevel, typeDefinition, headers)
         : sendSignedBlockAsJson(
-            apiMethod, signedBlockContainer, broadcastValidationLevel, typeDefinition);
+            apiMethod, signedBlockContainer, broadcastValidationLevel, typeDefinition, headers);
   }
 
   private SendSignedBlockResult sendSignedBlockAsSszOrFallback(
       final ValidatorApiMethod apiMethod,
       final SignedBlockContainer signedBlockContainer,
       final BroadcastValidationLevel broadcastValidationLevel,
-      final DeserializableTypeDefinition<SignedBlockContainer> typeDefinition) {
-    final SpecMilestone milestone = spec.atSlot(signedBlockContainer.getSlot()).getMilestone();
+      final DeserializableTypeDefinition<SignedBlockContainer> typeDefinition,
+      final Map<String, String> headers) {
     final SendSignedBlockResult result =
-        sendSignedBlockAsSsz(apiMethod, signedBlockContainer, broadcastValidationLevel, milestone);
+        sendSignedBlockAsSsz(apiMethod, signedBlockContainer, broadcastValidationLevel, headers);
     if (!result.isPublished() && !preferSszBlockEncoding.get()) {
       return sendSignedBlockAsJson(
-          apiMethod, signedBlockContainer, broadcastValidationLevel, typeDefinition);
+          apiMethod, signedBlockContainer, broadcastValidationLevel, typeDefinition, headers);
     }
     return result;
   }
@@ -99,14 +101,14 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
       final ValidatorApiMethod apiMethod,
       final SignedBlockContainer signedBlockContainer,
       final BroadcastValidationLevel broadcastValidationLevel,
-      final SpecMilestone milestone) {
+      final Map<String, String> headers) {
     return postOctetStream(
             apiMethod,
             emptyMap(),
             Map.of(
                 PARAM_BROADCAST_VALIDATION,
                 broadcastValidationLevel.name().toLowerCase(Locale.ROOT)),
-            Map.of(HEADER_CONSENSUS_VERSION, milestone.name().toLowerCase(Locale.ROOT)),
+            headers,
             signedBlockContainer.sszSerialize().toArray(),
             sszResponseHandler)
         .map(__ -> SendSignedBlockResult.success(signedBlockContainer.getRoot()))
@@ -117,14 +119,15 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
       final ValidatorApiMethod apiMethod,
       final SignedBlockContainer signedBlockContainer,
       final BroadcastValidationLevel broadcastValidationLevel,
-      final DeserializableTypeDefinition<SignedBlockContainer> typeDefinition) {
+      final DeserializableTypeDefinition<SignedBlockContainer> typeDefinition,
+      final Map<String, String> headers) {
     return postJson(
             apiMethod,
             emptyMap(),
             Map.of(
                 PARAM_BROADCAST_VALIDATION,
                 broadcastValidationLevel.name().toLowerCase(Locale.ROOT)),
-            emptyMap(),
+            headers,
             signedBlockContainer,
             typeDefinition,
             new ResponseHandler<>())

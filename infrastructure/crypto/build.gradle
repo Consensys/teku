@@ -1,6 +1,6 @@
 dependencies {
   api 'org.bouncycastle:bcprov-jdk18on'
-  api 'org.apache.tuweni:tuweni-bytes'
+  api 'io.tmio:tuweni-bytes'
 
 
   jmhImplementation 'org.bouncycastle:bcprov-jdk18on'

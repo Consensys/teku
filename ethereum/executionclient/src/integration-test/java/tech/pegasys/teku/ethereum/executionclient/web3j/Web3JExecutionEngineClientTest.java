@@ -323,11 +323,11 @@ public class Web3JExecutionEngineClientTest {
 
     final List<VersionedHash> blobVersionedHashes = dataStructureUtil.randomVersionedHashes(3);
     final Bytes32 parentBeaconBlockRoot = dataStructureUtil.randomBytes32();
-    final Bytes32 executionRequestHash = dataStructureUtil.randomBytes32();
+    final List<Bytes> executionRequests = dataStructureUtil.randomEncodedExecutionRequests();
 
     final SafeFuture<Response<PayloadStatusV1>> futureResponse =
         eeClient.newPayloadV4(
-            executionPayloadV3, blobVersionedHashes, parentBeaconBlockRoot, executionRequestHash);
+            executionPayloadV3, blobVersionedHashes, parentBeaconBlockRoot, executionRequests);
 
     assertThat(futureResponse)
         .succeedsWithin(1, TimeUnit.SECONDS)
@@ -355,6 +355,10 @@ public class Web3JExecutionEngineClientTest {
     assertThat(((List<Object>) requestData.get("params")).get(2))
         .asString()
         .isEqualTo(parentBeaconBlockRoot.toHexString());
+    assertThat(((List<Object>) requestData.get("params")).get(3))
+        .asInstanceOf(LIST)
+        .containsExactlyElementsOf(
+            executionRequests.stream().map(Bytes::toHexString).collect(Collectors.toList()));
   }
 
   @TestTemplate

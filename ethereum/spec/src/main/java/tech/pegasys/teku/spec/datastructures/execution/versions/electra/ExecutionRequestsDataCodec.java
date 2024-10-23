@@ -13,11 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsBuilder;
 
@@ -27,10 +24,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsBuilder;
 public class ExecutionRequestsDataCodec {
 
   private static final int EXPECTED_REQUEST_DATA_ELEMENTS = 3;
-  private static final Bytes DEPOSIT_REQUEST_PREFIX = Bytes.of(DepositRequest.REQUEST_TYPE);
-  private static final Bytes WITHDRAWAL_REQUEST_PREFIX = Bytes.of(WithdrawalRequest.REQUEST_TYPE);
-  private static final Bytes CONSOLIDATION_REQUEST_PREFIX =
-      Bytes.of(ConsolidationRequest.REQUEST_TYPE);
 
   private final ExecutionRequestsSchema executionRequestsSchema;
 
@@ -38,6 +31,12 @@ public class ExecutionRequestsDataCodec {
     this.executionRequestsSchema = executionRequestsSchema;
   }
 
+  /**
+   * Decodes the execution requests received from the EL.
+   *
+   * @param executionRequestData list of encoded execution requests from the EL
+   * @return an ExecutionRequests object with the requests
+   */
   public ExecutionRequests decode(final List<Bytes> executionRequestData) {
     if (executionRequestData.size() != EXPECTED_REQUEST_DATA_ELEMENTS) {
       throw new IllegalArgumentException(
@@ -78,17 +77,13 @@ public class ExecutionRequestsDataCodec {
     return executionRequestsBuilder.build();
   }
 
-  public Bytes32 hash(final ExecutionRequests executionRequests) {
-    final Bytes sortedEncodedRequests =
-        encodeWithTypePrefix(executionRequests).stream()
-            .map(Hash::sha256)
-            .map(Bytes.class::cast)
-            .reduce(Bytes.EMPTY, Bytes::concatenate);
-    return Hash.sha256(sortedEncodedRequests);
-  }
-
-  @VisibleForTesting
-  public List<Bytes> encodeWithoutTypePrefix(final ExecutionRequests executionRequests) {
+  /**
+   * Encodes the provided ExecutionRequests object to send the requests to the EL for validation.
+   *
+   * @param executionRequests the execution requests in the BeaconBlock
+   * @return list of encoded execution requests
+   */
+  public List<Bytes> encode(final ExecutionRequests executionRequests) {
     final SszList<DepositRequest> depositRequestsSszList =
         executionRequestsSchema
             .getDepositRequestsSchema()
@@ -106,14 +101,5 @@ public class ExecutionRequestsDataCodec {
         depositRequestsSszList.sszSerialize(),
         withdrawalRequestsSszList.sszSerialize(),
         consolidationRequestsSszList.sszSerialize());
-  }
-
-  @VisibleForTesting
-  List<Bytes> encodeWithTypePrefix(final ExecutionRequests executionRequests) {
-    final List<Bytes> encodeWithoutTypePrefix = encodeWithoutTypePrefix(executionRequests);
-    return List.of(
-        Bytes.concatenate(DEPOSIT_REQUEST_PREFIX, encodeWithoutTypePrefix.get(0)),
-        Bytes.concatenate(WITHDRAWAL_REQUEST_PREFIX, encodeWithoutTypePrefix.get(1)),
-        Bytes.concatenate(CONSOLIDATION_REQUEST_PREFIX, encodeWithoutTypePrefix.get(2)));
   }
 }

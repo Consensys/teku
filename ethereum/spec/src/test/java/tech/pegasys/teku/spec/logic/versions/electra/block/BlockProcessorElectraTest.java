@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -178,7 +179,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
             preState.getValidators().stream()
                 .filter(
                     validator ->
-                        validator.getPublicKey().equals(withdrawalRequest.getValidatorPublicKey())))
+                        validator.getPublicKey().equals(withdrawalRequest.getValidatorPubkey())))
         .isEmpty();
 
     final BeaconStateElectra postState =
@@ -545,8 +546,8 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
             .map(SszKZGCommitment::getKZGCommitment)
             .map(miscHelpers::kzgCommitmentToVersionedHash)
             .collect(Collectors.toList());
-    final Bytes32 expectedExecutionRequestsHash =
-        getExecutionRequestsDataCodec().hash(blockBody.getExecutionRequests());
+    final List<Bytes> expectedExecutionRequests =
+        getExecutionRequestsDataCodec().encode(blockBody.getExecutionRequests());
 
     final NewPayloadRequest newPayloadRequest =
         spec.getBlockProcessor(UInt64.ONE).computeNewPayloadRequest(preState, blockBody);
@@ -564,8 +565,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
     assertThat(newPayloadRequest.getParentBeaconBlockRoot()).isPresent();
     assertThat(newPayloadRequest.getParentBeaconBlockRoot().get())
         .isEqualTo(preState.getLatestBlockHeader().getParentRoot());
-    assertThat(newPayloadRequest.getExecutionRequestsHash())
-        .hasValue(expectedExecutionRequestsHash);
+    assertThat(newPayloadRequest.getExecutionRequests()).hasValue(expectedExecutionRequests);
   }
 
   private Supplier<ValidatorExitContext> validatorExitContextSupplier(final BeaconState state) {

@@ -14,10 +14,10 @@
 package tech.pegasys.teku.storage.server.kvstore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.stream.Collectors.groupingBy;
 import static tech.pegasys.teku.infrastructure.logging.DbLogger.DB_LOGGER;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -71,9 +71,8 @@ import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
+import tech.pegasys.teku.storage.archive.DataArchiveWriter;
 import tech.pegasys.teku.storage.server.Database;
-import tech.pegasys.teku.storage.server.DatabaseArchiveNoopWriter;
-import tech.pegasys.teku.storage.server.DatabaseArchiveWriter;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.CombinedKvStoreDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao;
@@ -324,9 +323,31 @@ public class KvStoreDatabase implements Database {
                 .forEach(updater::addBlobSidecar);
           });
 
+      needToUpdateEarliestBlockSlot(blocks.stream().findFirst())
+          .ifPresent(updater::setEarliestBlockSlot);
       needToUpdateEarliestBlobSidecarSlot(maybeEarliestBlobSidecar)
           .ifPresent(updater::setEarliestBlobSidecarSlot);
       updater.commit();
+    }
+  }
+
+  private Optional<UInt64> needToUpdateEarliestBlockSlot(
+      final Optional<SignedBeaconBlock> maybeNewEarliestBlockSlot) {
+    // New value is absent - not updating
+    if (maybeNewEarliestBlockSlot.isEmpty()) {
+      return Optional.empty();
+    }
+    // New value is present, value from DB is absent - updating
+    final Optional<UInt64> maybeEarliestFinalizedBlockSlotDb = dao.getEarliestFinalizedBlockSlot();
+    if (maybeEarliestFinalizedBlockSlotDb.isEmpty()) {
+      return maybeNewEarliestBlockSlot.map(SignedBeaconBlock::getSlot);
+    }
+    // New value is smaller than value from DB - updating
+    final UInt64 newEarliestBlockSlot = maybeNewEarliestBlockSlot.get().getSlot();
+    if (newEarliestBlockSlot.isLessThan(maybeEarliestFinalizedBlockSlotDb.get())) {
+      return maybeNewEarliestBlockSlot.map(SignedBeaconBlock::getSlot);
+    } else {
+      return Optional.empty();
     }
   }
 
@@ -378,7 +399,8 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public UInt64 pruneFinalizedBlocks(final UInt64 lastSlotToPrune, final int pruneLimit) {
+  public UInt64 pruneFinalizedBlocks(
+      final UInt64 lastSlotToPrune, final int pruneLimit, final UInt64 checkpointInitialSlot) {
     final Optional<UInt64> earliestBlockSlot =
         dao.getEarliestFinalizedBlock().map(SignedBeaconBlock::getSlot);
     LOG.debug(
@@ -387,14 +409,18 @@ public class KvStoreDatabase implements Database {
     if (earliestBlockSlot.isEmpty()) {
       return lastSlotToPrune;
     }
-    return pruneToBlock(lastSlotToPrune, pruneLimit);
+    return pruneToBlock(lastSlotToPrune, pruneLimit, checkpointInitialSlot);
   }
 
-  private UInt64 pruneToBlock(final UInt64 lastSlotToPrune, final int pruneLimit) {
+  private UInt64 pruneToBlock(
+      final UInt64 lastSlotToPrune, final int pruneLimit, final UInt64 checkpointInitialSlot) {
     final List<Pair<UInt64, Bytes32>> blocksToPrune;
+    final Optional<UInt64> earliestSlotAvailableAfterPrune;
     LOG.debug("Pruning finalized blocks to slot {} (included)", lastSlotToPrune);
     try (final Stream<SignedBeaconBlock> stream =
         dao.streamFinalizedBlocks(UInt64.ZERO, lastSlotToPrune)) {
+      // get an extra block to set earliest finalized block slot available after pruning runs
+      // ensuring it is an existing block in the DB
       blocksToPrune =
           stream.limit(pruneLimit).map(block -> Pair.of(block.getSlot(), block.getRoot())).toList();
     }
@@ -403,17 +429,30 @@ public class KvStoreDatabase implements Database {
       LOG.debug("No finalized blocks to prune up to {} slot", lastSlotToPrune);
       return lastSlotToPrune;
     }
+
+    try (final Stream<SignedBeaconBlock> stream =
+        dao.streamFinalizedBlocks(UInt64.ZERO, checkpointInitialSlot)) {
+
+      earliestSlotAvailableAfterPrune =
+          stream
+              .map(SignedBeaconBlock::getSlot)
+              .filter(slot -> slot.isGreaterThan(blocksToPrune.getLast().getLeft()))
+              .findFirst();
+    }
+
     final UInt64 lastPrunedBlockSlot = blocksToPrune.getLast().getKey();
     LOG.debug(
         "Pruning {} finalized blocks, last block slot is {}",
         blocksToPrune.size(),
         lastPrunedBlockSlot);
-    deleteFinalizedBlocks(blocksToPrune);
+    deleteFinalizedBlocks(blocksToPrune, earliestSlotAvailableAfterPrune);
 
     return blocksToPrune.size() < pruneLimit ? lastSlotToPrune : lastPrunedBlockSlot;
   }
 
-  private void deleteFinalizedBlocks(final List<Pair<UInt64, Bytes32>> blocksToPrune) {
+  private void deleteFinalizedBlocks(
+      final List<Pair<UInt64, Bytes32>> blocksToPrune,
+      final Optional<UInt64> earliestSlotAvailableAfterPrune) {
     if (blocksToPrune.size() > 0) {
       if (blocksToPrune.size() < 20) {
         LOG.debug(
@@ -426,6 +465,8 @@ public class KvStoreDatabase implements Database {
       try (final FinalizedUpdater updater = finalizedUpdater()) {
         blocksToPrune.forEach(
             pair -> updater.deleteFinalizedBlock(pair.getLeft(), pair.getRight()));
+        earliestSlotAvailableAfterPrune.ifPresentOrElse(
+            updater::setEarliestBlockSlot, updater::deleteEarliestBlockSlot);
         updater.commit();
       }
     }
@@ -579,6 +620,7 @@ public class KvStoreDatabase implements Database {
           && spec.atSlot(initialAnchor.getSlot())
               .getMilestone()
               .isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+        updater.setEarliestBlockSlot(initialAnchor.getSlot());
         updater.setEarliestBlobSidecarSlot(initialAnchor.getSlot());
       }
 
@@ -879,7 +921,7 @@ public class KvStoreDatabase implements Database {
   public boolean pruneOldestBlobSidecars(
       final UInt64 lastSlotToPrune,
       final int pruneLimit,
-      final DatabaseArchiveWriter<BlobSidecar> archiveWriter) {
+      final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys =
             streamBlobSidecarKeys(UInt64.ZERO, lastSlotToPrune);
         final FinalizedUpdater updater = finalizedUpdater()) {
@@ -889,16 +931,14 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public boolean pruneOldestNonCanonicalBlobSidecars(
-      final UInt64 lastSlotToPrune, final int pruneLimit) {
+      final UInt64 lastSlotToPrune,
+      final int pruneLimit,
+      final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableNoncanonicalBlobKeys =
             streamNonCanonicalBlobSidecarKeys(UInt64.ZERO, lastSlotToPrune);
         final FinalizedUpdater updater = finalizedUpdater()) {
       return pruneBlobSidecars(
-          pruneLimit,
-          prunableNoncanonicalBlobKeys,
-          updater,
-          DatabaseArchiveNoopWriter.NOOP_BLOBSIDECAR_STORE,
-          true);
+          pruneLimit, prunableNoncanonicalBlobKeys, updater, archiveWriter, true);
     }
   }
 
@@ -906,43 +946,64 @@ public class KvStoreDatabase implements Database {
       final int pruneLimit,
       final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys,
       final FinalizedUpdater updater,
-      final DatabaseArchiveWriter<BlobSidecar> archiveWriter,
-      final boolean nonCanonicalblobSidecars) {
-    int remaining = pruneLimit;
+      final DataArchiveWriter<List<BlobSidecar>> archiveWriter,
+      final boolean nonCanonicalBlobSidecars) {
+
     int pruned = 0;
     Optional<UInt64> earliestBlobSidecarSlot = Optional.empty();
-    for (final Iterator<SlotAndBlockRootAndBlobIndex> it = prunableBlobKeys.iterator();
-        it.hasNext(); ) {
-      --remaining;
-      final boolean finished = remaining < 0;
-      final SlotAndBlockRootAndBlobIndex key = it.next();
-      // Before we finish we should check that there are no BlobSidecars left in the same slot
-      if (finished && key.getBlobIndex().equals(ZERO)) {
-        break;
+
+    // Group the BlobSidecars by slot. Potential for higher memory usage
+    // if it hasn't been pruned in a while
+    final Map<UInt64, List<SlotAndBlockRootAndBlobIndex>> prunableMap =
+        prunableBlobKeys.collect(groupingBy(SlotAndBlockRootAndBlobIndex::getSlot));
+
+    // pruneLimit is the number of slots to prune, not the number of BlobSidecars
+    final List<UInt64> slots = prunableMap.keySet().stream().sorted().limit(pruneLimit).toList();
+    for (final UInt64 slot : slots) {
+      final List<SlotAndBlockRootAndBlobIndex> keys = prunableMap.get(slot);
+
+      // Retrieve the BlobSidecars for archiving.
+      final List<BlobSidecar> blobSidecars =
+          keys.stream()
+              .map(
+                  nonCanonicalBlobSidecars
+                      ? this::getNonCanonicalBlobSidecar
+                      : this::getBlobSidecar)
+              .filter(Optional::isPresent)
+              .map(Optional::get)
+              .toList();
+
+      // Just warn if we failed to find all the BlobSidecars.
+      if (keys.size() != blobSidecars.size()) {
+        LOG.warn("Failed to retrieve BlobSidecars for keys: {}", keys);
       }
-      // Attempt to archive the BlobSidecar if present. If there's no BlobSidecar return true.
-      final boolean blobSidecarArchived =
-          getBlobSidecar(key).map(archiveWriter::archive).orElse(Boolean.TRUE);
+
+      // Attempt to archive the BlobSidecars.
+      final boolean blobSidecarArchived = archiveWriter.archive(blobSidecars);
       if (!blobSidecarArchived) {
-        LOG.warn("Failed to archive BlobSidecar for slot:{}. Stopping pruning", key.getSlot());
+        LOG.error("Failed to archive and prune BlobSidecars. Stopping pruning");
         break;
       }
-      if (nonCanonicalblobSidecars) {
-        updater.removeNonCanonicalBlobSidecar(key);
-      } else {
-        earliestBlobSidecarSlot = Optional.of(key.getSlot().plus(1));
-        updater.removeBlobSidecar(key);
+
+      // Remove the BlobSidecars from the database.
+      for (final SlotAndBlockRootAndBlobIndex key : keys) {
+        if (nonCanonicalBlobSidecars) {
+          updater.removeNonCanonicalBlobSidecar(key);
+        } else {
+          updater.removeBlobSidecar(key);
+          earliestBlobSidecarSlot = Optional.of(slot.plus(1));
+        }
       }
+
       ++pruned;
     }
 
-    if (!nonCanonicalblobSidecars) {
+    if (!nonCanonicalBlobSidecars) {
       earliestBlobSidecarSlot.ifPresent(updater::setEarliestBlobSidecarSlot);
     }
     updater.commit();
 
-    // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar
-    // in a slot
+    // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar in a slot
     return pruned >= pruneLimit;
   }
 

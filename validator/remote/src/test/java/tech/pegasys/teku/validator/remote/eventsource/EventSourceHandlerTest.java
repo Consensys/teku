@@ -84,7 +84,7 @@ class EventSourceHandlerTest {
   void onMessage_shouldHandleAttesterSlashingEvent() throws Exception {
     final IndexedAttestation indexedAttestation1 = dataStructureUtil.randomIndexedAttestation();
     final IndexedAttestation indexedAttestation2 = dataStructureUtil.randomIndexedAttestation();
-    final AttesterSlashingSchema<?> attesterSlashingSchema =
+    final AttesterSlashingSchema attesterSlashingSchema =
         spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema();
     final AttesterSlashing attesterSlashing =
         attesterSlashingSchema.create(indexedAttestation1, indexedAttestation2);
@@ -92,11 +92,7 @@ class EventSourceHandlerTest {
     handler.onMessage(
         EventType.attester_slashing.name(),
         new MessageEvent(
-            JsonUtil.serialize(
-                attesterSlashing,
-                attesterSlashingSchema
-                    .castTypeToAttesterSlashingSchema()
-                    .getJsonTypeDefinition())));
+            JsonUtil.serialize(attesterSlashing, attesterSlashingSchema.getJsonTypeDefinition())));
 
     verify(validatorTimingChannel).onAttesterSlashing(eq(attesterSlashing));
     verifyNoMoreInteractions(validatorTimingChannel);
