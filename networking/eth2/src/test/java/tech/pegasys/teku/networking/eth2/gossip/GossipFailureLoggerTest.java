@@ -145,7 +145,7 @@ class GossipFailureLoggerTest {
   private static String noPeersMessage(final int slot) {
     return "Failed to publish thingy(s) for slot "
         + slot
-        + ": "
+        + "; "
         + NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION.getMessage();
   }
 

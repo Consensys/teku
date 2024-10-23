@@ -50,7 +50,7 @@ public class GossipFailureLogger {
     } else if (lastRootCause instanceof NoPeersForOutboundMessageException) {
       LOG.log(
           suppress ? Level.DEBUG : Level.WARN,
-          "Failed to publish {}(s) for slot {}: {}",
+          "Failed to publish {}(s) for slot {}; {}",
           messageType,
           lastErroredSlot,
           rootCause.getMessage());
