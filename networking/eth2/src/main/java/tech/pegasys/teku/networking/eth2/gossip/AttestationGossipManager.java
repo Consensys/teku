@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -62,7 +63,8 @@ public class AttestationGossipManager implements GossipManager {
               attestationPublishSuccessCounter.inc();
             },
             error -> {
-              gossipFailureLogger.logWithSuppression(error, attestation.getData().getSlot());
+              gossipFailureLogger.logWithSuppression(
+                  error, Optional.of(attestation.getData().getSlot()));
               attestationPublishFailureCounter.inc();
             });
   }

@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip;
 import io.libp2p.core.SemiDuplexNoOutboundStreamException;
 import io.libp2p.pubsub.MessageAlreadySeenException;
 import io.libp2p.pubsub.NoPeersForOutboundMessageException;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -24,15 +25,15 @@ class GossipFailureLoggerTest {
 
   public static final String ALREADY_SEEN_MESSAGE =
       "Failed to publish thingy(s) for slot 1 because the message has already been seen";
-  public static final UInt64 SLOT = UInt64.ONE;
+  public static final Optional<UInt64> SLOT = Optional.of(UInt64.ONE);
   public static final SemiDuplexNoOutboundStreamException NO_ACTIVE_STREAM_EXCEPTION =
       new SemiDuplexNoOutboundStreamException("So Lonely");
   public static final NoPeersForOutboundMessageException NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION =
       new NoPeersForOutboundMessageException("no peers");
-  public static final String NO_PEERS_MESSAGE = noPeersMessage(SLOT.intValue());
-  public static final String NO_ACTIVE_STREAM_MESSAGE = noActiveStreamMessage(SLOT.intValue());
+  public static final String NO_PEERS_MESSAGE = noPeersMessage(SLOT);
+  public static final String NO_ACTIVE_STREAM_MESSAGE = noActiveStreamMessage(SLOT);
 
-  public static final String GENERIC_FAILURE_MESSAGE = "Failed to publish thingy(s) for slot 1";
+  public static final String GENERIC_FAILURE_MESSAGE = genericError(SLOT);
 
   private final GossipFailureLogger logger = new GossipFailureLogger("thingy");
 
@@ -84,8 +85,8 @@ class GossipFailureLoggerTest {
 
       logger.logWithSuppression(
           new IllegalStateException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION),
-          UInt64.valueOf(2));
-      logCaptor.assertWarnLog(noPeersMessage(2));
+          Optional.of(UInt64.valueOf(2)));
+      logCaptor.assertWarnLog(noPeersMessage(Optional.of(UInt64.valueOf(2))));
     }
   }
 
@@ -142,16 +143,61 @@ class GossipFailureLoggerTest {
     }
   }
 
-  private static String noPeersMessage(final int slot) {
-    return "Failed to publish thingy(s) for slot "
-        + slot
+  @Test
+  void shouldLogGenericErrorsWithoutSuppression() {
+    try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
+      logger.logWithSuppression(
+          new RuntimeException("Foo", new IllegalStateException("Boom")), Optional.empty());
+      logCaptor.clearLogs();
+
+      logger.logWithSuppression(
+          new IllegalStateException("Foo", new IllegalStateException("goes the dynamite")),
+          Optional.empty());
+      logCaptor.assertErrorLog(genericError(Optional.empty()));
+    }
+  }
+
+  @Test
+  void shouldLogNoPeersErrorsAtWarnLevelWithoutSuppression() {
+    try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
+      logger.logWithSuppression(
+          new RuntimeException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION), Optional.empty());
+      logCaptor.clearLogs();
+
+      logger.logWithSuppression(
+          new IllegalStateException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION),
+          Optional.empty());
+      logCaptor.assertWarnLog(noPeersMessage(Optional.empty()));
+    }
+  }
+
+  @Test
+  void shouldLogNoActiveStreamErrorsWithoutSuppression() {
+    try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
+      logger.logWithSuppression(
+          new RuntimeException("Foo", NO_ACTIVE_STREAM_EXCEPTION), Optional.empty());
+      logCaptor.clearLogs();
+
+      logger.logWithSuppression(
+          new IllegalStateException("Foo", NO_ACTIVE_STREAM_EXCEPTION), Optional.empty());
+      logCaptor.assertWarnLog(noActiveStreamMessage(Optional.empty()));
+    }
+  }
+
+  private static String noPeersMessage(final Optional<UInt64> slot) {
+    return "Failed to publish thingy(s)"
+        + slot.map(s -> " for slot " + s).orElse("")
         + "; "
         + NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION.getMessage();
   }
 
-  private static String noActiveStreamMessage(final int slot) {
-    return "Failed to publish thingy(s) for slot "
-        + slot
+  private static String noActiveStreamMessage(final Optional<UInt64> slot) {
+    return "Failed to publish thingy(s)"
+        + slot.map(s -> " for slot " + s).orElse("")
         + " because no active outbound stream for the required gossip topic";
+  }
+
+  private static String genericError(final Optional<UInt64> slot) {
+    return "Failed to publish thingy(s)" + slot.map(s -> " for slot " + s).orElse("");
   }
 }

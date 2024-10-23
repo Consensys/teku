@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -180,6 +181,7 @@ class AbstractGossipManagerTest {
           forkInfo,
           processor,
           gossipType,
+          message -> Optional.of(UInt64.ZERO),
           message -> UInt64.ZERO,
           networkingConfig,
           DebugDataDumper.NOOP);

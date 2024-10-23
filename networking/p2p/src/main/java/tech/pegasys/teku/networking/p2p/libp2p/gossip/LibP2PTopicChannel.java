@@ -33,7 +33,7 @@ public class LibP2PTopicChannel implements TopicChannel {
   @Override
   public SafeFuture<Void> gossip(final Bytes data) {
     if (closed.get()) {
-      return SafeFuture.COMPLETE;
+      return SafeFuture.failedFuture(new IllegalStateException("Topic channel is closed"));
     }
     return topicHandler.gossip(data);
   }

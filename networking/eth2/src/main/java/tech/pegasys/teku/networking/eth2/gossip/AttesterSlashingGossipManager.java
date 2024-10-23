@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
@@ -46,6 +47,7 @@ public class AttesterSlashingGossipManager extends AbstractGossipManager<Atteste
         spec.atEpoch(forkInfo.getFork().getEpoch())
             .getSchemaDefinitions()
             .getAttesterSlashingSchema(),
+        message -> Optional.of(message.getAttestation1().getData().getSlot()),
         message -> spec.computeEpochAtSlot(message.getAttestation1().getData().getSlot()),
         spec.getNetworkingConfig(),
         debugDataDumper);

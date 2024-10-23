@@ -17,6 +17,7 @@ import com.google.common.base.Throwables;
 import io.libp2p.core.SemiDuplexNoOutboundStreamException;
 import io.libp2p.pubsub.MessageAlreadySeenException;
 import io.libp2p.pubsub.NoPeersForOutboundMessageException;
+import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,46 +27,55 @@ public class GossipFailureLogger {
   private static final Logger LOG = LogManager.getLogger();
 
   private final String messageType;
-  private UInt64 lastErroredSlot;
+  private Optional<UInt64> lastErroredSlot;
   private Throwable lastRootCause;
 
   public GossipFailureLogger(final String messageType) {
     this.messageType = messageType;
   }
 
-  public synchronized void logWithSuppression(final Throwable error, final UInt64 slot) {
+  public synchronized void logWithSuppression(
+      final Throwable error, final Optional<UInt64> maybeSlot) {
     final Throwable rootCause = Throwables.getRootCause(error);
 
-    final boolean suppress =
-        slot.equals(lastErroredSlot) && rootCause.getClass().equals(lastRootCause.getClass());
+    final boolean suppress;
+    if (maybeSlot.isEmpty()) {
+      suppress = false;
+    } else {
+      suppress =
+          maybeSlot.equals(lastErroredSlot)
+              && rootCause.getClass().equals(lastRootCause.getClass());
+    }
 
-    lastErroredSlot = slot;
+    lastErroredSlot = maybeSlot;
     lastRootCause = rootCause;
+
+    final String slotLog = maybeSlot.map(slot -> " for slot " + slot).orElse("");
 
     if (lastRootCause instanceof MessageAlreadySeenException) {
       LOG.debug(
-          "Failed to publish {}(s) for slot {} because the message has already been seen",
+          "Failed to publish {}(s){} because the message has already been seen",
           messageType,
-          lastErroredSlot);
+          slotLog);
     } else if (lastRootCause instanceof NoPeersForOutboundMessageException) {
       LOG.log(
           suppress ? Level.DEBUG : Level.WARN,
-          "Failed to publish {}(s) for slot {}; {}",
+          "Failed to publish {}(s){}; {}",
           messageType,
-          lastErroredSlot,
-          rootCause.getMessage());
+          slotLog,
+          lastRootCause.getMessage());
     } else if (lastRootCause instanceof SemiDuplexNoOutboundStreamException) {
       LOG.log(
           suppress ? Level.DEBUG : Level.WARN,
-          "Failed to publish {}(s) for slot {} because no active outbound stream for the required gossip topic",
+          "Failed to publish {}(s){} because no active outbound stream for the required gossip topic",
           messageType,
-          lastErroredSlot);
+          slotLog);
     } else {
       LOG.log(
           suppress ? Level.DEBUG : Level.ERROR,
-          "Failed to publish {}(s) for slot {}",
+          "Failed to publish {}(s){}",
           messageType,
-          lastErroredSlot,
+          slotLog,
           error);
     }
   }

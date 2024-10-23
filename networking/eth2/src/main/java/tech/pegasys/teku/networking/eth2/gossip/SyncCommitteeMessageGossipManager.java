@@ -109,7 +109,7 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
               publishSuccessCounter.inc();
             },
             error -> {
-              gossipFailureLogger.logWithSuppression(error, message.getSlot());
+              gossipFailureLogger.logWithSuppression(error, Optional.of(message.getSlot()));
               publishFailureCounter.inc();
             });
   }

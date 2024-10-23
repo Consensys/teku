@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -47,6 +48,7 @@ public class BlockGossipManager extends AbstractGossipManager<SignedBeaconBlock>
         spec.atEpoch(forkInfo.getFork().getEpoch())
             .getSchemaDefinitions()
             .getSignedBeaconBlockSchema(),
+        block -> Optional.of(block.getSlot()),
         block -> spec.computeEpochAtSlot(block.getSlot()),
         spec.getNetworkingConfig(),
         debugDataDumper);
