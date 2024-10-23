@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
@@ -124,9 +123,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private final Map<UInt64, SafeFuture<Optional<BlockContainerAndMetaData>>>
       blockProductionFuturesBySlotCache = LimitedMap.createSynchronizedLRU(2);
-
-  private final Map<UInt64, Bytes32> createdBlockRootsBySlotCache =
-      LimitedMap.createSynchronizedLRU(2);
 
   private final BlockProductionAndPublishingPerformanceFactory
       blockProductionAndPublishingPerformanceFactory;
@@ -401,12 +397,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             graffiti,
             requestedBuilderBoostFactor,
             blockProductionPerformance)
-        .thenApply(
-            block -> {
-              final Bytes32 blockRoot = block.blockContainer().getBlock().getRoot();
-              createdBlockRootsBySlotCache.put(slot, blockRoot);
-              return Optional.of(block);
-            });
+        .thenApply(Optional::of);
   }
 
   @Override
@@ -879,10 +870,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private boolean isLocallyCreatedBlock(final SignedBlockContainer blockContainer) {
-    final Bytes32 blockRoot = blockContainer.getSignedBlock().getMessage().getRoot();
-    final Bytes32 locallyCreatedBlockRoot =
-        createdBlockRootsBySlotCache.get(blockContainer.getSlot());
-    return Objects.equals(blockRoot, locallyCreatedBlockRoot);
+    return blockProductionFuturesBySlotCache.containsKey(blockContainer.getSlot());
   }
 
   @Override
