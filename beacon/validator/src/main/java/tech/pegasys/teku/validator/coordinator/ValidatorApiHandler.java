@@ -122,7 +122,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
    */
   private static final int DUTY_EPOCH_TOLERANCE = 1;
 
-  private final Map<UInt64, Bytes32> createdBlockRootsBySlotCache =
+  private final Map<UInt64, BlockContainerAndMetaData> createdBlocksBySlotCache =
       LimitedMap.createSynchronizedLRU(2);
 
   private final BlockProductionAndPublishingPerformanceFactory
@@ -336,6 +336,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
       final Optional<UInt64> requestedBuilderBoostFactor) {
+    if (createdBlocksBySlotCache.containsKey(slot)) {
+      return SafeFuture.completedFuture(Optional.of(createdBlocksBySlotCache.get(slot)));
+    }
     LOG.info("Creating unsigned block for slot {}", slot);
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(slot));
     if (isSyncActive()) {
@@ -391,8 +394,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             blockProductionPerformance)
         .thenApply(
             block -> {
-              final Bytes32 blockRoot = block.blockContainer().getBlock().getRoot();
-              createdBlockRootsBySlotCache.put(slot, blockRoot);
+              createdBlocksBySlotCache.put(slot, block);
               return Optional.of(block);
             });
   }
@@ -869,7 +871,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private boolean isLocallyCreatedBlock(final SignedBlockContainer blockContainer) {
     final Bytes32 blockRoot = blockContainer.getSignedBlock().getMessage().getRoot();
     final Bytes32 locallyCreatedBlockRoot =
-        createdBlockRootsBySlotCache.get(blockContainer.getSlot());
+        createdBlocksBySlotCache
+            .get(blockContainer.getSlot())
+            .blockContainer()
+            .getBlock()
+            .getRoot();
     return Objects.equals(blockRoot, locallyCreatedBlockRoot);
   }
 

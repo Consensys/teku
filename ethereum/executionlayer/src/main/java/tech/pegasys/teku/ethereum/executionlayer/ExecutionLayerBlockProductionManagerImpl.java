@@ -67,16 +67,16 @@ public class ExecutionLayerBlockProductionManagerImpl
       final boolean attemptBuilderFlow,
       final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
-    return executionResultCache.computeIfAbsent(
-        blockSlotState.getSlot(),
-        __ -> {
-          if (attemptBuilderFlow) {
-            return executeBuilderFlow(
-                context, blockSlotState, requestedBuilderBoostFactor, blockProductionPerformance);
-          } else {
-            return executeLocalFlow(context, blockSlotState, blockProductionPerformance);
-          }
-        });
+    final ExecutionPayloadResult result;
+    if (attemptBuilderFlow) {
+      result =
+          executeBuilderFlow(
+              context, blockSlotState, requestedBuilderBoostFactor, blockProductionPerformance);
+    } else {
+      result = executeLocalFlow(context, blockSlotState, blockProductionPerformance);
+    }
+    executionResultCache.put(blockSlotState.getSlot(), result);
+    return result;
   }
 
   @Override
@@ -88,15 +88,11 @@ public class ExecutionLayerBlockProductionManagerImpl
   public SafeFuture<BuilderPayloadOrFallbackData> getUnblindedPayload(
       final SignedBeaconBlock signedBeaconBlock,
       final BlockPublishingPerformance blockPublishingPerformance) {
-    final UInt64 slot = signedBeaconBlock.getSlot();
-    if (builderResultCache.containsKey(slot)) {
-      return SafeFuture.completedFuture(builderResultCache.get(slot));
-    }
     return executionLayerChannel
         .builderGetPayload(signedBeaconBlock, this::getCachedPayloadResult)
         .thenPeek(
             builderPayloadOrFallbackData ->
-                builderResultCache.put(slot, builderPayloadOrFallbackData))
+                builderResultCache.put(signedBeaconBlock.getSlot(), builderPayloadOrFallbackData))
         .alwaysRun(blockPublishingPerformance::builderGetPayload);
   }
 

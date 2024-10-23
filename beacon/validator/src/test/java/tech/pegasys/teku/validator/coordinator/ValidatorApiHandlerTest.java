@@ -543,10 +543,20 @@ class ValidatorApiHandlerTest {
     // even if passing a non-empty requestedBlinded and requestedBuilderBoostFactor isn't a valid
     // combination,
     // we still want to check that all parameters are passed down the line to the block factory
-    final SafeFuture<Optional<BlockContainerAndMetaData>> result =
+    SafeFuture<Optional<BlockContainerAndMetaData>> result =
         validatorApiHandler.createUnsignedBlock(
             newSlot, randaoReveal, Optional.empty(), Optional.of(ONE));
 
+    assertThat(result).isCompletedWithValue(Optional.of(blockContainerAndMetaData));
+
+    // further calls in the same slot should return the same block
+    result =
+        validatorApiHandler.createUnsignedBlock(
+            newSlot, randaoReveal, Optional.empty(), Optional.of(ONE));
+
+    assertThat(result).isCompletedWithValue(Optional.of(blockContainerAndMetaData));
+
+    // only produced once
     verify(blockFactory)
         .createUnsignedBlock(
             blockSlotState,
@@ -555,7 +565,6 @@ class ValidatorApiHandlerTest {
             Optional.empty(),
             Optional.of(ONE),
             BlockProductionPerformance.NOOP);
-    assertThat(result).isCompletedWithValue(Optional.of(blockContainerAndMetaData));
   }
 
   @Test
