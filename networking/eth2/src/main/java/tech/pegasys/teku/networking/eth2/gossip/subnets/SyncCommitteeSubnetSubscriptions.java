@@ -31,6 +31,7 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptions {
+
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final SchemaDefinitionsAltair schemaDefinitions;

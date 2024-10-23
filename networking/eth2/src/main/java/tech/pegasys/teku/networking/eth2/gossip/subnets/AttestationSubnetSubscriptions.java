@@ -34,6 +34,7 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions {
+
   private final Spec spec;
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
