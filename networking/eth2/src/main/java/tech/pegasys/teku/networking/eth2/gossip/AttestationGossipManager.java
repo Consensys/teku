@@ -62,14 +62,6 @@ public class AttestationGossipManager implements GossipManager {
               attestationPublishSuccessCounter.inc();
             },
             error -> {
-              LOG.trace(
-                  "Failed to publish attestation {}{} at slot {}",
-                  attestation.hashTreeRoot(),
-                  attestation
-                      .getCommitteeIndices()
-                      .map(z -> String.format(" for validator %s", z))
-                      .orElse(""),
-                  attestation.getData().getSlot());
               gossipFailureLogger.logWithSuppression(error, attestation.getData().getSlot());
               attestationPublishFailureCounter.inc();
             });

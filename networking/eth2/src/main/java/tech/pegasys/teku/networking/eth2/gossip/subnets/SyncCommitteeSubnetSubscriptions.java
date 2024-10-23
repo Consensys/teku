@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -33,7 +31,6 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptions {
-  private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final SchemaDefinitionsAltair schemaDefinitions;
@@ -63,12 +60,6 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
   }
 
   public SafeFuture<?> gossip(final SyncCommitteeMessage message, final int subnetId) {
-    LOG.trace(
-        "Send sync committee message {} validator {}, subnet {} on slot slot {} ",
-        message.hashTreeRoot(),
-        message.getValidatorIndex(),
-        subnetId,
-        message.getSlot());
     return gossipNetwork.gossip(
         GossipTopics.getSyncCommitteeSubnetTopic(
             forkInfo.getForkDigest(spec), subnetId, gossipEncoding),
