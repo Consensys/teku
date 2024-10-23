@@ -24,6 +24,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -558,6 +559,51 @@ class ValidatorApiHandlerTest {
 
     // only produced once
     verify(blockFactory)
+        .createUnsignedBlock(
+            blockSlotState,
+            newSlot,
+            randaoReveal,
+            Optional.empty(),
+            Optional.of(ONE),
+            BlockProductionPerformance.NOOP);
+  }
+
+  @Test
+  public void createUnsignedBlock_shouldAllowProducingBlockTwiceIfFirstAttemptFailed() {
+    final UInt64 newSlot = UInt64.valueOf(25);
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(newSlot);
+    final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlockContainerAndMetaData(newSlot);
+
+    when(chainDataClient.getStateForBlockProduction(newSlot, false))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
+    when(blockFactory.createUnsignedBlock(
+            blockSlotState,
+            newSlot,
+            randaoReveal,
+            Optional.empty(),
+            Optional.of(ONE),
+            BlockProductionPerformance.NOOP))
+        .thenThrow(new IllegalStateException("oopsy"))
+        .thenReturn(SafeFuture.completedFuture(blockContainerAndMetaData));
+
+    // first call should fail
+    SafeFuture<Optional<BlockContainerAndMetaData>> result =
+        validatorApiHandler.createUnsignedBlock(
+            newSlot, randaoReveal, Optional.empty(), Optional.of(ONE));
+
+    assertThat(result).isCompletedExceptionally();
+
+    // second call in the same slot should succeed and return the block
+    result =
+        validatorApiHandler.createUnsignedBlock(
+            newSlot, randaoReveal, Optional.empty(), Optional.of(ONE));
+
+    assertThat(result).isCompletedWithValue(Optional.of(blockContainerAndMetaData));
+
+    // attempted to produce twice
+    verify(blockFactory, times(2))
         .createUnsignedBlock(
             blockSlotState,
             newSlot,

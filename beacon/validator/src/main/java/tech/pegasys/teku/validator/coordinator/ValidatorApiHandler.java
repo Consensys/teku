@@ -331,7 +331,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   /**
    * Block would be produced only once per slot. Any additional calls to this method for the same
-   * slot would return the same {@link SafeFuture} as the first one.
+   * slot would return the same {@link SafeFuture} as the first one. The only exception is when the
+   * block production fails. In this case, the next call would attempt to produce the block again.
    */
   @Override
   public SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
@@ -339,10 +340,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
       final Optional<UInt64> requestedBuilderBoostFactor) {
-    return localBlockProductionBySlotCache.computeIfAbsent(
-        slot,
-        __ ->
-            createUnsignedBlockInternal(slot, randaoReveal, graffiti, requestedBuilderBoostFactor));
+    return localBlockProductionBySlotCache
+        .computeIfAbsent(
+            slot,
+            __ ->
+                createUnsignedBlockInternal(
+                    slot, randaoReveal, graffiti, requestedBuilderBoostFactor))
+        .whenException(
+            __ -> {
+              // allow further block production attempts for this slot
+              localBlockProductionBySlotCache.remove(slot);
+            });
   }
 
   public SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlockInternal(
@@ -876,7 +884,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private boolean isLocallyCreatedBlock(final SignedBlockContainer blockContainer) {
-    return localBlockProductionBySlotCache.containsKey(blockContainer.getSlot());
+    final SafeFuture<Optional<BlockContainerAndMetaData>> localBlockProduction =
+        localBlockProductionBySlotCache.get(blockContainer.getSlot());
+    return localBlockProduction.isCompletedNormally();
   }
 
   @Override
