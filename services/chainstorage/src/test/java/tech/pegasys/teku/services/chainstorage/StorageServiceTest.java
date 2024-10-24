@@ -80,7 +80,8 @@ class StorageServiceTest {
     when(serviceConfig.createAsyncRunner(any(), anyInt(), anyInt(), anyInt()))
         .thenReturn(stubAsyncRunner);
 
-    storageService = new StorageService(serviceConfig, storageConfiguration, false, false);
+    storageService =
+        new StorageService(serviceConfig, storageConfiguration, false, false, Optional.empty());
   }
 
   @Test
