@@ -405,8 +405,7 @@ class SyncCommitteeMessageValidatorTest {
       final ValidatableSyncCommitteeMessage validatableMessage, final IntSet subcommitteeIds) {
     // Create spies
     final ValidatableSyncCommitteeMessage validatableMessageSpy = spy(validatableMessage);
-    validatableMessage.calculateAssignments(
-        spec, chainBuilder.getLatestBlockAndState().getState());
+    validatableMessage.calculateAssignments(spec, chainBuilder.getLatestBlockAndState().getState());
     SyncSubcommitteeAssignments assignments =
         validatableMessage.getSubcommitteeAssignments().orElseThrow();
     SyncSubcommitteeAssignments assignmentsSpy = spy(assignments);
