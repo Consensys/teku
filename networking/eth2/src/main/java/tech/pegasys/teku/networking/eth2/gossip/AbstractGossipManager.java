@@ -59,6 +59,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
       final Function<T, Optional<UInt64>> getSlotForMessage,
       final Function<T, UInt64> getEpochForMessage,
       final NetworkingSpecConfig networkingConfig,
+      final GossipFailureLogger gossipFailureLogger,
       final DebugDataDumper debugDataDumper) {
     this.gossipNetwork = gossipNetwork;
     this.topicHandler =
@@ -75,7 +76,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
             networkingConfig,
             debugDataDumper);
     this.gossipEncoding = gossipEncoding;
-    this.gossipFailureLogger = new GossipFailureLogger(topicName.toString(), true);
+    this.gossipFailureLogger = gossipFailureLogger;
     this.getSlotForMessage = getSlotForMessage;
   }
 

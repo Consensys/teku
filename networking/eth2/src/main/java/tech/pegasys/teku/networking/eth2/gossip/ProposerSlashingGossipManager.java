@@ -51,6 +51,7 @@ public class ProposerSlashingGossipManager extends AbstractGossipManager<Propose
                 .getSpec()
                 .computeEpochAtSlot(message.getHeader1().getMessage().getSlot()),
         networkingConfig,
+        new GossipFailureLogger(GossipTopicName.PROPOSER_SLASHING.toString(), false),
         debugDataDumper);
   }
 

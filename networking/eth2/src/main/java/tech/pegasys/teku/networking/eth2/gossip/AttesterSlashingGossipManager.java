@@ -50,6 +50,7 @@ public class AttesterSlashingGossipManager extends AbstractGossipManager<Atteste
         message -> Optional.of(message.getAttestation1().getData().getSlot()),
         message -> spec.computeEpochAtSlot(message.getAttestation1().getData().getSlot()),
         spec.getNetworkingConfig(),
+        new GossipFailureLogger(GossipTopicName.ATTESTER_SLASHING.toString(), false),
         debugDataDumper);
   }
 

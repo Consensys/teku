@@ -55,6 +55,7 @@ public class AggregateGossipManager extends AbstractGossipManager<SignedAggregat
         message -> Optional.of(message.getMessage().getAggregate().getData().getSlot()),
         message -> spec.computeEpochAtSlot(message.getMessage().getAggregate().getData().getSlot()),
         spec.getNetworkingConfig(),
+        new GossipFailureLogger(GossipTopicName.BEACON_AGGREGATE_AND_PROOF.toString(), true),
         debugDataDumper);
   }
 
