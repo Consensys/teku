@@ -222,7 +222,7 @@ public class ValidatableAttestation {
 
   public SignedAggregateAndProof getSignedAggregateAndProof() {
     return maybeAggregate.orElseThrow(
-        () -> new UnsupportedOperationException("ValidateableAttestation is not an aggregate."));
+        () -> new UnsupportedOperationException("ValidatableAttestation is not an aggregate."));
   }
 
   public AttestationData getData() {
