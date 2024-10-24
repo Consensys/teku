@@ -370,7 +370,7 @@ public class P2POptions {
   // More about flood publishing
   // https://github.com/libp2p/specs/blob/master/pubsub/gossipsub/gossipsub-v1.1.md#flood-publishing
   @Option(
-      names = {"--Xp2p-flood-max_message_size_threshold"},
+      names = {"--Xp2p-flood-max-message-size-threshold"},
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
       description = "Maximum size (in bytes) of a message that will be flood published",

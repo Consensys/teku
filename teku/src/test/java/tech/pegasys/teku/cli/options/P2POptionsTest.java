@@ -349,7 +349,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void floodPublishMaxMessageSizeThreshold_isSetCorrectly() {
     final TekuConfiguration config =
-        getTekuConfigurationFromArguments("--Xp2p-flood-max_message_size_threshold=1000");
+        getTekuConfigurationFromArguments("--Xp2p-flood-max-message-size-threshold=1000");
     assertThat(config.network().getGossipConfig().getFloodPublishMaxMessageSizeThreshold())
         .isEqualTo(1000);
   }
