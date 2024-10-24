@@ -121,7 +121,7 @@ public class GossipHandlerTest {
   }
 
   @Test
-  public void gossip_returnCompletedFutureEvenIfFails() {
+  public void gossip_forwardsGossipFailures() {
     final Bytes message = Bytes.fromHexString("0x01");
     final SafeFuture<Unit> result = new SafeFuture<>();
     when(publisher.publish(any(), any())).thenReturn(result);
@@ -131,7 +131,7 @@ public class GossipHandlerTest {
     assertThat(gossipResult).isNotCompleted();
 
     result.completeExceptionally(new RuntimeException("Failed to gossip"));
-    assertThat(gossipResult).isCompleted();
+    assertThat(gossipResult).isCompletedExceptionally();
   }
 
   @Test
