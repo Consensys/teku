@@ -13,80 +13,38 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static tech.pegasys.teku.networks.EphemeryNetwork.MAX_EPHEMERY_SLOT;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class EphemerySlotValidationServiceTest {
-  @InjectMocks private EphemerySlotValidationService ephemerySlotValidationService;
+  private EphemerySlotValidationService ephemerySlotValidationService;
 
   @BeforeEach
   void setUp() {
     ephemerySlotValidationService = new EphemerySlotValidationService();
   }
 
-  //  @Test
-  //  void should_identify_ephemery_network() {
-  //    SpecConfig specConfig = mock(SpecConfig.class);
-  //    //    when(spec.getGenesisSpecConfig().getDepositContractAddress())
-  //    //            .thenReturn(EPHEMERY_DEPOSIT_CONTRACT_ADDRESS);
-  //    when(specConfig.getDepositContractAddress()).thenReturn(EPHEMERY_DEPOSIT_CONTRACT_ADDRESS);
-  //    boolean result = ephemerySlotValidationService.isEphemeryNetwork();
-  //    assertThat(result).isTrue();
-  //  }
-  //
-  //  @Test
-  //  void should_calculate_max_slot_correctly() {
-  //    SpecConfig mockSpecConfig = mock(SpecConfig.class);
-  //    when(mockSpecConfig.getMinGenesisTime()).thenReturn(UInt64.valueOf(1727377200L));
-  //    when(mockSpecConfig.getGenesisDelay()).thenReturn(UInt64.valueOf(600));
-  //    when(mockSpecConfig.getSecondsPerSlot()).thenReturn(UInt64.valueOf(12));
-  //    when(spec.getGenesisSpecConfig()).thenReturn(mockSpecConfig);
-  //    UInt64 maxSlot = ephemerySlotValidationService.calculateEphemeryMaxSlot(spec);
-  //    assertThat(maxSlot).isNotNegative();
-  //  }
-  //
-  //  @Test
-  //  void should_identify_ephemery_network() {
-  //    SpecConfig mockGenesisConfig = mock(GenesisSpecConfig.class);
-  //    when(mockGenesisConfig.getDepositContractAddress())
-  //        .thenReturn(EPHEMERY_DEPOSIT_CONTRACT_ADDRESS);
-  //
-  //    when(spec.getGenesisSpecConfig()).thenReturn(mockGenesisConfig);
-  //    boolean result = ephemerySlotValidationService.isEphemeryNetwork();
-  //    assertThat(result).isTrue();
-  //  }
-  //
-  //  @Test
-  //  void should_handle_null_deposit_address() {
-  //    GenesisSpecConfig mockGenesisConfig = mock(GenesisSpecConfig.class);
-  //    when(mockGenesisConfig.getDepositContractAddress()).thenReturn(null);
-  //    when(spec.getGenesisSpecConfig()).thenReturn(mockGenesisConfig);
-  //    assertThrows(NullPointerException.class, () -> isEphemeryNetwork());
-  //  }
-  //
-  //  @Test
-  //  void should_identify_non_ephemery_network() {
-  //    Eth1Address differentAddress =
-  //        Eth1Address.fromHexString("0x1111111111111111111111111111111111111111");
-  //
-  //    SpecConfig mockGenesisConfig = mock(GenesisSpecConfig.class);
-  //    when(mockGenesisConfig.getDepositContractAddress()).thenReturn(differentAddress);
-  //
-  //    when(spec.getGenesisSpecConfig()).thenReturn(mockGenesisConfig);
-  //    boolean result = isEphemeryNetwork();
-  //    assertThat(result).isFalse();
-  //  }
-  //
-  //  @Test
-  //  void should_handle_null_genesis_config() {
-  //    when(spec.getGenesisSpecConfig()).thenReturn(null);
-  //    assertThrows(
-  //        NullPointerException.class, () -> ephemerySlotValidationService.isEphemeryNetwork());
-  //  }
+  @Test
+  public void onSlot_shouldNotThrow_whenSlotIsValid() {
+    ephemerySlotValidationService.onSlot(UInt64.valueOf(MAX_EPHEMERY_SLOT));
+  }
+
+  @Test
+  public void onSlot_shouldThrowException_whenSlotExceedsMaxEphemerySlot() {
+    UInt64 invalidSlot = UInt64.valueOf(MAX_EPHEMERY_SLOT + 1);
+    assertThatThrownBy(() -> ephemerySlotValidationService.onSlot(invalidSlot))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining(
+            String.format(
+                "Slot %s exceeds maximum allowed slot %s for ephemery network",
+                invalidSlot, MAX_EPHEMERY_SLOT));
+  }
 
   @Test
   void shouldCompleteWhenServiceStartsAndStops() {

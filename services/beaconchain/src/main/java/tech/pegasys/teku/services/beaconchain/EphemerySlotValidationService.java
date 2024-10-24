@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
+import static tech.pegasys.teku.networks.EphemeryNetwork.MAX_EPHEMERY_SLOT;
+
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -24,11 +26,11 @@ public class EphemerySlotValidationService extends Service implements SlotEvents
 
   @Override
   public void onSlot(final UInt64 slot) {
-    UInt64 maxSlot = UInt64.valueOf(123);
-    if (slot.compareTo(maxSlot) > 0) {
+    if (slot.compareTo(MAX_EPHEMERY_SLOT) > 0) {
       throw new IllegalStateException(
           String.format(
-              "Slot %s exceeds maximum allowed slot %s for ephemery network", slot, maxSlot));
+              "Slot %s exceeds maximum allowed slot %s for ephemery network",
+              slot, MAX_EPHEMERY_SLOT));
     }
   }
 
