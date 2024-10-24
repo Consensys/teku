@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.config.SpecConfigReader;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 public class EphemeryNetworkTest {
   private static final long GENESIS_CHAINID = 39438135;
@@ -185,6 +186,20 @@ public class EphemeryNetworkTest {
     assertThat(genesisChainIdAfter1000Period).isGreaterThan(GENESIS_CHAINID);
     assertThat(CURRENT_TIMESTAMP + expectedMinGenesisTime)
         .isGreaterThan(genesisChainIdAfter1000Period + PERIOD_IN_SECONDS);
+  }
+
+  @Test
+  void checkEphemeryMaxSlot() {
+    final Spec spec =
+        getSpec(phase0Builder -> phase0Builder.minGenesisTime(UInt64.valueOf(MIN_GENESIS_TIME)));
+    final long timeBeforeNextPeriod = MIN_GENESIS_TIME + PERIOD_IN_SECONDS - 1;
+    final MiscHelpers miscHelpers = new MiscHelpers(spec.getGenesisSpecConfig());
+    assertThat(
+            miscHelpers
+                .computeSlotAtTime(
+                    UInt64.valueOf(MIN_GENESIS_TIME), UInt64.valueOf(timeBeforeNextPeriod))
+                .longValue())
+        .isEqualTo(EphemeryNetwork.MAX_EPHEMERY_SLOT);
   }
 
   @Test
