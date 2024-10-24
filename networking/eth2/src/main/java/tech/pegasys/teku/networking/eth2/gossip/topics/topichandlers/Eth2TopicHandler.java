@@ -50,7 +50,6 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   private final OperationProcessor<MessageT> processor;
   private final GossipEncoding gossipEncoding;
   private final Bytes4 forkDigest;
-  private final String topicName;
   private final SszSchema<MessageT> messageType;
   private final Eth2PreparedGossipMessageFactory preparedGossipMessageFactory;
   private final OperationMilestoneValidator<MessageT> forkValidator;
@@ -73,7 +72,6 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     this.processor = processor;
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkDigest;
-    this.topicName = topicName;
     this.messageType = messageType;
     this.forkValidator = forkValidator;
     this.networkingConfig = networkingConfig;
@@ -159,10 +157,6 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
         throw new UnsupportedOperationException(
             "Unexpected validation result: " + internalValidationResult);
     }
-  }
-
-  private String getTopicName() {
-    return topicName;
   }
 
   private SszSchema<MessageT> getMessageType() {
