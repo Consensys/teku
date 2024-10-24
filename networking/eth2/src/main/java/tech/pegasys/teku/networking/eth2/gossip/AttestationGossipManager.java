@@ -33,7 +33,7 @@ public class AttestationGossipManager implements GossipManager {
   private final Counter attestationPublishFailureCounter;
 
   private final GossipFailureLogger gossipFailureLogger =
-      new GossipFailureLogger("attestation", true);
+      GossipFailureLogger.createSuppressing("attestation");
 
   public AttestationGossipManager(
       final MetricsSystem metricsSystem,
@@ -64,8 +64,7 @@ public class AttestationGossipManager implements GossipManager {
               attestationPublishSuccessCounter.inc();
             },
             error -> {
-              gossipFailureLogger.logWithSuppression(
-                  error, Optional.of(attestation.getData().getSlot()));
+              gossipFailureLogger.log(error, Optional.of(attestation.getData().getSlot()));
               attestationPublishFailureCounter.inc();
             });
   }

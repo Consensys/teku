@@ -54,8 +54,8 @@ public class SignedContributionAndProofGossipManager
                 .getSpec()
                 .computeEpochAtSlot(message.getMessage().getContribution().getSlot()),
         networkingConfig,
-        new GossipFailureLogger(
-            GossipTopicName.SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF.toString(), true),
+        GossipFailureLogger.createSuppressing(
+            GossipTopicName.SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF.toString()),
         debugDataDumper);
   }
 

@@ -48,7 +48,7 @@ public class VoluntaryExitGossipManager extends AbstractGossipManager<SignedVolu
         exit -> Optional.empty(),
         exit -> exit.getMessage().getEpoch(),
         networkingConfig,
-        new GossipFailureLogger(GossipTopicName.VOLUNTARY_EXIT.toString(), false),
+        GossipFailureLogger.createNonSuppressing(GossipTopicName.VOLUNTARY_EXIT.toString()),
         debugDataDumper);
   }
 

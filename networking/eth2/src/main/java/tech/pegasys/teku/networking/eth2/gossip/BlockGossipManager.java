@@ -51,7 +51,7 @@ public class BlockGossipManager extends AbstractGossipManager<SignedBeaconBlock>
         block -> Optional.of(block.getSlot()),
         block -> spec.computeEpochAtSlot(block.getSlot()),
         spec.getNetworkingConfig(),
-        new GossipFailureLogger(GossipTopicName.BEACON_BLOCK.toString(), false),
+        GossipFailureLogger.createNonSuppressing(GossipTopicName.BEACON_BLOCK.toString()),
         debugDataDumper);
   }
 

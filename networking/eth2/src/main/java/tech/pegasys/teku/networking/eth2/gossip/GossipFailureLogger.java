@@ -31,13 +31,20 @@ public class GossipFailureLogger {
   private Optional<UInt64> lastErroredSlot;
   private Throwable lastRootCause;
 
-  public GossipFailureLogger(final String messageType, final boolean shouldSuppress) {
+  public static GossipFailureLogger createSuppressing(final String messageType) {
+    return new GossipFailureLogger(messageType, true);
+  }
+
+  public static GossipFailureLogger createNonSuppressing(final String messageType) {
+    return new GossipFailureLogger(messageType, false);
+  }
+
+  private GossipFailureLogger(final String messageType, final boolean shouldSuppress) {
     this.messageType = shouldSuppress ? messageType + "(s)" : messageType;
     this.shouldSuppress = shouldSuppress;
   }
 
-  public synchronized void logWithSuppression(
-      final Throwable error, final Optional<UInt64> maybeSlot) {
+  public synchronized void log(final Throwable error, final Optional<UInt64> maybeSlot) {
     final Throwable rootCause = Throwables.getRootCause(error);
 
     final boolean suppress;

@@ -90,7 +90,7 @@ public class BlobSidecarGossipManager implements GossipManager {
         gossipNetwork,
         gossipEncoding,
         subnetIdToTopicHandler,
-        new GossipFailureLogger("blob_sidecar", false));
+        GossipFailureLogger.createNonSuppressing("blob_sidecar"));
   }
 
   private BlobSidecarGossipManager(
@@ -118,7 +118,7 @@ public class BlobSidecarGossipManager implements GossipManager {
         .handle(
             (__, err) -> {
               if (err != null) {
-                gossipFailureLogger.logWithSuppression(err, Optional.of(message.getSlot()));
+                gossipFailureLogger.log(err, Optional.of(message.getSlot()));
               } else {
                 LOG.trace(
                     "Successfully gossiped blob sidecar {} on {}",

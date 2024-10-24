@@ -53,7 +53,7 @@ public class SignedBlsToExecutionChangeGossipManager
         // of the topic they arrived on (ie disable fork checking at this level)
         message -> forkInfo.getFork().getEpoch(),
         networkingConfig,
-        new GossipFailureLogger(GossipTopicName.BLS_TO_EXECUTION_CHANGE.toString(), false),
+        GossipFailureLogger.createSuppressing(GossipTopicName.BLS_TO_EXECUTION_CHANGE.toString()),
         debugDataDumper);
   }
 

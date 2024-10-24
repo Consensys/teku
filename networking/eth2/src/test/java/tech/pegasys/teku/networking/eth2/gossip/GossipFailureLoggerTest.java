@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import static tech.pegasys.teku.networking.eth2.gossip.GossipFailureLogger.createNonSuppressing;
+import static tech.pegasys.teku.networking.eth2.gossip.GossipFailureLogger.createSuppressing;
+
 import io.libp2p.core.SemiDuplexNoOutboundStreamException;
 import io.libp2p.pubsub.MessageAlreadySeenException;
 import io.libp2p.pubsub.NoPeersForOutboundMessageException;
@@ -31,13 +34,13 @@ class GossipFailureLoggerTest {
   public static final NoPeersForOutboundMessageException NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION =
       new NoPeersForOutboundMessageException("no peers");
 
-  private final GossipFailureLogger logger = new GossipFailureLogger("thingy", true);
-  private final GossipFailureLogger loggerNoSuppression = new GossipFailureLogger("thingy", false);
+  private final GossipFailureLogger loggerSuppressing = createSuppressing("thingy");
+  private final GossipFailureLogger loggerNoSuppression = createNonSuppressing("thingy");
 
   @Test
   void shouldLogAlreadySeenErrorsAtDebugLevel() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
-      logger.logWithSuppression(
+      loggerSuppressing.log(
           new RuntimeException("Foo", new MessageAlreadySeenException("Dupe")), SLOT);
       logCaptor.assertDebugLog(ALREADY_SEEN_MESSAGE);
     }
@@ -46,7 +49,7 @@ class GossipFailureLoggerTest {
   @Test
   void shouldLogFirstNoPeersErrorsAtWarningLevel() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
-      logger.logWithSuppression(
+      loggerSuppressing.log(
           new RuntimeException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION), SLOT);
       logCaptor.assertWarnLog(noPeersMessage(SLOT, true));
     }
@@ -55,7 +58,7 @@ class GossipFailureLoggerTest {
   @Test
   void shouldLogFirstNoActiveStreamErrorsAtWarningLevel() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
-      logger.logWithSuppression(new RuntimeException("Foo", NO_ACTIVE_STREAM_EXCEPTION), SLOT);
+      loggerSuppressing.log(new RuntimeException("Foo", NO_ACTIVE_STREAM_EXCEPTION), SLOT);
       logCaptor.assertWarnLog(noActiveStreamMessage(SLOT, true));
     }
   }
@@ -63,11 +66,11 @@ class GossipFailureLoggerTest {
   @Test
   void shouldLogRepeatedNoPeersErrorsAtDebugLevel() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
-      logger.logWithSuppression(
+      loggerSuppressing.log(
           new RuntimeException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION), SLOT);
       logCaptor.clearLogs();
 
-      logger.logWithSuppression(
+      loggerSuppressing.log(
           new IllegalStateException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION), SLOT);
       logCaptor.assertDebugLog(noPeersMessage(SLOT, true));
     }
@@ -76,11 +79,11 @@ class GossipFailureLoggerTest {
   @Test
   void shouldLogRepeatedNoPeersErrorsWhenNoSuppression() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
-      loggerNoSuppression.logWithSuppression(
+      loggerNoSuppression.log(
           new RuntimeException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION), SLOT);
       logCaptor.clearLogs();
 
-      loggerNoSuppression.logWithSuppression(
+      loggerNoSuppression.log(
           new IllegalStateException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION), SLOT);
       logCaptor.assertWarnLog(noPeersMessage(SLOT, false));
     }
@@ -89,11 +92,11 @@ class GossipFailureLoggerTest {
   @Test
   void shouldLogNoPeersErrorsWithDifferentSlotsAtWarnLevel() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
-      logger.logWithSuppression(
+      loggerSuppressing.log(
           new RuntimeException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION), SLOT);
       logCaptor.assertWarnLog(noPeersMessage(SLOT, true));
 
-      logger.logWithSuppression(
+      loggerSuppressing.log(
           new IllegalStateException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION),
           Optional.of(UInt64.valueOf(2)));
       logCaptor.assertWarnLog(noPeersMessage(Optional.of(UInt64.valueOf(2)), true));
@@ -103,14 +106,14 @@ class GossipFailureLoggerTest {
   @Test
   void shouldLogNoPeersErrorsAtWarnLevelWhenSeparatedByADifferentException() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
-      logger.logWithSuppression(
+      loggerSuppressing.log(
           new RuntimeException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION), SLOT);
       logCaptor.assertWarnLog(noPeersMessage(SLOT, true));
       logCaptor.clearLogs();
 
-      logger.logWithSuppression(new MessageAlreadySeenException("Dupe"), SLOT);
+      loggerSuppressing.log(new MessageAlreadySeenException("Dupe"), SLOT);
 
-      logger.logWithSuppression(
+      loggerSuppressing.log(
           new IllegalStateException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION), SLOT);
       logCaptor.assertWarnLog(noPeersMessage(SLOT, true));
     }
@@ -119,8 +122,7 @@ class GossipFailureLoggerTest {
   @Test
   void shouldLogFirstGenericErrorAtErrorLevel() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
-      logger.logWithSuppression(
-          new RuntimeException("Foo", new IllegalStateException("Boom")), SLOT);
+      loggerSuppressing.log(new RuntimeException("Foo", new IllegalStateException("Boom")), SLOT);
       logCaptor.assertErrorLog(genericError(SLOT, true));
     }
   }
@@ -128,11 +130,10 @@ class GossipFailureLoggerTest {
   @Test
   void shouldLogRepeatedGenericErrorsAtDebugLevel() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
-      logger.logWithSuppression(
-          new RuntimeException("Foo", new IllegalStateException("Boom")), SLOT);
+      loggerSuppressing.log(new RuntimeException("Foo", new IllegalStateException("Boom")), SLOT);
       logCaptor.clearLogs();
 
-      logger.logWithSuppression(
+      loggerSuppressing.log(
           new IllegalStateException("Foo", new IllegalStateException("goes the dynamite")), SLOT);
       logCaptor.assertDebugLog(genericError(SLOT, true));
     }
@@ -141,12 +142,11 @@ class GossipFailureLoggerTest {
   @Test
   void shouldLogMultipleGenericErrorsWithDifferentCausesAtErrorLevel() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
-      logger.logWithSuppression(
-          new RuntimeException("Foo", new IllegalStateException("Boom")), SLOT);
+      loggerSuppressing.log(new RuntimeException("Foo", new IllegalStateException("Boom")), SLOT);
       logCaptor.assertErrorLog(genericError(SLOT, true));
       logCaptor.clearLogs();
 
-      logger.logWithSuppression(
+      loggerSuppressing.log(
           new IllegalStateException("Foo", new IllegalArgumentException("goes the dynamite")),
           SLOT);
       logCaptor.assertErrorLog(genericError(SLOT, true));
@@ -156,11 +156,11 @@ class GossipFailureLoggerTest {
   @Test
   void shouldLogGenericErrorsWithoutSuppression() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
-      logger.logWithSuppression(
+      loggerSuppressing.log(
           new RuntimeException("Foo", new IllegalStateException("Boom")), Optional.empty());
       logCaptor.clearLogs();
 
-      logger.logWithSuppression(
+      loggerSuppressing.log(
           new IllegalStateException("Foo", new IllegalStateException("goes the dynamite")),
           Optional.empty());
       logCaptor.assertErrorLog(genericError(Optional.empty(), true));
@@ -170,11 +170,11 @@ class GossipFailureLoggerTest {
   @Test
   void shouldLogNoPeersErrorsAtWarnLevelWithoutSuppression() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
-      logger.logWithSuppression(
+      loggerSuppressing.log(
           new RuntimeException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION), Optional.empty());
       logCaptor.clearLogs();
 
-      logger.logWithSuppression(
+      loggerSuppressing.log(
           new IllegalStateException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION),
           Optional.empty());
       logCaptor.assertWarnLog(noPeersMessage(Optional.empty(), true));
@@ -184,11 +184,11 @@ class GossipFailureLoggerTest {
   @Test
   void shouldLogNoActiveStreamErrorsWithoutSuppression() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
-      logger.logWithSuppression(
+      loggerSuppressing.log(
           new RuntimeException("Foo", NO_ACTIVE_STREAM_EXCEPTION), Optional.empty());
       logCaptor.clearLogs();
 
-      logger.logWithSuppression(
+      loggerSuppressing.log(
           new IllegalStateException("Foo", NO_ACTIVE_STREAM_EXCEPTION), Optional.empty());
       logCaptor.assertWarnLog(noActiveStreamMessage(Optional.empty(), true));
     }

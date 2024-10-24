@@ -184,7 +184,7 @@ class AbstractGossipManagerTest {
           message -> Optional.of(UInt64.ZERO),
           message -> UInt64.ZERO,
           networkingConfig,
-          new GossipFailureLogger(TOPIC_NAME.toString(), true),
+          GossipFailureLogger.createSuppressing(TOPIC_NAME.toString()),
           DebugDataDumper.NOOP);
     }
   }

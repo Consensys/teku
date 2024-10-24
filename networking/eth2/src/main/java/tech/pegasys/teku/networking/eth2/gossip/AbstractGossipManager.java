@@ -100,7 +100,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
         .handle(
             (__, err) -> {
               if (err != null) {
-                gossipFailureLogger.logWithSuppression(err, getSlotForMessage.apply(message));
+                gossipFailureLogger.log(err, getSlotForMessage.apply(message));
               } else {
                 LOG.trace(
                     "Successfully gossiped message with root {} on {}",
