@@ -114,6 +114,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.LocalOperationAcceptedFilter;
 import tech.pegasys.teku.statetransition.MappedOperationPool;
@@ -532,6 +533,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initRestAPI();
     initOperationsReOrgManager();
     initValidatorIndexCacheTracker();
+    initEphemeryValidationService();
   }
 
   private void initKeyValueStore() {
@@ -1145,6 +1147,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishVoluntaryExit));
     blsToExecutionChangePool.subscribeOperationAdded(
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishSignedBlsToExecutionChange));
+  }
+
+  protected void initEphemeryValidationService() {
+    Optional<Eth2Network> network = beaconConfig.eth2NetworkConfig().getEth2Network();
+    if (network.isPresent() && network.equals(Optional.of(Eth2Network.EPHEMERY))) {
+      final EphemerySlotValidationService slotValidationService =
+          new EphemerySlotValidationService();
+      eventChannels.subscribe(SlotEventsChannel.class, slotValidationService);
+    }
   }
 
   protected Eth2P2PNetworkBuilder createEth2P2PNetworkBuilder() {
