@@ -14,6 +14,7 @@
 package tech.pegasys.teku.test.acceptance.dsl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.DATA_PATH;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.JWT_SECRET_FILE_PATH;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.METRICS_PORT;
@@ -176,7 +177,7 @@ public class TekuNodeConfigBuilder {
     LOG.debug("Xtrusted-setup={}", TRUSTED_SETUP_FILE);
     configMap.put("Xtrusted-setup", TRUSTED_SETUP_FILE);
     final URL trustedSetupResource = Eth2NetworkConfiguration.class.getResource(trustedSetup);
-    assert trustedSetupResource != null;
+    assertThat(trustedSetupResource).isNotNull();
     configFileMap.put(copyToTmpFile(trustedSetupResource), TRUSTED_SETUP_FILE);
     return this;
   }

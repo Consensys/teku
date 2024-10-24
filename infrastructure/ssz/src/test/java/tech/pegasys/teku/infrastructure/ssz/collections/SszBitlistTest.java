@@ -41,46 +41,46 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 
 public class SszBitlistTest implements SszPrimitiveListTestBase {
 
-  static Random random = new Random(1);
-  static SszBitlistSchema<SszBitlist> emptySchema = SszBitlistSchema.create(0);
-  static SszBitlistSchema<SszBitlist> schema = SszBitlistSchema.create(500);
-  static SszBitlistSchema<SszBitlist> hugeSchema = SszBitlistSchema.create(1L << 62);
+  static final Random RANDOM = new Random(1);
+  static final SszBitlistSchema<SszBitlist> EMPTY_SCHEMA = SszBitlistSchema.create(0);
+  static final SszBitlistSchema<SszBitlist> SCHEMA = SszBitlistSchema.create(500);
+  static final SszBitlistSchema<SszBitlist> HUGE_SCHEMA = SszBitlistSchema.create(1L << 62);
 
   static SszBitlist random(final SszBitlistSchema<?> schema, final int size) {
     return schema.ofBits(
-        size, IntStream.range(0, size).filter(__ -> random.nextBoolean()).toArray());
+        size, IntStream.range(0, size).filter(__ -> RANDOM.nextBoolean()).toArray());
   }
 
   @Override
   public Stream<SszBitlist> sszData() {
     return Stream.of(
-        emptySchema.empty(),
-        schema.empty(),
-        hugeSchema.empty(),
-        random(schema, 1),
-        random(hugeSchema, 1),
-        random(schema, 2),
-        random(hugeSchema, 2),
-        random(schema, 254),
-        schema.ofBits(254),
-        schema.ofBits(254, IntStream.range(0, 254).toArray()),
-        random(hugeSchema, 254),
-        random(schema, 255),
-        schema.ofBits(255),
-        schema.ofBits(255, IntStream.range(0, 255).toArray()),
-        random(hugeSchema, 255),
-        random(schema, 256),
-        schema.ofBits(256),
-        schema.ofBits(256, IntStream.range(0, 256).toArray()),
-        random(hugeSchema, 256),
-        random(schema, 257),
-        random(hugeSchema, 257),
-        random(schema, 499),
-        random(schema, 500),
-        random(hugeSchema, 511),
-        random(hugeSchema, 512),
-        random(hugeSchema, 513),
-        random(hugeSchema, 10000));
+        EMPTY_SCHEMA.empty(),
+        SCHEMA.empty(),
+        HUGE_SCHEMA.empty(),
+        random(SCHEMA, 1),
+        random(HUGE_SCHEMA, 1),
+        random(SCHEMA, 2),
+        random(HUGE_SCHEMA, 2),
+        random(SCHEMA, 254),
+        SCHEMA.ofBits(254),
+        SCHEMA.ofBits(254, IntStream.range(0, 254).toArray()),
+        random(HUGE_SCHEMA, 254),
+        random(SCHEMA, 255),
+        SCHEMA.ofBits(255),
+        SCHEMA.ofBits(255, IntStream.range(0, 255).toArray()),
+        random(HUGE_SCHEMA, 255),
+        random(SCHEMA, 256),
+        SCHEMA.ofBits(256),
+        SCHEMA.ofBits(256, IntStream.range(0, 256).toArray()),
+        random(HUGE_SCHEMA, 256),
+        random(SCHEMA, 257),
+        random(HUGE_SCHEMA, 257),
+        random(SCHEMA, 499),
+        random(SCHEMA, 500),
+        random(HUGE_SCHEMA, 511),
+        random(HUGE_SCHEMA, 512),
+        random(HUGE_SCHEMA, 513),
+        random(HUGE_SCHEMA, 10000));
   }
 
   public Stream<Arguments> bitlistArgs() {
@@ -149,8 +149,8 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
     bitSet.set(99);
     assertThat(bitSet.stream().count()).isEqualTo(1);
 
-    final SszBitlist sszBitlist = schema.wrapBitSet(10, bitSet);
-    final SszBitlist expectedSszBitlist = schema.ofBits(10);
+    final SszBitlist sszBitlist = SCHEMA.wrapBitSet(10, bitSet);
+    final SszBitlist expectedSszBitlist = SCHEMA.ofBits(10);
 
     assertThat(sszBitlist).isEqualTo(expectedSszBitlist);
     assertThat(sszBitlist.hashCode()).isEqualTo(expectedSszBitlist.hashCode());
@@ -161,7 +161,7 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
   @Test
   void wrapBitSet_shouldThrowIfSizeIsLargerThanSchemaMaxLength() {
     assertThatThrownBy(
-            () -> schema.wrapBitSet(Math.toIntExact(schema.getMaxLength() + 1), new BitSet()))
+            () -> SCHEMA.wrapBitSet(Math.toIntExact(SCHEMA.getMaxLength() + 1), new BitSet()))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -331,12 +331,12 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
   @Test
   void testEmptyHashTreeRoot() {
-    assertThat(emptySchema.empty().hashTreeRoot())
+    assertThat(EMPTY_SCHEMA.empty().hashTreeRoot())
         .isEqualTo(Hash.sha256(Bytes.concatenate(Bytes32.ZERO, Bytes32.ZERO)));
-    assertThat(schema.empty().hashTreeRoot())
+    assertThat(SCHEMA.empty().hashTreeRoot())
         .isEqualTo(
             Hash.sha256(Bytes.concatenate(TreeUtil.ZERO_TREES[1].hashTreeRoot(), Bytes32.ZERO)));
-    assertThat(hugeSchema.empty().hashTreeRoot())
+    assertThat(HUGE_SCHEMA.empty().hashTreeRoot())
         .isEqualTo(
             Hash.sha256(
                 Bytes.concatenate(TreeUtil.ZERO_TREES[62 - 8].hashTreeRoot(), Bytes32.ZERO)));

@@ -42,8 +42,8 @@ public class OneOfTypeTestTypeDefinition {
       SERIALIZABLE_ONE_OF_TYPE_DEFINITION =
           new SerializableOneOfTypeDefinitionBuilder<TestType>()
               .description("meaningful description")
-              .withType(TestObjA.isInstance, TYPE_A)
-              .withType(TestObjB.isInstance, TYPE_B)
+              .withType(TestObjA.IS_INSTANCE, TYPE_A)
+              .withType(TestObjB.IS_INSTANCE, TYPE_B)
               .build();
 
   public static class TestObjA implements TestType {
@@ -82,7 +82,7 @@ public class OneOfTypeTestTypeDefinition {
       return Objects.hash(name);
     }
 
-    static Predicate<TestType> isInstance = testType -> testType instanceof TestObjA;
+    static final Predicate<TestType> IS_INSTANCE = testType -> testType instanceof TestObjA;
   }
 
   public static class TestObjB implements TestType {
@@ -104,6 +104,6 @@ public class OneOfTypeTestTypeDefinition {
       this.name = name;
     }
 
-    static Predicate<TestType> isInstance = testType -> testType instanceof TestObjB;
+    static final Predicate<TestType> IS_INSTANCE = testType -> testType instanceof TestObjB;
   }
 }
