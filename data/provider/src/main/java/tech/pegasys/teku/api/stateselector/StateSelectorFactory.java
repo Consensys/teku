@@ -16,6 +16,8 @@ package tech.pegasys.teku.api.stateselector;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.AbstractSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -23,13 +25,17 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class StateSelectorFactory extends AbstractSelectorFactory<StateSelector> {
 
   private final Spec spec;
+  private static final Logger LOG = LogManager.getLogger();
 
   public StateSelectorFactory(final Spec spec, final CombinedChainDataClient client) {
     super(client);
@@ -79,20 +85,45 @@ public class StateSelectorFactory extends AbstractSelectorFactory<StateSelector>
 
   @Override
   public StateSelector finalizedSelector() {
+
     return () ->
         SafeFuture.completedFuture(
             client
                 .getLatestFinalized()
                 .map(
-                    finalized ->
-                        addMetaData(
-                            finalized.getState(),
-                            // The finalized checkpoint may change because of optimistically
-                            // imported blocks at the head and if the head isn't optimistic, the
-                            // finalized block can't be optimistic.
-                            client.isChainHeadOptimistic(),
-                            true,
-                            true)));
+                    finalized -> {
+                      final UInt64 slot = finalized.getSlot();
+                      final Spec spec = finalized.getSpec();
+                      final BeaconState finalizedState;
+                      //if this isn't the first slot after the finalized epoch than
+                      // we'll compute empty slots until we get there
+                      if (!slot.dividedBy(spec.getSlotsPerEpoch(slot)).isZero()) {
+                        finalizedState = processEmptySlots(finalized, spec);
+                      } else {
+                        finalizedState = finalized.getState();
+                      }
+                      return addMetaData(
+                          finalizedState,
+                          // The finalized checkpoint may change because of optimistically
+                          // imported blocks at the head and if the head isn't optimistic, the
+                          // finalized block can't be optimistic.
+                          client.isChainHeadOptimistic(),
+                          true,
+                          true);
+                    }));
+  }
+
+  private BeaconState processEmptySlots(final AnchorPoint finalized, final Spec spec) {
+    final BeaconState finalizedState;
+    try {
+      UInt64 slotToBeReached =
+          spec.computeStartSlotAtEpoch(finalized.getEpoch());
+      finalizedState =
+          spec.processSlots(finalized.getState(), slotToBeReached);
+    } catch (SlotProcessingException | EpochProcessingException e) {
+      throw new RuntimeException(e);
+    }
+    return finalizedState;
   }
 
   @Override
