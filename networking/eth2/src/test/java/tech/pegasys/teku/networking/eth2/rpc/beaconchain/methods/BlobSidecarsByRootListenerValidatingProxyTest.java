@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRootValidatorTest.breakInclusionProof;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,11 +70,16 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
     listenerWrapper =
         new BlobSidecarsByRootListenerValidatingProxy(peer, spec, listener, kzg, blobIdentifiers);
 
-    final BlobSidecar blobSidecar1_0 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
-    final BlobSidecar blobSidecar1_1 = dataStructureUtil.randomBlobSidecarForBlock(block1, 1);
-    final BlobSidecar blobSidecar2_0 = dataStructureUtil.randomBlobSidecarForBlock(block2, 0);
-    final BlobSidecar blobSidecar3_0 = dataStructureUtil.randomBlobSidecarForBlock(block3, 0);
-    final BlobSidecar blobSidecar4_0 = dataStructureUtil.randomBlobSidecarForBlock(block4, 0);
+    final BlobSidecar blobSidecar1_0 =
+        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);
+    final BlobSidecar blobSidecar1_1 =
+        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 1);
+    final BlobSidecar blobSidecar2_0 =
+        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block2, 0);
+    final BlobSidecar blobSidecar3_0 =
+        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block3, 0);
+    final BlobSidecar blobSidecar4_0 =
+        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block4, 0);
 
     assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar1_0).join());
     assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar1_1).join());
@@ -93,9 +99,12 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
     listenerWrapper =
         new BlobSidecarsByRootListenerValidatingProxy(peer, spec, listener, kzg, blobIdentifiers);
 
-    final BlobSidecar blobSidecar1_0 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
-    final BlobSidecar blobSidecar1_1 = dataStructureUtil.randomBlobSidecarForBlock(block1, 1);
-    final BlobSidecar blobSidecar2_0 = dataStructureUtil.randomBlobSidecarForBlock(block2, 0);
+    final BlobSidecar blobSidecar1_0 =
+        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);
+    final BlobSidecar blobSidecar1_1 =
+        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 1);
+    final BlobSidecar blobSidecar2_0 =
+        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block2, 0);
 
     assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar1_0).join());
     assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar1_1).join());
@@ -119,7 +128,8 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
         new BlobSidecarsByRootListenerValidatingProxy(
             peer, spec, listener, kzg, List.of(blobIdentifier));
 
-    final BlobSidecar blobSidecar1_0 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
+    final BlobSidecar blobSidecar1_0 =
+        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);
 
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar1_0);
     assertThat(result).isCompletedExceptionally();
@@ -129,6 +139,29 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
         .hasMessageContaining(
             BlobSidecarsResponseInvalidResponseException.InvalidResponseType
                 .BLOB_SIDECAR_KZG_VERIFICATION_FAILED
+                .describe());
+  }
+
+  @Test
+  void blobSidecarFailsInclusionProofVerification() {
+    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+    final BlobIdentifier blobIdentifier = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
+    listenerWrapper =
+        new BlobSidecarsByRootListenerValidatingProxy(
+            peer, spec, listener, kzg, List.of(blobIdentifier));
+
+    final BlobSidecar blobSidecar1_0 =
+        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);
+    final BlobSidecar blobSidecar1_0_modified = breakInclusionProof(spec, blobSidecar1_0);
+
+    final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar1_0_modified);
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get)
+        .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
+    assertThatThrownBy(result::get)
+        .hasMessageContaining(
+            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
+                .BLOB_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED
                 .describe());
   }
 }
