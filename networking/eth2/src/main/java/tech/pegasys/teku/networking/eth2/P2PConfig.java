@@ -14,7 +14,7 @@
 package tech.pegasys.teku.networking.eth2;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig.DEFAULT_FLOOD_PUBLISH_ENABLED;
+import static tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig.DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
 
 import java.time.Duration;
 import java.util.OptionalInt;
@@ -175,7 +175,8 @@ public class P2PConfig {
     private boolean batchVerifyStrictThreadLimitEnabled =
         DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED;
     private boolean allTopicsFilterEnabled = DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED;
-    private boolean isFloodPublishEnabled = DEFAULT_FLOOD_PUBLISH_ENABLED;
+    private int floodPublishMaxMessageSizeThreshold =
+        DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
 
     private Builder() {}
 
@@ -198,7 +199,7 @@ public class P2PConfig {
             builder.seenTTL(
                 Duration.ofSeconds(
                     (long) specConfig.getSecondsPerSlot() * specConfig.getSlotsPerEpoch() * 2));
-            builder.floodPublishEnabled(isFloodPublishEnabled);
+            builder.floodPublishMaxMessageSizeThreshold(floodPublishMaxMessageSizeThreshold);
           });
 
       final NetworkConfig networkConfig = this.networkConfig.build();
@@ -287,8 +288,9 @@ public class P2PConfig {
       return this;
     }
 
-    public Builder isFloodPublishEnabled(final boolean floodPublishEnabled) {
-      this.isFloodPublishEnabled = floodPublishEnabled;
+    public Builder floodPublishMaxMessageSizeThreshold(
+        final int floodPublishMaxMessageSizeThreshold) {
+      this.floodPublishMaxMessageSizeThreshold = floodPublishMaxMessageSizeThreshold;
       return this;
     }
 

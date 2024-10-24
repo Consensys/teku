@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS;
-import static tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig.DEFAULT_FLOOD_PUBLISH_ENABLED;
+import static tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig.DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
 import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT;
 import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT_IPV6;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
@@ -340,31 +340,18 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void floodPublishEnabled_defaultIsSetCorrectly() {
+  public void floodPublishMaxMessageSizeThreshold_defaultIsSetCorrectly() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
-    assertThat(config.network().getGossipConfig().isFloodPublishEnabled())
-        .isEqualTo(DEFAULT_FLOOD_PUBLISH_ENABLED);
+    assertThat(config.network().getGossipConfig().getFloodPublishMaxMessageSizeThreshold())
+        .isEqualTo(DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD);
   }
 
   @Test
-  public void floodPublishEnabled_shouldNotRequireAValue() {
+  public void floodPublishMaxMessageSizeThreshold_isSetCorrectly() {
     final TekuConfiguration config =
-        getTekuConfigurationFromArguments("--Xp2p-flood-publish-enabled");
-    assertThat(config.network().getGossipConfig().isFloodPublishEnabled()).isTrue();
-  }
-
-  @Test
-  public void floodPublishEnabled_true() {
-    final TekuConfiguration config =
-        getTekuConfigurationFromArguments("--Xp2p-flood-publish-enabled=true");
-    assertThat(config.network().getGossipConfig().isFloodPublishEnabled()).isTrue();
-  }
-
-  @Test
-  public void floodPublishEnabled_false() {
-    final TekuConfiguration config =
-        getTekuConfigurationFromArguments("--Xp2p-flood-publish-enabled=false");
-    assertThat(config.network().getGossipConfig().isFloodPublishEnabled()).isFalse();
+        getTekuConfigurationFromArguments("--Xp2p-flood-max-message-size-threshold=1000");
+    assertThat(config.network().getGossipConfig().getFloodPublishMaxMessageSizeThreshold())
+        .isEqualTo(1000);
   }
 
   @Test
