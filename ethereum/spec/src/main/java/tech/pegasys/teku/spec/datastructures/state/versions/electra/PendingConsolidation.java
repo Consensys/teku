@@ -49,6 +49,14 @@ public class PendingConsolidation extends Container2<PendingConsolidation, SszUI
     public PendingConsolidation create(final SszUInt64 sourceIndex, final SszUInt64 targetIndex) {
       return new PendingConsolidation(this, sourceIndex, targetIndex);
     }
+
+    public SszUInt64 getSourceIndexSchema() {
+      return (SszUInt64) getFieldSchema0();
+    }
+
+    public SszUInt64 getTargetIndexSchema() {
+      return (SszUInt64) getFieldSchema1();
+    }
   }
 
   private PendingConsolidation(final PendingConsolidationSchema type, final TreeNode backingNode) {
