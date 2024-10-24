@@ -880,7 +880,8 @@ public class DebugDbCommand implements Runnable {
             StorageConfiguration.builder()
                 .eth1DepositContract(networkConfiguration.getEth1DepositContractAddress())
                 .specProvider(spec)
-                .build());
+                .build(),
+            Optional.empty());
     return databaseFactory.createDatabase();
   }
 
