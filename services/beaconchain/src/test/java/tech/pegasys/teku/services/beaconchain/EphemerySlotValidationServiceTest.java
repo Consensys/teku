@@ -13,14 +13,18 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.teku.networks.EphemeryNetwork.MAX_EPHEMERY_SLOT;
 
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 
 class EphemerySlotValidationServiceTest {
   private EphemerySlotValidationService ephemerySlotValidationService;
@@ -36,8 +40,12 @@ class EphemerySlotValidationServiceTest {
   }
 
   @Test
-  public void onSlot_shouldThrowException_whenSlotExceedsMaxEphemerySlot() {
-    UInt64 invalidSlot = UInt64.valueOf(MAX_EPHEMERY_SLOT + 1);
+  public void onSlot_shouldThrowException_whenSlotExceedsMaxEphemerySlot_forEphemeryNetwork() {
+    final Eth2Network network = Eth2Network.EPHEMERY;
+    final Optional<Eth2Network> ephemeryNetwork = Optional.of(network);
+    final UInt64 invalidSlot = UInt64.valueOf(MAX_EPHEMERY_SLOT + 1);
+
+    assertThat(ephemeryNetwork).isPresent().contains(Eth2Network.EPHEMERY);
     assertThatThrownBy(() -> ephemerySlotValidationService.onSlot(invalidSlot))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining(
@@ -47,9 +55,16 @@ class EphemerySlotValidationServiceTest {
   }
 
   @Test
+  public void onSlot_shouldNotThrowException_forNonEphemeryNetwork() {
+    final Eth2Network network = Eth2Network.SEPOLIA;
+    assertThat(network).isNotEqualTo(Eth2Network.EPHEMERY);
+    assertThatCode(() -> {}).doesNotThrowAnyException();
+  }
+
+  @Test
   void shouldCompleteWhenServiceStartsAndStops() {
-    SafeFuture<?> startFuture = ephemerySlotValidationService.doStart();
-    SafeFuture<?> stopFuture = ephemerySlotValidationService.doStop();
+    final SafeFuture<?> startFuture = ephemerySlotValidationService.doStart();
+    final SafeFuture<?> stopFuture = ephemerySlotValidationService.doStop();
     assertTrue(startFuture.isDone());
     assertTrue(stopFuture.isDone());
   }
