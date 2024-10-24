@@ -50,12 +50,12 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   private final OperationProcessor<MessageT> processor;
   private final GossipEncoding gossipEncoding;
   private final Bytes4 forkDigest;
-  private final String topicName;
   private final SszSchema<MessageT> messageType;
   private final Eth2PreparedGossipMessageFactory preparedGossipMessageFactory;
   private final OperationMilestoneValidator<MessageT> forkValidator;
   private final NetworkingSpecConfig networkingConfig;
   private final DebugDataDumper debugDataDumper;
+  private final String topic;
 
   public Eth2TopicHandler(
       final RecentChainData recentChainData,
@@ -72,7 +72,6 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     this.processor = processor;
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkDigest;
-    this.topicName = topicName;
     this.messageType = messageType;
     this.forkValidator = forkValidator;
     this.networkingConfig = networkingConfig;
@@ -80,6 +79,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
         gossipEncoding.createPreparedGossipMessageFactory(
             recentChainData::getMilestoneByForkDigest);
     this.debugDataDumper = debugDataDumper;
+    this.topic = GossipTopics.getTopic(forkDigest, topicName, gossipEncoding);
   }
 
   public Eth2TopicHandler(
@@ -159,10 +159,6 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     }
   }
 
-  private String getTopicName() {
-    return topicName;
-  }
-
   private SszSchema<MessageT> getMessageType() {
     return messageType;
   }
@@ -214,7 +210,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   }
 
   public String getTopic() {
-    return GossipTopics.getTopic(getForkDigest(), getTopicName(), getGossipEncoding());
+    return topic;
   }
 
   public GossipEncoding getGossipEncoding() {
