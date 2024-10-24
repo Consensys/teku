@@ -34,6 +34,7 @@ public class LibP2PParamsFactory {
 
   public static final int MAX_SUBSCRIPTIONS_PER_MESSAGE = 200;
   public static final int MAX_COMPRESSED_GOSSIP_SIZE = 10 * (1 << 20);
+  public static final int FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD = 1 << 14; // 16KiB
 
   public static GossipParams createGossipParams(final GossipConfig gossipConfig) {
     final GossipParamsBuilder builder = GossipParams.builder();
@@ -47,7 +48,7 @@ public class LibP2PParamsFactory {
       final GossipConfig gossipConfig, final GossipParamsBuilder builder) {
     builder
         .fanoutTTL(gossipConfig.getFanoutTTL())
-        .floodPublish(gossipConfig.isFloodPublishEnabled())
+        .floodPublishMaxMessageSizeThreshold(FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD)
         .gossipSize(gossipConfig.getAdvertise())
         .gossipHistoryLength(gossipConfig.getHistory())
         .heartbeatInterval(gossipConfig.getHeartbeatInterval())

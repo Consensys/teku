@@ -370,14 +370,15 @@ public class P2POptions {
   // More about flood publishing
   // https://github.com/libp2p/specs/blob/master/pubsub/gossipsub/gossipsub-v1.1.md#flood-publishing
   @Option(
-      names = {"--Xp2p-flood-publish-enabled"},
-      paramLabel = "<BOOLEAN>",
+      names = {"--Xp2p-flood-max_message_size_threshold"},
+      paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
-      description = "Enables gossip 'floodPublish' feature",
+      description = "Maximum size (in bytes) of a message that will be flood published",
       arity = "0..1",
       hidden = true,
       fallbackValue = "true")
-  private boolean floodPublishEnabled = GossipConfig.DEFAULT_FLOOD_PUBLISH_ENABLED;
+  private int floodPublishMaxMessageSizeThreshold =
+      GossipConfig.DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
 
   private OptionalInt getP2pLowerBound() {
     if (p2pUpperBound.isPresent() && p2pLowerBound.isPresent()) {
@@ -409,7 +410,7 @@ public class P2POptions {
                   .peerRateLimit(peerRateLimit)
                   .allTopicsFilterEnabled(allTopicsFilterEnabled)
                   .peerRequestLimit(peerRequestLimit)
-                  .isFloodPublishEnabled(floodPublishEnabled);
+                  .floodPublishMaxMessageSizeThreshold(floodPublishMaxMessageSizeThreshold);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
             })
         .discovery(
