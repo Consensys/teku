@@ -30,10 +30,6 @@ class GossipFailureLoggerTest {
       new SemiDuplexNoOutboundStreamException("So Lonely");
   public static final NoPeersForOutboundMessageException NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION =
       new NoPeersForOutboundMessageException("no peers");
-  public static final String NO_PEERS_MESSAGE = noPeersMessage(SLOT);
-  public static final String NO_ACTIVE_STREAM_MESSAGE = noActiveStreamMessage(SLOT);
-
-  public static final String GENERIC_FAILURE_MESSAGE = genericError(SLOT);
 
   private final GossipFailureLogger logger = new GossipFailureLogger("thingy", true);
   private final GossipFailureLogger loggerNoSuppression = new GossipFailureLogger("thingy", false);
@@ -52,7 +48,7 @@ class GossipFailureLoggerTest {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
       logger.logWithSuppression(
           new RuntimeException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION), SLOT);
-      logCaptor.assertWarnLog(NO_PEERS_MESSAGE);
+      logCaptor.assertWarnLog(noPeersMessage(SLOT, true));
     }
   }
 
@@ -60,7 +56,7 @@ class GossipFailureLoggerTest {
   void shouldLogFirstNoActiveStreamErrorsAtWarningLevel() {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
       logger.logWithSuppression(new RuntimeException("Foo", NO_ACTIVE_STREAM_EXCEPTION), SLOT);
-      logCaptor.assertWarnLog(NO_ACTIVE_STREAM_MESSAGE);
+      logCaptor.assertWarnLog(noActiveStreamMessage(SLOT, true));
     }
   }
 
@@ -73,7 +69,7 @@ class GossipFailureLoggerTest {
 
       logger.logWithSuppression(
           new IllegalStateException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION), SLOT);
-      logCaptor.assertDebugLog(NO_PEERS_MESSAGE);
+      logCaptor.assertDebugLog(noPeersMessage(SLOT, true));
     }
   }
 
@@ -86,7 +82,7 @@ class GossipFailureLoggerTest {
 
       loggerNoSuppression.logWithSuppression(
           new IllegalStateException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION), SLOT);
-      logCaptor.assertWarnLog(NO_PEERS_MESSAGE);
+      logCaptor.assertWarnLog(noPeersMessage(SLOT, false));
     }
   }
 
@@ -95,12 +91,12 @@ class GossipFailureLoggerTest {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
       logger.logWithSuppression(
           new RuntimeException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION), SLOT);
-      logCaptor.assertWarnLog(NO_PEERS_MESSAGE);
+      logCaptor.assertWarnLog(noPeersMessage(SLOT, true));
 
       logger.logWithSuppression(
           new IllegalStateException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION),
           Optional.of(UInt64.valueOf(2)));
-      logCaptor.assertWarnLog(noPeersMessage(Optional.of(UInt64.valueOf(2))));
+      logCaptor.assertWarnLog(noPeersMessage(Optional.of(UInt64.valueOf(2)), true));
     }
   }
 
@@ -109,14 +105,14 @@ class GossipFailureLoggerTest {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
       logger.logWithSuppression(
           new RuntimeException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION), SLOT);
-      logCaptor.assertWarnLog(NO_PEERS_MESSAGE);
+      logCaptor.assertWarnLog(noPeersMessage(SLOT, true));
       logCaptor.clearLogs();
 
       logger.logWithSuppression(new MessageAlreadySeenException("Dupe"), SLOT);
 
       logger.logWithSuppression(
           new IllegalStateException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION), SLOT);
-      logCaptor.assertWarnLog(NO_PEERS_MESSAGE);
+      logCaptor.assertWarnLog(noPeersMessage(SLOT, true));
     }
   }
 
@@ -125,7 +121,7 @@ class GossipFailureLoggerTest {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
       logger.logWithSuppression(
           new RuntimeException("Foo", new IllegalStateException("Boom")), SLOT);
-      logCaptor.assertErrorLog(GENERIC_FAILURE_MESSAGE);
+      logCaptor.assertErrorLog(genericError(SLOT, true));
     }
   }
 
@@ -138,7 +134,7 @@ class GossipFailureLoggerTest {
 
       logger.logWithSuppression(
           new IllegalStateException("Foo", new IllegalStateException("goes the dynamite")), SLOT);
-      logCaptor.assertDebugLog(GENERIC_FAILURE_MESSAGE);
+      logCaptor.assertDebugLog(genericError(SLOT, true));
     }
   }
 
@@ -147,13 +143,13 @@ class GossipFailureLoggerTest {
     try (final LogCaptor logCaptor = LogCaptor.forClass(GossipFailureLogger.class)) {
       logger.logWithSuppression(
           new RuntimeException("Foo", new IllegalStateException("Boom")), SLOT);
-      logCaptor.assertErrorLog(GENERIC_FAILURE_MESSAGE);
+      logCaptor.assertErrorLog(genericError(SLOT, true));
       logCaptor.clearLogs();
 
       logger.logWithSuppression(
           new IllegalStateException("Foo", new IllegalArgumentException("goes the dynamite")),
           SLOT);
-      logCaptor.assertErrorLog(GENERIC_FAILURE_MESSAGE);
+      logCaptor.assertErrorLog(genericError(SLOT, true));
     }
   }
 
@@ -167,7 +163,7 @@ class GossipFailureLoggerTest {
       logger.logWithSuppression(
           new IllegalStateException("Foo", new IllegalStateException("goes the dynamite")),
           Optional.empty());
-      logCaptor.assertErrorLog(genericError(Optional.empty()));
+      logCaptor.assertErrorLog(genericError(Optional.empty(), true));
     }
   }
 
@@ -181,7 +177,7 @@ class GossipFailureLoggerTest {
       logger.logWithSuppression(
           new IllegalStateException("Foo", NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION),
           Optional.empty());
-      logCaptor.assertWarnLog(noPeersMessage(Optional.empty()));
+      logCaptor.assertWarnLog(noPeersMessage(Optional.empty(), true));
     }
   }
 
@@ -194,24 +190,29 @@ class GossipFailureLoggerTest {
 
       logger.logWithSuppression(
           new IllegalStateException("Foo", NO_ACTIVE_STREAM_EXCEPTION), Optional.empty());
-      logCaptor.assertWarnLog(noActiveStreamMessage(Optional.empty()));
+      logCaptor.assertWarnLog(noActiveStreamMessage(Optional.empty(), true));
     }
   }
 
-  private static String noPeersMessage(final Optional<UInt64> slot) {
-    return "Failed to publish thingy(s)"
+  private static String noPeersMessage(final Optional<UInt64> slot, final boolean shouldSuppress) {
+    return "Failed to publish thingy"
+        + (shouldSuppress ? "(s)" : "")
         + slot.map(s -> " for slot " + s).orElse("")
         + "; "
         + NO_PEERS_FOR_OUTBOUND_MESSAGE_EXCEPTION.getMessage();
   }
 
-  private static String noActiveStreamMessage(final Optional<UInt64> slot) {
-    return "Failed to publish thingy(s)"
+  private static String noActiveStreamMessage(
+      final Optional<UInt64> slot, final boolean shouldSuppress) {
+    return "Failed to publish thingy"
+        + (shouldSuppress ? "(s)" : "")
         + slot.map(s -> " for slot " + s).orElse("")
         + " because no active outbound stream for the required gossip topic";
   }
 
-  private static String genericError(final Optional<UInt64> slot) {
-    return "Failed to publish thingy(s)" + slot.map(s -> " for slot " + s).orElse("");
+  private static String genericError(final Optional<UInt64> slot, final boolean shouldSuppress) {
+    return "Failed to publish thingy"
+        + (shouldSuppress ? "(s)" : "")
+        + slot.map(s -> " for slot " + s).orElse("");
   }
 }

@@ -32,7 +32,7 @@ public class GossipFailureLogger {
   private Throwable lastRootCause;
 
   public GossipFailureLogger(final String messageType, final boolean shouldSuppress) {
-    this.messageType = messageType;
+    this.messageType = shouldSuppress ? messageType + "(s)" : messageType;
     this.shouldSuppress = shouldSuppress;
   }
 
@@ -57,31 +57,32 @@ public class GossipFailureLogger {
 
     final String slotLog = maybeSlot.map(slot -> " for slot " + slot).orElse("");
 
-    if (lastRootCause instanceof MessageAlreadySeenException) {
-      LOG.debug(
-          "Failed to publish {}(s){} because the message has already been seen",
-          messageType,
-          slotLog);
-    } else if (lastRootCause instanceof NoPeersForOutboundMessageException) {
-      LOG.log(
-          suppress ? Level.DEBUG : Level.WARN,
-          "Failed to publish {}(s){}; {}",
-          messageType,
-          slotLog,
-          lastRootCause.getMessage());
-    } else if (lastRootCause instanceof SemiDuplexNoOutboundStreamException) {
-      LOG.log(
-          suppress ? Level.DEBUG : Level.WARN,
-          "Failed to publish {}(s){} because no active outbound stream for the required gossip topic",
-          messageType,
-          slotLog);
-    } else {
-      LOG.log(
-          suppress ? Level.DEBUG : Level.ERROR,
-          "Failed to publish {}(s){}",
-          messageType,
-          slotLog,
-          error);
+    switch (lastRootCause) {
+      case MessageAlreadySeenException ignored ->
+          LOG.debug(
+              "Failed to publish {}{} because the message has already been seen",
+              messageType,
+              slotLog);
+      case NoPeersForOutboundMessageException ignored ->
+          LOG.log(
+              suppress ? Level.DEBUG : Level.WARN,
+              "Failed to publish {}{}; {}",
+              messageType,
+              slotLog,
+              lastRootCause.getMessage());
+      case SemiDuplexNoOutboundStreamException ignored ->
+          LOG.log(
+              suppress ? Level.DEBUG : Level.WARN,
+              "Failed to publish {}{} because no active outbound stream for the required gossip topic",
+              messageType,
+              slotLog);
+      default ->
+          LOG.log(
+              suppress ? Level.DEBUG : Level.ERROR,
+              "Failed to publish {}{}",
+              messageType,
+              slotLog,
+              error);
     }
   }
 }
