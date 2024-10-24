@@ -143,6 +143,11 @@ public abstract class AbstractSszVectorSchema<
   }
 
   @Override
+  public boolean hasExtraDataInBackingTree() {
+    return getElementSchema().hasExtraDataInBackingTree();
+  }
+
+  @Override
   public int getSszVariablePartSize(final TreeNode node) {
     return getVariablePartSize(node, getLength());
   }
