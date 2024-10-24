@@ -195,6 +195,9 @@ class ValidatorApiHandlerTest {
     this.epochStartSlot = spec.computeStartSlotAtEpoch(EPOCH);
     this.previousEpochStartSlot = spec.computeStartSlotAtEpoch(PREVIOUS_EPOCH);
     this.dataStructureUtil = new DataStructureUtil(spec);
+    when(blockGossipChannel.publishBlock(any())).thenReturn(SafeFuture.COMPLETE);
+    when(blobSidecarGossipChannel.publishBlobSidecar(any())).thenReturn(SafeFuture.COMPLETE);
+    when(blobSidecarGossipChannel.publishBlobSidecars(any())).thenReturn(SafeFuture.COMPLETE);
     when(dutyMetrics.getValidatorDutyMetric())
         .thenReturn(ValidatorDutyMetricUtils.createValidatorDutyMetric(new StubMetricsSystem()));
     this.validatorApiHandler =

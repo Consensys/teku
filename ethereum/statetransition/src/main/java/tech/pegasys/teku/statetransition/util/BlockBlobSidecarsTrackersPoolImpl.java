@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -101,7 +102,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   private final RecentChainData recentChainData;
   private final ExecutionLayerChannel executionLayer;
   private final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier;
-  private final Consumer<BlobSidecar> blobSidecarGossipPublisher;
+  private final Function<BlobSidecar, SafeFuture<Void>> blobSidecarGossipPublisher;
   private final int maxTrackers;
 
   private final BlockBlobSidecarsTrackerFactory trackerFactory;
@@ -133,7 +134,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
       final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
-      final Consumer<BlobSidecar> blobSidecarGossipPublisher,
+      final Function<BlobSidecar, SafeFuture<Void>> blobSidecarGossipPublisher,
       final UInt64 historicalSlotTolerance,
       final UInt64 futureSlotTolerance,
       final int maxTrackers) {
@@ -165,7 +166,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
       final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
-      final Consumer<BlobSidecar> blobSidecarGossipPublisher,
+      final Function<BlobSidecar, SafeFuture<Void>> blobSidecarGossipPublisher,
       final UInt64 historicalSlotTolerance,
       final UInt64 futureSlotTolerance,
       final int maxTrackers,
@@ -246,7 +247,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   private void publishRecoveredBlobSidecar(final BlobSidecar blobSidecar) {
     LOG.debug("Publishing recovered blob sidecar {}", blobSidecar::toLogString);
     gossipValidatorSupplier.get().markForEquivocation(blobSidecar);
-    blobSidecarGossipPublisher.accept(blobSidecar);
+    blobSidecarGossipPublisher.apply(blobSidecar).ifExceptionGetsHereRaiseABug();
   }
 
   private void countBlobSidecar(final RemoteOrigin origin) {

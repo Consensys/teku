@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 import io.libp2p.core.pubsub.PubsubSubscription;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 
 public class LibP2PTopicChannel implements TopicChannel {
@@ -30,11 +31,11 @@ public class LibP2PTopicChannel implements TopicChannel {
   }
 
   @Override
-  public void gossip(final Bytes data) {
+  public SafeFuture<Void> gossip(final Bytes data) {
     if (closed.get()) {
-      return;
+      return SafeFuture.failedFuture(new IllegalStateException("Topic channel is closed"));
     }
-    topicHandler.gossip(data);
+    return topicHandler.gossip(data);
   }
 
   @Override

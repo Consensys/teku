@@ -14,13 +14,14 @@
 package tech.pegasys.teku.networking.p2p.mock;
 
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 
 public class MockTopicChannel implements TopicChannel {
 
   @Override
-  public void gossip(final Bytes data) {
-    // Do nothing
+  public SafeFuture<Void> gossip(final Bytes data) {
+    return SafeFuture.COMPLETE;
   }
 
   @Override

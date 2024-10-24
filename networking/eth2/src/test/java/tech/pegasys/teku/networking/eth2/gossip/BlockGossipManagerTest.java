@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -79,7 +80,7 @@ public class BlockGossipManagerTest {
     // Should gossip new blocks received from event bus
     SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     Bytes serialized = gossipEncoding.encode(block);
-    blockGossipManager.publishBlock(block);
+    safeJoin(blockGossipManager.publishBlock(block));
 
     verify(topicChannel).gossip(serialized);
   }

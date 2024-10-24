@@ -20,10 +20,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
@@ -67,6 +70,8 @@ class AbstractGossipManagerTest {
   @BeforeEach
   void setUp() {
     storageSystem.chainUpdater().initializeGenesis();
+    when(topicChannel1.gossip(any())).thenReturn(SafeFuture.COMPLETE);
+    when(topicChannel2.gossip(any())).thenReturn(SafeFuture.COMPLETE);
     doReturn(topicChannel1, topicChannel2)
         .when(gossipNetwork)
         .subscribe(contains(TOPIC_NAME.toString()), any());
@@ -176,8 +181,10 @@ class AbstractGossipManagerTest {
           forkInfo,
           processor,
           gossipType,
+          message -> Optional.of(UInt64.ZERO),
           message -> UInt64.ZERO,
           networkingConfig,
+          GossipFailureLogger.createSuppressing(TOPIC_NAME.toString()),
           DebugDataDumper.NOOP);
     }
   }
