@@ -1149,8 +1149,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initEphemeryValidationService() {
-    final EphemerySlotValidationService slotValidationService =
-        new EphemerySlotValidationService(recentChainData);
+    final EphemerySlotValidationService slotValidationService = new EphemerySlotValidationService();
     eventChannels.subscribe(SlotEventsChannel.class, slotValidationService);
   }
 

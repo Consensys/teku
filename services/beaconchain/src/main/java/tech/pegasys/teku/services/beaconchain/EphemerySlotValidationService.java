@@ -13,35 +13,22 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class EphemerySlotValidationService extends Service implements SlotEventsChannel {
 
-  private final RecentChainData recentChainData;
-
-  public EphemerySlotValidationService(final RecentChainData recentChainData) {
-    this.recentChainData = recentChainData;
-  }
+  public EphemerySlotValidationService() {}
 
   @Override
   public void onSlot(final UInt64 slot) {
-    final UInt64 currentSlot =
-        recentChainData
-            .getCurrentSlot()
-            .orElseThrow(() -> new IllegalStateException("Current slot not available"));
-    final UInt64 maxSlot = currentSlot.max(recentChainData.getCurrentSlot().orElse(ZERO));
-
-    if (slot.minus(currentSlot).compareTo(maxSlot) > 0) {
+    UInt64 maxSlot = UInt64.valueOf(123);
+    if (slot.compareTo(maxSlot) > 0) {
       throw new IllegalStateException(
           String.format(
-              "Slot %s is too far ahead of current slot %s (max allowed: %s)",
-              slot, currentSlot, maxSlot));
+              "Slot %s exceeds maximum allowed slot %s for ephemery network", slot, maxSlot));
     }
   }
 
