@@ -52,51 +52,44 @@ public class BeaconStateSchemaAltair
   }
 
   public static List<SszField> getUniqueFields(final SpecConfig specConfig) {
-    final SszField previousEpochAttestationsField =
-        new SszField(
-            PREVIOUS_EPOCH_PARTICIPATION_FIELD_INDEX,
-            BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION,
-            () ->
-                SszListSchema.create(
-                    SszPrimitiveSchemas.UINT8_SCHEMA, specConfig.getValidatorRegistryLimit()));
-    final SszField currentEpochAttestationsField =
-        new SszField(
-            CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX,
-            BeaconStateFields.CURRENT_EPOCH_PARTICIPATION,
-            () ->
-                SszListSchema.create(
-                    SszPrimitiveSchemas.UINT8_SCHEMA, specConfig.getValidatorRegistryLimit()));
-    final SszField inactivityScores =
-        new SszField(
-            INACTIVITY_SCORES_FIELD_INDEX,
-            BeaconStateFields.INACTIVITY_SCORES,
-            SszUInt64ListSchema.create(specConfig.getValidatorRegistryLimit()));
-    final SszField currentSyncCommitteeField =
-        new SszField(
-            CURRENT_SYNC_COMMITTEE_FIELD_INDEX,
-            BeaconStateFields.CURRENT_SYNC_COMMITTEE,
-            () -> new SyncCommitteeSchema(SpecConfigAltair.required(specConfig)));
-    final SszField nextSyncCommitteeField =
-        new SszField(
-            NEXT_SYNC_COMMITTEE_FIELD_INDEX,
-            BeaconStateFields.NEXT_SYNC_COMMITTEE,
-            () -> new SyncCommitteeSchema(SpecConfigAltair.required(specConfig)));
+    final List<SszField> updatedFields =
+        List.of(
+            new SszField(
+                PREVIOUS_EPOCH_PARTICIPATION_FIELD_INDEX,
+                BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION,
+                () ->
+                    SszListSchema.create(
+                        SszPrimitiveSchemas.UINT8_SCHEMA, specConfig.getValidatorRegistryLimit())),
+            new SszField(
+                CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX,
+                BeaconStateFields.CURRENT_EPOCH_PARTICIPATION,
+                () ->
+                    SszListSchema.create(
+                        SszPrimitiveSchemas.UINT8_SCHEMA, specConfig.getValidatorRegistryLimit())));
+
+    final List<SszField> newFields =
+        List.of(
+            new SszField(
+                INACTIVITY_SCORES_FIELD_INDEX,
+                BeaconStateFields.INACTIVITY_SCORES,
+                SszUInt64ListSchema.create(specConfig.getValidatorRegistryLimit())),
+            new SszField(
+                CURRENT_SYNC_COMMITTEE_FIELD_INDEX,
+                BeaconStateFields.CURRENT_SYNC_COMMITTEE,
+                () -> new SyncCommitteeSchema(SpecConfigAltair.required(specConfig))),
+            new SszField(
+                NEXT_SYNC_COMMITTEE_FIELD_INDEX,
+                BeaconStateFields.NEXT_SYNC_COMMITTEE,
+                () -> new SyncCommitteeSchema(SpecConfigAltair.required(specConfig))));
 
     return Stream.concat(
-            BeaconStateSchemaPhase0.getUniqueFields(specConfig).stream(),
-            Stream.of(inactivityScores, currentSyncCommitteeField, nextSyncCommitteeField))
+            BeaconStateSchemaPhase0.getUniqueFields(specConfig).stream(), newFields.stream())
         .map(
-            field -> {
-              // Replace previousEpochAttestationsField with new version.
-              if (field.getIndex() == PREVIOUS_EPOCH_PARTICIPATION_FIELD_INDEX) {
-                return previousEpochAttestationsField;
-                // Replace currentEpochAttestationsField with new version.
-              } else if (field.getIndex() == CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX) {
-                return currentEpochAttestationsField;
-              } else {
-                return field;
-              }
-            })
+            field ->
+                updatedFields.stream()
+                    .filter(updatedField -> updatedField.getIndex() == field.getIndex())
+                    .findFirst()
+                    .orElse(field))
         .toList();
   }
 

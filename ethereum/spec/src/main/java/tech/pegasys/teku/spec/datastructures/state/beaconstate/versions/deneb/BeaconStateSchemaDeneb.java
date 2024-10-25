@@ -43,22 +43,20 @@ public class BeaconStateSchemaDeneb
   }
 
   public static List<SszField> getUniqueFields(final SpecConfig specConfig) {
-    final SszField latestExecutionPayloadHeaderField =
-        new SszField(
-            LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
-            BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
-            () -> new ExecutionPayloadHeaderSchemaDeneb(SpecConfigDeneb.required(specConfig)));
+    final List<SszField> updatedFields =
+        List.of(
+            new SszField(
+                LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
+                BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
+                () -> new ExecutionPayloadHeaderSchemaDeneb(SpecConfigDeneb.required(specConfig))));
 
     return BeaconStateSchemaCapella.getUniqueFields(specConfig).stream()
         .map(
-            field -> {
-              // Replace latestExecutionPayloadHeader with new version.
-              if (field.getIndex() == LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX) {
-                return latestExecutionPayloadHeaderField;
-              } else {
-                return field;
-              }
-            })
+            field ->
+                updatedFields.stream()
+                    .filter(updatedField -> updatedField.getIndex() == field.getIndex())
+                    .findFirst()
+                    .orElse(field))
         .toList();
   }
 

@@ -51,44 +51,40 @@ public class BeaconStateSchemaCapella
     final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema =
         new HistoricalSummary.HistoricalSummarySchema();
 
-    final SszField latestExecutionPayloadHeaderField =
-        new SszField(
-            LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
-            BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
-            () -> new ExecutionPayloadHeaderSchemaCapella(SpecConfigCapella.required(specConfig)));
-    final SszField nextWithdrawalIndexField =
-        new SszField(
-            NEXT_WITHDRAWAL_INDEX,
-            BeaconStateFields.NEXT_WITHDRAWAL_INDEX,
-            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
-    final SszField nextWithdrawalValidatorIndexField =
-        new SszField(
-            NEXT_WITHDRAWAL_VALIDATOR_INDEX,
-            BeaconStateFields.NEXT_WITHDRAWAL_VALIDATOR_INDEX,
-            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
-    final SszField historicalSummariesField =
-        new SszField(
-            HISTORICAL_SUMMARIES_INDEX,
-            BeaconStateFields.HISTORICAL_SUMMARIES,
-            () ->
-                SszListSchema.create(
-                    historicalSummarySchema, specConfig.getHistoricalRootsLimit()));
+    final List<SszField> updatedFields =
+        List.of(
+            new SszField(
+                LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
+                BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
+                () ->
+                    new ExecutionPayloadHeaderSchemaCapella(
+                        SpecConfigCapella.required(specConfig))));
+
+    final List<SszField> newFields =
+        List.of(
+            new SszField(
+                NEXT_WITHDRAWAL_INDEX,
+                BeaconStateFields.NEXT_WITHDRAWAL_INDEX,
+                () -> SszPrimitiveSchemas.UINT64_SCHEMA),
+            new SszField(
+                NEXT_WITHDRAWAL_VALIDATOR_INDEX,
+                BeaconStateFields.NEXT_WITHDRAWAL_VALIDATOR_INDEX,
+                () -> SszPrimitiveSchemas.UINT64_SCHEMA),
+            new SszField(
+                HISTORICAL_SUMMARIES_INDEX,
+                BeaconStateFields.HISTORICAL_SUMMARIES,
+                () ->
+                    SszListSchema.create(
+                        historicalSummarySchema, specConfig.getHistoricalRootsLimit())));
 
     return Stream.concat(
-            BeaconStateSchemaBellatrix.getUniqueFields(specConfig).stream(),
-            Stream.of(
-                nextWithdrawalIndexField,
-                nextWithdrawalValidatorIndexField,
-                historicalSummariesField))
+            BeaconStateSchemaBellatrix.getUniqueFields(specConfig).stream(), newFields.stream())
         .map(
-            field -> {
-              // Replace latestExecutionPayloadHeader with new version.
-              if (field.getIndex() == LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX) {
-                return latestExecutionPayloadHeaderField;
-              } else {
-                return field;
-              }
-            })
+            field ->
+                updatedFields.stream()
+                    .filter(updatedField -> updatedField.getIndex() == field.getIndex())
+                    .findFirst()
+                    .orElse(field))
         .toList();
   }
 

@@ -63,72 +63,56 @@ public class BeaconStateSchemaElectra
     final SpecConfigElectra specConfigElectra = SpecConfigElectra.required(specConfig);
     final PendingConsolidation.PendingConsolidationSchema pendingConsolidationSchema =
         new PendingConsolidation.PendingConsolidationSchema();
-    
-    final SszField depositRequestsStartIndexField =
-        new SszField(
-            DEPOSIT_REQUESTS_START_INDEX,
-            BeaconStateFields.DEPOSIT_REQUESTS_START_INDEX,
-            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
-    final SszField depositBalanceToConsumeField =
-        new SszField(
-            DEPOSIT_BALANCE_TO_CONSUME_INDEX,
-            BeaconStateFields.DEPOSIT_BALANCE_TO_CONSUME,
-            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
-    final SszField exitBalanceToConsumeField =
-        new SszField(
-            EXIT_BALANCE_TO_CONSUME_INDEX,
-            BeaconStateFields.EXIT_BALANCE_TO_CONSUME,
-            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
-    final SszField earliestExitEpochField =
-        new SszField(
-            EARLIEST_EXIT_EPOCH_INDEX,
-            BeaconStateFields.EARLIEST_EXIT_EPOCH,
-            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
-    final SszField consolidationBalanceToConsumeField =
-        new SszField(
-            CONSOLIDATION_BALANCE_TO_CONSUME_INDEX,
-            BeaconStateFields.CONSOLIDATION_BALANCE_TO_CONSUME,
-            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
-    final SszField earliestConsolidationEpochField =
-        new SszField(
-            EARLIEST_CONSOLIDATION_EPOCH_INDEX,
-            BeaconStateFields.EARLIEST_CONSOLIDATION_EPOCH,
-            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
-    final SszField pendingBalanceDepositsField =
-        new SszField(
-            PENDING_DEPOSITS_INDEX,
-            BeaconStateFields.PENDING_DEPOSITS,
-            () ->
-                SszListSchema.create(
-                    pendingDepositSchema, specConfigElectra.getPendingDepositsLimit()));
-    final SszField pendingPartialWithdrawalsField =
-        new SszField(
-            PENDING_PARTIAL_WITHDRAWALS_INDEX,
-            BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS,
-            () ->
-                SszListSchema.create(
-                    pendingPartialWithdrawalSchema,
-                    specConfigElectra.getPendingPartialWithdrawalsLimit()));
-    final SszField pendingConsolidationsField =
-        new SszField(
-            PENDING_CONSOLIDATIONS_INDEX,
-            BeaconStateFields.PENDING_CONSOLIDATIONS,
-            () ->
-                SszListSchema.create(
-                    pendingConsolidationSchema, specConfigElectra.getPendingConsolidationsLimit()));
+
+    final List<SszField> newFields =
+        List.of(
+            new SszField(
+                DEPOSIT_REQUESTS_START_INDEX,
+                BeaconStateFields.DEPOSIT_REQUESTS_START_INDEX,
+                () -> SszPrimitiveSchemas.UINT64_SCHEMA),
+            new SszField(
+                DEPOSIT_BALANCE_TO_CONSUME_INDEX,
+                BeaconStateFields.DEPOSIT_BALANCE_TO_CONSUME,
+                () -> SszPrimitiveSchemas.UINT64_SCHEMA),
+            new SszField(
+                EXIT_BALANCE_TO_CONSUME_INDEX,
+                BeaconStateFields.EXIT_BALANCE_TO_CONSUME,
+                () -> SszPrimitiveSchemas.UINT64_SCHEMA),
+            new SszField(
+                EARLIEST_EXIT_EPOCH_INDEX,
+                BeaconStateFields.EARLIEST_EXIT_EPOCH,
+                () -> SszPrimitiveSchemas.UINT64_SCHEMA),
+            new SszField(
+                CONSOLIDATION_BALANCE_TO_CONSUME_INDEX,
+                BeaconStateFields.CONSOLIDATION_BALANCE_TO_CONSUME,
+                () -> SszPrimitiveSchemas.UINT64_SCHEMA),
+            new SszField(
+                EARLIEST_CONSOLIDATION_EPOCH_INDEX,
+                BeaconStateFields.EARLIEST_CONSOLIDATION_EPOCH,
+                () -> SszPrimitiveSchemas.UINT64_SCHEMA),
+            new SszField(
+                PENDING_DEPOSITS_INDEX,
+                BeaconStateFields.PENDING_DEPOSITS,
+                () ->
+                    SszListSchema.create(
+                        pendingDepositSchema, specConfigElectra.getPendingDepositsLimit())),
+            new SszField(
+                PENDING_PARTIAL_WITHDRAWALS_INDEX,
+                BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS,
+                () ->
+                    SszListSchema.create(
+                        pendingPartialWithdrawalSchema,
+                        specConfigElectra.getPendingPartialWithdrawalsLimit())),
+            new SszField(
+                PENDING_CONSOLIDATIONS_INDEX,
+                BeaconStateFields.PENDING_CONSOLIDATIONS,
+                () ->
+                    SszListSchema.create(
+                        pendingConsolidationSchema,
+                        specConfigElectra.getPendingConsolidationsLimit())));
 
     return Stream.concat(
-            BeaconStateSchemaDeneb.getUniqueFields(specConfig).stream(),
-            Stream.of(
-                depositRequestsStartIndexField,
-                depositBalanceToConsumeField,
-                exitBalanceToConsumeField,
-                earliestExitEpochField,
-                consolidationBalanceToConsumeField,
-                earliestConsolidationEpochField,
-                pendingBalanceDepositsField,
-                pendingPartialWithdrawalsField,
-                pendingConsolidationsField))
+            BeaconStateSchemaDeneb.getUniqueFields(specConfig).stream(), newFields.stream())
         .toList();
   }
 
