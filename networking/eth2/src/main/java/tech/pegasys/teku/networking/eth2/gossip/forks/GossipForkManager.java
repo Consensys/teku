@@ -157,7 +157,7 @@ public class GossipForkManager {
     }
   }
 
-  public synchronized void publishAttestation(final ValidatableAttestation attestation) {
+  public void publishAttestation(final ValidatableAttestation attestation) {
     publishMessage(
         attestation.getData().getSlot(),
         attestation,
@@ -165,12 +165,12 @@ public class GossipForkManager {
         GossipForkSubscriptions::publishAttestation);
   }
 
-  public synchronized SafeFuture<Void> publishBlock(final SignedBeaconBlock block) {
+  public SafeFuture<Void> publishBlock(final SignedBeaconBlock block) {
     return publishMessageWithFeedback(
         block.getSlot(), block, "block", GossipForkSubscriptions::publishBlock);
   }
 
-  public synchronized SafeFuture<Void> publishBlobSidecar(final BlobSidecar blobSidecar) {
+  public SafeFuture<Void> publishBlobSidecar(final BlobSidecar blobSidecar) {
     return publishMessageWithFeedback(
         blobSidecar.getSlot(),
         blobSidecar,
@@ -178,8 +178,7 @@ public class GossipForkManager {
         GossipForkSubscriptions::publishBlobSidecar);
   }
 
-  public synchronized void publishSyncCommitteeMessage(
-      final ValidatableSyncCommitteeMessage message) {
+  public void publishSyncCommitteeMessage(final ValidatableSyncCommitteeMessage message) {
     publishMessage(
         message.getSlot(),
         message,
@@ -233,7 +232,7 @@ public class GossipForkManager {
         GossipForkSubscriptions::publishSignedBlsToExecutionChangeMessage);
   }
 
-  private <T> void publishMessage(
+  private synchronized <T> void publishMessage(
       final UInt64 slot,
       final T message,
       final String type,
@@ -249,7 +248,7 @@ public class GossipForkManager {
                     slot));
   }
 
-  private <T> SafeFuture<Void> publishMessageWithFeedback(
+  private synchronized <T> SafeFuture<Void> publishMessageWithFeedback(
       final UInt64 slot,
       final T message,
       final String type,
@@ -273,21 +272,21 @@ public class GossipForkManager {
     }
   }
 
-  public void unsubscribeFromAttestationSubnetId(final int subnetId) {
+  public synchronized void unsubscribeFromAttestationSubnetId(final int subnetId) {
     if (currentAttestationSubnets.remove(subnetId)) {
       activeSubscriptions.forEach(
           subscription -> subscription.unsubscribeFromAttestationSubnetId(subnetId));
     }
   }
 
-  public void subscribeToSyncCommitteeSubnetId(final int subnetId) {
+  public synchronized void subscribeToSyncCommitteeSubnetId(final int subnetId) {
     if (currentSyncCommitteeSubnets.add(subnetId)) {
       activeSubscriptions.forEach(
           subscription -> subscription.subscribeToSyncCommitteeSubnet(subnetId));
     }
   }
 
-  public void unsubscribeFromSyncCommitteeSubnetId(final int subnetId) {
+  public synchronized void unsubscribeFromSyncCommitteeSubnetId(final int subnetId) {
     if (currentSyncCommitteeSubnets.remove(subnetId)) {
       activeSubscriptions.forEach(
           subscription -> subscription.unsubscribeFromSyncCommitteeSubnet(subnetId));
