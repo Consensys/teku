@@ -96,7 +96,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       final Optional<List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     blockData.put(block.getRoot(), new TransactionBlockData(block, state, blockCheckpoints));
-    blobSidecars.ifPresent(sidecars -> this.blobSidecars.put(block.getSlotAndBlockRoot(), sidecars));
+    blobSidecars.ifPresent(
+        sidecars -> this.blobSidecars.put(block.getSlotAndBlockRoot(), sidecars));
     if (needToUpdateEarliestBlobSidecarSlot(maybeEarliestBlobSidecarSlot)) {
       this.maybeEarliestBlobSidecarTransactionSlot = maybeEarliestBlobSidecarSlot;
     }

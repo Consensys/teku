@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
@@ -99,6 +98,6 @@ class DepositTest {
 
   private SszBytes32Vector setupMerkleBranch() {
     return dataStructureUtil.randomSszBytes32Vector(
-        Deposit.SSZ_SCHEMA.getProofSchema(), (Supplier<Bytes32>) Bytes32::random);
+        Deposit.SSZ_SCHEMA.getProofSchema(), Bytes32::random);
   }
 }
