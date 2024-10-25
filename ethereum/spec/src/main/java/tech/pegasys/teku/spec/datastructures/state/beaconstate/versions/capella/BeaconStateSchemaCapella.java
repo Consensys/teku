@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
 
 public class BeaconStateSchemaCapella
@@ -47,7 +47,7 @@ public class BeaconStateSchemaCapella
     super("BeaconStateCapella", getUniqueFields(specConfig), specConfig);
   }
 
-  private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
+  public static List<SszField> getUniqueFields(final SpecConfig specConfig) {
     final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema =
         new HistoricalSummary.HistoricalSummarySchema();
     final SszField latestExecutionPayloadHeaderField =
@@ -65,7 +65,6 @@ public class BeaconStateSchemaCapella
             NEXT_WITHDRAWAL_VALIDATOR_INDEX,
             BeaconStateFields.NEXT_WITHDRAWAL_VALIDATOR_INDEX,
             () -> SszPrimitiveSchemas.UINT64_SCHEMA);
-
     final SszField historicalSummariesField =
         new SszField(
             HISTORICAL_SUMMARIES_INDEX,
@@ -74,12 +73,20 @@ public class BeaconStateSchemaCapella
                 SszListSchema.create(
                     historicalSummarySchema, specConfig.getHistoricalRootsLimit()));
     return Stream.concat(
-            BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
+            BeaconStateSchemaBellatrix.getUniqueFields(specConfig).stream(),
             Stream.of(
-                latestExecutionPayloadHeaderField,
                 nextWithdrawalIndexField,
                 nextWithdrawalValidatorIndexField,
                 historicalSummariesField))
+        .map(
+            field -> {
+              // Replace latestExecutionPayloadHeader with new version.
+              if (field.getIndex() == LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX) {
+                return latestExecutionPayloadHeaderField;
+              } else {
+                return field;
+              }
+            })
         .toList();
   }
 

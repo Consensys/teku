@@ -14,10 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix.LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella.HISTORICAL_SUMMARIES_INDEX;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella.NEXT_WITHDRAWAL_INDEX;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella.NEXT_WITHDRAWAL_VALIDATOR_INDEX;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -36,7 +32,7 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
@@ -60,8 +56,6 @@ public class BeaconStateSchemaElectra
   }
 
   private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
-    final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema =
-        new HistoricalSummary.HistoricalSummarySchema();
     final PendingDeposit.PendingDepositSchema pendingDepositSchema =
         new PendingDeposit.PendingDepositSchema();
     final PendingPartialWithdrawal.PendingPartialWithdrawalSchema pendingPartialWithdrawalSchema =
@@ -69,29 +63,6 @@ public class BeaconStateSchemaElectra
     final SpecConfigElectra specConfigElectra = SpecConfigElectra.required(specConfig);
     final PendingConsolidation.PendingConsolidationSchema pendingConsolidationSchema =
         new PendingConsolidation.PendingConsolidationSchema();
-    final SszField latestExecutionPayloadHeaderField =
-        new SszField(
-            LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
-            BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
-            () -> new ExecutionPayloadHeaderSchemaDeneb(specConfigElectra));
-    final SszField nextWithdrawalIndexField =
-        new SszField(
-            NEXT_WITHDRAWAL_INDEX,
-            BeaconStateFields.NEXT_WITHDRAWAL_INDEX,
-            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
-    final SszField nextWithdrawalValidatorIndexField =
-        new SszField(
-            NEXT_WITHDRAWAL_VALIDATOR_INDEX,
-            BeaconStateFields.NEXT_WITHDRAWAL_VALIDATOR_INDEX,
-            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
-
-    final SszField historicalSummariesField =
-        new SszField(
-            HISTORICAL_SUMMARIES_INDEX,
-            BeaconStateFields.HISTORICAL_SUMMARIES,
-            () ->
-                SszListSchema.create(
-                    historicalSummarySchema, specConfig.getHistoricalRootsLimit()));
     final SszField depositRequestsStartIndexField =
         new SszField(
             DEPOSIT_REQUESTS_START_INDEX,
@@ -145,12 +116,8 @@ public class BeaconStateSchemaElectra
                 SszListSchema.create(
                     pendingConsolidationSchema, specConfigElectra.getPendingConsolidationsLimit()));
     return Stream.concat(
-            BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
+            BeaconStateSchemaDeneb.getUniqueFields(specConfig).stream(),
             Stream.of(
-                latestExecutionPayloadHeaderField,
-                nextWithdrawalIndexField,
-                nextWithdrawalValidatorIndexField,
-                historicalSummariesField,
                 depositRequestsStartIndexField,
                 depositBalanceToConsumeField,
                 exitBalanceToConsumeField,
