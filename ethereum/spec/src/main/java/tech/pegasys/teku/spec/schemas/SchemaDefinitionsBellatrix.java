@@ -57,7 +57,7 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
     super(schemaRegistry);
     final SpecConfigBellatrix specConfig =
         SpecConfigBellatrix.required(schemaRegistry.getSpecConfig());
-    final long maxValidatorsPerAttestation = getMaxValidatorPerAttestation(specConfig);
+    final long maxValidatorsPerAttestation = getMaxValidatorsPerAttestation(specConfig);
     this.beaconStateSchema = BeaconStateSchemaBellatrix.create(specConfig);
     this.executionPayloadHeaderSchema = beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.beaconBlockBodySchema =

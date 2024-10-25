@@ -84,7 +84,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaAltairImpl.create(
             specConfig,
-            getMaxValidatorPerAttestation(specConfig),
+            getMaxValidatorsPerAttestation(specConfig),
             "BeaconBlockBodyAltair",
             schemaRegistry);
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockAltair");
@@ -244,7 +244,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   }
 
   @Override
-  long getMaxValidatorPerAttestation(final SpecConfig specConfig) {
+  long getMaxValidatorsPerAttestation(final SpecConfig specConfig) {
     return specConfig.getMaxValidatorsPerCommittee();
   }
 }
