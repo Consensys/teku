@@ -131,7 +131,9 @@ public class GossipHandlerTest {
     assertThat(gossipResult).isNotCompleted();
 
     result.completeExceptionally(new RuntimeException("Failed to gossip"));
-    assertThat(gossipResult).isCompletedExceptionally();
+    assertThatSafeFuture(gossipResult)
+        .isCompletedExceptionallyWith(RuntimeException.class)
+        .hasMessage("Failed to gossip");
   }
 
   @Test
