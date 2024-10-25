@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
-import com.google.common.base.Throwables;
 import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
@@ -74,24 +73,17 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
     }
     LOG.trace("Received message for topic {}", topic);
 
-    PubsubMessage pubsubMessage = message.getOriginalMessage();
-    if (!(pubsubMessage instanceof PreparedPubsubMessage)) {
+    final PubsubMessage pubsubMessage = message.getOriginalMessage();
+    if (!(pubsubMessage instanceof PreparedPubsubMessage gossipPubsubMessage)) {
       throw new IllegalArgumentException(
           "Don't know this PubsubMessage implementation: " + pubsubMessage.getClass());
     }
-    PreparedPubsubMessage gossipPubsubMessage = (PreparedPubsubMessage) pubsubMessage;
     return handler.handleMessage(gossipPubsubMessage.getPreparedMessage());
   }
 
-  public void gossip(final Bytes bytes) {
+  public SafeFuture<Void> gossip(final Bytes bytes) {
     LOG.trace("Gossiping {}: {} bytes", topic, bytes.size());
-    SafeFuture.of(publisher.publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), topic))
-        .finish(
-            () -> LOG.trace("Successfully gossiped message on {}", topic),
-            err ->
-                LOG.debug(
-                    "Failed to gossip message on {}, {}",
-                    topic,
-                    Throwables.getRootCause(err).getMessage()));
+    return SafeFuture.of(publisher.publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), topic))
+        .thenRun(() -> LOG.trace("Successfully gossiped message on {}", topic));
   }
 }

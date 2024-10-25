@@ -53,7 +53,7 @@ public class BlockPublisherPhase0 extends AbstractBlockPublisher {
       final SignedBeaconBlock block,
       final List<BlobSidecar> blobSidecars,
       final BlockPublishingPerformance blockPublishingPerformance) {
-    blockGossipChannel.publishBlock(block);
+    blockGossipChannel.publishBlock(block).ifExceptionGetsHereRaiseABug();
     blockPublishingPerformance.blockPublishingInitiated();
   }
 }
