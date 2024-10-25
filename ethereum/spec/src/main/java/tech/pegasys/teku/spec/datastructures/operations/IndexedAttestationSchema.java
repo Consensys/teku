@@ -28,8 +28,7 @@ public class IndexedAttestationSchema
       final String containerName, final long maxValidatorsPerAttestation) {
     super(
         containerName,
-        namedSchema(
-            "attesting_indices", SszUInt64ListSchema.create(maxValidatorsPerAttestation)),
+        namedSchema("attesting_indices", SszUInt64ListSchema.create(maxValidatorsPerAttestation)),
         namedSchema("data", AttestationData.SSZ_SCHEMA),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
   }
