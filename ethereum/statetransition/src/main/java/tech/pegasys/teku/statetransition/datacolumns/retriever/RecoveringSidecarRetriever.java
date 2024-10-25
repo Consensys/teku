@@ -236,9 +236,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
             recoveryComplete();
           } catch (final Throwable t) {
             LOG.error(
-                "Failed to reconstruct data column sidecars {}",
-                sidecar.getSlotAndBlockRoot()::toLogString,
-                () -> t);
+                "Failed to reconstruct data column sidecars {}", sidecar.getSlotAndBlockRoot(), t);
           }
         }
       }
