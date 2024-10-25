@@ -192,6 +192,11 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   }
 
   @Override
+  public int getBlobSidecarSubnetCount() {
+    return blobSidecarSubnetCountElectra;
+  }
+
+  @Override
   public int getMaxRequestBlobSidecarsElectra() {
     return maxRequestBlobSidecarsElectra;
   }
