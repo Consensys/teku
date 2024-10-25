@@ -14,21 +14,20 @@
 package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public class ExecutionPayloadFuzzInputTest extends AbstractFuzzInputTest<BeaconBlockBodyFuzzInput> {
+public class DepositRequestFuzzInputTest extends AbstractFuzzInputTest<DepositRequestFuzzInput> {
 
   @Override
-  protected SszSchema<BeaconBlockBodyFuzzInput> getInputType() {
-    return BeaconBlockBodyFuzzInput.createSchema(spec.getGenesisSpec());
+  protected SszSchema<DepositRequestFuzzInput> getInputType() {
+    return DepositRequestFuzzInput.createSchema(spec.getGenesisSpec());
   }
 
   @Override
-  protected BeaconBlockBodyFuzzInput createInput() {
+  protected DepositRequestFuzzInput createInput() {
     final BeaconState state = dataStructureUtil.randomBeaconState();
-    final BeaconBlockBodyElectra beaconBlockBody =
-        BeaconBlockBodyElectra.required(dataStructureUtil.randomBeaconBlockBody());
-    return new BeaconBlockBodyFuzzInput(spec, state, beaconBlockBody);
+    final DepositRequest depositRequest = dataStructureUtil.randomDepositRequest();
+    return new DepositRequestFuzzInput(spec, state, depositRequest);
   }
 }

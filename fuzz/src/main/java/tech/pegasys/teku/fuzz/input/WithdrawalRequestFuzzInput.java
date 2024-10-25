@@ -19,43 +19,41 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public class BlsToExecutionChangeFuzzInput
-    extends Container2<BlsToExecutionChangeFuzzInput, BeaconState, SignedBlsToExecutionChange> {
+public class WithdrawalRequestFuzzInput
+    extends Container2<WithdrawalRequestFuzzInput, BeaconState, WithdrawalRequest> {
 
-  public static ContainerSchema2<
-          BlsToExecutionChangeFuzzInput, BeaconState, SignedBlsToExecutionChange>
+  public static ContainerSchema2<WithdrawalRequestFuzzInput, BeaconState, WithdrawalRequest>
       createSchema(final SpecVersion spec) {
     return ContainerSchema2.create(
         SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
         spec.getSchemaDefinitions()
             .toVersionElectra()
             .orElseThrow()
-            .getSignedBlsToExecutionChangeSchema(),
-        BlsToExecutionChangeFuzzInput::new);
+            .getExecutionRequestsSchema()
+            .getWithdrawalRequestsSchema()
+            .getElementSchema(),
+        WithdrawalRequestFuzzInput::new);
   }
 
-  public BlsToExecutionChangeFuzzInput(
-      final ContainerSchema2<BlsToExecutionChangeFuzzInput, BeaconState, SignedBlsToExecutionChange>
-          type,
+  public WithdrawalRequestFuzzInput(
+      final ContainerSchema2<WithdrawalRequestFuzzInput, BeaconState, WithdrawalRequest> type,
       final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public BlsToExecutionChangeFuzzInput(
-      final Spec spec,
-      final BeaconState state,
-      final SignedBlsToExecutionChange blsToExecutionChange) {
-    super(createSchema(spec.atSlot(state.getSlot())), state, blsToExecutionChange);
-  }
-
-  public SignedBlsToExecutionChange getBlsToExecutionChange() {
-    return getField1();
+  public WithdrawalRequestFuzzInput(
+      final Spec spec, final BeaconState state, final WithdrawalRequest depositRequest) {
+    super(createSchema(spec.atSlot(state.getSlot())), state, depositRequest);
   }
 
   public BeaconState getState() {
     return getField0();
+  }
+
+  public WithdrawalRequest getWithdrawalRequest() {
+    return getField1();
   }
 }
