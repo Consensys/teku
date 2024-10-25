@@ -54,6 +54,7 @@ public class BeaconStateSchemaBellatrix
             () ->
                 new ExecutionPayloadHeaderSchemaBellatrix(
                     SpecConfigBellatrix.required(specConfig)));
+
     return Stream.concat(
             BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
             Stream.of(latestExecutionPayloadHeaderField))

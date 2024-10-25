@@ -63,6 +63,7 @@ public class BeaconStateSchemaElectra
     final SpecConfigElectra specConfigElectra = SpecConfigElectra.required(specConfig);
     final PendingConsolidation.PendingConsolidationSchema pendingConsolidationSchema =
         new PendingConsolidation.PendingConsolidationSchema();
+    
     final SszField depositRequestsStartIndexField =
         new SszField(
             DEPOSIT_REQUESTS_START_INDEX,
@@ -115,6 +116,7 @@ public class BeaconStateSchemaElectra
             () ->
                 SszListSchema.create(
                     pendingConsolidationSchema, specConfigElectra.getPendingConsolidationsLimit()));
+
     return Stream.concat(
             BeaconStateSchemaDeneb.getUniqueFields(specConfig).stream(),
             Stream.of(

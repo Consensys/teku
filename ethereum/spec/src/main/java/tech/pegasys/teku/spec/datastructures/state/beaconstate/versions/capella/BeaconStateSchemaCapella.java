@@ -50,6 +50,7 @@ public class BeaconStateSchemaCapella
   public static List<SszField> getUniqueFields(final SpecConfig specConfig) {
     final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema =
         new HistoricalSummary.HistoricalSummarySchema();
+
     final SszField latestExecutionPayloadHeaderField =
         new SszField(
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
@@ -72,6 +73,7 @@ public class BeaconStateSchemaCapella
             () ->
                 SszListSchema.create(
                     historicalSummarySchema, specConfig.getHistoricalRootsLimit()));
+
     return Stream.concat(
             BeaconStateSchemaBellatrix.getUniqueFields(specConfig).stream(),
             Stream.of(

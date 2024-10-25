@@ -48,6 +48,7 @@ public class BeaconStateSchemaDeneb
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
             BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
             () -> new ExecutionPayloadHeaderSchemaDeneb(SpecConfigDeneb.required(specConfig)));
+
     return BeaconStateSchemaCapella.getUniqueFields(specConfig).stream()
         .map(
             field -> {

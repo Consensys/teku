@@ -14,9 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0.CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0.PREVIOUS_EPOCH_PARTICIPATION_FIELD_INDEX;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
+import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
@@ -30,15 +33,14 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSc
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 
 public class BeaconStateSchemaAltair
     extends AbstractBeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> {
 
-  private static final int PREVIOUS_EPOCH_PARTICIPATION_FIELD_INDEX = 15;
-  private static final int CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX = 16;
-  private static final int INACTIVITY_SCORES_FIELD_INDEX = 21;
-  private static final int CURRENT_SYNC_COMMITTEE_FIELD_INDEX = 22;
-  private static final int NEXT_SYNC_COMMITTEE_FIELD_INDEX = 23;
+  public static final int INACTIVITY_SCORES_FIELD_INDEX = 21;
+  public static final int CURRENT_SYNC_COMMITTEE_FIELD_INDEX = 22;
+  public static final int NEXT_SYNC_COMMITTEE_FIELD_INDEX = 23;
 
   @VisibleForTesting
   BeaconStateSchemaAltair(final SpecConfig specConfig) {
@@ -64,7 +66,6 @@ public class BeaconStateSchemaAltair
             () ->
                 SszListSchema.create(
                     SszPrimitiveSchemas.UINT8_SCHEMA, specConfig.getValidatorRegistryLimit()));
-
     final SszField inactivityScores =
         new SszField(
             INACTIVITY_SCORES_FIELD_INDEX,
@@ -80,12 +81,23 @@ public class BeaconStateSchemaAltair
             NEXT_SYNC_COMMITTEE_FIELD_INDEX,
             BeaconStateFields.NEXT_SYNC_COMMITTEE,
             () -> new SyncCommitteeSchema(SpecConfigAltair.required(specConfig)));
-    return List.of(
-        previousEpochAttestationsField,
-        currentEpochAttestationsField,
-        inactivityScores,
-        currentSyncCommitteeField,
-        nextSyncCommitteeField);
+
+    return Stream.concat(
+            BeaconStateSchemaPhase0.getUniqueFields(specConfig).stream(),
+            Stream.of(inactivityScores, currentSyncCommitteeField, nextSyncCommitteeField))
+        .map(
+            field -> {
+              // Replace previousEpochAttestationsField with new version.
+              if (field.getIndex() == PREVIOUS_EPOCH_PARTICIPATION_FIELD_INDEX) {
+                return previousEpochAttestationsField;
+                // Replace currentEpochAttestationsField with new version.
+              } else if (field.getIndex() == CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX) {
+                return currentEpochAttestationsField;
+              } else {
+                return field;
+              }
+            })
+        .toList();
   }
 
   public static BeaconStateSchemaAltair required(final BeaconStateSchema<?, ?> schema) {
