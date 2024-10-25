@@ -65,7 +65,7 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            getMaxValidatorPerAttestation(specConfig),
+            getMaxValidatorsPerAttestation(specConfig),
             "BeaconBlockBodyPhase0",
             schemaRegistry);
     this.metadataMessageSchema = new MetadataMessageSchemaPhase0(specConfig.getNetworkingConfig());
@@ -75,7 +75,7 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   }
 
   @Override
-  long getMaxValidatorPerAttestation(final SpecConfig specConfig) {
+  long getMaxValidatorsPerAttestation(final SpecConfig specConfig) {
     return specConfig.getMaxValidatorsPerCommittee();
   }
 

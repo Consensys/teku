@@ -25,11 +25,10 @@ public class IndexedAttestationSchema
     extends ContainerSchema3<IndexedAttestation, SszUInt64List, AttestationData, SszSignature> {
 
   public IndexedAttestationSchema(
-      final String containerName, final long maxValidatorsPerIndexedAttestation) {
+      final String containerName, final long maxValidatorsPerAttestation) {
     super(
         containerName,
-        namedSchema(
-            "attesting_indices", SszUInt64ListSchema.create(maxValidatorsPerIndexedAttestation)),
+        namedSchema("attesting_indices", SszUInt64ListSchema.create(maxValidatorsPerAttestation)),
         namedSchema("data", AttestationData.SSZ_SCHEMA),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
   }

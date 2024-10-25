@@ -86,14 +86,14 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
         BeaconBlockBodySchemaCapellaImpl.create(
             specConfig,
             signedBlsToExecutionChangeSchema,
-            getMaxValidatorPerAttestation(specConfig),
+            getMaxValidatorsPerAttestation(specConfig),
             "BeaconBlockBodyCapella",
             schemaRegistry);
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaCapellaImpl.create(
             specConfig,
             signedBlsToExecutionChangeSchema,
-            getMaxValidatorPerAttestation(specConfig),
+            getMaxValidatorsPerAttestation(specConfig),
             "BlindedBlockBodyCapella",
             schemaRegistry);
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockCapella");
