@@ -88,7 +88,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     super(schemaRegistry);
     final SpecConfigElectra specConfig = SpecConfigElectra.required(schemaRegistry.getSpecConfig());
 
-    final long maxValidatorsPerAttestation = getMaxValidatorPerAttestation(specConfig);
+    final long maxValidatorsPerAttestation = getMaxValidatorsPerAttestation(specConfig);
 
     this.executionRequestsSchema = new ExecutionRequestsSchema(specConfig);
     this.beaconStateSchema = BeaconStateSchemaElectra.create(specConfig);
@@ -299,7 +299,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   }
 
   @Override
-  long getMaxValidatorPerAttestation(final SpecConfig specConfig) {
+  long getMaxValidatorsPerAttestation(final SpecConfig specConfig) {
     return (long) specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
   }
 }
