@@ -38,9 +38,9 @@ import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSu
 
 public class BeaconStateSchemaCapella
     extends AbstractBeaconStateSchema<BeaconStateCapella, MutableBeaconStateCapella> {
-  public static final int NEXT_WITHDRAWAL_INDEX = 25;
-  public static final int NEXT_WITHDRAWAL_VALIDATOR_INDEX = 26;
-  public static final int HISTORICAL_SUMMARIES_INDEX = 27;
+  public static final int NEXT_WITHDRAWAL_INDEX_FIELD_INDEX = 25;
+  public static final int NEXT_WITHDRAWAL_VALIDATOR_INDEX_FIELD_INDEX = 26;
+  public static final int HISTORICAL_SUMMARIES_FIELD_INDEX = 27;
 
   @VisibleForTesting
   BeaconStateSchemaCapella(final SpecConfig specConfig) {
@@ -63,15 +63,15 @@ public class BeaconStateSchemaCapella
     final List<SszField> newFields =
         List.of(
             new SszField(
-                NEXT_WITHDRAWAL_INDEX,
+                NEXT_WITHDRAWAL_INDEX_FIELD_INDEX,
                 BeaconStateFields.NEXT_WITHDRAWAL_INDEX,
                 () -> SszPrimitiveSchemas.UINT64_SCHEMA),
             new SszField(
-                NEXT_WITHDRAWAL_VALIDATOR_INDEX,
+                NEXT_WITHDRAWAL_VALIDATOR_INDEX_FIELD_INDEX,
                 BeaconStateFields.NEXT_WITHDRAWAL_VALIDATOR_INDEX,
                 () -> SszPrimitiveSchemas.UINT64_SCHEMA),
             new SszField(
-                HISTORICAL_SUMMARIES_INDEX,
+                HISTORICAL_SUMMARIES_FIELD_INDEX,
                 BeaconStateFields.HISTORICAL_SUMMARIES,
                 () ->
                     SszListSchema.create(
