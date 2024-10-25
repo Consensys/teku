@@ -40,15 +40,15 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingParti
 
 public class BeaconStateSchemaElectra
     extends AbstractBeaconStateSchema<BeaconStateElectra, MutableBeaconStateElectra> {
-  public static final int DEPOSIT_REQUESTS_START_INDEX = 28;
-  public static final int DEPOSIT_BALANCE_TO_CONSUME_INDEX = 29;
-  public static final int EXIT_BALANCE_TO_CONSUME_INDEX = 30;
-  public static final int EARLIEST_EXIT_EPOCH_INDEX = 31;
-  public static final int CONSOLIDATION_BALANCE_TO_CONSUME_INDEX = 32;
-  public static final int EARLIEST_CONSOLIDATION_EPOCH_INDEX = 33;
-  public static final int PENDING_DEPOSITS_INDEX = 34;
-  public static final int PENDING_PARTIAL_WITHDRAWALS_INDEX = 35;
-  public static final int PENDING_CONSOLIDATIONS_INDEX = 36;
+  public static final int DEPOSIT_REQUESTS_START_INDEX_FIELD_INDEX = 28;
+  public static final int DEPOSIT_BALANCE_TO_CONSUME_FIELD_INDEX = 29;
+  public static final int EXIT_BALANCE_TO_CONSUME_FIELD_INDEX = 30;
+  public static final int EARLIEST_EXIT_EPOCH_FIELD_INDEX = 31;
+  public static final int CONSOLIDATION_BALANCE_TO_CONSUME_FIELD_INDEX = 32;
+  public static final int EARLIEST_CONSOLIDATION_EPOCH_FIELD_INDEX = 33;
+  public static final int PENDING_DEPOSITS_FIELD_INDEX = 34;
+  public static final int PENDING_PARTIAL_WITHDRAWALS_FIELD_INDEX = 35;
+  public static final int PENDING_CONSOLIDATIONS_FIELD_INDEX = 36;
 
   @VisibleForTesting
   BeaconStateSchemaElectra(final SpecConfig specConfig) {
@@ -67,44 +67,44 @@ public class BeaconStateSchemaElectra
     final List<SszField> newFields =
         List.of(
             new SszField(
-                DEPOSIT_REQUESTS_START_INDEX,
+                DEPOSIT_REQUESTS_START_INDEX_FIELD_INDEX,
                 BeaconStateFields.DEPOSIT_REQUESTS_START_INDEX,
                 () -> SszPrimitiveSchemas.UINT64_SCHEMA),
             new SszField(
-                DEPOSIT_BALANCE_TO_CONSUME_INDEX,
+                DEPOSIT_BALANCE_TO_CONSUME_FIELD_INDEX,
                 BeaconStateFields.DEPOSIT_BALANCE_TO_CONSUME,
                 () -> SszPrimitiveSchemas.UINT64_SCHEMA),
             new SszField(
-                EXIT_BALANCE_TO_CONSUME_INDEX,
+                EXIT_BALANCE_TO_CONSUME_FIELD_INDEX,
                 BeaconStateFields.EXIT_BALANCE_TO_CONSUME,
                 () -> SszPrimitiveSchemas.UINT64_SCHEMA),
             new SszField(
-                EARLIEST_EXIT_EPOCH_INDEX,
+                EARLIEST_EXIT_EPOCH_FIELD_INDEX,
                 BeaconStateFields.EARLIEST_EXIT_EPOCH,
                 () -> SszPrimitiveSchemas.UINT64_SCHEMA),
             new SszField(
-                CONSOLIDATION_BALANCE_TO_CONSUME_INDEX,
+                CONSOLIDATION_BALANCE_TO_CONSUME_FIELD_INDEX,
                 BeaconStateFields.CONSOLIDATION_BALANCE_TO_CONSUME,
                 () -> SszPrimitiveSchemas.UINT64_SCHEMA),
             new SszField(
-                EARLIEST_CONSOLIDATION_EPOCH_INDEX,
+                EARLIEST_CONSOLIDATION_EPOCH_FIELD_INDEX,
                 BeaconStateFields.EARLIEST_CONSOLIDATION_EPOCH,
                 () -> SszPrimitiveSchemas.UINT64_SCHEMA),
             new SszField(
-                PENDING_DEPOSITS_INDEX,
+                PENDING_DEPOSITS_FIELD_INDEX,
                 BeaconStateFields.PENDING_DEPOSITS,
                 () ->
                     SszListSchema.create(
                         pendingDepositSchema, specConfigElectra.getPendingDepositsLimit())),
             new SszField(
-                PENDING_PARTIAL_WITHDRAWALS_INDEX,
+                PENDING_PARTIAL_WITHDRAWALS_FIELD_INDEX,
                 BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS,
                 () ->
                     SszListSchema.create(
                         pendingPartialWithdrawalSchema,
                         specConfigElectra.getPendingPartialWithdrawalsLimit())),
             new SszField(
-                PENDING_CONSOLIDATIONS_INDEX,
+                PENDING_CONSOLIDATIONS_FIELD_INDEX,
                 BeaconStateFields.PENDING_CONSOLIDATIONS,
                 () ->
                     SszListSchema.create(
