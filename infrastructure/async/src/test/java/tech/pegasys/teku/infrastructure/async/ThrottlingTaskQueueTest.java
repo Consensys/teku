@@ -16,7 +16,6 @@ package tech.pegasys.teku.infrastructure.async;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -48,7 +47,7 @@ public class ThrottlingTaskQueueTest {
                           });
                   return taskQueue.queueTask(() -> request);
                 })
-            .collect(Collectors.toList());
+            .toList();
 
     assertThat(getQueuedTasksGaugeValue()).isEqualTo(97);
     assertThat(taskQueue.getInflightTaskCount()).isEqualTo(3);
