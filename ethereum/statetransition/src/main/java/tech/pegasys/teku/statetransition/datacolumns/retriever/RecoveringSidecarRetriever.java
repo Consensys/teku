@@ -236,7 +236,9 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
             recoveryComplete();
           } catch (final Throwable t) {
             LOG.error(
-                "Failed to reconstruct data column sidecar {}", sidecar::toLogString, () -> t);
+                "Failed to reconstruct data column sidecars {}",
+                sidecar.getSlotAndBlockRoot()::toLogString,
+                () -> t);
           }
         }
       }
@@ -244,12 +246,12 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
 
     private void recoveryComplete() {
       recovered = true;
-      totalDataAvailabilityReconstructedColumns.inc(
-          promisesByColIdx.values().stream().mapToInt(List::size).sum());
+      int totalPromises = promisesByColIdx.values().stream().mapToInt(List::size).sum();
+      totalDataAvailabilityReconstructedColumns.inc(totalPromises);
       LOG.info(
           "[nyota] Recovery: completed for the slot {}, requests complete: {}",
           block.getSlot(),
-          promisesByColIdx.values().stream().mapToInt(List::size).sum());
+          totalPromises);
 
       promisesByColIdx.forEach(
           (key, value) -> {
