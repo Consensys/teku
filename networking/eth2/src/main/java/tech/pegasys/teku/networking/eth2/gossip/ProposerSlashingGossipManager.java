@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
@@ -44,11 +45,13 @@ public class ProposerSlashingGossipManager extends AbstractGossipManager<Propose
         forkInfo,
         processor,
         ProposerSlashing.SSZ_SCHEMA,
+        message -> Optional.of(message.getHeader1().getMessage().getSlot()),
         message ->
             recentChainData
                 .getSpec()
                 .computeEpochAtSlot(message.getHeader1().getMessage().getSlot()),
         networkingConfig,
+        GossipFailureLogger.createNonSuppressing(GossipTopicName.PROPOSER_SLASHING.toString()),
         debugDataDumper);
   }
 

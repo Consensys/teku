@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.spec.schemas;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATE_AND_PROOF_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
+
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
@@ -56,13 +59,13 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
     this.attesterSlashingSchema = schemaRegistry.get(SchemaTypes.ATTESTER_SLASHING_SCHEMA);
 
     this.attestationSchema = schemaRegistry.get(SchemaTypes.ATTESTATION_SCHEMA);
-    this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema);
-    this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(aggregateAndProofSchema);
+    this.aggregateAndProofSchema = schemaRegistry.get(AGGREGATE_AND_PROOF_SCHEMA);
+    this.signedAggregateAndProofSchema = schemaRegistry.get(SIGNED_AGGREGATE_AND_PROOF_SCHEMA);
     this.beaconStateSchema = BeaconStateSchemaPhase0.create(specConfig);
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            getMaxValidatorPerAttestation(specConfig),
+            getMaxValidatorsPerAttestation(specConfig),
             "BeaconBlockBodyPhase0",
             schemaRegistry);
     this.metadataMessageSchema = new MetadataMessageSchemaPhase0(specConfig.getNetworkingConfig());
@@ -72,7 +75,7 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   }
 
   @Override
-  long getMaxValidatorPerAttestation(final SpecConfig specConfig) {
+  long getMaxValidatorsPerAttestation(final SpecConfig specConfig) {
     return specConfig.getMaxValidatorsPerCommittee();
   }
 

@@ -32,18 +32,19 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   private UInt64 electraForkEpoch;
 
   private UInt64 minPerEpochChurnLimitElectra;
+
   private UInt64 minActivationBalance;
   private UInt64 maxEffectiveBalanceElectra;
+  private Integer minSlashingPenaltyQuotientElectra;
+  private Integer whistleblowerRewardQuotientElectra;
   private Integer pendingDepositsLimit;
   private Integer pendingPartialWithdrawalsLimit;
   private Integer pendingConsolidationsLimit;
-  private Integer minSlashingPenaltyQuotientElectra;
-  private Integer whistleblowerRewardQuotientElectra;
   private Integer maxAttesterSlashingsElectra;
   private Integer maxAttestationsElectra;
-  private Integer maxConsolidationRequestsPerPayload;
   private Integer maxDepositRequestsPerPayload;
   private Integer maxWithdrawalRequestsPerPayload;
+  private Integer maxConsolidationRequestsPerPayload;
   private Integer maxPendingPartialsPerWithdrawalsSweep;
   private Integer maxPendingDepositsPerEpoch;
 
@@ -58,29 +59,29 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
         minPerEpochChurnLimitElectra,
         minActivationBalance,
         maxEffectiveBalanceElectra,
+        minSlashingPenaltyQuotientElectra,
+        whistleblowerRewardQuotientElectra,
         pendingDepositsLimit,
         pendingPartialWithdrawalsLimit,
         pendingConsolidationsLimit,
-        minSlashingPenaltyQuotientElectra,
-        whistleblowerRewardQuotientElectra,
         maxAttesterSlashingsElectra,
         maxAttestationsElectra,
-        maxConsolidationRequestsPerPayload,
         maxDepositRequestsPerPayload,
         maxWithdrawalRequestsPerPayload,
+        maxConsolidationRequestsPerPayload,
         maxPendingPartialsPerWithdrawalsSweep,
         maxPendingDepositsPerEpoch);
-  }
-
-  public ElectraBuilder electraForkEpoch(final UInt64 electraForkEpoch) {
-    checkNotNull(electraForkEpoch);
-    this.electraForkEpoch = electraForkEpoch;
-    return this;
   }
 
   public ElectraBuilder electraForkVersion(final Bytes4 electraForkVersion) {
     checkNotNull(electraForkVersion);
     this.electraForkVersion = electraForkVersion;
+    return this;
+  }
+
+  public ElectraBuilder electraForkEpoch(final UInt64 electraForkEpoch) {
+    checkNotNull(electraForkEpoch);
+    this.electraForkEpoch = electraForkEpoch;
     return this;
   }
 
@@ -99,6 +100,20 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   public ElectraBuilder maxEffectiveBalanceElectra(final UInt64 maxEffectiveBalanceElectra) {
     checkNotNull(maxEffectiveBalanceElectra);
     this.maxEffectiveBalanceElectra = maxEffectiveBalanceElectra;
+    return this;
+  }
+
+  public ElectraBuilder minSlashingPenaltyQuotientElectra(
+      final Integer minSlashingPenaltyQuotientElectra) {
+    checkNotNull(minSlashingPenaltyQuotientElectra);
+    this.minSlashingPenaltyQuotientElectra = minSlashingPenaltyQuotientElectra;
+    return this;
+  }
+
+  public ElectraBuilder whistleblowerRewardQuotientElectra(
+      final Integer whistleblowerRewardQuotientElectra) {
+    checkNotNull(whistleblowerRewardQuotientElectra);
+    this.whistleblowerRewardQuotientElectra = whistleblowerRewardQuotientElectra;
     return this;
   }
 
@@ -121,20 +136,6 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     return this;
   }
 
-  public ElectraBuilder minSlashingPenaltyQuotientElectra(
-      final Integer minSlashingPenaltyQuotientElectra) {
-    checkNotNull(minSlashingPenaltyQuotientElectra);
-    this.minSlashingPenaltyQuotientElectra = minSlashingPenaltyQuotientElectra;
-    return this;
-  }
-
-  public ElectraBuilder whistleblowerRewardQuotientElectra(
-      final Integer whistleblowerRewardQuotientElectra) {
-    checkNotNull(whistleblowerRewardQuotientElectra);
-    this.whistleblowerRewardQuotientElectra = whistleblowerRewardQuotientElectra;
-    return this;
-  }
-
   public ElectraBuilder maxAttesterSlashingsElectra(final Integer maxAttesterSlashingsElectra) {
     checkNotNull(maxAttesterSlashingsElectra);
     this.maxAttesterSlashingsElectra = maxAttesterSlashingsElectra;
@@ -144,13 +145,6 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   public ElectraBuilder maxAttestationsElectra(final Integer maxAttestationsElectra) {
     checkNotNull(maxAttestationsElectra);
     this.maxAttestationsElectra = maxAttestationsElectra;
-    return this;
-  }
-
-  public ElectraBuilder maxConsolidationRequestsPerPayload(
-      final Integer maxConsolidationsRequestPerPayload) {
-    checkNotNull(maxConsolidationsRequestPerPayload);
-    this.maxConsolidationRequestsPerPayload = maxConsolidationsRequestPerPayload;
     return this;
   }
 
@@ -164,6 +158,13 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
       final Integer maxWithdrawalRequestsPerPayload) {
     checkNotNull(maxWithdrawalRequestsPerPayload);
     this.maxWithdrawalRequestsPerPayload = maxWithdrawalRequestsPerPayload;
+    return this;
+  }
+
+  public ElectraBuilder maxConsolidationRequestsPerPayload(
+      final Integer maxConsolidationsRequestPerPayload) {
+    checkNotNull(maxConsolidationsRequestPerPayload);
+    this.maxConsolidationRequestsPerPayload = maxConsolidationsRequestPerPayload;
     return this;
   }
 

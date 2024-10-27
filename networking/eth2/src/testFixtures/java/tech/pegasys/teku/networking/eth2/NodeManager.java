@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelExceptionHandler;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -52,23 +53,26 @@ public class NodeManager {
 
   public static NodeManager create(
       final Spec spec,
+      final AsyncRunner asyncRunner,
       final Eth2P2PNetworkFactory networkFactory,
       final List<BLSKeyPair> validatorKeys)
       throws Exception {
-    return create(spec, networkFactory, validatorKeys, c -> {});
+    return create(spec, asyncRunner, networkFactory, validatorKeys, c -> {});
   }
 
   @Deprecated
   public static NodeManager create(
+      final AsyncRunner asyncRunner,
       final Eth2P2PNetworkFactory networkFactory,
       final List<BLSKeyPair> validatorKeys,
       final Consumer<Eth2P2PNetworkBuilder> configureNetwork)
       throws Exception {
-    return create(DEFAULT_SPEC, networkFactory, validatorKeys, configureNetwork);
+    return create(DEFAULT_SPEC, asyncRunner, networkFactory, validatorKeys, configureNetwork);
   }
 
   public static NodeManager create(
       final Spec spec,
+      final AsyncRunner asyncRunner,
       final Eth2P2PNetworkFactory networkFactory,
       final List<BLSKeyPair> validatorKeys,
       final Consumer<Eth2P2PNetworkBuilder> configureNetwork)
@@ -76,11 +80,12 @@ public class NodeManager {
     final RecentChainData storageClient = MemoryOnlyRecentChainData.create(spec);
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(spec, storageClient, validatorKeys);
     chainUtil.initializeStorage();
-    return create(spec, networkFactory, configureNetwork, storageClient, chainUtil);
+    return create(spec, asyncRunner, networkFactory, configureNetwork, storageClient, chainUtil);
   }
 
   public static NodeManager create(
       final Spec spec,
+      final AsyncRunner asyncRunner,
       final Eth2P2PNetworkFactory networkFactory,
       final Consumer<Eth2P2PNetworkBuilder> configureNetwork,
       final RecentChainData storageClient,
@@ -100,7 +105,7 @@ public class NodeManager {
     configureNetwork.accept(networkBuilder);
 
     final BlockGossipChannel blockGossipChannel =
-        eventChannels.getPublisher(BlockGossipChannel.class);
+        eventChannels.getPublisher(BlockGossipChannel.class, asyncRunner);
 
     final Eth2P2PNetwork eth2P2PNetwork = networkBuilder.startNetwork();
     return new NodeManager(blockGossipChannel, storageClient, chainUtil, eth2P2PNetwork);
@@ -125,6 +130,6 @@ public class NodeManager {
   }
 
   public void gossipBlock(final SignedBeaconBlock block) {
-    blockGossipChannel.publishBlock(block);
+    blockGossipChannel.publishBlock(block).ifExceptionGetsHereRaiseABug();
   }
 }

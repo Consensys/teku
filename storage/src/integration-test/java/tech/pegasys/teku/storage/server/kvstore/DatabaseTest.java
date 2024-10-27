@@ -2207,7 +2207,8 @@ public class DatabaseTest {
         spec.computeEpochAtSlot(finalizedBlock.getSlot()).plus(1), finalizedBlock);
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
 
-    final UInt64 lastPrunedSlot1 = database.pruneFinalizedBlocks(UInt64.valueOf(3), 100);
+    final UInt64 lastPrunedSlot1 =
+        database.pruneFinalizedBlocks(UInt64.valueOf(3), 100, UInt64.valueOf(10));
     assertThat(lastPrunedSlot1).isEqualTo(UInt64.valueOf(3));
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(0))).isEmpty();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(1))).isEmpty();
@@ -2217,14 +2218,87 @@ public class DatabaseTest {
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(5))).isPresent();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
 
-    final UInt64 lastPrunedSlot2 = database.pruneFinalizedBlocks(UInt64.valueOf(5), 1);
+    final UInt64 lastPrunedSlot2 =
+        database.pruneFinalizedBlocks(UInt64.valueOf(5), 1, UInt64.valueOf(10));
     assertThat(lastPrunedSlot2).isEqualTo(UInt64.valueOf(4));
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(4))).isEmpty();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(5))).isPresent();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
 
-    final UInt64 lastPrunedSlot3 = database.pruneFinalizedBlocks(UInt64.valueOf(4), 1);
+    final UInt64 lastPrunedSlot3 =
+        database.pruneFinalizedBlocks(UInt64.valueOf(4), 1, UInt64.valueOf(10));
     assertThat(lastPrunedSlot3).isEqualTo(UInt64.valueOf(4));
+  }
+
+  @TestTemplate
+  public void pruneFinalizedBlocks_UpdatesEarliestAvailableBlockSlot(final DatabaseContext context)
+      throws Exception {
+    initialize(context, StateStorageMode.ARCHIVE);
+    final List<SignedBlockAndState> blockAndStates = chainBuilder.generateBlocksUpToSlot(5);
+    addBlocks(blockAndStates);
+    // Block 7 skipped simulating it was an empty block
+    final SignedBlockAndState finalizedBlock = chainBuilder.generateBlockAtSlot(7);
+    addBlocks(finalizedBlock);
+    justifyAndFinalizeEpoch(
+        spec.computeEpochAtSlot(finalizedBlock.getSlot()).plus(1), finalizedBlock);
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isEmpty();
+
+    final UInt64 lastPrunedSlot1 =
+        database.pruneFinalizedBlocks(UInt64.valueOf(3), 100, UInt64.valueOf(10));
+    assertThat(lastPrunedSlot1).isEqualTo(UInt64.valueOf(3));
+    assertThat(database.getEarliestAvailableBlockSlot()).isEqualTo(Optional.of(UInt64.valueOf(4)));
+
+    final UInt64 lastPrunedSlot2 =
+        database.pruneFinalizedBlocks(UInt64.valueOf(5), 10, UInt64.valueOf(10));
+    assertThat(lastPrunedSlot2).isEqualTo(UInt64.valueOf(5));
+    // there's no slot 6 because that was purposely skipped so we expect the earliest available
+    // block slot to be 7
+    assertThat(database.getEarliestAvailableBlockSlot()).isEqualTo(Optional.of(UInt64.valueOf(7)));
+  }
+
+  @TestTemplate
+  public void pruneFinalizedBlocks_UpdatesEarliestAvailableBlockSlotWhenLimited(
+      final DatabaseContext context) throws Exception {
+    initialize(context, StateStorageMode.ARCHIVE);
+    final List<SignedBlockAndState> blockAndStates = chainBuilder.generateBlocksUpToSlot(5);
+    addBlocks(blockAndStates);
+    // Block 7 skipped simulating it was an empty block
+    final SignedBlockAndState finalizedBlock = chainBuilder.generateBlockAtSlot(7);
+    addBlocks(finalizedBlock);
+    justifyAndFinalizeEpoch(
+        spec.computeEpochAtSlot(finalizedBlock.getSlot()).plus(1), finalizedBlock);
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isEmpty();
+
+    final UInt64 lastPrunedSlot1 =
+        database.pruneFinalizedBlocks(UInt64.valueOf(3), 2, UInt64.valueOf(10));
+    assertThat(lastPrunedSlot1).isEqualTo(UInt64.valueOf(1));
+    assertThat(database.getEarliestAvailableBlockSlot()).isEqualTo(Optional.of(UInt64.valueOf(2)));
+
+    final UInt64 lastPrunedSlot2 =
+        database.pruneFinalizedBlocks(UInt64.valueOf(5), 10, UInt64.valueOf(10));
+    assertThat(lastPrunedSlot2).isEqualTo(UInt64.valueOf(5));
+    // there's no slot 6 because that was purposely skipped so we expect the earliest available
+    // block slot to be 7
+    assertThat(database.getEarliestAvailableBlockSlot()).isEqualTo(Optional.of(UInt64.valueOf(7)));
+  }
+
+  @TestTemplate
+  public void
+      pruneFinalizedBlocks_ClearEarliestAvailableBlockSlotVariableWhenNoBlocksLeftAfterPrune(
+          final DatabaseContext context) throws Exception {
+    initialize(context, StateStorageMode.ARCHIVE);
+    final List<SignedBlockAndState> blockAndStates = chainBuilder.generateBlocksUpToSlot(5);
+    addBlocks(blockAndStates);
+    // Block 7 skipped simulating it was an empty block
+    final SignedBlockAndState finalizedBlock = chainBuilder.generateBlockAtSlot(7);
+    addBlocks(finalizedBlock);
+    justifyAndFinalizeEpoch(
+        spec.computeEpochAtSlot(finalizedBlock.getSlot()).plus(1), finalizedBlock);
+
+    final UInt64 lastPrunedSlot1 =
+        database.pruneFinalizedBlocks(UInt64.valueOf(7), 10, UInt64.valueOf(10));
+    assertThat(lastPrunedSlot1).isEqualTo(UInt64.valueOf(7));
+    assertThat(database.getEarliestAvailableBlockSlot()).isEqualTo(Optional.empty());
   }
 
   private List<Map.Entry<Bytes32, UInt64>> getFinalizedStateRootsList() {

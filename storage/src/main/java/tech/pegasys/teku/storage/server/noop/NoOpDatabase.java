@@ -226,7 +226,8 @@ public class NoOpDatabase implements Database {
   public void setFinalizedDepositSnapshot(final DepositTreeSnapshot finalizedDepositSnapshot) {}
 
   @Override
-  public UInt64 pruneFinalizedBlocks(final UInt64 lastSlotToPrune, final int pruneLimit) {
+  public UInt64 pruneFinalizedBlocks(
+      final UInt64 lastSlotToPrune, final int pruneLimit, final UInt64 checkpointInitialSlot) {
     return lastSlotToPrune;
   }
 

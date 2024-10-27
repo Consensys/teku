@@ -93,12 +93,12 @@ class SyncCommitteeMessageValidatorTest {
                 chainBuilder.getLatestEpoch(),
                 message.getValidatorIndex());
     final int validSubnetId = assignments.getAssignedSubcommittees().iterator().nextInt();
-    final ValidatableSyncCommitteeMessage validateableMessage =
+    final ValidatableSyncCommitteeMessage validatableMessage =
         ValidatableSyncCommitteeMessage.fromNetwork(message, validSubnetId);
 
-    assertThat(validator.validate(validateableMessage)).isCompletedWithValue(ACCEPT);
+    assertThat(validator.validate(validatableMessage)).isCompletedWithValue(ACCEPT);
     // Should store the computed subcommittee assignments for the validator.
-    assertThat(validateableMessage.getSubcommitteeAssignments()).contains(assignments);
+    assertThat(validatableMessage.getSubcommitteeAssignments()).contains(assignments);
   }
 
   @Test
@@ -128,16 +128,16 @@ class SyncCommitteeMessageValidatorTest {
             syncCommitteeUtil.getEpochForDutiesAtSlot(lastSlotOfPeriod),
             message.getValidatorIndex());
     final int validSubnetId = assignments.getAssignedSubcommittees().iterator().nextInt();
-    final ValidatableSyncCommitteeMessage validateableMessage =
+    final ValidatableSyncCommitteeMessage validatableMessage =
         ValidatableSyncCommitteeMessage.fromNetwork(message, validSubnetId);
     timeProvider.advanceTimeByMillis(
         spec.getSlotStartTime(lastSlotOfPeriod, recentChainData.getGenesisTime())
             .times(1000)
             .longValue());
 
-    assertThat(validator.validate(validateableMessage)).isCompletedWithValue(ACCEPT);
+    assertThat(validator.validate(validatableMessage)).isCompletedWithValue(ACCEPT);
     // Should store the computed subcommittee assignments for the validator.
-    assertThat(validateableMessage.getSubcommitteeAssignments()).contains(assignments);
+    assertThat(validatableMessage.getSubcommitteeAssignments()).contains(assignments);
   }
 
   @Test
@@ -354,9 +354,9 @@ class SyncCommitteeMessageValidatorTest {
                 chainBuilder.getLatestEpoch(),
                 message.getValidatorIndex());
     final int validSubnetId = assignments.getAssignedSubcommittees().iterator().nextInt();
-    final ValidatableSyncCommitteeMessage validateableMessage =
+    final ValidatableSyncCommitteeMessage validatableMessage =
         ValidatableSyncCommitteeMessage.fromNetwork(message, validSubnetId);
-    assertThat(validator.validate(validateableMessage)).isCompletedWithValue(ACCEPT);
+    assertThat(validator.validate(validatableMessage)).isCompletedWithValue(ACCEPT);
   }
 
   @Test
@@ -380,42 +380,41 @@ class SyncCommitteeMessageValidatorTest {
                 chainBuilder.getLatestEpoch(),
                 message.getValidatorIndex());
     final int validSubnetId = assignments.getAssignedSubcommittees().iterator().nextInt();
-    final ValidatableSyncCommitteeMessage validateableMessage =
+    final ValidatableSyncCommitteeMessage validatableMessage =
         ValidatableSyncCommitteeMessage.fromNetwork(message, validSubnetId);
-    assertThat(validator.validate(validateableMessage)).isCompletedWithValue(ACCEPT);
+    assertThat(validator.validate(validatableMessage)).isCompletedWithValue(ACCEPT);
   }
 
   private ValidatableSyncCommitteeMessage fromValidatorSpy(
       final SyncCommitteeMessage message, final IntSet subcommitteeIds) {
-    final ValidatableSyncCommitteeMessage validateableMessage =
+    final ValidatableSyncCommitteeMessage validatableMessage =
         ValidatableSyncCommitteeMessage.fromValidator(message);
-    return createSpy(validateableMessage, subcommitteeIds);
+    return createSpy(validatableMessage, subcommitteeIds);
   }
 
   private ValidatableSyncCommitteeMessage fromNetworkSpy(
       final SyncCommitteeMessage message,
       final int receivedSubnetId,
       final IntSet subcommitteeIds) {
-    final ValidatableSyncCommitteeMessage validateableMessage =
+    final ValidatableSyncCommitteeMessage validatableMessage =
         ValidatableSyncCommitteeMessage.fromNetwork(message, receivedSubnetId);
-    return createSpy(validateableMessage, subcommitteeIds);
+    return createSpy(validatableMessage, subcommitteeIds);
   }
 
   private ValidatableSyncCommitteeMessage createSpy(
-      final ValidatableSyncCommitteeMessage validateableMessage, final IntSet subcommitteeIds) {
+      final ValidatableSyncCommitteeMessage validatableMessage, final IntSet subcommitteeIds) {
     // Create spies
-    final ValidatableSyncCommitteeMessage validateableMessageSpy = spy(validateableMessage);
-    validateableMessage.calculateAssignments(
-        spec, chainBuilder.getLatestBlockAndState().getState());
+    final ValidatableSyncCommitteeMessage validatableMessageSpy = spy(validatableMessage);
+    validatableMessage.calculateAssignments(spec, chainBuilder.getLatestBlockAndState().getState());
     SyncSubcommitteeAssignments assignments =
-        validateableMessage.getSubcommitteeAssignments().orElseThrow();
+        validatableMessage.getSubcommitteeAssignments().orElseThrow();
     SyncSubcommitteeAssignments assignmentsSpy = spy(assignments);
 
     // Overwrite some functionality
-    doReturn(assignmentsSpy).when(validateableMessageSpy).calculateAssignments(any(), any());
-    doReturn(Optional.of(assignmentsSpy)).when(validateableMessageSpy).getSubcommitteeAssignments();
+    doReturn(assignmentsSpy).when(validatableMessageSpy).calculateAssignments(any(), any());
+    doReturn(Optional.of(assignmentsSpy)).when(validatableMessageSpy).getSubcommitteeAssignments();
     doReturn(subcommitteeIds).when(assignmentsSpy).getAssignedSubcommittees();
 
-    return validateableMessageSpy;
+    return validatableMessageSpy;
   }
 }
