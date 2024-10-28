@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.client;
 
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
@@ -475,7 +474,7 @@ class RecentChainDataTest {
             .streamValidAttestationsForBlockAtSlot(ONE)
             .map(attestation -> BlockOptions.create().addAttestation(attestation))
             .limit(2)
-            .collect(toList());
+            .toList();
     final ChainBuilder forkBuilder = chainBuilder.fork();
     final SignedBlockAndState latestBlockAndState =
         chainBuilder.generateBlockAtSlot(UInt64.valueOf(2), blockOptions.get(0));
@@ -520,7 +519,7 @@ class RecentChainDataTest {
             .streamValidAttestationsForBlockAtSlot(ONE)
             .map(attestation -> BlockOptions.create().addAttestation(attestation))
             .limit(2)
-            .collect(toList());
+            .toList();
     final ChainBuilder forkBuilder = chainBuilder.fork();
     final SignedBlockAndState latestBlockAndState =
         chainBuilder.generateBlockAtSlot(UInt64.valueOf(2), blockOptions.get(0));
@@ -871,7 +870,7 @@ class RecentChainDataTest {
             .streamValidAttestationsForBlockAtSlot(ONE)
             .map(attestation -> BlockOptions.create().addAttestation(attestation))
             .limit(2)
-            .collect(toList());
+            .toList();
     final ChainBuilder forkBuilder = chainBuilder.fork();
 
     final SignedBlockAndState firstBlockAndState =
@@ -965,9 +964,7 @@ class RecentChainDataTest {
     // Check that only recent, canonical blocks at or after the latest finalized block are left in
     // the store
     final List<SignedBlockAndState> expectedBlocks =
-        chainBuilder
-            .streamBlocksAndStates(finalizedCheckpoint.getEpochStartSlot(spec))
-            .collect(Collectors.toList());
+        chainBuilder.streamBlocksAndStates(finalizedCheckpoint.getEpochStartSlot(spec)).toList();
     final Set<Bytes32> blockRoots =
         expectedBlocks.stream().map(SignedBlockAndState::getRoot).collect(Collectors.toSet());
     // Collect blocks that should be pruned

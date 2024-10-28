@@ -178,7 +178,7 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
             .distinct()
             .filter(i -> i >= 0 && i < data.size())
             .boxed()
-            .collect(Collectors.toList());
+            .toList();
 
     SszComposite<SszData> origData = data.commitChanges();
 

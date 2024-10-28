@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.assertj.core.api.Assertions;
@@ -34,7 +33,7 @@ public interface SszDataTestBase {
 
   // workaround for https://github.com/junit-team/junit5/issues/1477
   static Stream<Arguments> passWhenEmpty(final Stream<Arguments> args) {
-    List<Arguments> list = args.collect(Collectors.toList());
+    List<Arguments> list = args.toList();
     Assumptions.assumeFalse(list.isEmpty());
     return list.stream();
   }
