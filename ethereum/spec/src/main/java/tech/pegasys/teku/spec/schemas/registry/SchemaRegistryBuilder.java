@@ -119,13 +119,13 @@ public class SchemaRegistryBuilder {
             (registry, specConfig) ->
                 new IndexedAttestationSchema(
                     INDEXED_ATTESTATION_SCHEMA.getContainerName(registry.getMilestone()),
-                    getMaxValidatorPerAttestationPhase0(specConfig)))
+                    getMaxValidatorsPerAttestationPhase0(specConfig)))
         .withCreator(
             ELECTRA,
             (registry, specConfig) ->
                 new IndexedAttestationSchema(
                     INDEXED_ATTESTATION_SCHEMA.getContainerName(registry.getMilestone()),
-                    getMaxValidatorPerAttestationElectra(specConfig)))
+                    getMaxValidatorsPerAttestationElectra(specConfig)))
         .build();
   }
 
@@ -134,13 +134,13 @@ public class SchemaRegistryBuilder {
         .withCreator(
             PHASE0,
             (registry, specConfig) ->
-                new AttestationPhase0Schema(getMaxValidatorPerAttestationPhase0(specConfig))
+                new AttestationPhase0Schema(getMaxValidatorsPerAttestationPhase0(specConfig))
                     .castTypeToAttestationSchema())
         .withCreator(
             ELECTRA,
             (registry, specConfig) ->
                 new AttestationElectraSchema(
-                        getMaxValidatorPerAttestationElectra(specConfig),
+                        getMaxValidatorsPerAttestationElectra(specConfig),
                         specConfig.getMaxCommitteesPerSlot())
                     .castTypeToAttestationSchema())
         .build();
@@ -178,11 +178,11 @@ public class SchemaRegistryBuilder {
         .build();
   }
 
-  private static long getMaxValidatorPerAttestationPhase0(final SpecConfig specConfig) {
+  private static long getMaxValidatorsPerAttestationPhase0(final SpecConfig specConfig) {
     return specConfig.getMaxValidatorsPerCommittee();
   }
 
-  private static long getMaxValidatorPerAttestationElectra(final SpecConfig specConfig) {
+  private static long getMaxValidatorsPerAttestationElectra(final SpecConfig specConfig) {
     return (long) specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
   }
 

@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -81,7 +80,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   private final ExecutionLayerChannel executionLayer = mock(ExecutionLayerChannel.class);
 
   @SuppressWarnings("unchecked")
-  private final Consumer<BlobSidecar> blobSidecarPublisher = mock(Consumer.class);
+  private final Function<BlobSidecar, SafeFuture<Void>> blobSidecarPublisher = mock(Function.class);
 
   private final BlobSidecarGossipValidator blobSidecarGossipValidator =
       mock(BlobSidecarGossipValidator.class);
@@ -124,6 +123,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     blockBlobSidecarsTrackersPool.subscribeRequiredBlobSidecarDropped(
         requiredBlobSidecarDroppedEvents::add);
     blockBlobSidecarsTrackersPool.subscribeNewBlobSidecar(newBlobSidecarEvents::add);
+    when(blobSidecarPublisher.apply(any())).thenReturn(SafeFuture.COMPLETE);
     setSlot(currentSlot);
   }
 
@@ -235,7 +235,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     assertBlobSidecarsTrackersCount(3);
 
     verify(blobSidecarGossipValidator).markForEquivocation(blobSidecar1);
-    verify(blobSidecarPublisher, times(1)).accept(blobSidecar1);
+    verify(blobSidecarPublisher, times(1)).apply(blobSidecar1);
   }
 
   @Test
@@ -254,7 +254,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     assertBlobSidecarsTrackersCount(1);
 
     verify(blobSidecarGossipValidator).markForEquivocation(blobSidecar1);
-    verify(blobSidecarPublisher, times(1)).accept(blobSidecar1);
+    verify(blobSidecarPublisher, times(1)).apply(blobSidecar1);
   }
 
   @Test
@@ -274,7 +274,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     assertBlobSidecarsTrackersCount(1);
 
     verify(blobSidecarGossipValidator, never()).markForEquivocation(blobSidecar1);
-    verify(blobSidecarPublisher, never()).accept(blobSidecar1);
+    verify(blobSidecarPublisher, never()).apply(blobSidecar1);
   }
 
   @Test

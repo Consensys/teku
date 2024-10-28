@@ -39,7 +39,7 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
   private final Counter publishFailureCounter;
 
   private final GossipFailureLogger gossipFailureLogger =
-      new GossipFailureLogger("sync committee message");
+      GossipFailureLogger.createSuppressing("sync_committee_message");
 
   public SyncCommitteeMessageGossipManager(
       final MetricsSystem metricsSystem,
@@ -109,7 +109,7 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
               publishSuccessCounter.inc();
             },
             error -> {
-              gossipFailureLogger.logWithSuppression(error, message.getSlot());
+              gossipFailureLogger.log(error, Optional.of(message.getSlot()));
               publishFailureCounter.inc();
             });
   }

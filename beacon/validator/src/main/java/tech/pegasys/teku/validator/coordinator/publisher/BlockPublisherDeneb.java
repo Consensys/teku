@@ -64,8 +64,8 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
       final SignedBeaconBlock block,
       final List<BlobSidecar> blobSidecars,
       final BlockPublishingPerformance blockPublishingPerformance) {
-    blockGossipChannel.publishBlock(block);
-    blobSidecarGossipChannel.publishBlobSidecars(blobSidecars);
+    blockGossipChannel.publishBlock(block).ifExceptionGetsHereRaiseABug();
+    blobSidecarGossipChannel.publishBlobSidecars(blobSidecars).ifExceptionGetsHereRaiseABug();
     blockPublishingPerformance.blockAndBlobSidecarsPublishingInitiated();
   }
 }

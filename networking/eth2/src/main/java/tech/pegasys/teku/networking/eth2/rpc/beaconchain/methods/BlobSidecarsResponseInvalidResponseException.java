@@ -35,6 +35,8 @@ public class BlobSidecarsResponseInvalidResponseException extends InvalidRespons
 
   public enum InvalidResponseType {
     BLOB_SIDECAR_KZG_VERIFICATION_FAILED("KZG verification for BlobSidecar has failed"),
+    BLOB_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED(
+        "Block inclusion proof verification for BlobSidecar has failed"),
     BLOB_SIDECAR_SLOT_NOT_IN_RANGE("BlobSidecar slot not in requested range"),
     BLOB_SIDECAR_UNEXPECTED_INDEX("BlobSidecar with unexpected index"),
     BLOB_SIDECAR_UNKNOWN_PARENT(

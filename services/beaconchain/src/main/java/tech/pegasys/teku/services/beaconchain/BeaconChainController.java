@@ -620,7 +620,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
       final BlockImportChannel blockImportChannel =
           eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
       final BlobSidecarGossipChannel blobSidecarGossipChannel =
-          eventChannels.getPublisher(BlobSidecarGossipChannel.class);
+          eventChannels.getPublisher(BlobSidecarGossipChannel.class, beaconAsyncRunner);
       final BlockBlobSidecarsTrackersPoolImpl pool =
           poolFactory.createPoolForBlockBlobSidecarsTrackers(
               blockImportChannel,
@@ -941,10 +941,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final BlockImportChannel blockImportChannel =
         eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
     final BlockGossipChannel blockGossipChannel =
-        eventChannels.getPublisher(BlockGossipChannel.class);
+        eventChannels.getPublisher(BlockGossipChannel.class, beaconAsyncRunner);
     final BlobSidecarGossipChannel blobSidecarGossipChannel;
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      blobSidecarGossipChannel = eventChannels.getPublisher(BlobSidecarGossipChannel.class);
+      blobSidecarGossipChannel =
+          eventChannels.getPublisher(BlobSidecarGossipChannel.class, beaconAsyncRunner);
     } else {
       blobSidecarGossipChannel = BlobSidecarGossipChannel.NOOP;
     }

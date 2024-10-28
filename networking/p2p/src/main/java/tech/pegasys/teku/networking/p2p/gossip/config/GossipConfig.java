@@ -36,7 +36,7 @@ public class GossipConfig {
   // After EIP-7045, attestations are valid for up to 2 full epochs, so TTL is 65
   // slots 1115 * HEARTBEAT = 1115 * 0.7 / 12 = 65.125
   static final Duration DEFAULT_SEEN_TTL = DEFAULT_HEARTBEAT_INTERVAL.multipliedBy(1115);
-  public static final Boolean DEFAULT_FLOOD_PUBLISH_ENABLED = false;
+  public static final int DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD = 1 << 14; // 16KiB
 
   private final int d;
   private final int dLow;
@@ -47,7 +47,7 @@ public class GossipConfig {
   private final int history;
   private final Duration heartbeatInterval;
   private final Duration seenTTL;
-  private final boolean floodPublishEnabled;
+  private final int floodPublishMaxMessageSizeThreshold;
   private final GossipScoringConfig scoringConfig;
 
   private GossipConfig(
@@ -60,7 +60,7 @@ public class GossipConfig {
       final int history,
       final Duration heartbeatInterval,
       final Duration seenTTL,
-      final boolean floodPublishEnabled,
+      final int floodPublishMaxMessageSizeThreshold,
       final GossipScoringConfig scoringConfig) {
     this.d = d;
     this.dLow = dLow;
@@ -71,7 +71,7 @@ public class GossipConfig {
     this.history = history;
     this.heartbeatInterval = heartbeatInterval;
     this.seenTTL = seenTTL;
-    this.floodPublishEnabled = floodPublishEnabled;
+    this.floodPublishMaxMessageSizeThreshold = floodPublishMaxMessageSizeThreshold;
     this.scoringConfig = scoringConfig;
   }
 
@@ -119,8 +119,8 @@ public class GossipConfig {
     return seenTTL;
   }
 
-  public boolean isFloodPublishEnabled() {
-    return floodPublishEnabled;
+  public int getFloodPublishMaxMessageSizeThreshold() {
+    return floodPublishMaxMessageSizeThreshold;
   }
 
   public GossipScoringConfig getScoringConfig() {
@@ -139,7 +139,8 @@ public class GossipConfig {
     private Integer history = DEFAULT_HISTORY;
     private Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
     private Duration seenTTL = DEFAULT_SEEN_TTL;
-    private boolean floodPublishEnabled = DEFAULT_FLOOD_PUBLISH_ENABLED;
+    private int floodPublishMaxMessageSizeThreshold =
+        DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
 
     private Builder() {}
 
@@ -154,7 +155,7 @@ public class GossipConfig {
           history,
           heartbeatInterval,
           seenTTL,
-          floodPublishEnabled,
+          floodPublishMaxMessageSizeThreshold,
           scoringConfigBuilder.build());
     }
 
@@ -227,8 +228,9 @@ public class GossipConfig {
       return this;
     }
 
-    public Builder floodPublishEnabled(final boolean floodPublishEnabled) {
-      this.floodPublishEnabled = floodPublishEnabled;
+    public Builder floodPublishMaxMessageSizeThreshold(
+        final int floodPublishMaxMessageSizeThreshold) {
+      this.floodPublishMaxMessageSizeThreshold = floodPublishMaxMessageSizeThreshold;
       return this;
     }
 
