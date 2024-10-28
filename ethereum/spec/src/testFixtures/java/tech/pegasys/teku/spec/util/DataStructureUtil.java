@@ -1925,6 +1925,10 @@ public final class DataStructureUtil {
         this, spec, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
+  public BeaconStateBuilderElectra stateBuilderElectra() {
+    return stateBuilderElectra(10, 10);
+  }
+
   public BeaconStateBuilderElectra stateBuilderElectra(
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
     return BeaconStateBuilderElectra.create(

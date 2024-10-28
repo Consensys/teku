@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_STATE_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
@@ -58,7 +59,8 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
     final SpecConfigBellatrix specConfig =
         SpecConfigBellatrix.required(schemaRegistry.getSpecConfig());
     final long maxValidatorsPerAttestation = getMaxValidatorsPerAttestation(specConfig);
-    this.beaconStateSchema = BeaconStateSchemaBellatrix.create(specConfig);
+    this.beaconStateSchema =
+        BeaconStateSchemaBellatrix.required(schemaRegistry.get(BEACON_STATE_SCHEMA));
     this.executionPayloadHeaderSchema = beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaBellatrixImpl.create(

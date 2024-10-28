@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -35,10 +36,13 @@ public abstract class AbstractBeaconStateTest<
   protected abstract Spec createSpec();
 
   private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
-  private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConfig);
+  private final SchemaRegistry schemaRegistry =
+      spec.getGenesisSchemaDefinitions().getSchemaRegistry();
+  private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConfig, schemaRegistry);
   protected DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  protected abstract BeaconStateSchema<T, TMutable> getSchema(final SpecConfig specConfig);
+  protected abstract BeaconStateSchema<T, TMutable> getSchema(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry);
 
   protected abstract T randomState();
 

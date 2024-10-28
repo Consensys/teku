@@ -36,7 +36,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
@@ -46,7 +45,7 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   private final AttestationSchema<Attestation> attestationSchema;
   private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
   private final AggregateAndProofSchema aggregateAndProofSchema;
-  private final BeaconStateSchemaPhase0 beaconStateSchema;
+  private final BeaconStateSchema<?, ?> beaconStateSchema;
   private final BeaconBlockBodySchemaPhase0 beaconBlockBodySchema;
   private final MetadataMessageSchemaPhase0 metadataMessageSchema;
   private final BeaconBlockSchema beaconBlockSchema;
@@ -61,7 +60,7 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
     this.attestationSchema = schemaRegistry.get(SchemaTypes.ATTESTATION_SCHEMA);
     this.aggregateAndProofSchema = schemaRegistry.get(AGGREGATE_AND_PROOF_SCHEMA);
     this.signedAggregateAndProofSchema = schemaRegistry.get(SIGNED_AGGREGATE_AND_PROOF_SCHEMA);
-    this.beaconStateSchema = BeaconStateSchemaPhase0.create(specConfig);
+    this.beaconStateSchema = schemaRegistry.get(SchemaTypes.BEACON_STATE_SCHEMA);
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,

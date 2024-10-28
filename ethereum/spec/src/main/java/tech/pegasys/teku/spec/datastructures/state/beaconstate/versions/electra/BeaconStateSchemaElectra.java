@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSu
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateSchemaElectra
     extends AbstractBeaconStateSchema<BeaconStateElectra, MutableBeaconStateElectra> {
@@ -51,11 +52,12 @@ public class BeaconStateSchemaElectra
   public static final int PENDING_CONSOLIDATIONS_FIELD_INDEX = 36;
 
   @VisibleForTesting
-  BeaconStateSchemaElectra(final SpecConfig specConfig) {
-    super("BeaconStateElectra", getUniqueFields(specConfig), specConfig);
+  BeaconStateSchemaElectra(final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    super("BeaconStateElectra", getUniqueFields(specConfig, schemaRegistry), specConfig);
   }
 
-  private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
+  private static List<SszField> getUniqueFields(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
     final PendingDeposit.PendingDepositSchema pendingDepositSchema =
         new PendingDeposit.PendingDepositSchema();
     final PendingPartialWithdrawal.PendingPartialWithdrawalSchema pendingPartialWithdrawalSchema =
@@ -112,7 +114,8 @@ public class BeaconStateSchemaElectra
                         specConfigElectra.getPendingConsolidationsLimit())));
 
     return Stream.concat(
-            BeaconStateSchemaDeneb.getUniqueFields(specConfig).stream(), newFields.stream())
+            BeaconStateSchemaDeneb.getUniqueFields(specConfig, schemaRegistry).stream(),
+            newFields.stream())
         .toList();
   }
 
@@ -148,8 +151,9 @@ public class BeaconStateSchemaElectra
     return new MutableBeaconStateElectraImpl(createEmptyBeaconStateImpl(), true);
   }
 
-  public static BeaconStateSchemaElectra create(final SpecConfig specConfig) {
-    return new BeaconStateSchemaElectra(specConfig);
+  public static BeaconStateSchemaElectra create(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    return new BeaconStateSchemaElectra(specConfig, schemaRegistry);
   }
 
   public static BeaconStateSchemaElectra required(final BeaconStateSchema<?, ?> schema) {

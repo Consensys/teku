@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_STATE_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
@@ -79,7 +80,8 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
     this.signedBlsToExecutionChangeSchema = new SignedBlsToExecutionChangeSchema();
     this.withdrawalSchema = Withdrawal.SSZ_SCHEMA;
 
-    this.beaconStateSchema = BeaconStateSchemaCapella.create(specConfig);
+    this.beaconStateSchema =
+        BeaconStateSchemaCapella.required(schemaRegistry.get(BEACON_STATE_SCHEMA));
     this.executionPayloadHeaderSchemaCapella =
         beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.beaconBlockBodySchema =

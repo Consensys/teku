@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_STATE_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -91,7 +92,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     final long maxValidatorsPerAttestation = getMaxValidatorsPerAttestation(specConfig);
 
     this.executionRequestsSchema = new ExecutionRequestsSchema(specConfig);
-    this.beaconStateSchema = BeaconStateSchemaElectra.create(specConfig);
+    this.beaconStateSchema =
+        BeaconStateSchemaElectra.required(schemaRegistry.get(BEACON_STATE_SCHEMA));
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaElectraImpl.create(
             specConfig,

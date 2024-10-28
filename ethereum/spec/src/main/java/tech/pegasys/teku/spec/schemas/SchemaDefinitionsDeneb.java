@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_STATE_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -88,7 +89,8 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     final SpecConfigDeneb specConfig = SpecConfigDeneb.required(schemaRegistry.getSpecConfig());
     this.executionPayloadSchemaDeneb = new ExecutionPayloadSchemaDeneb(specConfig);
 
-    this.beaconStateSchema = BeaconStateSchemaDeneb.create(specConfig);
+    this.beaconStateSchema =
+        BeaconStateSchemaDeneb.required(schemaRegistry.get(BEACON_STATE_SCHEMA));
     this.executionPayloadHeaderSchemaDeneb =
         beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.blobKzgCommitmentsSchema = new BlobKzgCommitmentsSchema(specConfig);

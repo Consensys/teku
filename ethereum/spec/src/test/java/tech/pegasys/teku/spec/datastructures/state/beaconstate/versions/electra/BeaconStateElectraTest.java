@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra;
 
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -20,22 +20,21 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateTest;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
-public class BeaconStatePhase0Test
-    extends AbstractBeaconStateTest<BeaconStatePhase0, MutableBeaconStatePhase0> {
-
+public class BeaconStateElectraTest
+    extends AbstractBeaconStateTest<BeaconStateElectra, MutableBeaconStateElectra> {
   @Override
   protected Spec createSpec() {
-    return TestSpecFactory.createMinimalPhase0();
+    return TestSpecFactory.createMinimalElectra();
   }
 
   @Override
-  protected BeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> getSchema(
+  protected BeaconStateSchema<BeaconStateElectra, MutableBeaconStateElectra> getSchema(
       final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
-    return BeaconStateSchemaPhase0.create(specConfig);
+    return BeaconStateSchemaElectra.create(specConfig, schemaRegistry);
   }
 
   @Override
-  protected BeaconStatePhase0 randomState() {
-    return dataStructureUtil.stateBuilderPhase0().build();
+  protected BeaconStateElectra randomState() {
+    return dataStructureUtil.stateBuilderElectra().build();
   }
 }

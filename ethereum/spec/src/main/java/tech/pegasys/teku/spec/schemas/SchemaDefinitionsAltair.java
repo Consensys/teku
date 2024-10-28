@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.schemas;
 
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATE_AND_PROOF_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_STATE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
 
 import com.google.common.base.Preconditions;
@@ -80,7 +81,8 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
     this.attestationSchema = schemaRegistry.get(SchemaTypes.ATTESTATION_SCHEMA);
     this.aggregateAndProofSchema = schemaRegistry.get(AGGREGATE_AND_PROOF_SCHEMA);
     this.signedAggregateAndProofSchema = schemaRegistry.get(SIGNED_AGGREGATE_AND_PROOF_SCHEMA);
-    this.beaconStateSchema = BeaconStateSchemaAltair.create(specConfig);
+    this.beaconStateSchema =
+        BeaconStateSchemaAltair.required(schemaRegistry.get(BEACON_STATE_SCHEMA));
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaAltairImpl.create(
             specConfig,

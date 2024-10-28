@@ -62,7 +62,8 @@ public class SchemaTypes {
   public static final SchemaId<ExecutionPayloadHeaderSchema<? extends ExecutionPayloadHeader>>
       EXECUTION_PAYLOAD_HEADER_SCHEMA = create("EXECUTION_PAYLOAD_HEADER_SCHEMA");
 
-  public static final SchemaId<BeaconStateSchema<BeaconState, MutableBeaconState>>
+  public static final SchemaId<
+          BeaconStateSchema<? extends BeaconState, ? extends MutableBeaconState>>
       BEACON_STATE_SCHEMA = create("BEACON_STATE_SCHEMA");
 
   // Altair
