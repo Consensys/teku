@@ -16,7 +16,6 @@ package tech.pegasys.teku.kzg;
 import static ethereum.ckzg4844.CKZG4844JNI.BLS_MODULUS;
 import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_BLOB;
 import static ethereum.ckzg4844.CKZG4844JNI.FIELD_ELEMENTS_PER_BLOB;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
