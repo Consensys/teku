@@ -88,7 +88,7 @@ public class GetIdentityIntegrationTest extends AbstractDataBackedRestAPIIntegra
       throws IOException {
     final JsonNode data = getResponseData(response);
 
-    assertThat(data.get("peer_id").asText()).isEqualTo(node1.toBase58().toString());
+    assertThat(data.get("peer_id").asText()).isEqualTo(node1.toBase58());
     assertThat(data.get("enr").asText()).isEqualTo(enr);
     assertThat(data.get("p2p_addresses").get(0).asText()).isEqualTo(address);
     assertThat(data.get("discovery_addresses").get(0).asText()).isEqualTo(discoveryAddress);

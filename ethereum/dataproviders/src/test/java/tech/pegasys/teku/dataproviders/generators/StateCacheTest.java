@@ -65,7 +65,7 @@ public class StateCacheTest {
         chain.stream()
             .filter(b -> !knownStates.containsKey(b.getRoot()))
             .limit(maxSize + 1)
-            .collect(Collectors.toList());
+            .toList();
     for (int i = 0; i < toAdd.size(); i++) {
       SignedBlockAndState blockAndState = toAdd.get(i);
       cache.put(blockAndState.getRoot(), blockAndState.getState());

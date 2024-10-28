@@ -893,7 +893,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .orElseThrow(
             () ->
                 new UnsupportedOperationException(
-                    "ValidateableAttestation does not have an IndexedAttestation."));
+                    "ValidatableAttestation does not have an IndexedAttestation."));
   }
 
   private SafeFuture<Void> onForkChoiceThread(final ExceptionThrowingRunnable task) {

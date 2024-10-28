@@ -255,9 +255,7 @@ public class ValidatorKeysApi {
       throws IOException {
 
     List<Map<String, String>> requestPayload =
-        publicKeys.stream()
-            .map(k -> remotePostRequestBody(k, signerUrl))
-            .collect(Collectors.toList());
+        publicKeys.stream().map(k -> remotePostRequestBody(k, signerUrl)).toList();
     final String body = objectMapper.writeValueAsString(Map.of("remote_keys", requestPayload));
 
     final String result = httpClient.post(validatorUri.get(), REMOTE_KEYS_URL, body, authHeaders());
