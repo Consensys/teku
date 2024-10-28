@@ -14,7 +14,6 @@
 package tech.pegasys.teku.services.beaconchain;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.teku.networks.EphemeryNetwork.MAX_EPHEMERY_SLOT;
@@ -45,20 +44,13 @@ class EphemerySlotValidationServiceTest {
     final Optional<Eth2Network> ephemeryNetwork = Optional.of(network);
     final UInt64 invalidSlot = UInt64.valueOf(MAX_EPHEMERY_SLOT + 1);
 
-    assertThat(ephemeryNetwork).isPresent().contains(Eth2Network.EPHEMERY);
+    assertThat(ephemeryNetwork).contains(Eth2Network.EPHEMERY);
     assertThatThrownBy(() -> ephemerySlotValidationService.onSlot(invalidSlot))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining(
             String.format(
                 "Slot %s exceeds maximum allowed slot %s for ephemery network",
                 invalidSlot, MAX_EPHEMERY_SLOT));
-  }
-
-  @Test
-  public void onSlot_shouldNotThrowException_forNonEphemeryNetwork() {
-    final Eth2Network network = Eth2Network.SEPOLIA;
-    assertThat(network).isNotEqualTo(Eth2Network.EPHEMERY);
-    assertThatCode(() -> {}).doesNotThrowAnyException();
   }
 
   @Test

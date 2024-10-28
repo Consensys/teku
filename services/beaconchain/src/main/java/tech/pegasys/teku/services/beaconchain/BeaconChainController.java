@@ -220,6 +220,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 public class BeaconChainController extends Service implements BeaconChainControllerFacade {
 
   private static final Logger LOG = LogManager.getLogger();
+  private final EphemerySlotValidationService ephemerySlotValidationService;
 
   protected static final String KEY_VALUE_STORE_SUBDIRECTORY = "kvstore";
 
@@ -336,6 +337,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             "future_items_size",
             "Current number of items held for future slots, labelled by type",
             "type");
+    this.ephemerySlotValidationService = new EphemerySlotValidationService();
   }
 
   @Override
@@ -365,6 +367,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
         blobSidecar ->
             recentBlobSidecarsFetcher.cancelRecentBlobSidecarRequest(
                 new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex())));
+
+    final Optional<Eth2Network> network = beaconConfig.eth2NetworkConfig().getEth2Network();
+    if (network.isPresent() && network.get() == Eth2Network.EPHEMERY) {
+      LOG.debug("BeaconChainController: subscribing to slot events");
+      eventChannels.subscribe(SlotEventsChannel.class, ephemerySlotValidationService);
+    }
     SafeFuture.allOfFailFast(
             attestationManager.start(),
             p2pNetwork.start(),
@@ -402,6 +410,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             attestationManager.stop(),
             p2pNetwork.stop(),
             timerService.stop(),
+            ephemerySlotValidationService.doStop(),
             SafeFuture.fromRunnable(
                 () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop)))
         .thenRun(forkChoiceExecutor::stop);
@@ -533,7 +542,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initRestAPI();
     initOperationsReOrgManager();
     initValidatorIndexCacheTracker();
-    initEphemeryValidationService();
   }
 
   private void initKeyValueStore() {
@@ -1148,15 +1156,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishVoluntaryExit));
     blsToExecutionChangePool.subscribeOperationAdded(
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishSignedBlsToExecutionChange));
-  }
-
-  protected void initEphemeryValidationService() {
-    Optional<Eth2Network> network = beaconConfig.eth2NetworkConfig().getEth2Network();
-    if (network.isPresent() && network.equals(Optional.of(Eth2Network.EPHEMERY))) {
-      final EphemerySlotValidationService slotValidationService =
-          new EphemerySlotValidationService();
-      eventChannels.subscribe(SlotEventsChannel.class, slotValidationService);
-    }
   }
 
   protected Eth2P2PNetworkBuilder createEth2P2PNetworkBuilder() {

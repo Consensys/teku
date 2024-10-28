@@ -22,11 +22,9 @@ import tech.pegasys.teku.service.serviceutils.Service;
 
 public class EphemerySlotValidationService extends Service implements SlotEventsChannel {
 
-  public EphemerySlotValidationService() {}
-
   @Override
   public void onSlot(final UInt64 slot) {
-    if (slot.compareTo(MAX_EPHEMERY_SLOT) > 0) {
+    if (slot.isGreaterThan(MAX_EPHEMERY_SLOT)) {
       throw new IllegalStateException(
           String.format(
               "Slot %s exceeds maximum allowed slot %s for ephemery network",
