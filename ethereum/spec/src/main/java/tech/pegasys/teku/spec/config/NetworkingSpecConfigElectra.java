@@ -21,7 +21,7 @@ package tech.pegasys.teku.spec.config;
  */
 public interface NetworkingSpecConfigElectra {
 
-  int getBlobSidecarSubnetCountElectra();
-
   int getMaxRequestBlobSidecarsElectra();
+
+  int getBlobSidecarSubnetCountElectra();
 }
