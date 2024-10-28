@@ -22,7 +22,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 public class ValidatorKeys {
   private final BLSKeyPair validatorKey;
 
-  private boolean locked = false;
+  private final boolean locked;
   private final Bytes32 withdrawalCredentials;
   private final Optional<BLSKeyPair> withdrawalKey;
 

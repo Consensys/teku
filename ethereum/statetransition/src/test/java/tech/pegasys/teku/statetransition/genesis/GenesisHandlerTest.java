@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.genesis;
 
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -63,7 +62,7 @@ public class GenesisHandlerTest {
                     data.getAmount(),
                     UInt64.valueOf(index));
               })
-          .collect(toList());
+          .toList();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 

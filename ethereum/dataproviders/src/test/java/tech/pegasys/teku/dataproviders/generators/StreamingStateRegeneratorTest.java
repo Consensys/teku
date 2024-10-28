@@ -16,7 +16,6 @@ package tech.pegasys.teku.dataproviders.generators;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -41,7 +40,7 @@ class StreamingStateRegeneratorTest {
     final List<SignedBlockAndState> newBlocksAndStates =
         chainBuilder
             .streamBlocksAndStates(genesis.getSlot().plus(UInt64.ONE), chainBuilder.getLatestSlot())
-            .collect(Collectors.toList());
+            .toList();
 
     final SignedBlockAndState lastBlockAndState = newBlocksAndStates.getLast();
     final BeaconState result =
