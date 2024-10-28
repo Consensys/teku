@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -148,11 +147,11 @@ public class OperationsReOrgManagerTest {
     attestationList.addAll(
         fork1Block1.getBody().getAttestations().stream()
             .map(attestation -> ValidatableAttestation.from(spec, attestation))
-            .collect(Collectors.toList()));
+            .toList());
     attestationList.addAll(
         fork1Block2.getBody().getAttestations().stream()
             .map(attestation -> ValidatableAttestation.from(spec, attestation))
-            .collect(Collectors.toList()));
+            .toList());
     assertThat(argument.getAllValues())
         .containsExactlyInAnyOrderElementsOf(attestationList)
         .allMatch(ValidatableAttestation::isValidIndexedAttestation);

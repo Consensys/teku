@@ -43,7 +43,7 @@ public class SyncDataAccessor {
 
   public static SyncDataAccessor create(final Path path) {
 
-    boolean atomicFileMoveSupport = false;
+    boolean atomicFileMoveSupport;
     final Path tmpFile;
     if (Files.isDirectory(path.toAbsolutePath())) {
       tmpFile = path.toAbsolutePath().resolve("syncWriteTest.tmp");

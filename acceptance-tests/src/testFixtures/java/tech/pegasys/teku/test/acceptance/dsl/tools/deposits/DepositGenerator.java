@@ -14,7 +14,6 @@
 package tech.pegasys.teku.test.acceptance.dsl.tools.deposits;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
@@ -40,9 +39,7 @@ public class DepositGenerator implements AutoCloseable {
     return SafeFuture.of(
         () -> {
           final List<SafeFuture<TransactionReceipt>> transactionReceipts =
-              validators.getValidatorKeys().stream()
-                  .map(this::sendDeposit)
-                  .collect(Collectors.toList());
+              validators.getValidatorKeys().stream().map(this::sendDeposit).toList();
           return SafeFuture.allOf(transactionReceipts.toArray(SafeFuture[]::new));
         });
   }
