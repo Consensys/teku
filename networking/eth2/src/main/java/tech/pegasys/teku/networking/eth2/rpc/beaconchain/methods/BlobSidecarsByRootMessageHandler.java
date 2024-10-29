@@ -34,7 +34,9 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
@@ -52,7 +54,6 @@ public class BlobSidecarsByRootMessageHandler
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final SpecConfigDeneb specConfigDeneb;
   private final CombinedChainDataClient combinedChainDataClient;
 
   private final LabelledMetric<Counter> requestCounter;
@@ -60,11 +61,9 @@ public class BlobSidecarsByRootMessageHandler
 
   public BlobSidecarsByRootMessageHandler(
       final Spec spec,
-      final SpecConfigDeneb specConfigDeneb,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient) {
     this.spec = spec;
-    this.specConfigDeneb = specConfigDeneb;
     this.combinedChainDataClient = combinedChainDataClient;
     requestCounter =
         metricsSystem.createLabelledCounter(
@@ -82,7 +81,7 @@ public class BlobSidecarsByRootMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final BlobSidecarsByRootRequestMessage request) {
-    final int maxRequestBlobSidecars = specConfigDeneb.getMaxRequestBlobSidecars();
+    final int maxRequestBlobSidecars = getMaxRequestBlobSidecars();
     if (request.size() > maxRequestBlobSidecars) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
@@ -154,6 +153,16 @@ public class BlobSidecarsByRootMessageHandler
           peer.adjustBlobSidecarsRequest(blobSidecarsRequestApproval.get(), 0);
           handleError(callback, err);
         });
+  }
+
+  private int getMaxRequestBlobSidecars() {
+    final UInt64 epoch =
+        combinedChainDataClient.getRecentChainData().getCurrentEpoch().orElse(UInt64.ZERO);
+    return spec.atEpoch(epoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)
+        ? SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig())
+            .getMaxRequestBlobSidecarsElectra()
+        : SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+            .getMaxRequestBlobSidecars();
   }
 
   private UInt64 getFinalizedEpoch() {

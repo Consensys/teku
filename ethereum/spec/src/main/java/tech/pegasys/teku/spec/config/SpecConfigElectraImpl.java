@@ -197,11 +197,6 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   }
 
   @Override
-  public int getBlobSidecarSubnetCount() {
-    return blobSidecarSubnetCountElectra;
-  }
-
-  @Override
   public Optional<SpecConfigElectra> toVersionElectra() {
     return Optional.of(this);
   }

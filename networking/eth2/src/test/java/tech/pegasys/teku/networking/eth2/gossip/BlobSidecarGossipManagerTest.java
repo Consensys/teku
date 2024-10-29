@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +31,7 @@ import java.util.regex.Pattern;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -41,9 +42,10 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -52,31 +54,30 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
+@TestSpecContext(milestone = {SpecMilestone.DENEB, SpecMilestone.ELECTRA})
 public class BlobSidecarGossipManagerTest {
 
   private static final Pattern BLOB_SIDECAR_TOPIC_PATTERN = Pattern.compile("blob_sidecar_(\\d+)");
 
-  private final Spec spec = TestSpecFactory.createMainnetDeneb();
-  private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private Spec spec;
+  private DataStructureUtil dataStructureUtil;
 
   @SuppressWarnings("unchecked")
   private final OperationProcessor<BlobSidecar> processor = mock(OperationProcessor.class);
 
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-
   private final Map<Integer, TopicChannel> topicChannels = new HashMap<>();
-
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-
-  private final ForkInfo forkInfo =
-      new ForkInfo(spec.fork(UInt64.ZERO), dataStructureUtil.randomBytes32());
-
   private BlobSidecarGossipManager blobSidecarGossipManager;
+  private SpecMilestone specMilestone;
 
   @BeforeEach
-  public void setup() {
+  public void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
+    spec = specContext.getSpec();
+    dataStructureUtil = specContext.getDataStructureUtil();
+    specMilestone = specContext.getSpecMilestone();
+    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis();
     // return TopicChannel mock for each blob_sidecar_<subnet_id> topic
     doAnswer(
@@ -96,6 +97,9 @@ public class BlobSidecarGossipManagerTest {
         .subscribe(any(), any());
     when(processor.process(any(), any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+
+    final ForkInfo forkInfo =
+        new ForkInfo(spec.fork(UInt64.ZERO), dataStructureUtil.randomBytes32());
     blobSidecarGossipManager =
         BlobSidecarGossipManager.create(
             storageSystem.recentChainData(),
@@ -109,7 +113,7 @@ public class BlobSidecarGossipManagerTest {
     blobSidecarGossipManager.subscribe();
   }
 
-  @Test
+  @TestTemplate
   public void testGossipingBlobSidecarPublishesToCorrectSubnet() {
     final BlobSidecar blobSidecar =
         dataStructureUtil.createRandomBlobSidecarBuilder().index(UInt64.ONE).build();
@@ -127,19 +131,19 @@ public class BlobSidecarGossipManagerTest {
         });
   }
 
-  @Test
+  @TestTemplate
   public void testGossipingBlobSidecarWithLargeIndexGossipToCorrectSubnet() {
     final BlobSidecar blobSidecar =
         dataStructureUtil.createRandomBlobSidecarBuilder().index(UInt64.valueOf(10)).build();
     final Bytes serialized = gossipEncoding.encode(blobSidecar);
 
-    safeJoin(blobSidecarGossipManager.publishBlobSidecar(blobSidecar));
-    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
-    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
+      safeJoin(blobSidecarGossipManager.publishBlobSidecar(blobSidecar));
+
+    final int blobSidecarSubnetCount = getBlobSidecarSubnetCount();
 
     topicChannels.forEach(
         (subnetId, channel) -> {
-          if (subnetId == 10 % specConfigDeneb.getBlobSidecarSubnetCount()) {
+          if (subnetId == 10 % blobSidecarSubnetCount) {
             verify(channel).gossip(serialized);
           } else {
             verifyNoInteractions(channel);
@@ -147,7 +151,7 @@ public class BlobSidecarGossipManagerTest {
         });
   }
 
-  @Test
+  @TestTemplate
   public void testUnsubscribingClosesAllChannels() {
     blobSidecarGossipManager.unsubscribe();
 
@@ -159,7 +163,7 @@ public class BlobSidecarGossipManagerTest {
             });
   }
 
-  @Test
+  @TestTemplate
   public void testAcceptingSidecarGossipIfOnTheCorrectTopic() {
     // topic handler for blob sidecars with subnet_id 1
     final Eth2TopicHandler<BlobSidecar> topicHandler = blobSidecarGossipManager.getTopicHandler(1);
@@ -175,7 +179,7 @@ public class BlobSidecarGossipManagerTest {
     assertThat(validationResult).isEqualTo(InternalValidationResult.ACCEPT);
   }
 
-  @Test
+  @TestTemplate
   public void testRejectingSidecarGossipIfNotOnTheCorrectTopic() {
     // topic handler for blob sidecars with subnet_id 1
     final Eth2TopicHandler<BlobSidecar> topicHandler = blobSidecarGossipManager.getTopicHandler(1);
@@ -190,4 +194,12 @@ public class BlobSidecarGossipManagerTest {
     assertThat(validationResult.getDescription())
         .hasValue("blob sidecar with subnet_id 2 does not match the topic subnet_id 1");
   }
+
+    private int getBlobSidecarSubnetCount() {
+        return specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)
+                ? SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig())
+                .getBlobSidecarSubnetCountElectra()
+                : SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+                .getBlobSidecarSubnetCount();
+    }
 }
