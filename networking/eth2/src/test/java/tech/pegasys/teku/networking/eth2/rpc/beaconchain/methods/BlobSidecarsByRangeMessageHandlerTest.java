@@ -111,8 +111,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
       BeaconChainMethodIds.getBlobSidecarsByRangeMethodId(1, RPC_ENCODING);
 
   private final BlobSidecarsByRangeMessageHandler handler =
-      new BlobSidecarsByRangeMessageHandler(
-          spec, specConfigDeneb, metricsSystem, combinedChainDataClient);
+      new BlobSidecarsByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
   private final Optional<RequestApproval> allowedObjectsRequest =
       Optional.of(
           new RequestApproval.RequestApprovalBuilder().objectsCount(100).timeSeconds(ZERO).build());

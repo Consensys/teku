@@ -56,6 +56,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsB
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class BlobSidecarsByRootMessageHandlerTest {
@@ -90,6 +91,8 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
+
+  private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final UpdatableStore store = mock(UpdatableStore.class);
 
   private final Eth2Peer peer = mock(Eth2Peer.class);
@@ -97,8 +100,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final BlobSidecarsByRootMessageHandler handler =
-      new BlobSidecarsByRootMessageHandler(
-          spec, specConfigDeneb, metricsSystem, combinedChainDataClient);
+      new BlobSidecarsByRootMessageHandler(spec, metricsSystem, combinedChainDataClient);
 
   private final Optional<RequestApproval> allowedObjectsRequest =
       Optional.of(
@@ -118,6 +120,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     when(combinedChainDataClient.getFinalizedBlock())
         .thenReturn(Optional.of(dataStructureUtil.randomSignedBeaconBlock(denebFirstSlot)));
     when(combinedChainDataClient.getStore()).thenReturn(store);
+    when(combinedChainDataClient.getRecentChainData()).thenReturn(recentChainData);
     when(callback.respond(any())).thenReturn(SafeFuture.COMPLETE);
 
     // mock store
@@ -132,6 +135,8 @@ public class BlobSidecarsByRootMessageHandlerTest {
   @Test
   public void validateRequest_shouldNotAllowRequestLargerThanMaximumAllowed() {
     final int maxRequestBlobSidecars = specConfigDeneb.getMaxRequestBlobSidecars();
+    when(recentChainData.getCurrentEpoch())
+        .thenReturn(Optional.of(dataStructureUtil.randomEpoch()));
     final BlobSidecarsByRootRequestMessage request =
         new BlobSidecarsByRootRequestMessage(
             messageSchema, dataStructureUtil.randomBlobIdentifiers(maxRequestBlobSidecars + 1));
