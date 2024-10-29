@@ -56,8 +56,8 @@ class EphemerySlotValidationServiceTest {
   @Test
   void shouldCompleteWhenServiceStartsAndStops() {
     final SafeFuture<?> startFuture = ephemerySlotValidationService.doStart();
-    final SafeFuture<?> stopFuture = ephemerySlotValidationService.doStop();
     assertTrue(startFuture.isDone());
+    final SafeFuture<?> stopFuture = ephemerySlotValidationService.doStop();
     assertTrue(stopFuture.isDone());
   }
 }
