@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -397,6 +398,10 @@ public class MiscHelpers {
 
   public int getBlobSidecarSubnetCount() {
     throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
+  }
+
+  public int getBlobKzgCommitmentsCount(final SignedBeaconBlock signedBeaconBlock) {
+    throw new UnsupportedOperationException("No Blob KZG Commitments before Deneb");
   }
 
   public UInt64 getMaxEffectiveBalance(final Validator validator) {

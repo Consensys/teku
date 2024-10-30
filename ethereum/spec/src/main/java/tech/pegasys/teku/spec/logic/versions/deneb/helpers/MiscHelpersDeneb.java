@@ -226,6 +226,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
     return SpecConfigDeneb.required(specConfig).getBlobSidecarSubnetCount();
   }
 
+  @Override
   public int getBlobKzgCommitmentsCount(final SignedBeaconBlock signedBeaconBlock) {
     return signedBeaconBlock
         .getMessage()
