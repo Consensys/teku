@@ -15,11 +15,13 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.collect.Sets;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -90,67 +92,67 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
         .toList();
   }
 
-  private record ColumnIdAndMaybeSidecar(
-      DataColumnSlotAndIdentifier id, Optional<DataColumnSidecar> maybeSidecar) {}
+  private SafeFuture<Optional<DataColumnSlotAndIdentifier>> checkColumnInCustody(
+      DataColumnSlotAndIdentifier columnIdentifier) {
+    return custody
+        .hasCustodyDataColumnSidecar(columnIdentifier)
+        .thenApply(hasColumn -> hasColumn ? Optional.of(columnIdentifier) : Optional.empty());
+  }
 
-  private SafeFuture<List<ColumnIdAndMaybeSidecar>> maybeGetColumnsFromCustody(
-      List<DataColumnSlotAndIdentifier> columnIdentifiers) {
-    return SafeFuture.collectAll(
-        columnIdentifiers.stream()
-            .map(
-                id ->
-                    custody
-                        .getCustodyDataColumnSidecar(id)
-                        .thenApply(maybeSidecar -> new ColumnIdAndMaybeSidecar(id, maybeSidecar))));
+  private SafeFuture<List<DataColumnSlotAndIdentifier>> maybeHasColumnsInCustody(
+      Collection<DataColumnSlotAndIdentifier> columnIdentifiers) {
+    return SafeFuture.collectAll(columnIdentifiers.stream().map(this::checkColumnInCustody))
+        .thenApply(list -> list.stream().flatMap(Optional::stream).toList());
   }
 
   @Override
-  public SafeFuture<List<DataColumnSidecar>> checkDataAvailability(
+  public SafeFuture<List<UInt64>> checkDataAvailability(
       UInt64 slot, Bytes32 blockRoot, Bytes32 parentRoot) {
-    final List<DataColumnSlotAndIdentifier> columnIdentifiers =
-        calculateSamplingColumnIds(slot, blockRoot);
+
+    final Set<DataColumnSlotAndIdentifier> requiredColumnIdentifiers =
+        new HashSet<>(calculateSamplingColumnIds(slot, blockRoot));
 
     LOG.debug(
-        "checkDataAvailability(): requesting {} columns for block {} ({})",
-        columnIdentifiers.size(),
+        "checkDataAvailability(): checking {} columns for block {} ({})",
+        requiredColumnIdentifiers.size(),
         slot,
         blockRoot);
 
-    SafeFuture<List<ColumnIdAndMaybeSidecar>> columnsInCustodyFuture =
-        maybeGetColumnsFromCustody(columnIdentifiers);
+    SafeFuture<List<DataColumnSlotAndIdentifier>> columnsInCustodyFuture =
+        maybeHasColumnsInCustody(requiredColumnIdentifiers);
 
     return columnsInCustodyFuture.thenCompose(
-        columnsInCustodyResults -> {
-          List<DataColumnSlotAndIdentifier> missingColumnIds =
-              columnsInCustodyResults.stream()
-                  .filter(res -> res.maybeSidecar().isEmpty())
-                  .map(ColumnIdAndMaybeSidecar::id)
-                  .toList();
+        columnsInCustodyList -> {
+          Set<DataColumnSlotAndIdentifier> columnsInCustody = new HashSet<>(columnsInCustodyList);
 
-          List<Integer> custodyColumnIndexes =
-              columnsInCustodyResults.stream()
-                  .flatMap(res -> res.maybeSidecar().stream())
-                  .map(DataColumnSidecar::getIndex)
-                  .map(UInt64::intValue)
-                  .toList();
+          Set<DataColumnSlotAndIdentifier> missingColumn =
+              Sets.difference(requiredColumnIdentifiers, columnsInCustody);
 
-          LOG.info(
-              "checkDataAvailability(): got {} (of {}) columns from custody (or received by Gossip) for block {} ({}), columns: {}",
-              columnIdentifiers.size() - missingColumnIds.size(),
-              columnIdentifiers.size(),
-              slot,
-              blockRoot,
-              StringifyUtil.columnIndexesToString(custodyColumnIndexes, getColumnCount(slot)));
+          if (LOG.isInfoEnabled()) {
+            List<Integer> existingColumnIndexes =
+                Sets.intersection(requiredColumnIdentifiers, columnsInCustody).stream()
+                    .map(it -> it.columnIndex().intValue())
+                    .sorted()
+                    .toList();
+
+            LOG.info(
+                "checkDataAvailability(): got {} (of {}) columns from custody (or received by Gossip) for block {} ({}), columns: {}",
+                existingColumnIndexes.size(),
+                requiredColumnIdentifiers.size(),
+                slot,
+                blockRoot,
+                StringifyUtil.columnIndexesToString(existingColumnIndexes, getColumnCount(slot)));
+          }
 
           SafeFuture<List<DataColumnSidecar>> columnsRetrievedFuture =
-              SafeFuture.collectAll(missingColumnIds.stream().map(retriever::retrieve))
+              SafeFuture.collectAll(missingColumn.stream().map(retriever::retrieve))
                   .thenPeek(
                       retrievedColumns -> {
                         if (!retrievedColumns.isEmpty()) {
                           LOG.info(
                               "checkDataAvailability(): retrieved remaining {} (of {}) columns via Req/Resp for block {} ({})",
                               retrievedColumns.size(),
-                              columnIdentifiers.size(),
+                              requiredColumnIdentifiers.size(),
                               slot,
                               blockRoot);
                         }
@@ -160,11 +162,9 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
                       });
 
           return columnsRetrievedFuture.thenApply(
-              columnsRetrieved ->
-                  Stream.concat(
-                          columnsInCustodyResults.stream().flatMap(r -> r.maybeSidecar().stream()),
-                          columnsRetrieved.stream())
-                      .sorted(Comparator.comparing(DataColumnSidecar::getIndex))
+              __ ->
+                  requiredColumnIdentifiers.stream()
+                      .map(DataColumnSlotAndIdentifier::columnIndex)
                       .toList());
         });
   }

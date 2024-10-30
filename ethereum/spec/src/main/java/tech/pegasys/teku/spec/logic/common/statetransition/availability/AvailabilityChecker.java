@@ -18,8 +18,8 @@ import static tech.pegasys.teku.spec.logic.common.statetransition.availability.D
 
 import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
@@ -45,7 +45,7 @@ public interface AvailabilityChecker<Data> {
         }
       };
 
-  AvailabilityChecker<DataColumnSidecar> NOOP_DATACOLUMN_SIDECAR =
+  AvailabilityChecker<UInt64> NOOP_DATACOLUMN_SIDECAR =
       new AvailabilityChecker<>() {
         @Override
         public boolean initiateDataAvailabilityCheck() {
@@ -53,13 +53,12 @@ public interface AvailabilityChecker<Data> {
         }
 
         @Override
-        public SafeFuture<DataAndValidationResult<DataColumnSidecar>> getAvailabilityCheckResult() {
+        public SafeFuture<DataAndValidationResult<UInt64>> getAvailabilityCheckResult() {
           return notRequiredResultFuture();
         }
 
         @Override
-        public DataAndValidationResult<DataColumnSidecar> validateImmediately(
-            final List<DataColumnSidecar> dataList) {
+        public DataAndValidationResult<UInt64> validateImmediately(final List<UInt64> dataList) {
           return notRequired();
         }
       };

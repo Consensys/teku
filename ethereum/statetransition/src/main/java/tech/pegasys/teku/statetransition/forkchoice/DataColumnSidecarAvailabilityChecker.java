@@ -17,21 +17,19 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 
-public class DataColumnSidecarAvailabilityChecker
-    implements AvailabilityChecker<DataColumnSidecar> {
+public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker<UInt64> {
   private static final Logger LOG = LogManager.getLogger("das-nyota");
 
   private final DataAvailabilitySampler dataAvailabilitySampler;
-  private final SafeFuture<DataAndValidationResult<DataColumnSidecar>> validationResult =
-      new SafeFuture<>();
+  private final SafeFuture<DataAndValidationResult<UInt64>> validationResult = new SafeFuture<>();
   final KZG kzg;
   final Spec spec;
 
@@ -69,8 +67,8 @@ public class DataColumnSidecarAvailabilityChecker
       default -> dataAvailabilitySampler
           .checkDataAvailability(block.getSlot(), block.getRoot(), block.getParentRoot())
           .finish(
-              dataColumnSidecars ->
-                  validationResult.complete(validateImmediately(dataColumnSidecars)),
+              sampleIndexes ->
+                  validationResult.complete(DataAndValidationResult.validResult(sampleIndexes)),
               throwable ->
                   validationResult.complete(DataAndValidationResult.notAvailable(throwable)));
     }
@@ -78,34 +76,12 @@ public class DataColumnSidecarAvailabilityChecker
   }
 
   @Override
-  public SafeFuture<DataAndValidationResult<DataColumnSidecar>> getAvailabilityCheckResult() {
+  public SafeFuture<DataAndValidationResult<UInt64>> getAvailabilityCheckResult() {
     return validationResult;
   }
 
   @Override
-  public DataAndValidationResult<DataColumnSidecar> validateImmediately(
-      List<DataColumnSidecar> dataColumnSidecars) {
-    if (dataColumnSidecars.isEmpty()) {
-      return DataAndValidationResult.validResult(dataColumnSidecars);
-    }
-    final boolean isNotValid =
-        dataColumnSidecars.stream()
-            .parallel()
-            .map(
-                dataColumnSidecar ->
-                    spec.atSlot(dataColumnSidecar.getSlot())
-                        .miscHelpers()
-                        .toVersionEip7594()
-                        .map(
-                            miscHelpersEip7594 ->
-                                miscHelpersEip7594.verifyDataColumnSidecarKzgProof(
-                                    kzg, dataColumnSidecar))
-                        .orElse(false))
-            .anyMatch(isGood -> !isGood);
-    if (isNotValid) {
-      return DataAndValidationResult.invalidResult(dataColumnSidecars);
-    } else {
-      return DataAndValidationResult.validResult(dataColumnSidecars);
-    }
+  public DataAndValidationResult<UInt64> validateImmediately(List<UInt64> dataColumnSidecars) {
+    return DataAndValidationResult.validResult(dataColumnSidecars);
   }
 }
