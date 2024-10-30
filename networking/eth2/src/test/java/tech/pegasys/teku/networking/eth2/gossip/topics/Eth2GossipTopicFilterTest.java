@@ -46,6 +46,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 @TestSpecContext(milestone = {SpecMilestone.DENEB, SpecMilestone.ELECTRA})
 class Eth2GossipTopicFilterTest {
 
+  private final UInt64 currentForkEpoch = UInt64.valueOf(10);
   private Spec spec;
   private SpecMilestone specMilestone;
   private DataStructureUtil dataStructureUtil;
@@ -57,8 +58,17 @@ class Eth2GossipTopicFilterTest {
   @BeforeEach
   void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
     specMilestone = specContext.getSpecMilestone();
+    spec =
+        switch (specContext.getSpecMilestone()) {
+          case PHASE0 -> throw new IllegalArgumentException("Phase0 is an unsupported milestone");
+          case ALTAIR -> throw new IllegalArgumentException("Altair is an unsupported milestone");
+          case BELLATRIX ->
+              throw new IllegalArgumentException("Bellatrix is an unsupported milestone");
+          case CAPELLA -> throw new IllegalArgumentException("Capella is an unsupported milestone");
+          case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(currentForkEpoch);
+          case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(currentForkEpoch);
+        };
 
-    spec = createSpecWithForkSchedule(UInt64.valueOf(10));
     dataStructureUtil = new DataStructureUtil(spec);
 
     filter = new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec);
@@ -75,12 +85,6 @@ class Eth2GossipTopicFilterTest {
 
     when(recentChainData.getCurrentForkInfo()).thenReturn(Optional.of(forkInfo));
     when(recentChainData.getNextFork(forkInfo.getFork())).thenReturn(Optional.of(nextFork));
-  }
-
-  private Spec createSpecWithForkSchedule(final UInt64 epoch) {
-    return specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)
-        ? TestSpecFactory.createMinimalWithElectraForkEpoch(epoch)
-        : TestSpecFactory.createMinimalWithDenebForkEpoch(epoch);
   }
 
   @TestTemplate
