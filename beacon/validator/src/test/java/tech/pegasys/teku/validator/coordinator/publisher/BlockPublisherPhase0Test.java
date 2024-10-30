@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,7 +49,9 @@ class BlockPublisherPhase0Test {
 
   @BeforeEach
   void setUp() {
-    when(blockGossipChannel.publishBlock(any())).thenReturn(SafeFuture.COMPLETE);
+    when(blockGossipChannel.publishBlock(signedBlock)).thenReturn(SafeFuture.COMPLETE);
+    when(blockImportChannel.importBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED))
+        .thenReturn(SafeFuture.completedFuture(null));
   }
 
   @Test
