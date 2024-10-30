@@ -35,8 +35,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
@@ -158,11 +156,8 @@ public class BlobSidecarsByRootMessageHandler
   private int getMaxRequestBlobSidecars() {
     final UInt64 epoch =
         combinedChainDataClient.getRecentChainData().getCurrentEpoch().orElse(UInt64.ZERO);
-    return spec.atEpoch(epoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)
-        ? SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig())
-            .getMaxRequestBlobSidecarsElectra()
-        : SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
-            .getMaxRequestBlobSidecars();
+    final SpecMilestone specMilestone = spec.getForkSchedule().getSpecMilestoneAtEpoch(epoch);
+    return spec.forMilestone(specMilestone).miscHelpers().getMaxRequestBlobSidecars();
   }
 
   private UInt64 getFinalizedEpoch() {
