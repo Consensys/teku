@@ -395,7 +395,11 @@ public final class DataStructureUtil {
   }
 
   public SszBitlist randomBitlist() {
-    return randomBitlist(getMaxValidatorsPerCommittee());
+    return randomBitlist(randomSlot());
+  }
+
+  public SszBitlist randomBitlist(final UInt64 slot) {
+    return randomBitlist(getMaxValidatorsPerCommittee(slot));
   }
 
   public SszBitlist randomBitlist(final int n) {
@@ -821,10 +825,11 @@ public final class DataStructureUtil {
   }
 
   public Attestation randomAttestation(final UInt64 slot) {
-    return spec.getGenesisSchemaDefinitions()
+    return spec.atSlot(slot)
+        .getSchemaDefinitions()
         .getAttestationSchema()
         .create(
-            randomBitlist(),
+            randomBitlist(slot),
             randomAttestationData(slot),
             randomSignature(),
             this::randomCommitteeBitvector);
@@ -879,7 +884,8 @@ public final class DataStructureUtil {
 
   public AttesterSlashing randomAttesterSlashingAtSlot(final UInt64 slot) {
     final UInt64[] attestingIndices = {randomUInt64(), randomUInt64(), randomUInt64()};
-    return spec.getGenesisSchemaDefinitions()
+    return spec.atSlot(slot)
+        .getSchemaDefinitions()
         .getAttesterSlashingSchema()
         .create(
             randomIndexedAttestation(randomAttestationData(slot), attestingIndices),
@@ -1426,9 +1432,12 @@ public final class DataStructureUtil {
                           schema.getProposerSlashingsSchema(), this::randomProposerSlashing, 1))
                   .attesterSlashings(
                       randomSszList(
-                          schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1))
+                          schema.getAttesterSlashingsSchema(),
+                          () -> randomAttesterSlashingAtSlot(slot),
+                          1))
                   .attestations(
-                      randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3))
+                      randomSszList(
+                          schema.getAttestationsSchema(), () -> randomAttestation(slot), 3))
                   .deposits(
                       randomSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1))
                   .voluntaryExits(
@@ -1541,7 +1550,7 @@ public final class DataStructureUtil {
   public IndexedAttestation randomIndexedAttestation(
       final AttestationData data, final UInt64... attestingIndicesInput) {
     final IndexedAttestationSchema indexedAttestationSchema =
-        spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
+        spec.atSlot(data.getSlot()).getSchemaDefinitions().getIndexedAttestationSchema();
     final SszUInt64List attestingIndices =
         indexedAttestationSchema.getAttestingIndicesSchema().of(attestingIndicesInput);
     return indexedAttestationSchema.create(attestingIndices, data, randomSignature());
@@ -2646,8 +2655,8 @@ public final class DataStructureUtil {
     return getConstant(SpecConfig::getJustificationBitsLength);
   }
 
-  private int getMaxValidatorsPerCommittee() {
-    if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+  private int getMaxValidatorsPerCommittee(final UInt64 slot) {
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
       return getConstant(SpecConfig::getMaxValidatorsPerCommittee)
           * getConstant(SpecConfig::getMaxCommitteesPerSlot);
     }
