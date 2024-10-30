@@ -42,12 +42,10 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailab
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
@@ -88,9 +86,14 @@ public class BlobSidecarsByRangeMessageHandler
   public Optional<RpcException> validateRequest(
       final String protocolId, final BlobSidecarsByRangeRequestMessage request) {
 
-    final SpecVersion specVersion = spec.atSlot(request.getStartSlot());
-    final int maxRequestBlobSidecars = getMaxRequestBlobSidecars(specVersion);
-    final long requestedCount = calculateRequestedCount(request, specVersion);
+    final SpecMilestone latestMilestoneRequested =
+        spec.getForkSchedule().getSpecMilestoneAtSlot(request.getMaxSlot());
+    final MiscHelpers miscHelpers = spec.forMilestone(latestMilestoneRequested).miscHelpers();
+
+    final int maxRequestBlobSidecars = miscHelpers.getMaxRequestBlobSidecars();
+    final int maxBlobsPerBlock = miscHelpers.getMaxBlobsPerBlock();
+
+    final long requestedCount = calculateRequestedCount(request, maxBlobsPerBlock);
 
     if (requestedCount > maxRequestBlobSidecars) {
       requestCounter.labels("count_too_big").inc();
@@ -120,7 +123,12 @@ public class BlobSidecarsByRangeMessageHandler
         message.getCount(),
         startSlot);
 
-    final long requestedCount = calculateRequestedCount(message, spec.atSlot(startSlot));
+    final SpecMilestone latestMilestoneRequested =
+        spec.getForkSchedule().getSpecMilestoneAtSlot(endSlot);
+    final MiscHelpers miscHelpers = spec.forMilestone(latestMilestoneRequested).miscHelpers();
+    final int maxRequestBlobSidecars = miscHelpers.getMaxRequestBlobSidecars();
+    final int maxBlobsPerBlock = miscHelpers.getMaxBlobsPerBlock();
+    final long requestedCount = calculateRequestedCount(message, maxBlobsPerBlock);
 
     final Optional<RequestApproval> blobSidecarsRequestApproval =
         peer.approveBlobSidecarsRequest(callback, requestedCount);
@@ -162,8 +170,6 @@ public class BlobSidecarsByRangeMessageHandler
                 canonicalHotRoots = ImmutableSortedMap.of();
               }
 
-              final int maxRequestBlobSidecars = getMaxRequestBlobSidecars(spec.atSlot(startSlot));
-
               final RequestState initialState =
                   new RequestState(
                       callback,
@@ -192,22 +198,8 @@ public class BlobSidecarsByRangeMessageHandler
             });
   }
 
-  private int getMaxRequestBlobSidecars(final SpecVersion specVersion) {
-    return specVersion.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)
-        ? SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig())
-            .getMaxRequestBlobSidecarsElectra()
-        : SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
-            .getMaxRequestBlobSidecars();
-  }
-
   private long calculateRequestedCount(
-      final BlobSidecarsByRangeRequestMessage message, final SpecVersion specVersion) {
-    final int maxBlobsPerBlock =
-        specVersion.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)
-            ? SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig())
-                .getMaxBlobsPerBlockElectra()
-            : SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
-                .getMaxBlobsPerBlock();
+      final BlobSidecarsByRangeRequestMessage message, final int maxBlobsPerBlock) {
     return maxBlobsPerBlock * message.getCount().longValue();
   }
 
