@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,15 +55,16 @@ class BlockPublisherPhase0Test {
 
   @Test
   void importBlock_shouldImportBlock() {
-    blockPublisherPhase0.importBlock(
-        signedBlock, BroadcastValidationLevel.NOT_REQUIRED, BlockPublishingPerformance.NOOP);
+    safeJoin(
+        blockPublisherPhase0.importBlock(
+            signedBlock, BroadcastValidationLevel.NOT_REQUIRED, BlockPublishingPerformance.NOOP));
 
     verify(blockImportChannel).importBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED);
   }
 
   @Test
   void publishBlock_shouldPublishBlock() {
-    blockPublisherPhase0.publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
+    safeJoin(blockPublisherPhase0.publishBlock(signedBlock, BlockPublishingPerformance.NOOP));
 
     verify(blockGossipChannel).publishBlock(signedBlock);
   }
