@@ -63,7 +63,7 @@ public class DasCustodySyncTest {
   final DataColumnSidecarRetrieverStub retrieverStub = new DataColumnSidecarRetrieverStub();
   final DataColumnSidecarRetriever asyncRetriever =
       new DelayedDataColumnSidecarRetriever(
-          retrieverStub, custodyStand.stubAsyncRunner, ofMillis(0));
+          retrieverStub, custodyStand.stubAsync.getStubAsyncRunner(), ofMillis(0));
   final DasCustodySync dasCustodySync =
       new DasCustodySync(custodyStand.custody, asyncRetriever, maxSyncRequests, minSyncRequests);
 

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static java.time.Duration.ofMillis;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -27,8 +26,6 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
-import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -42,6 +39,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.db.DelayedDasDb;
+import tech.pegasys.teku.statetransition.datacolumns.util.StubAsync;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 
 @SuppressWarnings("unused")
@@ -51,8 +49,7 @@ public class DasCustodyStand {
     return new Builder().withSpec(spec);
   }
 
-  final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(0);
-  final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner(stubTimeProvider);
+  final StubAsync stubAsync = new StubAsync();
 
   public final Spec spec;
 
@@ -90,7 +87,7 @@ public class DasCustodyStand {
                 delay ->
                     (CanonicalBlockResolver)
                         new DelayedCanonicalBlockResolver(
-                            this.blockResolver, stubAsyncRunner, delay))
+                            this.blockResolver, stubAsync.getStubAsyncRunner(), delay))
             .orElse(this.blockResolver);
     this.config = SpecConfigEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).getConfig());
     this.minCustodyPeriodSlotCalculator = MinCustodyPeriodSlotCalculator.createFromSpec(spec);
@@ -99,7 +96,8 @@ public class DasCustodyStand {
         asyncDbDelay
             .map(
                 dbDelay ->
-                    (DataColumnSidecarDB) new DelayedDasDb(this.db, stubAsyncRunner, dbDelay))
+                    (DataColumnSidecarDB)
+                        new DelayedDasDb(this.db, stubAsync.getStubAsyncRunner(), dbDelay))
             .orElse(this.db);
 
     this.dbAccessor = DataColumnSidecarDbAccessor.builder(asyncDb).spec(spec).build();
@@ -124,22 +122,11 @@ public class DasCustodyStand {
   }
 
   public void advanceTimeGradually(Duration delta) {
-    for (int i = 0; i < delta.toMillis(); i++) {
-      stubTimeProvider.advanceTimeBy(ofMillis(1));
-      stubAsyncRunner.executeDueActionsRepeatedly();
-    }
+    stubAsync.advanceTimeGradually(delta);
   }
 
   public void advanceTimeGraduallyUntilAllDone(Duration maxAdvancePeriod) {
-    for (int i = 0; i < maxAdvancePeriod.toMillis(); i++) {
-      if (!stubAsyncRunner.hasDelayedActions()) {
-        return;
-      }
-      stubTimeProvider.advanceTimeBy(ofMillis(1));
-      stubAsyncRunner.executeDueActionsRepeatedly();
-    }
-    throw new AssertionError(
-        "There are still scheduled tasks after maxAdvancePeriod: " + maxAdvancePeriod);
+    stubAsync.advanceTimeGraduallyUntilAllDone(maxAdvancePeriod);
   }
 
   public SignedBeaconBlock createBlockWithBlobs(int slot) {
