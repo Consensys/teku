@@ -235,7 +235,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     when(combinedChainDataClient.getBlobSidecarKeys(any(), any(), anyLong()))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
     final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(ZERO, count, maxBlobsPerBlock);
+        new BlobSidecarsByRangeRequestMessage(
+            denebForkEpoch.plus(1).times(slotsPerEpoch), count, maxBlobsPerBlock);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 

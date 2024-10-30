@@ -387,6 +387,18 @@ public class MiscHelpers {
     return UInt64.valueOf(specConfig.getNetworkingConfig().getMaxRequestBlocks());
   }
 
+  public int getMaxRequestBlobSidecars() {
+    throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
+  }
+
+  public int getMaxBlobsPerBlock() {
+    throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
+  }
+
+  public int getBlobSidecarSubnetCount() {
+    throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
+  }
+
   public UInt64 getMaxEffectiveBalance(final Validator validator) {
     return specConfig.getMaxEffectiveBalance();
   }

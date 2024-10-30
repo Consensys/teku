@@ -31,9 +31,6 @@ import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -67,9 +64,9 @@ public class BlobSidecarGossipManager implements GossipManager {
     final Int2ObjectMap<Eth2TopicHandler<BlobSidecar>> subnetIdToTopicHandler =
         new Int2ObjectOpenHashMap<>();
     final SpecMilestone specMilestone = spec.atEpoch(forkInfo.getFork().getEpoch()).getMilestone();
-
     final int blobSidecarSubnetCount =
-        getBlobSidecarSubnetCount(specMilestone, forkSpecVersion.getConfig());
+        spec.forMilestone(specMilestone).miscHelpers().getBlobSidecarSubnetCount();
+
     IntStream.range(0, blobSidecarSubnetCount)
         .forEach(
             subnetId -> {
@@ -134,13 +131,6 @@ public class BlobSidecarGossipManager implements GossipManager {
   @Override
   public boolean isEnabledDuringOptimisticSync() {
     return true;
-  }
-
-  private static int getBlobSidecarSubnetCount(
-      final SpecMilestone specMilestone, final SpecConfig specConfig) {
-    return specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)
-        ? SpecConfigElectra.required(specConfig).getBlobSidecarSubnetCountElectra()
-        : SpecConfigDeneb.required(specConfig).getBlobSidecarSubnetCount();
   }
 
   private static Eth2TopicHandler<BlobSidecar> createBlobSidecarTopicHandler(
