@@ -26,12 +26,13 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
-import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
+import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -75,14 +76,15 @@ class GetBlockTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTes
   }
 
   @Test
-  void metadata_shouldHandle200() throws IOException {
+  void metadata_shouldHandle200() throws Exception {
     final SignedBeaconBlock beaconBlock = dataStructureUtil.randomSignedBeaconBlock(1);
     final ObjectAndMetaData<SignedBeaconBlock> responseData = withMetaData(beaconBlock);
-
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
+    final JsonNode responseDataAsJsonNode = JsonTestUtil.parseAsJsonNode(data);
     final String expected =
         Resources.toString(Resources.getResource(GetBlockTest.class, "getBlock.json"), UTF_8);
-    assertThat(data).isEqualTo(expected);
+    final JsonNode expectedAsJsonNode = JsonTestUtil.parseAsJsonNode(expected);
+    assertThat(responseDataAsJsonNode).isEqualTo(expectedAsJsonNode);
   }
 
   @Test
