@@ -20,7 +20,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,8 +36,6 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
-import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
@@ -48,8 +45,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
-import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -60,9 +55,9 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
+import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 
 public class ValidatorApiHandlerIntegrationTest {
-
   // Use full storage system
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
@@ -80,12 +75,7 @@ public class ValidatorApiHandlerIntegrationTest {
   private final ActiveValidatorTracker activeValidatorTracker = mock(ActiveValidatorTracker.class);
   private final DefaultPerformanceTracker performanceTracker =
       mock(DefaultPerformanceTracker.class);
-  private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
-  private final BlockGossipChannel blockGossipChannel = mock(BlockGossipChannel.class);
-  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
-      mock(BlockBlobSidecarsTrackersPool.class);
-  private final BlobSidecarGossipChannel blobSidecarGossipChannel =
-      mock(BlobSidecarGossipChannel.class);
+  private final BlockPublisher blockPublisher = mock(BlockPublisher.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   private final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
   private final NetworkDataProvider networkDataProvider = mock(NetworkDataProvider.class);
@@ -109,10 +99,6 @@ public class ValidatorApiHandlerIntegrationTest {
           combinedChainDataClient,
           syncStateProvider,
           blockFactory,
-          blockImportChannel,
-          blockGossipChannel,
-          blockBlobSidecarsTrackersPool,
-          blobSidecarGossipChannel,
           attestationPool,
           attestationManager,
           attestationTopicSubscriber,
@@ -127,7 +113,7 @@ public class ValidatorApiHandlerIntegrationTest {
           syncCommitteeSubscriptionManager,
           new BlockProductionAndPublishingPerformanceFactory(
               new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0),
-          DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED);
+          blockPublisher);
 
   @BeforeEach
   public void setup() {

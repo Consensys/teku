@@ -18,6 +18,7 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.Supplier;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
@@ -39,6 +40,7 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
       new EnumMap<>(SpecMilestone.class);
 
   public MilestoneBasedBlockPublisher(
+      final AsyncRunner asyncRunner,
       final Spec spec,
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
@@ -51,6 +53,7 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
     this.spec = spec;
     final BlockPublisherPhase0 blockPublisherPhase0 =
         new BlockPublisherPhase0(
+            asyncRunner,
             blockFactory,
             blockGossipChannel,
             blockImportChannel,
@@ -63,6 +66,7 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
         Suppliers.memoize(
             () ->
                 new BlockPublisherDeneb(
+                    asyncRunner,
                     blockFactory,
                     blockImportChannel,
                     blockGossipChannel,

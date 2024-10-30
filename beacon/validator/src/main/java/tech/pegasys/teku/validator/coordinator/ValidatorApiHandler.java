@@ -65,8 +65,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
-import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
@@ -92,8 +90,6 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
-import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -108,7 +104,6 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.coordinator.duties.AttesterDutiesGenerator;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
-import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
 
 public class ValidatorApiHandler implements ValidatorApiChannel {
 
@@ -155,10 +150,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final CombinedChainDataClient combinedChainDataClient,
       final SyncStateProvider syncStateProvider,
       final BlockFactory blockFactory,
-      final BlockImportChannel blockImportChannel,
-      final BlockGossipChannel blockGossipChannel,
-      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
-      final BlobSidecarGossipChannel blobSidecarGossipChannel,
       final AggregatingAttestationPool attestationPool,
       final AttestationManager attestationManager,
       final AttestationTopicSubscriber attestationTopicSubscriber,
@@ -173,7 +164,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
       final BlockProductionAndPublishingPerformanceFactory
           blockProductionAndPublishingPerformanceFactory,
-      final boolean gossipBlobsAfterBlock) {
+      final BlockPublisher blockPublisher) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
@@ -194,17 +185,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncCommitteeContributionPool = syncCommitteeContributionPool;
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
     this.proposersDataManager = proposersDataManager;
-    this.blockPublisher =
-        new MilestoneBasedBlockPublisher(
-            spec,
-            blockFactory,
-            blockImportChannel,
-            blockGossipChannel,
-            blockBlobSidecarsTrackersPool,
-            blobSidecarGossipChannel,
-            performanceTracker,
-            dutyMetrics,
-            gossipBlobsAfterBlock);
+    this.blockPublisher = blockPublisher;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
   }
 

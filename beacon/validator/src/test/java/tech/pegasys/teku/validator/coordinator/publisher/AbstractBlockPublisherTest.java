@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -25,7 +26,9 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -34,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
@@ -44,6 +48,7 @@ import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class AbstractBlockPublisherTest {
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
@@ -55,6 +60,7 @@ public class AbstractBlockPublisherTest {
   private final AbstractBlockPublisher blockPublisher =
       spy(
           new BlockPublisherTest(
+              asyncRunner,
               blockFactory,
               blockGossipChannel,
               blockImportChannel,
@@ -81,10 +87,7 @@ public class AbstractBlockPublisherTest {
 
     when(blockPublisher.importBlock(
             signedBlock, BroadcastValidationLevel.NOT_REQUIRED, BlockPublishingPerformance.NOOP))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new BlockImportAndBroadcastValidationResults(
-                    SafeFuture.completedFuture(BlockImportResult.successful(signedBlock)))));
+        .thenReturn(prepareBlockImportResult(BlockImportResult.successful(signedBlock)));
 
     assertThatSafeFuture(
             blockPublisher.sendSignedBlock(
@@ -109,10 +112,7 @@ public class AbstractBlockPublisherTest {
             BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION,
             BlockPublishingPerformance.NOOP))
         .thenReturn(
-            SafeFuture.completedFuture(
-                new BlockImportAndBroadcastValidationResults(
-                    SafeFuture.completedFuture(BlockImportResult.successful(signedBlock)),
-                    validationResult)));
+            prepareBlockImportResult(BlockImportResult.successful(signedBlock), validationResult));
 
     final SafeFuture<SendSignedBlockResult> sendSignedBlockResult =
         blockPublisher.sendSignedBlock(
@@ -121,6 +121,10 @@ public class AbstractBlockPublisherTest {
             BlockPublishingPerformance.NOOP);
 
     assertThatSafeFuture(sendSignedBlockResult).isNotCompleted();
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    verify(blockPublisher, never()).importBlobSidecars(any(), any());
+    asyncRunner.executeDueActions();
+    verify(blockPublisher).importBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
 
     verify(blockPublisher)
         .importBlock(
@@ -159,6 +163,7 @@ public class AbstractBlockPublisherTest {
             BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION,
             BlockPublishingPerformance.NOOP);
 
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
     assertThatSafeFuture(sendSignedBlockResult).isNotCompleted();
 
     verify(blockPublisher)
@@ -187,6 +192,7 @@ public class AbstractBlockPublisherTest {
     final AbstractBlockPublisher blockPublisher =
         spy(
             new BlockPublisherTest(
+                asyncRunner,
                 blockFactory,
                 blockGossipChannel,
                 blockImportChannel,
@@ -199,10 +205,7 @@ public class AbstractBlockPublisherTest {
 
     when(blockPublisher.importBlock(
             signedBlock, BroadcastValidationLevel.NOT_REQUIRED, BlockPublishingPerformance.NOOP))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new BlockImportAndBroadcastValidationResults(
-                    SafeFuture.completedFuture(BlockImportResult.successful(signedBlock)))));
+        .thenReturn(prepareBlockImportResult(BlockImportResult.successful(signedBlock)));
 
     assertThatSafeFuture(
             blockPublisher.sendSignedBlock(
@@ -226,8 +229,48 @@ public class AbstractBlockPublisherTest {
     verify(blockPublisher).importBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
   }
 
+  @Test
+  public void sendSignedBlock_shouldReturnNotImportedWhenBlockImportFails() {
+    when(blockPublisher.importBlock(
+            signedBlock, BroadcastValidationLevel.NOT_REQUIRED, BlockPublishingPerformance.NOOP))
+        .thenReturn(
+            prepareBlockImportResult(
+                BlockImportResult.failedStateTransition(new RuntimeException("Failed"))));
+
+    assertThatSafeFuture(
+            blockPublisher.sendSignedBlock(
+                signedBlockContents,
+                BroadcastValidationLevel.NOT_REQUIRED,
+                BlockPublishingPerformance.NOOP))
+        .isCompletedWithValue(
+            SendSignedBlockResult.notImported(FailureReason.FAILED_STATE_TRANSITION.name()));
+
+    verify(blockPublisher).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
+    verify(blockPublisher).publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+    verify(blockPublisher)
+        .importBlock(
+            signedBlock, BroadcastValidationLevel.NOT_REQUIRED, BlockPublishingPerformance.NOOP);
+    verify(blockPublisher).importBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+  }
+
+  private SafeFuture<BlockImportAndBroadcastValidationResults> prepareBlockImportResult(
+      final BlockImportResult blockImportResult) {
+    return SafeFuture.completedFuture(
+        new BlockImportAndBroadcastValidationResults(
+            SafeFuture.completedFuture(blockImportResult)));
+  }
+
+  private SafeFuture<BlockImportAndBroadcastValidationResults> prepareBlockImportResult(
+      final BlockImportResult blockImportResult,
+      final SafeFuture<BroadcastValidationResult> broadcastValidationResult) {
+    return SafeFuture.completedFuture(
+        new BlockImportAndBroadcastValidationResults(
+            SafeFuture.completedFuture(blockImportResult), broadcastValidationResult));
+  }
+
   private static class BlockPublisherTest extends AbstractBlockPublisher {
     public BlockPublisherTest(
+        final AsyncRunner asyncRunner,
         final BlockFactory blockFactory,
         final BlockGossipChannel blockGossipChannel,
         final BlockImportChannel blockImportChannel,
@@ -235,6 +278,7 @@ public class AbstractBlockPublisherTest {
         final DutyMetrics dutyMetrics,
         final boolean gossipBlobsAfterBlock) {
       super(
+          asyncRunner,
           blockFactory,
           blockGossipChannel,
           blockImportChannel,

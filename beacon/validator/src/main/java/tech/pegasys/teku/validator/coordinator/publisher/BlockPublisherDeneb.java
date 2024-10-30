@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.coordinator.publisher;
 
 import java.util.List;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -31,6 +32,7 @@ public class BlockPublisherDeneb extends BlockPublisherPhase0 {
   protected final BlobSidecarGossipChannel blobSidecarGossipChannel;
 
   public BlockPublisherDeneb(
+      final AsyncRunner asyncRunner,
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
       final BlockGossipChannel blockGossipChannel,
@@ -40,6 +42,7 @@ public class BlockPublisherDeneb extends BlockPublisherPhase0 {
       final DutyMetrics dutyMetrics,
       final boolean gossipBlobsAfterBlock) {
     super(
+        asyncRunner,
         blockFactory,
         blockGossipChannel,
         blockImportChannel,

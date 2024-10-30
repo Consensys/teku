@@ -207,6 +207,7 @@ import tech.pegasys.teku.validator.coordinator.performance.NoOpPerformanceTracke
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.SyncCommitteePerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.ValidatorPerformanceMetrics;
+import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
@@ -968,6 +969,22 @@ public class BeaconChainController extends Service implements BeaconChainControl
             beaconConfig.getMetricsConfig().getBlockPublishingPerformanceWarningLocalThreshold(),
             beaconConfig.getMetricsConfig().getBlockPublishingPerformanceWarningBuilderThreshold());
 
+    final DutyMetrics dutyMetrics =
+        DutyMetrics.create(metricsSystem, timeProvider, recentChainData, spec);
+
+    final MilestoneBasedBlockPublisher blockPublisher =
+        new MilestoneBasedBlockPublisher(
+            beaconAsyncRunner,
+            spec,
+            blockFactory,
+            blockImportChannel,
+            blockGossipChannel,
+            blockBlobSidecarsTrackersPool,
+            blobSidecarGossipChannel,
+            performanceTracker,
+            dutyMetrics,
+            beaconConfig.p2pConfig().isGossipBlobsAfterBlockEnabled());
+
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculator),
@@ -976,15 +993,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
             combinedChainDataClient,
             syncService,
             blockFactory,
-            blockImportChannel,
-            blockGossipChannel,
-            blockBlobSidecarsTrackersPool,
-            blobSidecarGossipChannel,
             attestationPool,
             attestationManager,
             attestationTopicSubscriber,
             activeValidatorTracker,
-            DutyMetrics.create(metricsSystem, timeProvider, recentChainData, spec),
+            dutyMetrics,
             performanceTracker,
             spec,
             forkChoiceTrigger,
@@ -993,7 +1006,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
             blockProductionPerformanceFactory,
-            beaconConfig.p2pConfig().isGossipBlobsAfterBlockEnabled());
+            blockPublisher);
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
         .subscribe(ExecutionClientEventsChannel.class, executionClientVersionProvider)

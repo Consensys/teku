@@ -22,6 +22,7 @@ import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -40,6 +41,8 @@ import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 public abstract class AbstractBlockPublisher implements BlockPublisher {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final AsyncRunner asyncRunner;
+
   private final boolean gossipBlobsAfterBlock;
 
   protected final BlockFactory blockFactory;
@@ -49,12 +52,14 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
   protected final DutyMetrics dutyMetrics;
 
   public AbstractBlockPublisher(
+      final AsyncRunner asyncRunner,
       final BlockFactory blockFactory,
       final BlockGossipChannel blockGossipChannel,
       final BlockImportChannel blockImportChannel,
       final PerformanceTracker performanceTracker,
       final DutyMetrics dutyMetrics,
       final boolean gossipBlobsAfterBlock) {
+    this.asyncRunner = asyncRunner;
     this.blockFactory = blockFactory;
     this.blockImportChannel = blockImportChannel;
     this.blockGossipChannel = blockGossipChannel;
@@ -109,6 +114,13 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
         blockImportAndBroadcastValidationResults =
             importBlock(block, broadcastValidationLevel, blockPublishingPerformance);
 
+    // prepare and import blob sidecars in parallel with block import
+    asyncRunner
+        .runAsync(() -> importBlobSidecars(blobSidecars.get(), blockPublishingPerformance))
+        .finish(
+            error ->
+                LOG.error("Failed to import blob sidecars for slot {}", block.getSlot(), error));
+
     blockImportAndBroadcastValidationResults
         .thenCompose(BlockImportAndBroadcastValidationResults::broadcastValidationResult)
         .thenAccept(
@@ -116,7 +128,6 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
               if (broadcastValidationResult == BroadcastValidationResult.SUCCESS) {
                 publishBlockAndBlobs(block, blobSidecars, blockPublishingPerformance);
                 LOG.debug("Block (and blob sidecars) publishing initiated");
-                importBlobSidecars(blobSidecars.get(), blockPublishingPerformance);
               } else {
                 LOG.warn(
                     "Block (and blob sidecars) publishing skipped due to broadcast validation result {} for slot {}",
@@ -143,8 +154,8 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
       publishBlock(block, blockPublishingPerformance)
           .always(() -> publishBlobSidecars(blobSidecars.get(), blockPublishingPerformance));
     } else {
-      publishBlock(block, BlockPublishingPerformance.NOOP).ifExceptionGetsHereRaiseABug();
-      publishBlobSidecars(blobSidecars.get(), BlockPublishingPerformance.NOOP);
+      publishBlock(block, blockPublishingPerformance).ifExceptionGetsHereRaiseABug();
+      publishBlobSidecars(blobSidecars.get(), blockPublishingPerformance);
     }
   }
 
