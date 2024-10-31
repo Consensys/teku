@@ -31,7 +31,7 @@ public class BlsToExecutionChangeFuzzInput
     return ContainerSchema2.create(
         SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
         spec.getSchemaDefinitions()
-            .toVersionCapella()
+            .toVersionElectra()
             .orElseThrow()
             .getSignedBlsToExecutionChangeSchema(),
         BlsToExecutionChangeFuzzInput::new);

@@ -15,16 +15,11 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix.LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella.HISTORICAL_SUMMARIES_INDEX;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella.NEXT_WITHDRAWAL_INDEX;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella.NEXT_WITHDRAWAL_VALIDATOR_INDEX;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
-import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
@@ -36,7 +31,7 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
 
 public class BeaconStateSchemaDeneb
@@ -47,39 +42,21 @@ public class BeaconStateSchemaDeneb
     super("BeaconStateDeneb", getUniqueFields(specConfig), specConfig);
   }
 
-  private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
-    final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema =
-        new HistoricalSummary.HistoricalSummarySchema();
-    final SszField latestExecutionPayloadHeaderField =
-        new SszField(
-            LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
-            BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
-            () -> new ExecutionPayloadHeaderSchemaDeneb(SpecConfigDeneb.required(specConfig)));
-    final SszField nextWithdrawalIndexField =
-        new SszField(
-            NEXT_WITHDRAWAL_INDEX,
-            BeaconStateFields.NEXT_WITHDRAWAL_INDEX,
-            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
-    final SszField nextWithdrawalValidatorIndexField =
-        new SszField(
-            NEXT_WITHDRAWAL_VALIDATOR_INDEX,
-            BeaconStateFields.NEXT_WITHDRAWAL_VALIDATOR_INDEX,
-            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
+  public static List<SszField> getUniqueFields(final SpecConfig specConfig) {
+    final List<SszField> updatedFields =
+        List.of(
+            new SszField(
+                LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
+                BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
+                () -> new ExecutionPayloadHeaderSchemaDeneb(SpecConfigDeneb.required(specConfig))));
 
-    final SszField historicalSummariesField =
-        new SszField(
-            HISTORICAL_SUMMARIES_INDEX,
-            BeaconStateFields.HISTORICAL_SUMMARIES,
-            () ->
-                SszListSchema.create(
-                    historicalSummarySchema, specConfig.getHistoricalRootsLimit()));
-    return Stream.concat(
-            BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
-            Stream.of(
-                latestExecutionPayloadHeaderField,
-                nextWithdrawalIndexField,
-                nextWithdrawalValidatorIndexField,
-                historicalSummariesField))
+    return BeaconStateSchemaCapella.getUniqueFields(specConfig).stream()
+        .map(
+            field ->
+                updatedFields.stream()
+                    .filter(updatedField -> updatedField.getIndex() == field.getIndex())
+                    .findFirst()
+                    .orElse(field))
         .toList();
   }
 
