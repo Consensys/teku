@@ -65,9 +65,9 @@ public class BlockPublisherPhase0 extends AbstractBlockPublisher {
   @Override
   SafeFuture<Void> publishBlock(
       final SignedBeaconBlock block, final BlockPublishingPerformance blockPublishingPerformance) {
-    blockGossipChannel.publishBlock(block).ifExceptionGetsHereRaiseABug();
-    blockPublishingPerformance.blockPublishingInitiated();
-    return SafeFuture.COMPLETE;
+    return blockGossipChannel
+        .publishBlock(block)
+        .alwaysRun(blockPublishingPerformance::blockPublishingInitiated);
   }
 
   @Override
