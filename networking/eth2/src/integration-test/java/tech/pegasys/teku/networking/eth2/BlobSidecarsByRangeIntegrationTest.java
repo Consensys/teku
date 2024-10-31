@@ -24,18 +24,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
-
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
-import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -53,6 +48,7 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
     peer = createPeer(specContext.getSpec());
     specMilestone = specContext.getSpecMilestone();
   }
+
   @TestTemplate
   public void requestBlobSidecars_shouldFailBeforeDenebMilestone() {
     assumeThat(specMilestone).isLessThan(DENEB);

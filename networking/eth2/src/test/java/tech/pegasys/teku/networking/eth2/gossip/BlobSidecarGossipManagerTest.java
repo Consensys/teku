@@ -21,7 +21,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -137,7 +136,7 @@ public class BlobSidecarGossipManagerTest {
         dataStructureUtil.createRandomBlobSidecarBuilder().index(UInt64.valueOf(10)).build();
     final Bytes serialized = gossipEncoding.encode(blobSidecar);
 
-      safeJoin(blobSidecarGossipManager.publishBlobSidecar(blobSidecar));
+    safeJoin(blobSidecarGossipManager.publishBlobSidecar(blobSidecar));
 
     final int blobSidecarSubnetCount = getBlobSidecarSubnetCount();
 
@@ -195,11 +194,11 @@ public class BlobSidecarGossipManagerTest {
         .hasValue("blob sidecar with subnet_id 2 does not match the topic subnet_id 1");
   }
 
-    private int getBlobSidecarSubnetCount() {
-        return specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)
-                ? SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig())
-                .getBlobSidecarSubnetCountElectra()
-                : SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
-                .getBlobSidecarSubnetCount();
-    }
+  private int getBlobSidecarSubnetCount() {
+    return specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)
+        ? SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig())
+            .getBlobSidecarSubnetCountElectra()
+        : SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+            .getBlobSidecarSubnetCount();
+  }
 }
