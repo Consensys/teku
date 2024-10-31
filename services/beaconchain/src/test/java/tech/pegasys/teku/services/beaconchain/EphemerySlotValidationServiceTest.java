@@ -46,7 +46,7 @@ class EphemerySlotValidationServiceTest {
 
     assertThat(ephemeryNetwork).contains(Eth2Network.EPHEMERY);
     assertThatThrownBy(() -> ephemerySlotValidationService.onSlot(invalidSlot))
-        .isInstanceOf(IllegalStateException.class)
+        .isInstanceOf(EphemeryLifecycleException.class)
         .hasMessageContaining(
             String.format(
                 "Slot %s exceeds maximum allowed slot %s for ephemery network",

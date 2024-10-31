@@ -25,7 +25,7 @@ public class EphemerySlotValidationService extends Service implements SlotEvents
   @Override
   public void onSlot(final UInt64 slot) {
     if (slot.isGreaterThan(MAX_EPHEMERY_SLOT)) {
-      throw new IllegalStateException(
+      throw new EphemeryLifecycleException(
           String.format(
               "Slot %s exceeds maximum allowed slot %s for ephemery network",
               slot, MAX_EPHEMERY_SLOT));
