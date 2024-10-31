@@ -31,11 +31,12 @@ public class HistoricalSummary extends Container2<HistoricalSummary, SszBytes32,
     }
 
     @Override
-    public HistoricalSummary createFromBackingNode(TreeNode node) {
+    public HistoricalSummary createFromBackingNode(final TreeNode node) {
       return new HistoricalSummary(this, node);
     }
 
-    public HistoricalSummary create(SszBytes32 blockSummaryRoot, SszBytes32 stateSummaryRoot) {
+    public HistoricalSummary create(
+        final SszBytes32 blockSummaryRoot, final SszBytes32 stateSummaryRoot) {
       return new HistoricalSummary(this, blockSummaryRoot, stateSummaryRoot);
     }
 
@@ -48,12 +49,14 @@ public class HistoricalSummary extends Container2<HistoricalSummary, SszBytes32,
     }
   }
 
-  private HistoricalSummary(HistoricalSummarySchema type, TreeNode backingNode) {
+  private HistoricalSummary(final HistoricalSummarySchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   private HistoricalSummary(
-      HistoricalSummarySchema type, SszBytes32 blockSummaryRoot, SszBytes32 stateSummaryRoot) {
+      final HistoricalSummarySchema type,
+      final SszBytes32 blockSummaryRoot,
+      final SszBytes32 stateSummaryRoot) {
     super(type, blockSummaryRoot, stateSummaryRoot);
   }
 

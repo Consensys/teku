@@ -281,7 +281,7 @@ class DiscoveryNetworkTest {
 
   @ParameterizedTest
   @MethodSource("provideNodeIds")
-  public void nodeIdMustBeWrappedInUint256(String nodeIdValue) {
+  public void nodeIdMustBeWrappedInUint256(final String nodeIdValue) {
     final Optional<Bytes> nodeId =
         Optional.of(Bytes.wrap(new BigInteger(nodeIdValue).toByteArray()));
     when(discoveryService.getNodeId()).thenReturn(nodeId);
@@ -290,11 +290,12 @@ class DiscoveryNetworkTest {
         .isEqualTo(nodeIdValue);
   }
 
-  public DiscoveryPeer createDiscoveryPeer(Optional<EnrForkId> maybeForkId) {
+  public DiscoveryPeer createDiscoveryPeer(final Optional<EnrForkId> maybeForkId) {
     final SszBitvector syncCommitteeSubnets =
         schemaDefinitions.getSyncnetsENRFieldSchema().getDefault();
     return new DiscoveryPeer(
         BLSPublicKey.empty().toSSZBytes(),
+        Bytes32.ZERO,
         InetSocketAddress.createUnresolved("yo", 9999),
         maybeForkId,
         SszBitvectorSchema.create(spec.getNetworkingConfig().getAttestationSubnetCount())

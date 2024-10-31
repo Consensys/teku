@@ -114,7 +114,7 @@ public class SpecConfigReader {
     return configBuilder.build();
   }
 
-  public SpecConfig build(Consumer<SpecConfigBuilder> modifier) {
+  public SpecConfig build(final Consumer<SpecConfigBuilder> modifier) {
     modifier.accept(configBuilder);
     return build();
   }
@@ -222,7 +222,7 @@ public class SpecConfigReader {
       if (!ignoreUnknownConfigItems) {
         throw new IllegalArgumentException("Detected unknown spec config entries: " + unknownKeys);
       } else {
-        LOG.info("Ignoring unknown items in network configuration: {}", unknownKeys);
+        LOG.warn("Ignoring unknown items in network configuration: {}", unknownKeys);
       }
     }
   }
@@ -244,7 +244,7 @@ public class SpecConfigReader {
     }
   }
 
-  private Stream<Method> streamConfigSetters(Class<?> builderClass) {
+  private Stream<Method> streamConfigSetters(final Class<?> builderClass) {
     // Ignore any setters that aren't for individual config entries
     final Set<String> ignoredSetters = Set.of("rawConfig");
 
@@ -325,7 +325,7 @@ public class SpecConfigReader {
   }
 
   private interface BuilderSupplier<TBuilder> {
-    static <T> BuilderSupplier<T> fromBuilder(T builder) {
+    static <T> BuilderSupplier<T> fromBuilder(final T builder) {
       return (consumer) -> consumer.accept(builder);
     }
 

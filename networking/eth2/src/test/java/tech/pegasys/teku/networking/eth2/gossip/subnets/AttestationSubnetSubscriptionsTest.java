@@ -69,7 +69,7 @@ public class AttestationSubnetSubscriptionsTest {
             recentChainData,
             processor,
             recentChainData.getCurrentForkInfo().orElseThrow(),
-            mock(DebugDataDumper.class));
+            DebugDataDumper.NOOP);
     subnetSubscriptions.subscribe();
 
     when(gossipNetwork.subscribe(any(), any())).thenReturn(mock(TopicChannel.class));

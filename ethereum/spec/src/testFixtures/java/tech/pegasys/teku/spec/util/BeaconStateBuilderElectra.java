@@ -29,8 +29,8 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public class BeaconStateBuilderElectra
@@ -46,7 +46,7 @@ public class BeaconStateBuilderElectra
   private SyncCommittee nextSyncCommittee;
   private ExecutionPayloadHeader latestExecutionPayloadHeader;
 
-  private UInt64 depositReceiptsStartIndex;
+  private UInt64 depositRequestsStartIndex;
   private UInt64 depositBalanceToConsume;
   private UInt64 exitBalanceToConsume;
   private UInt64 earliestExitEpoch;
@@ -55,7 +55,7 @@ public class BeaconStateBuilderElectra
 
   private UInt64 earliestConsolidationEpoch;
 
-  private SszList<PendingBalanceDeposit> pendingBalanceDeposits;
+  private SszList<PendingDeposit> pendingDeposits;
   private SszList<PendingPartialWithdrawal> pendingPartialWithdrawals;
   private SszList<PendingConsolidation> pendingConsolidations;
 
@@ -82,13 +82,13 @@ public class BeaconStateBuilderElectra
     state.setLatestExecutionPayloadHeader(latestExecutionPayloadHeader);
     state.setNextWithdrawalIndex(nextWithdrawalIndex);
     state.setNextWithdrawalValidatorIndex(nextWithdrawalValidatorIndex);
-    state.setDepositReceiptsStartIndex(depositReceiptsStartIndex);
+    state.setDepositRequestsStartIndex(depositRequestsStartIndex);
     state.setDepositBalanceToConsume(depositBalanceToConsume);
     state.setExitBalanceToConsume(exitBalanceToConsume);
     state.setEarliestExitEpoch(earliestExitEpoch);
     state.setConsolidationBalanceToConsume(consolidationBalanceToConsume);
     state.setEarliestConsolidationEpoch(earliestConsolidationEpoch);
-    state.setPendingBalanceDeposits(pendingBalanceDeposits);
+    state.setPendingDeposits(pendingDeposits);
     state.setPendingPartialWithdrawals(pendingPartialWithdrawals);
     state.setPendingConsolidations(pendingConsolidations);
   }
@@ -118,10 +118,10 @@ public class BeaconStateBuilderElectra
     return this;
   }
 
-  public BeaconStateBuilderElectra depositReceiptsStartIndex(
-      final UInt64 depositReceiptsStartIndex) {
-    checkNotNull(depositReceiptsStartIndex);
-    this.depositReceiptsStartIndex = depositReceiptsStartIndex;
+  public BeaconStateBuilderElectra depositRequestsStartIndex(
+      final UInt64 depositRequestsStartIndex) {
+    checkNotNull(depositRequestsStartIndex);
+    this.depositRequestsStartIndex = depositRequestsStartIndex;
     return this;
   }
 
@@ -166,14 +166,13 @@ public class BeaconStateBuilderElectra
             ? dataStructureUtil.randomUInt64(defaultValidatorCount)
             : UInt64.ZERO;
 
-    this.depositReceiptsStartIndex = SpecConfigElectra.UNSET_DEPOSIT_RECEIPTS_START_INDEX;
+    this.depositRequestsStartIndex = SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX;
     this.depositBalanceToConsume = UInt64.ZERO;
     this.exitBalanceToConsume = UInt64.ZERO;
     this.earliestExitEpoch = UInt64.ZERO;
     this.consolidationBalanceToConsume = UInt64.ZERO;
     this.earliestConsolidationEpoch = UInt64.ZERO;
-    this.pendingBalanceDeposits =
-        schema.getPendingBalanceDepositsSchema().createFromElements(List.of());
+    this.pendingDeposits = schema.getPendingDepositsSchema().createFromElements(List.of());
     this.pendingPartialWithdrawals =
         schema.getPendingPartialWithdrawalsSchema().createFromElements(List.of());
     this.pendingConsolidations =

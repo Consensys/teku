@@ -56,18 +56,16 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
       final BlockPublishingPerformance blockPublishingPerformance) {
     // provide blobs for the block before importing it
     blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
-    return blockImportChannel
-        .importBlock(block, broadcastValidationLevel)
-        .thenPeek(__ -> blockPublishingPerformance.blockImportCompleted());
+    return blockImportChannel.importBlock(block, broadcastValidationLevel);
   }
 
   @Override
   void publishBlockAndBlobSidecars(
       final SignedBeaconBlock block,
       final List<BlobSidecar> blobSidecars,
-      BlockPublishingPerformance blockPublishingPerformance) {
-    blockGossipChannel.publishBlock(block);
-    blobSidecarGossipChannel.publishBlobSidecars(blobSidecars);
+      final BlockPublishingPerformance blockPublishingPerformance) {
+    blockGossipChannel.publishBlock(block).ifExceptionGetsHereRaiseABug();
+    blobSidecarGossipChannel.publishBlobSidecars(blobSidecars).ifExceptionGetsHereRaiseABug();
     blockPublishingPerformance.blockAndBlobSidecarsPublishingInitiated();
   }
 }

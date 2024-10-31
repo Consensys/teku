@@ -34,8 +34,8 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 
 public class GetAggregateAttestation extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/aggregate_attestation";
@@ -57,24 +57,23 @@ public class GetAggregateAttestation extends RestApiEndpoint {
             .description(
                 "Aggregates all attestations matching given attestation data root and slot.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
+            .deprecated(true)
             .queryParamRequired(ATTESTATION_DATA_ROOT_PARAMETER)
             .queryParamRequired(SLOT_PARAM)
-            .response(
-                HttpStatusCodes.SC_OK,
-                "Request successful",
-                getResponseType(spec.getGenesisSpecConfig()))
+            .response(HttpStatusCodes.SC_OK, "Request successful", getResponseType(spec))
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.provider = provider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final Bytes32 beaconBlockRoot = request.getQueryParameter(ATTESTATION_DATA_ROOT_PARAMETER);
     final UInt64 slot = request.getQueryParameter(SLOT_PARAM);
 
     final SafeFuture<Optional<Attestation>> future =
-        provider.createAggregate(slot, beaconBlockRoot);
+        provider.createAggregate(slot, beaconBlockRoot, Optional.empty());
 
     request.respondAsync(
         future.thenApply(
@@ -84,12 +83,16 @@ public class GetAggregateAttestation extends RestApiEndpoint {
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
-  private static SerializableTypeDefinition<Attestation> getResponseType(SpecConfig specConfig) {
-    Attestation.AttestationSchema dataSchema = new Attestation.AttestationSchema(specConfig);
+  private static SerializableTypeDefinition<Attestation> getResponseType(final Spec spec) {
+    final AttestationSchema<?> dataSchema =
+        spec.getGenesisSchemaDefinitions().getAttestationSchema();
 
     return SerializableTypeDefinition.object(Attestation.class)
         .name("GetAggregatedAttestationResponse")
-        .withField("data", dataSchema.getJsonTypeDefinition(), Function.identity())
+        .withField(
+            "data",
+            dataSchema.castTypeToAttestationSchema().getJsonTypeDefinition(),
+            Function.identity())
         .build();
   }
 }

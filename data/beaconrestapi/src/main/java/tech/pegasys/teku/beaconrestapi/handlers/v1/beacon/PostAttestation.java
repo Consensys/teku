@@ -65,12 +65,13 @@ public class PostAttestation extends RestApiEndpoint {
                 SC_BAD_REQUEST,
                 "Errors with one or more attestations",
                 ErrorListBadRequest.getJsonTypeDefinition())
+            .withChainDataResponses()
             .build());
     this.provider = provider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final List<Attestation> attestations = request.getRequestBody();
     final SafeFuture<List<SubmitDataError>> future = provider.submitAttestations(attestations);
 

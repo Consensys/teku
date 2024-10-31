@@ -25,13 +25,13 @@ import pubsub.pb.Rpc;
 public class GossipWireValidator implements PubsubRouterMessageValidator {
 
   public static class InvalidGossipMessageException extends IllegalArgumentException {
-    public InvalidGossipMessageException(String s) {
+    public InvalidGossipMessageException(final String s) {
       super(s);
     }
   }
 
   @Override
-  public void validate(@NotNull PubsubMessage pubsubMessage) {
+  public void validate(final @NotNull PubsubMessage pubsubMessage) {
     Rpc.Message message = pubsubMessage.getProtobufMessage();
     if (message.hasFrom()) {
       throw new InvalidGossipMessageException("The message has prohibited 'from' field: ");

@@ -51,7 +51,7 @@ public class SlashingProtectionImporterTest {
   public void shouldFailWithParseError(@TempDir final Path tempDir)
       throws URISyntaxException, IOException {
     final String errorString = loadAndGetErrorText("minimal_invalidKey.json", tempDir);
-    assertThat(errorString).startsWith("Failed to load data");
+    assertThat(errorString).startsWith("Json does not appear valid.");
   }
 
   @Test
@@ -73,11 +73,11 @@ public class SlashingProtectionImporterTest {
   public void shouldFailIfMetadataNotPresent(@TempDir final Path tempDir)
       throws IOException, URISyntaxException {
     final String errorString = loadAndGetErrorText("signedBlock.json", tempDir);
-    assertThat(errorString).contains("does not appear to have metadata");
+    assertThat(errorString).contains("required fields: (metadata");
   }
 
   @Test
-  public void shouldImportSingleRecord(@TempDir Path tempDir)
+  public void shouldImportSingleRecord(@TempDir final Path tempDir)
       throws URISyntaxException, IOException {
     final File ruleFile = usingResourceFile("slashProtection.yml", tempDir);
     final SlashingProtectionImporter importer = new SlashingProtectionImporter(tempDir);
@@ -88,7 +88,7 @@ public class SlashingProtectionImporterTest {
   }
 
   @Test
-  public void shouldExportAndImportFile(@TempDir Path tempDir)
+  public void shouldExportAndImportFile(@TempDir final Path tempDir)
       throws IOException, URISyntaxException {
     final Path exportedFile = tempDir.resolve("exportedFile.json").toAbsolutePath();
 
@@ -115,7 +115,7 @@ public class SlashingProtectionImporterTest {
   }
 
   @Test
-  void shouldImportFileOverRepairedRecords(@TempDir Path tempDir) throws Exception {
+  void shouldImportFileOverRepairedRecords(@TempDir final Path tempDir) throws Exception {
     final SubCommandLogger logger = mock(SubCommandLogger.class);
     final Path initialRecords = tempDir.resolve("initial");
     final Path repairedRecords = tempDir.resolve("repaired");
@@ -157,15 +157,12 @@ public class SlashingProtectionImporterTest {
     assertThat(importedRecord)
         .isEqualTo(
             new ValidatorSigningRecord(
-                initialRecord.getGenesisValidatorsRoot(),
-                repairedSlot,
-                repairedEpoch,
-                repairedEpoch));
+                initialRecord.genesisValidatorsRoot(), repairedSlot, repairedEpoch, repairedEpoch));
   }
 
   @Test
   void shouldFailImportingIfValidatorExistingRecordHasDifferentGenesisValidatorsRoot(
-      @TempDir Path tempDir) throws URISyntaxException, IOException {
+      @TempDir final Path tempDir) throws URISyntaxException, IOException {
     final SlashingProtectionImporter importer = new SlashingProtectionImporter(tempDir);
 
     final File slashProtection = getResourceFile("format2_minimal.json");

@@ -5,5 +5,7 @@ dependencies {
     implementation project(':infrastructure:restapi')
     implementation project(':infrastructure:http')
 
+    implementation 'io.tmio:tuweni-units'
+
     testImplementation testFixtures(project(':ethereum:spec'))
 }

@@ -26,7 +26,8 @@ public class SignedVoluntaryExit {
   public final BLSSignature signature;
 
   public SignedVoluntaryExit(
-      tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit signedVoluntaryExit) {
+      final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit
+          signedVoluntaryExit) {
     this.signature = new BLSSignature(signedVoluntaryExit.getSignature());
     this.message = new VoluntaryExit(signedVoluntaryExit.getMessage());
   }
@@ -52,7 +53,7 @@ public class SignedVoluntaryExit {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

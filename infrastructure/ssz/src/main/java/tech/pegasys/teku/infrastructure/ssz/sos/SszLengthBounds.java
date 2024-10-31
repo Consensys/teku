@@ -22,19 +22,19 @@ public class SszLengthBounds {
   private final long min;
   private final long max;
 
-  public static SszLengthBounds ofBits(long fixedSize) {
+  public static SszLengthBounds ofBits(final long fixedSize) {
     return new SszLengthBounds(fixedSize, fixedSize);
   }
 
-  public static SszLengthBounds ofBits(long min, long max) {
+  public static SszLengthBounds ofBits(final long min, final long max) {
     return new SszLengthBounds(min, max);
   }
 
-  public static SszLengthBounds ofBytes(long fixedSize) {
+  public static SszLengthBounds ofBytes(final long fixedSize) {
     return new SszLengthBounds(fixedSize * 8, fixedSize * 8);
   }
 
-  public static SszLengthBounds ofBytes(long min, long max) {
+  public static SszLengthBounds ofBytes(final long min, final long max) {
     return new SszLengthBounds(min * 8, max * 8);
   }
 
@@ -112,7 +112,7 @@ public class SszLengthBounds {
         .toString();
   }
 
-  private static String fromBits(long bits) {
+  private static String fromBits(final long bits) {
     long bytes = bits / 8;
     return "" + bytes + ((bits & 7) == 0 ? "" : "(+" + (bits - bytes * 8) + " bits)");
   }

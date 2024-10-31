@@ -1,0 +1,13 @@
+{
+  "title" : "AttesterSlashingPhase0",
+  "type" : "object",
+  "required" : [ "attestation_1", "attestation_2" ],
+  "properties" : {
+    "attestation_1" : {
+      "$ref" : "#/components/schemas/IndexedAttestationPhase0"
+    },
+    "attestation_2" : {
+      "$ref" : "#/components/schemas/IndexedAttestationPhase0"
+    }
+  }
+}

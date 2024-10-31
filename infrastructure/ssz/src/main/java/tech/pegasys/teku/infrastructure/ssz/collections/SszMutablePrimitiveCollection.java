@@ -25,12 +25,12 @@ public interface SszMutablePrimitiveCollection<ElementT, SszElementT extends Ssz
     return (SszPrimitiveSchema<ElementT, SszElementT>) getSchema().getElementSchema();
   }
 
-  default void setElement(int index, ElementT primitiveValue) {
+  default void setElement(final int index, final ElementT primitiveValue) {
     SszElementT sszData = getPrimitiveElementSchema().boxed(primitiveValue);
     set(index, sszData);
   }
 
-  default void setAllElements(Iterable<ElementT> newChildren) {
+  default void setAllElements(final Iterable<ElementT> newChildren) {
     clear();
     int idx = 0;
     for (ElementT newChild : newChildren) {

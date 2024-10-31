@@ -101,7 +101,9 @@ public class SlashingProtectionLoggerTest {
     List<Validator> protectedValidators = new ArrayList<>();
     protectedValidators.add(validator);
     when(slashingProtector.getSigningRecord(validator.getPublicKey()))
-        .thenReturn(Optional.of(new ValidatorSigningRecord(Bytes32.ZERO, UInt64.ZERO, null, null)));
+        .thenReturn(
+            Optional.of(
+                new ValidatorSigningRecord(Optional.of(Bytes32.ZERO), UInt64.ZERO, null, null)));
     slashingProtectionLogger.protectionSummary(protectedValidators);
     asyncRunner.executeQueuedActions();
     Set<String> protectedValidatorKeys = new HashSet<>();
@@ -117,7 +119,9 @@ public class SlashingProtectionLoggerTest {
     List<Validator> protectedValidators = new ArrayList<>();
     protectedValidators.add(validator);
     when(slashingProtector.getSigningRecord(validator.getPublicKey()))
-        .thenReturn(Optional.of(new ValidatorSigningRecord(Bytes32.ZERO, UInt64.ZERO, null, null)));
+        .thenReturn(
+            Optional.of(
+                new ValidatorSigningRecord(Optional.of(Bytes32.ZERO), UInt64.ZERO, null, null)));
     slashingProtectionLogger.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(1000)));
     slashingProtectionLogger.protectionSummary(protectedValidators);
     asyncRunner.executeQueuedActions();
@@ -135,7 +139,10 @@ public class SlashingProtectionLoggerTest {
         .thenReturn(
             Optional.of(
                 new ValidatorSigningRecord(
-                    Bytes32.ZERO, UInt64.ZERO, UInt64.valueOf(900), UInt64.valueOf(950))));
+                    Optional.of(Bytes32.ZERO),
+                    UInt64.ZERO,
+                    UInt64.valueOf(900),
+                    UInt64.valueOf(950))));
 
     List<Validator> validators = List.of(validator);
     slashingProtectionLogger.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(1000)));
@@ -148,13 +155,13 @@ public class SlashingProtectionLoggerTest {
     verify(validatorLogger, never()).outdatedSlashingProtection(any(), any());
   }
 
-  private Validator createProtectedValidator(BLSPublicKey publicKey) {
+  private Validator createProtectedValidator(final BLSPublicKey publicKey) {
     Signer localSigner = new NoOpLocalSigner();
     Signer signer = new SlashingProtectedSigner(publicKey, slashingProtector, localSigner);
     return new Validator(publicKey, signer, mock(GraffitiProvider.class));
   }
 
-  private Validator createUnProtectedValidator(BLSPublicKey publicKey) {
+  private Validator createUnProtectedValidator(final BLSPublicKey publicKey) {
     ExternalSigner externalSigner;
     try {
       externalSigner =

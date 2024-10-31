@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 
 public class SpecFactory {
 
-  public static Spec create(String configName) {
+  public static Spec create(final String configName) {
     return create(configName, __ -> {});
   }
 

@@ -31,25 +31,30 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps.CREATE_TOTAL;
 import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps.SIGN;
+import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -61,44 +66,51 @@ import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.duties.attestations.AttestationProductionDuty;
 import tech.pegasys.teku.validator.client.duties.attestations.BatchAttestationSendingStrategy;
 
+@TestSpecContext(milestone = {PHASE0, ELECTRA})
 class AttestationProductionDutyTest {
 
   private static final String TYPE = "attestation";
   private static final UInt64 SLOT = UInt64.valueOf(1488);
 
-  private final Spec spec = TestSpecFactory.createDefault();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final ForkInfo fork = dataStructureUtil.randomForkInfo();
+  private Spec spec;
+  private DataStructureUtil dataStructureUtil;
+  private ForkInfo fork;
   private final ForkProvider forkProvider = mock(ForkProvider.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
   private final ValidatorDutyMetrics validatorDutyMetrics =
       spy(ValidatorDutyMetrics.create(new StubMetricsSystem()));
 
-  private final AttestationProductionDuty duty =
-      new AttestationProductionDuty(
-          spec,
-          SLOT,
-          forkProvider,
-          validatorApiChannel,
-          new BatchAttestationSendingStrategy<>(validatorApiChannel::sendSignedAttestations),
-          validatorDutyMetrics);
+  private AttestationProductionDuty duty;
 
   @BeforeEach
-  public void setUp() {
+  public void setUp(final SpecContext specContext) {
+    spec = specContext.getSpec();
+    dataStructureUtil = specContext.getDataStructureUtil();
+    fork = dataStructureUtil.randomForkInfo();
+
+    duty =
+        new AttestationProductionDuty(
+            spec,
+            SLOT,
+            forkProvider,
+            validatorApiChannel,
+            new BatchAttestationSendingStrategy<>(validatorApiChannel::sendSignedAttestations),
+            validatorDutyMetrics);
+
     when(forkProvider.getForkInfo(any())).thenReturn(completedFuture(fork));
     when(validatorApiChannel.sendSignedAttestations(any()))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
   }
 
-  @Test
+  @TestTemplate
   public void shouldNotProduceAnyAttestationsWhenNoValidatorsAdded() {
     performAndReportDuty();
 
     verifyNoInteractions(validatorApiChannel, validatorLogger, validatorDutyMetrics);
   }
 
-  @Test
+  @TestTemplate
   public void shouldFailWhenUnsignedAttestationCanNotBeCreated() {
     final Validator validator = createValidator();
     when(validatorApiChannel.createAttestationData(SLOT, 0))
@@ -121,7 +133,7 @@ class AttestationProductionDutyTest {
         .record(any(), any(AttestationProductionDuty.class), eq(CREATE_TOTAL));
   }
 
-  @Test
+  @TestTemplate
   public void shouldPublishProducedAttestationsWhenSomeUnsignedAttestationsCanNotBeCreated() {
     final Validator validator1 = createValidator();
     final Validator validator2 = createValidator();
@@ -135,7 +147,11 @@ class AttestationProductionDutyTest {
     final AttestationData attestationData = expectCreateAttestationData(validator2CommitteeIndex);
     final Attestation expectedAttestation =
         expectSignAttestation(
-            validator2, validator2CommitteePosition, validator2CommitteeSize, attestationData);
+            validator2,
+            validator2CommitteeIndex,
+            validator2CommitteePosition,
+            validator2CommitteeSize,
+            attestationData);
 
     final SafeFuture<Optional<AttestationData>> attestationResult1 =
         duty.addValidator(
@@ -170,7 +186,7 @@ class AttestationProductionDutyTest {
     verify(validatorDutyMetrics).record(any(), any(AttestationProductionDuty.class), eq(SIGN));
   }
 
-  @Test
+  @TestTemplate
   public void shouldPublishProducedAttestationsWhenSomeUnsignedAttestationsFail() {
     final Validator validator1 = createValidator();
     final Validator validator2 = createValidator();
@@ -185,7 +201,11 @@ class AttestationProductionDutyTest {
     final AttestationData attestationData = expectCreateAttestationData(validator2CommitteeIndex);
     final Attestation expectedAttestation =
         expectSignAttestation(
-            validator2, validator2CommitteePosition, validator2CommitteeSize, attestationData);
+            validator2,
+            validator2CommitteeIndex,
+            validator2CommitteePosition,
+            validator2CommitteeSize,
+            attestationData);
 
     final SafeFuture<Optional<AttestationData>> attestationResult1 =
         duty.addValidator(
@@ -218,7 +238,7 @@ class AttestationProductionDutyTest {
     verify(validatorDutyMetrics).record(any(), any(AttestationProductionDuty.class), eq(SIGN));
   }
 
-  @Test
+  @TestTemplate
   public void shouldPublishProducedAttestationsWhenSignerFailsForSomeAttestations() {
     final Validator validator1 = createValidator();
     final Validator validator2 = createValidator();
@@ -233,7 +253,11 @@ class AttestationProductionDutyTest {
         .thenReturn(failedFuture(signingFailure));
     final Attestation expectedAttestation =
         expectSignAttestation(
-            validator2, validator2CommitteePosition, validator2CommitteeSize, attestationData);
+            validator2,
+            committeeIndex,
+            validator2CommitteePosition,
+            validator2CommitteeSize,
+            attestationData);
 
     final SafeFuture<Optional<AttestationData>> attestationResult1 =
         duty.addValidator(
@@ -262,7 +286,7 @@ class AttestationProductionDutyTest {
         .record(any(), any(AttestationProductionDuty.class), eq(SIGN));
   }
 
-  @Test
+  @TestTemplate
   public void shouldCreateAttestationForSingleValidator() {
     final int committeeIndex = 3;
     final int committeePosition = 6;
@@ -271,7 +295,8 @@ class AttestationProductionDutyTest {
 
     final AttestationData attestationData = expectCreateAttestationData(committeeIndex);
     final Attestation expectedAttestation =
-        expectSignAttestation(validator, committeePosition, committeeSize, attestationData);
+        expectSignAttestation(
+            validator, committeeIndex, committeePosition, committeeSize, attestationData);
 
     final SafeFuture<Optional<AttestationData>> attestationResult =
         duty.addValidator(validator, committeeIndex, committeePosition, 10, committeeSize);
@@ -289,7 +314,7 @@ class AttestationProductionDutyTest {
     verify(validatorDutyMetrics).record(any(), any(AttestationProductionDuty.class), eq(SIGN));
   }
 
-  @Test
+  @TestTemplate
   void shouldReportFailureWhenAttestationIsInvalid() {
     final int committeeIndex = 3;
     final int committeePosition = 6;
@@ -298,7 +323,8 @@ class AttestationProductionDutyTest {
 
     final AttestationData attestationData = expectCreateAttestationData(committeeIndex);
     final Attestation expectedAttestation =
-        expectSignAttestation(validator, committeePosition, committeeSize, attestationData);
+        expectSignAttestation(
+            validator, committeeIndex, committeePosition, committeeSize, attestationData);
 
     when(validatorApiChannel.sendSignedAttestations(List.of(expectedAttestation)))
         .thenReturn(
@@ -328,7 +354,7 @@ class AttestationProductionDutyTest {
   }
 
   @SuppressWarnings("unchecked")
-  @Test
+  @TestTemplate
   public void shouldCreateAttestationForMultipleValidatorsInSameCommittee() {
     final int committeeIndex = 3;
     final int committeeSize = 33;
@@ -342,13 +368,25 @@ class AttestationProductionDutyTest {
     final AttestationData attestationData = expectCreateAttestationData(committeeIndex);
     final Attestation expectedAttestation1 =
         expectSignAttestation(
-            validator1, validator1CommitteePosition, committeeSize, attestationData);
+            validator1,
+            committeeIndex,
+            validator1CommitteePosition,
+            committeeSize,
+            attestationData);
     final Attestation expectedAttestation2 =
         expectSignAttestation(
-            validator2, validator2CommitteePosition, committeeSize, attestationData);
+            validator2,
+            committeeIndex,
+            validator2CommitteePosition,
+            committeeSize,
+            attestationData);
     final Attestation expectedAttestation3 =
         expectSignAttestation(
-            validator3, validator3CommitteePosition, committeeSize, attestationData);
+            validator3,
+            committeeIndex,
+            validator3CommitteePosition,
+            committeeSize,
+            attestationData);
 
     final SafeFuture<Optional<AttestationData>> attestationResult1 =
         duty.addValidator(
@@ -384,10 +422,10 @@ class AttestationProductionDutyTest {
   }
 
   @SuppressWarnings("unchecked")
-  @Test
+  @TestTemplate
   public void shouldCreateAttestationForMultipleValidatorsInDifferentCommittees() {
     final int committeeIndex1 = 3;
-    final int committeeIndex2 = 5;
+    final int committeeIndex2 = 1;
     final int committeeSize1 = 15;
     final int committeeSize2 = 20;
     final int validator1CommitteePosition = 6;
@@ -401,13 +439,25 @@ class AttestationProductionDutyTest {
     final AttestationData unsignedAttestation2 = expectCreateAttestationData(committeeIndex2);
     final Attestation expectedAttestation1 =
         expectSignAttestation(
-            validator1, validator1CommitteePosition, committeeSize1, unsignedAttestation1);
+            validator1,
+            committeeIndex1,
+            validator1CommitteePosition,
+            committeeSize1,
+            unsignedAttestation1);
     final Attestation expectedAttestation2 =
         expectSignAttestation(
-            validator2, validator2CommitteePosition, committeeSize2, unsignedAttestation2);
+            validator2,
+            committeeIndex2,
+            validator2CommitteePosition,
+            committeeSize2,
+            unsignedAttestation2);
     final Attestation expectedAttestation3 =
         expectSignAttestation(
-            validator3, validator3CommitteePosition, committeeSize1, unsignedAttestation1);
+            validator3,
+            committeeIndex1,
+            validator3CommitteePosition,
+            committeeSize1,
+            unsignedAttestation1);
 
     final SafeFuture<Optional<AttestationData>> attestationResult1 =
         duty.addValidator(
@@ -449,40 +499,55 @@ class AttestationProductionDutyTest {
         .record(any(), any(AttestationProductionDuty.class), eq(SIGN));
   }
 
-  public Validator createValidator() {
+  private Validator createValidator() {
     final Signer signer = mock(Signer.class);
     return new Validator(
         dataStructureUtil.randomPublicKey(), signer, new FileBackedGraffitiProvider());
   }
 
-  public Attestation expectSignAttestation(
+  private Attestation expectSignAttestation(
       final Validator validator,
+      final int committeeIndex,
       final int committeePosition,
       final int committeeSize,
       final AttestationData attestationData) {
     final BLSSignature signature = dataStructureUtil.randomSignature();
     when(validator.getSigner().signAttestationData(attestationData, fork))
         .thenReturn(completedFuture(signature));
-    return createExpectedAttestation(attestationData, committeePosition, committeeSize, signature);
+
+    return createExpectedAttestation(
+        attestationData, committeeIndex, committeePosition, committeeSize, signature);
   }
 
-  public AttestationData expectCreateAttestationData(final int committeeIndex) {
+  private AttestationData expectCreateAttestationData(final int committeeIndex) {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(SLOT);
     when(validatorApiChannel.createAttestationData(SLOT, committeeIndex))
         .thenReturn(completedFuture(Optional.of(attestationData)));
     return attestationData;
   }
 
-  public Attestation createExpectedAttestation(
+  private Attestation createExpectedAttestation(
       final AttestationData attestationData,
+      final int committeeIndex,
       final int committeePosition,
       final int committeeSize,
       final BLSSignature signature) {
-    final AttestationSchema attestationSchema =
+    final AttestationSchema<?> attestationSchema =
         spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema();
     final SszBitlist expectedAggregationBits =
         attestationSchema.getAggregationBitsSchema().ofBits(committeeSize, committeePosition);
-    return attestationSchema.create(expectedAggregationBits, attestationData, signature);
+
+    final Supplier<SszBitvector> committeeBits;
+
+    if (spec.atSlot(attestationData.getSlot()).getMilestone().isGreaterThanOrEqualTo(ELECTRA)) {
+      committeeBits =
+          () -> attestationSchema.getCommitteeBitsSchema().orElseThrow().ofBits(committeeIndex);
+    } else {
+      committeeBits = () -> null;
+    }
+
+    return attestationSchema.create(
+        expectedAggregationBits, attestationData, signature, committeeBits);
   }
 
   private void performAndReportDuty() {

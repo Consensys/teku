@@ -59,12 +59,13 @@ public class PostStateValidators extends RestApiEndpoint {
             .tags(TAG_BEACON)
             .response(SC_OK, "Request successful", STATE_VALIDATORS_RESPONSE_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = provider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final Optional<StateValidatorRequestBodyType> requestBody;
 
     try {

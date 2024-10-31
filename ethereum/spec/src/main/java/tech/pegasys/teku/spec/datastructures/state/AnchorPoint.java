@@ -56,9 +56,9 @@ public class AnchorPoint extends StateAndBlockSummary {
 
   public static AnchorPoint create(
       final Spec spec,
-      Checkpoint checkpoint,
-      BeaconState state,
-      Optional<SignedBeaconBlock> block) {
+      final Checkpoint checkpoint,
+      final BeaconState state,
+      final Optional<SignedBeaconBlock> block) {
     final BeaconBlockSummary blockSummary =
         block
             .<BeaconBlockSummary>map(Function.identity())
@@ -67,12 +67,15 @@ public class AnchorPoint extends StateAndBlockSummary {
   }
 
   public static AnchorPoint create(
-      final Spec spec, Checkpoint checkpoint, SignedBeaconBlock block, BeaconState state) {
+      final Spec spec,
+      final Checkpoint checkpoint,
+      final SignedBeaconBlock block,
+      final BeaconState state) {
     return new AnchorPoint(spec, checkpoint, state, block);
   }
 
   public static AnchorPoint create(
-      final Spec spec, Checkpoint checkpoint, SignedBlockAndState blockAndState) {
+      final Spec spec, final Checkpoint checkpoint, final SignedBlockAndState blockAndState) {
     return new AnchorPoint(spec, checkpoint, blockAndState.getState(), blockAndState.getBlock());
   }
 

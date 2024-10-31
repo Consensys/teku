@@ -13,12 +13,17 @@
 
 package tech.pegasys.teku.ethereum.executionclient.schema;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexDeserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexSerializer;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 
 public class GetPayloadV3Response {
   public final ExecutionPayloadV3 executionPayload;
@@ -32,13 +37,25 @@ public class GetPayloadV3Response {
   public final boolean shouldOverrideBuilder;
 
   public GetPayloadV3Response(
-      @JsonProperty("executionPayload") final ExecutionPayloadV3 executionPayload,
-      @JsonProperty("blockValue") final UInt256 blockValue,
-      @JsonProperty("blobsBundle") final BlobsBundleV1 blobsBundle,
-      @JsonProperty("shouldOverrideBuilder") final boolean shouldOverrideBuilder) {
+      final @JsonProperty("executionPayload") ExecutionPayloadV3 executionPayload,
+      final @JsonProperty("blockValue") UInt256 blockValue,
+      final @JsonProperty("blobsBundle") BlobsBundleV1 blobsBundle,
+      final @JsonProperty("shouldOverrideBuilder") boolean shouldOverrideBuilder) {
+    checkNotNull(executionPayload, "executionPayload");
+    checkNotNull(blockValue, "blockValue");
+    checkNotNull(blobsBundle, "blobsBundle");
     this.executionPayload = executionPayload;
     this.blockValue = blockValue;
     this.blobsBundle = blobsBundle;
     this.shouldOverrideBuilder = shouldOverrideBuilder;
+  }
+
+  public GetPayloadResponse asInternalGetPayloadResponse(
+      final ExecutionPayloadSchema<?> executionPayloadSchema, final BlobSchema blobSchema) {
+    return new GetPayloadResponse(
+        executionPayload.asInternalExecutionPayload(executionPayloadSchema),
+        blockValue,
+        blobsBundle.asInternalBlobsBundle(blobSchema),
+        shouldOverrideBuilder);
   }
 }

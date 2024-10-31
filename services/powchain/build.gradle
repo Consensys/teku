@@ -18,10 +18,9 @@ dependencies {
   implementation project(':infrastructure:serviceutils')
   implementation project(':validator:client')
 
-  implementation 'org.apache.tuweni:tuweni-units'
+  implementation 'io.tmio:tuweni-units'
 
   testImplementation project(':ethereum:pow:merkletree')
-  testImplementation project(':data:serializer')
 
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':infrastructure:async'))

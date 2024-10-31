@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 public class PredicatesElectra extends Predicates {
   private final SpecConfigElectra configElectra;
 
-  public PredicatesElectra(SpecConfig specConfig) {
+  public PredicatesElectra(final SpecConfig specConfig) {
     super(specConfig);
     this.configElectra = SpecConfigElectra.required(specConfig);
   }
@@ -55,12 +55,22 @@ public class PredicatesElectra extends Predicates {
    */
   @Override
   public boolean isPartiallyWithdrawableValidator(final Validator validator, final UInt64 balance) {
-    if (hasExecutionWithdrawalCredential(validator)) {
-      final UInt64 maxEffectiveBalance = getValidatorMaxEffectiveBalance(validator);
-      return (balance.isGreaterThan(maxEffectiveBalance)
-          && maxEffectiveBalance.equals(validator.getEffectiveBalance()));
-    }
-    return false;
+    return hasExecutionWithdrawalCredential(validator)
+        && isPartiallyWithdrawableValidatorEth1CredentialsChecked(validator, balance);
+  }
+
+  @Override
+  public boolean isPartiallyWithdrawableValidatorEth1CredentialsChecked(
+      final Validator validator, final UInt64 balance) {
+    final UInt64 maxEffectiveBalance =
+        hasCompoundingWithdrawalCredential(validator)
+            ? configElectra.getMaxEffectiveBalanceElectra()
+            : configElectra.getMinActivationBalance();
+    final boolean hasMaxEffectiveBalance =
+        validator.getEffectiveBalance().equals(maxEffectiveBalance);
+    final boolean hasExcessBalance = balance.isGreaterThan(maxEffectiveBalance);
+
+    return hasMaxEffectiveBalance && hasExcessBalance;
   }
 
   /**
@@ -84,8 +94,9 @@ public class PredicatesElectra extends Predicates {
    * @param validator
    * @return
    */
+  @Override
   public boolean hasExecutionWithdrawalCredential(final Validator validator) {
-    return hasCompoundingWithdrawalCredential(validator) || hasEth1WithdrawalCredential(validator);
+    return hasEth1WithdrawalCredential(validator) || hasCompoundingWithdrawalCredential(validator);
   }
 
   /**
@@ -94,7 +105,7 @@ public class PredicatesElectra extends Predicates {
    * @param validator
    * @return
    */
-  protected boolean hasCompoundingWithdrawalCredential(final Validator validator) {
+  public boolean hasCompoundingWithdrawalCredential(final Validator validator) {
     return isCompoundingWithdrawalCredential(validator.getWithdrawalCredentials());
   }
 
@@ -104,20 +115,7 @@ public class PredicatesElectra extends Predicates {
    * @param withdrawalCredentials
    * @return
    */
-  protected boolean isCompoundingWithdrawalCredential(final Bytes32 withdrawalCredentials) {
+  public boolean isCompoundingWithdrawalCredential(final Bytes32 withdrawalCredentials) {
     return withdrawalCredentials.get(0) == COMPOUNDING_WITHDRAWAL_BYTE;
-  }
-
-  /**
-   * implements get_validator_max_effective_balance state accessor
-   *
-   * @param validator - a validator from a state.
-   * @return the max effective balance for the specified validator based on its withdrawal
-   *     credentials.
-   */
-  public UInt64 getValidatorMaxEffectiveBalance(final Validator validator) {
-    return hasCompoundingWithdrawalCredential(validator)
-        ? configElectra.getMaxEffectiveBalanceElectra()
-        : configElectra.getMinActivationBalance();
   }
 }

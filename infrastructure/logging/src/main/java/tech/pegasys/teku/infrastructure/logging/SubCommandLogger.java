@@ -25,7 +25,7 @@ public class SubCommandLogger {
     LoggingConfigurator.setColorEnabled(true);
   }
 
-  public void exit(int exitCode, final String message) {
+  public void exit(final int exitCode, final String message) {
     if (!StringUtils.isEmpty(message)) {
       if (exitCode == 0) {
         display(message);
@@ -44,7 +44,7 @@ public class SubCommandLogger {
             ColorConsolePrinter.Color.RED));
   }
 
-  public void displayDeprecationWarning(String message) {
+  public void displayDeprecationWarning(final String message) {
     error(
         print(String.format("DEPRECATION WARNING: %s", message), ColorConsolePrinter.Color.YELLOW));
   }

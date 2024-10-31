@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.ETH1_ADDRESS_W
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.crypto.Sha256;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -42,11 +43,12 @@ public class Predicates {
    * @see <a
    *     href="https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_active_validator">is_active_validator</a>
    */
-  public boolean isActiveValidator(Validator validator, UInt64 epoch) {
+  public boolean isActiveValidator(final Validator validator, final UInt64 epoch) {
     return isActiveValidator(validator.getActivationEpoch(), validator.getExitEpoch(), epoch);
   }
 
-  public boolean isActiveValidator(UInt64 activationEpoch, UInt64 exitEpoch, UInt64 epoch) {
+  public boolean isActiveValidator(
+      final UInt64 activationEpoch, final UInt64 exitEpoch, final UInt64 epoch) {
     return activationEpoch.compareTo(epoch) <= 0 && epoch.compareTo(exitEpoch) < 0;
   }
 
@@ -54,10 +56,11 @@ public class Predicates {
       final Bytes32 leaf,
       final SszBytes32Vector branch,
       final int depth,
-      int index,
+      final int startingIndex,
       final Bytes32 root) {
     final Sha256 sha256 = getSha256Instance();
     Bytes32 value = leaf;
+    int index = startingIndex;
     for (int i = 0; i < depth; i++) {
       if ((index & 1) == 1) {
         value = sha256.wrappedDigest(branch.getElement(i), value);
@@ -75,21 +78,50 @@ public class Predicates {
    * @see <a
    *     href="https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_slashable_validator">is_slashable_validator</a>
    */
-  public boolean isSlashableValidator(Validator validator, UInt64 epoch) {
+  public boolean isSlashableValidator(final Validator validator, final UInt64 epoch) {
     return !validator.isSlashed()
         && (validator.getActivationEpoch().compareTo(epoch) <= 0
             && epoch.compareTo(validator.getWithdrawableEpoch()) < 0);
   }
 
   /**
-   * Implementation of <b>has_eth1_withdrawal_credential</b> Capella Helper function. <br>
+   * Implementation of <b>has_eth1_withdrawal_credential</b> Capella helper function. <br>
    * Checks if validator has a 0x01 prefixed "eth1" withdrawal credential.
    *
    * @param validator the validator being checked
    * @return true if the validator has an "eth1" withdrawal credential, false otherwise
    */
   public boolean hasEth1WithdrawalCredential(final Validator validator) {
-    return validator.getWithdrawalCredentials().get(0) == ETH1_ADDRESS_WITHDRAWAL_BYTE;
+    return isEth1WithdrawalCredential(validator.getWithdrawalCredentials());
+  }
+
+  public static boolean isEth1WithdrawalCredential(final Bytes32 withdrawalCredentials) {
+    return withdrawalCredentials.get(0) == ETH1_ADDRESS_WITHDRAWAL_BYTE;
+  }
+
+  /**
+   * has_execution_withdrawal_credential
+   *
+   * @param validator
+   * @return
+   */
+  public boolean hasExecutionWithdrawalCredential(final Validator validator) {
+    return hasEth1WithdrawalCredential(validator);
+  }
+
+  /**
+   * Get the execution address from a validator's withdrawal credentials. This method does not check
+   * if the validator has the correct type of withdrawal credentials (e.g. prefixes 0x01 and 0x02).
+   *
+   * <p>This method can be used in conjunction with {@link
+   * PredicatesElectra#hasExecutionWithdrawalCredential(Validator)} to ensure a correct execution
+   * address will be returned.
+   *
+   * @param withdrawalCredentials the 32 bytes withdrawal credentials field of a validator
+   * @return the last 20 bytes of the input withdrawal credentials, wrapped as {@link Eth1Address}.
+   */
+  public static Eth1Address getExecutionAddressUnchecked(final Bytes32 withdrawalCredentials) {
+    return Eth1Address.fromBytes(withdrawalCredentials.slice(12));
   }
 
   /**

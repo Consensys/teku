@@ -19,7 +19,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SpecConfigElectra extends SpecConfigDeneb {
 
-  UInt64 UNSET_DEPOSIT_RECEIPTS_START_INDEX = UInt64.MAX_VALUE;
+  UInt64 UNSET_DEPOSIT_REQUESTS_START_INDEX = UInt64.MAX_VALUE;
+  UInt64 FULL_EXIT_REQUEST_AMOUNT = UInt64.ZERO;
 
   static SpecConfigElectra required(final SpecConfig specConfig) {
     return specConfig
@@ -31,39 +32,39 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
                         + specConfig.getClass().getSimpleName()));
   }
 
+  Bytes4 getElectraForkVersion();
+
+  UInt64 getElectraForkEpoch();
+
+  UInt64 getMinPerEpochChurnLimitElectra();
+
   UInt64 getMinActivationBalance();
 
   UInt64 getMaxEffectiveBalanceElectra();
 
-  int getPendingBalanceDepositsLimit();
+  int getPendingDepositsLimit();
 
   int getPendingPartialWithdrawalsLimit();
 
   int getPendingConsolidationsLimit();
 
-  int getWhistleblowerRewardQuotientElectra();
-
   int getMinSlashingPenaltyQuotientElectra();
+
+  int getWhistleblowerRewardQuotientElectra();
 
   int getMaxAttesterSlashingsElectra();
 
   int getMaxAttestationsElectra();
 
-  int getMaxConsolidations();
+  int getMaxConsolidationRequestsPerPayload();
 
-  int getMaxPartialWithdrawalsPerPayload();
+  int getMaxDepositRequestsPerPayload();
 
   int getMaxWithdrawalRequestsPerPayload();
 
-  UInt64 getMinPerEpochChurnLimitElectra();
+  int getMaxPendingPartialsPerWithdrawalsSweep();
 
-  Bytes4 getElectraForkVersion();
-
-  UInt64 getElectraForkEpoch();
-
-  int getMaxDepositReceiptsPerPayload();
-
-  int getMaxExecutionLayerExits();
+  int getMaxPendingDepositsPerEpoch();
 
   @Override
   Optional<SpecConfigElectra> toVersionElectra();

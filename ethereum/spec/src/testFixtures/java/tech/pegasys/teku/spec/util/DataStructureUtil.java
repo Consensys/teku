@@ -32,6 +32,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -84,6 +85,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
@@ -111,6 +113,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBidBuilder;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
@@ -125,8 +128,13 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsBuilderElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
@@ -148,7 +156,7 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -159,7 +167,6 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -175,15 +182,17 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
@@ -198,8 +207,9 @@ public final class DataStructureUtil {
   private static final int MAX_EP_RANDOM_TRANSACTIONS_SIZE = 32;
 
   private static final int MAX_EP_RANDOM_WITHDRAWALS = 4;
-  private static final int MAX_EP_RANDOM_DEPOSIT_RECEIPTS = 4;
-  private static final int MAX_EP_RANDOM_EXITS = 16;
+  private static final int MAX_EP_RANDOM_DEPOSIT_REQUESTS = 4;
+  private static final int MAX_EP_RANDOM_WITHDRAWAL_REQUESTS = 2;
+  private static final int MAX_EP_RANDOM_CONSOLIDATION_REQUESTS = 1;
 
   private final Spec spec;
 
@@ -308,17 +318,17 @@ public final class DataStructureUtil {
   }
 
   public <T extends SszData> SszList<T> randomSszList(
-      SszListSchema<T, ?> schema, Supplier<T> valueGenerator, long numItems) {
+      final SszListSchema<T, ?> schema, final Supplier<T> valueGenerator, final long numItems) {
     return randomSszList(schema, numItems, valueGenerator);
   }
 
   public <T extends SszData> SszList<T> randomFullSszList(
-      SszListSchema<T, ?> schema, Supplier<T> valueGenerator) {
+      final SszListSchema<T, ?> schema, final Supplier<T> valueGenerator) {
     return randomSszList(schema, schema.getMaxLength(), valueGenerator);
   }
 
   public <T extends SszData> SszList<T> randomSszList(
-      SszListSchema<T, ?> schema, final long numItems, Supplier<T> valueGenerator) {
+      final SszListSchema<T, ?> schema, final long numItems, final Supplier<T> valueGenerator) {
     return Stream.generate(valueGenerator)
         .limit(Math.min(numItems, schema.getMaxLength()))
         .collect(schema.collector());
@@ -370,7 +380,8 @@ public final class DataStructureUtil {
 
   public <SszElementT extends SszData, VectorT extends SszVector<SszElementT>>
       VectorT randomSszVector(
-          SszVectorSchema<SszElementT, VectorT> schema, Supplier<SszElementT> valueGenerator) {
+          final SszVectorSchema<SszElementT, VectorT> schema,
+          final Supplier<SszElementT> valueGenerator) {
     final int numItems = schema.getLength() / 10;
     final SszElementT defaultElement = schema.getElementSchema().getDefault();
     return Stream.concat(
@@ -391,6 +402,10 @@ public final class DataStructureUtil {
     Random random = new Random(nextSeed());
     int[] bits = IntStream.range(0, n).sequential().filter(__ -> random.nextBoolean()).toArray();
     return SszBitlistSchema.create(n).ofBits(n, bits);
+  }
+
+  public SszBitvector randomCommitteeBitvector() {
+    return randomSszBitvector(getMaxCommitteesPerSlot());
   }
 
   public SszBitvector randomSszBitvector(final int n) {
@@ -589,9 +604,7 @@ public final class DataStructureUtil {
                     .transactionsRoot(randomBytes32())
                     .withdrawalsRoot(() -> withdrawalsRoot)
                     .blobGasUsed(this::randomUInt64)
-                    .excessBlobGas(this::randomUInt64)
-                    .depositReceiptsRoot(this::randomBytes32)
-                    .exitsRoot(this::randomBytes32));
+                    .excessBlobGas(this::randomUInt64));
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
@@ -604,48 +617,35 @@ public final class DataStructureUtil {
   }
 
   public BuilderBid randomBuilderBid() {
-    return randomBuilderBid(randomPublicKey());
-  }
-
-  public BuilderBid randomBuilderBid(final BLSPublicKey builderPublicKey) {
-    // 1 ETH is 10^18 wei, Uint256 max is more than 10^77, so just to avoid
-    // overflows in
-    // computation
-    final UInt256 value = randomUInt256().divide(1000);
-    return randomBuilderBid(builderPublicKey, value);
-  }
-
-  public BuilderBid randomBuilderBid(final BLSPublicKey builderPublicKey, final UInt256 value) {
-    final SchemaDefinitionsBellatrix schemaDefinitions =
-        getBellatrixSchemaDefinitions(randomSlot());
-    return schemaDefinitions
-        .getBuilderBidSchema()
-        .createBuilderBid(
-            builder -> {
-              builder
-                  .header(randomExecutionPayloadHeader(spec.getGenesisSpec()))
-                  .value(value)
-                  .publicKey(builderPublicKey);
-              schemaDefinitions
-                  .toVersionDeneb()
-                  .ifPresent(__ -> builder.blobKzgCommitments(randomBlobKzgCommitments()));
-            });
+    return randomBuilderBid(__ -> {});
   }
 
   public BuilderBid randomBuilderBid(final Bytes32 withdrawalsRoot) {
+    return randomBuilderBid(
+        builder ->
+            builder.header(randomExecutionPayloadHeader(spec.getGenesisSpec(), withdrawalsRoot)));
+  }
+
+  public BuilderBid randomBuilderBid(final Consumer<BuilderBidBuilder> builderModifier) {
     final SchemaDefinitionsBellatrix schemaDefinitions =
         getBellatrixSchemaDefinitions(randomSlot());
     return schemaDefinitions
         .getBuilderBidSchema()
         .createBuilderBid(
             builder -> {
-              builder
-                  .header(randomExecutionPayloadHeader(spec.getGenesisSpec(), withdrawalsRoot))
-                  .value(randomUInt256())
-                  .publicKey(randomPublicKey());
+              builder.header(randomExecutionPayloadHeader());
               schemaDefinitions
                   .toVersionDeneb()
                   .ifPresent(__ -> builder.blobKzgCommitments(randomBlobKzgCommitments()));
+              schemaDefinitions
+                  .toVersionElectra()
+                  .ifPresent(__ -> builder.executionRequests(randomExecutionRequests()));
+              // 1 ETH is 10^18 wei, Uint256 max is more than 10^77, so just to avoid
+              // overflows in
+              // computation
+              builder.value(randomUInt256().divide(1000));
+              builder.publicKey(randomPublicKey());
+              builderModifier.accept(builder);
             });
   }
 
@@ -701,9 +701,7 @@ public final class DataStructureUtil {
                       .transactions(randomExecutionPayloadTransactions())
                       .withdrawals(this::randomExecutionPayloadWithdrawals)
                       .blobGasUsed(this::randomUInt64)
-                      .excessBlobGas(this::randomUInt64)
-                      .depositReceipts(this::randomExecutionPayloadDepositReceipts)
-                      .exits(this::randomExecutionPayloadExits);
+                      .excessBlobGas(this::randomUInt64);
               builderModifier.accept(executionPayloadBuilder);
             });
   }
@@ -728,15 +726,21 @@ public final class DataStructureUtil {
         .collect(toList());
   }
 
-  public List<DepositReceipt> randomExecutionPayloadDepositReceipts() {
-    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_DEPOSIT_RECEIPTS))
-        .mapToObj(__ -> randomDepositReceipt())
+  public List<DepositRequest> randomDepositRequests() {
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_DEPOSIT_REQUESTS))
+        .mapToObj(__ -> randomDepositRequest())
         .collect(toList());
   }
 
-  public List<ExecutionLayerExit> randomExecutionPayloadExits() {
-    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_EXITS))
-        .mapToObj(__ -> randomExecutionLayerExit())
+  public List<WithdrawalRequest> randomWithdrawalRequests() {
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_WITHDRAWAL_REQUESTS))
+        .mapToObj(__ -> randomWithdrawalRequest())
+        .collect(toList());
+  }
+
+  public List<ConsolidationRequest> randomConsolidationRequests() {
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_CONSOLIDATION_REQUESTS))
+        .mapToObj(__ -> randomConsolidationRequest())
         .collect(toList());
   }
 
@@ -805,7 +809,11 @@ public final class DataStructureUtil {
   public Attestation randomAttestation() {
     return spec.getGenesisSchemaDefinitions()
         .getAttestationSchema()
-        .create(randomBitlist(), randomAttestationData(), randomSignature());
+        .create(
+            randomBitlist(),
+            randomAttestationData(),
+            randomSignature(),
+            this::randomCommitteeBitvector);
   }
 
   public Attestation randomAttestation(final long slot) {
@@ -815,13 +823,18 @@ public final class DataStructureUtil {
   public Attestation randomAttestation(final UInt64 slot) {
     return spec.getGenesisSchemaDefinitions()
         .getAttestationSchema()
-        .create(randomBitlist(), randomAttestationData(slot), randomSignature());
+        .create(
+            randomBitlist(),
+            randomAttestationData(slot),
+            randomSignature(),
+            this::randomCommitteeBitvector);
   }
 
   public Attestation randomAttestation(final AttestationData attestationData) {
     return spec.getGenesisSchemaDefinitions()
         .getAttestationSchema()
-        .create(randomBitlist(), attestationData, randomSignature());
+        .create(
+            randomBitlist(), attestationData, randomSignature(), this::randomCommitteeBitvector);
   }
 
   public AggregateAndProof randomAggregateAndProof() {
@@ -1004,9 +1017,18 @@ public final class DataStructureUtil {
   }
 
   public SignedBeaconBlock randomSignedBeaconBlockWithCommitments(
+      final UInt64 slot, final int count) {
+    return randomSignedBeaconBlockWithCommitments(slot, randomBlobKzgCommitments(count));
+  }
+
+  public SignedBeaconBlock randomSignedBeaconBlockWithCommitments(
       final SszList<SszKZGCommitment> commitments) {
+    return randomSignedBeaconBlockWithCommitments(randomUInt64(), commitments);
+  }
+
+  public SignedBeaconBlock randomSignedBeaconBlockWithCommitments(
+      final UInt64 slot, final SszList<SszKZGCommitment> commitments) {
     final UInt64 proposerIndex = randomUInt64();
-    final UInt64 slot = randomUInt64();
     final Bytes32 stateRoot = randomBytes32();
     final Bytes32 parentRoot = randomBytes32();
 
@@ -1219,7 +1241,7 @@ public final class DataStructureUtil {
   }
 
   public BeaconBlock randomBeaconBlock(
-      final long slot, Bytes32 parentRoot, final Bytes32 stateRoot, final boolean isFull) {
+      final long slot, final Bytes32 parentRoot, final Bytes32 stateRoot, final boolean isFull) {
     return randomBeaconBlock(UInt64.valueOf(slot), parentRoot, stateRoot, isFull);
   }
 
@@ -1318,6 +1340,9 @@ public final class DataStructureUtil {
               }
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(randomBlobKzgCommitments());
+              }
+              if (builder.supportsExecutionRequests()) {
+                builder.executionRequests(randomExecutionRequests());
               }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
@@ -1421,6 +1446,9 @@ public final class DataStructureUtil {
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(randomBlobKzgCommitments());
               }
+              if (builder.supportsExecutionRequests()) {
+                builder.executionRequests(randomExecutionRequests());
+              }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
             })
@@ -1475,6 +1503,9 @@ public final class DataStructureUtil {
                         BeaconBlockBodySchemaDeneb.required(schema).getBlobKzgCommitmentsSchema(),
                         this::randomSszKZGCommitment));
               }
+              if (builder.supportsExecutionRequests()) {
+                builder.executionRequests(randomExecutionRequests());
+              }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
             })
@@ -1516,20 +1547,34 @@ public final class DataStructureUtil {
     return indexedAttestationSchema.create(attestingIndices, data, randomSignature());
   }
 
-  public DepositMessage randomDepositMessage(final BLSKeyPair keyPair) {
+  public DepositMessage randomDepositMessage(
+      final BLSKeyPair keyPair, final Optional<Bytes32> maybeWithdrawalCredentials) {
     final BLSPublicKey pubkey = keyPair.getPublicKey();
-    final Bytes32 withdrawalCredentials = randomBytes32();
+    final Bytes32 withdrawalCredentials = maybeWithdrawalCredentials.orElse(randomBytes32());
     return new DepositMessage(pubkey, withdrawalCredentials, getMaxEffectiveBalance());
   }
 
   public DepositMessage randomDepositMessage() {
     final BLSKeyPair keyPair = randomKeyPair();
-    return randomDepositMessage(keyPair);
+    return randomDepositMessage(keyPair, Optional.empty());
   }
 
   public DepositData randomDepositData() {
     final BLSKeyPair keyPair = randomKeyPair();
-    final DepositMessage depositMessage = randomDepositMessage(keyPair);
+    final DepositMessage depositMessage = randomDepositMessage(keyPair, Optional.empty());
+
+    final Bytes32 domain = computeDepositDomain();
+    final Bytes signingRoot = getSigningRoot(depositMessage, domain);
+
+    final BLSSignature signature = BLS.sign(keyPair.getSecretKey(), signingRoot);
+
+    return new DepositData(depositMessage, signature);
+  }
+
+  public DepositData randomDepositData(final Bytes32 withdrawalCredentials) {
+    final BLSKeyPair keyPair = randomKeyPair();
+    final DepositMessage depositMessage =
+        randomDepositMessage(keyPair, Optional.of(withdrawalCredentials));
 
     final Bytes32 domain = computeDepositDomain();
     final Bytes signingRoot = getSigningRoot(depositMessage, domain);
@@ -1547,10 +1592,11 @@ public final class DataStructureUtil {
     final Bytes32 randomBytes32 = randomBytes32();
     final SszBytes32VectorSchema<?> proofSchema = Deposit.SSZ_SCHEMA.getProofSchema();
     return new DepositWithIndex(
-        Stream.generate(() -> randomBytes32)
-            .limit(proofSchema.getLength())
-            .collect(proofSchema.collectorUnboxed()),
-        randomDepositData(),
+        new Deposit(
+            Stream.generate(() -> randomBytes32)
+                .limit(proofSchema.getLength())
+                .collect(proofSchema.collectorUnboxed()),
+            randomDepositData()),
         UInt64.valueOf(depositIndex));
   }
 
@@ -1616,14 +1662,12 @@ public final class DataStructureUtil {
     return randomDepositEvent(randomUInt64());
   }
 
-  public List<DepositWithIndex> randomDeposits(final int num) {
-    final ArrayList<DepositWithIndex> deposits = new ArrayList<>();
+  public List<Deposit> randomDeposits(final int num) {
+    return randomDepositsWithIndex(num).stream().map(DepositWithIndex::deposit).toList();
+  }
 
-    for (int i = 0; i < num; i++) {
-      deposits.add(randomDepositWithIndex());
-    }
-
-    return deposits;
+  public List<DepositWithIndex> randomDepositsWithIndex(final int num) {
+    return Stream.generate(this::randomDepositWithIndex).limit(num).collect(Collectors.toList());
   }
 
   public SszList<Deposit> randomSszDeposits(final int num) {
@@ -1740,7 +1784,9 @@ public final class DataStructureUtil {
             ? Optional.of(randomSignedValidatorRegistration())
             : Optional.empty(),
         randomWithdrawalList(),
-        randomBytes32());
+        randomBytes32(),
+        Optional.of(randomUInt64()),
+        Optional.of(randomUInt64()));
   }
 
   public ClientVersion randomClientVersion() {
@@ -1812,6 +1858,13 @@ public final class DataStructureUtil {
 
   public BeaconState randomBeaconState(final int validatorCount, final int numItemsInSSZLists) {
     return stateBuilder(spec.getGenesisSpec().getMilestone(), validatorCount, numItemsInSSZLists)
+        .build();
+  }
+
+  public BeaconState randomBeaconState(
+      final int validatorCount, final int numItemsInSSZLists, final UInt64 slot) {
+    return stateBuilder(spec.getGenesisSpec().getMilestone(), validatorCount, numItemsInSSZLists)
+        .slot(slot)
         .build();
   }
 
@@ -2038,7 +2091,7 @@ public final class DataStructureUtil {
         .create(randomUInt64(), randomValidatorIndex(), randomBytes20(), randomUInt64());
   }
 
-  public DepositReceipt randomDepositReceiptWithValidSignature(final UInt64 index) {
+  public DepositRequest randomDepositRequestWithValidSignature(final UInt64 index) {
     final BLSKeyPair keyPair = randomKeyPair();
     final DepositMessage depositMessage =
         new DepositMessage(keyPair.getPublicKey(), randomBytes32(), randomUInt64());
@@ -2046,7 +2099,7 @@ public final class DataStructureUtil {
     final Bytes signingRoot = getSigningRoot(depositMessage, domain);
     final BLSSignature signature = BLS.sign(keyPair.getSecretKey(), signingRoot);
     return getElectraSchemaDefinitions(randomSlot())
-        .getDepositReceiptSchema()
+        .getDepositRequestSchema()
         .create(
             depositMessage.getPubkey(),
             depositMessage.getWithdrawalCredentials(),
@@ -2055,9 +2108,9 @@ public final class DataStructureUtil {
             index);
   }
 
-  public DepositReceipt randomDepositReceipt() {
+  public DepositRequest randomDepositRequest() {
     return getElectraSchemaDefinitions(randomSlot())
-        .getDepositReceiptSchema()
+        .getDepositRequestSchema()
         .create(
             randomPublicKey(),
             randomEth1WithdrawalCredentials(),
@@ -2196,6 +2249,23 @@ public final class DataStructureUtil {
     return new RandomBlobSidecarBuilder()
         .signedBeaconBlockHeader(signedBeaconBlock.asHeader())
         .index(UInt64.valueOf(index))
+        .build();
+  }
+
+  public BlobSidecar randomBlobSidecarWithValidInclusionProofForBlock(
+      final SignedBeaconBlock signedBeaconBlock, final int index) {
+    return new RandomBlobSidecarBuilder()
+        .signedBeaconBlockHeader(signedBeaconBlock.asHeader())
+        .index(UInt64.valueOf(index))
+        .kzgCommitment(
+            BeaconBlockBodyDeneb.required(signedBeaconBlock.getMessage().getBody())
+                .getBlobKzgCommitments()
+                .get(index)
+                .getKZGCommitment()
+                .getBytesCompressed())
+        .kzgCommitmentInclusionProof(
+            validKzgCommitmentInclusionProof(
+                UInt64.valueOf(index), signedBeaconBlock.getBeaconBlock().orElseThrow().getBody()))
         .build();
   }
 
@@ -2431,6 +2501,12 @@ public final class DataStructureUtil {
     return IntStream.range(0, depth).mapToObj(__ -> randomBytes32()).toList();
   }
 
+  public List<Bytes32> validKzgCommitmentInclusionProof(
+      final UInt64 blobIndex, final BeaconBlockBody beaconBlockBody) {
+    return MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers())
+        .computeKzgCommitmentInclusionProof(blobIndex, beaconBlockBody);
+  }
+
   public SszList<SszKZGCommitment> randomBlobKzgCommitments() {
     // use MAX_BLOBS_PER_BLOCK as a limit
     return randomBlobKzgCommitments(randomNumberOfBlobsPerBlock());
@@ -2444,30 +2520,66 @@ public final class DataStructureUtil {
     return getBlobKzgCommitmentsSchema().of();
   }
 
-  public ExecutionLayerExit randomExecutionLayerExit() {
-    return getElectraSchemaDefinitions(randomSlot())
-        .getExecutionLayerExitSchema()
-        .create(randomEth1Address(), randomPublicKey());
+  public ExecutionRequests randomExecutionRequests() {
+    return new ExecutionRequestsBuilderElectra(
+            SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig()))
+        .deposits(randomDepositRequests())
+        .withdrawals(randomWithdrawalRequests())
+        .consolidations(randomConsolidationRequests())
+        .build();
   }
 
-  public ExecutionLayerExit executionLayerExit(
-      final Bytes20 sourceAddress, BLSPublicKey validatorPubKey) {
-    return getElectraSchemaDefinitions(randomSlot())
-        .getExecutionLayerExitSchema()
-        .create(sourceAddress, validatorPubKey);
+  public List<Bytes> randomEncodedExecutionRequests() {
+    final ExecutionRequestsSchema executionRequestsSchema =
+        SchemaDefinitionsElectra.required(
+                spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+            .getExecutionRequestsSchema();
+    return new ExecutionRequestsDataCodec(executionRequestsSchema)
+        .encode(randomExecutionRequests());
   }
 
-  public ExecutionLayerExit executionLayerExit(final Validator validator) {
+  public WithdrawalRequest randomWithdrawalRequest() {
+    return getElectraSchemaDefinitions(randomSlot())
+        .getWithdrawalRequestSchema()
+        .create(randomEth1Address(), randomPublicKey(), randomUInt64());
+  }
+
+  public WithdrawalRequest withdrawalRequest(
+      final Bytes20 sourceAddress, final BLSPublicKey validatorPubKey, final UInt64 amount) {
+    return getElectraSchemaDefinitions(randomSlot())
+        .getWithdrawalRequestSchema()
+        .create(sourceAddress, validatorPubKey, amount);
+  }
+
+  public WithdrawalRequest withdrawalRequest(final Validator validator) {
     final Bytes20 executionAddress = new Bytes20(validator.getWithdrawalCredentials().slice(12));
     return getElectraSchemaDefinitions(randomSlot())
-        .getExecutionLayerExitSchema()
-        .create(executionAddress, validator.getPublicKey());
+        .getWithdrawalRequestSchema()
+        .create(executionAddress, validator.getPublicKey(), randomUInt64());
   }
 
-  public PendingBalanceDeposit randomPendingBalanceDeposit() {
+  public WithdrawalRequest withdrawalRequest(final Validator validator, final UInt64 amount) {
+    final Bytes20 executionAddress = new Bytes20(validator.getWithdrawalCredentials().slice(12));
     return getElectraSchemaDefinitions(randomSlot())
-        .getPendingBalanceDepositSchema()
-        .create(SszUInt64.of(randomUInt64()), SszUInt64.of(randomUInt64()));
+        .getWithdrawalRequestSchema()
+        .create(executionAddress, validator.getPublicKey(), amount);
+  }
+
+  public PendingDeposit randomPendingDeposit() {
+    return getElectraSchemaDefinitions(randomSlot())
+        .getPendingDepositSchema()
+        .create(
+            randomSszPublicKey(),
+            SszBytes32.of(randomEth1WithdrawalCredentials()),
+            SszUInt64.of(randomUInt64()),
+            randomSszSignature(),
+            SszUInt64.of(randomUInt64()));
+  }
+
+  public ConsolidationRequest randomConsolidationRequest() {
+    return getElectraSchemaDefinitions(randomSlot())
+        .getConsolidationRequestSchema()
+        .create(randomEth1Address(), randomPublicKey(), randomPublicKey());
   }
 
   public PendingConsolidation randomPendingConsolidation() {
@@ -2535,7 +2647,15 @@ public final class DataStructureUtil {
   }
 
   private int getMaxValidatorsPerCommittee() {
+    if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      return getConstant(SpecConfig::getMaxValidatorsPerCommittee)
+          * getConstant(SpecConfig::getMaxCommitteesPerSlot);
+    }
     return getConstant(SpecConfig::getMaxValidatorsPerCommittee);
+  }
+
+  private int getMaxCommitteesPerSlot() {
+    return getConstant(SpecConfig::getMaxCommitteesPerSlot);
   }
 
   private UInt64 getMaxEffectiveBalance() {

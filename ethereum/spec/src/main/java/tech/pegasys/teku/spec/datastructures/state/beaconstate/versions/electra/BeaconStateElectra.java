@@ -15,23 +15,24 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra
 
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.CONSOLIDATION_BALANCE_TO_CONSUME;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.DEPOSIT_BALANCE_TO_CONSUME;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.DEPOSIT_RECEIPTS_START_INDEX;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.DEPOSIT_REQUESTS_START_INDEX;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.EARLIEST_CONSOLIDATION_EPOCH;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.EARLIEST_EXIT_EPOCH;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.EXIT_BALANCE_TO_CONSUME;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_BALANCE_DEPOSITS;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_CONSOLIDATIONS;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_DEPOSITS;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS;
 
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public interface BeaconStateElectra extends BeaconStateDeneb {
@@ -44,10 +45,27 @@ public interface BeaconStateElectra extends BeaconStateDeneb {
                     "Expected an Electra state but got: " + state.getClass().getSimpleName()));
   }
 
+  private static <T extends SszData> void addItems(
+      final MoreObjects.ToStringHelper stringBuilder,
+      final String keyPrefix,
+      final SszList<T> items) {
+    for (int i = 0; i < items.size(); i++) {
+      stringBuilder.add(keyPrefix + "[" + i + "]", items.get(i));
+    }
+  }
+
   static void describeCustomElectraFields(
-      MoreObjects.ToStringHelper stringBuilder, BeaconStateDeneb state) {
+      final MoreObjects.ToStringHelper stringBuilder, final BeaconStateElectra state) {
     BeaconStateDeneb.describeCustomDenebFields(stringBuilder, state);
-    stringBuilder.add("deposit_receipts_start_index", state.getNextWithdrawalIndex());
+    stringBuilder.add("deposit_requests_start_index", state.getDepositRequestsStartIndex());
+    stringBuilder.add("deposit_balance_to_consume", state.getDepositBalanceToConsume());
+    stringBuilder.add("exit_balance_to_consume", state.getExitBalanceToConsume());
+    stringBuilder.add("earliest_exit_epoch", state.getEarliestExitEpoch());
+    stringBuilder.add("consolidation_balance_to_consume", state.getConsolidationBalanceToConsume());
+    stringBuilder.add("earliest_consolidation_epoch", state.getEarliestConsolidationEpoch());
+    addItems(stringBuilder, "pending_deposits", state.getPendingDeposits());
+    addItems(stringBuilder, "pending_partial_withdrawals", state.getPendingPartialWithdrawals());
+    addItems(stringBuilder, "pending_consolidations", state.getPendingConsolidations());
   }
 
   @Override
@@ -66,8 +84,8 @@ public interface BeaconStateElectra extends BeaconStateDeneb {
     return Optional.of(this);
   }
 
-  default UInt64 getDepositReceiptsStartIndex() {
-    final int index = getSchema().getFieldIndex(DEPOSIT_RECEIPTS_START_INDEX);
+  default UInt64 getDepositRequestsStartIndex() {
+    final int index = getSchema().getFieldIndex(DEPOSIT_REQUESTS_START_INDEX);
     return ((SszUInt64) get(index)).get();
   }
 
@@ -96,8 +114,8 @@ public interface BeaconStateElectra extends BeaconStateDeneb {
     return ((SszUInt64) get(index)).get();
   }
 
-  default SszList<PendingBalanceDeposit> getPendingBalanceDeposits() {
-    final int index = getSchema().getFieldIndex(PENDING_BALANCE_DEPOSITS);
+  default SszList<PendingDeposit> getPendingDeposits() {
+    final int index = getSchema().getFieldIndex(PENDING_DEPOSITS);
     return getAny(index);
   }
 

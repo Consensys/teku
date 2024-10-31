@@ -250,6 +250,11 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
   private boolean isInHistoricBlockRoots(
       final BeaconState state, final SlotAndBlockRoot producedBlock) {
+    LOG.debug(
+        "Checking if block {} is in historic block roots {} of the state {}",
+        producedBlock,
+        state.getBlockRoots(),
+        state.hashTreeRoot());
     return producedBlock.getSlot().isLessThan(state.getSlot())
         && spec.getBlockRootAtSlot(state, producedBlock.getSlot())
             .equals(producedBlock.getBlockRoot());
@@ -423,7 +428,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   }
 
   @Override
-  public void reportBlockProductionAttempt(UInt64 epoch) {
+  public void reportBlockProductionAttempt(final UInt64 epoch) {
     final AtomicInteger numberOfBlockProductionAttempts =
         blockProductionAttemptsByEpoch.computeIfAbsent(epoch, __ -> new AtomicInteger(0));
     numberOfBlockProductionAttempts.incrementAndGet();

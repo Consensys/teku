@@ -145,17 +145,22 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   }
 
   @Test
-  public void shouldNotSendBlobSidecarsIfCountIsTooBig() {
+  public void validateRequest_shouldRejectRequestWhenCountIsTooBig() {
     final UInt64 maxRequestBlobSidecars =
         UInt64.valueOf(specConfigDeneb.getMaxRequestBlobSidecars());
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(
             startSlot, maxRequestBlobSidecars.increment(), maxBlobsPerBlock);
 
-    handler.onIncomingMessage(protocolId, peer, request, listener);
+    final Optional<RpcException> result = handler.validateRequest(protocolId, request);
 
-    // Rate limiter not invoked
-    verify(peer, never()).approveBlobSidecarsRequest(any(), anyLong());
+    assertThat(result)
+        .hasValue(
+            new RpcException(
+                INVALID_REQUEST_CODE,
+                String.format(
+                    "Only a maximum of %s blob sidecars can be requested per request",
+                    maxRequestBlobSidecars)));
 
     final long rateLimitedCount =
         metricsSystem
@@ -163,14 +168,6 @@ public class BlobSidecarsByRangeMessageHandlerTest {
             .getValue("count_too_big");
 
     assertThat(rateLimitedCount).isOne();
-
-    verify(listener)
-        .completeWithErrorResponse(
-            new RpcException(
-                INVALID_REQUEST_CODE,
-                String.format(
-                    "Only a maximum of %s blob sidecars can be requested per request",
-                    maxRequestBlobSidecars)));
   }
 
   @Test
@@ -236,7 +233,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   @Test
   public void shouldCompleteSuccessfullyIfNoBlobSidecarsInRange() {
-    when(combinedChainDataClient.getBlobSidecarKeys(any(), any(), any()))
+    when(combinedChainDataClient.getBlobSidecarKeys(any(), any(), anyLong()))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(ZERO, count, maxBlobsPerBlock);
@@ -302,7 +299,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     // we simulate that the canonical non-finalized chain only contains blobs from last
     // slotAndBlockRoot
     final SlotAndBlockRoot canonicalSlotAndBlockRoot =
-        allAvailableBlobs.get(allAvailableBlobs.size() - 1).getSlotAndBlockRoot();
+        allAvailableBlobs.getLast().getSlotAndBlockRoot();
 
     final List<BlobSidecar> expectedSent =
         allAvailableBlobs.stream()
@@ -407,15 +404,13 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   private List<BlobSidecar> setUpBlobSidecarsData(final UInt64 startSlot, final UInt64 maxSlot) {
     final List<Pair<SignedBeaconBlockHeader, SlotAndBlockRootAndBlobIndex>> headerAndKeys =
         setupKeyAndHeaderList(startSlot, maxSlot);
-    when(combinedChainDataClient.getBlobSidecarKeys(eq(startSlot), eq(maxSlot), any()))
+    when(combinedChainDataClient.getBlobSidecarKeys(eq(startSlot), eq(maxSlot), anyLong()))
         .thenAnswer(
             args ->
                 SafeFuture.completedFuture(
                     headerAndKeys
                         .subList(
-                            0,
-                            Math.min(
-                                headerAndKeys.size(), ((UInt64) args.getArgument(2)).intValue()))
+                            0, Math.min(headerAndKeys.size(), Math.toIntExact(args.getArgument(2))))
                         .stream()
                         .map(Pair::getValue)
                         .toList()));

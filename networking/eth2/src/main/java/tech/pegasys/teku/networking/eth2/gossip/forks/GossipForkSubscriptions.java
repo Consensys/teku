@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.forks;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -37,21 +38,21 @@ public interface GossipForkSubscriptions {
 
   void publishAttestation(ValidatableAttestation attestation);
 
-  void publishBlock(SignedBeaconBlock block);
+  SafeFuture<Void> publishBlock(SignedBeaconBlock block);
 
-  default void publishBlobSidecar(BlobSidecar blobSidecar) {
-    // since Deneb
+  default SafeFuture<Void> publishBlobSidecar(final BlobSidecar blobSidecar) {
+    return SafeFuture.COMPLETE;
   }
 
   void subscribeToAttestationSubnetId(int subnetId);
 
   void unsubscribeFromAttestationSubnetId(int subnetId);
 
-  default void publishSyncCommitteeMessage(ValidatableSyncCommitteeMessage message) {
+  default void publishSyncCommitteeMessage(final ValidatableSyncCommitteeMessage message) {
     // since Altair
   }
 
-  default void publishSyncCommitteeContribution(SignedContributionAndProof message) {
+  default void publishSyncCommitteeContribution(final SignedContributionAndProof message) {
     // since Altair
   }
 
@@ -61,13 +62,13 @@ public interface GossipForkSubscriptions {
 
   void publishVoluntaryExit(SignedVoluntaryExit message);
 
-  default void subscribeToSyncCommitteeSubnet(int subnetId) {
+  default void subscribeToSyncCommitteeSubnet(final int subnetId) {
     // since Altair
   }
 
-  default void unsubscribeFromSyncCommitteeSubnet(int subnetId) {
+  default void unsubscribeFromSyncCommitteeSubnet(final int subnetId) {
     // since Altair
   }
 
-  default void publishSignedBlsToExecutionChangeMessage(SignedBlsToExecutionChange message) {}
+  default void publishSignedBlsToExecutionChangeMessage(final SignedBlsToExecutionChange message) {}
 }

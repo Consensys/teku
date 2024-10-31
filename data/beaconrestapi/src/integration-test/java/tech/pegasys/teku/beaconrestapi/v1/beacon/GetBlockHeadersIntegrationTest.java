@@ -16,17 +16,16 @@ package tech.pegasys.teku.beaconrestapi.v1.beacon;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeadersResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeaders;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -52,11 +51,10 @@ public class GetBlockHeadersIntegrationTest extends AbstractDataBackedRestAPIInt
 
     final Response response = get();
 
-    final GetBlockHeadersResponse body =
-        jsonProvider.jsonToObject(response.body().string(), GetBlockHeadersResponse.class);
-
-    assertThat(body.data.size()).isGreaterThan(0);
-    assertThat(body.data.get(0).root).isEqualTo(head.getRoot());
+    final JsonNode responseBody = OBJECT_MAPPER.readTree(response.body().string());
+    final JsonNode data = responseBody.get("data");
+    assertThat(data.size()).isGreaterThan(0);
+    assertThat(data.get(0).get("root").asText()).isEqualTo(head.getRoot().toHexString());
   }
 
   @Test
@@ -67,10 +65,10 @@ public class GetBlockHeadersIntegrationTest extends AbstractDataBackedRestAPIInt
     SignedBlockAndState head = chainBuilder.generateNextBlock();
     chainUpdater.updateBestBlock(head);
 
-    final GetBlockHeadersResponse body = get(parent.getSlot());
+    final JsonNode data = get(parent.getSlot());
 
-    assertThat(body.data.size()).isGreaterThan(0);
-    assertThat(body.data.get(0).root).isEqualTo(parent.getRoot());
+    assertThat(data.size()).isGreaterThan(0);
+    assertThat(data.get(0).get("root").asText()).isEqualTo(parent.getRoot().toHexString());
   }
 
   @ParameterizedTest(name = "finalized={0}")
@@ -79,37 +77,30 @@ public class GetBlockHeadersIntegrationTest extends AbstractDataBackedRestAPIInt
     setupData();
 
     // PRE: we have a non-canonical block and a canonical block at the same slot
-    final SignedBeaconBlock canonical =
-        canonicalBlockAndStateList.get(canonicalBlockAndStateList.size() - 1).getBlock();
+    final SignedBeaconBlock canonical = canonicalBlockAndStateList.getLast().getBlock();
     final SignedBeaconBlock forked = nonCanonicalBlockAndStateList.get(1).getBlock();
     assertThat(forked.getSlot()).isEqualTo(canonical.getSlot());
     if (isFinalized) {
       chainUpdater.finalizeEpoch(2);
     }
-    final GetBlockHeadersResponse body = get(nonCanonicalBlockAndStateList.get(1).getSlot());
+    final JsonNode data = get(nonCanonicalBlockAndStateList.get(1).getSlot());
 
-    assertThat(body.data.size()).isGreaterThan(1);
-    assertThat(
-            body.data.stream()
-                .map(header -> String.format("%s:%s", header.root, header.canonical))
-                .collect(Collectors.toList()))
-        .containsExactlyInAnyOrder(
-            String.format("%s:%s", canonical.getRoot(), true),
-            String.format("%s:%s", forked.getRoot(), false));
+    assertThat(data.size()).isGreaterThan(1);
+    assertThat(data.get(0).get("root").asText()).isEqualTo(forked.getRoot().toHexString());
+    assertThat(data.get(0).get("canonical").asBoolean()).isFalse();
+    assertThat(data.get(1).get("root").asText()).isEqualTo(canonical.getRoot().toHexString());
+    assertThat(data.get(1).get("canonical").asBoolean()).isTrue();
   }
 
   private void setupData() {
     canonicalBlockAndStateList.addAll(createBlocksAtSlots(10));
     final ChainBuilder fork = chainBuilder.fork();
     nonCanonicalBlockAndStateList.add(fork.generateNextBlock());
-    chainUpdater.saveBlock(
-        nonCanonicalBlockAndStateList.get(nonCanonicalBlockAndStateList.size() - 1));
+    chainUpdater.saveBlock(nonCanonicalBlockAndStateList.getLast());
     nonCanonicalBlockAndStateList.add(fork.generateNextBlock());
-    chainUpdater.saveBlock(
-        nonCanonicalBlockAndStateList.get(nonCanonicalBlockAndStateList.size() - 1));
+    chainUpdater.saveBlock(nonCanonicalBlockAndStateList.getLast());
     canonicalBlockAndStateList.add(chainBuilder.generateNextBlock(1));
-    chainUpdater.updateBestBlock(
-        canonicalBlockAndStateList.get(canonicalBlockAndStateList.size() - 1));
+    chainUpdater.updateBestBlock(canonicalBlockAndStateList.getLast());
     chainUpdater.advanceChain(32);
   }
 
@@ -117,9 +108,9 @@ public class GetBlockHeadersIntegrationTest extends AbstractDataBackedRestAPIInt
     return getResponse(GetBlockHeaders.ROUTE);
   }
 
-  public GetBlockHeadersResponse get(final UInt64 slot) throws IOException {
+  private JsonNode get(final UInt64 slot) throws IOException {
     final Response response = getResponse(GetBlockHeaders.ROUTE, Map.of("slot", slot.toString()));
     assertThat(response.code()).isEqualTo(SC_OK);
-    return jsonProvider.jsonToObject(response.body().string(), GetBlockHeadersResponse.class);
+    return getResponseData(response);
   }
 }

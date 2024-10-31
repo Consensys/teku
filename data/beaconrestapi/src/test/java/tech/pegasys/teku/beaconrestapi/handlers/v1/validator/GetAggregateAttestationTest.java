@@ -50,7 +50,8 @@ class GetAggregateAttestationTest extends AbstractMigratedBeaconHandlerTest {
     request.setQueryParameter("attestation_data_root", attestationDataRoot.toHexString());
 
     Attestation attestation = dataStructureUtil.randomAttestation();
-    when(validatorDataProvider.createAggregate(eq(UInt64.valueOf(1)), eq(attestationDataRoot)))
+    when(validatorDataProvider.createAggregate(
+            eq(UInt64.valueOf(1)), eq(attestationDataRoot), eq(Optional.empty())))
         .thenReturn(SafeFuture.completedFuture(Optional.of(attestation)));
 
     handler.handleRequest(request);

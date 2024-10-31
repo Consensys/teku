@@ -33,16 +33,17 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
 public class BlindedBeaconBlockBodySchemaCapellaImpl
     extends ContainerSchema11<
@@ -62,17 +63,17 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
 
   private BlindedBeaconBlockBodySchemaCapellaImpl(
       final String containerName,
-      NamedSchema<SszSignature> randaoReveal,
-      NamedSchema<Eth1Data> eth1Data,
-      NamedSchema<SszBytes32> graffiti,
-      NamedSchema<SszList<ProposerSlashing>> proposerSlashings,
-      NamedSchema<SszList<AttesterSlashing>> attesterSlashings,
-      NamedSchema<SszList<Attestation>> attestations,
-      NamedSchema<SszList<Deposit>> deposits,
-      NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExits,
-      NamedSchema<SyncAggregate> syncAggregate,
-      NamedSchema<ExecutionPayloadHeaderCapellaImpl> executionPayloadHeader,
-      NamedSchema<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges) {
+      final NamedSchema<SszSignature> randaoReveal,
+      final NamedSchema<Eth1Data> eth1Data,
+      final NamedSchema<SszBytes32> graffiti,
+      final NamedSchema<SszList<ProposerSlashing>> proposerSlashings,
+      final NamedSchema<SszList<AttesterSlashing>> attesterSlashings,
+      final NamedSchema<SszList<Attestation>> attestations,
+      final NamedSchema<SszList<Deposit>> deposits,
+      final NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExits,
+      final NamedSchema<SyncAggregate> syncAggregate,
+      final NamedSchema<ExecutionPayloadHeaderCapellaImpl> executionPayloadHeader,
+      final NamedSchema<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges) {
     super(
         containerName,
         randaoReveal,
@@ -90,9 +91,10 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
 
   public static BlindedBeaconBlockBodySchemaCapellaImpl create(
       final SpecConfigCapella specConfig,
-      final AttesterSlashingSchema attesterSlashingSchema,
       final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema,
-      final String containerName) {
+      final long maxValidatorsPerAttestation,
+      final String containerName,
+      final SchemaRegistry schemaRegistry) {
     return new BlindedBeaconBlockBodySchemaCapellaImpl(
         containerName,
         namedSchema(BlockBodyFields.RANDAO_REVEAL, SszSignatureSchema.INSTANCE),
@@ -104,11 +106,15 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
                 ProposerSlashing.SSZ_SCHEMA, specConfig.getMaxProposerSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTER_SLASHINGS,
-            SszListSchema.create(attesterSlashingSchema, specConfig.getMaxAttesterSlashings())),
+            SszListSchema.create(
+                schemaRegistry.get(SchemaTypes.ATTESTER_SLASHING_SCHEMA),
+                specConfig.getMaxAttesterSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
-                new AttestationSchema(specConfig), specConfig.getMaxAttestations())),
+                new AttestationPhase0Schema(maxValidatorsPerAttestation)
+                    .castTypeToAttestationSchema(),
+                specConfig.getMaxAttestations())),
         namedSchema(
             BlockBodyFields.DEPOSITS,
             SszListSchema.create(Deposit.SSZ_SCHEMA, specConfig.getMaxDeposits())),
@@ -176,7 +182,7 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
   }
 
   @Override
-  public BlindedBeaconBlockBodyCapellaImpl createFromBackingNode(TreeNode node) {
+  public BlindedBeaconBlockBodyCapellaImpl createFromBackingNode(final TreeNode node) {
     return new BlindedBeaconBlockBodyCapellaImpl(this, node);
   }
 

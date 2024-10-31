@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 public class SyncDataAccessor {
 
   private static final Logger LOG = LogManager.getLogger();
-  private boolean atomicFileMoveSupport;
+  private final boolean atomicFileMoveSupport;
 
   SyncDataAccessor(final boolean atomicFileMoveSupport) {
     this.atomicFileMoveSupport = atomicFileMoveSupport;
@@ -43,7 +43,7 @@ public class SyncDataAccessor {
 
   public static SyncDataAccessor create(final Path path) {
 
-    boolean atomicFileMoveSupport = false;
+    boolean atomicFileMoveSupport;
     final Path tmpFile;
     if (Files.isDirectory(path.toAbsolutePath())) {
       tmpFile = path.toAbsolutePath().resolve("syncWriteTest.tmp");
@@ -54,8 +54,7 @@ public class SyncDataAccessor {
     try {
       ensurePathExists(path);
     } catch (IOException e) {
-      throw new IllegalStateException(
-          "Could not create slashing protection path: " + e.getMessage());
+      throw new IllegalStateException("Could not create file at: " + e.getMessage());
     }
 
     try {

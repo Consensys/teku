@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -72,6 +73,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
+  private final Optional<UInt256> discoveryNodeId;
   private final BeaconChainMethods rpcMethods;
   private final StatusMessageFactory statusMessageFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
@@ -95,6 +97,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   DefaultEth2Peer(
       final Spec spec,
       final Peer peer,
+      final Optional<UInt256> discoveryNodeId,
       final BeaconChainMethods rpcMethods,
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
@@ -105,6 +108,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final KZG kzg) {
     super(peer);
     this.spec = spec;
+    this.discoveryNodeId = discoveryNodeId;
     this.rpcMethods = rpcMethods;
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
@@ -126,6 +130,11 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                         spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
                     .getBlobSidecarsByRootRequestMessageSchema());
     this.maxBlobsPerBlock = Suppliers.memoize(() -> getSpecConfigDeneb().getMaxBlobsPerBlock());
+  }
+
+  @Override
+  public Optional<UInt256> getDiscoveryNodeId() {
+    return discoveryNodeId;
   }
 
   @Override
@@ -361,7 +370,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public Optional<RequestApproval> approveBlocksRequest(
-      final ResponseCallback<SignedBeaconBlock> callback, long blocksCount) {
+      final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
     return approveObjectsRequest("blocks", blockRequestTracker, blocksCount, callback);
   }
 
@@ -373,7 +382,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public Optional<RequestApproval> approveBlobSidecarsRequest(
-      final ResponseCallback<BlobSidecar> callback, long blobSidecarsCount) {
+      final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
     return approveObjectsRequest(
         "blob sidecars", blobSidecarsRequestTracker, blobSidecarsCount, callback);
   }

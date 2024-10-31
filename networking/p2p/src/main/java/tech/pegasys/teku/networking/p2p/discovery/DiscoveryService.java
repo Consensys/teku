@@ -14,9 +14,11 @@
 package tech.pegasys.teku.networking.p2p.discovery;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 /**
@@ -36,7 +38,9 @@ public interface DiscoveryService {
 
   Optional<Bytes> getNodeId();
 
-  Optional<String> getDiscoveryAddress();
+  Optional<List<String>> getDiscoveryAddresses();
 
   void updateCustomENRField(String fieldName, Bytes value);
+
+  Optional<String> lookupEnr(UInt256 nodeId);
 }

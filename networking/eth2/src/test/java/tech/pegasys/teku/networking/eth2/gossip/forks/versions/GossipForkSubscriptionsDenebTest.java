@@ -83,6 +83,6 @@ public class GossipForkSubscriptionsDenebTest {
         noopOperationProcessor,
         noopOperationProcessor,
         noopOperationProcessor,
-        mock(DebugDataDumper.class));
+        DebugDataDumper.NOOP);
   }
 }

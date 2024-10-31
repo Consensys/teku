@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -46,13 +48,15 @@ public class BlockGossipManager extends AbstractGossipManager<SignedBeaconBlock>
         spec.atEpoch(forkInfo.getFork().getEpoch())
             .getSchemaDefinitions()
             .getSignedBeaconBlockSchema(),
+        block -> Optional.of(block.getSlot()),
         block -> spec.computeEpochAtSlot(block.getSlot()),
         spec.getNetworkingConfig(),
+        GossipFailureLogger.createNonSuppressing(GossipTopicName.BEACON_BLOCK.toString()),
         debugDataDumper);
   }
 
-  public void publishBlock(final SignedBeaconBlock message) {
-    publishMessage(message);
+  public SafeFuture<Void> publishBlock(final SignedBeaconBlock message) {
+    return publishMessageWithFeedback(message);
   }
 
   @Override

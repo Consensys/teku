@@ -97,7 +97,8 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
   }
 
   @Override
-  protected void applyAdditionalFields(MutableBeaconState state, final SpecVersion specVersion) {
+  protected void applyAdditionalFields(
+      final MutableBeaconState state, final SpecVersion specVersion) {
     state
         .toMutableVersionBellatrix()
         .ifPresent(
@@ -112,10 +113,10 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
   }
 
   public static void applyBellatrixFields(
-      MutableBeaconStateBellatrix state,
-      SyncCommitteeSchema syncCommitteeSchema,
-      ExecutionPayloadHeaderSchemaBellatrix executionPayloadHeaderSchema,
-      BeaconStateBellatrix instance) {
+      final MutableBeaconStateBellatrix state,
+      final SyncCommitteeSchema syncCommitteeSchema,
+      final ExecutionPayloadHeaderSchemaBellatrix executionPayloadHeaderSchema,
+      final BeaconStateBellatrix instance) {
     BeaconStateAltair.applyAltairFields(state, syncCommitteeSchema, instance);
 
     state.setLatestExecutionPayloadHeader(
@@ -123,7 +124,7 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
             executionPayloadHeaderSchema));
   }
 
-  public BeaconStateBellatrix(BeaconState beaconState) {
+  public BeaconStateBellatrix(final BeaconState beaconState) {
     super(beaconState);
     final tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix
             .BeaconStateBellatrix
@@ -133,7 +134,7 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

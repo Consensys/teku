@@ -13,20 +13,20 @@
 
 package tech.pegasys.teku.reference.common.operations;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -141,32 +141,29 @@ public class DefaultOperationProcessor implements OperationProcessor {
   }
 
   @Override
-  public void processDepositReceipt(
-      final MutableBeaconState state, final DepositReceipt depositReceipt)
+  public void processDepositRequest(
+      final MutableBeaconState state, final List<DepositRequest> depositRequests)
       throws BlockProcessingException {
-    final SszList<DepositReceipt> depositReceiptList =
-        BeaconBlockBodySchemaElectra.required(beaconBlockBodySchema)
-            .getExecutionPayloadSchema()
-            .getDepositReceiptsSchemaRequired()
-            .of(depositReceipt);
-
-    spec.getBlockProcessor(state.getSlot()).processDepositReceipts(state, depositReceiptList);
+    spec.getBlockProcessor(state.getSlot()).processDepositRequests(state, depositRequests);
   }
 
   @Override
-  public void processExecutionLayerExit(
-      final MutableBeaconState state, final ExecutionLayerExit executionLayerExit)
+  public void processWithdrawalRequest(
+      final MutableBeaconState state, final List<WithdrawalRequest> withdrawalRequests)
       throws BlockProcessingException {
-    final SszList<ExecutionLayerExit> exits =
-        BeaconBlockBodySchemaElectra.required(beaconBlockBodySchema)
-            .getExecutionPayloadSchema()
-            .getExecutionLayerExitsSchemaRequired()
-            .of(executionLayerExit);
     final Supplier<ValidatorExitContext> validatorExitContextSupplier =
         spec.atSlot(state.getSlot())
             .beaconStateMutators()
             .createValidatorExitContextSupplier(state);
     spec.getBlockProcessor(state.getSlot())
-        .processExecutionLayerExits(state, exits, validatorExitContextSupplier);
+        .processWithdrawalRequests(state, withdrawalRequests, validatorExitContextSupplier);
+  }
+
+  @Override
+  public void processConsolidationRequest(
+      final MutableBeaconState state, final List<ConsolidationRequest> consolidationRequests)
+      throws BlockProcessingException {
+    spec.getBlockProcessor(state.getSlot())
+        .processConsolidationRequests(state, consolidationRequests);
   }
 }

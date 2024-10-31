@@ -5,7 +5,7 @@ orbs:
 executors:
   small_executor:
     docker:
-      - image: cimg/openjdk:17.0.7
+      - image: cimg/openjdk:21.0.2
         auth: &docker-auth
           # Don't panic, throw away account to avoid Docker rate limits when downloading.
           # Second reason we're doing this is so that forked PRs from external contributors works ie env vars aren't visible to forked PRs from within contexts
@@ -27,7 +27,7 @@ executors:
 
   medium_executor:
     docker:
-      - image: cimg/openjdk:17.0.7
+      - image: cimg/openjdk:21.0.2
         auth:
           <<: *docker-auth
     resource_class: medium
@@ -39,7 +39,7 @@ executors:
 
   medium_plus_executor:
     docker:
-      - image: cimg/openjdk:17.0.7
+      - image: cimg/openjdk:21.0.2
         auth:
           <<: *docker-auth
     resource_class: "medium+"
@@ -50,7 +50,7 @@ executors:
 
   large_executor:
     docker:
-      - image: cimg/openjdk:17.0.7
+      - image: cimg/openjdk:21.0.2
         auth:
           <<: *docker-auth
     resource_class: large
@@ -63,6 +63,16 @@ executors:
     machine:
       image: ubuntu-2204:2024.01.1 # https://circleci.com/developer/machine/image/ubuntu-2204
       docker_layer_caching: true
+    working_directory: ~/project
+    environment:
+      architecture: "amd64"
+      platform: "linux/amd64"
+
+  machine_large_executor_amd64:
+    machine:
+      image: ubuntu-2204:2024.01.1 # https://circleci.com/developer/machine/image/ubuntu-2204
+      docker_layer_caching: true
+    resource_class: large
     working_directory: ~/project
     environment:
       architecture: "amd64"
@@ -83,6 +93,21 @@ executors:
           <<: *docker-auth
 
 commands:
+  install_java_21:
+    description: "Install Java 21"
+    steps:
+      - run:
+          name: "Install Java 21"
+          command: |
+            sudo apt update
+            sudo apt install -y openjdk-21-jdk
+            if [ "$(uname -m)" = "aarch64" ]; then
+              ARCH="arm64"
+            else
+              ARCH="amd64"
+            fi
+            sudo update-alternatives --set java /usr/lib/jvm/java-21-openjdk-$ARCH/bin/java
+            sudo update-alternatives --set javac /usr/lib/jvm/java-21-openjdk-$ARCH/bin/javac
   prepare:
     description: "Prepare"
     steps:
@@ -148,7 +173,7 @@ commands:
           name: "Publish Docker Images"
           command: |
             docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
-            ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH} -PincludeCommitHash=<< pipeline.parameters.include_commit_hash >>" uploadDocker
+            ./gradlew --no-daemon --parallel -Pbranch=${CIRCLE_BRANCH} -PincludeCommitHashInDockerTag=<< pipeline.parameters.include_commit_hash_in_docker_tag >> uploadDocker
 
   notify:
     description: "Notify Slack"
@@ -159,7 +184,7 @@ commands:
           only_for_branches: 'master'
 
 parameters:
-  include_commit_hash:
+  include_commit_hash_in_docker_tag:
     type: boolean
     default: false
 
@@ -210,7 +235,7 @@ jobs:
           no_output_timeout: 20m
           command: |
             $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
-            $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"
+            $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.vfs.watch=false"
             cmd.exe /c gradlew.bat --no-daemon --parallel --build-cache
       - run:
           name: "Gather test artifacts"
@@ -222,13 +247,23 @@ jobs:
           path: build/test-results
 
   spotless:
-    executor: small_executor
+    executor: medium_executor
     steps:
       - prepare
       - run:
           name: Spotless
           command: |
-            ./gradlew --no-daemon --parallel checkMavenCoordinateCollisions spotlessCheck checkModuleDependencies
+            ./gradlew --no-daemon --parallel spotlessCheck
+      - notify
+
+  moduleChecks:
+    executor: small_executor
+    steps:
+      - prepare
+      - run:
+          name: Module Checks
+          command: |
+            ./gradlew --no-daemon --parallel checkMavenCoordinateCollisions checkModuleDependencies
       - notify
 
   dockerScan:
@@ -328,9 +363,10 @@ jobs:
           path: build/test-results
 
   acceptanceTests:
-    parallelism: 5
-    executor: machine_executor_amd64
+    parallelism: 4
+    executor: machine_large_executor_amd64
     steps:
+      - install_java_21
       - prepare
       - attach_workspace:
           at: ~/project
@@ -437,12 +473,9 @@ jobs:
       - notify
 
   publishDockerAmd64:
-    parameters:
-      include_commit_hash:
-        type: boolean
-        default: false
     executor: machine_executor_amd64
     steps:
+      - install_java_21
       - prepare
       - attach_workspace:
           at: ~/project
@@ -451,12 +484,9 @@ jobs:
       - notify
 
   publishDockerArm64:
-    parameters:
-      include_commit_hash:
-        type: boolean
-        default: false
     executor: machine_executor_arm64
     steps:
+      - install_java_21
       - prepare
       - attach_workspace:
           at: ~/project
@@ -472,7 +502,7 @@ jobs:
       - run:
           name: Create and publish docker manifest
           command: |
-            ./gradlew --no-daemon --parallel manifestDocker
+            ./gradlew --no-daemon --parallel -PincludeCommitHashInDockerTag=<< pipeline.parameters.include_commit_hash_in_docker_tag >> manifestDocker
       - notify
 
   extractAPISpec:
@@ -552,12 +582,17 @@ workflows:
           filters:
             tags: &filters-release-tags
               only: /^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?/
+      - moduleChecks:
+          filters:
+            tags:
+              <<: *filters-release-tags
       - spotless:
           filters:
             tags:
               <<: *filters-release-tags
       - windowsBuild:
           requires:
+            - moduleChecks
             - spotless
           filters:
             tags:
@@ -620,6 +655,7 @@ workflows:
             - acceptanceTests
             - referenceTests
             - extractAPISpec
+            - moduleChecks
             - spotless
             - windowsBuild
           context:
@@ -639,6 +675,7 @@ workflows:
             - acceptanceTests
             - referenceTests
             - extractAPISpec
+            - moduleChecks
             - spotless
             - windowsBuild
           context:
@@ -658,6 +695,7 @@ workflows:
             - acceptanceTests
             - referenceTests
             - extractAPISpec
+            - moduleChecks
             - spotless
             - windowsBuild
           context:
@@ -690,6 +728,7 @@ workflows:
             - acceptanceTests
             - referenceTests
             - extractAPISpec
+            - moduleChecks
             - spotless
             - windowsBuild
   nightly:

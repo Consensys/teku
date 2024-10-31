@@ -24,8 +24,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -63,8 +63,8 @@ public class AttesterSlashingGenerator {
     UInt64 epoch = spec.computeEpochAtSlot(blockAndState.getSlot());
     Optional<CommitteeAssignment> maybeAssignment =
         spec.getCommitteeAssignment(blockAndState.getState(), epoch, validatorIndex);
-    IntList committeeIndices = maybeAssignment.orElseThrow().getCommittee();
-    UInt64 committeeIndex = maybeAssignment.orElseThrow().getCommitteeIndex();
+    IntList committeeIndices = maybeAssignment.orElseThrow().committee();
+    UInt64 committeeIndex = maybeAssignment.orElseThrow().committeeIndex();
     Committee committee = new Committee(committeeIndex, committeeIndices);
     int indexIntoCommittee = committeeIndices.indexOf(validatorIndex);
 
@@ -105,7 +105,7 @@ public class AttesterSlashingGenerator {
       final Committee committee,
       final AttestationData attestationData) {
     int committeeSize = committee.getCommitteeSize();
-    AttestationSchema attestationSchema =
+    AttestationSchema<?> attestationSchema =
         spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema();
     SszBitlist aggregationBitfield =
         attestationSchema.getAggregationBitsSchema().ofBits(committeeSize, indexIntoCommittee);

@@ -520,7 +520,7 @@ class Store extends CacheableStore {
   }
 
   @Override
-  public boolean containsBlock(Bytes32 blockRoot) {
+  public boolean containsBlock(final Bytes32 blockRoot) {
     readLock.lock();
     try {
       return forkChoiceStrategy.contains(blockRoot);
@@ -610,7 +610,7 @@ class Store extends CacheableStore {
   }
 
   @Override
-  public Optional<Boolean> isFfgCompetitive(Bytes32 headRoot, Bytes32 parentRoot) {
+  public Optional<Boolean> isFfgCompetitive(final Bytes32 headRoot, final Bytes32 parentRoot) {
     final Optional<ProtoNodeData> maybeHeadData = getBlockDataFromForkChoiceStrategy(headRoot);
     final Optional<ProtoNodeData> maybeParentData = getBlockDataFromForkChoiceStrategy(parentRoot);
     if (maybeParentData.isEmpty() || maybeHeadData.isEmpty()) {

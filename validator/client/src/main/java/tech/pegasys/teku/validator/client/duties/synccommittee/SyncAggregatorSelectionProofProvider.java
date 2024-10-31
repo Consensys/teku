@@ -73,7 +73,7 @@ public class SyncAggregatorSelectionProofProvider {
   }
 
   public Optional<SafeFuture<BLSSignature>> getSelectionProofFuture(
-      int validatorIndex, int subcommitteeIndex) {
+      final int validatorIndex, final int subcommitteeIndex) {
     return Optional.ofNullable(
         selectionProofFutures.get(Pair.of(validatorIndex, subcommitteeIndex)));
   }

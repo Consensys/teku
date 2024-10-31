@@ -228,7 +228,8 @@ public class Eth2P2PNetworkFactory {
                 500,
                 50,
                 spec,
-                KZG.NOOP);
+                KZG.NOOP,
+                (__) -> Optional.empty());
 
         List<RpcMethod<?, ?, ?>> rpcMethods =
             eth2PeerManager.getBeaconChainMethods().all().stream()
@@ -344,117 +345,123 @@ public class Eth2P2PNetworkFactory {
         final DiscoveryNetwork<?> network,
         final GossipEncoding gossipEncoding) {
       return switch (forkAndSpecMilestone.getSpecMilestone()) {
-        case PHASE0 -> new GossipForkSubscriptionsPhase0(
-            forkAndSpecMilestone.getFork(),
-            spec,
-            asyncRunner,
-            metricsSystem,
-            network,
-            recentChainData,
-            gossipEncoding,
-            gossipedBlockProcessor,
-            gossipedAttestationProcessor,
-            gossipedAggregateProcessor,
-            attesterSlashingProcessor,
-            proposerSlashingProcessor,
-            voluntaryExitProcessor,
-            debugDataDumper);
-        case ALTAIR -> new GossipForkSubscriptionsAltair(
-            forkAndSpecMilestone.getFork(),
-            spec,
-            asyncRunner,
-            metricsSystem,
-            network,
-            recentChainData,
-            gossipEncoding,
-            gossipedBlockProcessor,
-            gossipedAttestationProcessor,
-            gossipedAggregateProcessor,
-            attesterSlashingProcessor,
-            proposerSlashingProcessor,
-            voluntaryExitProcessor,
-            signedContributionAndProofProcessor,
-            syncCommitteeMessageProcessor,
-            debugDataDumper);
-        case BELLATRIX -> new GossipForkSubscriptionsBellatrix(
-            forkAndSpecMilestone.getFork(),
-            spec,
-            asyncRunner,
-            metricsSystem,
-            network,
-            recentChainData,
-            gossipEncoding,
-            gossipedBlockProcessor,
-            gossipedAttestationProcessor,
-            gossipedAggregateProcessor,
-            attesterSlashingProcessor,
-            proposerSlashingProcessor,
-            voluntaryExitProcessor,
-            signedContributionAndProofProcessor,
-            syncCommitteeMessageProcessor,
-            debugDataDumper);
-        case CAPELLA -> new GossipForkSubscriptionsCapella(
-            forkAndSpecMilestone.getFork(),
-            spec,
-            asyncRunner,
-            metricsSystem,
-            network,
-            recentChainData,
-            gossipEncoding,
-            gossipedBlockProcessor,
-            gossipedAttestationProcessor,
-            gossipedAggregateProcessor,
-            attesterSlashingProcessor,
-            proposerSlashingProcessor,
-            voluntaryExitProcessor,
-            signedContributionAndProofProcessor,
-            syncCommitteeMessageProcessor,
-            signedBlsToExecutionChangeProcessor,
-            debugDataDumper);
-        case DENEB -> new GossipForkSubscriptionsDeneb(
-            forkAndSpecMilestone.getFork(),
-            spec,
-            asyncRunner,
-            metricsSystem,
-            network,
-            recentChainData,
-            gossipEncoding,
-            gossipedBlockProcessor,
-            gossipedBlobSidecarProcessor,
-            gossipedAttestationProcessor,
-            gossipedAggregateProcessor,
-            attesterSlashingProcessor,
-            proposerSlashingProcessor,
-            voluntaryExitProcessor,
-            signedContributionAndProofProcessor,
-            syncCommitteeMessageProcessor,
-            signedBlsToExecutionChangeProcessor,
-            debugDataDumper);
-        case ELECTRA -> new GossipForkSubscriptionsElectra(
-            forkAndSpecMilestone.getFork(),
-            spec,
-            asyncRunner,
-            metricsSystem,
-            network,
-            recentChainData,
-            gossipEncoding,
-            gossipedBlockProcessor,
-            gossipedBlobSidecarProcessor,
-            gossipedAttestationProcessor,
-            gossipedAggregateProcessor,
-            attesterSlashingProcessor,
-            proposerSlashingProcessor,
-            voluntaryExitProcessor,
-            signedContributionAndProofProcessor,
-            syncCommitteeMessageProcessor,
-            signedBlsToExecutionChangeProcessor,
-            debugDataDumper);
+        case PHASE0 ->
+            new GossipForkSubscriptionsPhase0(
+                forkAndSpecMilestone.getFork(),
+                spec,
+                asyncRunner,
+                metricsSystem,
+                network,
+                recentChainData,
+                gossipEncoding,
+                gossipedBlockProcessor,
+                gossipedAttestationProcessor,
+                gossipedAggregateProcessor,
+                attesterSlashingProcessor,
+                proposerSlashingProcessor,
+                voluntaryExitProcessor,
+                debugDataDumper);
+        case ALTAIR ->
+            new GossipForkSubscriptionsAltair(
+                forkAndSpecMilestone.getFork(),
+                spec,
+                asyncRunner,
+                metricsSystem,
+                network,
+                recentChainData,
+                gossipEncoding,
+                gossipedBlockProcessor,
+                gossipedAttestationProcessor,
+                gossipedAggregateProcessor,
+                attesterSlashingProcessor,
+                proposerSlashingProcessor,
+                voluntaryExitProcessor,
+                signedContributionAndProofProcessor,
+                syncCommitteeMessageProcessor,
+                debugDataDumper);
+        case BELLATRIX ->
+            new GossipForkSubscriptionsBellatrix(
+                forkAndSpecMilestone.getFork(),
+                spec,
+                asyncRunner,
+                metricsSystem,
+                network,
+                recentChainData,
+                gossipEncoding,
+                gossipedBlockProcessor,
+                gossipedAttestationProcessor,
+                gossipedAggregateProcessor,
+                attesterSlashingProcessor,
+                proposerSlashingProcessor,
+                voluntaryExitProcessor,
+                signedContributionAndProofProcessor,
+                syncCommitteeMessageProcessor,
+                debugDataDumper);
+        case CAPELLA ->
+            new GossipForkSubscriptionsCapella(
+                forkAndSpecMilestone.getFork(),
+                spec,
+                asyncRunner,
+                metricsSystem,
+                network,
+                recentChainData,
+                gossipEncoding,
+                gossipedBlockProcessor,
+                gossipedAttestationProcessor,
+                gossipedAggregateProcessor,
+                attesterSlashingProcessor,
+                proposerSlashingProcessor,
+                voluntaryExitProcessor,
+                signedContributionAndProofProcessor,
+                syncCommitteeMessageProcessor,
+                signedBlsToExecutionChangeProcessor,
+                debugDataDumper);
+        case DENEB ->
+            new GossipForkSubscriptionsDeneb(
+                forkAndSpecMilestone.getFork(),
+                spec,
+                asyncRunner,
+                metricsSystem,
+                network,
+                recentChainData,
+                gossipEncoding,
+                gossipedBlockProcessor,
+                gossipedBlobSidecarProcessor,
+                gossipedAttestationProcessor,
+                gossipedAggregateProcessor,
+                attesterSlashingProcessor,
+                proposerSlashingProcessor,
+                voluntaryExitProcessor,
+                signedContributionAndProofProcessor,
+                syncCommitteeMessageProcessor,
+                signedBlsToExecutionChangeProcessor,
+                debugDataDumper);
+        case ELECTRA ->
+            new GossipForkSubscriptionsElectra(
+                forkAndSpecMilestone.getFork(),
+                spec,
+                asyncRunner,
+                metricsSystem,
+                network,
+                recentChainData,
+                gossipEncoding,
+                gossipedBlockProcessor,
+                gossipedBlobSidecarProcessor,
+                gossipedAttestationProcessor,
+                gossipedAggregateProcessor,
+                attesterSlashingProcessor,
+                proposerSlashingProcessor,
+                voluntaryExitProcessor,
+                signedContributionAndProofProcessor,
+                syncCommitteeMessageProcessor,
+                signedBlsToExecutionChangeProcessor,
+                debugDataDumper);
       };
     }
 
     private P2PConfig generateConfig() {
       final List<String> peerAddresses =
-          peers.stream().map(P2PNetwork::getNodeAddress).collect(toList());
+          peers.stream().flatMap(peer -> peer.getNodeAddresses().stream()).collect(toList());
 
       final Random random = new Random();
       final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
@@ -687,7 +694,7 @@ public class Eth2P2PNetworkFactory {
     }
 
     public Eth2P2PNetworkBuilder rpcMethodsModifier(
-        Function<RpcMethod<?, ?, ?>, Stream<RpcMethod<?, ?, ?>>> rpcMethodsModifier) {
+        final Function<RpcMethod<?, ?, ?>, Stream<RpcMethod<?, ?, ?>>> rpcMethodsModifier) {
       checkNotNull(rpcMethodsModifier);
       this.rpcMethodsModifier = rpcMethodsModifier;
       return this;
@@ -699,32 +706,32 @@ public class Eth2P2PNetworkFactory {
       return this;
     }
 
-    public Eth2P2PNetworkBuilder asyncRunner(AsyncRunner asyncRunner) {
+    public Eth2P2PNetworkBuilder asyncRunner(final AsyncRunner asyncRunner) {
       checkNotNull(asyncRunner);
       this.asyncRunner = asyncRunner;
       return this;
     }
 
-    public Eth2P2PNetworkBuilder eth2RpcPingInterval(Duration eth2RpcPingInterval) {
+    public Eth2P2PNetworkBuilder eth2RpcPingInterval(final Duration eth2RpcPingInterval) {
       checkNotNull(eth2RpcPingInterval);
       this.eth2RpcPingInterval = eth2RpcPingInterval;
       return this;
     }
 
     public Eth2P2PNetworkBuilder eth2RpcOutstandingPingThreshold(
-        int eth2RpcOutstandingPingThreshold) {
+        final int eth2RpcOutstandingPingThreshold) {
       checkArgument(eth2RpcOutstandingPingThreshold > 0);
       this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
       return this;
     }
 
-    public Eth2P2PNetworkBuilder eth2StatusUpdateInterval(Duration eth2StatusUpdateInterval) {
+    public Eth2P2PNetworkBuilder eth2StatusUpdateInterval(final Duration eth2StatusUpdateInterval) {
       checkNotNull(eth2StatusUpdateInterval);
       this.eth2StatusUpdateInterval = eth2StatusUpdateInterval;
       return this;
     }
 
-    public Eth2P2PNetworkBuilder debugDataDumper(final DebugDataDumper debugDataDumper) {
+    public Eth2P2PNetworkBuilder p2pDebugDataDumper(final DebugDataDumper debugDataDumper) {
       checkNotNull(debugDataDumper);
       this.debugDataDumper = debugDataDumper;
       return this;

@@ -19,11 +19,11 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 
 public class SszBytes32 extends AbstractSszPrimitive<Bytes32> {
 
-  public static SszBytes32 of(Bytes32 val) {
+  public static SszBytes32 of(final Bytes32 val) {
     return new SszBytes32(val);
   }
 
-  private SszBytes32(Bytes32 val) {
+  private SszBytes32(final Bytes32 val) {
     super(val, SszPrimitiveSchemas.BYTES32_SCHEMA);
   }
 }

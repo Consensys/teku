@@ -91,8 +91,7 @@ public class TreeNodeAssert extends AbstractAssert<TreeNodeAssert, TreeNode> {
       assertThat(actual.hashTreeRoot())
           .describedAs("zero branch node root at gIndex %s", gIndex)
           .isEqualTo(expected.hashTreeRoot());
-    } else if (actual instanceof BranchNode) {
-      final BranchNode actualBranch = (BranchNode) actual;
+    } else if (actual instanceof BranchNode actualBranch) {
       final BranchNode expectedBranch = (BranchNode) expected;
       assertTreeEqual(
           actualBranch.left(), expectedBranch.left(), GIndexUtil.gIdxLeftGIndex(gIndex));

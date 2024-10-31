@@ -23,7 +23,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
@@ -86,7 +85,7 @@ public class BatchSignatureVerifierTest {
                           }
                           return ret;
                         }))
-            .collect(Collectors.toList());
+            .toList();
 
     for (Future<Boolean> future : futures) {
       assertThat(future.get()).isTrue();

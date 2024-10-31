@@ -20,14 +20,13 @@ dependencies {
   referenceTestImplementation testFixtures(project(':infrastructure:metrics'))
   referenceTestImplementation project(':infrastructure:time')
   referenceTestImplementation project(':data:dataexchange')
-  referenceTestImplementation project(':data:serializer')
 
   referenceTestImplementation 'org.hyperledger.besu:plugin-api'
   referenceTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
   referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  referenceTestImplementation 'org.apache.tuweni:tuweni-bytes'
-  referenceTestImplementation 'org.apache.tuweni:tuweni-junit'
-  referenceTestImplementation 'org.apache.tuweni:tuweni-ssz'
+  referenceTestImplementation 'io.tmio:tuweni-bytes'
+  referenceTestImplementation 'io.tmio:tuweni-junit'
+  referenceTestImplementation 'io.tmio:tuweni-ssz'
   referenceTestImplementation 'org.xerial.snappy:snappy-java'
 }
 
@@ -46,4 +45,9 @@ task generateReferenceTestClasses(type: JavaExec) {
   systemProperty("teku.ref-test-module.path", project.file("../eth-reference-tests").absolutePath)
 }
 
-compileReferenceTestJava.dependsOn(generateReferenceTestClasses)
+compileReferenceTestJava {
+  dependsOn generateReferenceTestClasses
+  // Fork worker to compile tests and avoid OoM errors during compilation
+  options.fork = true
+  options.forkOptions.memoryMaximumSize = "2048m"
+}

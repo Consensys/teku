@@ -25,7 +25,7 @@ public interface SszMutableCollection<SszElementT extends SszData>
    * @param startIndex The first index in the range to be modified (inclusive)
    * @param endIndex The last index in the range to be modified (exclusive)
    */
-  default void setAll(SszElementT value, int startIndex, int endIndex) {
+  default void setAll(final SszElementT value, final int startIndex, final int endIndex) {
     checkArgument(
         startIndex <= endIndex, "Start index must be less than or equal to the end index");
     for (int i = startIndex; i < endIndex; i++) {
@@ -39,7 +39,7 @@ public interface SszMutableCollection<SszElementT extends SszData>
    * @param value The value to set
    * @param endIndex The index defining the end of the range to set (exclusive)
    */
-  default void setAll(SszElementT value, int endIndex) {
+  default void setAll(final SszElementT value, final int endIndex) {
     setAll(value, 0, endIndex);
   }
 }

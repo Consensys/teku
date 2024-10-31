@@ -43,7 +43,7 @@ public class BuilderBidSchemaBellatrix
   }
 
   @Override
-  public BuilderBidBellatrix createFromBackingNode(TreeNode node) {
+  public BuilderBidBellatrix createFromBackingNode(final TreeNode node) {
     return new BuilderBidBellatrix(this, node);
   }
 

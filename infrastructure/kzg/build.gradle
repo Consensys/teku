@@ -2,9 +2,9 @@ dependencies {
   implementation project(':infrastructure:io')
   implementation project(':infrastructure:http')
 
-  implementation 'org.apache.tuweni:tuweni-bytes'
-  implementation 'org.apache.tuweni:tuweni-ssz'
-  implementation 'tech.pegasys:jc-kzg-4844'
+  implementation 'io.tmio:tuweni-bytes'
+  implementation 'io.tmio:tuweni-ssz'
+  implementation 'io.consensys.protocols:jc-kzg-4844'
   implementation 'commons-io:commons-io'
 
   testFixturesImplementation 'com.google.guava:guava'

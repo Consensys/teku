@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class SszTestExecutor<T extends SszData> implements TestExecutor {
   private final SchemaProvider<T> sszType;
@@ -183,6 +184,42 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put(
               "ssz_static/BlobIdentifier",
               new SszTestExecutor<>(schemas -> BlobIdentifier.SSZ_SCHEMA))
+
+          // Electra types
+          .put(
+              "ssz_static/ExecutionRequests",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsElectra.required(schemas).getExecutionRequestsSchema()))
+          .put(
+              "ssz_static/DepositRequest",
+              new SszTestExecutor<>(
+                  schemas -> SchemaDefinitionsElectra.required(schemas).getDepositRequestSchema()))
+          .put(
+              "ssz_static/WithdrawalRequest",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsElectra.required(schemas).getWithdrawalRequestSchema()))
+          .put(
+              "ssz_static/ConsolidationRequest",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsElectra.required(schemas).getConsolidationRequestSchema()))
+          .put(
+              "ssz_static/PendingDeposit",
+              new SszTestExecutor<>(
+                  schemas -> SchemaDefinitionsElectra.required(schemas).getPendingDepositSchema()))
+          .put(
+              "ssz_static/PendingConsolidation",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsElectra.required(schemas).getPendingConsolidationSchema()))
+          .put(
+              "ssz_static/PendingPartialWithdrawal",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsElectra.required(schemas)
+                          .getPendingPartialWithdrawalSchema()))
 
           // Legacy Schemas (Not yet migrated to SchemaDefinitions)
           .put(

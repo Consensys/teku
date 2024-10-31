@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.time.Throttler;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -64,8 +65,9 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
   private static final Logger LOG = LogManager.getLogger();
   protected final UInt64 maxEffectiveBalance;
-  // Used to log once per epoch (throttlingPeriod = 1)
-  private final Throttler<Logger> loggerThrottler = new Throttler<>(LOG, UInt64.ONE);
+  // Used to log once per minute (throttlingPeriod = 60 seconds)
+  private final Throttler<Logger> loggerThrottler = new Throttler<>(LOG, UInt64.valueOf(60));
+  private final TimeProvider timeProvider;
 
   protected AbstractEpochProcessor(
       final SpecConfig specConfig,
@@ -75,7 +77,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorStatusFactory validatorStatusFactory,
-      final SchemaDefinitions schemaDefinitions) {
+      final SchemaDefinitions schemaDefinitions,
+      final TimeProvider timeProvider) {
     this.specConfig = specConfig;
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
@@ -85,6 +88,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     this.validatorStatusFactory = validatorStatusFactory;
     this.schemaDefinitions = schemaDefinitions;
     this.maxEffectiveBalance = specConfig.getMaxEffectiveBalance();
+    this.timeProvider = timeProvider;
   }
 
   /**
@@ -100,6 +104,16 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
   protected void processEpoch(final BeaconState preState, final MutableBeaconState state)
       throws EpochProcessingException {
+    /*
+     WARNING: After Electra, it is possible that the validator set is updated within epoch processing
+     (process_pending_deposits). This means that the validator set in the state can get out of sync with
+     our validatorStatuses cache. This is not a problem for the current epoch processing, but it can cause
+     undesired side effects in the future.
+
+     Up until Electra, the only function that uses validatorStatuses after process_pending_deposits is
+     process_effective_balance_updates, and in this particular case it is ok that we don't have the new validators
+     in validatorStatuses.
+    */
     final ValidatorStatuses validatorStatuses =
         validatorStatusFactory.createValidatorStatuses(preState);
 
@@ -118,7 +132,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processRegistryUpdates(state, validatorStatuses.getStatuses());
     processSlashings(state, validatorStatuses);
     processEth1DataReset(state);
-    processPendingBalanceDeposits(state);
+    processPendingDeposits(state);
     processPendingConsolidations(state);
     processEffectiveBalanceUpdates(state, validatorStatuses.getStatuses());
     processSlashingsReset(state);
@@ -129,7 +143,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processSyncCommitteeUpdates(state);
 
     if (beaconStateAccessors.isInactivityLeak(state)) {
-      loggerThrottler.invoke(currentEpoch, (log) -> log.info("Beacon chain is in inactivity leak"));
+      loggerThrottler.invoke(
+          timeProvider.getTimeInSeconds(), (log) -> log.info("Beacon chain is in inactivity leak"));
     }
   }
 
@@ -170,7 +185,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
   /** Processes justification and finalization */
   @Override
   public void processJustificationAndFinalization(
-      MutableBeaconState state, TotalBalances totalBalances) throws EpochProcessingException {
+      final MutableBeaconState state, final TotalBalances totalBalances)
+      throws EpochProcessingException {
     try {
       UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
       if (currentEpoch.isLessThanOrEqualTo(SpecConfig.GENESIS_EPOCH.plus(1))) {
@@ -271,7 +287,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
   @Override
   public void processRewardsAndPenalties(
-      MutableBeaconState state, ValidatorStatuses validatorStatuses)
+      final MutableBeaconState state, final ValidatorStatuses validatorStatuses)
       throws EpochProcessingException {
     try {
       if (beaconStateAccessors.getCurrentEpoch(state).equals(SpecConfig.GENESIS_EPOCH)) {
@@ -393,7 +409,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
   /** Processes slashings */
   @Override
   public void processSlashings(
-      MutableBeaconState state, final ValidatorStatuses validatorStatuses) {
+      final MutableBeaconState state, final ValidatorStatuses validatorStatuses) {
     final UInt64 totalBalance =
         validatorStatuses.getTotalBalances().getCurrentEpochActiveValidators();
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(state);
@@ -462,8 +478,10 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
               hysteresisUpwardMultiplier,
               maxEffectiveBalance)) {
         final Validator validator = validators.get(index);
+        final UInt64 effectiveBalanceLimit = getEffectiveBalanceLimitForValidator(validator);
         final UInt64 newEffectiveBalance =
-            balance.minus(balance.mod(effectiveBalanceIncrement)).min(maxEffectiveBalance);
+            effectiveBalanceLimit.min(
+                balance.minus(balance.mod(effectiveBalanceIncrement)).min(maxEffectiveBalance));
         BeaconStateCache.getTransitionCaches(state)
             .getProgressiveTotalBalances()
             .onEffectiveBalanceChange(status, newEffectiveBalance);
@@ -472,7 +490,11 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     }
   }
 
-  private boolean shouldIncreaseEffectiveBalance(
+  protected UInt64 getEffectiveBalanceLimitForValidator(final Validator validator) {
+    return specConfig.getMaxEffectiveBalance();
+  }
+
+  protected boolean shouldIncreaseEffectiveBalance(
       final UInt64 balance,
       final UInt64 hysteresisIncrement,
       final UInt64 currentEffectiveBalance,
@@ -485,7 +507,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
         && currentEffectiveBalance.plus(upwardThreshold).isLessThan(balance);
   }
 
-  private boolean shouldDecreaseEffectiveBalance(
+  protected boolean shouldDecreaseEffectiveBalance(
       final UInt64 balance,
       final UInt64 hysteresisIncrement,
       final UInt64 currentEffectiveBalance,

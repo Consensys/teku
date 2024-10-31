@@ -13,14 +13,16 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATE_AND_PROOF_SCHEMA;
+
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SignedAggregateAndProof
     extends Container2<SignedAggregateAndProof, AggregateAndProof, SszSignature> {
@@ -28,10 +30,11 @@ public class SignedAggregateAndProof
   public static class SignedAggregateAndProofSchema
       extends ContainerSchema2<SignedAggregateAndProof, AggregateAndProof, SszSignature> {
 
-    public SignedAggregateAndProofSchema(final SpecConfig specConfig) {
+    public SignedAggregateAndProofSchema(
+        final String containerName, final SchemaRegistry schemaRegistry) {
       super(
-          "SignedAggregateAndProof",
-          namedSchema("message", new AggregateAndProofSchema(specConfig)),
+          containerName,
+          namedSchema("message", schemaRegistry.get(AGGREGATE_AND_PROOF_SCHEMA)),
           namedSchema("signature", SszSignatureSchema.INSTANCE));
     }
 
@@ -40,16 +43,18 @@ public class SignedAggregateAndProof
     }
 
     @Override
-    public SignedAggregateAndProof createFromBackingNode(TreeNode node) {
+    public SignedAggregateAndProof createFromBackingNode(final TreeNode node) {
       return new SignedAggregateAndProof(this, node);
     }
 
-    public SignedAggregateAndProof create(final AggregateAndProof message, BLSSignature signature) {
+    public SignedAggregateAndProof create(
+        final AggregateAndProof message, final BLSSignature signature) {
       return new SignedAggregateAndProof(this, message, signature);
     }
   }
 
-  private SignedAggregateAndProof(SignedAggregateAndProofSchema type, TreeNode backingNode) {
+  private SignedAggregateAndProof(
+      final SignedAggregateAndProofSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 

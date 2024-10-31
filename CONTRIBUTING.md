@@ -31,7 +31,9 @@ You'll find us on [Discord] and that's the fastest way to get an answer.
 ### Your first code contribution
 Start by looking through the 'good first issue' and 'help wanted' issues:
 * [Good First Issue][search-label-good-first-issue] - issues which should only require a few lines of code, and a test or two.
-* [Help wanted issues][search-label-help-wanted] - issues which are a bit more involved than `good first issue` issues.
+* [Help wanted issues][search-label-help-wanted] - issues that are a bit more involved than `good first issue` issues.
+
+Please keep in mind that we do not accept non-code contributions like fixing comments, typos or some other trivial fixes. Although we appreciate the extra help, managing lots of these small contributions is unfeasible, and puts extra pressure in our continuous delivery systems (running all tests, etc). Feel free to open an issue pointing any of those errors and we will batch them into a single change.
 
 ### Local Development
 The codebase is maintained using the "*contributor workflow*" where everyone without exception contributes patch proposals using "*pull-requests*". This facilitates social contribution, easy testing and peer review.
@@ -47,7 +49,7 @@ In general a commit serves a single purpose and diffs should be easily comprehen
 
 ### Architectural Best Practices
 
-Questions on architectural best practices will be guided by the principles set forth in [Effective Java](http://index-of.es/Java/Effective%20Java.pdf) by Joshua Bloch
+Questions on architectural best practices will be guided by the principles set forth in Effective Java by Joshua Bloch
 
 ### Automated Test coverage
 All code submissions must be accompanied by appropriate automated tests.  The goal is to provide confidence in the code’s robustness, while avoiding redundant tests.
@@ -79,7 +81,7 @@ Following these guidelines helps maintainers and the community understand your r
 Explain the problem and include additional details to help maintainers reproduce the problem:
 
 * **Use a clear and descriptive title** for the issue to identify the problem.
-* **Describe the exact steps which reproduce the problem** in as many details as possible. For example, start by explaining how you started Teku, e.g. which command exactly you used in the terminal, or how you started it otherwise. 
+* **Describe the exact steps which reproduce the problem** in as many details as possible. For example, start by explaining how you started Teku, e.g. which command exactly you used in the terminal, or how you started it otherwise.
 * **Provide specific examples to demonstrate the steps**. Include links to files or GitHub projects, or copy/pasteable snippets, which you use in those examples. If you're providing snippets in the issue, use [Markdown code blocks](https://help.github.com/articles/markdown-basics/#multiple-lines).
 * **Describe the behavior you observed after following the steps** and point out what exactly is the problem with that behavior.
 * **Explain which behavior you expected to see instead and why.**

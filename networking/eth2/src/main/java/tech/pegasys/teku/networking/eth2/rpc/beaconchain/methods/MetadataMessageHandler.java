@@ -28,7 +28,8 @@ public class MetadataMessageHandler
   private final Spec spec;
   private final MetadataMessagesFactory metadataMessagesFactory;
 
-  public MetadataMessageHandler(final Spec spec, MetadataMessagesFactory metadataMessagesFactory) {
+  public MetadataMessageHandler(
+      final Spec spec, final MetadataMessagesFactory metadataMessagesFactory) {
     this.spec = spec;
     this.metadataMessagesFactory = metadataMessagesFactory;
   }
@@ -36,9 +37,9 @@ public class MetadataMessageHandler
   @Override
   public void onIncomingMessage(
       final String protocolId,
-      Eth2Peer peer,
-      EmptyMessage message,
-      ResponseCallback<MetadataMessage> callback) {
+      final Eth2Peer peer,
+      final EmptyMessage message,
+      final ResponseCallback<MetadataMessage> callback) {
     if (!peer.approveRequest()) {
       return;
     }

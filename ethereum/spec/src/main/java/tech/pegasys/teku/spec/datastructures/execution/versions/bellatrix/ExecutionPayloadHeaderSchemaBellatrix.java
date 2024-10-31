@@ -128,7 +128,7 @@ public class ExecutionPayloadHeaderSchemaBellatrix
   }
 
   @Override
-  public ExecutionPayloadHeaderBellatrix createFromBackingNode(TreeNode node) {
+  public ExecutionPayloadHeaderBellatrix createFromBackingNode(final TreeNode node) {
     return new ExecutionPayloadHeaderBellatrix(this, node);
   }
 

@@ -27,7 +27,7 @@ public class DefaultRpcPayloadEncoder<T extends SszData> implements RpcPayloadEn
   private static final Logger LOG = LogManager.getLogger();
   private final SszSchema<T> type;
 
-  public DefaultRpcPayloadEncoder(SszSchema<T> type) {
+  public DefaultRpcPayloadEncoder(final SszSchema<T> type) {
     this.type = type;
   }
 

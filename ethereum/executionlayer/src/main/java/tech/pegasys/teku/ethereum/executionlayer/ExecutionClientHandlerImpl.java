@@ -24,6 +24,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
 
@@ -100,17 +102,21 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
   }
 
   @Override
-  public SafeFuture<PayloadStatus> engineNewPayload(final NewPayloadRequest newPayloadRequest) {
+  public SafeFuture<PayloadStatus> engineNewPayload(
+      final NewPayloadRequest newPayloadRequest, final UInt64 slot) {
     final ExecutionPayload executionPayload = newPayloadRequest.getExecutionPayload();
     final JsonRpcRequestParams.Builder paramsBuilder =
         new JsonRpcRequestParams.Builder()
             .add(executionPayload)
             .addOptional(newPayloadRequest.getVersionedHashes())
-            .addOptional(newPayloadRequest.getParentBeaconBlockRoot());
+            .addOptional(newPayloadRequest.getParentBeaconBlockRoot())
+            .addOptional(newPayloadRequest.getExecutionRequests());
 
     return engineMethodsResolver
         .getMethod(
-            EngineApiMethod.ENGINE_NEW_PAYLOAD, executionPayload::getMilestone, PayloadStatus.class)
+            EngineApiMethod.ENGINE_NEW_PAYLOAD,
+            () -> spec.atSlot(slot).getMilestone(),
+            PayloadStatus.class)
         .execute(paramsBuilder.build());
   }
 
@@ -122,5 +128,18 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
         .thenApply(
             clientVersions ->
                 clientVersions.stream().map(ClientVersionV1::asInternalClientVersion).toList());
+  }
+
+  @Override
+  public SafeFuture<List<BlobAndProof>> engineGetBlobs(
+      final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
+    final JsonRpcRequestParams params =
+        new JsonRpcRequestParams.Builder().add(blobVersionedHashes).add(slot).build();
+    return engineMethodsResolver
+        .getListMethod(
+            EngineApiMethod.ENGINE_GET_BLOBS,
+            () -> spec.atSlot(slot).getMilestone(),
+            BlobAndProof.class)
+        .execute(params);
   }
 }

@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.ethereum.executionclient.schema;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.base.MoreObjects;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes32Deserializer;
@@ -32,24 +36,56 @@ public class PayloadAttributesV3 extends PayloadAttributesV2 {
   public final Bytes32 parentBeaconBlockRoot;
 
   public PayloadAttributesV3(
-      @JsonProperty("timestamp") UInt64 timestamp,
-      @JsonProperty("prevRandao") Bytes32 prevRandao,
-      @JsonProperty("suggestedFeeRecipient") Bytes20 suggestedFeeRecipient,
-      @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals,
-      @JsonProperty("parentBeaconBlockRoot") final Bytes32 parentBeaconBlockRoot) {
+      final @JsonProperty("timestamp") UInt64 timestamp,
+      final @JsonProperty("prevRandao") Bytes32 prevRandao,
+      final @JsonProperty("suggestedFeeRecipient") Bytes20 suggestedFeeRecipient,
+      final @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals,
+      final @JsonProperty("parentBeaconBlockRoot") Bytes32 parentBeaconBlockRoot) {
     super(timestamp, prevRandao, suggestedFeeRecipient, withdrawals);
+    checkNotNull(parentBeaconBlockRoot, "parentBeaconBlockRoot");
     this.parentBeaconBlockRoot = parentBeaconBlockRoot;
   }
 
   public static Optional<PayloadAttributesV3> fromInternalPayloadBuildingAttributesV3(
-      Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
+      final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
     return payloadBuildingAttributes.map(
-        (payloadAttributes) ->
+        payloadAttributes ->
             new PayloadAttributesV3(
                 payloadAttributes.getTimestamp(),
                 payloadAttributes.getPrevRandao(),
                 payloadAttributes.getFeeRecipient(),
-                getWithdrawals(payloadAttributes.getWithdrawals()),
+                getWithdrawals(payloadAttributes),
                 payloadAttributes.getParentBeaconBlockRoot()));
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
+    final PayloadAttributesV3 that = (PayloadAttributesV3) o;
+    return Objects.equals(parentBeaconBlockRoot, that.parentBeaconBlockRoot);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), parentBeaconBlockRoot);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("timestamp", timestamp)
+        .add("prevRandao", prevRandao)
+        .add("suggestedFeeRecipient", suggestedFeeRecipient)
+        .add("withdrawals", withdrawals)
+        .add("parentBeaconBlockRoot", parentBeaconBlockRoot)
+        .toString();
   }
 }

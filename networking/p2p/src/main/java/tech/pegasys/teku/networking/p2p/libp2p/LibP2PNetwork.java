@@ -21,6 +21,7 @@ import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.PrivKey;
 import io.libp2p.core.multiformats.Multiaddr;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -50,30 +51,29 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   private final PrivKey privKey;
   private final NodeId nodeId;
-
   private final Host host;
   private final PeerManager peerManager;
-  private final Multiaddr advertisedAddr;
+  private final List<Multiaddr> advertisedAddresses;
   private final GossipNetwork gossipNetwork;
+  private final List<Integer> listenPorts;
 
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
-  private final int listenPort;
 
   protected LibP2PNetwork(
-      PrivKey privKey,
-      NodeId nodeId,
-      Host host,
-      PeerManager peerManager,
-      Multiaddr advertisedAddr,
-      GossipNetwork gossipNetwork,
-      int listenPort) {
+      final PrivKey privKey,
+      final NodeId nodeId,
+      final Host host,
+      final PeerManager peerManager,
+      final List<Multiaddr> advertisedAddresses,
+      final GossipNetwork gossipNetwork,
+      final List<Integer> listenPorts) {
     this.privKey = privKey;
     this.nodeId = nodeId;
     this.host = host;
     this.peerManager = peerManager;
-    this.advertisedAddr = advertisedAddr;
+    this.advertisedAddresses = advertisedAddresses;
     this.gossipNetwork = gossipNetwork;
-    this.listenPort = listenPort;
+    this.listenPorts = listenPorts;
   }
 
   @Override
@@ -85,14 +85,14 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     return SafeFuture.of(host.start())
         .thenApply(
             i -> {
-              STATUS_LOG.listeningForLibP2P(getNodeAddress());
+              STATUS_LOG.listeningForLibP2P(getNodeAddresses());
               return null;
             });
   }
 
   @Override
-  public String getNodeAddress() {
-    return advertisedAddr.toString();
+  public List<String> getNodeAddresses() {
+    return advertisedAddresses.stream().map(Multiaddr::toString).toList();
   }
 
   @Override
@@ -157,8 +157,8 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public int getListenPort() {
-    return listenPort;
+  public List<Integer> getListenPorts() {
+    return listenPorts;
   }
 
   @Override
@@ -186,7 +186,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public Optional<String> getDiscoveryAddress() {
+  public Optional<List<String>> getDiscoveryAddresses() {
     return Optional.empty();
   }
 

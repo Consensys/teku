@@ -35,16 +35,16 @@ class BeaconStateAltairImpl extends AbstractBeaconState<MutableBeaconStateAltair
   }
 
   BeaconStateAltairImpl(
-      SszCompositeSchema<?> type,
-      TreeNode backingNode,
-      IntCache<SszData> cache,
-      TransitionCaches transitionCaches,
-      SlotCaches slotCaches) {
+      final SszCompositeSchema<?> type,
+      final TreeNode backingNode,
+      final IntCache<SszData> cache,
+      final TransitionCaches transitionCaches,
+      final SlotCaches slotCaches) {
     super(type, backingNode, cache, transitionCaches, slotCaches);
   }
 
   BeaconStateAltairImpl(
-      AbstractSszContainerSchema<? extends SszContainer> type, TreeNode backingNode) {
+      final AbstractSszContainerSchema<? extends SszContainer> type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -59,11 +59,12 @@ class BeaconStateAltairImpl extends AbstractBeaconState<MutableBeaconStateAltair
   }
 
   @Override
-  protected void describeCustomFields(ToStringHelper stringBuilder) {
+  protected void describeCustomFields(final ToStringHelper stringBuilder) {
     describeCustomFields(stringBuilder, this);
   }
 
-  static void describeCustomFields(ToStringHelper stringBuilder, final BeaconStateAltair state) {
+  static void describeCustomFields(
+      final ToStringHelper stringBuilder, final BeaconStateAltair state) {
     stringBuilder
         .add("previous_epoch_participation", state.getPreviousEpochParticipation())
         .add("current_epoch_participation", state.getCurrentEpochParticipation())

@@ -34,14 +34,13 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
 public class GetAttestations extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/pool/attestations";
   private final NodeDataProvider nodeDataProvider;
 
-  public GetAttestations(final DataProvider dataProvider, Spec spec) {
+  public GetAttestations(final DataProvider dataProvider, final Spec spec) {
     this(dataProvider.getNodeDataProvider(), spec);
   }
 
@@ -53,15 +52,16 @@ public class GetAttestations extends RestApiEndpoint {
             .description(
                 "Retrieves attestations known by the node but not necessarily incorporated into any block.")
             .tags(TAG_BEACON)
+            .deprecated(true)
             .queryParam(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION))
             .queryParam(COMMITTEE_INDEX_PARAMETER)
-            .response(SC_OK, "Request successful", getResponseType(spec.getGenesisSpecConfig()))
+            .response(SC_OK, "Request successful", getResponseType(spec))
             .build());
     this.nodeDataProvider = nodeDataProvider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
     final Optional<UInt64> slot =
         request.getOptionalQueryParameter(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION));
@@ -71,13 +71,13 @@ public class GetAttestations extends RestApiEndpoint {
     request.respondOk(nodeDataProvider.getAttestations(slot, committeeIndex));
   }
 
-  private static SerializableTypeDefinition<List<Attestation>> getResponseType(
-      SpecConfig specConfig) {
+  private static SerializableTypeDefinition<List<Attestation>> getResponseType(final Spec spec) {
     return SerializableTypeDefinition.<List<Attestation>>object()
         .name("GetPoolAttestationsResponse")
         .withField(
             "data",
-            listOf(new Attestation.AttestationSchema(specConfig).getJsonTypeDefinition()),
+            listOf(
+                spec.getGenesisSchemaDefinitions().getAttestationSchema().getJsonTypeDefinition()),
             Function.identity())
         .build();
   }

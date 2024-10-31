@@ -38,7 +38,7 @@ public class SignedBuilderBidSchema
   }
 
   @Override
-  public SignedBuilderBid createFromBackingNode(TreeNode node) {
+  public SignedBuilderBid createFromBackingNode(final TreeNode node) {
     return new SignedBuilderBid(this, node);
   }
 }

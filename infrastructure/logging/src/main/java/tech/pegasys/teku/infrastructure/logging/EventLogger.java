@@ -162,11 +162,13 @@ public class EventLogger {
     info("Execution Client is responding to requests again after a previous failure", Color.GREEN);
   }
 
-  public void missingEngineApiCapabilities(final List<String> missingCapabilities) {
+  // TODO remove the isOptional param when all ELs implement the engine_getBlob
+  public void missingEngineApiCapabilities(
+      final List<String> missingCapabilities, final boolean isOptional) {
     warn(
         String.format(
-            "Execution Client does not support required Engine API methods: %s. Make sure it is upgraded to a compatible version.",
-            missingCapabilities),
+            "Execution Client does not support %s Engine API methods: %s. Make sure it is upgraded to a compatible version.",
+            isOptional ? "optional" : "required", missingCapabilities),
         Color.YELLOW);
   }
 
@@ -174,11 +176,11 @@ public class EventLogger {
     log.info("Execution Client version: {} {}", name, version);
   }
 
-  public void logDefaultGraffiti(final String graffiti) {
+  public void logGraffitiWatermark(final String graffitiWatermark) {
     log.info(
-        "Default graffiti to use when building block without external VC: \"{}\". "
-            + "To change check validator graffiti options.",
-        graffiti);
+        "Using graffiti watermark: \"{}\". This will be appended to any user-defined graffiti or used if none is defined. "
+            + "Refer to validator graffiti options to customize.",
+        graffitiWatermark);
   }
 
   public void builderIsNotAvailable(final String errorMessage) {

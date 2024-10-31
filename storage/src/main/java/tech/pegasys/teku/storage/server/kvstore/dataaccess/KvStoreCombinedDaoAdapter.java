@@ -168,6 +168,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public Optional<UInt64> getEarliestFinalizedStateSlot() {
+    return finalizedDao.getEarliestFinalizedStateSlot();
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
     return finalizedDao.getLatestFinalizedBlockAtSlot(slot);
   }
@@ -554,13 +559,23 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void addReconstructedFinalizedState(Bytes32 blockRoot, BeaconState state) {
+    public void deleteFinalizedState(final UInt64 slot) {
+      finalizedUpdater.deleteFinalizedState(slot);
+    }
+
+    @Override
+    public void addReconstructedFinalizedState(final Bytes32 blockRoot, final BeaconState state) {
       finalizedUpdater.addReconstructedFinalizedState(blockRoot, state);
     }
 
     @Override
     public void addFinalizedStateRoot(final Bytes32 stateRoot, final UInt64 slot) {
       finalizedUpdater.addFinalizedStateRoot(stateRoot, slot);
+    }
+
+    @Override
+    public void deleteFinalizedStateRoot(final Bytes32 stateRoot) {
+      finalizedUpdater.deleteFinalizedStateRoot(stateRoot);
     }
 
     @Override
@@ -571,6 +586,16 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void setEarliestBlobSidecarSlot(final UInt64 slot) {
       finalizedUpdater.setEarliestBlobSidecarSlot(slot);
+    }
+
+    @Override
+    public void setEarliestBlockSlot(final UInt64 slot) {
+      finalizedUpdater.setEarliestBlockSlot(slot);
+    }
+
+    @Override
+    public void deleteEarliestBlockSlot() {
+      finalizedUpdater.deleteEarliestBlockSlot();
     }
 
     @Override

@@ -35,14 +35,14 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void shouldReadFromConfigurationFile() {
     final Eth2NetworkConfiguration eth2NetworkConfig =
-        Eth2NetworkConfiguration.builder("prater").build();
+        Eth2NetworkConfiguration.builder("holesky").build();
     final TekuConfiguration config = getTekuConfigurationFromFile("networkOptions_config.yaml");
     assertThat(config.eth2NetworkConfiguration().getConstants())
         .isEqualTo(eth2NetworkConfig.getConstants());
   }
 
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"mainnet", "minimal", "swift", "prater"})
+  @ValueSource(strings = {"mainnet", "minimal", "swift", "holesky"})
   public void useDefaultsFromNetworkDefinition(final String networkName) {
     final Eth2NetworkConfiguration eth2NetworkConfig =
         Eth2NetworkConfiguration.builder(networkName).build();
@@ -110,7 +110,7 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void overrideDefaultBootnodesWithEmptyList() {
-    beaconNodeCommand.parse(new String[] {"--network", "prater", "--p2p-discovery-bootnodes"});
+    beaconNodeCommand.parse(new String[] {"--network", "holesky", "--p2p-discovery-bootnodes"});
 
     TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
     final List<String> bootnodes = tekuConfiguration.discovery().getBootnodes();
@@ -164,7 +164,7 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void initialState_shouldDefaultToNetworkValue() {
-    final String network = "prater";
+    final String network = "holesky";
     final Eth2NetworkConfiguration networkConfig =
         Eth2NetworkConfiguration.builder(network).build();
     assertThat(networkConfig.getNetworkBoostrapConfig().getInitialState()).isPresent();
@@ -183,7 +183,7 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void initialState_shouldOverrideNetworkValue() {
     final String state = "state.ssz";
-    final String network = "prater";
+    final String network = "holesky";
     final Eth2NetworkConfiguration networkConfig =
         Eth2NetworkConfiguration.builder(network).build();
     assertThat(networkConfig.getNetworkBoostrapConfig().getInitialState()).isPresent();

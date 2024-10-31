@@ -32,7 +32,7 @@ public class BlstSignature implements Signature {
 
   static final BlstSignature INFINITY = new BlstSignature(new P2_Affine());
 
-  public static BlstSignature fromBytes(Bytes compressed) {
+  public static BlstSignature fromBytes(final Bytes compressed) {
     try {
       checkArgument(
           compressed.size() == COMPRESSED_SIG_SIZE,
@@ -46,7 +46,7 @@ public class BlstSignature implements Signature {
     }
   }
 
-  static BlstSignature fromSignature(Signature signature) {
+  static BlstSignature fromSignature(final Signature signature) {
     if (signature instanceof BlstSignature) {
       return (BlstSignature) signature;
     } else {
@@ -54,7 +54,7 @@ public class BlstSignature implements Signature {
     }
   }
 
-  public static BlstSignature aggregate(List<BlstSignature> signatures) {
+  public static BlstSignature aggregate(final List<BlstSignature> signatures) {
     try {
       P2 sum = new P2();
       for (BlstSignature finiteSignature : signatures) {
@@ -68,7 +68,10 @@ public class BlstSignature implements Signature {
   }
 
   private static void blstPrepareVerifyAggregated(
-      BlstPublicKey pubKey, Bytes message, Pairing ctx, BlstSignature blstSignature) {
+      final BlstPublicKey pubKey,
+      final Bytes message,
+      final Pairing ctx,
+      final BlstSignature blstSignature) {
 
     BLST_ERROR ret =
         ctx.aggregate(
@@ -81,14 +84,14 @@ public class BlstSignature implements Signature {
     }
   }
 
-  private static boolean blstCompleteVerifyAggregated(Pairing ctx) {
+  private static boolean blstCompleteVerifyAggregated(final Pairing ctx) {
     ctx.commit();
     return ctx.finalverify();
   }
 
   final P2_Affine ec2Point;
 
-  public BlstSignature(P2_Affine ec2Point) {
+  public BlstSignature(final P2_Affine ec2Point) {
     this.ec2Point = ec2Point;
   }
 
@@ -98,7 +101,7 @@ public class BlstSignature implements Signature {
   }
 
   @Override
-  public boolean verify(List<PublicKeyMessagePair> keysToMessages) {
+  public boolean verify(final List<PublicKeyMessagePair> keysToMessages) {
 
     boolean isAnyPublicKeyInfinity =
         keysToMessages.stream()
@@ -119,19 +122,19 @@ public class BlstSignature implements Signature {
   }
 
   @Override
-  public boolean verify(List<PublicKey> publicKeys, Bytes message) {
+  public boolean verify(final List<PublicKey> publicKeys, final Bytes message) {
     return verify(
         BlstPublicKey.aggregate(publicKeys.stream().map(BlstPublicKey::fromPublicKey).toList()),
         message);
   }
 
   @Override
-  public boolean verify(PublicKey publicKey, Bytes message) {
+  public boolean verify(final PublicKey publicKey, final Bytes message) {
     return BlstBLS12381.verify(BlstPublicKey.fromPublicKey(publicKey), message, this);
   }
 
   @Override
-  public boolean verify(PublicKey publicKey, Bytes message, String dst) {
+  public boolean verify(final PublicKey publicKey, final Bytes message, final String dst) {
     return BlstBLS12381.verify(BlstPublicKey.fromPublicKey(publicKey), message, this, dst);
   }
 
@@ -151,7 +154,7 @@ public class BlstSignature implements Signature {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

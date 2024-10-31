@@ -13,14 +13,16 @@
 
 package tech.pegasys.teku.ethereum.executionclient.schema;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.ArrayList;
+import com.google.common.base.MoreObjects;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 
 public class PayloadAttributesV2 extends PayloadAttributesV1 {
@@ -28,37 +30,73 @@ public class PayloadAttributesV2 extends PayloadAttributesV1 {
   public final List<WithdrawalV1> withdrawals;
 
   public PayloadAttributesV2(
-      @JsonProperty("timestamp") UInt64 timestamp,
-      @JsonProperty("prevRandao") Bytes32 prevRandao,
-      @JsonProperty("suggestedFeeRecipient") Bytes20 suggestedFeeRecipient,
-      @JsonProperty("withdrawals") final List<WithdrawalV1> withdrawals) {
+      final @JsonProperty("timestamp") UInt64 timestamp,
+      final @JsonProperty("prevRandao") Bytes32 prevRandao,
+      final @JsonProperty("suggestedFeeRecipient") Bytes20 suggestedFeeRecipient,
+      final @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals) {
     super(timestamp, prevRandao, suggestedFeeRecipient);
+    checkNotNull(withdrawals, "withdrawals");
     this.withdrawals = withdrawals;
   }
 
   public static Optional<PayloadAttributesV2> fromInternalPayloadBuildingAttributesV2(
-      Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
+      final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
     return payloadBuildingAttributes.map(
-        (payloadAttributes) ->
+        payloadAttributes ->
             new PayloadAttributesV2(
                 payloadAttributes.getTimestamp(),
                 payloadAttributes.getPrevRandao(),
                 payloadAttributes.getFeeRecipient(),
-                PayloadAttributesV2.getWithdrawals(payloadAttributes.getWithdrawals())));
+                getWithdrawals(payloadAttributes)));
   }
 
   public static List<WithdrawalV1> getWithdrawals(
-      final Optional<List<Withdrawal>> maybeWithdrawals) {
-    if (maybeWithdrawals.isEmpty()) {
-      return null;
-    }
+      final PayloadBuildingAttributes payloadAttributes) {
+    return payloadAttributes
+        .getWithdrawals()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Withdrawals were expected to be part of the payload attributes for slot "
+                        + payloadAttributes.getProposalSlot()))
+        .stream()
+        .map(
+            withdrawal ->
+                new WithdrawalV1(
+                    withdrawal.getIndex(),
+                    withdrawal.getValidatorIndex(),
+                    withdrawal.getAddress(),
+                    withdrawal.getAmount()))
+        .toList();
+  }
 
-    final List<WithdrawalV1> withdrawals = new ArrayList<>();
-
-    for (final Withdrawal w : maybeWithdrawals.get()) {
-      withdrawals.add(
-          new WithdrawalV1(w.getIndex(), w.getValidatorIndex(), w.getAddress(), w.getAmount()));
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
     }
-    return withdrawals;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
+    final PayloadAttributesV2 that = (PayloadAttributesV2) o;
+    return Objects.equals(withdrawals, that.withdrawals);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), withdrawals);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("timestamp", timestamp)
+        .add("prevRandao", prevRandao)
+        .add("suggestedFeeRecipient", suggestedFeeRecipient)
+        .add("withdrawals", withdrawals)
+        .toString();
   }
 }

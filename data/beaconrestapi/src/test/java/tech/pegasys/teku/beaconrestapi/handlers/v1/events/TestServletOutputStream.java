@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 public class TestServletOutputStream extends ServletOutputStream {
-  private StringBuilder builder = new StringBuilder();
+  private final StringBuilder builder = new StringBuilder();
   private int writeCounter = 0;
 
   @Override

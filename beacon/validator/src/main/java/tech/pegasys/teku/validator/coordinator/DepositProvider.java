@@ -103,13 +103,13 @@ public class DepositProvider
     event.getDeposits().stream()
         .map(depositUtil::convertDepositEventToOperationDeposit)
         .forEach(
-            deposit -> {
+            depositWithIndex -> {
               if (!recentChainData.isPreGenesis()) {
-                LOG.debug("About to process deposit: {}", deposit.getIndex());
+                LOG.debug("About to process deposit: {}", depositWithIndex.index());
               }
 
-              depositNavigableMap.put(deposit.getIndex(), deposit);
-              depositMerkleTree.pushLeaf(deposit.getData().hashTreeRoot());
+              depositNavigableMap.put(depositWithIndex.index(), depositWithIndex);
+              depositMerkleTree.pushLeaf(depositWithIndex.deposit().getData().hashTreeRoot());
             });
     depositCounter.inc(event.getDeposits().size());
     eth1DataCache.onBlockWithDeposit(
@@ -211,9 +211,17 @@ public class DepositProvider
       final BeaconState state, final Eth1Data eth1Data) {
     final long maxDeposits = spec.getMaxDeposits(state);
     final SszListSchema<Deposit, ?> depositsSchema = depositsSchemaCache.get(maxDeposits);
+    return getDepositsWithIndex(state, eth1Data).stream()
+        .map(DepositWithIndex::deposit)
+        .collect(depositsSchema.collector());
+  }
+
+  public synchronized List<DepositWithIndex> getDepositsWithIndex(
+      final BeaconState state, final Eth1Data eth1Data) {
+    final long maxDeposits = spec.getMaxDeposits(state);
     // no Eth1 deposits needed if already transitioned to the EIP-6110 mechanism
     if (spec.isFormerDepositMechanismDisabled(state)) {
-      return depositsSchema.createFromElements(emptyList());
+      return emptyList();
     }
     final UInt64 eth1DepositCount;
     if (spec.isEnoughVotesToUpdateEth1Data(state, eth1Data, 1)) {
@@ -230,7 +238,7 @@ public class DepositProvider
                 stateElectra -> {
                   // EIP-6110
                   final UInt64 eth1DepositIndexLimit =
-                      eth1DepositCount.min(stateElectra.getDepositReceiptsStartIndex());
+                      eth1DepositCount.min(stateElectra.getDepositRequestsStartIndex());
                   return eth1DepositIndexLimit.minusMinZero(eth1DepositIndex).min(maxDeposits);
                 })
             .orElseGet(
@@ -241,7 +249,7 @@ public class DepositProvider
 
     // No deposits to include
     if (eth1PendingDepositCount.isZero()) {
-      return depositsSchema.createFromElements(emptyList());
+      return emptyList();
     }
 
     // We need to have all the deposits that can be included in the state available to ensure
@@ -250,7 +258,7 @@ public class DepositProvider
 
     final UInt64 toDepositIndex = eth1DepositIndex.plus(eth1PendingDepositCount);
 
-    return getDepositsWithProof(eth1DepositIndex, toDepositIndex, eth1DepositCount, depositsSchema);
+    return getDepositsWithProof(eth1DepositIndex, toDepositIndex, eth1DepositCount);
   }
 
   protected synchronized List<DepositWithIndex> getAvailableDeposits() {
@@ -283,11 +291,8 @@ public class DepositProvider
    * @param toDepositIndex exclusive
    * @param eth1DepositCount number of deposits in the merkle tree according to Eth1Data in state
    */
-  private SszList<Deposit> getDepositsWithProof(
-      final UInt64 fromDepositIndex,
-      final UInt64 toDepositIndex,
-      final UInt64 eth1DepositCount,
-      final SszListSchema<Deposit, ?> depositsSchema) {
+  private List<DepositWithIndex> getDepositsWithProof(
+      final UInt64 fromDepositIndex, final UInt64 toDepositIndex, final UInt64 eth1DepositCount) {
     final AtomicReference<UInt64> expectedDepositIndex = new AtomicReference<>(fromDepositIndex);
     final SszBytes32VectorSchema<?> depositProofSchema = Deposit.SSZ_SCHEMA.getProofSchema();
     if (depositMerkleTree.getDepositCount() < eth1DepositCount.intValue()) {
@@ -301,17 +306,19 @@ public class DepositProvider
         .values()
         .stream()
         .map(
-            deposit -> {
-              if (!deposit.getIndex().equals(expectedDepositIndex.get())) {
+            depositWithIndex -> {
+              if (!depositWithIndex.index().equals(expectedDepositIndex.get())) {
                 throw MissingDepositsException.missingRange(
-                    expectedDepositIndex.get(), deposit.getIndex());
+                    expectedDepositIndex.get(), depositWithIndex.index());
               }
-              expectedDepositIndex.set(deposit.getIndex().plus(ONE));
+              expectedDepositIndex.set(depositWithIndex.index().plus(ONE));
               SszBytes32Vector proof =
-                  depositProofSchema.of(merkleTree.getProof(deposit.getIndex().intValue()));
-              return new DepositWithIndex(proof, deposit.getData(), deposit.getIndex());
+                  depositProofSchema.of(merkleTree.getProof(depositWithIndex.index().intValue()));
+              return new DepositWithIndex(
+                  new Deposit(proof, depositWithIndex.deposit().getData()),
+                  depositWithIndex.index());
             })
-        .collect(depositsSchema.collector());
+        .toList();
   }
 
   @Override
@@ -323,7 +330,7 @@ public class DepositProvider
   private static class DepositsSchemaCache {
     private SszListSchema<Deposit, ?> cachedSchema;
 
-    public SszListSchema<Deposit, ?> get(long maxDeposits) {
+    public SszListSchema<Deposit, ?> get(final long maxDeposits) {
       SszListSchema<Deposit, ?> cachedSchemaLoc = cachedSchema;
       if (cachedSchemaLoc == null || maxDeposits != cachedSchemaLoc.getMaxLength()) {
         cachedSchemaLoc = SszListSchema.create(Deposit.SSZ_SCHEMA, maxDeposits);

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.remote.eventsource;
 
 import static java.util.Collections.emptyMap;
+import static tech.pegasys.teku.validator.remote.BeaconNodeReadinessManager.ReadinessStatus.READY;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -24,6 +25,7 @@ import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import com.launchdarkly.eventsource.background.ConnectionErrorHandler.Action;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -133,7 +135,7 @@ public class EventSourceBeaconChainEventAdapter
   }
 
   @Override
-  public void onPrimaryNodeBackReady() {
+  public void onPrimaryNodeReady() {
     if (!currentEventStreamHasSameEndpoint(primaryBeaconNodeApi)) {
       switchBackToPrimaryEventStream();
     }
@@ -180,6 +182,12 @@ public class EventSourceBeaconChainEventAdapter
     if (failoverBeaconNodeApis.isEmpty()) {
       return false;
     }
+    // No need to change anything if current node is READY
+    if (beaconNodeReadinessManager
+        .getReadinessStatus(currentBeaconNodeUsedForEventStreaming)
+        .equals(READY)) {
+      return false;
+    }
     return findReadyFailoverAndSwitch();
   }
 
@@ -188,7 +196,7 @@ public class EventSourceBeaconChainEventAdapter
         failoverBeaconNodeApis.stream()
             .filter(beaconNodeReadinessManager::isReady)
             .filter(failover -> !currentEventStreamHasSameEndpoint(failover))
-            .findFirst();
+            .max(Comparator.comparing(beaconNodeReadinessManager::getReadinessStatusWeight));
     if (readyFailover.isPresent()) {
       switchToFailoverEventStream(readyFailover.get());
       return true;

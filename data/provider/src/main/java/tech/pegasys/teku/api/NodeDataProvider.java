@@ -26,7 +26,9 @@ import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -47,6 +49,7 @@ import tech.pegasys.teku.statetransition.forkchoice.RegisteredValidatorInfo;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
+import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class NodeDataProvider {
@@ -63,6 +66,8 @@ public class NodeDataProvider {
   private final boolean isLivenessTrackingEnabled;
   private final ProposersDataManager proposersDataManager;
   private final ForkChoiceNotifier forkChoiceNotifier;
+  private final RecentChainData recentChainData;
+  private final Spec spec;
 
   public NodeDataProvider(
       final AggregatingAttestationPool attestationPool,
@@ -76,7 +81,9 @@ public class NodeDataProvider {
       final boolean isLivenessTrackingEnabled,
       final ActiveValidatorChannel activeValidatorChannel,
       final ProposersDataManager proposersDataManager,
-      final ForkChoiceNotifier forkChoiceNotifier) {
+      final ForkChoiceNotifier forkChoiceNotifier,
+      final RecentChainData recentChainData,
+      final Spec spec) {
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingsPool;
     this.proposerSlashingPool = proposerSlashingPool;
@@ -89,6 +96,8 @@ public class NodeDataProvider {
     this.isLivenessTrackingEnabled = isLivenessTrackingEnabled;
     this.proposersDataManager = proposersDataManager;
     this.forkChoiceNotifier = forkChoiceNotifier;
+    this.recentChainData = recentChainData;
+    this.spec = spec;
   }
 
   public List<Attestation> getAttestations(
@@ -96,8 +105,44 @@ public class NodeDataProvider {
     return attestationPool.getAttestations(maybeSlot, maybeCommitteeIndex);
   }
 
+  public ObjectAndMetaData<List<Attestation>> getAttestationsAndMetaData(
+      final Optional<UInt64> maybeSlot, final Optional<UInt64> maybeCommitteeIndex) {
+    return lookupMetaData(
+        attestationPool.getAttestations(maybeSlot, maybeCommitteeIndex), maybeSlot);
+  }
+
+  private ObjectAndMetaData<List<Attestation>> lookupMetaData(
+      final List<Attestation> attestations, final Optional<UInt64> maybeSlot) {
+    final UInt64 slot = getSlot(attestations, maybeSlot);
+    return new ObjectAndMetaData<>(
+        attestations, spec.atSlot(slot).getMilestone(), false, false, false);
+  }
+
+  private UInt64 getSlot(final List<Attestation> attestations, final Optional<UInt64> maybeSlot) {
+    return maybeSlot.orElseGet(
+        () ->
+            attestations.stream()
+                .findFirst()
+                .map(attestation -> attestation.getData().getSlot())
+                .orElseGet(() -> recentChainData.getCurrentSlot().orElse(UInt64.ZERO)));
+  }
+
   public List<AttesterSlashing> getAttesterSlashings() {
     return new ArrayList<>(attesterSlashingPool.getAll());
+  }
+
+  public ObjectAndMetaData<List<AttesterSlashing>> getAttesterSlashingsAndMetaData() {
+    final List<AttesterSlashing> attesterSlashings = new ArrayList<>(attesterSlashingPool.getAll());
+    final UInt64 slot = getSlot(attesterSlashings);
+    return new ObjectAndMetaData<>(
+        attesterSlashings, spec.atSlot(slot).getMilestone(), false, false, false);
+  }
+
+  private UInt64 getSlot(final List<AttesterSlashing> attesterSlashings) {
+    return attesterSlashings.stream()
+        .findFirst()
+        .map(attesterSlashing -> attesterSlashing.getAttestation1().getData().getSlot())
+        .orElseGet(() -> recentChainData.getCurrentSlot().orElse(UInt64.ZERO));
   }
 
   public List<ProposerSlashing> getProposerSlashings() {

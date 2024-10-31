@@ -71,7 +71,7 @@ public class AttestationGossipManagerTest {
           recentChainData,
           gossipedAttestationProcessor,
           forkInfo,
-          mock(DebugDataDumper.class));
+          DebugDataDumper.NOOP);
 
   @BeforeEach
   public void setup() {

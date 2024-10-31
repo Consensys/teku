@@ -18,7 +18,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRequestBodyFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
@@ -30,14 +32,13 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.ethereum.json.types.validator.PostSyncCommitteeData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class PostSyncCommitteeSubscriptionsTest extends AbstractMigratedBeaconHandlerTest {
-  private final List<PostSyncCommitteeSubscriptions.PostSyncCommitteeData> requestBody =
-      List.of(
-          new PostSyncCommitteeSubscriptions.PostSyncCommitteeData(
-              1, new IntOpenHashSet(List.of(0, 1)), UInt64.ONE));
+  private final List<PostSyncCommitteeData> requestBody =
+      List.of(new PostSyncCommitteeData(1, new IntOpenHashSet(List.of(0, 1)), UInt64.ONE));
 
   @BeforeEach
   void setup() {
@@ -76,5 +77,15 @@ class PostSyncCommitteeSubscriptionsTest extends AbstractMigratedBeaconHandlerTe
   @Test
   void metadata_shouldHandle200() {
     verifyMetadataEmptyResponse(handler, SC_OK);
+  }
+
+  @Test
+  void metadata_shouldHandle204() {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
+  }
+
+  @Test
+  void metadata_shouldHandle503() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_SERVICE_UNAVAILABLE);
   }
 }

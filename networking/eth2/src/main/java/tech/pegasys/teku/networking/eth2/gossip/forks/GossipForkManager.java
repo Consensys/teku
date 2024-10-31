@@ -26,9 +26,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -63,6 +65,7 @@ public class GossipForkManager {
   private final IntSet currentSyncCommitteeSubnets = new IntOpenHashSet();
 
   private Optional<UInt64> currentEpoch = Optional.empty();
+  private boolean isHeadOptimistic;
 
   private GossipForkManager(
       final Spec spec,
@@ -71,6 +74,7 @@ public class GossipForkManager {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.forksByActivationEpoch = forksByActivationEpoch;
+    this.isHeadOptimistic = recentChainData.isChainHeadOptimistic();
   }
 
   public static GossipForkManager.Builder builder() {
@@ -141,6 +145,7 @@ public class GossipForkManager {
   }
 
   public synchronized void onOptimisticHeadChanged(final boolean isHeadOptimistic) {
+    this.isHeadOptimistic = isHeadOptimistic;
     if (isHeadOptimistic) {
       activeSubscriptions.forEach(GossipForkSubscriptions::stopGossipForOptimisticSync);
     } else {
@@ -152,7 +157,7 @@ public class GossipForkManager {
     }
   }
 
-  public synchronized void publishAttestation(final ValidatableAttestation attestation) {
+  public void publishAttestation(final ValidatableAttestation attestation) {
     publishMessage(
         attestation.getData().getSlot(),
         attestation,
@@ -160,20 +165,20 @@ public class GossipForkManager {
         GossipForkSubscriptions::publishAttestation);
   }
 
-  public synchronized void publishBlock(final SignedBeaconBlock block) {
-    publishMessage(block.getSlot(), block, "block", GossipForkSubscriptions::publishBlock);
+  public SafeFuture<Void> publishBlock(final SignedBeaconBlock block) {
+    return publishMessageWithFeedback(
+        block.getSlot(), block, "block", GossipForkSubscriptions::publishBlock);
   }
 
-  public synchronized void publishBlobSidecar(final BlobSidecar blobSidecar) {
-    publishMessage(
+  public SafeFuture<Void> publishBlobSidecar(final BlobSidecar blobSidecar) {
+    return publishMessageWithFeedback(
         blobSidecar.getSlot(),
         blobSidecar,
         "blob sidecar",
         GossipForkSubscriptions::publishBlobSidecar);
   }
 
-  public synchronized void publishSyncCommitteeMessage(
-      final ValidatableSyncCommitteeMessage message) {
+  public void publishSyncCommitteeMessage(final ValidatableSyncCommitteeMessage message) {
     publishMessage(
         message.getSlot(),
         message,
@@ -227,7 +232,7 @@ public class GossipForkManager {
         GossipForkSubscriptions::publishSignedBlsToExecutionChangeMessage);
   }
 
-  private <T> void publishMessage(
+  private synchronized <T> void publishMessage(
       final UInt64 slot,
       final T message,
       final String type,
@@ -243,6 +248,23 @@ public class GossipForkManager {
                     slot));
   }
 
+  private synchronized <T> SafeFuture<Void> publishMessageWithFeedback(
+      final UInt64 slot,
+      final T message,
+      final String type,
+      final BiFunction<GossipForkSubscriptions, T, SafeFuture<Void>> publisher) {
+    final Optional<GossipForkSubscriptions> gossipForkSubscriptions =
+        getSubscriptionActiveAtSlot(slot).filter(this::isActive);
+
+    if (gossipForkSubscriptions.isEmpty()) {
+      LOG.warn(
+          "Not publishing {} because no gossip subscriptions are active for slot {}", type, slot);
+      return SafeFuture.COMPLETE;
+    }
+
+    return publisher.apply(gossipForkSubscriptions.get(), message);
+  }
+
   public synchronized void subscribeToAttestationSubnetId(final int subnetId) {
     if (currentAttestationSubnets.add(subnetId)) {
       activeSubscriptions.forEach(
@@ -250,21 +272,21 @@ public class GossipForkManager {
     }
   }
 
-  public void unsubscribeFromAttestationSubnetId(final int subnetId) {
+  public synchronized void unsubscribeFromAttestationSubnetId(final int subnetId) {
     if (currentAttestationSubnets.remove(subnetId)) {
       activeSubscriptions.forEach(
           subscription -> subscription.unsubscribeFromAttestationSubnetId(subnetId));
     }
   }
 
-  public void subscribeToSyncCommitteeSubnetId(final int subnetId) {
+  public synchronized void subscribeToSyncCommitteeSubnetId(final int subnetId) {
     if (currentSyncCommitteeSubnets.add(subnetId)) {
       activeSubscriptions.forEach(
           subscription -> subscription.subscribeToSyncCommitteeSubnet(subnetId));
     }
   }
 
-  public void unsubscribeFromSyncCommitteeSubnetId(final int subnetId) {
+  public synchronized void unsubscribeFromSyncCommitteeSubnetId(final int subnetId) {
     if (currentSyncCommitteeSubnets.remove(subnetId)) {
       activeSubscriptions.forEach(
           subscription -> subscription.unsubscribeFromSyncCommitteeSubnet(subnetId));
@@ -279,7 +301,7 @@ public class GossipForkManager {
     if (activeSubscriptions.add(subscription)) {
       subscription.startGossip(
           recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot(),
-          recentChainData.isChainHeadOptimistic());
+          isHeadOptimistic);
       currentAttestationSubnets.forEach(subscription::subscribeToAttestationSubnetId);
       currentSyncCommitteeSubnets.forEach(subscription::subscribeToSyncCommitteeSubnet);
     }

@@ -24,11 +24,13 @@ import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -43,7 +45,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
@@ -85,11 +87,15 @@ public interface ValidatorApiChannel extends ChannelInterface {
         }
 
         @Override
+        public SafeFuture<Optional<PeerCount>> getPeerCount() {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
         public SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
             UInt64 slot,
             BLSSignature randaoReveal,
             Optional<Bytes32> graffiti,
-            Optional<Boolean> requestedBlinded,
             Optional<UInt64> requestedBuilderBoostFactor) {
           return SafeFuture.completedFuture(Optional.empty());
         }
@@ -102,7 +108,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
         @Override
         public SafeFuture<Optional<Attestation>> createAggregate(
-            UInt64 slot, Bytes32 attestationHashTreeRoot) {
+            UInt64 slot, Bytes32 attestationHashTreeRoot, Optional<UInt64> committeeIndex) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
@@ -209,20 +215,18 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<ProposerDuties>> getProposerDuties(UInt64 epoch);
 
-  /**
-   * @param requestedBlinded can be removed once block creation V2 APIs are removed in favour of V3
-   *     only
-   */
+  SafeFuture<Optional<PeerCount>> getPeerCount();
+
   SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       UInt64 slot,
       BLSSignature randaoReveal,
       Optional<Bytes32> graffiti,
-      Optional<Boolean> requestedBlinded,
       Optional<UInt64> requestedBuilderBoostFactor);
 
   SafeFuture<Optional<AttestationData>> createAttestationData(UInt64 slot, int committeeIndex);
 
-  SafeFuture<Optional<Attestation>> createAggregate(UInt64 slot, Bytes32 attestationHashTreeRoot);
+  SafeFuture<Optional<Attestation>> createAggregate(
+      UInt64 slot, Bytes32 attestationHashTreeRoot, Optional<UInt64> committeeIndex);
 
   SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
       UInt64 slot, int subcommitteeIndex, Bytes32 beaconBlockRoot);

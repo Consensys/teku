@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.p2p.mock;
 import io.libp2p.core.PeerId;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -38,7 +39,7 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   private final NodeId nodeId = new MockNodeId();
 
   @Override
-  public SafeFuture<Peer> connect(PeerAddress peer) {
+  public SafeFuture<Peer> connect(final PeerAddress peer) {
     return SafeFuture.failedFuture(new UnsupportedOperationException());
   }
 
@@ -94,8 +95,8 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   }
 
   @Override
-  public String getNodeAddress() {
-    return "/ip4/127.0.0.1/tcp/" + port + "/p2p/" + nodeId.toBase58();
+  public List<String> getNodeAddresses() {
+    return List.of("/ip4/127.0.0.1/tcp/" + port + "/p2p/" + nodeId.toBase58());
   }
 
   @Override
@@ -114,13 +115,13 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   }
 
   @Override
-  public Optional<String> getDiscoveryAddress() {
+  public Optional<List<String>> getDiscoveryAddresses() {
     return Optional.empty();
   }
 
   @Override
-  public int getListenPort() {
-    return 0;
+  public List<Integer> getListenPorts() {
+    return Collections.singletonList(0);
   }
 
   /** Stops the P2P network layer. */

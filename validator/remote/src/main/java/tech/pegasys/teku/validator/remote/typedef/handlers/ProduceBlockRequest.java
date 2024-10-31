@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
 import static java.util.Collections.emptyMap;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BUILDER_BOOST_FACTOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CONSENSUS_BLOCK_VALUE;
@@ -49,12 +48,11 @@ import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
-import tech.pegasys.teku.validator.remote.typedef.BlockProductionV3FailedException;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class ProduceBlockRequest extends AbstractTypeDefRequest {
@@ -72,15 +70,15 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
   public ProduceBlockRequest(
       final HttpUrl baseEndpoint,
       final OkHttpClient okHttpClient,
-      final Spec spec,
+      final SchemaDefinitionCache schemaDefinitionCache,
       final UInt64 slot,
       final boolean preferSszBlockEncoding) {
     super(baseEndpoint, okHttpClient);
     this.slot = slot;
     this.preferSszBlockEncoding = preferSszBlockEncoding;
-    this.blockContainerSchema = spec.atSlot(slot).getSchemaDefinitions().getBlockContainerSchema();
+    this.blockContainerSchema = schemaDefinitionCache.atSlot(slot).getBlockContainerSchema();
     this.blindedBlockContainerSchema =
-        spec.atSlot(slot).getSchemaDefinitions().getBlindedBlockContainerSchema();
+        schemaDefinitionCache.atSlot(slot).getBlindedBlockContainerSchema();
 
     final DeserializableTypeDefinition<ProduceBlockResponse> produceBlockResponseDefinition =
         buildDeserializableTypeDefinition(blockContainerSchema.getJsonTypeDefinition());
@@ -99,15 +97,10 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
 
     this.responseHandler =
         new ResponseHandler<>(produceBlockTypeDefinition)
-            .withHandler(SC_OK, this::handleBlockContainerResult)
-            .withHandler(
-                SC_NOT_FOUND,
-                (__, ___) -> {
-                  throw new BlockProductionV3FailedException();
-                });
+            .withHandler(SC_OK, this::handleBlockContainerResult);
   }
 
-  public Optional<BlockContainerAndMetaData> createUnsignedBlock(
+  public Optional<BlockContainerAndMetaData> submit(
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
       final Optional<UInt64> requestedBuilderBoostFactor) {
@@ -254,7 +247,7 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
       return executionPayloadBlinded;
     }
 
-    public void setExecutionPayloadBlinded(Boolean executionPayloadBlinded) {
+    public void setExecutionPayloadBlinded(final Boolean executionPayloadBlinded) {
       this.executionPayloadBlinded = executionPayloadBlinded;
     }
 
@@ -262,7 +255,7 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
       return consensusBlockValue;
     }
 
-    public void setConsensusBlockValue(UInt256 consensusBlockValue) {
+    public void setConsensusBlockValue(final UInt256 consensusBlockValue) {
       this.consensusBlockValue = consensusBlockValue;
     }
 
@@ -270,7 +263,7 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
       return executionPayloadValue;
     }
 
-    public void setExecutionPayloadValue(UInt256 executionPayloadValue) {
+    public void setExecutionPayloadValue(final UInt256 executionPayloadValue) {
       this.executionPayloadValue = executionPayloadValue;
     }
 

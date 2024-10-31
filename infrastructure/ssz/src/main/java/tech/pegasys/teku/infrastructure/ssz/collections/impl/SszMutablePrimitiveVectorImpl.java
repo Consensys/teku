@@ -26,12 +26,13 @@ public class SszMutablePrimitiveVectorImpl<ElementT, SszElementT extends SszPrim
     implements SszMutablePrimitiveVector<ElementT, SszElementT> {
 
   @SuppressWarnings("unchecked")
-  public SszMutablePrimitiveVectorImpl(AbstractSszComposite<SszElementT> backingImmutableData) {
+  public SszMutablePrimitiveVectorImpl(
+      final AbstractSszComposite<SszElementT> backingImmutableData) {
     super(backingImmutableData);
   }
 
   @Override
-  protected void checkIndex(int index, boolean set) {
+  protected void checkIndex(final int index, final boolean set) {
     if (index < 0 || index >= size()) {
       throw new IndexOutOfBoundsException(
           "Invalid index " + index + " for vector with size " + size());
@@ -52,7 +53,7 @@ public class SszMutablePrimitiveVectorImpl<ElementT, SszElementT extends SszPrim
 
   @Override
   protected AbstractSszComposite<SszElementT> createImmutableSszComposite(
-      TreeNode backingNode, IntCache<SszElementT> childrenCache) {
+      final TreeNode backingNode, final IntCache<SszElementT> childrenCache) {
     return new SszPrimitiveVectorImpl<>(getSchema(), backingNode, childrenCache);
   }
 

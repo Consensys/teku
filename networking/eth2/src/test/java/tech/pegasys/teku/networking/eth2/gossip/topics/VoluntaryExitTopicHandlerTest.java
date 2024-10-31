@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
@@ -50,7 +49,7 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
             forkInfo,
             processor,
             spec.getNetworkingConfig(),
-            mock(DebugDataDumper.class))
+            DebugDataDumper.NOOP)
         .getTopicHandler();
   }
 

@@ -76,8 +76,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
         dataStructureUtil.randomBlockContainerAndMetaData(ONE);
     final BLSSignature signature =
         blockContainerAndMetaData.blockContainer().getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), any(), any()))
+    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.JSON);
     assertResponseWithHeaders(
@@ -100,8 +99,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
         dataStructureUtil.randomBlockContainerAndMetaData(ONE);
     final BLSSignature signature =
         blockContainerAndMetaData.blockContainer().getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), any(), any()))
+    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.OCTET_STREAM);
     assertResponseWithHeaders(
@@ -123,8 +121,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
         dataStructureUtil.randomBlindedBlockContainerAndMetaData(ONE);
     final BLSSignature signature =
         blockContainerAndMetaData.blockContainer().getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), any(), any()))
+    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.JSON);
     assertResponseWithHeaders(
@@ -148,8 +145,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     final BeaconBlock blindedBeaconBlock = blockContainerAndMetaData.blockContainer().getBlock();
     final BLSSignature signature =
         blockContainerAndMetaData.blockContainer().getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), any(), any()))
+    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.OCTET_STREAM);
     assertResponseWithHeaders(
@@ -172,8 +168,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
         dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);
     final BLSSignature signature =
         blockContainerAndMetaData.blockContainer().getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), any(), any()))
+    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.JSON);
     assertResponseWithHeaders(
@@ -196,8 +191,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), any(), any()))
+    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.OCTET_STREAM);
     assertResponseWithHeaders(
@@ -217,8 +211,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   void shouldFailWhenNoBlockProduced() throws IOException {
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), any(), any()))
+    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     Response response = get(signature, ContentTypes.JSON);
     assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
@@ -247,8 +240,8 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   }
 
   private void assertResponseWithHeaders(
-      Response response,
-      boolean blinded,
+      final Response response,
+      final boolean blinded,
       final UInt256 executionPayloadValue,
       final UInt256 consensusBlockValue) {
     assertThat(response.code()).isEqualTo(SC_OK);

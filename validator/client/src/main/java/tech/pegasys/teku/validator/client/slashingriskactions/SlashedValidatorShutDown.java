@@ -31,7 +31,7 @@ public class SlashedValidatorShutDown implements SlashingRiskAction {
   }
 
   @Override
-  public void perform(List<BLSPublicKey> pubKeys) {
+  public void perform(final List<BLSPublicKey> pubKeys) {
     if (!pubKeys.isEmpty()) {
       statusLog.validatorSlashedAlert(
           pubKeys.stream().map(BLSPublicKey::toHexString).collect(Collectors.toSet()));

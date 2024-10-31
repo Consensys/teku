@@ -72,7 +72,7 @@ public class ForkChoiceIntegrationTest {
   }
 
   @SuppressWarnings("unchecked")
-  private static Optional<? extends Arguments> parseForkChoiceFile(Path path) {
+  private static Optional<? extends Arguments> parseForkChoiceFile(final Path path) {
     final File file = path.toFile();
     final SchemaDefinitions schemaDefinitions = SPEC.getGenesisSchemaDefinitions();
     final BeaconStateSchema<?, ?> beaconStateSchema = schemaDefinitions.getBeaconStateSchema();
@@ -97,7 +97,7 @@ public class ForkChoiceIntegrationTest {
     }
   }
 
-  private static List<File> findForkChoiceTestsByPath(Path path) {
+  private static List<File> findForkChoiceTestsByPath(final Path path) {
     try (Stream<Path> paths = Files.walk(path)) {
       return paths
           .filter(p -> Files.isRegularFile(p) && !p.getParent().endsWith("cache"))
@@ -109,7 +109,8 @@ public class ForkChoiceIntegrationTest {
     }
   }
 
-  private static Object extractTestStep(File file, Map<String, Object> stepDescription) {
+  private static Object extractTestStep(
+      final File file, final Map<String, Object> stepDescription) {
     ForkChoiceTestStep stepKind = getStepKind(stepDescription);
     Object value = stepDescription.get(stepKind.name());
 
@@ -143,17 +144,16 @@ public class ForkChoiceIntegrationTest {
     }
   }
 
-  private static ForkChoiceTestStep getStepKind(Map<String, Object> ss) {
-    return ss.keySet().stream()
-        .map(ForkChoiceTestStep::valueOf)
-        .collect(Collectors.toList())
-        .get(0);
+  private static ForkChoiceTestStep getStepKind(final Map<String, Object> ss) {
+    return ss.keySet().stream().map(ForkChoiceTestStep::valueOf).toList().get(0);
   }
 
   private static <T extends SszData> T resolvePart(
-      Class<T> clazz, SszSchema<? extends T> type, File testFile, Object value) {
-    if (value instanceof String) {
-      String path = (String) value;
+      final Class<T> clazz,
+      final SszSchema<? extends T> type,
+      final File testFile,
+      final Object value) {
+    if (value instanceof String path) {
       if (path.endsWith(".yaml") || path.endsWith(".ssz")) {
         Path partPath = Paths.get(testFile.getParentFile().getParent(), "cache", path);
         try {
@@ -173,7 +173,10 @@ public class ForkChoiceIntegrationTest {
   @ParameterizedTest(name = "{index}.{2} fork choice test")
   @MethodSource("loadForkChoiceTests")
   void runForkChoiceTests(
-      BeaconState genesis, List<Object> steps, String testName, boolean protoArrayFC) {
+      final BeaconState genesis,
+      final List<Object> steps,
+      final String testName,
+      final boolean protoArrayFC) {
 
     RecentChainData storageClient = MemoryOnlyRecentChainData.create(SPEC);
     storageClient.initializeFromGenesis(genesis, UInt64.ZERO);
@@ -218,9 +221,9 @@ public class ForkChoiceIntegrationTest {
         if (!processAttestation(forkChoice, (Attestation) step)) {
           attestationBuffer.add((Attestation) step);
         }
-      } else if (step instanceof Map) {
+      } else if (step instanceof Map<?, ?> rawChecks) {
         @SuppressWarnings("unchecked")
-        Map<String, Object> checks = (Map<String, Object>) step;
+        Map<String, Object> checks = (Map<String, Object>) rawChecks;
         for (Map.Entry<String, Object> e : checks.entrySet()) {
           String check = e.getKey();
           switch (check) {
@@ -277,13 +280,13 @@ public class ForkChoiceIntegrationTest {
     }
   }
 
-  private boolean processAttestation(ForkChoice fc, Attestation step) {
+  private boolean processAttestation(final ForkChoice fc, final Attestation step) {
     AttestationProcessingResult attestationProcessingResult =
         fc.onAttestation(ValidatableAttestation.from(SPEC, step)).join();
     return attestationProcessingResult.isSuccessful();
   }
 
-  private boolean processBlock(ForkChoice fc, SignedBeaconBlock block) {
+  private boolean processBlock(final ForkChoice fc, final SignedBeaconBlock block) {
     BlockImportResult blockImportResult =
         fc.onBlock(
                 block,

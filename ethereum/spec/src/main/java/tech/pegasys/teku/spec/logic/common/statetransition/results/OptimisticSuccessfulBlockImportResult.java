@@ -17,7 +17,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class OptimisticSuccessfulBlockImportResult extends SuccessfulBlockImportResult {
 
-  public OptimisticSuccessfulBlockImportResult(SignedBeaconBlock block) {
+  public OptimisticSuccessfulBlockImportResult(final SignedBeaconBlock block) {
     super(block);
   }
 

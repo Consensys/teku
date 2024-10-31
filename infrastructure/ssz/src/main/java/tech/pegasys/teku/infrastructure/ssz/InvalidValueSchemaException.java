@@ -15,7 +15,7 @@ package tech.pegasys.teku.infrastructure.ssz;
 
 public class InvalidValueSchemaException extends RuntimeException {
 
-  public InvalidValueSchemaException(String message) {
+  public InvalidValueSchemaException(final String message) {
     super(message);
   }
 }

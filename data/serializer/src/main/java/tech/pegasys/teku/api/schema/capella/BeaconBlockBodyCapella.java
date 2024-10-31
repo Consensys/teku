@@ -73,7 +73,8 @@ public class BeaconBlockBodyCapella extends BeaconBlockBodyAltair {
   }
 
   public BeaconBlockBodyCapella(
-      tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella
+              .BeaconBlockBodyCapella
           message) {
     super(message);
     checkNotNull(message.getExecutionPayload(), "Execution Payload is required for capella blocks");

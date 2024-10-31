@@ -26,6 +26,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -135,7 +136,7 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   public void setBlockRequestFilter(
-      Function<List<SignedBeaconBlock>, List<SignedBeaconBlock>> filter) {
+      final Function<List<SignedBeaconBlock>, List<SignedBeaconBlock>> filter) {
     this.blockRequestFilter = filter;
   }
 
@@ -356,6 +357,11 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
+  public Optional<UInt256> getDiscoveryNodeId() {
+    return Optional.empty();
+  }
+
+  @Override
   public NodeId getId() {
     return nodeId;
   }
@@ -387,7 +393,7 @@ public class RespondingEth2Peer implements Eth2Peer {
     return SafeFuture.COMPLETE;
   }
 
-  private void disconnect(Optional<DisconnectReason> reason, boolean locallyInitiated) {
+  private void disconnect(final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
     disconnected = true;
     disconnectSubscribers.forEach(s -> s.onDisconnected(reason, locallyInitiated));
   }

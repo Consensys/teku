@@ -209,7 +209,8 @@ public class BuilderBidValidatorTest {
 
   private void prepareValidSignedBuilderBid() {
     final BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(1);
-    final BuilderBid builderBid = dataStructureUtil.randomBuilderBid(keyPair.getPublicKey());
+    final BuilderBid builderBid =
+        dataStructureUtil.randomBuilderBid(builder -> builder.publicKey(keyPair.getPublicKey()));
 
     final Bytes signingRoot =
         spec.computeBuilderApplicationSigningRoot(state.getSlot(), builderBid);
@@ -224,7 +225,7 @@ public class BuilderBidValidatorTest {
   }
 
   private void prepareGasLimit(
-      UInt64 parentGasLimit, UInt64 proposedGasLimit, UInt64 preferredGasLimit) {
+      final UInt64 parentGasLimit, final UInt64 proposedGasLimit, final UInt64 preferredGasLimit) {
 
     UInt64 slot = dataStructureUtil.randomUInt64();
 
@@ -274,7 +275,7 @@ public class BuilderBidValidatorTest {
   }
 
   private ExecutionPayloadHeader createExecutionPayloadHeaderWithGasLimit(
-      SchemaDefinitionsBellatrix schemaDefinitions, UInt64 gasLimit) {
+      final SchemaDefinitionsBellatrix schemaDefinitions, final UInt64 gasLimit) {
     return schemaDefinitions
         .getExecutionPayloadHeaderSchema()
         .createExecutionPayloadHeader(

@@ -118,7 +118,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final int peerRateLimit,
       final int peerRequestLimit,
       final Spec spec,
-      final KZG kzg) {
+      final KZG kzg,
+      final DiscoveryNodeIdExtractor discoveryNodeIdExtractor) {
 
     final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
     attestationSubnetService.subscribeToUpdates(
@@ -142,7 +143,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             requiredCheckpoint,
             peerRateLimit,
             peerRequestLimit,
-            kzg),
+            kzg,
+            discoveryNodeIdExtractor),
         statusMessageFactory,
         metadataMessagesFactory,
         rpcEncoding,
@@ -157,7 +159,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     return metadataMessagesFactory.createMetadataMessage(schema);
   }
 
-  private void setUpPeriodicTasksForPeer(Eth2Peer peer) {
+  private void setUpPeriodicTasksForPeer(final Eth2Peer peer) {
     Cancellable periodicStatusUpdateTask = periodicallyUpdatePeerStatus(peer);
     Cancellable periodicPingTask = periodicallyPingPeer(peer);
     peer.subscribeDisconnect(
@@ -167,7 +169,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         });
   }
 
-  Cancellable periodicallyUpdatePeerStatus(Eth2Peer peer) {
+  Cancellable periodicallyUpdatePeerStatus(final Eth2Peer peer) {
     return asyncRunner.runWithFixedDelay(
         () ->
             peer.sendStatus()
@@ -178,7 +180,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         err -> LOG.debug("Exception calling runnable for updating peer status.", err));
   }
 
-  Cancellable periodicallyPingPeer(Eth2Peer peer) {
+  Cancellable periodicallyPingPeer(final Eth2Peer peer) {
     return asyncRunner.runWithFixedDelay(
         () -> sendPeriodicPing(peer),
         eth2RpcPingInterval,
@@ -247,7 +249,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   }
 
   @VisibleForTesting
-  void sendPeriodicPing(Eth2Peer peer) {
+  void sendPeriodicPing(final Eth2Peer peer) {
     if (peer.getUnansweredPingCount() >= eth2RpcOutstandingPingThreshold) {
       LOG.debug("Disconnecting the peer {} due to PING timeout.", peer.getId());
       peer.disconnectCleanly(DisconnectReason.UNRESPONSIVE).ifExceptionGetsHereRaiseABug();
@@ -290,11 +292,11 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
    * @return the peer corresponding to this node id.
    */
   @Override
-  public Optional<Eth2Peer> getConnectedPeer(NodeId nodeId) {
+  public Optional<Eth2Peer> getConnectedPeer(final NodeId nodeId) {
     return Optional.ofNullable(connectedPeerMap.get(nodeId));
   }
 
-  public Optional<Eth2Peer> getPeer(NodeId peerId) {
+  public Optional<Eth2Peer> getPeer(final NodeId peerId) {
     return Optional.ofNullable(connectedPeerMap.get(peerId)).filter(this::peerIsReady);
   }
 
@@ -302,7 +304,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     return connectedPeerMap.values().stream().filter(this::peerIsReady);
   }
 
-  private boolean peerIsReady(Eth2Peer peer) {
+  private boolean peerIsReady(final Eth2Peer peer) {
     return peer.hasStatus();
   }
 

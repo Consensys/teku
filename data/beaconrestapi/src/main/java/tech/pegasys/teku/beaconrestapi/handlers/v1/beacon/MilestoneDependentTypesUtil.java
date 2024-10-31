@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
@@ -76,7 +79,40 @@ public class MilestoneDependentTypesUtil {
     return builder.build();
   }
 
-  public static <T extends SszData> DeserializableTypeDefinition<? extends T> slotBasedSelector(
+  public static <T extends SszData>
+      DeserializableTypeDefinition<? extends T> headerBasedSelectorWithSlotFallback(
+          final Map<String, String> headers,
+          final String json,
+          final SchemaDefinitionCache schemaDefinitionCache,
+          final Function<SchemaDefinitions, SszSchema<? extends T>> getSchema) {
+    if (headers.containsKey(HEADER_CONSENSUS_VERSION)) {
+      return headerBasedSelector(headers, schemaDefinitionCache, getSchema);
+    }
+    return slotBasedSelector(json, schemaDefinitionCache, getSchema);
+  }
+
+  public static <T extends SszData> DeserializableTypeDefinition<? extends T> headerBasedSelector(
+      final Map<String, String> headers,
+      final SchemaDefinitionCache schemaDefinitionCache,
+      final Function<SchemaDefinitions, SszSchema<? extends T>> getSchema) {
+    if (!headers.containsKey(HEADER_CONSENSUS_VERSION)) {
+      throw new BadRequestException(
+          String.format("Missing required header value for (%s)", HEADER_CONSENSUS_VERSION));
+    }
+    try {
+      final SpecMilestone milestone = SpecMilestone.forName(headers.get(HEADER_CONSENSUS_VERSION));
+      return getSchema
+          .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
+          .getJsonTypeDefinition();
+    } catch (Exception e) {
+      throw new BadRequestException(
+          String.format(
+              "Invalid value for (%s) header: %s",
+              HEADER_CONSENSUS_VERSION, headers.get(HEADER_CONSENSUS_VERSION)));
+    }
+  }
+
+  private static <T extends SszData> DeserializableTypeDefinition<? extends T> slotBasedSelector(
       final String json,
       final SchemaDefinitionCache schemaDefinitionCache,
       final Function<SchemaDefinitions, SszSchema<? extends T>> getSchema) {

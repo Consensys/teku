@@ -74,7 +74,7 @@ public class BeaconChainUtil {
       final List<BLSKeyPair> validatorKeys,
       final RecentChainData recentChainData,
       final ForkChoice forkChoice,
-      boolean signDeposits) {
+      final boolean signDeposits) {
     this.spec = spec;
     this.beaconBlockBodySchema =
         spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
@@ -179,7 +179,7 @@ public class BeaconChainUtil {
   }
 
   public SignedBeaconBlock createAndImportBlockAtSlotWithAttestations(
-      final UInt64 slot, List<Attestation> attestations) throws Exception {
+      final UInt64 slot, final List<Attestation> attestations) throws Exception {
     Optional<SszList<Attestation>> attestationsSSZList =
         attestations.isEmpty()
             ? Optional.empty()
@@ -192,10 +192,10 @@ public class BeaconChainUtil {
 
   private SignedBeaconBlock createAndImportBlockAtSlot(
       final UInt64 slot,
-      Optional<SszList<Attestation>> attestations,
-      Optional<SszList<Deposit>> deposits,
-      Optional<SszList<SignedVoluntaryExit>> exits,
-      Optional<Eth1Data> eth1Data)
+      final Optional<SszList<Attestation>> attestations,
+      final Optional<SszList<Deposit>> deposits,
+      final Optional<SszList<SignedVoluntaryExit>> exits,
+      final Optional<Eth1Data> eth1Data)
       throws Exception {
     final SignedBeaconBlock block =
         createBlockAndStateAtSlot(slot, true, attestations, deposits, exits, eth1Data).getBlock();
@@ -231,13 +231,13 @@ public class BeaconChainUtil {
     return createBlockAtSlot(slot, false);
   }
 
-  public SignedBeaconBlock createBlockAtSlot(final UInt64 slot, boolean withValidProposer)
+  public SignedBeaconBlock createBlockAtSlot(final UInt64 slot, final boolean withValidProposer)
       throws Exception {
     return createBlockAndStateAtSlot(slot, withValidProposer).getBlock();
   }
 
-  public SignedBlockAndState createBlockAndStateAtSlot(final UInt64 slot, boolean withValidProposer)
-      throws Exception {
+  public SignedBlockAndState createBlockAndStateAtSlot(
+      final UInt64 slot, final boolean withValidProposer) throws Exception {
     return createBlockAndStateAtSlot(
         slot,
         withValidProposer,
@@ -249,11 +249,11 @@ public class BeaconChainUtil {
 
   private SignedBlockAndState createBlockAndStateAtSlot(
       final UInt64 slot,
-      boolean withValidProposer,
-      Optional<SszList<Attestation>> attestations,
-      Optional<SszList<Deposit>> deposits,
-      Optional<SszList<SignedVoluntaryExit>> exits,
-      Optional<Eth1Data> eth1Data)
+      final boolean withValidProposer,
+      final Optional<SszList<Attestation>> attestations,
+      final Optional<SszList<Deposit>> deposits,
+      final Optional<SszList<SignedVoluntaryExit>> exits,
+      final Optional<Eth1Data> eth1Data)
       throws Exception {
     checkState(
         withValidProposer || validatorKeys.size() > 1,

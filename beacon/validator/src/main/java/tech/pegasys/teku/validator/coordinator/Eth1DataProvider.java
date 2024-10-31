@@ -34,7 +34,8 @@ public class Eth1DataProvider {
   private final Eth1DataCache eth1DataCache;
   private final DepositProvider depositProvider;
 
-  public Eth1DataProvider(Eth1DataCache eth1DataCache, DepositProvider depositProvider) {
+  public Eth1DataProvider(
+      final Eth1DataCache eth1DataCache, final DepositProvider depositProvider) {
     this.eth1DataCache = eth1DataCache;
     this.depositProvider = depositProvider;
   }

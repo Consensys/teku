@@ -83,6 +83,6 @@ class GossipForkSubscriptionsCapellaTest {
         noopOperationProcessor,
         noopOperationProcessor,
         noopOperationProcessor,
-        mock(DebugDataDumper.class));
+        DebugDataDumper.NOOP);
   }
 }

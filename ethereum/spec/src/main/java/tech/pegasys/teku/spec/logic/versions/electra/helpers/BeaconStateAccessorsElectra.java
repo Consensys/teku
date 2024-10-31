@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -26,7 +27,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.BeaconStateAccessorsDeneb;
-import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 
 public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
 
@@ -36,7 +36,7 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
   public BeaconStateAccessorsElectra(
       final SpecConfig config,
       final PredicatesElectra predicatesElectra,
-      final MiscHelpersDeneb miscHelpers) {
+      final MiscHelpersElectra miscHelpers) {
     super(SpecConfigDeneb.required(config), predicatesElectra, miscHelpers);
     configElectra = config.toVersionElectra().orElseThrow();
     this.predicatesElectra = predicatesElectra;
@@ -57,11 +57,10 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
    *
    * @param state The state to get the effective balance from
    * @param validatorIndex the index of the validator
-   * @return
    */
   public UInt64 getActiveBalance(final BeaconState state, final int validatorIndex) {
     final Validator validator = state.getValidators().get(validatorIndex);
-    final UInt64 maxEffectiveBalance = predicatesElectra.getValidatorMaxEffectiveBalance(validator);
+    final UInt64 maxEffectiveBalance = miscHelpers.getMaxEffectiveBalance(validator);
     final UInt64 validatorBalance = state.getBalances().get(validatorIndex).get();
     return validatorBalance.min(maxEffectiveBalance);
   }
@@ -71,7 +70,7 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
    *
    * @param state The state
    * @param validatorIndex The index of the validator
-   * @return The sum of the withdrawal amounts for the validator in the partial withdrawal queue
+   * @return The sum of the withdrawal amounts for the validator in the partial withdrawal queue.
    */
   public UInt64 getPendingBalanceToWithdraw(
       final BeaconStateElectra state, final int validatorIndex) {
@@ -79,7 +78,7 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
         state.getPendingPartialWithdrawals().asList();
     return partialWithdrawals.stream()
         .filter(z -> z.getIndex() == validatorIndex)
-        .map(z -> z.getAmount())
+        .map(PendingPartialWithdrawal::getAmount)
         .reduce(UInt64.ZERO, UInt64::plus);
   }
 
@@ -101,7 +100,6 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
    * get_consolidation_churn_limit
    *
    * @param state state to read churn limits from
-   * @return
    */
   public UInt64 getConsolidationChurnLimit(final BeaconStateElectra state) {
     return getBalanceChurnLimit(state).minusMinZero(getActivationExitChurnLimit(state));
@@ -115,5 +113,10 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
         BeaconStateAccessorsElectra.class,
         beaconStateAccessors.getClass());
     return (BeaconStateAccessorsElectra) beaconStateAccessors;
+  }
+
+  @Override
+  public IntList getNextSyncCommitteeIndices(final BeaconState state) {
+    return getNextSyncCommitteeIndices(state, configElectra.getMaxEffectiveBalanceElectra());
   }
 }

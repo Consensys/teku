@@ -102,20 +102,20 @@ public class AttestationManager extends Service
         activeValidatorChannel);
   }
 
-  public void subscribeToAllValidAttestations(ProcessedAttestationListener listener) {
+  public void subscribeToAllValidAttestations(final ProcessedAttestationListener listener) {
     allValidAttestationsSubscribers.subscribe(listener);
   }
 
-  private void notifyAllValidAttestationsSubscribers(ValidatableAttestation attestation) {
+  private void notifyAllValidAttestationsSubscribers(final ValidatableAttestation attestation) {
     allValidAttestationsSubscribers.forEach(s -> s.accept(attestation));
   }
 
   public void subscribeToAttestationsToSend(
-      ProcessedAttestationListener attestationsToSendListener) {
+      final ProcessedAttestationListener attestationsToSendListener) {
     attestationsToSendSubscribers.subscribe(attestationsToSendListener);
   }
 
-  private void validateForGossipAndNotifySendSubscribers(ValidatableAttestation attestation) {
+  private void validateForGossipAndNotifySendSubscribers(final ValidatableAttestation attestation) {
     if (attestation.isAggregate() && !attestation.isAcceptedAsGossip()) {
       // We know the Attestation is valid, but need to validate the SignedAggregateAndProof wrapper
       aggregateValidator
@@ -265,7 +265,7 @@ public class AttestationManager extends Service
             });
   }
 
-  private void sendToSubscribersIfProducedLocally(ValidatableAttestation attestation) {
+  private void sendToSubscribersIfProducedLocally(final ValidatableAttestation attestation) {
     if (!attestation.isProducedLocally()) {
       return;
     }

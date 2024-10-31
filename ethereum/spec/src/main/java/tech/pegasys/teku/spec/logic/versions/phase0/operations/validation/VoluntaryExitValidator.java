@@ -37,7 +37,7 @@ public class VoluntaryExitValidator
   private final Predicates predicates;
   private final BeaconStateAccessors beaconStateAccessors;
 
-  VoluntaryExitValidator(
+  public VoluntaryExitValidator(
       final SpecConfig specConfig,
       final Predicates predicates,
       final BeaconStateAccessors beaconStateAccessors) {
@@ -49,7 +49,7 @@ public class VoluntaryExitValidator
   @Override
   public Optional<OperationInvalidReason> validate(
       final Fork fork, final BeaconState state, final SignedVoluntaryExit signedExit) {
-    VoluntaryExit exit = signedExit.getMessage();
+    final VoluntaryExit exit = signedExit.getMessage();
     return firstOf(
         () ->
             check(
@@ -80,7 +80,7 @@ public class VoluntaryExitValidator
         });
   }
 
-  private Validator getValidator(BeaconState state, VoluntaryExit exit) {
+  private Validator getValidator(final BeaconState state, final VoluntaryExit exit) {
     return state.getValidators().get(exit.getValidatorIndex().intValue());
   }
 
@@ -102,12 +102,17 @@ public class VoluntaryExitValidator
       return () -> "Specified exit epoch is still in the future";
     }
 
-    public static OperationInvalidReason validatorTooYoung(UInt64 exitEpoch) {
+    public static OperationInvalidReason validatorTooYoung(final UInt64 exitEpoch) {
       return () -> "Validator cannot exit until epoch " + exitEpoch;
     }
 
     public static OperationInvalidReason invalidSignature() {
       return () -> "Signature is invalid";
+    }
+
+    public static OperationInvalidReason pendingWithdrawalsInQueue() {
+      return () ->
+          "Validator cannot be exited while there are pending withdrawals in the withdrawal queue";
     }
   }
 }

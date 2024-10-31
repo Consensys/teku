@@ -20,7 +20,7 @@ public class Eth1Vote implements Comparable<Eth1Vote> {
   private int vote = 0;
   private final int index;
 
-  public Eth1Vote(int index) {
+  public Eth1Vote(final int index) {
     this.index = index;
   }
 
@@ -35,7 +35,7 @@ public class Eth1Vote implements Comparable<Eth1Vote> {
   // Greater vote number, or in case of a tie,
   // smallest index number wins
   @Override
-  public int compareTo(Eth1Vote eth1Vote) {
+  public int compareTo(final Eth1Vote eth1Vote) {
     if (this.vote > eth1Vote.vote) {
       return 1;
     } else if (this.vote < eth1Vote.vote) {

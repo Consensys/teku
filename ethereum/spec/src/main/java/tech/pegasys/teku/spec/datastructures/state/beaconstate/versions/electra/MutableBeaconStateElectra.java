@@ -13,15 +13,20 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra;
 
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_CONSOLIDATIONS;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_DEPOSITS;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS;
+
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.MutableBeaconStateDeneb;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public interface MutableBeaconStateElectra extends MutableBeaconStateDeneb, BeaconStateElectra {
@@ -42,10 +47,10 @@ public interface MutableBeaconStateElectra extends MutableBeaconStateDeneb, Beac
     return Optional.of(this);
   }
 
-  default void setDepositReceiptsStartIndex(final UInt64 depositReceiptsStartIndex) {
+  default void setDepositRequestsStartIndex(final UInt64 depositRequestsStartIndex) {
     final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.DEPOSIT_RECEIPTS_START_INDEX);
-    set(fieldIndex, SszUInt64.of(depositReceiptsStartIndex));
+        getSchema().getFieldIndex(BeaconStateFields.DEPOSIT_REQUESTS_START_INDEX);
+    set(fieldIndex, SszUInt64.of(depositRequestsStartIndex));
   }
 
   default void setDepositBalanceToConsume(final UInt64 depositBalanceToConsume) {
@@ -75,19 +80,37 @@ public interface MutableBeaconStateElectra extends MutableBeaconStateDeneb, Beac
     set(fieldIndex, SszUInt64.of(earliestConsolidationEpoch));
   }
 
-  default void setPendingBalanceDeposits(SszList<PendingBalanceDeposit> pendingBalanceDeposits) {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PENDING_BALANCE_DEPOSITS);
-    set(fieldIndex, pendingBalanceDeposits);
+  default void setPendingDeposits(final SszList<PendingDeposit> pendingDeposits) {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PENDING_DEPOSITS);
+    set(fieldIndex, pendingDeposits);
+  }
+
+  @Override
+  default SszMutableList<PendingDeposit> getPendingDeposits() {
+    final int index = getSchema().getFieldIndex(PENDING_DEPOSITS);
+    return getAnyByRef(index);
   }
 
   default void setPendingPartialWithdrawals(
-      SszList<PendingPartialWithdrawal> pendingPartialWithdrawals) {
+      final SszList<PendingPartialWithdrawal> pendingPartialWithdrawals) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS);
     set(fieldIndex, pendingPartialWithdrawals);
   }
 
-  default void setPendingConsolidations(SszList<PendingConsolidation> pendingConsolidations) {
+  @Override
+  default SszMutableList<PendingPartialWithdrawal> getPendingPartialWithdrawals() {
+    final int index = getSchema().getFieldIndex(PENDING_PARTIAL_WITHDRAWALS);
+    return getAnyByRef(index);
+  }
+
+  default void setPendingConsolidations(final SszList<PendingConsolidation> pendingConsolidations) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PENDING_CONSOLIDATIONS);
     set(fieldIndex, pendingConsolidations);
+  }
+
+  @Override
+  default SszMutableList<PendingConsolidation> getPendingConsolidations() {
+    final int index = getSchema().getFieldIndex(PENDING_CONSOLIDATIONS);
+    return getAnyByRef(index);
   }
 }

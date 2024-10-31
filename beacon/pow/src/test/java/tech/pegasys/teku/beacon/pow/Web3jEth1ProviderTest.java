@@ -223,7 +223,7 @@ public class Web3jEth1ProviderTest {
         .isCompletedExceptionallyWith(RejectedRequestException.class);
   }
 
-  private void prepareRequestWithSyncingResponse(Request request, boolean isSyncing) {
+  private void prepareRequestWithSyncingResponse(final Request request, final boolean isSyncing) {
     EthSyncing response = new EthSyncing();
     EthSyncing.Result result = new EthSyncing.Result();
     result.setSyncing(isSyncing);
@@ -231,17 +231,17 @@ public class Web3jEth1ProviderTest {
     when(request.sendAsync()).thenReturn(SafeFuture.completedFuture(response));
   }
 
-  private void prepareRequestWithChainidResponse(Request request, String chainId) {
+  private void prepareRequestWithChainidResponse(final Request request, final String chainId) {
     EthChainId response = new EthChainId();
     response.setResult(chainId);
     when(request.sendAsync()).thenReturn(SafeFuture.completedFuture(response));
   }
 
-  private void prepareFailingRequestByException(Request request) {
+  private void prepareFailingRequestByException(final Request request) {
     when(request.sendAsync()).thenReturn(SafeFuture.failedFuture(new RuntimeException("error")));
   }
 
-  private void prepareFailingRequestWithChainidJRPCError(Request request) {
+  private void prepareFailingRequestWithChainidJRPCError(final Request request) {
     EthChainId response = new EthChainId();
     response.setError(new Response.Error(-100, "error message"));
     when(request.sendAsync()).thenReturn(SafeFuture.completedFuture(response));

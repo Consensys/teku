@@ -19,7 +19,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Function;
@@ -27,16 +26,15 @@ import org.apache.tuweni.bytes.Bytes;
 import org.xerial.snappy.Snappy;
 import org.yaml.snakeyaml.LoaderOptions;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class TestDataUtils {
 
   private static final YAMLFactory YAML_FACTORY;
-  private static final JsonProvider JSON_PROVIDER;
 
   static {
     final LoaderOptions loaderOptions = new LoaderOptions();
@@ -44,7 +42,6 @@ public class TestDataUtils {
     // https://github.com/FasterXML/jackson-dataformats-text/tree/2.15/yaml#maximum-input-yaml-document-size-3-mb
     loaderOptions.setCodePointLimit(1024 * 1024 * 100);
     YAML_FACTORY = YAMLFactory.builder().loaderOptions(loaderOptions).build();
-    JSON_PROVIDER = new JsonProvider();
   }
 
   public static <T extends SszData> T loadSsz(
@@ -106,16 +103,13 @@ public class TestDataUtils {
   }
 
   public static <T> T loadJson(
-      final TestDefinition testDefinition, final String fileName, final Class<T> type)
+      final TestDefinition testDefinition,
+      final String fileName,
+      final DeserializableTypeDefinition<T> type)
       throws IOException {
     final Path path = testDefinition.getTestDirectory().resolve(fileName);
     try (final InputStream in = Files.newInputStream(path)) {
-      return JSON_PROVIDER.getObjectMapper().readValue(in, type);
+      return JsonUtil.parse(in, type);
     }
-  }
-
-  public static <T> void writeJsonToFile(final T object, final Path file) throws IOException {
-    final String json = JSON_PROVIDER.getObjectMapper().writeValueAsString(object);
-    Files.writeString(file, json, StandardCharsets.UTF_8);
   }
 }

@@ -41,8 +41,14 @@ public class SanityBlocksTestExecutor implements TestExecutor {
   private static final String STATE_ROOT_MISMATCH_ERROR_MESSAGE =
       "Block state root does NOT match the calculated state root";
 
+  private static final List<String> IGNORED_TEST_NAMES = List.of();
+
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
+    if (IGNORED_TEST_NAMES.contains(testDefinition.getTestName())) {
+      return;
+    }
+
     final SanityBlocksMetaData metaData =
         loadYaml(testDefinition, "meta.yaml", SanityBlocksMetaData.class);
     final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz_snappy");

@@ -43,11 +43,11 @@ public class GetFinalizedBlockRoot extends RestApiEndpoint {
           .withField("data", ROOT_TYPE, Function.identity())
           .build();
 
-  public GetFinalizedBlockRoot(DataProvider dataProvider) {
+  public GetFinalizedBlockRoot(final DataProvider dataProvider) {
     this(dataProvider.getChainDataProvider());
   }
 
-  public GetFinalizedBlockRoot(ChainDataProvider chainDataProvider) {
+  public GetFinalizedBlockRoot(final ChainDataProvider chainDataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getFinalizedBlockRoot")
@@ -59,12 +59,13 @@ public class GetFinalizedBlockRoot extends RestApiEndpoint {
             .pathParam(SLOT_PARAMETER)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final UInt64 slot = request.getPathParameter(SLOT_PARAMETER);
     final SafeFuture<Optional<Bytes32>> futureFinalizedBlockRoot =
         chainDataProvider.getFinalizedBlockRoot(slot);

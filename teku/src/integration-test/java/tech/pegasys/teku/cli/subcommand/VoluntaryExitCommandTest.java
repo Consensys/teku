@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -49,20 +50,25 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
-import org.mockserver.model.Parameter;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @ExtendWith(MockServerExtension.class)
 public class VoluntaryExitCommandTest {
@@ -73,7 +79,7 @@ public class VoluntaryExitCommandTest {
   private final PrintWriter outputWriter = new PrintWriter(stringWriter, true);
   private final PrintWriter errorWriter = new PrintWriter(stringWriter, true);
 
-  private ClientAndServer mockBeaconServer;
+  private ClientAndServer server;
 
   private final BeaconNodeCommand beaconNodeCommand =
       new BeaconNodeCommand(
@@ -108,11 +114,9 @@ public class VoluntaryExitCommandTest {
   private List<String> commandArgs;
 
   @BeforeEach
-  public void setup(ClientAndServer server) throws IOException {
-    this.mockBeaconServer = server;
-    configureSuccessfulHeadResponse(mockBeaconServer);
-    configureSuccessfulGenesisResponse(mockBeaconServer);
-    configureSuccessfulValidatorResponses(mockBeaconServer);
+  public void setup(final ClientAndServer server) throws IOException {
+    this.server = server;
+    configureSuccessfulValidatorResponses();
     originalSystemIn = System.in;
     originalSystemOut = System.out;
     originalSytstemErr = System.err;
@@ -123,7 +127,7 @@ public class VoluntaryExitCommandTest {
         List.of(
             "voluntary-exit",
             "--beacon-node-api-endpoint",
-            getMockBeaconServerEndpoint(mockBeaconServer),
+            getMockBeaconServerEndpoint(),
             "--data-validator-path",
             Resources.getResource("tech/pegasys/teku/cli/subcommand/voluntary-exit/validator")
                 .getPath(),
@@ -139,7 +143,7 @@ public class VoluntaryExitCommandTest {
 
   @AfterEach
   public void tearDown() {
-    mockBeaconServer.reset();
+    server.reset();
     System.setOut(originalSystemOut);
     System.setIn(originalSystemIn);
     System.setErr(originalSytstemErr);
@@ -147,8 +151,9 @@ public class VoluntaryExitCommandTest {
 
   @Test
   public void shouldExitAllLoadedValidators() throws JsonProcessingException {
-    configureSuccessfulSpecResponse(mockBeaconServer);
-    configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
+    configureSuccessfulSpecResponse();
+    configureSuccessfulGenesisResponse();
+    configureSuccessfulVoluntaryExitResponse();
 
     final List<String> args = getCommandArguments(true, false, List.of());
     int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
@@ -161,8 +166,9 @@ public class VoluntaryExitCommandTest {
   @Test
   public void shouldExitLoadedValidatorsUsingConfirmationMessage() throws JsonProcessingException {
     setUserInput("yes");
-    configureSuccessfulSpecResponse(mockBeaconServer);
-    configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
+    configureSuccessfulSpecResponse();
+    configureSuccessfulGenesisResponse();
+    configureSuccessfulVoluntaryExitResponse();
 
     final List<String> args = getCommandArguments(true, true, List.of());
     int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
@@ -174,8 +180,9 @@ public class VoluntaryExitCommandTest {
 
   @Test
   public void shouldExitValidatorWithPubKeyFromKeyManagerOnly() throws JsonProcessingException {
-    configureSuccessfulSpecResponse(mockBeaconServer);
-    configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
+    configureSuccessfulSpecResponse();
+    configureSuccessfulGenesisResponse();
+    configureSuccessfulVoluntaryExitResponse();
 
     final List<String> args =
         getCommandArguments(
@@ -192,7 +199,8 @@ public class VoluntaryExitCommandTest {
 
   @Test
   public void shouldAcceptNetworkOnCommandLine() {
-    configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
+    configureSuccessfulVoluntaryExitResponse();
+    configureSuccessfulGenesisResponse();
 
     // No beacon-api offered by spec, so would need to be loaded from local network option
     final List<String> args =
@@ -209,7 +217,8 @@ public class VoluntaryExitCommandTest {
 
   @Test
   public void shouldReturnRejectedReasonWhenExitIsRejectedByBeaconNode() throws IOException {
-    configureRejectedVoluntaryExitResponse(mockBeaconServer);
+    configureRejectedVoluntaryExitResponse();
+    configureSuccessfulGenesisResponse();
 
     final List<String> args =
         getCommandArguments(
@@ -238,8 +247,9 @@ public class VoluntaryExitCommandTest {
 
   @Test
   public void shouldExitValidatorWithPubKeyFromPathOnly() throws JsonProcessingException {
-    configureSuccessfulSpecResponse(mockBeaconServer);
-    configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
+    configureSuccessfulSpecResponse();
+    configureSuccessfulGenesisResponse();
+    configureSuccessfulVoluntaryExitResponse();
 
     final List<String> args =
         getCommandArguments(
@@ -256,8 +266,9 @@ public class VoluntaryExitCommandTest {
 
   @Test
   public void shouldSkipKeyManagerKeys() throws JsonProcessingException {
-    configureSuccessfulSpecResponse(mockBeaconServer);
-    configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
+    configureSuccessfulSpecResponse();
+    configureSuccessfulGenesisResponse();
+    configureSuccessfulVoluntaryExitResponse();
 
     final List<String> args =
         getCommandArguments(
@@ -274,7 +285,8 @@ public class VoluntaryExitCommandTest {
 
   @Test
   void shouldNotWarn_NotWithdrawableIfCapellaEnabled() throws JsonProcessingException {
-    configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalCapella());
+    configureSuccessfulSpecResponse(TestSpecFactory.createMinimalCapella());
+    configureSuccessfulGenesisResponse();
 
     final List<String> args = getCommandArguments(false, true, List.of());
     setUserInput("no");
@@ -289,7 +301,8 @@ public class VoluntaryExitCommandTest {
 
   @Test
   void shouldGenerateExitWithoutSendingToNode(@TempDir final Path tempDir) throws IOException {
-    configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalCapella());
+    configureSuccessfulSpecResponse(TestSpecFactory.createMinimalCapella());
+    configureSuccessfulGenesisResponse();
     final Path outputFolder = tempDir.resolve("out");
     final List<String> args = new ArrayList<>();
     args.addAll(commandArgs);
@@ -316,7 +329,9 @@ public class VoluntaryExitCommandTest {
 
   @Test
   void shouldFailIfSaveFolderCannotBeCreated(@TempDir final Path tempDir) throws IOException {
-    configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalCapella());
+    configureSuccessfulSpecResponse(TestSpecFactory.createMinimalCapella());
+    configureSuccessfulGenesisResponse();
+
     final Path invalidOutputDestination = tempDir.resolve("testFile");
     Files.writeString(invalidOutputDestination, "test");
     final List<String> args = new ArrayList<>();
@@ -336,7 +351,9 @@ public class VoluntaryExitCommandTest {
   @Test
   @DisabledOnOs(OS.WINDOWS) // can't set permissions on windows
   void shouldFailIfSaveFolderHasInsufficientAccess(@TempDir final Path tempDir) throws IOException {
-    configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalCapella());
+    configureSuccessfulSpecResponse(TestSpecFactory.createMinimalCapella());
+    configureSuccessfulGenesisResponse();
+
     final Path invalidOutputDestination = tempDir.resolve("testFile");
     tempDir.toFile().mkdir();
     tempDir.toFile().setWritable(false);
@@ -354,8 +371,78 @@ public class VoluntaryExitCommandTest {
   }
 
   @Test
+  void shouldFailIfGenesisDataNotAvailableAndNoEpochSpecified() throws JsonProcessingException {
+    configureSuccessfulSpecResponse(TestSpecFactory.createMinimalCapella());
+    final List<String> args =
+        getCommandArguments(false, true, List.of("--validator-public-keys", validatorPubKey1));
+    final int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+    assertThat(parseResult).isEqualTo(1);
+    assertThat(stdErr.toString(UTF_8)).contains("Could not calculate epoch from genesis data");
+  }
+
+  @Test
+  void shouldFailToGenerateExitWithoutBeaconNodeAvailable() {
+    final List<String> args =
+        List.of("voluntary-exit", "--validator-public-keys", validatorPubKey1);
+    final int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+    assertThat(parseResult).isEqualTo(1);
+    assertThat(stdErr.toString(UTF_8)).contains("Failed to connect to beacon node.");
+  }
+
+  @Test
+  void shouldFailToGenerateIfExternalSignerNotAvailable() throws IOException {
+    configureSuccessfulSpecResponse(TestSpecFactory.createMinimalCapella());
+    setUserInput("yes");
+    configureSuccessfulGenesisResponse();
+    final String validator2 = validatorResourceFile("aa51616_response.json");
+    setupValidatorStatusResponse(validatorPubKey2, validator2);
+
+    final List<String> args =
+        List.of(
+            "voluntary-exit",
+            commandArgs.get(1),
+            commandArgs.get(2),
+            "--validators-external-signer-url=" + getMockSignerEndpoint(),
+            "--validators-external-signer-public-keys=" + validatorPubKey2);
+    final int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+    assertThat(parseResult).isEqualTo(1);
+    // this is not a perfect error, but it does demonstrate it's not saying spec wasn't available,
+    // which is a good start
+    assertThat(stdErr.toString(UTF_8)).contains("ExternalSignerException");
+  }
+
+  @Test
+  void canProcessExitForExternalSource(@TempDir final Path tempDir) throws IOException {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final List<String> keys = List.of(validatorPubKey2);
+    setUserInput("yes");
+    configureSuccessfulSpecResponse(TestSpecFactory.createMinimalCapella());
+    configureExternalSignerUpcheck();
+    configureSuccessfulGenesisResponse();
+    configureExternalSignerPublicKeys(keys);
+
+    final String validator2 = validatorResourceFile("aa51616_response.json");
+    configureExternalSignerResponse(validatorPubKey2, dataStructureUtil.randomSignature());
+    setupValidatorStatusResponse(validatorPubKey2, validator2);
+
+    final List<String> args =
+        List.of(
+            "voluntary-exit",
+            commandArgs.get(1),
+            commandArgs.get(2),
+            "--save-exits-path",
+            tempDir.toAbsolutePath().toString(),
+            "--validators-external-signer-url=" + getMockSignerEndpoint(),
+            "--validators-external-signer-public-keys=" + keys.get(0));
+    final int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+    assertThat(parseResult).isEqualTo(0);
+    assertThat(stdOut.toString(UTF_8)).contains("Writing signed exit for aa51616");
+  }
+
+  @Test
   void shouldExitFailureWithNoValidatorKeysFound() throws JsonProcessingException {
-    configureSuccessfulSpecResponse(mockBeaconServer);
+    configureSuccessfulSpecResponse();
+    configureSuccessfulGenesisResponse();
 
     final List<String> args = commandArgs.subList(0, 5);
     int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
@@ -365,8 +452,9 @@ public class VoluntaryExitCommandTest {
   }
 
   @Test
-  void shouldExitFailureFutureEpoch() throws JsonProcessingException {
-    configureSuccessfulSpecResponse(mockBeaconServer);
+  void shouldExitFailureFutureEpoch() throws IOException {
+    configureSuccessfulSpecResponse();
+    configureSuccessfulGenesisResponse();
 
     final List<String> args = getCommandArguments(false, true, List.of("--epoch=1024"));
     int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
@@ -377,11 +465,34 @@ public class VoluntaryExitCommandTest {
   }
 
   @Test
+  void shouldCreateExitForFutureEpochIfOutputFolderDefined(@TempDir final Path tempDir)
+      throws IOException {
+    configureSuccessfulSpecResponse(TestSpecFactory.createMinimalCapella());
+    configureSuccessfulGenesisResponse();
+    final List<String> args = new ArrayList<>();
+    args.addAll(commandArgs);
+    args.addAll(
+        List.of(
+            "--epoch",
+            "1024",
+            "--validator-public-keys",
+            validatorPubKey1,
+            "--save-exits-path",
+            tempDir.toAbsolutePath().toString()));
+
+    beaconNodeCommand.parse(args.toArray(new String[0]));
+    final String outString = stdOut.toString(UTF_8);
+    assertThat(StringUtils.countMatches(outString, "Writing signed exit for")).isEqualTo(1);
+  }
+
+  @Test
   void shouldUseCurrentForkDomainForSignatureBeforeDeneb() throws JsonProcessingException {
     setUserInput("yes");
-    configureSuccessfulSpecResponse(mockBeaconServer);
+    configureSuccessfulSpecResponse();
+    configureSuccessfulGenesisResponse();
+
     final Supplier<List<SignedVoluntaryExit>> exitsCapture =
-        configureSuccessfulVoluntaryExitResponseWithCapture(mockBeaconServer);
+        configureSuccessfulVoluntaryExitResponseWithCapture();
 
     final List<String> args =
         getCommandArguments(false, true, List.of("--validator-public-keys", validatorPubKey1));
@@ -403,9 +514,11 @@ public class VoluntaryExitCommandTest {
   @Test
   void shouldUseCapellaForkDomainForSignatureAfterCapella() throws JsonProcessingException {
     setUserInput("yes");
-    configureSuccessfulDenebSpecResponse(mockBeaconServer);
+    configureSuccessfulDenebSpecResponse();
+    configureSuccessfulGenesisResponse();
+
     final Supplier<List<SignedVoluntaryExit>> exitsCapture =
-        configureSuccessfulVoluntaryExitResponseWithCapture(mockBeaconServer);
+        configureSuccessfulVoluntaryExitResponseWithCapture();
 
     final List<String> args =
         getCommandArguments(false, true, List.of("--validator-public-keys", validatorPubKey1));
@@ -443,135 +556,106 @@ public class VoluntaryExitCommandTest {
     return args;
   }
 
-  private String getMockBeaconServerEndpoint(final ClientAndServer mockBeaconServer) {
-    return String.format("http://127.0.0.1:%s/", mockBeaconServer.getLocalPort());
+  private String getMockBeaconServerEndpoint() {
+    return String.format("http://127.0.0.1:%s/beacon", server.getLocalPort());
   }
 
-  private void configureSuccessfulSpecResponse(final ClientAndServer mockBeaconServer)
-      throws JsonProcessingException {
-    configureSuccessfulSpecResponse(mockBeaconServer, spec);
+  private String getMockSignerEndpoint() {
+    return String.format("http://127.0.0.1:%s/signer", server.getLocalPort());
   }
 
-  private void configureSuccessfulDenebSpecResponse(final ClientAndServer mockBeaconServer)
-      throws JsonProcessingException {
-    configureSuccessfulSpecResponse(mockBeaconServer, specDeneb);
+  private void configureSuccessfulSpecResponse() throws JsonProcessingException {
+    configureSuccessfulSpecResponse(spec);
   }
 
-  private void configureSuccessfulSpecResponse(
-      final ClientAndServer mockBeaconServer, final Spec spec) throws JsonProcessingException {
-    mockBeaconServer
+  private void configureSuccessfulDenebSpecResponse() throws JsonProcessingException {
+    configureSuccessfulSpecResponse(specDeneb);
+  }
+
+  private void configureSuccessfulSpecResponse(final Spec spec) throws JsonProcessingException {
+    server
         .when(request().withPath("/eth/v1/config/spec"))
         .respond(response().withStatusCode(200).withBody(getTestSpecJsonString(spec)));
   }
 
-  private void configureSuccessfulHeadResponse(final ClientAndServer mockBeaconServer)
-      throws IOException {
-    final String testHead =
-        Resources.toString(
-            Resources.getResource("tech/pegasys/teku/cli/subcommand/voluntary-exit/head.json"),
-            UTF_8);
-    mockBeaconServer
-        .when(request().withPath("/eth/v1/beacon/headers/head"))
-        .respond(response().withStatusCode(200).withBody(testHead));
-  }
+  private void configureSuccessfulGenesisResponse() {
+    final TimeProvider timeProvider = new SystemTimeProvider();
+    final SpecConfig config = spec.getGenesisSpec().getConfig();
+    final UInt64 genesisTime =
+        timeProvider
+            .getTimeInSeconds()
+            .minus(1020L * config.getSecondsPerSlot() * config.getSlotsPerEpoch());
 
-  private void configureSuccessfulGenesisResponse(final ClientAndServer mockBeaconServer)
-      throws IOException {
     final String testHead =
-        Resources.toString(
-            Resources.getResource("tech/pegasys/teku/cli/subcommand/voluntary-exit/genesis.json"),
-            UTF_8);
-    mockBeaconServer
+        String.format(
+            "{ \"data\": {\"genesis_time\": \"%s\","
+                + "\"genesis_validators_root\": \"0xf03f804ff1c97ada13050eb617e66e88e1199c2ce1be0b6b27e36fafb8d3ee48\","
+                + "\"genesis_fork_version\": \"0x00004105\"}}",
+            genesisTime);
+
+    server
         .when(request().withPath("/eth/v1/beacon/genesis"))
         .respond(response().withStatusCode(200).withBody(testHead));
   }
 
-  private void configureSuccessfulValidatorResponses(final ClientAndServer mockBeaconServer)
-      throws IOException {
-    final String keyManagerValidator1 =
-        Resources.toString(
-            Resources.getResource(
-                "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-responses/8b0f19f_response.json"),
-            UTF_8);
+  private void configureSuccessfulValidatorResponses() throws IOException {
+    final String keyManagerValidator1 = validatorResourceFile("8b0f19f_response.json");
+    final String keyManagerValidator2 = validatorResourceFile("82c2a92_response.json");
+    final String validator1 = validatorResourceFile("a756543_response.json");
+    final String validator2 = validatorResourceFile("aa51616_response.json");
 
-    final String keyManagerValidator2 =
-        Resources.toString(
-            Resources.getResource(
-                "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-responses/82c2a92_response.json"),
-            UTF_8);
+    final String validators = validatorResourceFile("validators_response.json");
 
-    final String validator1 =
-        Resources.toString(
-            Resources.getResource(
-                "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-responses/a756543_response.json"),
-            UTF_8);
+    setupValidatorStatusResponse(keyManagerPubKey1, keyManagerValidator1);
+    setupValidatorStatusResponse(keyManagerPubKey2, keyManagerValidator2);
+    setupValidatorStatusResponse(validatorPubKey1, validator1);
+    setupValidatorStatusResponse(validatorPubKey2, validator2);
 
-    final String validator2 =
-        Resources.toString(
-            Resources.getResource(
-                "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-responses/aa51616_response.json"),
-            UTF_8);
-
-    final String validators =
-        Resources.toString(
-            Resources.getResource(
-                "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-responses/validators_response.json"),
-            UTF_8);
-
-    mockBeaconServer
+    server
         .when(
             request()
+                .withMethod("POST")
                 .withPath("/eth/v1/beacon/states/head/validators")
-                .withQueryStringParameters(Parameter.param("id", keyManagerPubKey1)))
-        .respond(response().withStatusCode(200).withBody(keyManagerValidator1));
-
-    mockBeaconServer
-        .when(
-            request()
-                .withPath("/eth/v1/beacon/states/head/validators")
-                .withQueryStringParameters(Parameter.param("id", keyManagerPubKey2)))
-        .respond(response().withStatusCode(200).withBody(keyManagerValidator2));
-
-    mockBeaconServer
-        .when(
-            request()
-                .withPath("/eth/v1/beacon/states/head/validators")
-                .withQueryStringParameters(Parameter.param("id", validatorPubKey1)))
-        .respond(response().withStatusCode(200).withBody(validator1));
-
-    mockBeaconServer
-        .when(
-            request()
-                .withPath("/eth/v1/beacon/states/head/validators")
-                .withQueryStringParameters(Parameter.param("id", validatorPubKey2)))
-        .respond(response().withStatusCode(200).withBody(validator2));
-
-    mockBeaconServer
-        .when(
-            request()
-                .withPath("/eth/v1/beacon/states/head/validators")
-                .withQueryStringParameters(
-                    Parameter.param(
-                        "id",
-                        String.join(
+                .withBody(
+                    "{\"ids\":["
+                        + String.join(
                             ",",
-                            validatorPubKey1,
-                            keyManagerPubKey1,
-                            keyManagerPubKey2,
-                            validatorPubKey2))))
+                            quoted(validatorPubKey1),
+                            quoted(keyManagerPubKey1),
+                            quoted(keyManagerPubKey2),
+                            quoted(validatorPubKey2))
+                        + "]}"))
         .respond(response().withStatusCode(200).withBody(validators));
   }
 
-  private void configureSuccessfulVoluntaryExitResponse(final ClientAndServer mockBeaconServer) {
-    mockBeaconServer
+  private void setupValidatorStatusResponse(final String publicKey, final String responseString) {
+    server
+        .when(
+            request()
+                .withMethod("POST")
+                .withPath("/eth/v1/beacon/states/head/validators")
+                .withBody("{\"ids\":[" + String.join(",", "\"" + publicKey + "\"") + "]}"))
+        .respond(response().withStatusCode(200).withBody(responseString));
+  }
+
+  private String validatorResourceFile(final String validatorStatusFile) throws IOException {
+    return Resources.toString(
+        Resources.getResource(
+            "tech/pegasys/teku/cli/subcommand/voluntary-exit/validator-responses/"
+                + validatorStatusFile),
+        UTF_8);
+  }
+
+  private void configureSuccessfulVoluntaryExitResponse() {
+    server
         .when(request().withPath("/eth/v1/beacon/pool/voluntary_exits"))
         .respond(response().withStatusCode(200));
   }
 
-  private Supplier<List<SignedVoluntaryExit>> configureSuccessfulVoluntaryExitResponseWithCapture(
-      final ClientAndServer mockBeaconServer) {
+  private Supplier<List<SignedVoluntaryExit>>
+      configureSuccessfulVoluntaryExitResponseWithCapture() {
     final List<String> responses = new ArrayList<>();
-    mockBeaconServer
+    server
         .when(request().withPath("/eth/v1/beacon/pool/voluntary_exits"))
         .respond(
             httpRequest -> {
@@ -592,28 +676,70 @@ public class VoluntaryExitCommandTest {
             .toList();
   }
 
-  private void configureRejectedVoluntaryExitResponse(final ClientAndServer mockBeaconServer)
-      throws IOException {
+  private void configureExternalSignerUpcheck() {
+    server
+        .when(request().withMethod("GET").withPath("/upcheck"))
+        .respond(response().withStatusCode(200));
+  }
+
+  private void configureExternalSignerResponse(
+      final String validatorPubKey2, final BLSSignature blsSignature) {
+    server
+        .when(request().withMethod("POST").withPath("/api/v1/eth2/sign/" + validatorPubKey2))
+        .respond(response().withStatusCode(200).withBody(blsSignature.toString()));
+  }
+
+  private void configureExternalSignerPublicKeys(final List<String> keys) {
+    final String body =
+        "{["
+            + keys.stream()
+                .map(
+                    k ->
+                        "{"
+                            + quotedFieldName("validating_pubkey")
+                            + quoted(k)
+                            + ","
+                            + quotedFieldName("derivation_path")
+                            + quoted("")
+                            + ","
+                            + quotedFieldName("readonly")
+                            + "false}")
+                .collect(Collectors.joining(","))
+            + "]}";
+    server
+        .when(request().withMethod("GET").withPath("/eth/v1/keystores"))
+        .respond(response().withStatusCode(200).withBody(body));
+  }
+
+  private void configureRejectedVoluntaryExitResponse() throws IOException {
     final String rejectedExitResponseBody =
         Resources.toString(
             Resources.getResource(
                 "tech/pegasys/teku/cli/subcommand/voluntary-exit/rejected-exit.json"),
             UTF_8);
 
-    mockBeaconServer
+    server
         .when(request().withMethod("POST").withPath("/eth/v1/beacon/pool/voluntary_exits"))
         .respond(response().withStatusCode(400).withBody(rejectedExitResponseBody));
+  }
+
+  private String quoted(final String unquotedString) {
+    return "\"" + unquotedString + "\"";
+  }
+
+  private String quotedFieldName(final String unquotedString) {
+    return "\"" + unquotedString + "\":";
   }
 
   private String getTestSpecJsonString(final Spec spec) throws JsonProcessingException {
     return JsonUtil.serialize(new ConfigProvider(spec).getConfig(), GET_SPEC_RESPONSE_TYPE);
   }
 
-  private String extractValidatorId(String pubKey) {
+  private String extractValidatorId(final String pubKey) {
     return pubKey.substring(2, 9);
   }
 
-  private void assertValidatorsExited(String... args) {
+  private void assertValidatorsExited(final String... args) {
     Arrays.stream(args)
         .forEach(
             arg -> {
@@ -622,7 +748,7 @@ public class VoluntaryExitCommandTest {
             });
   }
 
-  private void assertValidatorsNotExited(String... args) {
+  private void assertValidatorsNotExited(final String... args) {
     Arrays.stream(args)
         .forEach(
             arg -> {

@@ -29,8 +29,9 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class PostAggregateAndProofs extends RestApiEndpoint {
@@ -38,12 +39,12 @@ public class PostAggregateAndProofs extends RestApiEndpoint {
   private final ValidatorDataProvider provider;
 
   public PostAggregateAndProofs(
-      final DataProvider provider, final SchemaDefinitions schemaDefinitions) {
-    this(provider.getValidatorDataProvider(), schemaDefinitions);
+      final DataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
+    this(provider.getValidatorDataProvider(), schemaDefinitionCache);
   }
 
   public PostAggregateAndProofs(
-      final ValidatorDataProvider provider, final SchemaDefinitions schemaDefinitions) {
+      final ValidatorDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("publishAggregateAndProofs")
@@ -51,16 +52,21 @@ public class PostAggregateAndProofs extends RestApiEndpoint {
             .description(
                 "Verifies given aggregate and proofs and publishes it on appropriate gossipsub topic.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
+            .deprecated(true)
             .requestBodyType(
                 DeserializableTypeDefinition.listOf(
-                    schemaDefinitions.getSignedAggregateAndProofSchema().getJsonTypeDefinition()))
+                    schemaDefinitionCache
+                        .getSchemaDefinition(SpecMilestone.PHASE0)
+                        .getSignedAggregateAndProofSchema()
+                        .getJsonTypeDefinition()))
             .response(SC_OK, "Successfully published aggregate.")
+            .withChainDataResponses()
             .build());
     this.provider = provider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final List<SignedAggregateAndProof> signedAggregateAndProofs = request.getRequestBody();
     final SafeFuture<List<SubmitDataError>> future =
         provider.sendAggregateAndProofs(signedAggregateAndProofs);

@@ -38,7 +38,7 @@ public class BlocksByRangeResponseInvalidResponseException extends InvalidRespon
 
     private final String description;
 
-    InvalidResponseType(String description) {
+    InvalidResponseType(final String description) {
       this.description = description;
     }
 

@@ -30,9 +30,9 @@ public class ForkChoiceUpdatedResult {
   private final Bytes8 payloadId;
 
   public ForkChoiceUpdatedResult(
-      @JsonProperty("payloadStatus") PayloadStatusV1 payloadStatus,
-      @JsonProperty("payloadId") Bytes8 payloadId) {
-    checkNotNull(payloadStatus, "payloadStatus cannot be null");
+      final @JsonProperty("payloadStatus") PayloadStatusV1 payloadStatus,
+      final @JsonProperty("payloadId") Bytes8 payloadId) {
+    checkNotNull(payloadStatus, "payloadStatus");
     this.payloadStatus = payloadStatus;
     this.payloadId = payloadId;
   }

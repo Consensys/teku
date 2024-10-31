@@ -16,6 +16,8 @@ package tech.pegasys.teku.spec.schemas;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
@@ -35,29 +37,25 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExit;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerExitSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.builder.versions.electra.BuilderBidSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
-
   private final BeaconStateSchemaElectra beaconStateSchema;
-
-  private final ExecutionPayloadSchemaElectra executionPayloadSchemaElectra;
-  private final ExecutionPayloadHeaderSchemaElectra executionPayloadHeaderSchemaElectra;
 
   private final BeaconBlockBodySchemaElectraImpl beaconBlockBodySchema;
   private final BlindedBeaconBlockBodySchemaElectraImpl blindedBeaconBlockBodySchema;
@@ -75,37 +73,43 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final BlobsBundleSchema blobsBundleSchema;
   private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
 
-  private final DepositReceiptSchema depositReceiptSchema;
+  private final ExecutionRequestsSchema executionRequestsSchema;
+  private final DepositRequestSchema depositRequestSchema;
+  private final WithdrawalRequestSchema withdrawalRequestSchema;
+  private final ConsolidationRequestSchema consolidationRequestSchema;
 
-  private final ExecutionLayerExitSchema executionLayerExitSchema;
-
-  private final PendingBalanceDeposit.PendingBalanceDepositSchema pendingBalanceDepositSchema;
+  private final PendingDeposit.PendingDepositSchema pendingDepositSchema;
 
   private final PendingPartialWithdrawal.PendingPartialWithdrawalSchema
       pendingPartialWithdrawalSchema;
   private final PendingConsolidation.PendingConsolidationSchema pendingConsolidationSchema;
 
-  public SchemaDefinitionsElectra(final SpecConfigElectra specConfig) {
-    super(specConfig);
-    this.executionPayloadSchemaElectra = new ExecutionPayloadSchemaElectra(specConfig);
+  public SchemaDefinitionsElectra(final SchemaRegistry schemaRegistry) {
+    super(schemaRegistry);
+    final SpecConfigElectra specConfig = SpecConfigElectra.required(schemaRegistry.getSpecConfig());
 
+    final long maxValidatorsPerAttestation = getMaxValidatorsPerAttestation(specConfig);
+
+    this.executionRequestsSchema = new ExecutionRequestsSchema(specConfig);
     this.beaconStateSchema = BeaconStateSchemaElectra.create(specConfig);
-    this.executionPayloadHeaderSchemaElectra =
-        beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaElectraImpl.create(
             specConfig,
-            getAttesterSlashingSchema(),
             getSignedBlsToExecutionChangeSchema(),
             getBlobKzgCommitmentsSchema(),
-            "BeaconBlockBodyElectra");
+            getExecutionRequestsSchema(),
+            maxValidatorsPerAttestation,
+            "BeaconBlockBodyElectra",
+            schemaRegistry);
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaElectraImpl.create(
             specConfig,
-            getAttesterSlashingSchema(),
             getSignedBlsToExecutionChangeSchema(),
             getBlobKzgCommitmentsSchema(),
-            "BlindedBlockBodyElectra");
+            getExecutionRequestsSchema(),
+            maxValidatorsPerAttestation,
+            "BlindedBlockBodyElectra",
+            schemaRegistry);
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockElectra");
     this.blindedBeaconBlockSchema =
         new BeaconBlockSchema(blindedBeaconBlockBodySchema, "BlindedBlockElectra");
@@ -114,10 +118,11 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.signedBlindedBeaconBlockSchema =
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockElectra");
     this.builderBidSchemaElectra =
-        new BuilderBidSchemaDeneb(
+        new BuilderBidSchemaElectra(
             "BuilderBidElectra",
-            executionPayloadHeaderSchemaElectra,
-            getBlobKzgCommitmentsSchema());
+            getExecutionPayloadHeaderSchema(),
+            getBlobKzgCommitmentsSchema(),
+            executionRequestsSchema);
     this.signedBuilderBidSchemaElectra =
         new SignedBuilderBidSchema("SignedBuilderBidElectra", builderBidSchemaElectra);
 
@@ -131,11 +136,12 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
         new BlobsBundleSchema(
             "BlobsBundleElectra", getBlobSchema(), getBlobKzgCommitmentsSchema(), specConfig);
     this.executionPayloadAndBlobsBundleSchema =
-        new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaElectra, blobsBundleSchema);
+        new ExecutionPayloadAndBlobsBundleSchema(getExecutionPayloadSchema(), blobsBundleSchema);
 
-    this.depositReceiptSchema = DepositReceipt.SSZ_SCHEMA;
-    this.executionLayerExitSchema = ExecutionLayerExit.SSZ_SCHEMA;
-    this.pendingBalanceDepositSchema = new PendingBalanceDeposit.PendingBalanceDepositSchema();
+    this.depositRequestSchema = DepositRequest.SSZ_SCHEMA;
+    this.withdrawalRequestSchema = WithdrawalRequest.SSZ_SCHEMA;
+    this.consolidationRequestSchema = ConsolidationRequest.SSZ_SCHEMA;
+    this.pendingDepositSchema = new PendingDeposit.PendingDepositSchema();
     this.pendingPartialWithdrawalSchema =
         new PendingPartialWithdrawal.PendingPartialWithdrawalSchema();
     this.pendingConsolidationSchema = new PendingConsolidation.PendingConsolidationSchema();
@@ -207,16 +213,6 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   }
 
   @Override
-  public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
-    return executionPayloadSchemaElectra;
-  }
-
-  @Override
-  public ExecutionPayloadHeaderSchema<?> getExecutionPayloadHeaderSchema() {
-    return executionPayloadHeaderSchemaElectra;
-  }
-
-  @Override
   public BuilderBidSchema<?> getBuilderBidSchema() {
     return builderBidSchemaElectra;
   }
@@ -256,16 +252,24 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return executionPayloadAndBlobsBundleSchema;
   }
 
-  public DepositReceiptSchema getDepositReceiptSchema() {
-    return depositReceiptSchema;
+  public ExecutionRequestsSchema getExecutionRequestsSchema() {
+    return executionRequestsSchema;
   }
 
-  public ExecutionLayerExitSchema getExecutionLayerExitSchema() {
-    return executionLayerExitSchema;
+  public DepositRequestSchema getDepositRequestSchema() {
+    return depositRequestSchema;
   }
 
-  public PendingBalanceDeposit.PendingBalanceDepositSchema getPendingBalanceDepositSchema() {
-    return pendingBalanceDepositSchema;
+  public WithdrawalRequestSchema getWithdrawalRequestSchema() {
+    return withdrawalRequestSchema;
+  }
+
+  public ConsolidationRequestSchema getConsolidationRequestSchema() {
+    return consolidationRequestSchema;
+  }
+
+  public PendingDeposit.PendingDepositSchema getPendingDepositSchema() {
+    return pendingDepositSchema;
   }
 
   public PendingPartialWithdrawal.PendingPartialWithdrawalSchema
@@ -273,12 +277,29 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return pendingPartialWithdrawalSchema;
   }
 
+  public PendingConsolidation.PendingConsolidationSchema getPendingConsolidationSchema() {
+    return pendingConsolidationSchema;
+  }
+
+  public SszListSchema<PendingDeposit, ?> getPendingDepositsSchema() {
+    return beaconStateSchema.getPendingDepositsSchema();
+  }
+
+  public SszListSchema<PendingPartialWithdrawal, ?> getPendingPartialWithdrawalsSchema() {
+    return beaconStateSchema.getPendingPartialWithdrawalsSchema();
+  }
+
+  public SszListSchema<PendingConsolidation, ?> getPendingConsolidationsSchema() {
+    return beaconStateSchema.getPendingConsolidationsSchema();
+  }
+
   @Override
   public Optional<SchemaDefinitionsElectra> toVersionElectra() {
     return Optional.of(this);
   }
 
-  public PendingConsolidation.PendingConsolidationSchema getPendingConsolidationSchema() {
-    return pendingConsolidationSchema;
+  @Override
+  long getMaxValidatorsPerAttestation(final SpecConfig specConfig) {
+    return (long) specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
   }
 }

@@ -29,12 +29,13 @@ public class AttestationFuzzInput
       final SpecVersion spec) {
     return ContainerSchema2.create(
         SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
-        spec.getSchemaDefinitions().getAttestationSchema(),
+        spec.getSchemaDefinitions().getAttestationSchema().castTypeToAttestationSchema(),
         AttestationFuzzInput::new);
   }
 
   private AttestationFuzzInput(
-      ContainerSchema2<AttestationFuzzInput, BeaconState, Attestation> type, TreeNode backingNode) {
+      final ContainerSchema2<AttestationFuzzInput, BeaconState, Attestation> type,
+      final TreeNode backingNode) {
     super(type, backingNode);
   }
 

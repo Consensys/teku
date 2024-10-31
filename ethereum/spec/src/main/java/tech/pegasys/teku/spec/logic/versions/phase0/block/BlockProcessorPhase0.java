@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.versions.phase0.block;
 
-import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -23,8 +22,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -107,7 +106,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   }
 
   @Override
-  public UInt64 computeParticipantReward(BeaconStateAltair state) {
+  public UInt64 computeParticipantReward(final BeaconStateAltair state) {
     return UInt64.ZERO;
   }
 
@@ -163,7 +162,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   }
 
   @Override
-  public Optional<List<Withdrawal>> getExpectedWithdrawals(final BeaconState preState) {
-    return Optional.empty();
+  public ExpectedWithdrawals getExpectedWithdrawals(final BeaconState preState) {
+    return ExpectedWithdrawals.NOOP;
   }
 }

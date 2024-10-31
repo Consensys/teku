@@ -67,6 +67,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getEarliestFinalizedBlock();
 
+  Optional<UInt64> getEarliestFinalizedStateSlot();
+
   Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(UInt64 slot);
 
   List<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(UInt64 slot);
@@ -234,9 +236,13 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
 
+    void deleteFinalizedState(final UInt64 slot);
+
     void addReconstructedFinalizedState(final Bytes32 blockRoot, final BeaconState state);
 
     void addFinalizedStateRoot(final Bytes32 stateRoot, final UInt64 slot);
+
+    void deleteFinalizedStateRoot(final Bytes32 stateRoot);
 
     void setOptimisticTransitionBlockSlot(final Optional<UInt64> transitionBlockSlot);
 
@@ -253,6 +259,10 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void removeNonCanonicalBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
     void setEarliestBlobSidecarSlot(UInt64 slot);
+
+    void setEarliestBlockSlot(UInt64 slot);
+
+    void deleteEarliestBlockSlot();
 
     void commit();
 

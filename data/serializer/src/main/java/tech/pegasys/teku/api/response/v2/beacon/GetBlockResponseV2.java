@@ -21,11 +21,15 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
+import tech.pegasys.teku.api.schema.capella.SignedBeaconBlockCapella;
+import tech.pegasys.teku.api.schema.deneb.SignedBeaconBlockDeneb;
+import tech.pegasys.teku.api.schema.electra.SignedBeaconBlockElectra;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 
 @SuppressWarnings("JavaCase")
 public class GetBlockResponseV2 {
+
   private final Version version;
 
   @JsonProperty("execution_optimistic")
@@ -38,7 +42,10 @@ public class GetBlockResponseV2 {
   @JsonSubTypes({
     @JsonSubTypes.Type(value = SignedBeaconBlockPhase0.class, name = "phase0"),
     @JsonSubTypes.Type(value = SignedBeaconBlockAltair.class, name = "altair"),
-    @JsonSubTypes.Type(value = SignedBeaconBlockBellatrix.class, name = "bellatrix")
+    @JsonSubTypes.Type(value = SignedBeaconBlockBellatrix.class, name = "bellatrix"),
+    @JsonSubTypes.Type(value = SignedBeaconBlockCapella.class, name = "capella"),
+    @JsonSubTypes.Type(value = SignedBeaconBlockDeneb.class, name = "deneb"),
+    @JsonSubTypes.Type(value = SignedBeaconBlockElectra.class, name = "electra")
   })
   public final SignedBlock data;
 

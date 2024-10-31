@@ -65,12 +65,13 @@ public class GetBlock extends RestApiEndpoint {
                 getResponseType(schemaDefinitionCache),
                 sszResponseType())
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> future =
         chainDataProvider.getBlock(request.getPathParameter(PARAMETER_BLOCK_ID));
 
@@ -89,7 +90,7 @@ public class GetBlock extends RestApiEndpoint {
   }
 
   private static SerializableTypeDefinition<ObjectAndMetaData<SignedBeaconBlock>> getResponseType(
-      SchemaDefinitionCache schemaDefinitionCache) {
+      final SchemaDefinitionCache schemaDefinitionCache) {
     final SerializableTypeDefinition<SignedBeaconBlock> signedBeaconBlockType =
         getSchemaDefinitionForAllSupportedMilestones(
             schemaDefinitionCache,

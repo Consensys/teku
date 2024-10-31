@@ -53,19 +53,19 @@ public class BeaconBlockBodyDenebImpl
     implements BeaconBlockBodyDeneb {
 
   BeaconBlockBodyDenebImpl(
-      BeaconBlockBodySchemaDenebImpl type,
-      SszSignature randaoReveal,
-      Eth1Data eth1Data,
-      SszBytes32 graffiti,
-      SszList<ProposerSlashing> proposerSlashings,
-      SszList<AttesterSlashing> attesterSlashings,
-      SszList<Attestation> attestations,
-      SszList<Deposit> deposits,
-      SszList<SignedVoluntaryExit> voluntaryExits,
-      SyncAggregate syncAggregate,
-      ExecutionPayloadDenebImpl executionPayload,
-      SszList<SignedBlsToExecutionChange> blsToExecutionChanges,
-      SszList<SszKZGCommitment> blobKzgCommitments) {
+      final BeaconBlockBodySchemaDenebImpl type,
+      final SszSignature randaoReveal,
+      final Eth1Data eth1Data,
+      final SszBytes32 graffiti,
+      final SszList<ProposerSlashing> proposerSlashings,
+      final SszList<AttesterSlashing> attesterSlashings,
+      final SszList<Attestation> attestations,
+      final SszList<Deposit> deposits,
+      final SszList<SignedVoluntaryExit> voluntaryExits,
+      final SyncAggregate syncAggregate,
+      final ExecutionPayloadDenebImpl executionPayload,
+      final SszList<SignedBlsToExecutionChange> blsToExecutionChanges,
+      final SszList<SszKZGCommitment> blobKzgCommitments) {
     super(
         type,
         randaoReveal,

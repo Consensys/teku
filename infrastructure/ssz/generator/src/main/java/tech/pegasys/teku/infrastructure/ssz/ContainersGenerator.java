@@ -23,7 +23,7 @@ import java.util.stream.IntStream;
 
 public class ContainersGenerator {
 
-  private final int maxFields = 19;
+  private final int maxFields = 20;
   private final Path templateSrcPath;
   private final Path targetSrcPath;
   private final String typePackagePath = "tech/pegasys/teku/infrastructure/ssz/containers/";
@@ -31,7 +31,7 @@ public class ContainersGenerator {
   private final String containerTypeTemplateFile = "ContainerSchemaTemplate.java";
   private final String containerViewTemplateFile = "ContainerTemplate.java";
 
-  public ContainersGenerator(Path templateSourcePath, Path destinationSourcePath) {
+  public ContainersGenerator(final Path templateSourcePath, final Path destinationSourcePath) {
     templateSrcPath = templateSourcePath;
     targetSrcPath = destinationSourcePath;
   }
@@ -40,7 +40,7 @@ public class ContainersGenerator {
    * Available generation from Gradle with {@code
    * :infrastructure:ssz:generator:generateAndFormatContainers} task
    */
-  public static void main(String[] args) {
+  public static void main(final String[] args) {
     final Path templateSourcePath;
     final Path targetSourcePath;
     if (args.length < 1) {
@@ -70,7 +70,7 @@ public class ContainersGenerator {
     }
   }
 
-  public void generateContainerClasses(int fieldsCount) {
+  public void generateContainerClasses(final int fieldsCount) {
     String typeClassName = "ContainerSchema" + fieldsCount;
     String viewClassName = "Container" + fieldsCount;
     Map<String, String> vars =
@@ -90,12 +90,12 @@ public class ContainersGenerator {
             Map.entry(
                 "FieldsDeclarations",
                 IntStream.range(0, fieldsCount)
-                    .mapToObj(i -> "SszSchema<V" + i + "> fieldSchema" + i)
+                    .mapToObj(i -> "final SszSchema<V" + i + "> fieldSchema" + i)
                     .collect(Collectors.joining(", "))),
             Map.entry(
                 "NamedFieldsDeclarations",
                 IntStream.range(0, fieldsCount)
-                    .mapToObj(i -> "NamedSchema<V" + i + "> fieldNamedSchema" + i)
+                    .mapToObj(i -> "final NamedSchema<V" + i + "> fieldNamedSchema" + i)
                     .collect(Collectors.joining(", "))),
             Map.entry(
                 "Fields",
@@ -110,7 +110,7 @@ public class ContainersGenerator {
             Map.entry(
                 "ViewParams",
                 IntStream.range(0, fieldsCount)
-                    .mapToObj(i -> "V" + i + " arg" + i)
+                    .mapToObj(i -> "final V" + i + " arg" + i)
                     .collect(Collectors.joining(", "))),
             Map.entry(
                 "ViewArgs",
@@ -150,7 +150,8 @@ public class ContainersGenerator {
         vars);
   }
 
-  public void generateFromTemplate(Path templateSrc, Path destSrc, Map<String, String> varToVal) {
+  public void generateFromTemplate(
+      final Path templateSrc, final Path destSrc, final Map<String, String> varToVal) {
     try {
       String src = Files.readString(templateSrc);
       String res = replacePlaceholders(src, varToVal);
@@ -161,7 +162,7 @@ public class ContainersGenerator {
     }
   }
 
-  public String replacePlaceholders(String src, Map<String, String> varToVal) {
+  public String replacePlaceholders(final String src, final Map<String, String> varToVal) {
     String res = src;
     for (Map.Entry<String, String> entry : varToVal.entrySet()) {
       res =

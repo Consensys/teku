@@ -64,7 +64,7 @@ public class BlsToExecutionChangeGenerator {
   }
 
   public SszList<SignedBlsToExecutionChange> asSszList(
-      final UInt64 epoch, SignedBlsToExecutionChange... changes) {
+      final UInt64 epoch, final SignedBlsToExecutionChange... changes) {
     return BeaconBlockBodySchemaCapella.required(
             spec.atEpoch(epoch).getSchemaDefinitions().getBeaconBlockBodySchema())
         .getBlsToExecutionChangesSchema()

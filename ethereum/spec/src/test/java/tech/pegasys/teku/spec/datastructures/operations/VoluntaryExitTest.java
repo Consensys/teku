@@ -25,10 +25,10 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 class VoluntaryExitTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
-  private UInt64 epoch = dataStructureUtil.randomUInt64();
-  private UInt64 validatorIndex = dataStructureUtil.randomUInt64();
+  private final UInt64 epoch = dataStructureUtil.randomUInt64();
+  private final UInt64 validatorIndex = dataStructureUtil.randomUInt64();
 
-  private VoluntaryExit voluntaryExit = new VoluntaryExit(epoch, validatorIndex);
+  private final VoluntaryExit voluntaryExit = new VoluntaryExit(epoch, validatorIndex);
 
   @Test
   void equalsReturnsTrueWhenObjectsAreSame() {

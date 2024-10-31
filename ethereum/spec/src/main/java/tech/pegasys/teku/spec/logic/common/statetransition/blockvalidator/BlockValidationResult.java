@@ -22,12 +22,12 @@ public class BlockValidationResult {
   private final boolean isValid;
   private final String failureReason;
 
-  private BlockValidationResult(String failureReason) {
+  private BlockValidationResult(final String failureReason) {
     this.failureReason = failureReason;
     this.isValid = false;
   }
 
-  private BlockValidationResult(boolean isValid) {
+  private BlockValidationResult(final boolean isValid) {
     this.isValid = isValid;
     failureReason = null;
   }

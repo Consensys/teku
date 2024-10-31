@@ -17,7 +17,6 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
@@ -28,7 +27,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszTestUtils {
 
-  public static IntList getVectorLengths(SszContainerSchema<?> sszContainerSchema) {
+  public static IntList getVectorLengths(final SszContainerSchema<?> sszContainerSchema) {
     IntList vectorLengths = new IntArrayList();
     sszContainerSchema.getFieldSchemas().stream()
         .filter(t -> t instanceof SszVectorSchema)
@@ -37,23 +36,25 @@ public class SszTestUtils {
     return vectorLengths;
   }
 
-  public static SszBitlist not(SszBitlist bitlist) {
-    List<Boolean> notList = bitlist.stream().map(b -> !b.get()).collect(Collectors.toList());
+  public static SszBitlist not(final SszBitlist bitlist) {
+    List<Boolean> notList = bitlist.stream().map(b -> !b.get()).toList();
     int[] notBitIndices = IntStream.range(0, notList.size()).filter(notList::get).toArray();
     return bitlist.getSchema().ofBits(bitlist.size(), notBitIndices);
   }
 
   /** Dumps the tree to stdout */
-  public static String dumpBinaryTree(TreeNode node) {
+  public static String dumpBinaryTree(final TreeNode node) {
     StringBuilder ret = new StringBuilder();
     dumpBinaryTreeRec(node, "", false, s -> ret.append(s).append('\n'));
     return ret.toString();
   }
 
   private static void dumpBinaryTreeRec(
-      TreeNode node, String prefix, boolean printCommit, Consumer<String> linesConsumer) {
-    if (node instanceof LeafNode) {
-      LeafNode leafNode = (LeafNode) node;
+      final TreeNode node,
+      final String prefix,
+      final boolean printCommit,
+      final Consumer<String> linesConsumer) {
+    if (node instanceof LeafNode leafNode) {
       linesConsumer.accept(prefix + leafNode);
     } else {
       BranchNode branchNode = (BranchNode) node;

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.time;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -24,11 +26,13 @@ public class Throttler<TResource> {
   private final AtomicReference<UInt64> lastInvoked = new AtomicReference<>(null);
 
   public Throttler(final TResource resource, final UInt64 throttlingPeriod) {
+    checkNotNull(throttlingPeriod, "Missing throttling period");
     this.resource = resource;
     this.throttlingPeriod = throttlingPeriod;
   }
 
-  public void invoke(final UInt64 currentTime, Consumer<TResource> invocation) {
+  public void invoke(final UInt64 currentTime, final Consumer<TResource> invocation) {
+    checkNotNull(currentTime, "Missing current time");
     if (updateLastInvoked(currentTime)) {
       invocation.accept(resource);
     }

@@ -15,6 +15,13 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig.DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
+import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT;
+import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT_IPV6;
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -37,7 +44,6 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(p2pConfig.getTargetSubnetSubscriberCount()).isEqualTo(5);
     assertThat(p2pConfig.getPeerRateLimit()).isEqualTo(100);
     assertThat(p2pConfig.getPeerRequestLimit()).isEqualTo(101);
-    assertThat(p2pConfig.isP2pDumpsToFileEnabled()).isFalse();
 
     final DiscoveryConfig discoConfig = tekuConfig.discovery();
     assertThat(discoConfig.isDiscoveryEnabled()).isTrue();
@@ -48,8 +54,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
     final NetworkConfig networkConfig = tekuConfig.network();
     assertThat(networkConfig.isEnabled()).isTrue();
-    assertThat(networkConfig.getAdvertisedIp()).isEqualTo("127.200.0.1");
-    assertThat(networkConfig.getNetworkInterface()).isEqualTo("127.100.0.1");
+    assertThat(networkConfig.getAdvertisedIps()).containsExactly("127.200.0.1");
+    assertThat(networkConfig.getNetworkInterfaces()).containsExactly("127.100.0.1");
     assertThat(networkConfig.getListenPort()).isEqualTo(4321);
     assertThat(networkConfig.getPrivateKeySource()).containsInstanceOf(FilePrivateKeySource.class);
     assertThat(((FilePrivateKeySource) networkConfig.getPrivateKeySource().get()).getFileName())
@@ -108,17 +114,18 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void advertisedIp_shouldDefaultToEmpty() {
+  public void advertisedIps_shouldDefaultToEmpty() {
     final NetworkConfig config = getTekuConfigurationFromArguments().network();
-    assertThat(config.hasUserExplicitlySetAdvertisedIp()).isFalse();
+    assertThat(config.hasUserExplicitlySetAdvertisedIps()).isFalse();
   }
 
   @Test
-  public void advertisedIp_shouldAcceptValue() {
+  public void advertisedIps_shouldAcceptValue() {
     final String ip = "10.0.1.200";
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--p2p-advertised-ip", ip);
-    assertThat(tekuConfiguration.network().getAdvertisedIp()).contains(ip);
+    assertThat(tekuConfiguration.network().getAdvertisedIps())
+        .allMatch(advertisedIp -> advertisedIp.contains(ip));
   }
 
   @Test
@@ -138,26 +145,6 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments();
     assertThat(tekuConfig.discovery().getAdvertisedUdpPort())
         .isEqualTo(tekuConfig.network().getAdvertisedPort());
-  }
-
-  @Test
-  void p2pDumpsToFileEnabled_shouldDefaultFalse() {
-    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments();
-    assertThat(tekuConfig.p2p().isP2pDumpsToFileEnabled()).isEqualTo(false);
-  }
-
-  @Test
-  void p2pDumpsToFileEnabled_shouldTrue() {
-    final TekuConfiguration tekuConfig =
-        getTekuConfigurationFromArguments("--Xp2p-dumps-to-file-enabled=true");
-    assertThat(tekuConfig.p2p().isP2pDumpsToFileEnabled()).isEqualTo(true);
-  }
-
-  @Test
-  void p2pDumpsToFileEnabled_shouldNotRequireAValue() {
-    final TekuConfiguration tekuConfig =
-        getTekuConfigurationFromArguments("--Xp2p-dumps-to-file-enabled");
-    assertThat(tekuConfig.p2p().isP2pDumpsToFileEnabled()).isEqualTo(true);
   }
 
   @Test
@@ -277,5 +264,110 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
             () -> createConfigBuilder().sync(s -> s.historicalSyncBatchSize(3000)).build())
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessage("Historical sync batch size cannot be greater than 128");
+  }
+
+  @Test
+  public void allSubnetsShouldOverrideQueueSizesAndPeers() {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--p2p-subscribe-all-subnets-enabled", "true");
+
+    assertThat(tekuConfiguration.discovery().getMaxPeers())
+        .isEqualTo(DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS);
+    assertThat(tekuConfiguration.discovery().getMinPeers())
+        .isEqualTo(DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS);
+    assertThat(tekuConfiguration.eth2NetworkConfiguration().getAsyncBeaconChainMaxQueue())
+        .isEqualTo(DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS);
+    assertThat(tekuConfiguration.eth2NetworkConfiguration().getAsyncP2pMaxQueue())
+        .isEqualTo(DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS);
+    assertThat(tekuConfiguration.validatorClient().getValidatorConfig().getExecutorMaxQueueSize())
+        .isEqualTo(DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS);
+    assertThat(tekuConfiguration.p2p().getBatchVerifyQueueCapacity())
+        .isEqualTo(DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS);
+  }
+
+  @Test
+  public void allSubnetsShouldNotOverridePeersIfExplicitlySet() {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--p2p-subscribe-all-subnets-enabled",
+            "true",
+            "--p2p-peer-lower-bound",
+            "20",
+            "--p2p-peer-upper-bound",
+            "21");
+
+    assertThat(tekuConfiguration.discovery().getMaxPeers()).isEqualTo(21);
+    assertThat(tekuConfiguration.discovery().getMinPeers()).isEqualTo(20);
+  }
+
+  @Test
+  public void allSubnetsShouldNotOverridePeersIfExplicitlySetWithDefaults() {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--p2p-peer-lower-bound",
+            "64",
+            "--p2p-peer-upper-bound",
+            "100",
+            "--p2p-subscribe-all-subnets-enabled",
+            "true");
+
+    assertThat(tekuConfiguration.discovery().getMinPeers()).isEqualTo(64);
+    assertThat(tekuConfiguration.discovery().getMaxPeers()).isEqualTo(100);
+  }
+
+  @Test
+  public void allSubnetsShouldNotOverrideQueuesIfExplicitlySet() {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--p2p-subscribe-all-subnets-enabled",
+            "true",
+            "--Xnetwork-async-p2p-max-queue",
+            "15000",
+            "--Xnetwork-async-beaconchain-max-queue",
+            "15020",
+            "--Xvalidator-executor-max-queue-size",
+            "15120",
+            "--Xp2p-batch-verify-signatures-queue-capacity",
+            "15220");
+
+    assertThat(tekuConfiguration.eth2NetworkConfiguration().getAsyncP2pMaxQueue())
+        .isEqualTo(15_000);
+    assertThat(tekuConfiguration.eth2NetworkConfiguration().getAsyncBeaconChainMaxQueue())
+        .isEqualTo(15_020);
+    assertThat(tekuConfiguration.validatorClient().getValidatorConfig().getExecutorMaxQueueSize())
+        .isEqualTo(15_120);
+    assertThat(tekuConfiguration.p2p().getBatchVerifyQueueCapacity()).isEqualTo(15_220);
+  }
+
+  @Test
+  public void floodPublishMaxMessageSizeThreshold_defaultIsSetCorrectly() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.network().getGossipConfig().getFloodPublishMaxMessageSizeThreshold())
+        .isEqualTo(DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD);
+  }
+
+  @Test
+  public void floodPublishMaxMessageSizeThreshold_isSetCorrectly() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xp2p-flood-max-message-size-threshold=1000");
+    assertThat(config.network().getGossipConfig().getFloodPublishMaxMessageSizeThreshold())
+        .isEqualTo(1000);
+  }
+
+  @Test
+  public void defaultPortsAreSetCorrectly() {
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+
+    final DiscoveryConfig discoveryConfig = tekuConfiguration.discovery();
+    assertThat(discoveryConfig.getListenUdpPort()).isEqualTo(DEFAULT_P2P_PORT);
+    assertThat(discoveryConfig.getListenUpdPortIpv6()).isEqualTo(DEFAULT_P2P_PORT_IPV6);
+    assertThat(discoveryConfig.getAdvertisedUdpPort()).isEqualTo(DEFAULT_P2P_PORT);
+    assertThat(discoveryConfig.getAdvertisedUdpPortIpv6()).isEqualTo(DEFAULT_P2P_PORT_IPV6);
+
+    final NetworkConfig networkConfig = tekuConfiguration.network();
+    assertThat(networkConfig.getListenPort()).isEqualTo(DEFAULT_P2P_PORT);
+    assertThat(networkConfig.getListenPortIpv6()).isEqualTo(DEFAULT_P2P_PORT_IPV6);
+    assertThat(networkConfig.getAdvertisedPort()).isEqualTo(DEFAULT_P2P_PORT);
+    assertThat(networkConfig.getAdvertisedPortIpv6()).isEqualTo(DEFAULT_P2P_PORT_IPV6);
   }
 }

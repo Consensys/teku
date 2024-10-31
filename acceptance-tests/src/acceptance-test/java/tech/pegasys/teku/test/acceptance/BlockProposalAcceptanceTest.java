@@ -21,8 +21,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Locale;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
@@ -34,8 +35,9 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 public class BlockProposalAcceptanceTest extends AcceptanceTestBase {
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
-  @Test
-  void shouldHaveCorrectFeeRecipientAndGraffiti() throws Exception {
+  @ParameterizedTest(name = "ssz_encode={0}")
+  @ValueSource(booleans = {true, false})
+  void shouldHaveCorrectFeeRecipientAndGraffiti(final boolean useSszBlocks) throws Exception {
     final String networkName = "swift";
 
     final ValidatorKeystores validatorKeystores =
@@ -69,6 +71,7 @@ public class BlockProposalAcceptanceTest extends AcceptanceTestBase {
                 .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
                 .withInteropModeDisabled()
                 .withBeaconNodes(beaconNode)
+                .withBeaconNodeSszBlocksEnabled(useSszBlocks)
                 .withGraffiti(userGraffiti)
                 .withNetwork("auto")
                 .build());
@@ -78,12 +81,16 @@ public class BlockProposalAcceptanceTest extends AcceptanceTestBase {
 
     beaconNode.waitForBlockSatisfying(
         block -> {
-          assertThat(block).isInstanceOf(SignedBeaconBlockBellatrix.class);
-          final SignedBeaconBlockBellatrix bellatrixBlock = (SignedBeaconBlockBellatrix) block;
-          assertThat(
-                  bellatrixBlock.getMessage().getBody().executionPayload.feeRecipient.toHexString())
+          final Bytes20 feeRecipient =
+              block
+                  .getMessage()
+                  .getBody()
+                  .getOptionalExecutionPayload()
+                  .orElseThrow()
+                  .getFeeRecipient();
+          assertThat(feeRecipient.toHexString().toLowerCase(Locale.ROOT))
               .isEqualTo(defaultFeeRecipient.toLowerCase(Locale.ROOT));
-          final Bytes32 graffiti = bellatrixBlock.getMessage().getBody().graffiti;
+          final Bytes32 graffiti = block.getMessage().getBody().getGraffiti();
           final String graffitiMessage =
               new String(
                   Arrays.copyOfRange(

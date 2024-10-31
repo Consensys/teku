@@ -42,6 +42,9 @@ public class ConfigProvider {
     if (v instanceof UInt256) {
       return ((UInt256) v).toDecimalString();
     }
+    if (v == null) {
+      return null;
+    }
     return v.toString();
   }
 

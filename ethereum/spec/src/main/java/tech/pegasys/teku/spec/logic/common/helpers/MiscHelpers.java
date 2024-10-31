@@ -42,10 +42,12 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 
 public class MiscHelpers {
 
@@ -60,7 +62,7 @@ public class MiscHelpers {
     this.specConfig = specConfig;
   }
 
-  public int computeShuffledIndex(int index, int indexCount, Bytes32 seed) {
+  public int computeShuffledIndex(final int index, final int indexCount, final Bytes32 seed) {
     checkArgument(index < indexCount, "CommitteeUtil.computeShuffledIndex1");
 
     final Sha256 sha256 = getSha256Instance();
@@ -96,6 +98,14 @@ public class MiscHelpers {
 
   public int computeProposerIndex(
       final BeaconState state, final IntList indices, final Bytes32 seed) {
+    return computeProposerIndex(state, indices, seed, specConfig.getMaxEffectiveBalance());
+  }
+
+  protected int computeProposerIndex(
+      final BeaconState state,
+      final IntList indices,
+      final Bytes32 seed,
+      final UInt64 maxEffectiveBalance) {
     checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
 
     final Sha256 sha256 = getSha256Instance();
@@ -104,15 +114,16 @@ public class MiscHelpers {
     final int total = indices.size();
     byte[] hash = null;
     while (true) {
-      int candidateIndex = indices.getInt(computeShuffledIndex(i % total, total, seed));
+      final int candidateIndex = indices.getInt(computeShuffledIndex(i % total, total, seed));
       if (i % 32 == 0) {
         hash = sha256.digest(seed, uint64ToBytes(Math.floorDiv(i, 32L)));
       }
-      int randomByte = UnsignedBytes.toInt(hash[i % 32]);
-      UInt64 effectiveBalance = state.getValidators().get(candidateIndex).getEffectiveBalance();
-      if (effectiveBalance
+      final int randomByte = UnsignedBytes.toInt(hash[i % 32]);
+      final UInt64 validatorEffectiveBalance =
+          state.getValidators().get(candidateIndex).getEffectiveBalance();
+      if (validatorEffectiveBalance
           .times(MAX_RANDOM_BYTE)
-          .isGreaterThanOrEqualTo(specConfig.getMaxEffectiveBalance().times(randomByte))) {
+          .isGreaterThanOrEqualTo(maxEffectiveBalance.times(randomByte))) {
         return candidateIndex;
       }
       i++;
@@ -148,7 +159,7 @@ public class MiscHelpers {
     return blockEpoch.dividedBy(n).isGreaterThan(parentEpoch.dividedBy(n));
   }
 
-  public UInt64 computeActivationExitEpoch(UInt64 epoch) {
+  public UInt64 computeActivationExitEpoch(final UInt64 epoch) {
     return epoch.plus(UInt64.ONE).plus(specConfig.getMaxSeedLookahead());
   }
 
@@ -246,13 +257,13 @@ public class MiscHelpers {
     return computeStartSlotAtEpoch(nextPeriodEpoch);
   }
 
-  IntList shuffleList(IntList input, Bytes32 seed) {
+  IntList shuffleList(final IntList input, final Bytes32 seed) {
     final int[] indices = input.toIntArray();
     shuffleList(indices, seed);
     return IntList.of(indices);
   }
 
-  public void shuffleList(int[] input, Bytes32 seed) {
+  public void shuffleList(final int[] input, final Bytes32 seed) {
 
     int listSize = input.length;
     if (listSize == 0) {
@@ -299,26 +310,27 @@ public class MiscHelpers {
     }
   }
 
-  public Bytes computeSigningRoot(Merkleizable object, Bytes32 domain) {
+  public Bytes computeSigningRoot(final Merkleizable object, final Bytes32 domain) {
     return new SigningData(object.hashTreeRoot(), domain).hashTreeRoot();
   }
 
-  public Bytes computeSigningRoot(UInt64 number, Bytes32 domain) {
+  public Bytes computeSigningRoot(final UInt64 number, final Bytes32 domain) {
     SigningData domainWrappedObject = new SigningData(SszUInt64.of(number).hashTreeRoot(), domain);
     return domainWrappedObject.hashTreeRoot();
   }
 
-  public Bytes32 computeSigningRoot(Bytes bytes, Bytes32 domain) {
+  public Bytes32 computeSigningRoot(final Bytes bytes, final Bytes32 domain) {
     SigningData domainWrappedObject =
         new SigningData(SszByteVector.computeHashTreeRoot(bytes), domain);
     return domainWrappedObject.hashTreeRoot();
   }
 
-  public Bytes4 computeForkDigest(Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
+  public Bytes4 computeForkDigest(
+      final Bytes4 currentVersion, final Bytes32 genesisValidatorsRoot) {
     return new Bytes4(computeForkDataRoot(currentVersion, genesisValidatorsRoot).slice(0, 4));
   }
 
-  public Bytes32 computeDomain(Bytes4 domainType) {
+  public Bytes32 computeDomain(final Bytes4 domainType) {
     return computeDomain(domainType, specConfig.getGenesisForkVersion(), Bytes32.ZERO);
   }
 
@@ -327,12 +339,13 @@ public class MiscHelpers {
   }
 
   public Bytes32 computeDomain(
-      Bytes4 domainType, Bytes4 forkVersion, Bytes32 genesisValidatorsRoot) {
+      final Bytes4 domainType, final Bytes4 forkVersion, final Bytes32 genesisValidatorsRoot) {
     final Bytes32 forkDataRoot = computeForkDataRoot(forkVersion, genesisValidatorsRoot);
     return Bytes32.wrap(Bytes.concatenate(domainType.getWrappedBytes(), forkDataRoot.slice(0, 28)));
   }
 
-  private Bytes32 computeForkDataRoot(Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
+  private Bytes32 computeForkDataRoot(
+      final Bytes4 currentVersion, final Bytes32 genesisValidatorsRoot) {
     return new ForkData(currentVersion, genesisValidatorsRoot).hashTreeRoot();
   }
 
@@ -374,11 +387,19 @@ public class MiscHelpers {
     return UInt64.valueOf(specConfig.getNetworkingConfig().getMaxRequestBlocks());
   }
 
+  public UInt64 getMaxEffectiveBalance(final Validator validator) {
+    return specConfig.getMaxEffectiveBalance();
+  }
+
   public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
     return false;
   }
 
   public Optional<MiscHelpersDeneb> toVersionDeneb() {
+    return Optional.empty();
+  }
+
+  public Optional<MiscHelpersElectra> toVersionElectra() {
     return Optional.empty();
   }
 }
