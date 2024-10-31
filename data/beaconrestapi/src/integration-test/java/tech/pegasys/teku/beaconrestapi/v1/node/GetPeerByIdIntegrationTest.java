@@ -49,7 +49,7 @@ public class GetPeerByIdIntegrationTest extends AbstractDataBackedRestAPIIntegra
     assertThat(response.code()).isEqualTo(SC_OK);
 
     final JsonNode data = getResponseData(response);
-    assertThat(data.get("peer_id").asText()).isEqualTo(node1.toBase58().toString());
+    assertThat(data.get("peer_id").asText()).isEqualTo(node1.toBase58());
     assertThat(data.get("enr")).isNull();
     assertThat(data.get("last_seen_p2p_address").asText())
         .isEqualTo("/ip/1.2.3.4/tcp/4242/p2p/aeiou");

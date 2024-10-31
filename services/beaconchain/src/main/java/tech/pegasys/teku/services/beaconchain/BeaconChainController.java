@@ -114,6 +114,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.LocalOperationAcceptedFilter;
 import tech.pegasys.teku.statetransition.MappedOperationPool;
@@ -219,6 +220,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 public class BeaconChainController extends Service implements BeaconChainControllerFacade {
 
   private static final Logger LOG = LogManager.getLogger();
+  private final EphemerySlotValidationService ephemerySlotValidationService;
 
   protected static final String KEY_VALUE_STORE_SUBDIRECTORY = "kvstore";
 
@@ -335,6 +337,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             "future_items_size",
             "Current number of items held for future slots, labelled by type",
             "type");
+    this.ephemerySlotValidationService = new EphemerySlotValidationService();
   }
 
   @Override
@@ -364,6 +367,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
         blobSidecar ->
             recentBlobSidecarsFetcher.cancelRecentBlobSidecarRequest(
                 new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex())));
+
+    final Optional<Eth2Network> network = beaconConfig.eth2NetworkConfig().getEth2Network();
+    if (network.isPresent() && network.get() == Eth2Network.EPHEMERY) {
+      LOG.debug("BeaconChainController: subscribing to slot events");
+      eventChannels.subscribe(SlotEventsChannel.class, ephemerySlotValidationService);
+    }
     SafeFuture.allOfFailFast(
             attestationManager.start(),
             p2pNetwork.start(),
@@ -401,6 +410,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             attestationManager.stop(),
             p2pNetwork.stop(),
             timerService.stop(),
+            ephemerySlotValidationService.doStop(),
             SafeFuture.fromRunnable(
                 () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop)))
         .thenRun(forkChoiceExecutor::stop);
@@ -618,7 +628,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
       final BlockImportChannel blockImportChannel =
           eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
       final BlobSidecarGossipChannel blobSidecarGossipChannel =
-          eventChannels.getPublisher(BlobSidecarGossipChannel.class);
+          eventChannels.getPublisher(BlobSidecarGossipChannel.class, beaconAsyncRunner);
       final BlockBlobSidecarsTrackersPoolImpl pool =
           poolFactory.createPoolForBlockBlobSidecarsTrackers(
               blockImportChannel,
@@ -939,10 +949,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final BlockImportChannel blockImportChannel =
         eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
     final BlockGossipChannel blockGossipChannel =
-        eventChannels.getPublisher(BlockGossipChannel.class);
+        eventChannels.getPublisher(BlockGossipChannel.class, beaconAsyncRunner);
     final BlobSidecarGossipChannel blobSidecarGossipChannel;
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      blobSidecarGossipChannel = eventChannels.getPublisher(BlobSidecarGossipChannel.class);
+      blobSidecarGossipChannel =
+          eventChannels.getPublisher(BlobSidecarGossipChannel.class, beaconAsyncRunner);
     } else {
       blobSidecarGossipChannel = BlobSidecarGossipChannel.NOOP;
     }

@@ -24,13 +24,14 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRespo
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
 class GetAttestationsTest extends AbstractMigratedBeaconHandlerTest {
@@ -74,14 +75,16 @@ class GetAttestationsTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  void metadata_shouldHandle200() throws IOException {
+  void metadata_shouldHandle200() throws Exception {
     List<Attestation> responseData =
         List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
+    final JsonNode responseDataAsJsonNode = JsonTestUtil.parseAsJsonNode(data);
     final String expected =
         Resources.toString(
             Resources.getResource(GetAttestationsTest.class, "getAttestations.json"), UTF_8);
-    assertThat(data).isEqualTo(expected);
+    final JsonNode expectedAsJsonNode = JsonTestUtil.parseAsJsonNode(expected);
+    assertThat(responseDataAsJsonNode).isEqualTo(expectedAsJsonNode);
   }
 }

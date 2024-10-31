@@ -192,6 +192,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
@@ -394,7 +395,11 @@ public final class DataStructureUtil {
   }
 
   public SszBitlist randomBitlist() {
-    return randomBitlist(getMaxValidatorsPerCommittee());
+    return randomBitlist(randomSlot());
+  }
+
+  public SszBitlist randomBitlist(final UInt64 slot) {
+    return randomBitlist(getMaxValidatorsPerCommittee(slot));
   }
 
   public SszBitlist randomBitlist(final int n) {
@@ -820,10 +825,11 @@ public final class DataStructureUtil {
   }
 
   public Attestation randomAttestation(final UInt64 slot) {
-    return spec.getGenesisSchemaDefinitions()
+    return spec.atSlot(slot)
+        .getSchemaDefinitions()
         .getAttestationSchema()
         .create(
-            randomBitlist(),
+            randomBitlist(slot),
             randomAttestationData(slot),
             randomSignature(),
             this::randomCommitteeBitvector);
@@ -878,7 +884,8 @@ public final class DataStructureUtil {
 
   public AttesterSlashing randomAttesterSlashingAtSlot(final UInt64 slot) {
     final UInt64[] attestingIndices = {randomUInt64(), randomUInt64(), randomUInt64()};
-    return spec.getGenesisSchemaDefinitions()
+    return spec.atSlot(slot)
+        .getSchemaDefinitions()
         .getAttesterSlashingSchema()
         .create(
             randomIndexedAttestation(randomAttestationData(slot), attestingIndices),
@@ -1425,9 +1432,12 @@ public final class DataStructureUtil {
                           schema.getProposerSlashingsSchema(), this::randomProposerSlashing, 1))
                   .attesterSlashings(
                       randomSszList(
-                          schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1))
+                          schema.getAttesterSlashingsSchema(),
+                          () -> randomAttesterSlashingAtSlot(slot),
+                          1))
                   .attestations(
-                      randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3))
+                      randomSszList(
+                          schema.getAttestationsSchema(), () -> randomAttestation(slot), 3))
                   .deposits(
                       randomSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1))
                   .voluntaryExits(
@@ -1540,7 +1550,7 @@ public final class DataStructureUtil {
   public IndexedAttestation randomIndexedAttestation(
       final AttestationData data, final UInt64... attestingIndicesInput) {
     final IndexedAttestationSchema indexedAttestationSchema =
-        spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
+        spec.atSlot(data.getSlot()).getSchemaDefinitions().getIndexedAttestationSchema();
     final SszUInt64List attestingIndices =
         indexedAttestationSchema.getAttestingIndicesSchema().of(attestingIndicesInput);
     return indexedAttestationSchema.create(attestingIndices, data, randomSignature());
@@ -2251,6 +2261,23 @@ public final class DataStructureUtil {
         .build();
   }
 
+  public BlobSidecar randomBlobSidecarWithValidInclusionProofForBlock(
+      final SignedBeaconBlock signedBeaconBlock, final int index) {
+    return new RandomBlobSidecarBuilder()
+        .signedBeaconBlockHeader(signedBeaconBlock.asHeader())
+        .index(UInt64.valueOf(index))
+        .kzgCommitment(
+            BeaconBlockBodyDeneb.required(signedBeaconBlock.getMessage().getBody())
+                .getBlobKzgCommitments()
+                .get(index)
+                .getKZGCommitment()
+                .getBytesCompressed())
+        .kzgCommitmentInclusionProof(
+            validKzgCommitmentInclusionProof(
+                UInt64.valueOf(index), signedBeaconBlock.getBeaconBlock().orElseThrow().getBody()))
+        .build();
+  }
+
   public List<Blob> randomBlobs(final int count, final UInt64 slot) {
     final List<Blob> blobs = new ArrayList<>();
     final BlobSchema blobSchema = getDenebSchemaDefinitions(slot).getBlobSchema();
@@ -2483,6 +2510,12 @@ public final class DataStructureUtil {
     return IntStream.range(0, depth).mapToObj(__ -> randomBytes32()).toList();
   }
 
+  public List<Bytes32> validKzgCommitmentInclusionProof(
+      final UInt64 blobIndex, final BeaconBlockBody beaconBlockBody) {
+    return MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers())
+        .computeKzgCommitmentInclusionProof(blobIndex, beaconBlockBody);
+  }
+
   public SszList<SszKZGCommitment> randomBlobKzgCommitments() {
     // use MAX_BLOBS_PER_BLOCK as a limit
     return randomBlobKzgCommitments(randomNumberOfBlobsPerBlock());
@@ -2622,8 +2655,8 @@ public final class DataStructureUtil {
     return getConstant(SpecConfig::getJustificationBitsLength);
   }
 
-  private int getMaxValidatorsPerCommittee() {
-    if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+  private int getMaxValidatorsPerCommittee(final UInt64 slot) {
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
       return getConstant(SpecConfig::getMaxValidatorsPerCommittee)
           * getConstant(SpecConfig::getMaxCommitteesPerSlot);
     }

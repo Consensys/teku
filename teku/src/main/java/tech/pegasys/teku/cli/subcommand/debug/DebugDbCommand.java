@@ -259,6 +259,7 @@ public class DebugDbCommand implements Runnable {
               .map(
                   storeData ->
                       StoreBuilder.create()
+                          .asyncRunner(asyncRunner)
                           .onDiskStoreData(storeData)
                           .metricsSystem(new NoOpMetricsSystem())
                           .specProvider(eth2NetworkOptions.getNetworkConfiguration().getSpec())

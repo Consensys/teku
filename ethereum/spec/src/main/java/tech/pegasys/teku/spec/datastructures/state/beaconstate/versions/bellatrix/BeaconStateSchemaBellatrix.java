@@ -47,16 +47,17 @@ public class BeaconStateSchemaBellatrix
   }
 
   public static List<SszField> getUniqueFields(final SpecConfig specConfig) {
-    final SszField latestExecutionPayloadHeaderField =
-        new SszField(
-            LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
-            BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
-            () ->
-                new ExecutionPayloadHeaderSchemaBellatrix(
-                    SpecConfigBellatrix.required(specConfig)));
+    final List<SszField> newFields =
+        List.of(
+            new SszField(
+                LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
+                BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
+                () ->
+                    new ExecutionPayloadHeaderSchemaBellatrix(
+                        SpecConfigBellatrix.required(specConfig))));
+
     return Stream.concat(
-            BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
-            Stream.of(latestExecutionPayloadHeaderField))
+            BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(), newFields.stream())
         .toList();
   }
 

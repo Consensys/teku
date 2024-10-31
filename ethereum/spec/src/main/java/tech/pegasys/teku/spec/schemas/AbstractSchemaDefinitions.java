@@ -43,7 +43,7 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
     this.attnetsENRFieldSchema = schemaRegistry.get(ATTNETS_ENR_FIELD_SCHEMA);
   }
 
-  abstract long getMaxValidatorPerAttestation(SpecConfig specConfig);
+  abstract long getMaxValidatorsPerAttestation(SpecConfig specConfig);
 
   @Override
   public SchemaRegistry getSchemaRegistry() {
