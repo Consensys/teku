@@ -15,47 +15,65 @@ package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
+import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 
+@TestSpecContext(milestone = {SpecMilestone.CAPELLA, SpecMilestone.DENEB, SpecMilestone.ELECTRA})
 public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegrationTest {
 
-  @Test
+  private Eth2Peer peer;
+  private SpecMilestone specMilestone;
+
+  @BeforeEach
+  public void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
+    peer = createPeer(specContext.getSpec());
+    specMilestone = specContext.getSpecMilestone();
+  }
+  @TestTemplate
   public void requestBlobSidecars_shouldFailBeforeDenebMilestone() {
-    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalCapella());
+    assumeThat(specMilestone).isLessThan(DENEB);
     assertThatThrownBy(() -> requestBlobSidecarsByRange(peer, UInt64.ONE, UInt64.valueOf(10)))
         .hasRootCauseInstanceOf(UnsupportedOperationException.class)
         .hasMessageContaining("BlobSidecarsByRange method is not supported");
   }
 
-  @Test
+  @TestTemplate
   public void requestBlobSidecars_shouldReturnEmptyBlobSidecarsOnDenebMilestone()
       throws ExecutionException, InterruptedException, TimeoutException {
-    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
     final List<BlobSidecar> blobSidecars =
         requestBlobSidecarsByRange(peer, UInt64.ONE, UInt64.valueOf(10));
     assertThat(blobSidecars).isEmpty();
   }
 
-  @Test
+  @TestTemplate
   public void requestBlobSidecars_shouldReturnEmptyBlobSidecarsWhenCountIsZero()
       throws ExecutionException, InterruptedException, TimeoutException {
-    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
-
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
     // finalize chain 2 blobs per block
     finalizeChainWithBlobs(2);
 
@@ -65,11 +83,10 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
     assertThat(blobSidecars).isEmpty();
   }
 
-  @Test
+  @TestTemplate
   public void requestBlobSidecars_shouldReturnCanonicalBlobSidecarsOnDenebMilestone()
       throws ExecutionException, InterruptedException, TimeoutException {
-    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
-
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
     // finalize chain 2 blobs per block
     finalizeChainWithBlobs(2);
 
