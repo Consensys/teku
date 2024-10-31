@@ -90,7 +90,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final BlobSidecar blobSidecar1_0 =
         dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(
             dataStructureUtil.randomSignedBeaconBlock(ONE), 0);
-    final BlobSidecar blobSidecar1_0_modified = breakInclusionProof(spec, blobSidecar1_0);
+    final BlobSidecar blobSidecar1_0_modified = breakInclusionProof(blobSidecar1_0);
 
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar1_0_modified);
     assertThat(result).isCompletedExceptionally();

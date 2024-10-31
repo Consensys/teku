@@ -22,61 +22,56 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @SuppressWarnings("JavaCase")
+@TestSpecContext(milestone = {SpecMilestone.DENEB, SpecMilestone.ELECTRA})
 public class BlobSidecarsByRootValidatorTest {
-  private final Spec spec = TestSpecFactory.createMainnetDeneb();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+  private final UInt64 currentForkEpoch = UInt64.valueOf(1);
+
+  private Spec spec;
+  private DataStructureUtil dataStructureUtil;
   private BlobSidecarsByRootValidator validator;
+  private UInt64 currentForkFirstSlot;
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final KZG kzg = mock(KZG.class);
 
   @BeforeEach
-  void setUp() {
+  void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
+    spec =
+        switch (specContext.getSpecMilestone()) {
+          case PHASE0 -> throw new IllegalArgumentException("Phase0 is an unsupported milestone");
+          case ALTAIR -> throw new IllegalArgumentException("Altair is an unsupported milestone");
+          case BELLATRIX ->
+              throw new IllegalArgumentException("Bellatrix is an unsupported milestone");
+          case CAPELLA -> throw new IllegalArgumentException("Capella is an unsupported milestone");
+          case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(currentForkEpoch);
+          case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(currentForkEpoch);
+        };
+
+    currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
+
+    dataStructureUtil = new DataStructureUtil(spec);
     when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(true);
   }
 
-  public static BlobSidecar breakInclusionProof(final Spec spec, final BlobSidecar blobSidecar) {
-    final BlobSidecar blobSidecarModified =
-        SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
-            .getBlobSidecarSchema()
-            .create(
-                blobSidecar.getIndex(),
-                blobSidecar.getBlob(),
-                blobSidecar.getKZGCommitment(),
-                blobSidecar.getKZGProof(),
-                blobSidecar.getSignedBeaconBlockHeader(),
-                IntStream.range(0, blobSidecar.getKzgCommitmentInclusionProof().size())
-                    .mapToObj(
-                        index -> {
-                          if (index == 0) {
-                            return blobSidecar
-                                .getKzgCommitmentInclusionProof()
-                                .get(index)
-                                .get()
-                                .not();
-                          } else {
-                            return blobSidecar.getKzgCommitmentInclusionProof().get(index).get();
-                          }
-                        })
-                    .toList());
-    return blobSidecarModified;
-  }
-
-  @Test
+  @TestTemplate
   void blobSidecarIsCorrect() {
-    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+    final SignedBeaconBlock block1 =
+        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot);
     final BlobIdentifier blobIdentifier1_0 = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
     final BlobSidecar blobSidecar1_0 =
         dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);
@@ -85,9 +80,10 @@ public class BlobSidecarsByRootValidatorTest {
     assertDoesNotThrow(() -> validator.validate(blobSidecar1_0));
   }
 
-  @Test
+  @TestTemplate
   void blobSidecarIdentifierNotRequested() {
-    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+    final SignedBeaconBlock block1 =
+        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot);
     final BlobIdentifier blobIdentifier2_0 =
         new BlobIdentifier(dataStructureUtil.randomBytes32(), UInt64.ZERO);
     final BlobSidecar blobSidecar1_0 =
@@ -102,10 +98,11 @@ public class BlobSidecarsByRootValidatorTest {
                 .describe());
   }
 
-  @Test
+  @TestTemplate
   void blobSidecarFailsKzgVerification() {
     when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(false);
-    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+    final SignedBeaconBlock block1 =
+        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot);
     final BlobIdentifier blobIdentifier1_0 = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
     final BlobSidecar blobSidecar1_0 =
         dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);
@@ -119,13 +116,14 @@ public class BlobSidecarsByRootValidatorTest {
                 .describe());
   }
 
-  @Test
+  @TestTemplate
   void blobSidecarFailsInclusionProofVerification() {
-    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+    final SignedBeaconBlock block1 =
+        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot);
     final BlobIdentifier blobIdentifier1_0 = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
     final BlobSidecar blobSidecar1_0 =
         dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);
-    final BlobSidecar blobSidecar1_0_modified = breakInclusionProof(spec, blobSidecar1_0);
+    final BlobSidecar blobSidecar1_0_modified = breakInclusionProof(blobSidecar1_0);
 
     validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1_0));
     assertThatThrownBy(() -> validator.validate(blobSidecar1_0_modified))
@@ -136,9 +134,10 @@ public class BlobSidecarsByRootValidatorTest {
                 .describe());
   }
 
-  @Test
+  @TestTemplate
   void blobSidecarResponseWithDuplicateSidecar() {
-    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+    final SignedBeaconBlock block1 =
+        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot);
     final BlobIdentifier blobIdentifier1_0 = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
     final BlobSidecar blobSidecar1_0 =
         dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);
@@ -151,5 +150,26 @@ public class BlobSidecarsByRootValidatorTest {
             BlobSidecarsResponseInvalidResponseException.InvalidResponseType
                 .BLOB_SIDECAR_UNEXPECTED_IDENTIFIER
                 .describe());
+  }
+
+  public static BlobSidecar breakInclusionProof(final BlobSidecar blobSidecar) {
+    return blobSidecar
+        .getSchema()
+        .create(
+            blobSidecar.getIndex(),
+            blobSidecar.getBlob(),
+            blobSidecar.getKZGCommitment(),
+            blobSidecar.getKZGProof(),
+            blobSidecar.getSignedBeaconBlockHeader(),
+            IntStream.range(0, blobSidecar.getKzgCommitmentInclusionProof().size())
+                .mapToObj(
+                    index -> {
+                      if (index == 0) {
+                        return blobSidecar.getKzgCommitmentInclusionProof().get(index).get().not();
+                      } else {
+                        return blobSidecar.getKzgCommitmentInclusionProof().get(index).get();
+                      }
+                    })
+                .toList());
   }
 }
