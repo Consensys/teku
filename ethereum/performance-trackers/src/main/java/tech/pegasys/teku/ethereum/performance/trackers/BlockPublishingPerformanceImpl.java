@@ -67,6 +67,11 @@ public class BlockPublishingPerformanceImpl implements BlockPublishingPerformanc
   }
 
   @Override
+  public void blobSidecarsImportCompleted() {
+    performanceTracker.addEvent("blob_sidecars_imported");
+  }
+
+  @Override
   public void blockPublishingInitiated() {
     performanceTracker.addEvent("block_publishing_initiated");
   }

@@ -104,9 +104,7 @@ public class BlockFactoryPhase0 implements BlockFactory {
   }
 
   @Override
-  public List<BlobSidecar> createBlobSidecars(
-      final SignedBlockContainer blockContainer,
-      final BlockPublishingPerformance blockPublishingPerformance) {
+  public List<BlobSidecar> createBlobSidecars(final SignedBlockContainer blockContainer) {
     return Collections.emptyList();
   }
 }

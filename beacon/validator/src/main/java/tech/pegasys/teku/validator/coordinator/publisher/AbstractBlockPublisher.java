@@ -82,10 +82,7 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
             signedBlock ->
                 gossipAndImportUnblindedSignedBlockAndBlobSidecars(
                     signedBlock,
-                    Suppliers.memoize(
-                        () ->
-                            blockFactory.createBlobSidecars(
-                                blockContainer, blockPublishingPerformance)),
+                    Suppliers.memoize(() -> blockFactory.createBlobSidecars(blockContainer)),
                     broadcastValidationLevel,
                     blockPublishingPerformance))
         .thenCompose(result -> calculateResult(blockContainer, result, blockPublishingPerformance));

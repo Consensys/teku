@@ -77,8 +77,7 @@ public class AbstractBlockPublisherTest {
     when(blockPublisher.publishBlock(any(), any())).thenReturn(SafeFuture.COMPLETE);
     when(blockFactory.unblindSignedBlockIfBlinded(signedBlock, BlockPublishingPerformance.NOOP))
         .thenReturn(SafeFuture.completedFuture(signedBlock));
-    when(blockFactory.createBlobSidecars(signedBlockContents, BlockPublishingPerformance.NOOP))
-        .thenReturn(blobSidecars);
+    when(blockFactory.createBlobSidecars(signedBlockContents)).thenReturn(blobSidecars);
   }
 
   @Test

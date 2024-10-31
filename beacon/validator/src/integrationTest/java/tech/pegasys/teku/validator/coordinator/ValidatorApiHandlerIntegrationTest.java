@@ -166,7 +166,7 @@ public class ValidatorApiHandlerIntegrationTest {
                   .toList();
             })
         .when(blockFactory)
-        .createBlobSidecars(any(), any());
+        .createBlobSidecars(any());
 
     handler =
         new ValidatorApiHandler(

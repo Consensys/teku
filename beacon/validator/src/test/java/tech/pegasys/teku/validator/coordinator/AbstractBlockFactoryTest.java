@@ -377,8 +377,7 @@ public abstract class AbstractBlockFactoryTest {
     when(executionLayer.getCachedUnblindedPayload(signedBlockContainer.getSlot()))
         .thenReturn(builderPayload.map(BuilderPayloadOrFallbackData::create));
 
-    final List<BlobSidecar> blobSidecars =
-        blockFactory.createBlobSidecars(signedBlockContainer, BlockPublishingPerformance.NOOP);
+    final List<BlobSidecar> blobSidecars = blockFactory.createBlobSidecars(signedBlockContainer);
 
     return new BlockAndBlobSidecars(signedBlockContainer, blobSidecars);
   }

@@ -36,6 +36,9 @@ public interface BlockPublishingPerformance {
 
         @Override
         public void blockImportCompleted() {}
+
+        @Override
+        public void blobSidecarsImportCompleted() {}
       };
 
   void blobSidecarsPublishingInitiated();
@@ -45,6 +48,8 @@ public interface BlockPublishingPerformance {
   void builderGetPayload();
 
   void blobSidecarsPrepared();
+
+  void blobSidecarsImportCompleted();
 
   void blockImportCompleted();
 

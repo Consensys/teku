@@ -61,6 +61,7 @@ public class BlockPublisherDeneb extends BlockPublisherPhase0 {
         blobSidecar ->
             blockBlobSidecarsTrackersPool.onNewBlobSidecar(
                 blobSidecar, RemoteOrigin.LOCAL_PROPOSAL));
+    blockPublishingPerformance.blobSidecarsImportCompleted();
   }
 
   @Override
