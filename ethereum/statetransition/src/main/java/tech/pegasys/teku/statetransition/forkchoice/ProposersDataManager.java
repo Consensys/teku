@@ -237,9 +237,8 @@ public class ProposersDataManager implements SlotEventsChannel {
             .map(RegisteredValidatorInfo::getSignedValidatorRegistration);
 
     final Eth1Address feeRecipient = getFeeRecipient(proposerInfo, blockSlot);
+    final Optional<UInt64> maxBlobsPerBlock = spec.getMaxBlobsPerBlock().map(UInt64::valueOf);
 
-    // TODO EIP-7742 add targetBlobCount and maximumBlobCount
-    // (https://github.com/Consensys/teku/issues/8745)
     return Optional.of(
         new PayloadBuildingAttributes(
             proposerIndex,
@@ -250,8 +249,8 @@ public class ProposersDataManager implements SlotEventsChannel {
             validatorRegistration,
             spec.getExpectedWithdrawals(state),
             currentHeadBlockRoot,
-            Optional.empty(),
-            Optional.empty()));
+            maxBlobsPerBlock.map(maxBlobs -> maxBlobs.dividedBy(2)),
+            maxBlobsPerBlock));
   }
 
   // this function MUST return a fee recipient.
