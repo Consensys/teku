@@ -23,42 +23,67 @@ import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSide
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @SuppressWarnings("JavaCase")
+@TestSpecContext(milestone = {SpecMilestone.DENEB, SpecMilestone.ELECTRA})
 public class BlobSidecarsByRootListenerValidatingProxyTest {
-  private final Spec spec = TestSpecFactory.createMainnetDeneb();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private BlobSidecarsByRootListenerValidatingProxy listenerWrapper;
+
+  private final UInt64 currentForkEpoch = UInt64.valueOf(1);
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final KZG kzg = mock(KZG.class);
 
   @SuppressWarnings("unchecked")
   private final RpcResponseListener<BlobSidecar> listener = mock(RpcResponseListener.class);
 
+  private Spec spec;
+  private DataStructureUtil dataStructureUtil;
+  private UInt64 currentForkFirstSlot;
+  private BlobSidecarsByRootListenerValidatingProxy listenerWrapper;
+
   @BeforeEach
-  void setUp() {
+  void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
+    spec =
+        switch (specContext.getSpecMilestone()) {
+          case PHASE0 -> throw new IllegalArgumentException("Phase0 is an unsupported milestone");
+          case ALTAIR -> throw new IllegalArgumentException("Altair is an unsupported milestone");
+          case BELLATRIX ->
+              throw new IllegalArgumentException("Bellatrix is an unsupported milestone");
+          case CAPELLA -> throw new IllegalArgumentException("Capella is an unsupported milestone");
+          case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(currentForkEpoch);
+          case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(currentForkEpoch);
+        };
+    dataStructureUtil = new DataStructureUtil(spec);
+    currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
+
     when(listener.onResponse(any())).thenReturn(SafeFuture.completedFuture(null));
     when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(true);
   }
 
-  @Test
+  @TestTemplate
   void blobSidecarsAreCorrect() {
-    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
-    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(UInt64.valueOf(2));
-    final SignedBeaconBlock block3 = dataStructureUtil.randomSignedBeaconBlock(UInt64.valueOf(3));
-    final SignedBeaconBlock block4 = dataStructureUtil.randomSignedBeaconBlock(UInt64.valueOf(4));
+    final SignedBeaconBlock block1 =
+        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot);
+    final SignedBeaconBlock block2 =
+        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot.plus(1));
+    final SignedBeaconBlock block3 =
+        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot.plus(2));
+    final SignedBeaconBlock block4 =
+        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot.plus(3));
     final List<BlobIdentifier> blobIdentifiers =
         List.of(
             new BlobIdentifier(block1.getRoot(), UInt64.ZERO),
@@ -88,10 +113,12 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
     assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar4_0).join());
   }
 
-  @Test
+  @TestTemplate
   void blobSidecarIdentifierNotRequested() {
-    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
-    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(UInt64.valueOf(2));
+    final SignedBeaconBlock block1 =
+        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot);
+    final SignedBeaconBlock block2 =
+        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot.plus(1));
     final List<BlobIdentifier> blobIdentifiers =
         List.of(
             new BlobIdentifier(block1.getRoot(), UInt64.ZERO),
@@ -119,10 +146,11 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
                 .describe());
   }
 
-  @Test
+  @TestTemplate
   void blobSidecarFailsKzgVerification() {
     when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(false);
-    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+    final SignedBeaconBlock block1 =
+        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot);
     final BlobIdentifier blobIdentifier = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
     listenerWrapper =
         new BlobSidecarsByRootListenerValidatingProxy(
@@ -142,9 +170,10 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
                 .describe());
   }
 
-  @Test
+  @TestTemplate
   void blobSidecarFailsInclusionProofVerification() {
-    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+    final SignedBeaconBlock block1 =
+        dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot);
     final BlobIdentifier blobIdentifier = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
     listenerWrapper =
         new BlobSidecarsByRootListenerValidatingProxy(

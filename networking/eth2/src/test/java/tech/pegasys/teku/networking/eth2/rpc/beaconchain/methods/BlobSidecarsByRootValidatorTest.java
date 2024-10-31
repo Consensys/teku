@@ -41,13 +41,13 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class BlobSidecarsByRootValidatorTest {
 
   private final UInt64 currentForkEpoch = UInt64.valueOf(1);
+  private final Eth2Peer peer = mock(Eth2Peer.class);
+  private final KZG kzg = mock(KZG.class);
 
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
   private BlobSidecarsByRootValidator validator;
   private UInt64 currentForkFirstSlot;
-  private final Eth2Peer peer = mock(Eth2Peer.class);
-  private final KZG kzg = mock(KZG.class);
 
   @BeforeEach
   void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
@@ -63,7 +63,6 @@ public class BlobSidecarsByRootValidatorTest {
         };
 
     currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
-
     dataStructureUtil = new DataStructureUtil(spec);
     when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(true);
   }
