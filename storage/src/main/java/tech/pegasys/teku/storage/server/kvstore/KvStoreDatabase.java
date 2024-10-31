@@ -629,7 +629,10 @@ public class KvStoreDatabase implements Database {
                 .equals(maybeAnchor.get().getEpochStartSlot(spec));
     if (shouldIncludeAnchorBlock && !blockInformation.containsKey(maybeAnchor.get().getRoot())) {
       final Checkpoint anchor = maybeAnchor.orElseThrow();
-      final StateAndBlockSummary latestFinalized = StateAndBlockSummary.create(finalizedState);
+      // Use AnchorPoint to skip the verification `verifyStateAndBlockConsistency` which doesn't
+      // allow for state that has been transitioned with an empty block
+      final StateAndBlockSummary latestFinalized =
+          AnchorPoint.create(spec, finalizedCheckpoint, finalizedState, Optional.empty());
       if (!latestFinalized.getRoot().equals(anchor.getRoot())) {
         throw new IllegalStateException("Anchor state (" + anchor + ") is unavailable");
       }
