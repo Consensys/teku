@@ -29,7 +29,7 @@ public interface BlockPublishingPerformance {
         public void blobSidecarsPrepared() {}
 
         @Override
-        public void blockAndBlobSidecarsPublishingInitiated() {}
+        public void blobSidecarsPublishingInitiated() {}
 
         @Override
         public void blockPublishingInitiated() {}
@@ -38,7 +38,7 @@ public interface BlockPublishingPerformance {
         public void blockImportCompleted() {}
       };
 
-  void blockAndBlobSidecarsPublishingInitiated();
+  void blobSidecarsPublishingInitiated();
 
   void blockPublishingInitiated();
 
