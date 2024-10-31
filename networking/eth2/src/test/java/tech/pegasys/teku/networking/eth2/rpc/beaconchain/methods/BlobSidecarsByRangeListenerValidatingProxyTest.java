@@ -357,7 +357,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
             dataStructureUtil.randomSignedBeaconBlock(1), 0);
     final BlobSidecar blobSidecar2_1 =
         dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(
-            dataStructureUtil.randomSignedBeaconBlock(2, blobSidecar1_0.getBlockRoot()), 1);
+            dataStructureUtil.randomSignedBeaconBlock(2, blobSidecar1_0.getBlockRoot(), true), 1);
 
     assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar1_0).join());
 
