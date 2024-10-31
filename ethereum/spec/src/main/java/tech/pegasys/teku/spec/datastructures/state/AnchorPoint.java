@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -59,7 +60,9 @@ public class AnchorPoint extends StateAndBlockSummary {
       BeaconState state,
       Optional<SignedBeaconBlock> block) {
     final BeaconBlockSummary blockSummary =
-        block.<BeaconBlockSummary>map(a -> a).orElseGet(() -> BeaconBlockHeader.fromState(state));
+        block
+            .<BeaconBlockSummary>map(Function.identity())
+            .orElseGet(() -> BeaconBlockHeader.fromState(state));
     return new AnchorPoint(spec, checkpoint, state, blockSummary);
   }
 
@@ -93,7 +96,7 @@ public class AnchorPoint extends StateAndBlockSummary {
     } else {
       final BeaconBlockHeader header = BeaconBlockHeader.fromState(state);
 
-      // Calculate closest epoch boundary to use for the checkpoint
+      // Calculate the closest epoch boundary to use for the checkpoint
       final UInt64 epoch = spec.computeNextEpochBoundary(state.getSlot());
       final Checkpoint checkpoint = new Checkpoint(epoch, header.hashTreeRoot());
 
@@ -132,7 +135,7 @@ public class AnchorPoint extends StateAndBlockSummary {
 
   private void verifyAnchor() {
     final UInt64 blockSlot = blockSummary.getSlot();
-    if (state.getSlot().isGreaterThan(blockSlot)) {
+    if (isTransitioned) {
       // the finalized state is transitioned with empty slot(s)
       checkArgument(
           blockSummary.getStateRoot().equals(state.getLatestBlockHeader().getStateRoot()),
