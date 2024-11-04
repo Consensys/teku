@@ -18,6 +18,7 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.Supplier;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
@@ -39,6 +40,7 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
       new EnumMap<>(SpecMilestone.class);
 
   public MilestoneBasedBlockPublisher(
+      final AsyncRunner asyncRunner,
       final Spec spec,
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
@@ -46,24 +48,33 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final BlobSidecarGossipChannel blobSidecarGossipChannel,
       final PerformanceTracker performanceTracker,
-      final DutyMetrics dutyMetrics) {
+      final DutyMetrics dutyMetrics,
+      final boolean gossipBlobsAfterBlock) {
     this.spec = spec;
     final BlockPublisherPhase0 blockPublisherPhase0 =
         new BlockPublisherPhase0(
-            blockFactory, blockGossipChannel, blockImportChannel, performanceTracker, dutyMetrics);
+            asyncRunner,
+            blockFactory,
+            blockGossipChannel,
+            blockImportChannel,
+            performanceTracker,
+            dutyMetrics,
+            gossipBlobsAfterBlock);
 
     // Not needed for all milestones
     final Supplier<BlockPublisherDeneb> blockAndBlobSidecarsPublisherSupplier =
         Suppliers.memoize(
             () ->
                 new BlockPublisherDeneb(
+                    asyncRunner,
                     blockFactory,
                     blockImportChannel,
                     blockGossipChannel,
                     blockBlobSidecarsTrackersPool,
                     blobSidecarGossipChannel,
                     performanceTracker,
-                    dutyMetrics));
+                    dutyMetrics,
+                    gossipBlobsAfterBlock));
 
     // Populate forks publishers
     spec.getEnabledMilestones()

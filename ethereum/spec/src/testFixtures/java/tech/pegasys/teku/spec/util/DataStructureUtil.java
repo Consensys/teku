@@ -893,13 +893,20 @@ public final class DataStructureUtil {
   }
 
   public AttesterSlashing randomAttesterSlashing() {
-    return randomAttesterSlashing(randomUInt64(), randomUInt64(), randomUInt64());
+    return randomAttesterSlashing(
+        randomSlot().longValue(), randomUInt64(), randomUInt64(), randomUInt64());
   }
 
   public AttesterSlashing randomAttesterSlashing(final UInt64... attestingIndices) {
+    return randomAttesterSlashing(randomSlot().longValue(), attestingIndices);
+  }
+
+  public AttesterSlashing randomAttesterSlashing(
+      final long slot, final UInt64... attestingIndices) {
     IndexedAttestation attestation1 = randomIndexedAttestation(attestingIndices);
     IndexedAttestation attestation2 = randomIndexedAttestation(attestingIndices);
-    return spec.getGenesisSchemaDefinitions()
+    return spec.atSlot(UInt64.valueOf(slot))
+        .getSchemaDefinitions()
         .getAttesterSlashingSchema()
         .create(attestation1, attestation2);
   }
@@ -1254,7 +1261,8 @@ public final class DataStructureUtil {
   public BeaconBlock randomBeaconBlock(
       final UInt64 slot, final Bytes32 parentRoot, final Bytes32 stateRoot, final boolean isFull) {
     final UInt64 proposerIndex = randomUInt64();
-    final BeaconBlockBody body = !isFull ? randomBeaconBlockBody() : randomFullBeaconBlockBody();
+    final BeaconBlockBody body =
+        !isFull ? randomBeaconBlockBody(slot) : randomFullBeaconBlockBody(slot);
 
     return new BeaconBlock(
         spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockSchema(),
@@ -1464,14 +1472,14 @@ public final class DataStructureUtil {
         .join();
   }
 
-  public BeaconBlockBody randomFullBeaconBlockBody() {
-    return randomFullBeaconBlockBody(__ -> {});
+  public BeaconBlockBody randomFullBeaconBlockBody(final UInt64 slot) {
+    return randomFullBeaconBlockBody(slot, __ -> {});
   }
 
   public BeaconBlockBody randomFullBeaconBlockBody(
-      final Consumer<BeaconBlockBodyBuilder> builderModifier) {
+      final UInt64 slot, final Consumer<BeaconBlockBodyBuilder> builderModifier) {
     final BeaconBlockBodySchema<?> schema =
-        spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
+        spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
     return schema
         .createBlockBody(
             builder -> {
@@ -1484,9 +1492,10 @@ public final class DataStructureUtil {
                           schema.getProposerSlashingsSchema(), this::randomProposerSlashing))
                   .attesterSlashings(
                       randomFullSszList(
-                          schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing))
+                          schema.getAttesterSlashingsSchema(), () -> randomAttesterSlashing(slot)))
                   .attestations(
-                      randomFullSszList(schema.getAttestationsSchema(), this::randomAttestation))
+                      randomFullSszList(
+                          schema.getAttestationsSchema(), () -> randomAttestation(slot)))
                   .deposits(
                       randomFullSszList(
                           schema.getDepositsSchema(), this::randomDepositWithoutIndex))
