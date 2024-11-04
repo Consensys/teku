@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedExecutionPayloadEnvelopeAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -57,6 +58,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected Optional<UInt64> earliestBlobSidecarSlot;
   protected Optional<Bytes32> latestCanonicalBlockRoot;
   protected Optional<Bytes32> proposerBoostRoot = Optional.empty();
+  protected Optional<Bytes32> payloadWithholdBoostRoot = Optional.empty();
+  protected Optional<Bytes32> payloadRevealBoostRoot = Optional.empty();
   protected final TestReadOnlyForkChoiceStrategy forkChoiceStrategy =
       new TestReadOnlyForkChoiceStrategy();
 
@@ -305,6 +308,12 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public void putExecutionPayloadEnvelopeAndState(
+      final SignedExecutionPayloadEnvelopeAndState executionPayloadEnvelopeAndState) {
+    // EIP-7732 TODO: implement
+  }
+
+  @Override
   public void putStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
     // NO-OP
   }
@@ -355,11 +364,31 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public void setPayloadWithholdBoostRoot(final Bytes32 payloadWithholdBoostRoot) {
+    this.payloadWithholdBoostRoot = Optional.of(payloadWithholdBoostRoot);
+  }
+
+  @Override
+  public void setPayloadRevealBoostRoot(final Bytes32 payloadRevealBoostRoot) {
+    this.payloadRevealBoostRoot = Optional.of(payloadRevealBoostRoot);
+  }
+
+  @Override
   public void removeFinalizedOptimisticTransitionPayload() {}
 
   @Override
   public void removeProposerBoostRoot() {
     proposerBoostRoot = Optional.empty();
+  }
+
+  @Override
+  public void removePayloadWithholdBoostRoot() {
+    payloadWithholdBoostRoot = Optional.empty();
+  }
+
+  @Override
+  public void removePayloadRevealBoostRoot() {
+    payloadRevealBoostRoot = Optional.empty();
   }
 
   @Override

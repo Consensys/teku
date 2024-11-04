@@ -126,7 +126,6 @@ public class StoreBuilder {
           finalizedOptimisticTransitionPayload,
           justifiedCheckpoint,
           bestJustifiedCheckpoint,
-          blockInfoByRoot,
           votes,
           storeConfig,
           forkChoiceStrategy);

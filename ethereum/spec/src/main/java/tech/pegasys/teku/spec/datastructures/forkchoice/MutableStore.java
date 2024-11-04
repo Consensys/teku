@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedExecutionPayloadEnvelopeAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -67,6 +68,9 @@ public interface MutableStore extends ReadOnlyStore {
         Optional.empty());
   }
 
+  void putExecutionPayloadEnvelopeAndState(
+      final SignedExecutionPayloadEnvelopeAndState executionPayloadEnvelopeAndState);
+
   void putStateRoot(Bytes32 stateRoot, SlotAndBlockRoot slotAndBlockRoot);
 
   void pullUpBlockCheckpoints(Bytes32 blockRoot);
@@ -85,7 +89,15 @@ public interface MutableStore extends ReadOnlyStore {
 
   void setLatestCanonicalBlockRoot(Bytes32 latestCanonicalBlockRoot);
 
+  void setPayloadWithholdBoostRoot(Bytes32 payloadWithholdBoostRoot);
+
+  void setPayloadRevealBoostRoot(Bytes32 payloadRevealBoostRoot);
+
   void removeProposerBoostRoot();
+
+  void removePayloadWithholdBoostRoot();
+
+  void removePayloadRevealBoostRoot();
 
   void removeFinalizedOptimisticTransitionPayload();
 }

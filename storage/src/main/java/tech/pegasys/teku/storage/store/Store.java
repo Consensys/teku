@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -120,6 +121,13 @@ class Store extends CacheableStore {
   private UInt64 reorgThreshold = UInt64.ZERO;
   private UInt64 parentThreshold = UInt64.ZERO;
 
+  // ePBS
+  private Optional<Bytes32> payloadWithholdBoostRoot = Optional.empty();
+  private boolean payloadWithholdBoostFull = false;
+  private Optional<Bytes32> payloadRevealBoostRoot = Optional.empty();
+  private final CachingTaskQueue<Bytes32, StateAndExecutionPayloadSummary> executionPayloadStates;
+  private Map<Bytes32, List<Byte>> ptcVote;
+
   private Store(
       final MetricsSystem metricsSystem,
       final Spec spec,
@@ -140,7 +148,8 @@ class Store extends CacheableStore {
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates,
       final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates,
-      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars) {
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
+      final CachingTaskQueue<Bytes32, StateAndExecutionPayloadSummary> executionPayloadStates) {
     checkArgument(
         time.isGreaterThanOrEqualTo(genesisTime),
         "Time must be greater than or equal to genesisTime");
@@ -190,6 +199,12 @@ class Store extends CacheableStore {
             blockProvider);
 
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
+
+    // ePBS
+    this.payloadWithholdBoostFull = true;
+    this.executionPayloadStates = executionPayloadStates;
+    states.cache(finalizedAnchor.getRoot(), finalizedAnchor);
+    ptcVote.put(finalizedAnchor.getRoot(), new ArrayList<>());
   }
 
   private BlockProvider createBlockProviderFromMapWhileLocked(
@@ -221,7 +236,6 @@ class Store extends CacheableStore {
       final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
-      final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
       final Map<UInt64, VoteTracker> votes,
       final StoreConfig config,
       final ForkChoiceStrategy forkChoiceStrategy) {
@@ -242,6 +256,14 @@ class Store extends CacheableStore {
             : Optional.empty();
     final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars =
         LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
+    // ePBS
+    final CachingTaskQueue<Bytes32, StateAndExecutionPayloadSummary>
+        executionPayloadStateTaskQueue =
+            CachingTaskQueue.create(
+                asyncRunner,
+                metricsSystem,
+                "memory_execution_payload_states",
+                config.getStateCacheSize());
 
     return new Store(
         metricsSystem,
@@ -263,7 +285,8 @@ class Store extends CacheableStore {
         blocks,
         checkpointStateTaskQueue,
         maybeEpochStates,
-        blobSidecars);
+        blobSidecars,
+        executionPayloadStateTaskQueue);
   }
 
   public static UpdatableStore create(
@@ -311,7 +334,6 @@ class Store extends CacheableStore {
         finalizedOptimisticTransitionPayload,
         justifiedCheckpoint,
         bestJustifiedCheckpoint,
-        blockInfoByRoot,
         votes,
         config,
         forkChoiceStrategy);
@@ -785,8 +807,26 @@ class Store extends CacheableStore {
 
   /** Non-synchronized, no lock, unsafe if Store is not locked externally */
   @Override
+  void cachePayloadWithholdBoostRoot(final Optional<Bytes32> payloadWithholdBoostRoot) {
+    this.payloadWithholdBoostRoot = payloadWithholdBoostRoot;
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cachePayloadRevealBoostRoot(final Optional<Bytes32> payloadRevealBoostRoot) {
+    this.payloadRevealBoostRoot = payloadRevealBoostRoot;
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
   void cacheStates(final Map<Bytes32, StateAndBlockSummary> stateAndBlockSummaries) {
     states.cacheAll(stateAndBlockSummaries);
+  }
+
+  @Override
+  void cacheExecutionPayloadStates(
+      final Map<Bytes32, StateAndExecutionPayloadSummary> stateAndExecutionPayloadSummaries) {
+    executionPayloadStates.cacheAll(stateAndExecutionPayloadSummaries);
   }
 
   /** Non-synchronized, no lock, unsafe if Store is not locked externally */
