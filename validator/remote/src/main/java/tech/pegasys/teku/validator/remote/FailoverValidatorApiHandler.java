@@ -266,7 +266,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final ValidatorApiChannel blockCreatorApiChannel =
           blindedBlockCreatorCache.remove(slotAndBlockRoot);
       LOG.info(
-          "Block for slot {} and block {} was blinded and will only be sent to the beacon node which created it.",
+          "Block for slot {} and root {} was blinded and will only be sent to the beacon node which created it.",
           slotAndBlockRoot.getSlot(),
           slotAndBlockRoot.getBlockRoot().toHexString());
       return blockCreatorApiChannel.sendSignedBlock(blockContainer, broadcastValidationLevel);
