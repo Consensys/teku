@@ -92,6 +92,15 @@ public class StubMetricsSystem implements MetricsSystem {
         .computeIfAbsent(name, __ -> new StubLabelledOperationTimer(category, name, help));
   }
 
+  @Override
+  public LabelledMetric<OperationTimer> createSimpleLabelledTimer(
+      final MetricCategory category,
+      final String name,
+      final String help,
+      final String... labelNames) {
+    return createLabelledTimer(category, name, help, labelNames);
+  }
+
   public StubGauge getGauge(final MetricCategory category, final String name) {
     validateMetricName(name);
     return Optional.ofNullable(gauges.get(category))
