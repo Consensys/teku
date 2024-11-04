@@ -126,9 +126,7 @@ public class BlobSidecarsByRangeMessageHandler
     final SpecMilestone latestMilestoneRequested =
         spec.getForkSchedule().getSpecMilestoneAtSlot(endSlot);
     final MiscHelpers miscHelpers = spec.forMilestone(latestMilestoneRequested).miscHelpers();
-    final int maxRequestBlobSidecars = miscHelpers.getMaxRequestBlobSidecars();
-    final int maxBlobsPerBlock = miscHelpers.getMaxBlobsPerBlock();
-    final long requestedCount = calculateRequestedCount(message, maxBlobsPerBlock);
+    final long requestedCount = calculateRequestedCount(message, miscHelpers.getMaxBlobsPerBlock());
 
     final Optional<RequestApproval> blobSidecarsRequestApproval =
         peer.approveBlobSidecarsRequest(callback, requestedCount);
@@ -169,7 +167,7 @@ public class BlobSidecarsByRangeMessageHandler
               } else {
                 canonicalHotRoots = ImmutableSortedMap.of();
               }
-
+              final int maxRequestBlobSidecars = miscHelpers.getMaxRequestBlobSidecars();
               final RequestState initialState =
                   new RequestState(
                       callback,
