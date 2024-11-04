@@ -18,7 +18,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
-import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -69,12 +68,8 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
   }
 
   @Override
-  public List<BlobSidecar> createBlobSidecars(
-      final SignedBlockContainer blockContainer,
-      final BlockPublishingPerformance blockPublishingPerformance) {
-    return operationSelector
-        .createBlobSidecarsSelector(blockPublishingPerformance)
-        .apply(blockContainer);
+  public List<BlobSidecar> createBlobSidecars(final SignedBlockContainer blockContainer) {
+    return operationSelector.createBlobSidecarsSelector().apply(blockContainer);
   }
 
   private BlockContents createBlockContents(

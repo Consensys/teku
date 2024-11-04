@@ -775,9 +775,7 @@ class BlockOperationSelectorFactoryTest {
         MiscHelpersDeneb.required(spec.atSlot(signedBlockContents.getSlot()).miscHelpers());
 
     final List<BlobSidecar> blobSidecars =
-        factory
-            .createBlobSidecarsSelector(BlockPublishingPerformance.NOOP)
-            .apply(signedBlockContents);
+        factory.createBlobSidecarsSelector().apply(signedBlockContents);
 
     final SszList<Blob> expectedBlobs = signedBlockContents.getBlobs().orElseThrow();
     final SszList<SszKZGProof> expectedProofs = signedBlockContents.getKzgProofs().orElseThrow();
@@ -821,11 +819,7 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomExecutionPayload(),
         blobsBundle);
 
-    assertThatThrownBy(
-            () ->
-                factory
-                    .createBlobSidecarsSelector(BlockPublishingPerformance.NOOP)
-                    .apply(signedBlindedBeaconBlock))
+    assertThatThrownBy(() -> factory.createBlobSidecarsSelector().apply(signedBlindedBeaconBlock))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
             "Commitments in the builder BlobsBundle don't match the commitments in the block");
@@ -846,11 +840,7 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomExecutionPayload(),
         blobsBundle);
 
-    assertThatThrownBy(
-            () ->
-                factory
-                    .createBlobSidecarsSelector(BlockPublishingPerformance.NOOP)
-                    .apply(signedBlindedBeaconBlock))
+    assertThatThrownBy(() -> factory.createBlobSidecarsSelector().apply(signedBlindedBeaconBlock))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
             "The number of blobs in the builder BlobsBundle doesn't match the number of commitments in the block");
@@ -871,11 +861,7 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomExecutionPayload(),
         blobsBundle);
 
-    assertThatThrownBy(
-            () ->
-                factory
-                    .createBlobSidecarsSelector(BlockPublishingPerformance.NOOP)
-                    .apply(signedBlindedBeaconBlock))
+    assertThatThrownBy(() -> factory.createBlobSidecarsSelector().apply(signedBlindedBeaconBlock))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
             "The number of proofs in the builder BlobsBundle doesn't match the number of commitments in the block");
@@ -908,9 +894,7 @@ class BlockOperationSelectorFactoryTest {
     }
 
     final List<BlobSidecar> blobSidecars =
-        factory
-            .createBlobSidecarsSelector(BlockPublishingPerformance.NOOP)
-            .apply(signedBlindedBeaconBlock);
+        factory.createBlobSidecarsSelector().apply(signedBlindedBeaconBlock);
 
     final SszList<Blob> expectedBlobs = blobsBundle.getBlobs();
     final SszList<SszKZGProof> expectedProofs = blobsBundle.getProofs();
