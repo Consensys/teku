@@ -45,26 +45,17 @@ import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnv
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderSchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage.ExecutionPayloadEnvelopesByRootRequestMessageSchema;
-import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateEip7732;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateSchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.MutableBeaconStateEip7732;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
-import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
 public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
-  private final AttestationSchema<Attestation> attestationSchema;
-  private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
-  private final AggregateAndProofSchema aggregateAndProofSchema;
-
   private final BeaconStateSchemaEip7732 beaconStateSchema;
 
   private final ExecutionPayloadHeaderSchemaEip7732 executionPayloadHeaderSchemaEip7732;
@@ -100,10 +91,6 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
     final SpecConfigEip7732 specConfig = SpecConfigEip7732.required(schemaRegistry.getSpecConfig());
 
     final long maxValidatorsPerAttestation = getMaxValidatorPerAttestation(specConfig);
-
-    this.attestationSchema = schemaRegistry.get(SchemaTypes.ATTESTATION_SCHEMA);
-    this.aggregateAndProofSchema = new AggregateAndProofSchema(attestationSchema);
-    this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(aggregateAndProofSchema);
 
     this.beaconStateSchema = BeaconStateSchemaEip7732.create(specConfig);
     this.executionPayloadHeaderSchemaEip7732 =
@@ -186,23 +173,8 @@ public class SchemaDefinitionsEip7732 extends SchemaDefinitionsElectra {
   }
 
   @Override
-  public SignedAggregateAndProofSchema getSignedAggregateAndProofSchema() {
-    return signedAggregateAndProofSchema;
-  }
-
-  @Override
   public BlobSidecarSchema getBlobSidecarSchema() {
     return blobSidecarSchema;
-  }
-
-  @Override
-  public AggregateAndProofSchema getAggregateAndProofSchema() {
-    return aggregateAndProofSchema;
-  }
-
-  @Override
-  public AttestationSchema<Attestation> getAttestationSchema() {
-    return attestationSchema;
   }
 
   @Override
