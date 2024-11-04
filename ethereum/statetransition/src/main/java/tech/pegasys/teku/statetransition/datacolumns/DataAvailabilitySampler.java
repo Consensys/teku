@@ -17,7 +17,6 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 
 public interface DataAvailabilitySampler {
@@ -32,7 +31,7 @@ public interface DataAvailabilitySampler {
   DataAvailabilitySampler NOOP =
       new DataAvailabilitySampler() {
         @Override
-        public SafeFuture<List<DataColumnSidecar>> checkDataAvailability(
+        public SafeFuture<List<UInt64>> checkDataAvailability(
             UInt64 slot, Bytes32 blockRoot, Bytes32 parentRoot) {
           return SafeFuture.completedFuture(List.of());
         }
@@ -43,7 +42,7 @@ public interface DataAvailabilitySampler {
         }
       };
 
-  SafeFuture<List<DataColumnSidecar>> checkDataAvailability(
+  SafeFuture<List<UInt64>> checkDataAvailability(
       UInt64 slot, Bytes32 blockRoot, Bytes32 parentRoot);
 
   SamplingEligibilityStatus checkSamplingEligibility(BeaconBlock block);

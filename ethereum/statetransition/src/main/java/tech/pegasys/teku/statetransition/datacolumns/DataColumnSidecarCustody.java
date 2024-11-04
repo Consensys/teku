@@ -20,8 +20,23 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 public interface DataColumnSidecarCustody {
 
-  DataColumnSidecarCustody NOOP = (__) -> SafeFuture.completedFuture(Optional.empty());
+  DataColumnSidecarCustody NOOP =
+      new DataColumnSidecarCustody() {
+        @Override
+        public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecar(
+            DataColumnSlotAndIdentifier columnId) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
+        public SafeFuture<Boolean> hasCustodyDataColumnSidecar(
+            DataColumnSlotAndIdentifier columnId) {
+          return SafeFuture.completedFuture(false);
+        }
+      };
 
   SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecar(
       DataColumnSlotAndIdentifier columnId);
+
+  SafeFuture<Boolean> hasCustodyDataColumnSidecar(DataColumnSlotAndIdentifier columnId);
 }

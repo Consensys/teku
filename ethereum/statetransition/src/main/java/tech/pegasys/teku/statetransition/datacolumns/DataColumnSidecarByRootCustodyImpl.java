@@ -86,6 +86,11 @@ public class DataColumnSidecarByRootCustodyImpl
     return custody.getCustodyDataColumnSidecar(columnId);
   }
 
+  @Override
+  public SafeFuture<Boolean> hasCustodyDataColumnSidecar(DataColumnSlotAndIdentifier columnId) {
+    return custody.hasCustodyDataColumnSidecar(columnId);
+  }
+
   private static class ColumnSlotCache {
     private final Map<Bytes32, UInt64> blockRootToSlot = new HashMap<>();
     private final NavigableMap<UInt64, Bytes32> slotToBlockRoot = new TreeMap<>();
