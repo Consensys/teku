@@ -33,7 +33,7 @@ public class PayloadAttributesV4 extends PayloadAttributesV3 {
 
   @JsonSerialize(using = UInt64AsHexSerializer.class)
   @JsonDeserialize(using = UInt64AsHexDeserializer.class)
-  public final UInt64 targetBlockCount;
+  public final UInt64 targetBlobCount;
 
   @JsonSerialize(using = UInt64AsHexSerializer.class)
   @JsonDeserialize(using = UInt64AsHexDeserializer.class)
@@ -45,13 +45,13 @@ public class PayloadAttributesV4 extends PayloadAttributesV3 {
       final @JsonProperty("suggestedFeeRecipient") Bytes20 suggestedFeeRecipient,
       final @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals,
       final @JsonProperty("parentBeaconBlockRoot") Bytes32 parentBeaconBlockRoot,
-      final @JsonProperty("targetBlobCount") UInt64 targetBlockCount,
+      final @JsonProperty("targetBlobCount") UInt64 targetBlobCount,
       final @JsonProperty("maximumBlobCount") UInt64 maximumBlobCount) {
     super(timestamp, prevRandao, suggestedFeeRecipient, withdrawals, parentBeaconBlockRoot);
 
-    checkNotNull(targetBlockCount, "targetBlockCount");
+    checkNotNull(targetBlobCount, "targetBlobCount");
     checkNotNull(maximumBlobCount, "maximumBlobCount");
-    this.targetBlockCount = targetBlockCount;
+    this.targetBlobCount = targetBlobCount;
     this.maximumBlobCount = maximumBlobCount;
   }
 
@@ -91,13 +91,13 @@ public class PayloadAttributesV4 extends PayloadAttributesV3 {
       return false;
     }
     final PayloadAttributesV4 that = (PayloadAttributesV4) o;
-    return Objects.equals(targetBlockCount, that.targetBlockCount)
+    return Objects.equals(targetBlobCount, that.targetBlobCount)
         && Objects.equals(maximumBlobCount, that.maximumBlobCount);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), targetBlockCount, maximumBlobCount);
+    return Objects.hash(super.hashCode(), targetBlobCount, maximumBlobCount);
   }
 
   @Override
@@ -108,7 +108,7 @@ public class PayloadAttributesV4 extends PayloadAttributesV3 {
         .add("suggestedFeeRecipient", suggestedFeeRecipient)
         .add("withdrawals", withdrawals)
         .add("parentBeaconBlockRoot", parentBeaconBlockRoot)
-        .add("targetBlockCount", targetBlockCount)
+        .add("targetBlobCount", targetBlobCount)
         .add("maximumBlobCount", maximumBlobCount)
         .toString();
   }

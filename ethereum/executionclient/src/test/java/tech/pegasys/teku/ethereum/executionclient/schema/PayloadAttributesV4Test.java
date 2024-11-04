@@ -94,7 +94,7 @@ class PayloadAttributesV4Test {
     assertThat(payloadBuildingAttributes.getParentBeaconBlockRoot())
         .isEqualTo(payloadAttributesV4.parentBeaconBlockRoot);
     assertThat(payloadBuildingAttributes.getTargetBlobCount())
-        .hasValue(payloadAttributesV4.targetBlockCount);
+        .hasValue(payloadAttributesV4.targetBlobCount);
     assertThat(payloadBuildingAttributes.getMaximumBlobCount())
         .hasValue(payloadAttributesV4.maximumBlobCount);
   }
