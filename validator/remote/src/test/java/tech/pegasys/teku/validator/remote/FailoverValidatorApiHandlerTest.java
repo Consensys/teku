@@ -596,8 +596,7 @@ class FailoverValidatorApiHandlerTest {
 
     final ValidatorApiChannelRequest<SendSignedBlockResult> publishingRequest =
         apiChannel ->
-            apiChannel.sendSignedBlock(
-                blindedSignedBlock, BroadcastValidationLevel.NOT_REQUIRED);
+            apiChannel.sendSignedBlock(blindedSignedBlock, BroadcastValidationLevel.NOT_REQUIRED);
 
     setupSuccesses(
         publishingRequest,
