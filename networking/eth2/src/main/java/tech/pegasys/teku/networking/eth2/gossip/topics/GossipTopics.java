@@ -73,10 +73,18 @@ public class GossipTopics {
     for (int i = 0; i < NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT; i++) {
       topics.add(getSyncCommitteeSubnetTopic(forkDigest, i, gossipEncoding));
     }
-    if (spec.getNetworkingConfigDeneb().isPresent()) {
-      for (int i = 0; i < spec.getNetworkingConfigDeneb().get().getBlobSidecarSubnetCount(); i++) {
-        topics.add(getBlobSidecarSubnetTopic(forkDigest, i, gossipEncoding));
-      }
+    if (spec.getNetworkingConfigElectra().isPresent()) {
+      addBlobSidecarSubnetTopics(
+          spec.getNetworkingConfigElectra().get().getBlobSidecarSubnetCountElectra(),
+          topics,
+          forkDigest,
+          gossipEncoding);
+    } else if (spec.getNetworkingConfigDeneb().isPresent()) {
+      addBlobSidecarSubnetTopics(
+          spec.getNetworkingConfigDeneb().get().getBlobSidecarSubnetCount(),
+          topics,
+          forkDigest,
+          gossipEncoding);
     }
     for (GossipTopicName topicName : GossipTopicName.values()) {
       topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding));
@@ -97,5 +105,15 @@ public class GossipTopics {
     final String forkDigest = topic.substring(beginIndex, endIndex);
 
     return Bytes4.fromHexString(forkDigest);
+  }
+
+  private static void addBlobSidecarSubnetTopics(
+      final int blobSidecarSubnetCount,
+      final Set<String> topics,
+      final Bytes4 forkDigest,
+      final GossipEncoding gossipEncoding) {
+    for (int i = 0; i < blobSidecarSubnetCount; i++) {
+      topics.add(getBlobSidecarSubnetTopic(forkDigest, i, gossipEncoding));
+    }
   }
 }
