@@ -451,8 +451,7 @@ public class BlockOperationSelectorFactory {
     };
   }
 
-  public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector(
-      final BlockPublishingPerformance blockPublishingPerformance) {
+  public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector() {
     return blockContainer -> {
       final UInt64 slot = blockContainer.getSlot();
       final SignedBeaconBlock block = blockContainer.getSignedBlock();
@@ -505,17 +504,12 @@ public class BlockOperationSelectorFactory {
       final MiscHelpersDeneb miscHelpersDeneb =
           MiscHelpersDeneb.required(spec.atSlot(slot).miscHelpers());
 
-      final List<BlobSidecar> blobSidecars =
-          IntStream.range(0, blobs.size())
-              .mapToObj(
-                  index ->
-                      miscHelpersDeneb.constructBlobSidecar(
-                          block, UInt64.valueOf(index), blobs.get(index), proofs.get(index)))
-              .toList();
-
-      blockPublishingPerformance.blobSidecarsPrepared();
-
-      return blobSidecars;
+      return IntStream.range(0, blobs.size())
+          .mapToObj(
+              index ->
+                  miscHelpersDeneb.constructBlobSidecar(
+                      block, UInt64.valueOf(index), blobs.get(index), proofs.get(index)))
+          .toList();
     };
   }
 

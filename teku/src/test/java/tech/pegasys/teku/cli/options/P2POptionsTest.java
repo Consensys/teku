@@ -16,6 +16,7 @@ package tech.pegasys.teku.cli.options;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig.DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
@@ -352,6 +353,34 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--Xp2p-flood-max-message-size-threshold=1000");
     assertThat(config.network().getGossipConfig().getFloodPublishMaxMessageSizeThreshold())
         .isEqualTo(1000);
+  }
+
+  @Test
+  public void gossipBlobsAfterBlockEnabled_defaultIsSetCorrectly() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.p2p().isGossipBlobsAfterBlockEnabled())
+        .isEqualTo(DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED);
+  }
+
+  @Test
+  public void gossipBlobsAfterBlockEnabled_shouldNotRequireAValue() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xp2p-gossip-blobs-after-block-enabled");
+    assertThat(config.p2p().isGossipBlobsAfterBlockEnabled()).isTrue();
+  }
+
+  @Test
+  public void gossipBlobsAfterBlockEnabled_true() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xp2p-gossip-blobs-after-block-enabled=true");
+    assertThat(config.p2p().isGossipBlobsAfterBlockEnabled()).isTrue();
+  }
+
+  @Test
+  public void gossipBlobsAfterBlockEnabled_false() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xp2p-gossip-blobs-after-block-enabled=false");
+    assertThat(config.p2p().isGossipBlobsAfterBlockEnabled()).isFalse();
   }
 
   @Test

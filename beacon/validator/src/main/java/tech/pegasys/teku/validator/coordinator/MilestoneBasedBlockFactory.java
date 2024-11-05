@@ -93,13 +93,9 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
   }
 
   @Override
-  public List<BlobSidecar> createBlobSidecars(
-      final SignedBlockContainer blockContainer,
-      final BlockPublishingPerformance blockPublishingPerformance) {
+  public List<BlobSidecar> createBlobSidecars(final SignedBlockContainer blockContainer) {
     final SpecMilestone milestone = getMilestone(blockContainer.getSlot());
-    return registeredFactories
-        .get(milestone)
-        .createBlobSidecars(blockContainer, blockPublishingPerformance);
+    return registeredFactories.get(milestone).createBlobSidecars(blockContainer);
   }
 
   private SpecMilestone getMilestone(final UInt64 slot) {
