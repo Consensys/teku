@@ -74,4 +74,6 @@ dependencies {
     testImplementation testFixtures(project(':infrastructure:ssz'))
     testImplementation testFixtures(project(':infrastructure:metrics'))
     testImplementation testFixtures(project(':infrastructure:time'))
+
+    testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
 }

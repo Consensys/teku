@@ -170,7 +170,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
         .finish(
             error -> {
               VALIDATOR_LOGGER.registeringValidatorsFailed(error);
-              LOG.info("Will retry to register validators in {} seconds", RETRY_DELAY.getSeconds());
+              LOG.info("Will retry to register validators in {} seconds", RETRY_DELAY.toSeconds());
               asyncRunner.runAfterDelay(
                   () -> onUpdatedValidatorStatuses(newValidatorStatuses, possibleMissingEvents),
                   RETRY_DELAY);
