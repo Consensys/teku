@@ -84,13 +84,14 @@ public class AttestationGossipManagerTest {
   public void onNewAttestation_afterMatchingAssignment() {
     // Create a new DataStructureUtil so that generated attestations are not subject to change
     // when access to the global DataStructureUtil changes
-    DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final Attestation attestation = dataStructureUtil.randomAttestation(3);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final UInt64 slot = UInt64.valueOf(3);
+    final Attestation attestation = dataStructureUtil.randomAttestation(slot);
     final Attestation attestation2 =
         spec.getGenesisSchemaDefinitions()
             .getAttestationSchema()
             .create(
-                dataStructureUtil.randomBitlist(),
+                dataStructureUtil.randomBitlist(slot),
                 dataStructureUtil.randomAttestationData(UInt64.valueOf(13)),
                 dataStructureUtil.randomSignature());
     final int subnetId = computeSubnetId(attestation);

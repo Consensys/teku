@@ -592,7 +592,7 @@ class FailoverValidatorApiHandlerTest {
     SafeFutureAssert.assertThatSafeFuture(creationRequest.run(failoverApiHandler)).isCompleted();
 
     final SignedBeaconBlock blindedSignedBlock =
-        DATA_STRUCTURE_UTIL.randomSignedBlindedBeaconBlock(UInt64.ONE);
+        DATA_STRUCTURE_UTIL.signedBlock(blindedBlock.blockContainer().getBlock());
 
     final ValidatorApiChannelRequest<SendSignedBlockResult> publishingRequest =
         apiChannel ->
