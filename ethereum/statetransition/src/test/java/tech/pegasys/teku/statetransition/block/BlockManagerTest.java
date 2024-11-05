@@ -30,7 +30,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.GOSSIP;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.FAILED_DATA_AVAILABILITY_CHECK_INVALID;
@@ -53,6 +52,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -60,6 +62,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFutureSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
@@ -109,6 +113,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class BlockManagerTest {
+  private final AsyncRunner asyncRunner = mock(AsyncRunner.class);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final EventLogger eventLogger = mock(EventLogger.class);
   private Spec spec;
@@ -157,6 +162,15 @@ public class BlockManagerTest {
 
   @BeforeEach
   public void setup() {
+    // prepare an async runner
+    doAnswer(
+            invocation -> {
+              final ExceptionThrowingFutureSupplier<?> task = invocation.getArgument(0);
+              return SafeFuture.of(task.get());
+            })
+        .when(asyncRunner)
+        .runAsync((ExceptionThrowingFutureSupplier<?>) any());
+
     setupWithSpec(TestSpecFactory.createMinimalDeneb());
   }
 
@@ -184,6 +198,7 @@ public class BlockManagerTest {
     this.executionLayer = spy(new ExecutionLayerChannelStub(spec, false, Optional.empty()));
     this.blockImporter =
         new BlockImporter(
+            asyncRunner,
             spec,
             receivedBlockEventsChannelPublisher,
             localRecentChainData,
@@ -1196,9 +1211,13 @@ public class BlockManagerTest {
   }
 
   private void safeJoinBlockImport(final SignedBeaconBlock block) {
-    safeJoin(
-        blockManager
-            .importBlock(block)
-            .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult));
+    try {
+      blockManager
+          .importBlock(block)
+          .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult)
+          .get(5, TimeUnit.SECONDS);
+    } catch (final InterruptedException | ExecutionException | TimeoutException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
