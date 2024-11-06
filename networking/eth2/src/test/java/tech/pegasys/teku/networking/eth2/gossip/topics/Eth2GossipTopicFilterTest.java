@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -140,7 +139,8 @@ class Eth2GossipTopicFilterTest {
 
   @TestTemplate
   void shouldNotConsiderBlobSidecarWithIncorrectSubnetIdRelevant() {
-    final int blobSidecarSubnetCount = getBlobSidecarSubnetCount();
+    final int blobSidecarSubnetCount =
+        spec.forMilestone(specMilestone).miscHelpers().getBlobSidecarSubnetCount().orElseThrow();
     assertThat(
             filter.isRelevantTopic(
                 getTopicName(getBlobSidecarSubnetTopicName(blobSidecarSubnetCount + 1))))
@@ -158,14 +158,6 @@ class Eth2GossipTopicFilterTest {
         GossipTopics.getTopic(
             Bytes4.fromHexString("0x11223344"), GossipTopicName.BEACON_BLOCK, SSZ_SNAPPY);
     assertThat(filter.isRelevantTopic(irrelevantTopic)).isFalse();
-  }
-
-  private int getBlobSidecarSubnetCount() {
-    return specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)
-        ? SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig())
-            .getBlobSidecarSubnetCountElectra()
-        : SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
-            .getBlobSidecarSubnetCount();
   }
 
   private String getTopicName(final GossipTopicName name) {
