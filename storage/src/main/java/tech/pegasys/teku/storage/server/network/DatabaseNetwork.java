@@ -26,8 +26,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -44,9 +46,6 @@ public class DatabaseNetwork {
   @JsonProperty("deposit_chain_id")
   @VisibleForTesting
   final Long depositChainId;
-
-  private static final String EPHEMERY_DEPOSIT_CONTRACT_ADDRESS =
-      "0x4242424242424242424242424242424242424242";
 
   @JsonCreator
   DatabaseNetwork(
@@ -67,7 +66,8 @@ public class DatabaseNetwork {
       final File source,
       final Bytes4 forkVersion,
       final Eth1Address depositContract,
-      final Long depositChainId)
+      final Long depositChainId,
+      final Optional<Eth2Network> maybeNetwork)
       throws IOException {
     final String forkVersionString = forkVersion.toHexString().toLowerCase(Locale.ROOT);
     final String depositContractString = depositContract.toHexString().toLowerCase(Locale.ROOT);
@@ -88,7 +88,7 @@ public class DatabaseNetwork {
                 "deposit contract", depositContractString, databaseNetwork.depositContract));
       }
       if (databaseNetwork.depositChainId != null
-          && !depositContractString.equals(EPHEMERY_DEPOSIT_CONTRACT_ADDRESS)
+          && maybeNetwork.map(n -> !n.equals(Eth2Network.EPHEMERY)).orElse(true)
           && !databaseNetwork.depositChainId.equals(depositChainId)) {
         throw DatabaseStorageException.unrecoverable(
             formatMessage(
@@ -97,7 +97,7 @@ public class DatabaseNetwork {
                 String.valueOf(databaseNetwork.depositChainId)));
       }
       if (databaseNetwork.depositChainId != null
-          && depositContractString.equals(EPHEMERY_DEPOSIT_CONTRACT_ADDRESS)
+          && maybeNetwork.map(n -> n.equals(Eth2Network.EPHEMERY)).orElse(false)
           && !databaseNetwork.depositChainId.equals(depositChainId)) {
         throw new EphemeryException();
       }

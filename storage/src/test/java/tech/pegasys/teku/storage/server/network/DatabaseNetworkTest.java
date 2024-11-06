@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Locale;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -53,7 +54,8 @@ public class DatabaseNetworkTest {
     final Bytes4 fork = dataStructureUtil.randomFork().getCurrentVersion();
     final Eth1Address eth1Address = dataStructureUtil.randomEth1Address();
     final Long depositChainId = dataStructureUtil.randomLong();
-    assertThat(DatabaseNetwork.init(networkFile, fork, eth1Address, depositChainId))
+    assertThat(
+            DatabaseNetwork.init(networkFile, fork, eth1Address, depositChainId, Optional.empty()))
         .isEqualTo(
             new DatabaseNetwork(
                 fork.toHexString().toLowerCase(Locale.ROOT),
@@ -73,9 +75,13 @@ public class DatabaseNetworkTest {
         networkFile,
         dataStructureUtil.randomFork().getCurrentVersion(),
         eth1Address,
-        depositChainId);
+        depositChainId,
+        Optional.empty());
 
-    assertThatThrownBy(() -> DatabaseNetwork.init(networkFile, fork, eth1Address, depositChainId))
+    assertThatThrownBy(
+            () ->
+                DatabaseNetwork.init(
+                    networkFile, fork, eth1Address, depositChainId, Optional.empty()))
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageStartingWith("Supplied fork version");
   }
@@ -88,9 +94,13 @@ public class DatabaseNetworkTest {
     final Eth1Address eth1Address = dataStructureUtil.randomEth1Address();
     final Long depositChainId = dataStructureUtil.randomLong();
 
-    DatabaseNetwork.init(networkFile, fork, dataStructureUtil.randomEth1Address(), depositChainId);
+    DatabaseNetwork.init(
+        networkFile, fork, dataStructureUtil.randomEth1Address(), depositChainId, Optional.empty());
 
-    assertThatThrownBy(() -> DatabaseNetwork.init(networkFile, fork, eth1Address, depositChainId))
+    assertThatThrownBy(
+            () ->
+                DatabaseNetwork.init(
+                    networkFile, fork, eth1Address, depositChainId, Optional.empty()))
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageStartingWith("Supplied deposit contract");
   }
@@ -103,9 +113,11 @@ public class DatabaseNetworkTest {
     final Eth1Address eth1Address = dataStructureUtil.randomEth1Address();
     final Long depositChainId = dataStructureUtil.randomLong();
 
-    DatabaseNetwork.init(networkFile, fork, eth1Address, depositChainId);
+    DatabaseNetwork.init(networkFile, fork, eth1Address, depositChainId, Optional.empty());
 
-    assertDoesNotThrow(() -> DatabaseNetwork.init(networkFile, fork, eth1Address, depositChainId));
+    assertDoesNotThrow(
+        () ->
+            DatabaseNetwork.init(networkFile, fork, eth1Address, depositChainId, Optional.empty()));
   }
 
   @Test

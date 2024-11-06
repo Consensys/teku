@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -50,7 +51,8 @@ public class VersionedDatabaseFactoryTest {
             StorageConfiguration.builder()
                 .specProvider(spec)
                 .eth1DepositContract(eth1Address)
-                .build());
+                .build(),
+            Optional.empty());
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
 
@@ -76,7 +78,8 @@ public class VersionedDatabaseFactoryTest {
             StorageConfiguration.builder()
                 .specProvider(spec)
                 .eth1DepositContract(eth1Address)
-                .build());
+                .build(),
+            Optional.empty());
 
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
@@ -97,7 +100,8 @@ public class VersionedDatabaseFactoryTest {
             StorageConfiguration.builder()
                 .specProvider(spec)
                 .eth1DepositContract(eth1Address)
-                .build());
+                .build(),
+            Optional.empty());
 
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
@@ -115,7 +119,8 @@ public class VersionedDatabaseFactoryTest {
             StorageConfiguration.builder()
                 .specProvider(spec)
                 .eth1DepositContract(eth1Address)
-                .build());
+                .build(),
+            Optional.empty());
 
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
@@ -135,7 +140,8 @@ public class VersionedDatabaseFactoryTest {
                 .eth1DepositContract(eth1Address)
                 .dataStorageMode(DATA_STORAGE_MODE)
                 .dataStorageCreateDbVersion(version)
-                .build());
+                .build(),
+            Optional.empty());
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(version);
   }
 
