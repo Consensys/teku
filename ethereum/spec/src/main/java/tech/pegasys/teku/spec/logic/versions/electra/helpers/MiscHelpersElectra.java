@@ -85,4 +85,19 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
         .getEth1DepositIndex()
         .equals(BeaconStateElectra.required(state).getDepositRequestsStartIndex());
   }
+
+  @Override
+  public int getMaxRequestBlobSidecars() {
+    return SpecConfigElectra.required(specConfig).getMaxRequestBlobSidecarsElectra();
+  }
+
+  @Override
+  public int getMaxBlobsPerBlock() {
+    return SpecConfigElectra.required(specConfig).getMaxBlobsPerBlockElectra();
+  }
+
+  @Override
+  public int getBlobSidecarSubnetCount() {
+    return SpecConfigElectra.required(specConfig).getBlobSidecarSubnetCountElectra();
+  }
 }
