@@ -70,7 +70,7 @@ public class BlobSidecarGossipManager implements GossipManager {
         new Int2ObjectOpenHashMap<>();
     final SpecMilestone specMilestone = spec.atEpoch(forkInfo.getFork().getEpoch()).getMilestone();
     final int blobSidecarSubnetCount =
-        spec.forMilestone(specMilestone).miscHelpers().getBlobSidecarSubnetCount();
+        spec.forMilestone(specMilestone).miscHelpers().getBlobSidecarSubnetCount().orElseThrow();
 
     IntStream.range(0, blobSidecarSubnetCount)
         .forEach(

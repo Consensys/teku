@@ -396,8 +396,8 @@ public class MiscHelpers {
     throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
   }
 
-  public int getBlobSidecarSubnetCount() {
-    throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
+  public Optional<Integer> getBlobSidecarSubnetCount() {
+    return Optional.empty();
   }
 
   public int getBlobKzgCommitmentsCount(final SignedBeaconBlock signedBeaconBlock) {

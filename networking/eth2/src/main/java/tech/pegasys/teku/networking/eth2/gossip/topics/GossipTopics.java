@@ -18,6 +18,7 @@ import java.util.Set;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 
 /**
@@ -64,7 +65,10 @@ public class GossipTopics {
   }
 
   public static Set<String> getAllTopics(
-      final GossipEncoding gossipEncoding, final Bytes4 forkDigest, final Spec spec) {
+      final GossipEncoding gossipEncoding,
+      final Bytes4 forkDigest,
+      final Spec spec,
+      final SpecMilestone specMilestone) {
     final Set<String> topics = new HashSet<>();
 
     for (int i = 0; i < spec.getNetworkingConfig().getAttestationSubnetCount(); i++) {
@@ -73,19 +77,13 @@ public class GossipTopics {
     for (int i = 0; i < NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT; i++) {
       topics.add(getSyncCommitteeSubnetTopic(forkDigest, i, gossipEncoding));
     }
-    if (spec.getNetworkingConfigElectra().isPresent()) {
-      addBlobSidecarSubnetTopics(
-          spec.getNetworkingConfigElectra().get().getBlobSidecarSubnetCountElectra(),
-          topics,
-          forkDigest,
-          gossipEncoding);
-    } else if (spec.getNetworkingConfigDeneb().isPresent()) {
-      addBlobSidecarSubnetTopics(
-          spec.getNetworkingConfigDeneb().get().getBlobSidecarSubnetCount(),
-          topics,
-          forkDigest,
-          gossipEncoding);
-    }
+
+    spec.forMilestone(specMilestone)
+        .miscHelpers()
+        .getBlobSidecarSubnetCount()
+        .ifPresent(
+            integer -> addBlobSidecarSubnetTopics(integer, topics, forkDigest, gossipEncoding));
+
     for (GossipTopicName topicName : GossipTopicName.values()) {
       topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding));
     }

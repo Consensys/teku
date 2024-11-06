@@ -960,7 +960,7 @@ public class Spec {
   public UInt64 computeSubnetForBlobSidecar(final BlobSidecar blobSidecar) {
     return blobSidecar
         .getIndex()
-        .mod(atSlot(blobSidecar.getSlot()).miscHelpers().getBlobSidecarSubnetCount());
+        .mod(atSlot(blobSidecar.getSlot()).miscHelpers().getBlobSidecarSubnetCount().orElseThrow());
   }
 
   public Optional<UInt64> computeFirstSlotWithBlobSupport() {

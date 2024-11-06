@@ -53,6 +53,7 @@ class Eth2GossipTopicFilterTest {
   private DataStructureUtil dataStructureUtil;
   private ForkInfo forkInfo;
   private Eth2GossipTopicFilter filter;
+  private Bytes4 currentForkDigest;
   private Bytes4 nextForkDigest;
 
   @BeforeEach
@@ -74,6 +75,7 @@ class Eth2GossipTopicFilterTest {
     final Bytes32 genesisValidatorsRoot = dataStructureUtil.randomBytes32();
     final List<Fork> forks = spec.getForkSchedule().getForks();
     forkInfo = new ForkInfo(forks.get(0), genesisValidatorsRoot);
+    currentForkDigest = forkInfo.getForkDigest(spec);
 
     final Fork nextFork = forks.get(1);
     nextForkDigest =
@@ -83,6 +85,8 @@ class Eth2GossipTopicFilterTest {
 
     when(recentChainData.getCurrentForkInfo()).thenReturn(Optional.of(forkInfo));
     when(recentChainData.getNextFork(forkInfo.getFork())).thenReturn(Optional.of(nextFork));
+    when(recentChainData.getMilestoneByForkDigest(currentForkDigest))
+        .thenReturn(Optional.of(specMilestone));
   }
 
   @TestTemplate

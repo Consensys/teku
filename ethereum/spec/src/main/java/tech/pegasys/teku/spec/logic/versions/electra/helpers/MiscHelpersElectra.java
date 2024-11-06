@@ -97,7 +97,7 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
   }
 
   @Override
-  public int getBlobSidecarSubnetCount() {
-    return SpecConfigElectra.required(specConfig).getBlobSidecarSubnetCountElectra();
+  public Optional<Integer> getBlobSidecarSubnetCount() {
+    return Optional.of(SpecConfigElectra.required(specConfig).getBlobSidecarSubnetCountElectra());
   }
 }
