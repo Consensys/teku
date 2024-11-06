@@ -31,7 +31,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
@@ -54,7 +53,6 @@ class ProposersDataManagerTest {
   private List<BeaconPreparableProposer> proposers;
 
   private Spec spec;
-  private SpecMilestone specMilestone;
   private DataStructureUtil dataStructureUtil;
   private ProposersDataManager manager;
   private Eth1Address defaultAddress;
@@ -62,7 +60,6 @@ class ProposersDataManagerTest {
 
   @BeforeEach
   public void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
-    specMilestone = specContext.getSpecMilestone();
     spec =
         switch (specContext.getSpecMilestone()) {
           case PHASE0 -> TestSpecFactory.createMinimalPhase0();
