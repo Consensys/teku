@@ -34,7 +34,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -509,11 +508,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                 // Let's try now
                 if (!existingTracker.isLocalElFetchTriggered() && !existingTracker.isCompleted()) {
                   fetchMissingContentFromLocalEL(slotAndBlockRoot)
-                      .finish(
-                          error ->
-                              LOG.error(
-                                  "An error occurred while attempting to fetch blobs via local EL: {}",
-                                  getRootCauseMessage(error)));
+                      .finish(this::logLocalElBlobsLookupFailure);
                 }
               }
             });
@@ -599,16 +594,16 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
         .runAfterDelay(
             () ->
                 this.fetchMissingContentFromLocalEL(slotAndBlockRoot)
-                    .handleException(
-                        error ->
-                            LOG.warn(
-                                "Local EL blobs lookup failed: {}",
-                                ExceptionUtils.getRootCauseMessage(error)))
+                    .handleException(this::logLocalElBlobsLookupFailure)
                     .thenRun(() -> this.fetchMissingContentFromRemotePeers(slotAndBlockRoot)),
             fetchDelay)
         .finish(
             error ->
                 LOG.error("An error occurred while attempting to fetch missing blobs.", error));
+  }
+
+  private void logLocalElBlobsLookupFailure(final Throwable error) {
+    LOG.warn("Local EL blobs lookup failed: {}", getRootCauseMessage(error));
   }
 
   @VisibleForTesting
