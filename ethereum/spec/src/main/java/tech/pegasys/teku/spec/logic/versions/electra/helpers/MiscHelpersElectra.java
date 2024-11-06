@@ -92,8 +92,12 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
   }
 
   @Override
-  public int getMaxBlobsPerBlock() {
-    return SpecConfigElectra.required(specConfig).getMaxBlobsPerBlockElectra();
+  public Optional<Integer> getMaxBlobsPerBlock() {
+    return Optional.of(SpecConfigElectra.required(specConfig).getMaxBlobsPerBlockElectra());
+  }
+
+  public Optional<Integer> getTargetBlobsPerBlock() {
+    return Optional.of(SpecConfigElectra.required(specConfig).getTargetBlobsPerBlockElectra());
   }
 
   @Override

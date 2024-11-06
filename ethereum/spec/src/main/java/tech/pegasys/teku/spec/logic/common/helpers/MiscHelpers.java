@@ -392,8 +392,12 @@ public class MiscHelpers {
     throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
   }
 
-  public int getMaxBlobsPerBlock() {
-    throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
+  public Optional<Integer> getMaxBlobsPerBlock() {
+    return Optional.empty();
+  }
+
+  public Optional<Integer> getTargetBlobsPerBlock() {
+    return Optional.empty();
   }
 
   public Optional<Integer> getBlobSidecarSubnetCount() {

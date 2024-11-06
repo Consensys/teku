@@ -217,8 +217,8 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   }
 
   @Override
-  public int getMaxBlobsPerBlock() {
-    return SpecConfigDeneb.required(specConfig).getMaxBlobsPerBlock();
+  public Optional<Integer> getMaxBlobsPerBlock() {
+    return Optional.of(SpecConfigDeneb.required(specConfig).getMaxBlobsPerBlock());
   }
 
   @Override

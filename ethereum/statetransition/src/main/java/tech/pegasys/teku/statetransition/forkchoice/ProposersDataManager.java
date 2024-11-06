@@ -195,11 +195,10 @@ public class ProposersDataManager implements SlotEventsChannel {
     final ForkChoiceState forkChoiceState = forkChoiceUpdateData.getForkChoiceState();
     final Bytes32 currentHeadBlockRoot = forkChoiceState.getHeadBlockRoot();
     return getStateInEpoch(epoch)
-        .thenApplyAsync(
+        .thenApply(
             maybeState ->
                 calculatePayloadBuildingAttributes(
-                    currentHeadBlockRoot, blockSlot, epoch, maybeState, mandatory),
-            eventThread);
+                    currentHeadBlockRoot, blockSlot, epoch, maybeState, mandatory));
   }
 
   /**
@@ -237,7 +236,10 @@ public class ProposersDataManager implements SlotEventsChannel {
             .map(RegisteredValidatorInfo::getSignedValidatorRegistration);
 
     final Eth1Address feeRecipient = getFeeRecipient(proposerInfo, blockSlot);
-    final Optional<UInt64> maxBlobsPerBlock = spec.getMaxBlobsPerBlock().map(UInt64::valueOf);
+    final Optional<UInt64> maxBlobsPerBlock =
+        spec.getMaxBlobsPerBlock(blockSlot).map(UInt64::valueOf);
+    final Optional<UInt64> targetBlobsPerBlock =
+        spec.getTargetBlobsPerBlock(blockSlot).map(UInt64::valueOf);
 
     return Optional.of(
         new PayloadBuildingAttributes(
@@ -249,7 +251,7 @@ public class ProposersDataManager implements SlotEventsChannel {
             validatorRegistration,
             spec.getExpectedWithdrawals(state),
             currentHeadBlockRoot,
-            maxBlobsPerBlock.map(maxBlobs -> maxBlobs.dividedBy(2)),
+            targetBlobsPerBlock,
             maxBlobsPerBlock));
   }
 

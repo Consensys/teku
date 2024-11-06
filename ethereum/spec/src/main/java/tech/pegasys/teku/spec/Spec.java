@@ -962,11 +962,17 @@ public class Spec {
   }
 
   public Optional<Integer> getMaxBlobsPerBlock() {
-    return getSpecConfigDeneb().map(SpecConfigDeneb::getMaxBlobsPerBlock);
+    final SpecMilestone highestSupportedMilestone =
+        getForkSchedule().getHighestSupportedMilestone();
+    return forMilestone(highestSupportedMilestone).miscHelpers().getMaxBlobsPerBlock();
   }
 
   public Optional<Integer> getMaxBlobsPerBlock(final UInt64 slot) {
-    return getSpecConfigDeneb(slot).map(SpecConfigDeneb::getMaxBlobsPerBlock);
+    return atSlot(slot).miscHelpers().getMaxBlobsPerBlock();
+  }
+
+  public Optional<Integer> getTargetBlobsPerBlock(final UInt64 slot) {
+    return atSlot(slot).miscHelpers().getTargetBlobsPerBlock();
   }
 
   public UInt64 computeSubnetForBlobSidecar(final BlobSidecar blobSidecar) {
@@ -993,10 +999,6 @@ public class Spec {
     return Optional.ofNullable(forMilestone(highestSupportedMilestone))
         .map(SpecVersion::getConfig)
         .flatMap(SpecConfig::toVersionDeneb);
-  }
-
-  private Optional<SpecConfigDeneb> getSpecConfigDeneb(final UInt64 slot) {
-    return atSlot(slot).getConfig().toVersionDeneb();
   }
 
   // Private helpers

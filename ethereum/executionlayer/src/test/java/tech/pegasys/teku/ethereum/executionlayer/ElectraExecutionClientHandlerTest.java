@@ -127,7 +127,7 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
   }
 
   @Test
-  void engineForkChoiceUpdated_shouldCallEngineForkChoiceUpdatedV3() {
+  void engineForkChoiceUpdated_shouldCallEngineForkChoiceUpdatedV4() {
     final ExecutionClientHandler handler = getHandler();
     final ForkChoiceState forkChoiceState = dataStructureUtil.randomForkChoiceState(false);
     final ForkChoiceStateV1 forkChoiceStateV1 =
@@ -142,7 +142,7 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
             Optional.empty(),
             Optional.of(List.of()),
             dataStructureUtil.randomBytes32(),
-            spec.getMaxBlobsPerBlock().map(max -> UInt64.valueOf(max / 2)),
+            spec.getTargetBlobsPerBlock(dataStructureUtil.randomSlot()).map(UInt64::valueOf),
             spec.getMaxBlobsPerBlock().map(UInt64::valueOf));
     final Optional<PayloadAttributesV4> payloadAttributes =
         PayloadAttributesV4.fromInternalPayloadBuildingAttributesV4(Optional.of(attributes));

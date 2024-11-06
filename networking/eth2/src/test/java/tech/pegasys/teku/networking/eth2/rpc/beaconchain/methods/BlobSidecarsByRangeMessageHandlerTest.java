@@ -112,7 +112,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         };
 
     dataStructureUtil = new DataStructureUtil(spec);
-    maxBlobsPerBlock = spec.forMilestone(specMilestone).miscHelpers().getMaxBlobsPerBlock();
+    maxBlobsPerBlock =
+        spec.forMilestone(specMilestone).miscHelpers().getMaxBlobsPerBlock().orElseThrow();
     slotsPerEpoch = spec.getSlotsPerEpoch(ZERO);
     startSlot = currentForkEpoch.increment().times(slotsPerEpoch);
     handler = new BlobSidecarsByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
