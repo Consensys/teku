@@ -14,6 +14,10 @@
 package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLS_TO_EXECUTION_CHANGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARY_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.WITHDRAWAL_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
@@ -35,7 +39,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSch
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadSchemaCapella;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
@@ -74,10 +77,12 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   public SchemaDefinitionsCapella(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
     final SpecConfigCapella specConfig = SpecConfigCapella.required(schemaRegistry.getSpecConfig());
+    this.historicalSummarySchema = schemaRegistry.get(HISTORICAL_SUMMARY_SCHEMA);
     this.executionPayloadSchemaCapella = new ExecutionPayloadSchemaCapella(specConfig);
-    this.blsToExecutionChangeSchema = new BlsToExecutionChangeSchema();
-    this.signedBlsToExecutionChangeSchema = new SignedBlsToExecutionChangeSchema();
-    this.withdrawalSchema = Withdrawal.SSZ_SCHEMA;
+    this.blsToExecutionChangeSchema = schemaRegistry.get(BLS_TO_EXECUTION_CHANGE_SCHEMA);
+    this.signedBlsToExecutionChangeSchema =
+        schemaRegistry.get(SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA);
+    this.withdrawalSchema = schemaRegistry.get(WITHDRAWAL_SCHEMA);
 
     this.beaconStateSchema = BeaconStateSchemaCapella.create(specConfig);
     this.executionPayloadHeaderSchemaCapella =
@@ -107,7 +112,6 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
         new BuilderBidSchemaBellatrix("BuilderBidCapella", executionPayloadHeaderSchemaCapella);
     this.signedBuilderBidSchemaCapella =
         new SignedBuilderBidSchema("SignedBuilderBidCapella", builderBidSchemaCapella);
-    this.historicalSummarySchema = new HistoricalSummary.HistoricalSummarySchema();
   }
 
   public static SchemaDefinitionsCapella required(final SchemaDefinitions schemaDefinitions) {
