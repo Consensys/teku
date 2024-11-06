@@ -23,17 +23,21 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchem
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
+import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary.HistoricalSummarySchema;
 
 public class SchemaTypes {
   // PHASE0
@@ -59,9 +63,6 @@ public class SchemaTypes {
   public static final SchemaId<SignedAggregateAndProofSchema> SIGNED_AGGREGATE_AND_PROOF_SCHEMA =
       create("SIGNED_AGGREGATE_AND_PROOF_SCHEMA");
 
-  public static final SchemaId<ExecutionPayloadHeaderSchema<? extends ExecutionPayloadHeader>>
-      EXECUTION_PAYLOAD_HEADER_SCHEMA = create("EXECUTION_PAYLOAD_HEADER_SCHEMA");
-
   public static final SchemaId<BeaconStateSchema<BeaconState, MutableBeaconState>>
       BEACON_STATE_SCHEMA = create("BEACON_STATE_SCHEMA");
 
@@ -69,7 +70,17 @@ public class SchemaTypes {
 
   // Bellatrix
 
+  public static final SchemaId<ExecutionPayloadHeaderSchema<? extends ExecutionPayloadHeader>>
+      EXECUTION_PAYLOAD_HEADER_SCHEMA = create("EXECUTION_PAYLOAD_HEADER_SCHEMA");
+
   // Capella
+  public static final SchemaId<WithdrawalSchema> WITHDRAWAL_SCHEMA = create("WITHDRAWAL_SCHEMA");
+  public static final SchemaId<BlsToExecutionChangeSchema> BLS_TO_EXECUTION_CHANGE_SCHEMA =
+      create("BLS_TO_EXECUTION_CHANGE_SCHEMA");
+  public static final SchemaId<SignedBlsToExecutionChangeSchema>
+      SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA = create("SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA");
+  public static final SchemaId<HistoricalSummarySchema> HISTORICAL_SUMMARY_SCHEMA =
+      create("HISTORICAL_SUMMARY_SCHEMA");
 
   // Deneb
 

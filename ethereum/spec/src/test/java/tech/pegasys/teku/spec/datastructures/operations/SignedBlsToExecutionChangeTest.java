@@ -18,17 +18,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class SignedBlsToExecutionChangeTest {
-
-  private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createMinimal(SpecMilestone.CAPELLA));
+  private final Spec spec = TestSpecFactory.createMinimal(SpecMilestone.CAPELLA);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema =
-      new SignedBlsToExecutionChangeSchema();
+      spec.getGenesisSchemaDefinitions()
+          .toVersionCapella()
+          .orElseThrow()
+          .getSignedBlsToExecutionChangeSchema();
 
   private final BlsToExecutionChange message = dataStructureUtil.randomBlsToExecutionChange();
 
