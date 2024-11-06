@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getRootCauseMessage;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin.LOCAL_EL;
 import static tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin.LOCAL_PROPOSAL;
@@ -511,7 +512,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                       .finish(
                           error ->
                               LOG.error(
-                                  "An error occurred while attempting to fetch blobs via local EL"));
+                                  "An error occurred while attempting to fetch blobs via local EL: {}",
+                                  getRootCauseMessage(error)));
                 }
               }
             });
