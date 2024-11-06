@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -52,7 +53,9 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
       final RecentChainData recentChainData, final GossipEncoding gossipEncoding) {
     final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
     final Bytes4 forkDigest = forkInfo.getForkDigest(spec);
-    final Set<String> topics = getAllTopics(gossipEncoding, forkDigest, spec);
+    final SpecMilestone specMilestone =
+        recentChainData.getMilestoneByForkDigest(forkDigest).orElseThrow();
+    final Set<String> topics = getAllTopics(gossipEncoding, forkDigest, spec, specMilestone);
     spec.getForkSchedule().getForks().stream()
         .filter(fork -> fork.getEpoch().isGreaterThanOrEqualTo(forkInfo.getFork().getEpoch()))
         .forEach(
@@ -62,7 +65,7 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
                       .miscHelpers()
                       .computeForkDigest(
                           futureFork.getCurrentVersion(), forkInfo.getGenesisValidatorsRoot());
-              topics.addAll(getAllTopics(gossipEncoding, futureForkDigest, spec));
+              topics.addAll(getAllTopics(gossipEncoding, futureForkDigest, spec, specMilestone));
             });
     return topics;
   }

@@ -222,8 +222,8 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   }
 
   @Override
-  public int getBlobSidecarSubnetCount() {
-    return SpecConfigDeneb.required(specConfig).getBlobSidecarSubnetCount();
+  public Optional<Integer> getBlobSidecarSubnetCount() {
+    return Optional.of(SpecConfigDeneb.required(specConfig).getBlobSidecarSubnetCount());
   }
 
   @Override

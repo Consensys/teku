@@ -32,8 +32,8 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHa
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -68,8 +68,11 @@ public class BlobSidecarGossipManager implements GossipManager {
             .getBlobSidecarSchema();
     final Int2ObjectMap<Eth2TopicHandler<BlobSidecar>> subnetIdToTopicHandler =
         new Int2ObjectOpenHashMap<>();
-    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(forkSpecVersion.getConfig());
-    IntStream.range(0, specConfigDeneb.getBlobSidecarSubnetCount())
+    final SpecMilestone specMilestone = spec.atEpoch(forkInfo.getFork().getEpoch()).getMilestone();
+    final int blobSidecarSubnetCount =
+        spec.forMilestone(specMilestone).miscHelpers().getBlobSidecarSubnetCount().orElseThrow();
+
+    IntStream.range(0, blobSidecarSubnetCount)
         .forEach(
             subnetId -> {
               final Eth2TopicHandler<BlobSidecar> topicHandler =
