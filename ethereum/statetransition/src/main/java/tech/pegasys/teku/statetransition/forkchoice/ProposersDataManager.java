@@ -195,10 +195,11 @@ public class ProposersDataManager implements SlotEventsChannel {
     final ForkChoiceState forkChoiceState = forkChoiceUpdateData.getForkChoiceState();
     final Bytes32 currentHeadBlockRoot = forkChoiceState.getHeadBlockRoot();
     return getStateInEpoch(epoch)
-        .thenApply(
+        .thenApplyAsync(
             maybeState ->
                 calculatePayloadBuildingAttributes(
-                    currentHeadBlockRoot, blockSlot, epoch, maybeState, mandatory));
+                    currentHeadBlockRoot, blockSlot, epoch, maybeState, mandatory),
+            eventThread);
   }
 
   /**

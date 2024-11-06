@@ -29,6 +29,7 @@ import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -121,15 +122,17 @@ class ProposersDataManagerTest {
     when(specMock.getMaxBlobsPerBlock(currentForkFirstSlot)).thenReturn(spec.getMaxBlobsPerBlock());
     when(specMock.getTargetBlobsPerBlock(currentForkFirstSlot))
         .thenReturn(spec.getTargetBlobsPerBlock(currentForkFirstSlot));
+    final InlineEventThread eventThread = new InlineEventThread();
     manager =
         new ProposersDataManager(
-            mock(EventThread.class),
+            eventThread,
             specMock,
             metricsSystem,
             channel,
             recentChainData,
             Optional.of(defaultAddress),
             true);
+    eventThread.markAsOnEventThread();
     final ForkChoiceUpdateData forkChoiceUpdateDataMock = mock(ForkChoiceUpdateData.class);
     when(forkChoiceUpdateDataMock.hasHeadBlockHash()).thenReturn(true);
     final ForkChoiceState forkChoiceStateMock = mock(ForkChoiceState.class);
@@ -142,7 +145,6 @@ class ProposersDataManagerTest {
     when(recentChainData.getChainHead()).thenReturn(Optional.of(chainHeadMock));
     final BeaconState beaconStateMock = mock(BeaconState.class);
     when(chainHeadMock.getState()).thenReturn(SafeFuture.completedFuture(beaconStateMock));
-
     final SafeFuture<Optional<PayloadBuildingAttributes>> payloadBuildingAttributesFuture =
         manager.calculatePayloadBuildingAttributes(
             currentForkFirstSlot, true, forkChoiceUpdateDataMock, false);

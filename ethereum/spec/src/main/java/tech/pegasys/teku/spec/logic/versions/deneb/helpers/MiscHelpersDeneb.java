@@ -222,6 +222,11 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   }
 
   @Override
+  public Optional<Integer> getTargetBlobsPerBlock() {
+    return getMaxBlobsPerBlock().map(maxBlobsPerBlock -> maxBlobsPerBlock / 2);
+  }
+
+  @Override
   public Optional<Integer> getBlobSidecarSubnetCount() {
     return Optional.of(SpecConfigDeneb.required(specConfig).getBlobSidecarSubnetCount());
   }
