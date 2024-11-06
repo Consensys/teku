@@ -1235,6 +1235,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initBlockImporter()");
     blockImporter =
         new BlockImporter(
+            beaconAsyncRunner,
             spec,
             receivedBlockEventsChannelPublisher,
             recentChainData,

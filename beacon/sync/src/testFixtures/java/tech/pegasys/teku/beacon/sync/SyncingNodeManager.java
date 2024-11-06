@@ -146,6 +146,7 @@ public class SyncingNodeManager {
 
     final BlockImporter blockImporter =
         new BlockImporter(
+            asyncRunner,
             spec,
             receivedBlockEventsChannelPublisher,
             recentChainData,
