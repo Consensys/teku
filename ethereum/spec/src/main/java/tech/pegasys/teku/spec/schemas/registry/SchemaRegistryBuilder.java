@@ -196,8 +196,8 @@ public class SchemaRegistryBuilder {
 
   private static SchemaProvider<?> createSingleAttestationSchemaProvider() {
     return constantProviderBuilder(SINGLE_ATTESTATION_SCHEMA)
-            .withCreator(ELECTRA, (registry, specConfig) -> new SingleAttestationSchema())
-            .build();
+        .withCreator(ELECTRA, (registry, specConfig) -> new SingleAttestationSchema())
+        .build();
   }
 
   private static SchemaProvider<?> createDepositRequestSchemaProvider() {
