@@ -18,7 +18,6 @@ import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.schemas.registry.BaseSchemaProvider.constantProviderBuilder;
-import static tech.pegasys.teku.spec.schemas.registry.BaseSchemaProvider.variableProviderBuilder;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTER_SLASHING_SCHEMA;
@@ -102,18 +101,19 @@ public class SchemaRegistryBuilder {
   }
 
   private static SchemaProvider<?> createBlobsBundleSchemaProvider() {
-    return variableProviderBuilder(BLOBS_BUNDLE_SCHEMA)
+    // we can keep this to be constant because the blob list max length is
+    // getMaxBlobCommitmentsPerBlock
+    return constantProviderBuilder(BLOBS_BUNDLE_SCHEMA)
         .withCreator(
             DENEB,
             (registry, specConfig) ->
-                new BlobsBundleSchema(
-                    BLOBS_BUNDLE_SCHEMA.getContainerName(registry),
-                    registry,
-                    SpecConfigDeneb.required(specConfig)))
+                new BlobsBundleSchema(registry, SpecConfigDeneb.required(specConfig)))
         .build();
   }
 
   private static SchemaProvider<?> createBlobKzgCommitmentsSchemaProvider() {
+    // we can keep this to be constant because the kzg commitment list max length is
+    // getMaxBlobCommitmentsPerBlock
     return constantProviderBuilder(BLOB_KZG_COMMITMENTS_SCHEMA)
         .withCreator(
             DENEB,

@@ -31,12 +31,9 @@ public class BlobsBundleSchema
     extends ContainerSchema3<
         BlobsBundle, SszList<SszKZGCommitment>, SszList<SszKZGProof>, SszList<Blob>> {
 
-  public BlobsBundleSchema(
-      final String containerName,
-      final SchemaRegistry schemaRegistry,
-      final SpecConfigDeneb specConfig) {
+  public BlobsBundleSchema(final SchemaRegistry schemaRegistry, final SpecConfigDeneb specConfig) {
     super(
-        containerName,
+        "BlobsBundle",
         namedSchema("commitments", schemaRegistry.get(BLOB_KZG_COMMITMENTS_SCHEMA)),
         namedSchema(
             "proofs",
