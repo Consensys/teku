@@ -18,13 +18,23 @@ import com.google.common.base.CaseFormat;
 import com.google.common.base.Converter;
 import com.google.common.base.MoreObjects;
 import java.util.Locale;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
+import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
@@ -83,6 +93,22 @@ public class SchemaTypes {
       create("HISTORICAL_SUMMARY_SCHEMA");
 
   // Deneb
+  public static final SchemaId<BlobKzgCommitmentsSchema> BLOB_KZG_COMMITMENTS_SCHEMA =
+      create("BLOB_KZG_COMMITMENTS_SCHEMA");
+  public static final SchemaId<BlobSchema> BLOB_SCHEMA = create("BLOB_SCHEMA");
+  public static final SchemaId<SszListSchema<Blob, ? extends SszList<Blob>>> BLOBS_IN_BLOCK_SCHEMA =
+      create("BLOBS_IN_BLOCK_SCHEMA");
+  public static final SchemaId<BlobSidecarSchema> BLOB_SIDECAR_SCHEMA =
+      create("BLOB_SIDECAR_SCHEMA");
+  public static final SchemaId<BlobSidecarsByRootRequestMessageSchema>
+      BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA =
+          create("BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA");
+  public static final SchemaId<BlockContentsSchema> BLOCK_CONTENTS_SCHEMA =
+      create("BLOCK_CONTENTS_SCHEMA");
+  public static final SchemaId<SignedBlockContentsSchema> SIGNED_BLOCK_CONTENTS_SCHEMA =
+      create("SIGNED_BLOCK_CONTENTS_SCHEMA");
+  public static final SchemaId<BlobsBundleSchema> BLOBS_BUNDLE_SCHEMA =
+      create("BLOBS_BUNDLE_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation
@@ -115,8 +141,8 @@ public class SchemaTypes {
       return name;
     }
 
-    public String getContainerName(final SpecMilestone milestone) {
-      return getContainerName() + capitalizeMilestone(milestone);
+    public String getContainerName(final SchemaRegistry schemaRegistry) {
+      return getContainerName() + capitalizeMilestone(schemaRegistry.getMilestone());
     }
 
     public String getContainerName() {
