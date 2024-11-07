@@ -264,8 +264,9 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
         new BlobSidecarsByRangeListenerValidatingProxy(
             spec, peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
 
+    // TODO add blobs based on the max blobs per block (Deneb or Electra)
     final SignedBeaconBlock block1 =
-        dataStructureUtil.randomSignedBeaconBlockWithCommitments(currentForkFirstSlot, 7);
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(currentForkFirstSlot, 9);
     final BlobSidecar blobSidecar1_0 =
         dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);
     final BlobSidecar blobSidecar1_1 =
@@ -280,6 +281,10 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
         dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 5);
     final BlobSidecar blobSidecar1_6 =
         dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 6);
+    final BlobSidecar blobSidecar1_7 =
+        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 7);
+    final BlobSidecar blobSidecar1_8 =
+        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 8);
 
     safeJoin(listenerWrapper.onResponse(blobSidecar1_0));
     safeJoin(listenerWrapper.onResponse(blobSidecar1_1));
@@ -287,8 +292,10 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     safeJoin(listenerWrapper.onResponse(blobSidecar1_3));
     safeJoin(listenerWrapper.onResponse(blobSidecar1_4));
     safeJoin(listenerWrapper.onResponse(blobSidecar1_5));
+    safeJoin(listenerWrapper.onResponse(blobSidecar1_6));
+    safeJoin(listenerWrapper.onResponse(blobSidecar1_7));
 
-    final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar1_6);
+    final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar1_8);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
         .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
