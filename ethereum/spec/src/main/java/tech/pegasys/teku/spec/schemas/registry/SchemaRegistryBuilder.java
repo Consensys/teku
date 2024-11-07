@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.schemas.registry.BaseSchemaProvider.constantProviderBuilder;
+import static tech.pegasys.teku.spec.schemas.registry.BaseSchemaProvider.variableProviderBuilder;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTER_SLASHING_SCHEMA;
@@ -101,14 +102,13 @@ public class SchemaRegistryBuilder {
   }
 
   private static SchemaProvider<?> createBlobsBundleSchemaProvider() {
-    return constantProviderBuilder(BLOBS_BUNDLE_SCHEMA)
+    return variableProviderBuilder(BLOBS_BUNDLE_SCHEMA)
         .withCreator(
             DENEB,
             (registry, specConfig) ->
                 new BlobsBundleSchema(
                     BLOBS_BUNDLE_SCHEMA.getContainerName(registry),
-                    registry.get(BLOB_SCHEMA),
-                    registry.get(BLOB_KZG_COMMITMENTS_SCHEMA),
+                    registry,
                     SpecConfigDeneb.required(specConfig)))
         .build();
   }

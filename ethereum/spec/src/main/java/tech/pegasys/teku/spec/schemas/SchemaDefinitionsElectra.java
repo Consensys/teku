@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOBS_BUNDLE_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -32,7 +33,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.B
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodySchemaElectraImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
-import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
@@ -70,7 +70,6 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   private final BlockContentsSchema blockContentsSchema;
   private final SignedBlockContentsSchema signedBlockContentsSchema;
-  private final BlobsBundleSchema blobsBundleSchema;
   private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
 
   private final ExecutionRequestsSchema executionRequestsSchema;
@@ -132,11 +131,9 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.signedBlockContentsSchema =
         SignedBlockContentsSchema.create(
             specConfig, signedBeaconBlockSchema, getBlobSchema(), "SignedBlockContentsElectra");
-    this.blobsBundleSchema =
-        new BlobsBundleSchema(
-            "BlobsBundleElectra", getBlobSchema(), getBlobKzgCommitmentsSchema(), specConfig);
     this.executionPayloadAndBlobsBundleSchema =
-        new ExecutionPayloadAndBlobsBundleSchema(getExecutionPayloadSchema(), blobsBundleSchema);
+        new ExecutionPayloadAndBlobsBundleSchema(
+            getExecutionPayloadSchema(), schemaRegistry.get(BLOBS_BUNDLE_SCHEMA));
 
     this.depositRequestSchema = DepositRequest.SSZ_SCHEMA;
     this.withdrawalRequestSchema = WithdrawalRequest.SSZ_SCHEMA;
@@ -240,11 +237,6 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   @Override
   public SignedBlockContentsSchema getSignedBlockContentsSchema() {
     return signedBlockContentsSchema;
-  }
-
-  @Override
-  public BlobsBundleSchema getBlobsBundleSchema() {
-    return blobsBundleSchema;
   }
 
   @Override

@@ -13,17 +13,19 @@
 
 package tech.pegasys.teku.spec.datastructures.builder;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_KZG_COMMITMENTS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
+
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BlobsBundleSchema
     extends ContainerSchema3<
@@ -31,18 +33,19 @@ public class BlobsBundleSchema
 
   public BlobsBundleSchema(
       final String containerName,
-      final BlobSchema blobSchema,
-      final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema,
+      final SchemaRegistry schemaRegistry,
       final SpecConfigDeneb specConfig) {
     super(
         containerName,
-        namedSchema("commitments", blobKzgCommitmentsSchema),
+        namedSchema("commitments", schemaRegistry.get(BLOB_KZG_COMMITMENTS_SCHEMA)),
         namedSchema(
             "proofs",
             SszListSchema.create(
                 SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobCommitmentsPerBlock())),
         namedSchema(
-            "blobs", SszListSchema.create(blobSchema, specConfig.getMaxBlobCommitmentsPerBlock())));
+            "blobs",
+            SszListSchema.create(
+                schemaRegistry.get(BLOB_SCHEMA), specConfig.getMaxBlobCommitmentsPerBlock())));
   }
 
   @SuppressWarnings("unchecked")

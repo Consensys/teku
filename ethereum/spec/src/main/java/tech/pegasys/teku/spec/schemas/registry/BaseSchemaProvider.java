@@ -102,10 +102,46 @@ class BaseSchemaProvider<T> implements SchemaProvider<T> {
     }
   }
 
+  /**
+   * Creates a builder for a constant schema provider.<br>
+   * This can be used when schema remains the same across multiple milestones. <br>
+   * Example usage:
+   *
+   * <pre>{@code
+   * constantProviderBuilder(EXAMPLE_SCHEMA)
+   *    .withCreator(ALTAIR, (registry, config) -> new ExampleSchemaAltair())
+   *    .withCreator(ELECTRA, (registry, config) -> new ExampleSchemaElectra())
+   *    .build();
+   *
+   * }</pre>
+   *
+   * this will create a schema provider that will generate: <br>
+   * - only one ExampleSchemaAltair instance which will be reused from ALTAIR to BELLATRIX <br>
+   * - only one ExampleSchemaElectra instance which will be reused from ELECTRA to last known
+   * milestone <br>
+   */
   static <T> Builder<T> constantProviderBuilder(final SchemaId<T> schemaId) {
     return new Builder<>(schemaId, true);
   }
 
+  /**
+   * Creates a builder for a variable schema provider.<br>
+   * This can be used when schema changes across multiple milestones (i.e. depends on changing
+   * schemas) <br>
+   * Example usage:
+   *
+   * <pre>{@code
+   * variableProviderBuilder(EXAMPLE_SCHEMA)
+   *    .withCreator(ALTAIR, (registry, config) -> new ExampleSchema1(registry, config))
+   *    .withCreator(ELECTRA, (registry, config) -> new ExampleSchema2(registry, config))
+   *    .build();
+   *
+   * }</pre>
+   *
+   * this will create a schema provider that will generate: <br>
+   * - a new instance of ExampleSchema1 for each milestone from ALTAIR to ELECTRA <br>
+   * - a new instance of ExampleSchema2 for each milestone from ELECTRA to last known milestone <br>
+   */
   static <T> Builder<T> variableProviderBuilder(final SchemaId<T> schemaId) {
     return new Builder<>(schemaId, false);
   }
