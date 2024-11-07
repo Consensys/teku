@@ -14,6 +14,12 @@
 package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOBS_BUNDLE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOBS_IN_BLOCK_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_KZG_COMMITMENTS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECAR_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -26,7 +32,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSch
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
@@ -91,7 +96,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     this.beaconStateSchema = BeaconStateSchemaDeneb.create(specConfig);
     this.executionPayloadHeaderSchemaDeneb =
         beaconStateSchema.getLastExecutionPayloadHeaderSchema();
-    this.blobKzgCommitmentsSchema = new BlobKzgCommitmentsSchema(specConfig);
+    this.blobKzgCommitmentsSchema = schemaRegistry.get(BLOB_KZG_COMMITMENTS_SCHEMA);
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaDenebImpl.create(
             specConfig,
@@ -121,24 +126,19 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     this.signedBuilderBidSchemaDeneb =
         new SignedBuilderBidSchema("SignedBuilderBidDeneb", builderBidSchemaDeneb);
 
-    this.blobSchema = new BlobSchema(specConfig);
-    this.blobsInBlockSchema = SszListSchema.create(blobSchema, specConfig.getMaxBlobsPerBlock());
-    this.blobSidecarSchema =
-        BlobSidecarSchema.create(
-            SignedBeaconBlockHeader.SSZ_SCHEMA,
-            blobSchema,
-            specConfig.getKzgCommitmentInclusionProofDepth());
+    this.blobSchema = schemaRegistry.get(BLOB_SCHEMA);
+    this.blobsInBlockSchema = schemaRegistry.get(BLOBS_IN_BLOCK_SCHEMA);
+    this.blobSidecarSchema = schemaRegistry.get(BLOB_SIDECAR_SCHEMA);
     this.blockContentsSchema =
         BlockContentsSchema.create(specConfig, beaconBlockSchema, blobSchema, "BlockContentsDeneb");
     this.signedBlockContentsSchema =
         SignedBlockContentsSchema.create(
             specConfig, signedBeaconBlockSchema, blobSchema, "SignedBlockContentsDeneb");
-    this.blobsBundleSchema =
-        new BlobsBundleSchema("BlobsBundleDeneb", blobSchema, blobKzgCommitmentsSchema, specConfig);
+    this.blobsBundleSchema = schemaRegistry.get(BLOBS_BUNDLE_SCHEMA);
     this.executionPayloadAndBlobsBundleSchema =
         new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaDeneb, blobsBundleSchema);
     this.blobSidecarsByRootRequestMessageSchema =
-        new BlobSidecarsByRootRequestMessageSchema(specConfig);
+        schemaRegistry.get(BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA);
   }
 
   public static SchemaDefinitionsDeneb required(final SchemaDefinitions schemaDefinitions) {

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.schemas.registry;
 
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
+import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.schemas.registry.BaseSchemaProvider.constantProviderBuilder;
@@ -22,6 +23,12 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_SC
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTER_SLASHING_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTNETS_ENR_FIELD_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCKS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOBS_BUNDLE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOBS_IN_BLOCK_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_KZG_COMMITMENTS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECAR_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLS_TO_EXECUTION_CHANGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_BATCH_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARY_SCHEMA;
@@ -34,12 +41,20 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.WITHDRAWAL_SCH
 import com.google.common.annotations.VisibleForTesting;
 import java.util.HashSet;
 import java.util.Set;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSchema;
@@ -74,7 +89,76 @@ public class SchemaRegistryBuilder {
         .addProvider(createWithdrawalSchemaProvider())
         .addProvider(createBlsToExecutionChangeSchemaProvider())
         .addProvider(createSignedBlsToExecutionChangeSchemaProvider())
-        .addProvider(createHistoricalSummarySchemaProvider());
+        .addProvider(createHistoricalSummarySchemaProvider())
+
+        // DENEB
+        .addProvider(createBlobKzgCommitmentsSchemaProvider())
+        .addProvider(createBlobSchemaProvider())
+        .addProvider(createBlobsInBlockSchemaProvider())
+        .addProvider(createBlobSidecarSchemaProvider())
+        .addProvider(createBlobSidecarsByRootRequestMessageSchemaProvider())
+        .addProvider(createBlobsBundleSchemaProvider());
+  }
+
+  private static SchemaProvider<?> createBlobsBundleSchemaProvider() {
+    // we can keep this to be constant because the blob list max length is
+    // getMaxBlobCommitmentsPerBlock
+    return constantProviderBuilder(BLOBS_BUNDLE_SCHEMA)
+        .withCreator(
+            DENEB,
+            (registry, specConfig) ->
+                new BlobsBundleSchema(registry, SpecConfigDeneb.required(specConfig)))
+        .build();
+  }
+
+  private static SchemaProvider<?> createBlobKzgCommitmentsSchemaProvider() {
+    // we can keep this to be constant because the kzg commitment list max length is
+    // getMaxBlobCommitmentsPerBlock
+    return constantProviderBuilder(BLOB_KZG_COMMITMENTS_SCHEMA)
+        .withCreator(
+            DENEB,
+            (registry, specConfig) ->
+                new BlobKzgCommitmentsSchema(SpecConfigDeneb.required(specConfig)))
+        .build();
+  }
+
+  private static SchemaProvider<?> createBlobSchemaProvider() {
+    return constantProviderBuilder(BLOB_SCHEMA)
+        .withCreator(
+            DENEB, (registry, specConfig) -> new BlobSchema(SpecConfigDeneb.required(specConfig)))
+        .build();
+  }
+
+  private static SchemaProvider<?> createBlobsInBlockSchemaProvider() {
+    return constantProviderBuilder(BLOBS_IN_BLOCK_SCHEMA)
+        .withCreator(
+            DENEB,
+            (registry, specConfig) ->
+                SszListSchema.create(
+                    registry.get(BLOB_SCHEMA),
+                    SpecConfigDeneb.required(specConfig).getMaxBlobsPerBlock()))
+        .build();
+  }
+
+  private static SchemaProvider<?> createBlobSidecarSchemaProvider() {
+    return constantProviderBuilder(BLOB_SIDECAR_SCHEMA)
+        .withCreator(
+            DENEB,
+            (registry, specConfig) ->
+                BlobSidecarSchema.create(
+                    SignedBeaconBlockHeader.SSZ_SCHEMA,
+                    registry.get(BLOB_SCHEMA),
+                    SpecConfigDeneb.required(specConfig).getKzgCommitmentInclusionProofDepth()))
+        .build();
+  }
+
+  private static SchemaProvider<?> createBlobSidecarsByRootRequestMessageSchemaProvider() {
+    return constantProviderBuilder(BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA)
+        .withCreator(
+            DENEB,
+            (registry, specConfig) ->
+                new BlobSidecarsByRootRequestMessageSchema(SpecConfigDeneb.required(specConfig)))
+        .build();
   }
 
   private static SchemaProvider<?> createHistoricalSummarySchemaProvider() {
@@ -143,12 +227,12 @@ public class SchemaRegistryBuilder {
             PHASE0,
             (registry, specConfig) ->
                 new AttesterSlashingSchema(
-                    ATTESTER_SLASHING_SCHEMA.getContainerName(registry.getMilestone()), registry))
+                    ATTESTER_SLASHING_SCHEMA.getContainerName(registry), registry))
         .withCreator(
             ELECTRA,
             (registry, specConfig) ->
                 new AttesterSlashingSchema(
-                    ATTESTER_SLASHING_SCHEMA.getContainerName(registry.getMilestone()), registry))
+                    ATTESTER_SLASHING_SCHEMA.getContainerName(registry), registry))
         .build();
   }
 
@@ -158,13 +242,13 @@ public class SchemaRegistryBuilder {
             PHASE0,
             (registry, specConfig) ->
                 new IndexedAttestationSchema(
-                    INDEXED_ATTESTATION_SCHEMA.getContainerName(registry.getMilestone()),
+                    INDEXED_ATTESTATION_SCHEMA.getContainerName(registry),
                     getMaxValidatorsPerAttestationPhase0(specConfig)))
         .withCreator(
             ELECTRA,
             (registry, specConfig) ->
                 new IndexedAttestationSchema(
-                    INDEXED_ATTESTATION_SCHEMA.getContainerName(registry.getMilestone()),
+                    INDEXED_ATTESTATION_SCHEMA.getContainerName(registry),
                     getMaxValidatorsPerAttestationElectra(specConfig)))
         .build();
   }
@@ -192,12 +276,12 @@ public class SchemaRegistryBuilder {
             PHASE0,
             (registry, specConfig) ->
                 new AggregateAndProofSchema(
-                    AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry.getMilestone()), registry))
+                    AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry), registry))
         .withCreator(
             ELECTRA,
             (registry, specConfig) ->
                 new AggregateAndProofSchema(
-                    AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry.getMilestone()), registry))
+                    AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry), registry))
         .build();
   }
 
@@ -207,14 +291,12 @@ public class SchemaRegistryBuilder {
             PHASE0,
             (registry, specConfig) ->
                 new SignedAggregateAndProofSchema(
-                    SIGNED_AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry.getMilestone()),
-                    registry))
+                    SIGNED_AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry), registry))
         .withCreator(
             ELECTRA,
             (registry, specConfig) ->
                 new SignedAggregateAndProofSchema(
-                    SIGNED_AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry.getMilestone()),
-                    registry))
+                    SIGNED_AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry), registry))
         .build();
   }
 

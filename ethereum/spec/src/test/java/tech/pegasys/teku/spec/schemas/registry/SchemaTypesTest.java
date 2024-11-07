@@ -17,6 +17,8 @@ import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isStatic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import org.junit.jupiter.api.Test;
@@ -29,7 +31,9 @@ public class SchemaTypesTest {
   public void shouldProvideContainerNameViaSchemaId() {
     final SchemaId<String> schemaId = SchemaTypes.create("MY_TEST_SCHEMA");
     assertEquals(schemaId.getContainerName(), "MyTest");
-    assertEquals(schemaId.getContainerName(SpecMilestone.DENEB), "MyTestDeneb");
+    final SchemaRegistry schemaRegistry = mock(SchemaRegistry.class);
+    when(schemaRegistry.getMilestone()).thenReturn(SpecMilestone.DENEB);
+    assertEquals(schemaId.getContainerName(schemaRegistry), "MyTestDeneb");
   }
 
   @Test
