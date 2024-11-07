@@ -80,7 +80,7 @@ public class DasLongPollCustody implements UpdatableDataColumnSidecarCustody, Sl
     SafeFuture<Optional<Boolean>> existingFuture =
         delegate
             .hasCustodyDataColumnSidecar(columnId)
-            .thenApply(doesExist -> doesExist ? Optional.empty() : Optional.of(true));
+            .thenApply(doesExist -> doesExist ? Optional.of(true) : Optional.empty());
     return anyNonEmpty(pendingFuture, existingFuture)
         .thenApply(maybeResult -> maybeResult.orElse(false));
   }
