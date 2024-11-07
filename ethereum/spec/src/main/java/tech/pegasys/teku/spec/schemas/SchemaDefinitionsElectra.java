@@ -21,6 +21,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_CONSOL
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_DEPOSITS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_PARTIAL_WITHDRAWALS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.WITHDRAWAL_REQUEST_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SINGLE_ATTESTATION_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -65,7 +66,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.pendingPartialWithdrawalsSchema = schemaRegistry.get(PENDING_PARTIAL_WITHDRAWALS_SCHEMA);
     this.pendingConsolidationsSchema = schemaRegistry.get(PENDING_CONSOLIDATIONS_SCHEMA);
 
-    this.singleAttestationSchema = new SingleAttestationSchema();
+    this.singleAttestationSchema = schemaRegistry.get(SINGLE_ATTESTATION_SCHEMA);
 
     this.depositRequestSchema = schemaRegistry.get(DEPOSIT_REQUEST_SCHEMA);
     this.withdrawalRequestSchema = schemaRegistry.get(WITHDRAWAL_REQUEST_SCHEMA);

@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSche
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -169,6 +170,8 @@ public class SchemaTypes {
       create("WITHDRAWAL_REQUEST_SCHEMA");
   public static final SchemaId<ConsolidationRequestSchema> CONSOLIDATION_REQUEST_SCHEMA =
       create("CONSOLIDATION_REQUEST_SCHEMA");
+  public static final SchemaId<SingleAttestationSchema> SINGLE_ATTESTATION_SCHEMA =
+          create("SINGLE_ATTESTATION_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation
