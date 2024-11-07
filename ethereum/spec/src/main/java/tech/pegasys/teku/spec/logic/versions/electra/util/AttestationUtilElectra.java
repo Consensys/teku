@@ -120,7 +120,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
   public IndexedAttestation getIndexedAttestation(
       final BeaconState state, final Attestation attestation) {
     if (attestation.isSingleAttestation()) {
-      final IndexedAttestationSchema<?> indexedAttestationSchema =
+      final IndexedAttestationSchema indexedAttestationSchema =
           schemaDefinitions.getIndexedAttestationSchema();
 
       return indexedAttestationSchema.create(
@@ -135,7 +135,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
 
   public IndexedAttestation getIndexedAttestationFromSingleAttestation(
       final SingleAttestation attestation) {
-    final IndexedAttestationSchema<?> indexedAttestationSchema =
+    final IndexedAttestationSchema indexedAttestationSchema =
         schemaDefinitions.getIndexedAttestationSchema();
 
     return indexedAttestationSchema.create(
