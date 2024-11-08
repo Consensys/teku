@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -53,6 +54,7 @@ public class StoreBuilder {
   private Checkpoint justifiedCheckpoint;
   private Checkpoint bestJustifiedCheckpoint;
   private Map<UInt64, VoteTracker> votes;
+  private Map<Bytes32, List<Byte>> ptcVote;
   private Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload =
       Optional.empty();
   private ForkChoiceStrategy forkChoiceStrategy = null;
@@ -102,7 +104,9 @@ public class StoreBuilder {
         .justifiedCheckpoint(data.getJustifiedCheckpoint())
         .bestJustifiedCheckpoint(data.getBestJustifiedCheckpoint())
         .blockInformation(data.getBlockInformation())
-        .votes(data.getVotes());
+        .votes(data.getVotes())
+        // EIP-7732 TODO: figure out this
+        .ptcVote(new HashMap<>());
   }
 
   public UpdatableStore build() {
@@ -125,7 +129,8 @@ public class StoreBuilder {
           bestJustifiedCheckpoint,
           votes,
           storeConfig,
-          forkChoiceStrategy);
+          forkChoiceStrategy,
+          ptcVote);
     }
     return Store.create(
         asyncRunner,
@@ -143,6 +148,7 @@ public class StoreBuilder {
         bestJustifiedCheckpoint,
         blockInfoByRoot,
         votes,
+        ptcVote,
         storeConfig);
   }
 
@@ -158,6 +164,7 @@ public class StoreBuilder {
     checkState(bestJustifiedCheckpoint != null, "Best justified checkpoint must be defined");
     checkState(latestFinalized != null, "Latest finalized anchor must be defined");
     checkState(votes != null, "Votes must be defined");
+    checkState(ptcVote != null, "Ptc vote must be defined");
     checkState(!blockInfoByRoot.isEmpty(), "Block data must be supplied");
   }
 
@@ -265,6 +272,12 @@ public class StoreBuilder {
   public StoreBuilder votes(final Map<UInt64, VoteTracker> votes) {
     checkNotNull(votes);
     this.votes = votes;
+    return this;
+  }
+
+  public StoreBuilder ptcVote(final Map<Bytes32, List<Byte>> ptcVote) {
+    checkNotNull(ptcVote);
+    this.ptcVote = ptcVote;
     return this;
   }
 }

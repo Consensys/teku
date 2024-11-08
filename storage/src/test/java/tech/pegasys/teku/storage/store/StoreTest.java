@@ -81,6 +81,7 @@ class StoreTest extends AbstractStoreTest {
                     genesisCheckpoint,
                     Collections.emptyMap(),
                     Collections.emptyMap(),
+                    Collections.emptyMap(),
                     defaultStoreConfig))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Time must be greater than or equal to genesisTime");
