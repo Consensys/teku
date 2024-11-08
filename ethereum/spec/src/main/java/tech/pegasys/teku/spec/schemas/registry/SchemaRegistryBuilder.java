@@ -338,7 +338,9 @@ public class SchemaRegistryBuilder {
 
     if (lastBuiltSchemaRegistryMilestone == null) {
       // we recursively build all previous milestones
-      milestone.getPreviousMilestoneIfExists().ifPresent(previousMilestone -> build(previousMilestone, specConfig));
+      milestone
+          .getPreviousMilestoneIfExists()
+          .ifPresent(previousMilestone -> build(previousMilestone, specConfig));
     } else {
       checkArgument(
           lastBuiltSchemaRegistryMilestone.ordinal() == milestone.ordinal() - 1,
