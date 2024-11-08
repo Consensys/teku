@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ChildNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -353,7 +354,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
-  public Optional<Bytes32> getAncestor(final Bytes32 blockRoot, final UInt64 slot) {
+  public Optional<ChildNode> getAncestor(final Bytes32 blockRoot, final UInt64 slot) {
     protoArrayLock.readLock().lock();
     try {
       // Note: This code could be more succinct if currentNode were an Optional and we used flatMap
@@ -372,7 +373,8 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
         }
         currentNode = protoArray.getNodes().get(parentIndex.get());
       }
-      return Optional.of(currentNode.getBlockRoot());
+      return Optional.of(
+          new ChildNode(currentNode.getBlockRoot(), currentNode.getBlockSlot(), false));
     } finally {
       protoArrayLock.readLock().unlock();
     }
