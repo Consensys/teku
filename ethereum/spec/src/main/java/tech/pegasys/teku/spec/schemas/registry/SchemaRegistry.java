@@ -75,20 +75,9 @@ public class SchemaRegistry {
               + " or it does not support milestone "
               + milestone);
     }
-    T schema = cache.get(milestone, schemaId);
+    final T schema = cache.get(milestone, schemaId);
     if (schema != null) {
       return schema;
-    }
-
-    // let's check if the schema is stored associated to the effective milestone
-    final SpecMilestone effectiveMilestone = provider.getEffectiveMilestone(milestone);
-    if (effectiveMilestone != milestone) {
-      schema = cache.get(effectiveMilestone, schemaId);
-      if (schema != null) {
-        // let's cache the schema for current milestone as well
-        cache.put(milestone, schemaId, schema);
-        return schema;
-      }
     }
 
     // The schema was not found.
@@ -101,17 +90,31 @@ public class SchemaRegistry {
     }
 
     // actual schema creation (may trigger recursive registry lookups)
-    schema = provider.getSchema(this);
+    final T createdSchema = provider.getSchema(this);
 
     // release the provider
     INFLIGHT_PROVIDERS.remove(provider);
 
-    // cache the schema
-    cache.put(effectiveMilestone, schemaId, schema);
-    if (effectiveMilestone != milestone) {
-      cache.put(milestone, schemaId, schema);
+    // let's check if the created schema is equal to the one from the previous milestone
+    final SpecMilestone effectiveMilestone = provider.getBaseMilestone(milestone);
+    final T resolvedSchema;
+    if (provider.isSchemaEqualityCheckDisabled()) {
+      resolvedSchema = createdSchema;
+    } else {
+      resolvedSchema =
+          milestone
+              .getPreviousMilestoneIfExists()
+              .filter(
+                  previousMilestone -> previousMilestone.isGreaterThanOrEqualTo(effectiveMilestone))
+              .map(previousMilestone -> cache.get(previousMilestone, schemaId))
+              .filter(previousSchema -> previousSchema.equals(createdSchema))
+              .orElse(createdSchema);
     }
-    return schema;
+
+    // cache the schema
+    cache.put(milestone, schemaId, resolvedSchema);
+
+    return resolvedSchema;
   }
 
   public SpecMilestone getMilestone() {
