@@ -58,7 +58,7 @@ public class ForkScheduleTest {
       TRANSITION_CONFIG.toVersionAltair().orElseThrow().getAltairForkVersion();
   static final Bytes4 UNKNOWN_FORK_VERSION = Bytes4.fromHexStringLenient("0xFFFFFFFF");
 
-  static final SchemaRegistryBuilder SCHEMA_REGISTRY_BUILDER = SchemaRegistryBuilder.create();
+  final SchemaRegistryBuilder SCHEMA_REGISTRY_BUILDER = SchemaRegistryBuilder.create();
 
   @Test
   public void build_validScheduleWithAltairTransition() {
@@ -116,7 +116,8 @@ public class ForkScheduleTest {
   @Test
   public void builder_milestonesSuppliedOutOfOrder_processAltairBeforePhase0() {
     final SpecVersion altair = SpecVersion.createAltair(ALTAIR_CONFIG, SCHEMA_REGISTRY_BUILDER);
-    final SpecVersion phase0 = SpecVersion.createPhase0(ALTAIR_CONFIG, SCHEMA_REGISTRY_BUILDER);
+    final SpecVersion phase0 =
+        SpecVersion.createPhase0(ALTAIR_CONFIG, SchemaRegistryBuilder.create());
     final ForkSchedule.Builder builder = ForkSchedule.builder();
 
     builder.addNextMilestone(altair);
