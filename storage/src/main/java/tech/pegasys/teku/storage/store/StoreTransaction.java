@@ -357,6 +357,23 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public Optional<Bytes32> getPayloadWithholdBoostRoot() {
+    return payloadWithholdBoostRootSet
+        ? payloadWithholdBoostRoot
+        : store.getPayloadWithholdBoostRoot();
+  }
+
+  @Override
+  public Optional<Bytes32> getPayloadRevealBoostRoot() {
+    return payloadRevealBoostRootSet ? payloadRevealBoostRoot : store.getPayloadRevealBoostRoot();
+  }
+
+  @Override
+  public boolean getPayloadWithholdBoostFull() {
+    return store.getPayloadWithholdBoostFull();
+  }
+
+  @Override
   public ReadOnlyForkChoiceStrategy getForkChoiceStrategy() {
     return store.getForkChoiceStrategy();
   }
@@ -520,6 +537,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public Optional<Boolean> isFfgCompetitive(final Bytes32 headRoot, final Bytes32 parentRoot) {
     return store.isFfgCompetitive(headRoot, parentRoot);
+  }
+
+  @Override
+  public boolean isPayloadPresent(final Bytes32 root) {
+    return store.isPayloadPresent(root);
   }
 
   @Override

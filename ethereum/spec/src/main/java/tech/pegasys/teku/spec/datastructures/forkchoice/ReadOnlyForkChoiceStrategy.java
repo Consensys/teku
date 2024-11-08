@@ -29,7 +29,7 @@ public interface ReadOnlyForkChoiceStrategy {
 
   Optional<Bytes32> executionBlockHash(Bytes32 blockRoot);
 
-  Optional<Bytes32> getAncestor(Bytes32 blockRoot, UInt64 slot);
+  Optional<ChildNode> getAncestor(Bytes32 blockRoot, UInt64 slot);
 
   Optional<SlotAndBlockRoot> findCommonAncestor(Bytes32 blockRoot1, Bytes32 blockRoot2);
 

@@ -25,12 +25,14 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodyEip7732;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ChildNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -123,7 +125,7 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/consensus-specs/blob/v0.10.1/specs/phase0/fork-choice.md#get_ancestor</a>
    */
-  public Optional<Bytes32> getAncestor(
+  public Optional<ChildNode> getAncestor(
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy, final Bytes32 root, final UInt64 slot) {
     return forkChoiceStrategy.getAncestor(root, slot);
   }
@@ -359,7 +361,7 @@ public class ForkChoiceUtil {
     // LMD vote must be consistent with FFG vote target
     final UInt64 targetSlot = miscHelpers.computeStartSlotAtEpoch(target.getEpoch());
     if (getAncestor(forkChoiceStrategy, attestationData.getBeaconBlockRoot(), targetSlot)
-        .map(ancestorRoot -> !ancestorRoot.equals(target.getRoot()))
+        .map(ancestorRoot -> !ancestorRoot.root().equals(target.getRoot()))
         .orElse(true)) {
       return AttestationProcessingResult.invalid(
           "LMD vote must be consistent with FFG vote target");
@@ -495,7 +497,7 @@ public class ForkChoiceUtil {
       final UInt64 slot,
       final Bytes32 ancestorRoot) {
     return getAncestor(forkChoiceStrategy, root, slot)
-        .map(ancestorAtSlot -> ancestorAtSlot.equals(ancestorRoot))
+        .map(ancestorAtSlot -> ancestorAtSlot.root().equals(ancestorRoot))
         .orElse(false);
   }
 
@@ -516,14 +518,139 @@ public class ForkChoiceUtil {
     return Optional.empty();
   }
 
-  private boolean isBellatrixBlockOld(final ReadOnlyStore store, final UInt64 blockSlot) {
-    final Optional<SpecConfigBellatrix> maybeConfig = specConfig.toVersionBellatrix();
-    if (maybeConfig.isEmpty()) {
+  // ePBS
+  public boolean isParentNodeFull(final ReadOnlyStore store, final SignedBeaconBlock block) {
+    final Optional<SignedBeaconBlock> parent = store.getBlockIfAvailable(block.getParentRoot());
+    if (parent.isEmpty()) {
       return false;
     }
-    return blockSlot
-        .plus(maybeConfig.get().getSafeSlotsToImportOptimistically())
-        .isLessThanOrEqualTo(getCurrentSlot(store));
+    final BeaconBlockBodyEip7732 body =
+        BeaconBlockBodyEip7732.required(block.getMessage().getBody());
+    final Bytes32 parentBlockHash =
+        ExecutionPayloadHeaderEip7732.required(body.getSignedExecutionPayloadHeader().getMessage())
+            .getParentBlockHash();
+    final BeaconBlockBodyEip7732 parentBody =
+        BeaconBlockBodyEip7732.required(parent.get().getMessage().getBody());
+    final Bytes32 messageBlockHash =
+        ExecutionPayloadHeaderEip7732.required(
+                parentBody.getSignedExecutionPayloadHeader().getMessage())
+            .getBlockHash();
+    return parentBlockHash.equals(messageBlockHash);
+  }
+
+  public UInt64 computeProposerBoost(
+      final ReadOnlyStore store, final BeaconState state, final ChildNode node) {
+    final Optional<Bytes32> maybeProposerBoostRoot = store.getProposerBoostRoot();
+    if (maybeProposerBoostRoot.isEmpty()) {
+      return UInt64.ZERO;
+    }
+    final Bytes32 proposerBoostRoot = maybeProposerBoostRoot.get();
+    final Optional<ChildNode> maybeAncestor =
+        getAncestor(store.getForkChoiceStrategy(), proposerBoostRoot, node.slot());
+    if (maybeAncestor.isEmpty()) {
+      return UInt64.ZERO;
+    }
+    final ChildNode ancestor = maybeAncestor.get();
+    if (!ancestor.root().equals(node.root())) {
+      return UInt64.ZERO;
+    }
+    final Optional<UInt64> maybeProposerBoostSlot =
+        store.getBlockIfAvailable(proposerBoostRoot).map(SignedBeaconBlock::getSlot);
+    if (maybeProposerBoostSlot.isEmpty()) {
+      return UInt64.ZERO;
+    }
+    final UInt64 proposerBoostSlot = maybeProposerBoostSlot.get();
+    // Proposer boost is not applied after skipped slots
+    if (node.slot().isGreaterThan(proposerBoostSlot)) {
+      return UInt64.ZERO;
+    }
+    if (node.slot().isLessThan(proposerBoostSlot)
+        && ancestor.isPayloadPresent() != node.isPayloadPresent()) {
+      return UInt64.ZERO;
+    }
+    final UInt64 committeeWeight = beaconStateAccessors.getTotalActiveBalance(state);
+    // TODO: change to EIP7732 version
+    return (committeeWeight
+        .dividedBy(specConfig.getSlotsPerEpoch())
+        .times(specConfig.getProposerScoreBoost())
+        .dividedBy(100));
+  }
+
+  public UInt64 computeWithholdBoost(
+      final ReadOnlyStore store, final BeaconState state, final ChildNode node) {
+    final Optional<Bytes32> maybePayloadWithholdBoostRoot = store.getPayloadWithholdBoostRoot();
+    if (maybePayloadWithholdBoostRoot.isEmpty()) {
+      return UInt64.ZERO;
+    }
+    final Bytes32 payloadWithholdBoostRoot = maybePayloadWithholdBoostRoot.get();
+    final Optional<ChildNode> maybeAncestor =
+        getAncestor(store.getForkChoiceStrategy(), payloadWithholdBoostRoot, node.slot());
+    if (maybeAncestor.isEmpty()) {
+      return UInt64.ZERO;
+    }
+    final ChildNode ancestor = maybeAncestor.get();
+    if (!ancestor.root().equals(node.root())) {
+      return UInt64.ZERO;
+    }
+    boolean ancestorIsPayloadPresent = ancestor.isPayloadPresent();
+    if (node.slot()
+        .isGreaterThanOrEqualTo(
+            store
+                .getBlockIfAvailable(payloadWithholdBoostRoot)
+                .map(SignedBeaconBlock::getSlot)
+                .orElse(UInt64.MAX_VALUE))) {
+      ancestorIsPayloadPresent = store.getPayloadWithholdBoostFull();
+    }
+    if (ancestorIsPayloadPresent != node.isPayloadPresent()) {
+      return UInt64.ZERO;
+    }
+    final UInt64 committeeWeight = beaconStateAccessors.getTotalActiveBalance(state);
+    // TODO: add PAYLOAD_WITHHOLD_BOOST
+    return (committeeWeight.dividedBy(specConfig.getSlotsPerEpoch()).times(40).dividedBy(100));
+  }
+
+  public UInt64 computeRevealBoost(
+      final ReadOnlyStore store, final BeaconState state, final ChildNode node) {
+    final Optional<Bytes32> maybePayloadRevealBoostRoot = store.getPayloadRevealBoostRoot();
+    if (maybePayloadRevealBoostRoot.isEmpty()) {
+      return UInt64.ZERO;
+    }
+    final Bytes32 payloadRevealBoostRoot = maybePayloadRevealBoostRoot.get();
+    final Optional<ChildNode> maybeAncestor =
+        getAncestor(store.getForkChoiceStrategy(), payloadRevealBoostRoot, node.slot());
+    if (maybeAncestor.isEmpty()) {
+      return UInt64.ZERO;
+    }
+    final ChildNode ancestor = maybeAncestor.get();
+    if (!ancestor.root().equals(node.root())) {
+      return UInt64.ZERO;
+    }
+    boolean ancestorIsPayloadPresent = ancestor.isPayloadPresent();
+    if (node.slot()
+        .isGreaterThanOrEqualTo(
+            store
+                .getBlockIfAvailable(payloadRevealBoostRoot)
+                .map(SignedBeaconBlock::getSlot)
+                .orElse(UInt64.MAX_VALUE))) {
+      ancestorIsPayloadPresent = true;
+    }
+    if (ancestorIsPayloadPresent != node.isPayloadPresent()) {
+      return UInt64.ZERO;
+    }
+    final UInt64 committeeWeight = beaconStateAccessors.getTotalActiveBalance(state);
+    // TODO: add PAYLOAD_REVEAL_BOOST
+    return (committeeWeight.dividedBy(specConfig.getSlotsPerEpoch()).times(40).dividedBy(100));
+  }
+
+  private boolean isBellatrixBlockOld(final ReadOnlyStore store, final UInt64 blockSlot) {
+    return specConfig
+        .toVersionBellatrix()
+        .filter(
+            specConfigBellatrix ->
+                blockSlot
+                    .plus(specConfigBellatrix.getSafeSlotsToImportOptimistically())
+                    .isLessThanOrEqualTo(getCurrentSlot(store)))
+        .isPresent();
   }
 
   private boolean isExecutionBlock(final ReadOnlyStore store, final SignedBeaconBlock block) {

@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ChildNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -70,11 +71,11 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   }
 
   @Override
-  public Optional<Bytes32> getAncestor(final Bytes32 blockRoot, final UInt64 slot) {
+  public Optional<ChildNode> getAncestor(final Bytes32 blockRoot, final UInt64 slot) {
     if (getBlock(blockRoot).isEmpty()) {
       return Optional.empty();
     }
-    return getBlock(slot).map(SignedBeaconBlock::getRoot);
+    return getBlock(slot).map(block -> new ChildNode(block.getRoot(), block.getSlot(), true));
   }
 
   @Override

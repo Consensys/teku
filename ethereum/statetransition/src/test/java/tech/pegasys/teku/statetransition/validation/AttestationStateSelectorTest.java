@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ChildNode;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -211,7 +212,8 @@ class AttestationStateSelectorTest {
                   recentChainData
                       .getStore()
                       .getForkChoiceStrategy()
-                      .getAncestor(blockRoot, state.getSlot());
+                      .getAncestor(blockRoot, state.getSlot())
+                      .map(ChildNode::root);
               final Bytes32 stateBlockRoot = BeaconBlockHeader.fromState(state).getRoot();
               assertThat(attestationAncestorBlockRoot).contains(stateBlockRoot);
             } else {

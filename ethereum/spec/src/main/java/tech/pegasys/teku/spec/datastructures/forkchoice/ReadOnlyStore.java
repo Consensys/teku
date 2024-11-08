@@ -79,6 +79,12 @@ public interface ReadOnlyStore extends TimeProvider {
 
   Optional<Bytes32> getProposerBoostRoot();
 
+  Optional<Bytes32> getPayloadWithholdBoostRoot();
+
+  Optional<Bytes32> getPayloadRevealBoostRoot();
+
+  boolean getPayloadWithholdBoostFull();
+
   ReadOnlyForkChoiceStrategy getForkChoiceStrategy();
 
   boolean containsBlock(Bytes32 blockRoot);
@@ -143,4 +149,7 @@ public interface ReadOnlyStore extends TimeProvider {
 
   // implements is_ffg_competitive from Consensus Spec
   Optional<Boolean> isFfgCompetitive(Bytes32 headRoot, Bytes32 parentRoot);
+
+  // ePBS
+  boolean isPayloadPresent(Bytes32 root);
 }

@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -53,6 +54,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.constants.PayloadStatus;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -149,7 +151,8 @@ class Store extends CacheableStore {
       final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates,
       final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
-      final CachingTaskQueue<Bytes32, StateAndExecutionPayloadSummary> executionPayloadStates) {
+      final CachingTaskQueue<Bytes32, StateAndExecutionPayloadSummary> executionPayloadStates,
+      final Map<Bytes32, List<Byte>> ptcVote) {
     checkArgument(
         time.isGreaterThanOrEqualTo(genesisTime),
         "Time must be greater than or equal to genesisTime");
@@ -203,6 +206,7 @@ class Store extends CacheableStore {
     // ePBS
     this.payloadWithholdBoostFull = true;
     this.executionPayloadStates = executionPayloadStates;
+    this.ptcVote = new HashMap<>(ptcVote);
     states.cache(finalizedAnchor.getRoot(), finalizedAnchor);
     ptcVote.put(finalizedAnchor.getRoot(), new ArrayList<>());
   }
@@ -238,7 +242,8 @@ class Store extends CacheableStore {
       final Checkpoint bestJustifiedCheckpoint,
       final Map<UInt64, VoteTracker> votes,
       final StoreConfig config,
-      final ForkChoiceStrategy forkChoiceStrategy) {
+      final ForkChoiceStrategy forkChoiceStrategy,
+      final Map<Bytes32, List<Byte>> ptcVote) {
     final Map<Bytes32, SignedBeaconBlock> blocks =
         LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
     final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStateTaskQueue =
@@ -286,7 +291,8 @@ class Store extends CacheableStore {
         checkpointStateTaskQueue,
         maybeEpochStates,
         blobSidecars,
-        executionPayloadStateTaskQueue);
+        executionPayloadStateTaskQueue,
+        ptcVote);
   }
 
   public static UpdatableStore create(
@@ -306,6 +312,7 @@ class Store extends CacheableStore {
       final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
       final Optional<Bytes32> initialCanonicalBlockRoot,
       final Map<UInt64, VoteTracker> votes,
+      final Map<Bytes32, List<Byte>> ptcVote,
       final StoreConfig config) {
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(time, genesisTime));
 
@@ -336,7 +343,8 @@ class Store extends CacheableStore {
         bestJustifiedCheckpoint,
         votes,
         config,
-        forkChoiceStrategy);
+        forkChoiceStrategy,
+        ptcVote);
   }
 
   private static Optional<Bytes32> getInitialCanonicalBlockRoot(
@@ -561,6 +569,36 @@ class Store extends CacheableStore {
   }
 
   @Override
+  public Optional<Bytes32> getPayloadWithholdBoostRoot() {
+    readLock.lock();
+    try {
+      return payloadWithholdBoostRoot;
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public Optional<Bytes32> getPayloadRevealBoostRoot() {
+    readLock.lock();
+    try {
+      return payloadRevealBoostRoot;
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public boolean getPayloadWithholdBoostFull() {
+    readLock.lock();
+    try {
+      return payloadWithholdBoostFull;
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
   public boolean containsBlock(final Bytes32 blockRoot) {
     readLock.lock();
     try {
@@ -667,6 +705,16 @@ class Store extends CacheableStore {
         parentUnrealizedJustifiedCheckpoint);
     return Optional.of(
         headUnrealizedJustifiedCheckpoint.equals(parentUnrealizedJustifiedCheckpoint));
+  }
+
+  // EIP7732 TODO: Turn 256 into constant PAYLOAD_TIMELY_THRESHOLD
+  @Override
+  public boolean isPayloadPresent(final Bytes32 root) {
+    final List<Byte> ptcVote = this.ptcVote.getOrDefault(root, Collections.emptyList());
+    return ptcVote.stream()
+            .filter(vote -> vote.equals(PayloadStatus.PAYLOAD_PRESENT.getCode()))
+            .count()
+        > 256;
   }
 
   private Optional<ProtoNodeData> getBlockDataFromForkChoiceStrategy(final Bytes32 root) {

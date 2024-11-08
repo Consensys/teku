@@ -150,6 +150,16 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public Optional<Bytes32> getPayloadWithholdBoostRoot() {
+    return payloadWithholdBoostRoot;
+  }
+
+  @Override
+  public Optional<Bytes32> getPayloadRevealBoostRoot() {
+    return payloadRevealBoostRoot;
+  }
+
+  @Override
   public ReadOnlyForkChoiceStrategy getForkChoiceStrategy() {
     return forkChoiceStrategy;
   }
@@ -276,6 +286,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   @Override
   public Optional<Boolean> isFfgCompetitive(final Bytes32 headRoot, final Bytes32 parentRoot) {
     return Optional.empty();
+  }
+
+  @Override
+  public boolean isPayloadPresent(final Bytes32 root) {
+    return false;
   }
 
   @Override
@@ -439,7 +454,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     }
 
     @Override
-    public Optional<Bytes32> getAncestor(final Bytes32 blockRoot, final UInt64 slot) {
+    public Optional<ChildNode> getAncestor(final Bytes32 blockRoot, final UInt64 slot) {
       return Optional.empty();
     }
 
