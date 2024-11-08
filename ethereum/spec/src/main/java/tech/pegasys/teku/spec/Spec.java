@@ -72,6 +72,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ChildNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -631,7 +632,8 @@ public class Spec {
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy, final Bytes32 root, final UInt64 slot) {
     return forGetAncestor(forkChoiceStrategy, root, slot)
         .getForkChoiceUtil()
-        .getAncestor(forkChoiceStrategy, root, slot);
+        .getAncestor(forkChoiceStrategy, root, slot)
+        .map(ChildNode::root);
   }
 
   public NavigableMap<UInt64, Bytes32> getAncestors(
