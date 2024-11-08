@@ -337,7 +337,8 @@ public class SchemaRegistryBuilder {
       final SpecMilestone milestone, final SpecConfig specConfig) {
 
     if (lastBuiltSchemaRegistryMilestone == null) {
-      checkArgument(milestone == PHASE0, "First build must be for PHASE0");
+      // we recursively build all previous milestones
+      milestone.getPreviousMilestoneIfExists().ifPresent(previousMilestone -> build(previousMilestone, specConfig));
     } else {
       checkArgument(
           lastBuiltSchemaRegistryMilestone.ordinal() == milestone.ordinal() - 1,

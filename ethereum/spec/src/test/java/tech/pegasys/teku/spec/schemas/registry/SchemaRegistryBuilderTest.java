@@ -79,10 +79,12 @@ public class SchemaRegistryBuilderTest {
   }
 
   @Test
-  void shouldThrowWhenNotStartingFromPhase0() {
-    assertThatThrownBy(() -> builder.build(ALTAIR, specConfig))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("First build must be for PHASE0");
+  void shouldAutomaticallyBuildPreviousMilestones() {
+    builder.addProvider(mockProvider);
+    builder.build(ALTAIR, specConfig);
+
+    verify(cache).put(PHASE0, stringId, stringSchema);
+    verify(cache).put(ALTAIR, stringId, stringSchema);
   }
 
   @Test
