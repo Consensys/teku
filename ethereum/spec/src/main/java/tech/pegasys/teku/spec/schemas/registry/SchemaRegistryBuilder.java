@@ -332,6 +332,7 @@ public class SchemaRegistryBuilder {
     return this;
   }
 
+  @SuppressWarnings("EnumOrdinal")
   public synchronized SchemaRegistry build(
       final SpecMilestone milestone, final SpecConfig specConfig) {
 

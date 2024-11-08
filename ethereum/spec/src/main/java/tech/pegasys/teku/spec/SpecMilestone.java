@@ -56,6 +56,7 @@ public enum SpecMilestone {
   }
 
   /** Returns the milestone prior to this milestone */
+  @SuppressWarnings("EnumOrdinal")
   public SpecMilestone getPreviousMilestone() {
     checkArgument(!equals(PHASE0), "There is no milestone prior to Phase0");
     final SpecMilestone[] values = SpecMilestone.values();
@@ -63,6 +64,7 @@ public enum SpecMilestone {
   }
 
   /** Returns the milestone prior to this milestone */
+  @SuppressWarnings("EnumOrdinal")
   public Optional<SpecMilestone> getPreviousMilestoneIfExists() {
     if (this.equals(PHASE0)) {
       return Optional.empty();

@@ -39,7 +39,7 @@ class BaseSchemaProviderTest {
 
   @Test
   void shouldSupportContinuousUntilHighestMilestone() {
-    final SchemaProvider<String> provider =
+    final SchemaProvider<?> provider =
         providerBuilder(STRING_SCHEMA_ID)
             .withCreator(ALTAIR, (r, c) -> "TestSchemaAltair")
             .withCreator(BELLATRIX, (r, c) -> "TestSchemaBellatrix")
