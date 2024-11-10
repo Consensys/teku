@@ -570,10 +570,10 @@ public class ForkChoiceUtil {
     }
     final UInt64 committeeWeight = beaconStateAccessors.getTotalActiveBalance(state);
     // TODO: change to EIP7732 version
-    return (committeeWeight
+    return committeeWeight
         .dividedBy(specConfig.getSlotsPerEpoch())
         .times(specConfig.getProposerScoreBoost())
-        .dividedBy(100));
+        .dividedBy(100);
   }
 
   public UInt64 computeWithholdBoost(
@@ -606,7 +606,7 @@ public class ForkChoiceUtil {
     }
     final UInt64 committeeWeight = beaconStateAccessors.getTotalActiveBalance(state);
     // TODO: add PAYLOAD_WITHHOLD_BOOST
-    return (committeeWeight.dividedBy(specConfig.getSlotsPerEpoch()).times(40).dividedBy(100));
+    return committeeWeight.dividedBy(specConfig.getSlotsPerEpoch()).times(40).dividedBy(100);
   }
 
   public UInt64 computeRevealBoost(
@@ -639,7 +639,7 @@ public class ForkChoiceUtil {
     }
     final UInt64 committeeWeight = beaconStateAccessors.getTotalActiveBalance(state);
     // TODO: add PAYLOAD_REVEAL_BOOST
-    return (committeeWeight.dividedBy(specConfig.getSlotsPerEpoch()).times(40).dividedBy(100));
+    return committeeWeight.dividedBy(specConfig.getSlotsPerEpoch()).times(40).dividedBy(100);
   }
 
   private boolean isBellatrixBlockOld(final ReadOnlyStore store, final UInt64 blockSlot) {
