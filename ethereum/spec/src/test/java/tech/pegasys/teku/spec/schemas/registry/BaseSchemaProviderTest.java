@@ -89,6 +89,16 @@ class BaseSchemaProviderTest {
   }
 
   @Test
+  void shouldAlwaysCreateNewSchemaDisabledByDefault() {
+    final SchemaProvider<?> provider =
+        providerBuilder(STRING_SCHEMA_ID)
+            .withCreator(PHASE0, (r, c) -> "TestSchema" + r.getMilestone())
+            .build();
+
+    assertFalse(provider.alwaysCreateNewSchema());
+  }
+
+  @Test
   void shouldSupportAlwaysCreateNewSchema() {
     final SchemaProvider<?> provider =
         providerBuilder(STRING_SCHEMA_ID)
