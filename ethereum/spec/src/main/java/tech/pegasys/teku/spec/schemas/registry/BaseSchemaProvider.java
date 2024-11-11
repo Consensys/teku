@@ -29,15 +29,15 @@ class BaseSchemaProvider<T> implements SchemaProvider<T> {
   private final TreeMap<SpecMilestone, SchemaProviderCreator<T>> milestoneToSchemaCreator =
       new TreeMap<>();
   private final SchemaId<T> schemaId;
-  private final boolean disableSchemaEqualityCheck;
+  private final boolean alwaysCreateNewSchema;
 
   private BaseSchemaProvider(
       final SchemaId<T> schemaId,
       final List<SchemaProviderCreator<T>> schemaProviderCreators,
       final SpecMilestone untilMilestone,
-      final boolean disableSchemaEqualityCheck) {
+      final boolean alwaysCreateNewSchema) {
     this.schemaId = schemaId;
-    this.disableSchemaEqualityCheck = disableSchemaEqualityCheck;
+    this.alwaysCreateNewSchema = alwaysCreateNewSchema;
     final List<SchemaProviderCreator<T>> creatorsList = new ArrayList<>(schemaProviderCreators);
 
     SchemaProviderCreator<T> lastCreator = null;
@@ -59,8 +59,8 @@ class BaseSchemaProvider<T> implements SchemaProvider<T> {
   }
 
   @Override
-  public boolean isSchemaEqualityCheckDisabled() {
-    return disableSchemaEqualityCheck;
+  public boolean alwaysCreateNewSchema() {
+    return alwaysCreateNewSchema;
   }
 
   @Override
@@ -109,7 +109,7 @@ class BaseSchemaProvider<T> implements SchemaProvider<T> {
    * Example usage:
    *
    * <pre>{@code
-   * variableProviderBuilder(EXAMPLE_SCHEMA)
+   * providerBuilder(EXAMPLE_SCHEMA)
    *    .withCreator(ALTAIR, (registry, config) -> ExampleSchema1.create(registry, config))
    *    .withCreator(ELECTRA, (registry, config) -> ExampleSchema2.create(registry, config))
    *    .build();
@@ -139,7 +139,7 @@ class BaseSchemaProvider<T> implements SchemaProvider<T> {
    *
    * }</pre>
    *
-   * - disabling the schema equality check by calling {@link Builder#disableSchemaEqualityCheck()}
+   * - using {@link Builder#alwaysCreateNewSchema()}
    */
   static <T> Builder<T> providerBuilder(final SchemaId<T> schemaId) {
     return new Builder<>(schemaId);
@@ -149,7 +149,7 @@ class BaseSchemaProvider<T> implements SchemaProvider<T> {
     private final SchemaId<T> schemaId;
     final List<SchemaProviderCreator<T>> schemaProviderCreators = new ArrayList<>();
     private SpecMilestone untilMilestone = SpecMilestone.getHighestMilestone();
-    private boolean disableSchemaEqualityCheck = false;
+    private boolean alwaysCreateNewSchema = false;
 
     private Builder(final SchemaId<T> schemaId) {
       this.schemaId = schemaId;
@@ -178,9 +178,12 @@ class BaseSchemaProvider<T> implements SchemaProvider<T> {
       return this;
     }
 
-    /** Disables schema equality check. Refer to {@link BaseSchemaProvider} for more information. */
-    public Builder<T> disableSchemaEqualityCheck() {
-      this.disableSchemaEqualityCheck = true;
+    /**
+     * Forces schema provider to create a new schema on each milestone, disabling schema equality
+     * check with previous milestone. Refer to {@link BaseSchemaProvider} for more information.
+     */
+    public Builder<T> alwaysCreateNewSchema() {
+      this.alwaysCreateNewSchema = true;
       return this;
     }
 
@@ -193,7 +196,7 @@ class BaseSchemaProvider<T> implements SchemaProvider<T> {
           "until must be greater or equal than last creator milestone in %s",
           schemaId);
       return new BaseSchemaProvider<>(
-          schemaId, schemaProviderCreators, untilMilestone, disableSchemaEqualityCheck);
+          schemaId, schemaProviderCreators, untilMilestone, alwaysCreateNewSchema);
     }
   }
 }

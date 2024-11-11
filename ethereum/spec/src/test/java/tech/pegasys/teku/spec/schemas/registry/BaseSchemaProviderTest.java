@@ -89,24 +89,14 @@ class BaseSchemaProviderTest {
   }
 
   @Test
-  void shouldSupportContinuousDefaultEqualsCheckEnabled() {
+  void shouldSupportAlwaysCreateNewSchema() {
     final SchemaProvider<?> provider =
         providerBuilder(STRING_SCHEMA_ID)
             .withCreator(PHASE0, (r, c) -> "TestSchema" + r.getMilestone())
+            .alwaysCreateNewSchema()
             .build();
 
-    assertFalse(provider.isSchemaEqualityCheckDisabled());
-  }
-
-  @Test
-  void shouldSupportDisablingEqualsCheck() {
-    final SchemaProvider<?> provider =
-        providerBuilder(STRING_SCHEMA_ID)
-            .withCreator(PHASE0, (r, c) -> "TestSchema" + r.getMilestone())
-            .disableSchemaEqualityCheck()
-            .build();
-
-    assertTrue(provider.isSchemaEqualityCheckDisabled());
+    assertTrue(provider.alwaysCreateNewSchema());
   }
 
   @Test

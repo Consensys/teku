@@ -24,7 +24,7 @@ interface SchemaProvider<T> {
 
   SpecMilestone getBaseMilestone(SpecMilestone version);
 
-  boolean isSchemaEqualityCheckDisabled();
+  boolean alwaysCreateNewSchema();
 
   SchemaId<T> getSchemaId();
 }

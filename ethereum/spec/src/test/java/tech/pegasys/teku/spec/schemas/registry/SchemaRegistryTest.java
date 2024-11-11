@@ -76,7 +76,7 @@ public class SchemaRegistryTest {
     when(schemaCache.get(SpecMilestone.PHASE0, schemaId)).thenReturn(cachedPhase0Schema);
     when(schemaProvider.getBaseMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.PHASE0);
     when(schemaProvider.getSchema(schemaRegistry)).thenReturn(newSchema);
-    when(schemaProvider.isSchemaEqualityCheckDisabled()).thenReturn(true);
+    when(schemaProvider.alwaysCreateNewSchema()).thenReturn(true);
 
     schemaRegistry.registerProvider(schemaProvider);
     final TestSchema result = schemaRegistry.get(schemaId);
@@ -103,7 +103,7 @@ public class SchemaRegistryTest {
     when(schemaCache.get(SpecMilestone.PHASE0, schemaId)).thenReturn(cachedPhase0Schema);
     when(schemaProvider.getBaseMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.PHASE0);
     when(schemaProvider.getSchema(schemaRegistry)).thenReturn(newSchema);
-    when(schemaProvider.isSchemaEqualityCheckDisabled()).thenReturn(false);
+    when(schemaProvider.alwaysCreateNewSchema()).thenReturn(false);
 
     schemaRegistry.registerProvider(schemaProvider);
     final TestSchema result = schemaRegistry.get(schemaId);
@@ -129,7 +129,7 @@ public class SchemaRegistryTest {
     when(schemaCache.get(SpecMilestone.PHASE0, schemaId)).thenReturn(cachedPhase0Schema);
     when(schemaProvider.getBaseMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.PHASE0);
     when(schemaProvider.getSchema(schemaRegistry)).thenReturn(newSchema);
-    when(schemaProvider.isSchemaEqualityCheckDisabled()).thenReturn(false);
+    when(schemaProvider.alwaysCreateNewSchema()).thenReturn(false);
 
     schemaRegistry.registerProvider(schemaProvider);
     final TestSchema result = schemaRegistry.get(schemaId);
@@ -150,7 +150,7 @@ public class SchemaRegistryTest {
     when(schemaCache.get(SpecMilestone.PHASE0, schemaId)).thenReturn(null);
     when(schemaProvider.getBaseMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.PHASE0);
     when(schemaProvider.getSchema(schemaRegistry)).thenReturn(newSchema);
-    when(schemaProvider.isSchemaEqualityCheckDisabled()).thenReturn(false);
+    when(schemaProvider.alwaysCreateNewSchema()).thenReturn(false);
 
     schemaRegistry.registerProvider(schemaProvider);
     final TestSchema result = schemaRegistry.get(schemaId);
@@ -175,7 +175,7 @@ public class SchemaRegistryTest {
     when(schemaCache.get(SpecMilestone.PHASE0, schemaId)).thenReturn(null);
     when(schemaProvider.getBaseMilestone(SpecMilestone.PHASE0)).thenReturn(SpecMilestone.PHASE0);
     when(schemaProvider.getSchema(schemaRegistry)).thenReturn(newSchema);
-    when(schemaProvider.isSchemaEqualityCheckDisabled()).thenReturn(false);
+    when(schemaProvider.alwaysCreateNewSchema()).thenReturn(false);
 
     schemaRegistry.registerProvider(schemaProvider);
     final TestSchema result = schemaRegistry.get(schemaId);

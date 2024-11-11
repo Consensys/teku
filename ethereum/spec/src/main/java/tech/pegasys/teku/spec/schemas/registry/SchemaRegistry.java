@@ -98,7 +98,7 @@ public class SchemaRegistry {
     // let's check if the created schema is equal to the one from the previous milestone
     final SpecMilestone effectiveMilestone = provider.getBaseMilestone(milestone);
     final T resolvedSchema;
-    if (provider.isSchemaEqualityCheckDisabled()) {
+    if (provider.alwaysCreateNewSchema()) {
       resolvedSchema = createdSchema;
     } else {
       resolvedSchema =
