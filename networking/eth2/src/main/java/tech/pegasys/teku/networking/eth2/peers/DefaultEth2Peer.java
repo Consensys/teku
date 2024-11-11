@@ -92,7 +92,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final Supplier<UInt64> firstSlotSupportingBlobSidecarsByRange;
   private final Supplier<BlobSidecarsByRootRequestMessageSchema>
       blobSidecarsByRootRequestMessageSchema;
-  private final Supplier<Integer> maxBlobsPerBlock;
 
   DefaultEth2Peer(
       final Spec spec,
@@ -129,8 +128,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                 SchemaDefinitionsDeneb.required(
                         spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
                     .getBlobSidecarsByRootRequestMessageSchema());
-    // TODO get Deneb or Electra max blobs per block instead
-    this.maxBlobsPerBlock = Suppliers.memoize(() -> getSpecConfigDeneb().getMaxBlobsPerBlock());
   }
 
   @Override
@@ -331,6 +328,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
             method -> {
               final UInt64 firstSupportedSlot = firstSlotSupportingBlobSidecarsByRange.get();
               final BlobSidecarsByRangeRequestMessage request;
+              final int maxBlobsPerBlock = calculateMaxBlobsPerBlock(startSlot.plus(count));
 
               if (startSlot.isLessThan(firstSupportedSlot)) {
                 LOG.debug(
@@ -344,10 +342,9 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                 }
                 request =
                     new BlobSidecarsByRangeRequestMessage(
-                        firstSupportedSlot, updatedCount, maxBlobsPerBlock.get());
+                        firstSupportedSlot, updatedCount, maxBlobsPerBlock);
               } else {
-                request =
-                    new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock.get());
+                request = new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
               }
               return requestStream(
                   method,
@@ -356,12 +353,16 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                       spec,
                       this,
                       listener,
-                      maxBlobsPerBlock.get(),
+                      maxBlobsPerBlock,
                       kzg,
                       request.getStartSlot(),
                       request.getCount()));
             })
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRange"));
+  }
+
+  private int calculateMaxBlobsPerBlock(final UInt64 endSlot) {
+    return spec.atSlot(endSlot).getConfig().toVersionDeneb().orElseThrow().getMaxBlobsPerBlock();
   }
 
   @Override
