@@ -13,11 +13,12 @@
 
 package tech.pegasys.teku.spec.schemas.registry;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
-import static tech.pegasys.teku.spec.schemas.registry.BaseSchemaProvider.constantProviderBuilder;
+import static tech.pegasys.teku.spec.schemas.registry.BaseSchemaProvider.providerBuilder;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTER_SLASHING_SCHEMA;
@@ -71,6 +72,7 @@ public class SchemaRegistryBuilder {
   private final Set<SchemaProvider<?>> providers = new HashSet<>();
   private final Set<SchemaId<?>> schemaIds = new HashSet<>();
   private final SchemaCache cache;
+  private SpecMilestone lastBuiltSchemaRegistryMilestone;
 
   public static SchemaRegistryBuilder create() {
     return new SchemaRegistryBuilder()
@@ -103,7 +105,7 @@ public class SchemaRegistryBuilder {
   private static SchemaProvider<?> createBlobsBundleSchemaProvider() {
     // we can keep this to be constant because the blob list max length is
     // getMaxBlobCommitmentsPerBlock
-    return constantProviderBuilder(BLOBS_BUNDLE_SCHEMA)
+    return providerBuilder(BLOBS_BUNDLE_SCHEMA)
         .withCreator(
             DENEB,
             (registry, specConfig) ->
@@ -114,7 +116,7 @@ public class SchemaRegistryBuilder {
   private static SchemaProvider<?> createBlobKzgCommitmentsSchemaProvider() {
     // we can keep this to be constant because the kzg commitment list max length is
     // getMaxBlobCommitmentsPerBlock
-    return constantProviderBuilder(BLOB_KZG_COMMITMENTS_SCHEMA)
+    return providerBuilder(BLOB_KZG_COMMITMENTS_SCHEMA)
         .withCreator(
             DENEB,
             (registry, specConfig) ->
@@ -123,14 +125,14 @@ public class SchemaRegistryBuilder {
   }
 
   private static SchemaProvider<?> createBlobSchemaProvider() {
-    return constantProviderBuilder(BLOB_SCHEMA)
+    return providerBuilder(BLOB_SCHEMA)
         .withCreator(
             DENEB, (registry, specConfig) -> new BlobSchema(SpecConfigDeneb.required(specConfig)))
         .build();
   }
 
   private static SchemaProvider<?> createBlobsInBlockSchemaProvider() {
-    return constantProviderBuilder(BLOBS_IN_BLOCK_SCHEMA)
+    return providerBuilder(BLOBS_IN_BLOCK_SCHEMA)
         .withCreator(
             DENEB,
             (registry, specConfig) ->
@@ -141,7 +143,7 @@ public class SchemaRegistryBuilder {
   }
 
   private static SchemaProvider<?> createBlobSidecarSchemaProvider() {
-    return constantProviderBuilder(BLOB_SIDECAR_SCHEMA)
+    return providerBuilder(BLOB_SIDECAR_SCHEMA)
         .withCreator(
             DENEB,
             (registry, specConfig) ->
@@ -153,7 +155,7 @@ public class SchemaRegistryBuilder {
   }
 
   private static SchemaProvider<?> createBlobSidecarsByRootRequestMessageSchemaProvider() {
-    return constantProviderBuilder(BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA)
+    return providerBuilder(BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA)
         .withCreator(
             DENEB,
             (registry, specConfig) ->
@@ -162,32 +164,32 @@ public class SchemaRegistryBuilder {
   }
 
   private static SchemaProvider<?> createHistoricalSummarySchemaProvider() {
-    return constantProviderBuilder(HISTORICAL_SUMMARY_SCHEMA)
+    return providerBuilder(HISTORICAL_SUMMARY_SCHEMA)
         .withCreator(CAPELLA, (registry, specConfig) -> new HistoricalSummarySchema())
         .build();
   }
 
   private static SchemaProvider<?> createSignedBlsToExecutionChangeSchemaProvider() {
-    return constantProviderBuilder(SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA)
+    return providerBuilder(SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA)
         .withCreator(
             CAPELLA, (registry, specConfig) -> new SignedBlsToExecutionChangeSchema(registry))
         .build();
   }
 
   private static SchemaProvider<?> createBlsToExecutionChangeSchemaProvider() {
-    return constantProviderBuilder(BLS_TO_EXECUTION_CHANGE_SCHEMA)
+    return providerBuilder(BLS_TO_EXECUTION_CHANGE_SCHEMA)
         .withCreator(CAPELLA, (registry, specConfig) -> new BlsToExecutionChangeSchema())
         .build();
   }
 
   private static SchemaProvider<?> createWithdrawalSchemaProvider() {
-    return constantProviderBuilder(WITHDRAWAL_SCHEMA)
+    return providerBuilder(WITHDRAWAL_SCHEMA)
         .withCreator(CAPELLA, (registry, specConfig) -> new WithdrawalSchema())
         .build();
   }
 
   private static SchemaProvider<?> createAttnetsENRFieldSchemaProvider() {
-    return constantProviderBuilder(ATTNETS_ENR_FIELD_SCHEMA)
+    return providerBuilder(ATTNETS_ENR_FIELD_SCHEMA)
         .withCreator(
             PHASE0,
             (registry, specConfig) ->
@@ -196,7 +198,7 @@ public class SchemaRegistryBuilder {
   }
 
   private static SchemaProvider<?> createSyncnetsENRFieldSchemaProvider() {
-    return constantProviderBuilder(SYNCNETS_ENR_FIELD_SCHEMA)
+    return providerBuilder(SYNCNETS_ENR_FIELD_SCHEMA)
         .withCreator(
             PHASE0,
             (registry, specConfig) ->
@@ -205,7 +207,7 @@ public class SchemaRegistryBuilder {
   }
 
   private static SchemaProvider<?> createBeaconBlocksByRootRequestMessageSchemaProvider() {
-    return constantProviderBuilder(BEACON_BLOCKS_BY_ROOT_REQUEST_MESSAGE_SCHEMA)
+    return providerBuilder(BEACON_BLOCKS_BY_ROOT_REQUEST_MESSAGE_SCHEMA)
         .withCreator(
             PHASE0,
             (registry, specConfig) -> new BeaconBlocksByRootRequestMessageSchema(specConfig))
@@ -213,7 +215,7 @@ public class SchemaRegistryBuilder {
   }
 
   private static SchemaProvider<?> createHistoricalBatchSchemaProvider() {
-    return constantProviderBuilder(HISTORICAL_BATCH_SCHEMA)
+    return providerBuilder(HISTORICAL_BATCH_SCHEMA)
         .withCreator(
             PHASE0,
             (registry, specConfig) ->
@@ -222,7 +224,7 @@ public class SchemaRegistryBuilder {
   }
 
   private static SchemaProvider<?> createAttesterSlashingSchemaProvider() {
-    return constantProviderBuilder(ATTESTER_SLASHING_SCHEMA)
+    return providerBuilder(ATTESTER_SLASHING_SCHEMA)
         .withCreator(
             PHASE0,
             (registry, specConfig) ->
@@ -237,7 +239,7 @@ public class SchemaRegistryBuilder {
   }
 
   private static SchemaProvider<?> createIndexedAttestationSchemaProvider() {
-    return constantProviderBuilder(INDEXED_ATTESTATION_SCHEMA)
+    return providerBuilder(INDEXED_ATTESTATION_SCHEMA)
         .withCreator(
             PHASE0,
             (registry, specConfig) ->
@@ -254,7 +256,7 @@ public class SchemaRegistryBuilder {
   }
 
   private static SchemaProvider<?> createAttestationSchemaProvider() {
-    return constantProviderBuilder(ATTESTATION_SCHEMA)
+    return providerBuilder(ATTESTATION_SCHEMA)
         .withCreator(
             PHASE0,
             (registry, specConfig) ->
@@ -271,7 +273,7 @@ public class SchemaRegistryBuilder {
   }
 
   private static SchemaProvider<?> createAggregateAndProofSchemaProvider() {
-    return constantProviderBuilder(AGGREGATE_AND_PROOF_SCHEMA)
+    return providerBuilder(AGGREGATE_AND_PROOF_SCHEMA)
         .withCreator(
             PHASE0,
             (registry, specConfig) ->
@@ -286,7 +288,7 @@ public class SchemaRegistryBuilder {
   }
 
   private static SchemaProvider<?> createSignedAggregateAndProofSchemaProvider() {
-    return constantProviderBuilder(SIGNED_AGGREGATE_AND_PROOF_SCHEMA)
+    return providerBuilder(SIGNED_AGGREGATE_AND_PROOF_SCHEMA)
         .withCreator(
             PHASE0,
             (registry, specConfig) ->
@@ -330,8 +332,25 @@ public class SchemaRegistryBuilder {
     return this;
   }
 
+  @SuppressWarnings("EnumOrdinal")
   public synchronized SchemaRegistry build(
       final SpecMilestone milestone, final SpecConfig specConfig) {
+
+    if (lastBuiltSchemaRegistryMilestone == null) {
+      // we recursively build all previous milestones
+      milestone
+          .getPreviousMilestoneIfExists()
+          .ifPresent(previousMilestone -> build(previousMilestone, specConfig));
+    } else {
+      checkArgument(
+          lastBuiltSchemaRegistryMilestone.ordinal() == milestone.ordinal() - 1,
+          "Build must follow the milestone ordering. Last built milestone: %s, requested milestone: %s",
+          lastBuiltSchemaRegistryMilestone,
+          milestone);
+    }
+
+    lastBuiltSchemaRegistryMilestone = milestone;
+
     final SchemaRegistry registry = new SchemaRegistry(milestone, specConfig, cache);
 
     for (final SchemaProvider<?> provider : providers) {

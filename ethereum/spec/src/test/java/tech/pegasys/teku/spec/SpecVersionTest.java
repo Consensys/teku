@@ -29,7 +29,6 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 class SpecVersionTest {
-  private final SchemaRegistryBuilder schemaRegistryBuilder = SchemaRegistryBuilder.create();
   private final SpecConfig minimalConfig =
       SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
 
@@ -42,44 +41,48 @@ class SpecVersionTest {
 
     switch (milestone) {
       case PHASE0 -> {
-        expectedVersion = SpecVersion.createPhase0(minimalConfig, schemaRegistryBuilder);
+        expectedVersion = SpecVersion.createPhase0(minimalConfig, SchemaRegistryBuilder.create());
         actualVersion =
-            SpecVersion.create(SpecMilestone.PHASE0, minimalConfig, schemaRegistryBuilder);
+            SpecVersion.create(SpecMilestone.PHASE0, minimalConfig, SchemaRegistryBuilder.create());
       }
 
       case ALTAIR -> {
         expectedVersion =
             SpecVersion.createAltair(
-                SpecConfigAltair.required(minimalConfig), schemaRegistryBuilder);
+                SpecConfigAltair.required(minimalConfig), SchemaRegistryBuilder.create());
         actualVersion =
-            SpecVersion.create(SpecMilestone.ALTAIR, minimalConfig, schemaRegistryBuilder);
+            SpecVersion.create(SpecMilestone.ALTAIR, minimalConfig, SchemaRegistryBuilder.create());
       }
       case BELLATRIX -> {
         expectedVersion =
             SpecVersion.createBellatrix(
-                SpecConfigBellatrix.required(minimalConfig), schemaRegistryBuilder);
+                SpecConfigBellatrix.required(minimalConfig), SchemaRegistryBuilder.create());
         actualVersion =
-            SpecVersion.create(SpecMilestone.BELLATRIX, minimalConfig, schemaRegistryBuilder);
+            SpecVersion.create(
+                SpecMilestone.BELLATRIX, minimalConfig, SchemaRegistryBuilder.create());
       }
       case CAPELLA -> {
         expectedVersion =
             SpecVersion.createCapella(
-                SpecConfigCapella.required(minimalConfig), schemaRegistryBuilder);
+                SpecConfigCapella.required(minimalConfig), SchemaRegistryBuilder.create());
         actualVersion =
-            SpecVersion.create(SpecMilestone.CAPELLA, minimalConfig, schemaRegistryBuilder);
+            SpecVersion.create(
+                SpecMilestone.CAPELLA, minimalConfig, SchemaRegistryBuilder.create());
       }
       case DENEB -> {
         expectedVersion =
-            SpecVersion.createDeneb(SpecConfigDeneb.required(minimalConfig), schemaRegistryBuilder);
+            SpecVersion.createDeneb(
+                SpecConfigDeneb.required(minimalConfig), SchemaRegistryBuilder.create());
         actualVersion =
-            SpecVersion.create(SpecMilestone.DENEB, minimalConfig, schemaRegistryBuilder);
+            SpecVersion.create(SpecMilestone.DENEB, minimalConfig, SchemaRegistryBuilder.create());
       }
       case ELECTRA -> {
         expectedVersion =
             SpecVersion.createElectra(
-                SpecConfigElectra.required(minimalConfig), schemaRegistryBuilder);
+                SpecConfigElectra.required(minimalConfig), SchemaRegistryBuilder.create());
         actualVersion =
-            SpecVersion.create(SpecMilestone.ELECTRA, minimalConfig, schemaRegistryBuilder);
+            SpecVersion.create(
+                SpecMilestone.ELECTRA, minimalConfig, SchemaRegistryBuilder.create());
       }
     }
 

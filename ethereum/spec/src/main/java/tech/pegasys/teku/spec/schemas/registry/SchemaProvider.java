@@ -22,7 +22,9 @@ interface SchemaProvider<T> {
 
   Set<SpecMilestone> getSupportedMilestones();
 
-  SpecMilestone getEffectiveMilestone(SpecMilestone version);
+  SpecMilestone getBaseMilestone(SpecMilestone version);
+
+  boolean alwaysCreateNewSchema();
 
   SchemaId<T> getSchemaId();
 }
