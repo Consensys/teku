@@ -366,7 +366,7 @@ public class Web3JExecutionEngineClientTest {
   public void getBlobsV1_shouldBuildRequestAndResponseSuccessfully() {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
     final List<BlobSidecar> blobSidecars =
-        dataStructureUtil.randomBlobSidecars(spec.getMaxBlobsPerBlock().orElseThrow());
+        dataStructureUtil.randomBlobSidecars(spec.getMaxBlobsPerBlockForHighestMilestone().orElseThrow());
     final List<BlobAndProofV1> blobsAndProofsV1 =
         blobSidecars.stream()
             .map(
