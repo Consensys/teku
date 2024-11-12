@@ -106,6 +106,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   }
 
   @Override
+  @Deprecated
   public int getMaxRequestBlobSidecars() {
     return maxRequestBlobSidecars;
   }
@@ -126,6 +127,11 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
     return maybeEpochsStoreBlobs
         .filter(epochsStoreBlobsInput -> epochsStoreBlobsInput > minEpochsForBlobSidecarsRequests)
         .orElse(minEpochsForBlobSidecarsRequests);
+  }
+
+  @Override
+  public int getMaxRequestBlobSidecarsInEffect() {
+    return maxRequestBlobSidecars;
   }
 
   @Override
