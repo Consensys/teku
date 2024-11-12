@@ -112,8 +112,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         };
 
     dataStructureUtil = new DataStructureUtil(spec);
-    maxBlobsPerBlock =
-        spec.forMilestone(specMilestone).miscHelpers().getMaxBlobsPerBlock().orElseThrow();
+    maxBlobsPerBlock = spec.forMilestone(specMilestone).getConfig().getMaxBlobsPerBlockInEffect();
     slotsPerEpoch = spec.getSlotsPerEpoch(ZERO);
     startSlot = currentForkEpoch.increment().times(slotsPerEpoch);
     handler = new BlobSidecarsByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
@@ -147,7 +146,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   @TestTemplate
   public void validateRequest_shouldRejectRequestWhenCountIsTooBig() {
     final UInt64 maxRequestBlobSidecars =
-        UInt64.valueOf(spec.forMilestone(specMilestone).miscHelpers().getMaxRequestBlobSidecars());
+        UInt64.valueOf(
+            spec.forMilestone(specMilestone).getConfig().getMaxRequestBlobSidecarsInEffect());
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(
             startSlot, maxRequestBlobSidecars.increment(), maxBlobsPerBlock);

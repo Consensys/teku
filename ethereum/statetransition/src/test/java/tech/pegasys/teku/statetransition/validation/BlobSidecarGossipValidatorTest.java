@@ -371,7 +371,7 @@ public class BlobSidecarGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldVerifySignedHeaderAgainAfterItDroppedFromCache(SpecContext specContext) {
+  void shouldVerifySignedHeaderAgainAfterItDroppedFromCache(final SpecContext specContext) {
     final Spec specMock = mock(Spec.class);
     final SpecVersion specVersion = mock(SpecVersion.class);
     when(specMock.atSlot(any())).thenReturn(specVersion);
