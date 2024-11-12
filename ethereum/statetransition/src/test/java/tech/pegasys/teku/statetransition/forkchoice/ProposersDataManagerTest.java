@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -119,9 +120,7 @@ class ProposersDataManagerTest {
     when(specMock.computeTimeAtSlot(any(), any())).thenReturn(timestamp);
     final Bytes32 random = dataStructureUtil.randomBytes32();
     when(specMock.getRandaoMix(any(), any())).thenReturn(random);
-    when(specMock.getMaxBlobsPerBlock(currentForkFirstSlot)).thenReturn(spec.getMaxBlobsPerBlock());
-    when(specMock.getTargetBlobsPerBlock(currentForkFirstSlot))
-        .thenReturn(spec.getTargetBlobsPerBlock(currentForkFirstSlot));
+    when(specMock.atSlot(currentForkFirstSlot)).thenReturn(spec.atSlot(currentForkFirstSlot));
     final InlineEventThread eventThread = new InlineEventThread();
     manager =
         new ProposersDataManager(
@@ -152,8 +151,18 @@ class ProposersDataManagerTest {
         payloadBuildingAttributesFuture.get();
     assertThat(maybePayloadBuildingAttributes).isPresent();
     assertThat(maybePayloadBuildingAttributes.get().getTargetBlobCount())
-        .isEqualTo(spec.getTargetBlobsPerBlock(currentForkFirstSlot).map(UInt64::valueOf));
+        .isEqualTo(
+            spec.atSlot(currentForkFirstSlot)
+                .getConfig()
+                .toVersionDeneb()
+                .map(SpecConfig::getTargetBlobsPerBlockInEffect)
+                .map(UInt64::valueOf));
     assertThat(maybePayloadBuildingAttributes.get().getMaximumBlobCount())
-        .isEqualTo(spec.getMaxBlobsPerBlock(currentForkFirstSlot).map(UInt64::valueOf));
+        .isEqualTo(
+            spec.atSlot(currentForkFirstSlot)
+                .getConfig()
+                .toVersionDeneb()
+                .map(SpecConfig::getMaxBlobsPerBlockInEffect)
+                .map(UInt64::valueOf));
   }
 }

@@ -57,4 +57,16 @@ public interface NetworkingSpecConfig {
   default NetworkingSpecConfig getNetworkingConfig() {
     return this;
   }
+
+  // Effective configs, the following configurations related to values that changes throughout the
+  // spec versions.
+  // they need to have different names due to how yaml files are structured.
+  // This way we can unify the access to these values in the codebase abstracting the spec version.
+  default int getMaxRequestBlobSidecarsInEffect() {
+    throw new UnsupportedOperationException("Blobs not supported by this spec version");
+  }
+
+  default int getBlobSidecarSubnetCountInEffect() {
+    throw new UnsupportedOperationException("Blobs not supported by this spec version");
+  }
 }

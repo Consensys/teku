@@ -66,8 +66,11 @@ public interface SpecConfigElectra extends SpecConfigDeneb, NetworkingSpecConfig
 
   int getMaxPendingDepositsPerEpoch();
 
+  // deprecated methods have corresponding "inEffect" methods in SpecConfig
+  @Deprecated
   int getMaxBlobsPerBlockElectra();
 
+  @Deprecated
   int getTargetBlobsPerBlockElectra();
 
   @Override

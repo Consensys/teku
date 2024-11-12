@@ -961,24 +961,19 @@ public class Spec {
         .isLessThanOrEqualTo(specConfigDeneb.getMinEpochsForBlobSidecarsRequests());
   }
 
-  public Optional<Integer> getMaxBlobsPerBlock() {
+  public Optional<Integer> getMaxBlobsPerBlockForHighestMilestone() {
     final SpecMilestone highestSupportedMilestone =
         getForkSchedule().getHighestSupportedMilestone();
-    return forMilestone(highestSupportedMilestone).miscHelpers().getMaxBlobsPerBlock();
-  }
-
-  public Optional<Integer> getMaxBlobsPerBlock(final UInt64 slot) {
-    return atSlot(slot).miscHelpers().getMaxBlobsPerBlock();
-  }
-
-  public Optional<Integer> getTargetBlobsPerBlock(final UInt64 slot) {
-    return atSlot(slot).miscHelpers().getTargetBlobsPerBlock();
+    return forMilestone(highestSupportedMilestone)
+        .getConfig()
+        .toVersionDeneb()
+        .map(SpecConfigDeneb::getMaxBlobsPerBlockInEffect);
   }
 
   public UInt64 computeSubnetForBlobSidecar(final BlobSidecar blobSidecar) {
     return blobSidecar
         .getIndex()
-        .mod(atSlot(blobSidecar.getSlot()).miscHelpers().getBlobSidecarSubnetCount().orElseThrow());
+        .mod(atSlot(blobSidecar.getSlot()).getConfig().getBlobSidecarSubnetCountInEffect());
   }
 
   public Optional<UInt64> computeFirstSlotWithBlobSupport() {

@@ -46,7 +46,8 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAnd
 
 public class BlockBlobSidecarsTrackerTest {
   private final Spec spec = TestSpecFactory.createMainnetDeneb();
-  private final UInt64 maxBlobsPerBlock = UInt64.valueOf(spec.getMaxBlobsPerBlock().orElseThrow());
+  private final UInt64 maxBlobsPerBlock =
+      UInt64.valueOf(spec.getGenesisSpecConfig().getMaxBlobsPerBlockInEffect());
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final SignedBeaconBlock block =

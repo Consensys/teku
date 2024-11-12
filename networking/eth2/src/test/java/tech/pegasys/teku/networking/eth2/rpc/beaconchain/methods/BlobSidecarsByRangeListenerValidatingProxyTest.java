@@ -71,7 +71,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
         };
     currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
     dataStructureUtil = new DataStructureUtil(spec);
-    maxBlobsPerBlock = spec.getMaxBlobsPerBlock().orElseThrow();
+    maxBlobsPerBlock = spec.getMaxBlobsPerBlockForHighestMilestone().orElseThrow();
 
     when(listener.onResponse(any())).thenReturn(SafeFuture.completedFuture(null));
     when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(true);
@@ -265,7 +265,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
         new BlobSidecarsByRangeListenerValidatingProxy(
             spec, peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
 
-    final int exceedingBlobCount = spec.getMaxBlobsPerBlock().orElseThrow() + 1;
+    final int exceedingBlobCount = spec.getMaxBlobsPerBlockForHighestMilestone().orElseThrow() + 1;
     final int exceedingBlobIndex = exceedingBlobCount - 1;
     final SignedBeaconBlock block1 =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(

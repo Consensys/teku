@@ -90,6 +90,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   }
 
   @Override
+  @Deprecated
   public int getMaxBlobsPerBlock() {
     return maxBlobsPerBlock;
   }
@@ -115,6 +116,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   }
 
   @Override
+  @Deprecated
   public int getBlobSidecarSubnetCount() {
     return blobSidecarSubnetCount;
   }
@@ -124,6 +126,21 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
     return maybeEpochsStoreBlobs
         .filter(epochsStoreBlobsInput -> epochsStoreBlobsInput > minEpochsForBlobSidecarsRequests)
         .orElse(minEpochsForBlobSidecarsRequests);
+  }
+
+  @Override
+  public int getBlobSidecarSubnetCountInEffect() {
+    return blobSidecarSubnetCount;
+  }
+
+  @Override
+  public int getMaxBlobsPerBlockInEffect() {
+    return maxBlobsPerBlock;
+  }
+
+  @Override
+  public int getTargetBlobsPerBlockInEffect() {
+    return maxBlobsPerBlock / 2;
   }
 
   @Override

@@ -76,7 +76,9 @@ public class Eth2PeerFactory {
         PeerChainValidator.create(spec, metricsSystem, chainDataClient, requiredCheckpoint),
         RateTracker.create(peerRateLimit, TIME_OUT, timeProvider),
         RateTracker.create(
-            peerRateLimit * spec.getMaxBlobsPerBlock().orElse(1), TIME_OUT, timeProvider),
+            peerRateLimit * spec.getMaxBlobsPerBlockForHighestMilestone().orElse(1),
+            TIME_OUT,
+            timeProvider),
         RateTracker.create(peerRequestLimit, TIME_OUT, timeProvider),
         kzg);
   }

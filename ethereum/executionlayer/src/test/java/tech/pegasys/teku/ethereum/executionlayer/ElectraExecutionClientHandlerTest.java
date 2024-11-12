@@ -142,8 +142,9 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
             Optional.empty(),
             Optional.of(List.of()),
             dataStructureUtil.randomBytes32(),
-            spec.getTargetBlobsPerBlock(dataStructureUtil.randomSlot()).map(UInt64::valueOf),
-            spec.getMaxBlobsPerBlock().map(UInt64::valueOf));
+            Optional.of(
+                UInt64.valueOf(spec.getGenesisSpecConfig().getTargetBlobsPerBlockInEffect())),
+            Optional.of(UInt64.valueOf(spec.getGenesisSpecConfig().getMaxBlobsPerBlockInEffect())));
     final Optional<PayloadAttributesV4> payloadAttributes =
         PayloadAttributesV4.fromInternalPayloadBuildingAttributesV4(Optional.of(attributes));
     final ForkChoiceUpdatedResult responseData =
@@ -164,7 +165,7 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
   @Test
   void engineGetBlobs_shouldCallGetBlobsV1() {
     final ExecutionClientHandler handler = getHandler();
-    final int maxBlobsPerBlock = spec.getMaxBlobsPerBlock().orElseThrow();
+    final int maxBlobsPerBlock = spec.getGenesisSpecConfig().getMaxBlobsPerBlockInEffect();
     final List<VersionedHash> versionedHashes =
         dataStructureUtil.randomVersionedHashes(maxBlobsPerBlock);
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(maxBlobsPerBlock);

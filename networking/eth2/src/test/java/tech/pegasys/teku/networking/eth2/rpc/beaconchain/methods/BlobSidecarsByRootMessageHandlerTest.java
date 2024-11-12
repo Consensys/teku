@@ -49,7 +49,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
@@ -149,7 +148,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
   @TestTemplate
   public void validateRequest_shouldNotAllowRequestLargerThanMaximumAllowed() {
     final int maxRequestBlobSidecars =
-        spec.forMilestone(specMilestone).miscHelpers().getMaxRequestBlobSidecars();
+        spec.forMilestone(specMilestone).getConfig().getMaxRequestBlobSidecarsInEffect();
     when(recentChainData.getCurrentEpoch())
         .thenReturn(Optional.of(dataStructureUtil.randomEpoch()));
     final BlobSidecarsByRootRequestMessage request =
@@ -359,8 +358,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
             .mapToObj(__ -> dataStructureUtil.randomSignedBeaconBlock())
             .toList();
     final int maxBlobsPerBlock =
-        SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
-            .getMaxBlobsPerBlock();
+        spec.forMilestone(SpecMilestone.DENEB).getConfig().getMaxBlobsPerBlockInEffect();
     final List<BlobSidecar> blobSidecars =
         blocks.stream()
             .map(

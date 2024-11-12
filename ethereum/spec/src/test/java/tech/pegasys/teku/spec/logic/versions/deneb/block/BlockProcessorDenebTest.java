@@ -44,7 +44,7 @@ public class BlockProcessorDenebTest extends BlockProcessorCapellaTest {
   void shouldFailProcessingIfCommitmentsInBlockAreMoreThanMaxBlobsPerBlock() {
     final BeaconState preState = createBeaconState();
     final UInt64 slot = preState.getSlot().increment();
-    final int maxBlobsPerBlock = spec.getMaxBlobsPerBlock(slot).orElseThrow();
+    final int maxBlobsPerBlock = spec.atSlot(slot).getConfig().getMaxBlobsPerBlockInEffect();
     final BeaconBlockBody blockBody =
         dataStructureUtil.randomBeaconBlockBodyWithCommitments(maxBlobsPerBlock + 1);
     assertThatThrownBy(

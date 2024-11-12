@@ -622,7 +622,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         blobsUtil.generateBlobs(
             slot,
             blobsToGenerate.orElseGet(
-                () -> random.nextInt(spec.getMaxBlobsPerBlock().orElseThrow() + 1)));
+                () ->
+                    random.nextInt(
+                        spec.atSlot(slot).getConfig().getMaxBlobsPerBlockInEffect() + 1)));
     final List<KZGCommitment> commitments = blobsUtil.blobsToKzgCommitments(blobs);
     final List<KZGProof> proofs = blobsUtil.computeKzgProofs(blobs, commitments);
 

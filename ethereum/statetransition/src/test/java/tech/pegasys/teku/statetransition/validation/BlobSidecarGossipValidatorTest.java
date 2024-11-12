@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -130,7 +131,9 @@ public class BlobSidecarGossipValidatorTest {
             .createRandomBlobSidecarBuilder()
             .signedBeaconBlockHeader(
                 new SignedBeaconBlockHeader(blockHeader, dataStructureUtil.randomSignature()))
-            .index(UInt64.valueOf(specContext.getSpec().getMaxBlobsPerBlock().orElseThrow()))
+            .index(
+                UInt64.valueOf(
+                    specContext.getSpec().getMaxBlobsPerBlockForHighestMilestone().orElseThrow()))
             .build();
 
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))
@@ -139,15 +142,11 @@ public class BlobSidecarGossipValidatorTest {
 
   @TestTemplate
   void shouldRejectWhenSlotIsNotDeneb() {
-    final Spec mockedSpec = mock(Spec.class);
-    when(mockedSpec.getMaxBlobsPerBlock(slot)).thenReturn(Optional.empty());
-    final SpecVersion mockedSpecVersion = mock(SpecVersion.class);
-    when(mockedSpec.getGenesisSpec()).thenReturn(mockedSpecVersion);
-    when(mockedSpecVersion.getSlotsPerEpoch()).thenReturn(1);
+    final Spec spec = TestSpecFactory.createMinimalBellatrix();
 
     blobSidecarValidator =
         BlobSidecarGossipValidator.create(
-            mockedSpec, invalidBlocks, gossipValidationHelper, miscHelpersDeneb, kzg);
+            spec, invalidBlocks, gossipValidationHelper, miscHelpersDeneb, kzg);
 
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
@@ -372,11 +371,12 @@ public class BlobSidecarGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldVerifySignedHeaderAgainAfterItDroppedFromCache() {
+  void shouldVerifySignedHeaderAgainAfterItDroppedFromCache(SpecContext specContext) {
     final Spec specMock = mock(Spec.class);
     final SpecVersion specVersion = mock(SpecVersion.class);
-    when(specMock.getMaxBlobsPerBlock(any())).thenReturn(Optional.of(6));
+    when(specMock.atSlot(any())).thenReturn(specVersion);
     when(specMock.getGenesisSpec()).thenReturn(specVersion);
+    when(specVersion.getConfig()).thenReturn(specContext.getSpec().getGenesisSpecConfig());
     // This will make cache of size 3
     when(specVersion.getSlotsPerEpoch()).thenReturn(1);
     this.blobSidecarValidator =

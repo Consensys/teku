@@ -63,7 +63,7 @@ public class BlobSidecarGossipValidator {
       final MiscHelpersDeneb miscHelpersDeneb,
       final KZG kzg) {
 
-    final Optional<Integer> maybeMaxBlobsPerBlock = spec.getMaxBlobsPerBlock();
+    final Optional<Integer> maybeMaxBlobsPerBlock = spec.getMaxBlobsPerBlockForHighestMilestone();
 
     final int validInfoSize = VALID_BLOCK_SET_SIZE * maybeMaxBlobsPerBlock.orElse(1);
     // It's not fatal if we miss something and we don't need finalized data
@@ -118,12 +118,9 @@ public class BlobSidecarGossipValidator {
     /*
      * [REJECT] The sidecar's index is consistent with `MAX_BLOBS_PER_BLOCK` -- i.e. `blob_sidecar.index < MAX_BLOBS_PER_BLOCK`.
      */
-    final Optional<Integer> maxBlobsPerBlockAtSlot =
-        spec.getMaxBlobsPerBlock(blobSidecar.getSlot());
-    if (maxBlobsPerBlockAtSlot.isEmpty()) {
-      return completedFuture(reject("BlobSidecar's slot is pre-Deneb"));
-    }
-    if (blobSidecar.getIndex().isGreaterThanOrEqualTo(maxBlobsPerBlockAtSlot.get())) {
+    final int maxBlobsPerBlockAtSlot =
+        spec.atSlot(blobSidecar.getSlot()).getConfig().getMaxBlobsPerBlockInEffect();
+    if (blobSidecar.getIndex().isGreaterThanOrEqualTo(maxBlobsPerBlockAtSlot)) {
       return completedFuture(reject("BlobSidecar index is greater than MAX_BLOBS_PER_BLOCK"));
     }
 

@@ -46,9 +46,11 @@ public class BlockContentsSchema
         namedSchema("block", beaconBlockSchema),
         namedSchema(
             FIELD_KZG_PROOFS,
-            SszListSchema.create(SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())),
+            SszListSchema.create(
+                SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobsPerBlockInEffect())),
         namedSchema(
-            FIELD_BLOBS, SszListSchema.create(blobSchema, specConfig.getMaxBlobsPerBlock())));
+            FIELD_BLOBS,
+            SszListSchema.create(blobSchema, specConfig.getMaxBlobsPerBlockInEffect())));
   }
 
   public static BlockContentsSchema create(

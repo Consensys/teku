@@ -109,7 +109,8 @@ public class EngineGetBlobsV1Test {
   public void shouldCallGetBlobsV1AndParseResponseSuccessfully() {
     final List<VersionedHash> versionedHashes = dataStructureUtil.randomVersionedHashes(4);
     final List<BlobSidecar> blobSidecars =
-        dataStructureUtil.randomBlobSidecars(spec.getMaxBlobsPerBlock().orElseThrow());
+        dataStructureUtil.randomBlobSidecars(
+            spec.getGenesisSpecConfig().getMaxBlobsPerBlockInEffect());
 
     when(executionEngineClient.getBlobsV1(eq(versionedHashes)))
         .thenReturn(dummySuccessfulResponse(blobSidecars));

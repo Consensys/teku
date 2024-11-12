@@ -663,7 +663,8 @@ class ExecutionLayerManagerImplTest {
   public void engineGetBlobs_shouldReturnGetBlobsResponseViaEngine() {
     setupDeneb();
     final List<VersionedHash> versionedHashes =
-        dataStructureUtil.randomVersionedHashes(spec.getMaxBlobsPerBlock().orElseThrow());
+        dataStructureUtil.randomVersionedHashes(
+            spec.getGenesisSpecConfig().getMaxBlobsPerBlockInEffect());
     final UInt64 slot = dataStructureUtil.randomSlot();
     final List<BlobAndProof> getBlobsResponse =
         prepareEngineGetBlobsResponse(versionedHashes, slot);
@@ -804,7 +805,8 @@ class ExecutionLayerManagerImplTest {
   private List<BlobAndProof> prepareEngineGetBlobsResponse(
       final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
     final List<BlobSidecar> blobSidecars =
-        dataStructureUtil.randomBlobSidecars(spec.getMaxBlobsPerBlock().orElseThrow());
+        dataStructureUtil.randomBlobSidecars(
+            spec.getGenesisSpecConfig().getMaxBlobsPerBlockInEffect());
     final List<BlobAndProof> getBlobsResponse =
         blobSidecars.stream()
             .map(blobSidecar -> new BlobAndProof(blobSidecar.getBlob(), blobSidecar.getKZGProof()))

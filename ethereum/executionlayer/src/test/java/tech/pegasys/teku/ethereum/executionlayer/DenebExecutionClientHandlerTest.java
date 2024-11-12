@@ -145,7 +145,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
   @Test
   void engineGetBlobs_shouldCallGetBlobsV1() {
     final ExecutionClientHandler handler = getHandler();
-    final int maxBlobsPerBlock = spec.getMaxBlobsPerBlock().orElseThrow();
+    final int maxBlobsPerBlock = spec.getGenesisSpecConfig().getMaxBlobsPerBlockInEffect();
     final List<VersionedHash> versionedHashes =
         dataStructureUtil.randomVersionedHashes(maxBlobsPerBlock - 1);
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(maxBlobsPerBlock);

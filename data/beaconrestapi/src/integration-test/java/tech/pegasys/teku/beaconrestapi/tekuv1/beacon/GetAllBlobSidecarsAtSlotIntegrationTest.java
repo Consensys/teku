@@ -38,7 +38,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -178,8 +177,7 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
     final BlobSidecarSchema blobSidecarSchema =
         SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions()).getBlobSidecarSchema();
     SszListSchema<BlobSidecar, ? extends SszList<BlobSidecar>> blobSidecarSszListSchema =
-        SszListSchema.create(
-            blobSidecarSchema, SpecConfigDeneb.required(specConfig).getMaxBlobsPerBlock());
+        SszListSchema.create(blobSidecarSchema, specConfig.getMaxBlobsPerBlockInEffect());
     return blobSidecarSszListSchema.sszDeserialize(Bytes.of(response.body().bytes())).asList();
   }
 }

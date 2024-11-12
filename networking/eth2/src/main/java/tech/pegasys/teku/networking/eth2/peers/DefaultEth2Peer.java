@@ -362,7 +362,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   private int calculateMaxBlobsPerBlock(final UInt64 endSlot) {
-    return spec.atSlot(endSlot).getConfig().toVersionDeneb().orElseThrow().getMaxBlobsPerBlock();
+    return spec.atSlot(endSlot).getConfig().getMaxBlobsPerBlockInEffect();
   }
 
   @Override

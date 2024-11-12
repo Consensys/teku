@@ -398,6 +398,16 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public int getMaxBlobsPerBlockInEffect() {
+    return specConfig.getMaxBlobsPerBlockInEffect();
+  }
+
+  @Override
+  public int getTargetBlobsPerBlockInEffect() {
+    return specConfig.getTargetBlobsPerBlockInEffect();
+  }
+
+  @Override
   public SpecMilestone getMilestone() {
     return specConfig.getMilestone();
   }
