@@ -169,7 +169,8 @@ class SpecConfigBuilderTest {
   }
 
   private Spec getSpec(final Consumer<SpecConfigBuilder> consumer) {
-    final SpecConfig config = SpecConfigLoader.loadConfig("mainnet", consumer);
+    final SpecConfigAndParent<? extends SpecConfig> config =
+        SpecConfigLoader.loadConfig("mainnet", consumer);
     return SpecFactory.create(config);
   }
 }

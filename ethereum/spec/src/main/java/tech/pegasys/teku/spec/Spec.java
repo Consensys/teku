@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.constants.Domain;
@@ -111,11 +112,15 @@ public class Spec {
   private final Map<SpecMilestone, SpecVersion> specVersions;
   private final ForkSchedule forkSchedule;
   private final StateTransition stateTransition;
+  private final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent;
 
   private Spec(
-      final Map<SpecMilestone, SpecVersion> specVersions, final ForkSchedule forkSchedule) {
+      final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent,
+      final Map<SpecMilestone, SpecVersion> specVersions,
+      final ForkSchedule forkSchedule) {
     Preconditions.checkArgument(specVersions != null && !specVersions.isEmpty());
     Preconditions.checkArgument(forkSchedule != null);
+    this.specConfigAndParent = specConfigAndParent;
     this.specVersions = specVersions;
     this.forkSchedule = forkSchedule;
 
@@ -123,13 +128,16 @@ public class Spec {
     this.stateTransition = new StateTransition(this::atSlot);
   }
 
-  static Spec create(final SpecConfig config, final SpecMilestone highestMilestoneSupported) {
+  static Spec create(
+      final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent,
+      final SpecMilestone highestMilestoneSupported) {
     final Map<SpecMilestone, SpecVersion> specVersions = new EnumMap<>(SpecMilestone.class);
     final ForkSchedule.Builder forkScheduleBuilder = ForkSchedule.builder();
     final SchemaRegistryBuilder schemaRegistryBuilder = SchemaRegistryBuilder.create();
 
     for (SpecMilestone milestone : SpecMilestone.getMilestonesUpTo(highestMilestoneSupported)) {
-      SpecVersion.create(milestone, config, schemaRegistryBuilder)
+      SpecVersion.create(
+              milestone, specConfigAndParent.forMilestone(milestone), schemaRegistryBuilder)
           .ifPresent(
               milestoneSpec -> {
                 forkScheduleBuilder.addNextMilestone(milestoneSpec);
@@ -139,7 +147,7 @@ public class Spec {
 
     final ForkSchedule forkSchedule = forkScheduleBuilder.build();
 
-    return new Spec(specVersions, forkSchedule);
+    return new Spec(specConfigAndParent, specVersions, forkSchedule);
   }
 
   public SpecVersion forMilestone(final SpecMilestone milestone) {
@@ -160,6 +168,10 @@ public class Spec {
 
   private SpecVersion atTimeMillis(final UInt64 genesisTimeMillis, final UInt64 currentTimeMillis) {
     return atTime(millisToSeconds(genesisTimeMillis), millisToSeconds(currentTimeMillis));
+  }
+
+  public SpecConfigAndParent<? extends SpecConfig> getSpecConfigAndParent() {
+    return specConfigAndParent;
   }
 
   public SpecConfig getSpecConfig(final UInt64 epoch) {

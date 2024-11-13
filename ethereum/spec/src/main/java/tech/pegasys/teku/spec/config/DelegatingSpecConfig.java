@@ -18,6 +18,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 
 public class DelegatingSpecConfig implements SpecConfig {
   protected final SpecConfig specConfig;
@@ -394,5 +395,10 @@ public class DelegatingSpecConfig implements SpecConfig {
   @Override
   public int getProposerScoreBoost() {
     return specConfig.getProposerScoreBoost();
+  }
+
+  @Override
+  public SpecMilestone getMilestone() {
+    return specConfig.getMilestone();
   }
 }

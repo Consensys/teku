@@ -97,7 +97,9 @@ public class PrettyPrintCommand implements Callable<Integer> {
   public Integer call() throws IOException {
     final SpecVersion spec =
         SpecVersion.create(
-                milestone, SpecConfigLoader.loadConfig(network), SchemaRegistryBuilder.create())
+                milestone,
+                SpecConfigLoader.loadConfig(network).specConfig(),
+                SchemaRegistryBuilder.create())
             .orElseThrow();
     final Bytes inputData;
     try (final InputStream in = openStream()) {

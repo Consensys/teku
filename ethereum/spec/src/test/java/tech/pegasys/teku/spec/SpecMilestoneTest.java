@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
@@ -30,17 +31,27 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecMilestoneTest {
   private final SpecConfigElectra electraSpecConfig =
-      SpecConfigElectra.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+      SpecConfigAndParent.requireElectra(
+              SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()))
+          .specConfig();
   private final SpecConfigDeneb denebSpecConfig =
-      SpecConfigDeneb.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+      SpecConfigAndParent.requireDeneb(
+              SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()))
+          .specConfig();
   private final SpecConfigCapella capellaSpecConfig =
-      SpecConfigCapella.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+      SpecConfigAndParent.requireCapella(
+              SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()))
+          .specConfig();
   private final SpecConfigBellatrix bellatrixSpecConfig =
-      SpecConfigBellatrix.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+      SpecConfigAndParent.requireBellatrix(
+              SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()))
+          .specConfig();
   private final SpecConfigAltair altairSpecConfig =
-      SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+      SpecConfigAndParent.requireAltair(
+              SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()))
+          .specConfig();
   private final SpecConfig phase0SpecConfig =
-      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()).specConfig();
 
   @Test
   public void isGreaterThanOrEqualTo() {

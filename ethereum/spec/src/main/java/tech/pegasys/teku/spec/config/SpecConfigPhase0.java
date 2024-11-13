@@ -19,6 +19,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.constants.WithdrawalPrefixes;
 import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
@@ -632,6 +633,11 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public int getAttestationSubnetPrefixBits() {
     return attestationSubnetPrefixBits;
+  }
+
+  @Override
+  public SpecMilestone getMilestone() {
+    return SpecMilestone.PHASE0;
   }
 
   @Override

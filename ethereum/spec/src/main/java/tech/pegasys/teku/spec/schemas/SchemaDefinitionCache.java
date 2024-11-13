@@ -48,7 +48,9 @@ public class SchemaDefinitionCache {
       return specVersion.getSchemaDefinitions();
     }
     return SpecVersion.create(
-            milestone, spec.getGenesisSpecConfig(), SchemaRegistryBuilder.create())
+            milestone,
+            spec.getSpecConfigAndParent().forMilestone(milestone),
+            SchemaRegistryBuilder.create())
         .orElseThrow(
             () ->
                 new IllegalArgumentException(

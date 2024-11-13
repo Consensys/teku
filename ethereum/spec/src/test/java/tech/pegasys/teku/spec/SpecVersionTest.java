@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 class SpecVersionTest {
   private final SpecConfig minimalConfig =
-      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()).specConfig();
 
   @ParameterizedTest
   @EnumSource(SpecMilestone.class)

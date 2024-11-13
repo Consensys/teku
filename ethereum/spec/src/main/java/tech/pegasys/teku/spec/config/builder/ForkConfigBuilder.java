@@ -19,10 +19,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 
 interface ForkConfigBuilder<ParentType extends SpecConfig, ForkType extends ParentType> {
 
-  ForkType build(ParentType specConfig);
+  SpecConfigAndParent<ForkType> build(SpecConfigAndParent<ParentType> specConfigAndParent);
 
   void validate();
 

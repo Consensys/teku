@@ -110,11 +110,12 @@ public class SpecConfigReader {
 
   final SpecConfigBuilder configBuilder = SpecConfig.builder();
 
-  public SpecConfig build() {
+  public SpecConfigAndParent<? extends SpecConfig> build() {
     return configBuilder.build();
   }
 
-  public SpecConfig build(final Consumer<SpecConfigBuilder> modifier) {
+  public SpecConfigAndParent<? extends SpecConfig> build(
+      final Consumer<SpecConfigBuilder> modifier) {
     modifier.accept(configBuilder);
     return build();
   }
