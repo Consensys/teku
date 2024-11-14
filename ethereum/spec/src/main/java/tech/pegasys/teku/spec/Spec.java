@@ -137,9 +137,7 @@ public class Spec {
 
     for (SpecMilestone milestone : SpecMilestone.getMilestonesUpTo(highestMilestoneSupported)) {
       SpecVersion.create(
-              milestone,
-              specConfigAndParent.forMilestone(milestone).specConfig(),
-              schemaRegistryBuilder)
+              milestone, specConfigAndParent.forMilestone(milestone), schemaRegistryBuilder)
           .ifPresent(
               milestoneSpec -> {
                 forkScheduleBuilder.addNextMilestone(milestoneSpec);
