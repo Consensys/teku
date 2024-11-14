@@ -49,7 +49,7 @@ public class SchemaDefinitionCache {
     }
     return SpecVersion.create(
             milestone,
-            spec.getSpecConfigAndParent().forMilestone(milestone),
+            spec.getSpecConfigAndParent().forMilestone(milestone).specConfig(),
             SchemaRegistryBuilder.create())
         .orElseThrow(
             () ->

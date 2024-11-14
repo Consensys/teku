@@ -13,7 +13,12 @@
 
 package tech.pegasys.teku.spec.config;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
+import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
+import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
+import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -31,9 +36,9 @@ public record SpecConfigAndParent<TConfig extends SpecConfig>(
     return new SpecConfigAndParent<>(spec, Optional.empty());
   }
 
-  public SpecConfig forMilestone(final SpecMilestone milestone) {
+  public SpecConfigAndParent<? extends SpecConfig> forMilestone(final SpecMilestone milestone) {
     if (specConfig.getMilestone() == milestone) {
-      return specConfig;
+      return this;
     }
     if (parentSpecConfig.isEmpty()) {
       throw new IllegalArgumentException("No config available for milestone " + milestone);
@@ -44,41 +49,36 @@ public record SpecConfigAndParent<TConfig extends SpecConfig>(
   @SuppressWarnings("unchecked")
   public static SpecConfigAndParent<SpecConfigPhase0> requirePhase0(
       final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
-    return (SpecConfigAndParent<SpecConfigPhase0>) specConfigAndParent;
+    return (SpecConfigAndParent<SpecConfigPhase0>) specConfigAndParent.forMilestone(PHASE0);
   }
 
   @SuppressWarnings("unchecked")
   public static SpecConfigAndParent<SpecConfigAltair> requireAltair(
       final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
-    checkArgument(specConfigAndParent.specConfig.toVersionAltair().isPresent());
-    return (SpecConfigAndParent<SpecConfigAltair>) specConfigAndParent;
+    return (SpecConfigAndParent<SpecConfigAltair>) specConfigAndParent.forMilestone(ALTAIR);
   }
 
   @SuppressWarnings("unchecked")
   public static SpecConfigAndParent<SpecConfigBellatrix> requireBellatrix(
       final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
-    checkArgument(specConfigAndParent.specConfig.toVersionBellatrix().isPresent());
-    return (SpecConfigAndParent<SpecConfigBellatrix>) specConfigAndParent;
+    return (SpecConfigAndParent<SpecConfigBellatrix>) specConfigAndParent.forMilestone(BELLATRIX);
   }
 
   @SuppressWarnings("unchecked")
   public static SpecConfigAndParent<SpecConfigCapella> requireCapella(
       final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
-    checkArgument(specConfigAndParent.specConfig.toVersionCapella().isPresent());
-    return (SpecConfigAndParent<SpecConfigCapella>) specConfigAndParent;
+    return (SpecConfigAndParent<SpecConfigCapella>) specConfigAndParent.forMilestone(CAPELLA);
   }
 
   @SuppressWarnings("unchecked")
   public static SpecConfigAndParent<SpecConfigDeneb> requireDeneb(
       final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
-    checkArgument(specConfigAndParent.specConfig.toVersionDeneb().isPresent());
-    return (SpecConfigAndParent<SpecConfigDeneb>) specConfigAndParent;
+    return (SpecConfigAndParent<SpecConfigDeneb>) specConfigAndParent.forMilestone(DENEB);
   }
 
   @SuppressWarnings("unchecked")
   public static SpecConfigAndParent<SpecConfigElectra> requireElectra(
       final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
-    checkArgument(specConfigAndParent.specConfig.toVersionElectra().isPresent());
-    return (SpecConfigAndParent<SpecConfigElectra>) specConfigAndParent;
+    return (SpecConfigAndParent<SpecConfigElectra>) specConfigAndParent.forMilestone(ELECTRA);
   }
 }
