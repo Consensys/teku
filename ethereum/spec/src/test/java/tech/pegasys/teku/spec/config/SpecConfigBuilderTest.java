@@ -111,6 +111,7 @@ class SpecConfigBuilderTest {
 
   @Test
   public void shouldCreateSpecExposingNonActiveConfig() {
+    // we will need to update this when we schedule ELECTRA on mainnet
     final Spec spec = getSpec(__ -> {});
     assertThat(spec.getForkSchedule().getHighestSupportedMilestone()).isNotEqualTo(ELECTRA);
     assertThat(spec.getSpecConfigAndParent().specConfig().getMilestone()).isEqualTo(ELECTRA);

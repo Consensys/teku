@@ -78,7 +78,7 @@ class BuilderChain<In extends SpecConfig, Out extends In> implements ForkConfigB
   @Override
   @SuppressWarnings("unchecked")
   public SpecConfigAndParent<Out> build(final SpecConfigAndParent<In> specConfig) {
-    SpecConfigAndParent<In> config = builderToApply.build(specConfig);
+    final SpecConfigAndParent<In> config = builderToApply.build(specConfig);
     return tail.build(config);
   }
 
