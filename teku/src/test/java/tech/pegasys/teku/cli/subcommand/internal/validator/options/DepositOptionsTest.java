@@ -158,8 +158,9 @@ class DepositOptionsTest {
 
     final SpecConfig config =
         SpecConfigLoader.loadConfig(
-            Eth2Network.MAINNET.configName(),
-            builder -> builder.maxEffectiveBalance(expectedAmount));
+                Eth2Network.MAINNET.configName(),
+                builder -> builder.maxEffectiveBalance(expectedAmount))
+            .specConfig();
     assertThat(depositOptions.getAmount(config)).isEqualTo(expectedAmount);
   }
 }

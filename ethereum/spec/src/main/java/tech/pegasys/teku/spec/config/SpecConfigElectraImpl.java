@@ -17,6 +17,7 @@ import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements SpecConfigElectra {
 
@@ -199,6 +200,11 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   @Override
   public Optional<SpecConfigElectra> toVersionElectra() {
     return Optional.of(this);
+  }
+
+  @Override
+  public SpecMilestone getMilestone() {
+    return SpecMilestone.ELECTRA;
   }
 
   @Override

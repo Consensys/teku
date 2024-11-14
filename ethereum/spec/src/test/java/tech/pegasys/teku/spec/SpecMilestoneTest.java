@@ -30,17 +30,32 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecMilestoneTest {
   private final SpecConfigElectra electraSpecConfig =
-      SpecConfigElectra.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
+          .specConfig()
+          .toVersionElectra()
+          .orElseThrow();
   private final SpecConfigDeneb denebSpecConfig =
-      SpecConfigDeneb.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
+          .specConfig()
+          .toVersionDeneb()
+          .orElseThrow();
   private final SpecConfigCapella capellaSpecConfig =
-      SpecConfigCapella.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
+          .specConfig()
+          .toVersionCapella()
+          .orElseThrow();
   private final SpecConfigBellatrix bellatrixSpecConfig =
-      SpecConfigBellatrix.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
+          .specConfig()
+          .toVersionBellatrix()
+          .orElseThrow();
   private final SpecConfigAltair altairSpecConfig =
-      SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
+          .specConfig()
+          .toVersionAltair()
+          .orElseThrow();
   private final SpecConfig phase0SpecConfig =
-      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()).specConfig();
 
   @Test
   public void isGreaterThanOrEqualTo() {
