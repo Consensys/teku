@@ -56,9 +56,6 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   private final ExecutionPayloadSchemaCapella executionPayloadSchemaCapella;
   private final ExecutionPayloadHeaderSchemaCapella executionPayloadHeaderSchemaCapella;
 
-  private final BeaconBlockBodySchemaCapellaImpl beaconBlockBodySchema;
-  private final BlindedBeaconBlockBodySchemaCapellaImpl blindedBeaconBlockBodySchema;
-
   private final BeaconBlockSchema beaconBlockSchema;
   private final BeaconBlockSchema blindedBeaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
@@ -87,20 +84,6 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
     this.beaconStateSchema = BeaconStateSchemaCapella.create(specConfig);
     this.executionPayloadHeaderSchemaCapella =
         beaconStateSchema.getLastExecutionPayloadHeaderSchema();
-    this.beaconBlockBodySchema =
-        BeaconBlockBodySchemaCapellaImpl.create(
-            specConfig,
-            signedBlsToExecutionChangeSchema,
-            getMaxValidatorsPerAttestation(specConfig),
-            "BeaconBlockBodyCapella",
-            schemaRegistry);
-    this.blindedBeaconBlockBodySchema =
-        BlindedBeaconBlockBodySchemaCapellaImpl.create(
-            specConfig,
-            signedBlsToExecutionChangeSchema,
-            getMaxValidatorsPerAttestation(specConfig),
-            "BlindedBlockBodyCapella",
-            schemaRegistry);
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockCapella");
     this.blindedBeaconBlockSchema =
         new BeaconBlockSchema(blindedBeaconBlockBodySchema, "BlindedBlockCapella");
@@ -127,16 +110,6 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   public BeaconStateSchema<? extends BeaconStateCapella, ? extends MutableBeaconStateCapella>
       getBeaconStateSchema() {
     return beaconStateSchema;
-  }
-
-  @Override
-  public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
-    return beaconBlockBodySchema;
-  }
-
-  @Override
-  public BeaconBlockBodySchema<?> getBlindedBeaconBlockBodySchema() {
-    return blindedBeaconBlockBodySchema;
   }
 
   @Override
@@ -191,7 +164,7 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
 
   @Override
   public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
-    return new BeaconBlockBodyBuilderCapella(beaconBlockBodySchema, blindedBeaconBlockBodySchema);
+    return new BeaconBlockBodyBuilderCapella(getBeaconBlockBodySchema().toVersionCapella().orElseThrow(), getBlindedBeaconBlockBodySchema().toVersionCapella().orElseThrow());
   }
 
   public WithdrawalSchema getWithdrawalSchema() {

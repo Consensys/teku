@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOBS_BUNDLE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -56,8 +57,6 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final BeaconStateSchemaElectra beaconStateSchema;
-
-  private final BeaconBlockBodySchemaElectraImpl beaconBlockBodySchema;
   private final BlindedBeaconBlockBodySchemaElectraImpl blindedBeaconBlockBodySchema;
 
   private final BeaconBlockSchema beaconBlockSchema;
@@ -89,17 +88,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
     final long maxValidatorsPerAttestation = getMaxValidatorsPerAttestation(specConfig);
 
-    this.executionRequestsSchema = new ExecutionRequestsSchema(specConfig);
+    this.executionRequestsSchema = schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA);
     this.beaconStateSchema = BeaconStateSchemaElectra.create(specConfig);
-    this.beaconBlockBodySchema =
-        BeaconBlockBodySchemaElectraImpl.create(
-            specConfig,
-            getSignedBlsToExecutionChangeSchema(),
-            getBlobKzgCommitmentsSchema(),
-            getExecutionRequestsSchema(),
-            maxValidatorsPerAttestation,
-            "BeaconBlockBodyElectra",
-            schemaRegistry);
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaElectraImpl.create(
             specConfig,
@@ -157,11 +147,6 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   public BeaconStateSchema<? extends BeaconStateElectra, ? extends MutableBeaconStateElectra>
       getBeaconStateSchema() {
     return beaconStateSchema;
-  }
-
-  @Override
-  public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
-    return beaconBlockBodySchema;
   }
 
   @Override
@@ -226,7 +211,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   @Override
   public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
-    return new BeaconBlockBodyBuilderElectra(beaconBlockBodySchema, blindedBeaconBlockBodySchema);
+    return new BeaconBlockBodyBuilderElectra(getBeaconBlockBodySchema().toVersionElectra().orElseThrow(), blindedBeaconBlockBodySchema);
   }
 
   @Override

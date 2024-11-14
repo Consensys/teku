@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_KZG_COMMI
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECAR_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -51,7 +52,6 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSc
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
@@ -63,12 +63,11 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   private final BeaconStateSchemaDeneb beaconStateSchema;
 
-  private final ExecutionPayloadSchemaDeneb executionPayloadSchemaDeneb;
+  private final ExecutionPayloadSchema<?> executionPayloadSchemaDeneb;
   private final ExecutionPayloadHeaderSchemaDeneb executionPayloadHeaderSchemaDeneb;
 
   private final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema;
 
-  private final BeaconBlockBodySchemaDenebImpl beaconBlockBodySchema;
   private final BlindedBeaconBlockBodySchemaDenebImpl blindedBeaconBlockBodySchema;
 
   private final BeaconBlockSchema beaconBlockSchema;
@@ -91,20 +90,12 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   public SchemaDefinitionsDeneb(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
     final SpecConfigDeneb specConfig = SpecConfigDeneb.required(schemaRegistry.getSpecConfig());
-    this.executionPayloadSchemaDeneb = new ExecutionPayloadSchemaDeneb(specConfig);
+    this.executionPayloadSchemaDeneb = schemaRegistry.get(EXECUTION_PAYLOAD_SCHEMA);
 
     this.beaconStateSchema = BeaconStateSchemaDeneb.create(specConfig);
     this.executionPayloadHeaderSchemaDeneb =
         beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.blobKzgCommitmentsSchema = schemaRegistry.get(BLOB_KZG_COMMITMENTS_SCHEMA);
-    this.beaconBlockBodySchema =
-        BeaconBlockBodySchemaDenebImpl.create(
-            specConfig,
-            getSignedBlsToExecutionChangeSchema(),
-            blobKzgCommitmentsSchema,
-            getMaxValidatorsPerAttestation(specConfig),
-            "BeaconBlockBodyDeneb",
-            schemaRegistry);
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaDenebImpl.create(
             specConfig,
@@ -154,11 +145,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   public BeaconStateSchema<? extends BeaconStateDeneb, ? extends MutableBeaconStateDeneb>
       getBeaconStateSchema() {
     return beaconStateSchema;
-  }
-
-  @Override
-  public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
-    return beaconBlockBodySchema;
   }
 
   @Override
@@ -233,7 +219,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   @Override
   public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
-    return new BeaconBlockBodyBuilderDeneb(beaconBlockBodySchema, blindedBeaconBlockBodySchema);
+    return new BeaconBlockBodyBuilderDeneb(getBeaconBlockBodySchema().toVersionDeneb().orElseThrow(), blindedBeaconBlockBodySchema);
   }
 
   public BlobSchema getBlobSchema() {

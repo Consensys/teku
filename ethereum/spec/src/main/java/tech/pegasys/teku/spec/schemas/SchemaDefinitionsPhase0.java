@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.schemas;
 
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATE_AND_PROOF_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_BODY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
 
 import java.util.Optional;
@@ -47,7 +48,7 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
   private final AggregateAndProofSchema aggregateAndProofSchema;
   private final BeaconStateSchemaPhase0 beaconStateSchema;
-  private final BeaconBlockBodySchemaPhase0 beaconBlockBodySchema;
+  private final BeaconBlockBodySchema<?> beaconBlockBodySchema;
   private final MetadataMessageSchemaPhase0 metadataMessageSchema;
   private final BeaconBlockSchema beaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
@@ -62,12 +63,7 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
     this.aggregateAndProofSchema = schemaRegistry.get(AGGREGATE_AND_PROOF_SCHEMA);
     this.signedAggregateAndProofSchema = schemaRegistry.get(SIGNED_AGGREGATE_AND_PROOF_SCHEMA);
     this.beaconStateSchema = BeaconStateSchemaPhase0.create(specConfig);
-    this.beaconBlockBodySchema =
-        BeaconBlockBodySchemaPhase0.create(
-            specConfig,
-            getMaxValidatorsPerAttestation(specConfig),
-            "BeaconBlockBodyPhase0",
-            schemaRegistry);
+    this.beaconBlockBodySchema = schemaRegistry.get(BEACON_BLOCK_BODY_SCHEMA);
     this.metadataMessageSchema = new MetadataMessageSchemaPhase0(specConfig.getNetworkingConfig());
     beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockPhase0");
     signedBeaconBlockSchema =

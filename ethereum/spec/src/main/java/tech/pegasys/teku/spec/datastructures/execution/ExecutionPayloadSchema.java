@@ -20,8 +20,11 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
@@ -59,4 +62,16 @@ public interface ExecutionPayloadSchema<T extends ExecutionPayload>
   LongList getBlindedNodeGeneralizedIndices();
 
   ExecutionPayload createExecutionPayload(Consumer<ExecutionPayloadBuilder> builderConsumer);
+
+  default ExecutionPayloadSchemaBellatrix toVersionBellatrixRequired() {
+    return (ExecutionPayloadSchemaBellatrix) this;
+  }
+
+  default ExecutionPayloadSchemaCapella toVersionCapellaRequired() {
+    return (ExecutionPayloadSchemaCapella) this;
+  }
+
+  default ExecutionPayloadSchemaDeneb toVersionDenebRequired() {
+    return (ExecutionPayloadSchemaDeneb) this;
+  }
 }

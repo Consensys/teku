@@ -45,6 +45,11 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTER_SLASHING_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_HEADER_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA;
+
 public class BlindedBeaconBlockBodySchemaCapellaImpl
     extends ContainerSchema11<
         BlindedBeaconBlockBodyCapellaImpl,
@@ -91,8 +96,6 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
 
   public static BlindedBeaconBlockBodySchemaCapellaImpl create(
       final SpecConfigCapella specConfig,
-      final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema,
-      final long maxValidatorsPerAttestation,
       final String containerName,
       final SchemaRegistry schemaRegistry) {
     return new BlindedBeaconBlockBodySchemaCapellaImpl(
@@ -107,13 +110,12 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
         namedSchema(
             BlockBodyFields.ATTESTER_SLASHINGS,
             SszListSchema.create(
-                schemaRegistry.get(SchemaTypes.ATTESTER_SLASHING_SCHEMA),
+                schemaRegistry.get(ATTESTER_SLASHING_SCHEMA),
                 specConfig.getMaxAttesterSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
-                new AttestationPhase0Schema(maxValidatorsPerAttestation)
-                    .castTypeToAttestationSchema(),
+                schemaRegistry.get(ATTESTATION_SCHEMA),
                 specConfig.getMaxAttestations())),
         namedSchema(
             BlockBodyFields.DEPOSITS,
@@ -127,11 +129,11 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
             SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
         namedSchema(
             BlockBodyFields.EXECUTION_PAYLOAD_HEADER,
-            new ExecutionPayloadHeaderSchemaCapella(specConfig)),
+            schemaRegistry.get(EXECUTION_PAYLOAD_HEADER_SCHEMA).toVersionCapellaRequired()),
         namedSchema(
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(
-                signedBlsToExecutionChangeSchema, specConfig.getMaxBlsToExecutionChanges())));
+                    schemaRegistry.get(SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA), specConfig.getMaxBlsToExecutionChanges())));
   }
 
   @Override
