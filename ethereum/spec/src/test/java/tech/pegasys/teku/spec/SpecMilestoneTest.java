@@ -21,7 +21,6 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
-import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
@@ -31,25 +30,30 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecMilestoneTest {
   private final SpecConfigElectra electraSpecConfig =
-      SpecConfigAndParent.requireElectra(
-              SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()))
-          .specConfig();
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
+          .specConfig()
+          .toVersionElectra()
+          .orElseThrow();
   private final SpecConfigDeneb denebSpecConfig =
-      SpecConfigAndParent.requireDeneb(
-              SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()))
-          .specConfig();
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
+          .specConfig()
+          .toVersionDeneb()
+          .orElseThrow();
   private final SpecConfigCapella capellaSpecConfig =
-      SpecConfigAndParent.requireCapella(
-              SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()))
-          .specConfig();
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
+          .specConfig()
+          .toVersionCapella()
+          .orElseThrow();
   private final SpecConfigBellatrix bellatrixSpecConfig =
-      SpecConfigAndParent.requireBellatrix(
-              SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()))
-          .specConfig();
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
+          .specConfig()
+          .toVersionBellatrix()
+          .orElseThrow();
   private final SpecConfigAltair altairSpecConfig =
-      SpecConfigAndParent.requireAltair(
-              SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()))
-          .specConfig();
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
+          .specConfig()
+          .toVersionAltair()
+          .orElseThrow();
   private final SpecConfig phase0SpecConfig =
       SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()).specConfig();
 

@@ -42,7 +42,7 @@ import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
@@ -105,14 +105,13 @@ class SyncCommitteeAggregationDutyTest {
     assertThat(syncCommitteeUtil.isSyncCommitteeAggregator(aggregatorSignature)).isTrue();
   }
 
-  private static SpecConfigAndParent<SpecConfigAltair> createSpecConfig() {
-    return SpecConfigAndParent.requireAltair(
-        SpecConfigLoader.loadConfig(
-            "minimal",
-            modifier ->
-                modifier.altairBuilder(
-                    altairModifier ->
-                        altairModifier.altairForkEpoch(UInt64.ZERO).syncCommitteeSize(512))));
+  private static SpecConfigAndParent<? extends SpecConfig> createSpecConfig() {
+    return SpecConfigLoader.loadConfig(
+        "minimal",
+        modifier ->
+            modifier.altairBuilder(
+                altairModifier ->
+                    altairModifier.altairForkEpoch(UInt64.ZERO).syncCommitteeSize(512)));
   }
 
   @Test

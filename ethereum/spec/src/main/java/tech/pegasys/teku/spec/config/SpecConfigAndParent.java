@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.spec.config;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.util.Optional;
 import tech.pegasys.teku.spec.SpecMilestone;
 
@@ -39,46 +37,5 @@ public record SpecConfigAndParent<TConfig extends SpecConfig>(
       throw new IllegalArgumentException("No config available for milestone " + milestone);
     }
     return parentSpecConfig.get().forMilestone(milestone);
-  }
-
-  @SuppressWarnings("unchecked")
-  public static SpecConfigAndParent<SpecConfigPhase0> requirePhase0(
-      final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
-    return (SpecConfigAndParent<SpecConfigPhase0>) specConfigAndParent;
-  }
-
-  @SuppressWarnings("unchecked")
-  public static SpecConfigAndParent<SpecConfigAltair> requireAltair(
-      final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
-    checkArgument(specConfigAndParent.specConfig.toVersionAltair().isPresent());
-    return (SpecConfigAndParent<SpecConfigAltair>) specConfigAndParent;
-  }
-
-  @SuppressWarnings("unchecked")
-  public static SpecConfigAndParent<SpecConfigBellatrix> requireBellatrix(
-      final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
-    checkArgument(specConfigAndParent.specConfig.toVersionBellatrix().isPresent());
-    return (SpecConfigAndParent<SpecConfigBellatrix>) specConfigAndParent;
-  }
-
-  @SuppressWarnings("unchecked")
-  public static SpecConfigAndParent<SpecConfigCapella> requireCapella(
-      final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
-    checkArgument(specConfigAndParent.specConfig.toVersionCapella().isPresent());
-    return (SpecConfigAndParent<SpecConfigCapella>) specConfigAndParent;
-  }
-
-  @SuppressWarnings("unchecked")
-  public static SpecConfigAndParent<SpecConfigDeneb> requireDeneb(
-      final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
-    checkArgument(specConfigAndParent.specConfig.toVersionDeneb().isPresent());
-    return (SpecConfigAndParent<SpecConfigDeneb>) specConfigAndParent;
-  }
-
-  @SuppressWarnings("unchecked")
-  public static SpecConfigAndParent<SpecConfigElectra> requireElectra(
-      final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
-    checkArgument(specConfigAndParent.specConfig.toVersionElectra().isPresent());
-    return (SpecConfigAndParent<SpecConfigElectra>) specConfigAndParent;
   }
 }

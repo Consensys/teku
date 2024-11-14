@@ -13,16 +13,13 @@
 
 package tech.pegasys.teku.spec;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.base.Preconditions;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
-import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
-import tech.pegasys.teku.spec.config.SpecConfigCapella;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -68,54 +65,55 @@ public class TestSpecFactory {
         String.format(
             "Altair epoch %s must be less than bellatrix epoch %s",
             altairEpoch, bellatrixForkEpoch));
-    final SpecConfigAndParent<SpecConfigBellatrix> specConfig =
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getBellatrixSpecConfig(Eth2Network.MINIMAL, altairEpoch, bellatrixForkEpoch);
     return create(specConfig, SpecMilestone.BELLATRIX);
   }
 
   public static Spec createMinimalBellatrix() {
-    final SpecConfigAndParent<SpecConfigBellatrix> specConfig =
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getBellatrixSpecConfig(Eth2Network.MINIMAL);
     return create(specConfig, SpecMilestone.BELLATRIX);
   }
 
   public static Spec createMinimalBellatrix(final Consumer<SpecConfigBuilder> configAdapter) {
-    final SpecConfigAndParent<SpecConfigBellatrix> specConfig =
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getBellatrixSpecConfig(Eth2Network.MINIMAL, configAdapter);
     return create(specConfig, SpecMilestone.BELLATRIX);
   }
 
   public static Spec createMinimalAltair() {
-    final SpecConfigAndParent<SpecConfigAltair> specConfig =
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getAltairSpecConfig(Eth2Network.MINIMAL);
     return create(specConfig, SpecMilestone.ALTAIR);
   }
 
   public static Spec createMinimalCapella() {
-    final SpecConfigAndParent<SpecConfigCapella> specConfig =
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getCapellaSpecConfig(Eth2Network.MINIMAL);
     return create(specConfig, SpecMilestone.CAPELLA);
   }
 
   public static Spec createMinimalDeneb() {
-    final SpecConfigAndParent<SpecConfigDeneb> specConfig = getDenebSpecConfig(Eth2Network.MINIMAL);
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
+        getDenebSpecConfig(Eth2Network.MINIMAL);
     return create(specConfig, SpecMilestone.DENEB);
   }
 
   public static Spec createMinimalDeneb(final Consumer<SpecConfigBuilder> configAdapter) {
-    final SpecConfigAndParent<SpecConfigDeneb> specConfig =
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getDenebSpecConfig(Eth2Network.MINIMAL, configAdapter);
     return create(specConfig, SpecMilestone.DENEB);
   }
 
   public static Spec createMinimalElectra() {
-    final SpecConfigAndParent<SpecConfigElectra> specConfig =
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getElectraSpecConfig(Eth2Network.MINIMAL);
     return create(specConfig, SpecMilestone.ELECTRA);
   }
 
   public static Spec createMinimalElectra(final Consumer<SpecConfigBuilder> configAdapter) {
-    final SpecConfigAndParent<SpecConfigElectra> specConfig =
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getElectraSpecConfig(Eth2Network.MINIMAL, configAdapter);
     return create(specConfig, SpecMilestone.ELECTRA);
   }
@@ -127,7 +125,7 @@ public class TestSpecFactory {
    * @return A spec with phase0 and altair enabled, forking to altair at the given epoch
    */
   public static Spec createMinimalWithAltairForkEpoch(final UInt64 altairForkEpoch) {
-    final SpecConfigAndParent<SpecConfigAltair> config =
+    final SpecConfigAndParent<? extends SpecConfig> config =
         getAltairSpecConfig(Eth2Network.MINIMAL, altairForkEpoch);
     return create(config, SpecMilestone.ALTAIR);
   }
@@ -139,7 +137,7 @@ public class TestSpecFactory {
    * @return A spec with altair and bellatrix enabled, forking to bellatrix at the given epoch
    */
   public static Spec createMinimalWithBellatrixForkEpoch(final UInt64 bellatrixForkEpoch) {
-    final SpecConfigAndParent<SpecConfigBellatrix> config =
+    final SpecConfigAndParent<? extends SpecConfig> config =
         getBellatrixSpecConfig(Eth2Network.MINIMAL, UInt64.ZERO, bellatrixForkEpoch);
     return create(config, SpecMilestone.BELLATRIX);
   }
@@ -152,7 +150,7 @@ public class TestSpecFactory {
    *     epoch
    */
   public static Spec createMinimalWithCapellaForkEpoch(final UInt64 capellaForkEpoch) {
-    final SpecConfigAndParent<SpecConfigCapella> config =
+    final SpecConfigAndParent<? extends SpecConfig> config =
         getCapellaSpecConfig(Eth2Network.MINIMAL, capellaForkEpoch);
     return create(config, SpecMilestone.CAPELLA);
   }
@@ -164,7 +162,7 @@ public class TestSpecFactory {
    * @return A spec with Deneb enabled, forking to Deneb at the given epoch
    */
   public static Spec createMinimalWithDenebForkEpoch(final UInt64 denebForkEpoch) {
-    final SpecConfigAndParent<SpecConfigDeneb> config =
+    final SpecConfigAndParent<? extends SpecConfig> config =
         getDenebSpecConfig(Eth2Network.MINIMAL, UInt64.ZERO, denebForkEpoch);
     return create(config, SpecMilestone.DENEB);
   }
@@ -176,7 +174,7 @@ public class TestSpecFactory {
    * @return A spec with Electra enabled, forking to Electra at the given epoch
    */
   public static Spec createMinimalWithElectraForkEpoch(final UInt64 electraForkEpoch) {
-    final SpecConfigAndParent<SpecConfigElectra> config =
+    final SpecConfigAndParent<? extends SpecConfig> config =
         getElectraSpecConfig(Eth2Network.MINIMAL, UInt64.ZERO, UInt64.ZERO, electraForkEpoch);
     return create(config, SpecMilestone.ELECTRA);
   }
@@ -200,24 +198,25 @@ public class TestSpecFactory {
   }
 
   public static Spec createMainnetAltair() {
-    final SpecConfigAndParent<SpecConfigAltair> specConfig =
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getAltairSpecConfig(Eth2Network.MAINNET);
     return create(specConfig, SpecMilestone.ALTAIR);
   }
 
   public static Spec createMainnetCapella() {
-    final SpecConfigAndParent<SpecConfigCapella> specConfig =
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getCapellaSpecConfig(Eth2Network.MAINNET);
     return create(specConfig, SpecMilestone.CAPELLA);
   }
 
   public static Spec createMainnetDeneb() {
-    final SpecConfigAndParent<SpecConfigDeneb> specConfig = getDenebSpecConfig(Eth2Network.MAINNET);
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
+        getDenebSpecConfig(Eth2Network.MAINNET);
     return create(specConfig, SpecMilestone.DENEB);
   }
 
   public static Spec createMainnetElectra() {
-    final SpecConfigAndParent<SpecConfigElectra> specConfig =
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getElectraSpecConfig(Eth2Network.MAINNET);
     return create(specConfig, SpecMilestone.ELECTRA);
   }
@@ -284,25 +283,25 @@ public class TestSpecFactory {
     return Spec.create(config, highestSupportedMilestone);
   }
 
-  private static SpecConfigAndParent<SpecConfigAltair> getAltairSpecConfig(
+  private static SpecConfigAndParent<? extends SpecConfig> getAltairSpecConfig(
       final Eth2Network network) {
     return getAltairSpecConfig(network, UInt64.ZERO);
   }
 
-  private static SpecConfigAndParent<SpecConfigAltair> getAltairSpecConfig(
+  private static SpecConfigAndParent<? extends SpecConfig> getAltairSpecConfig(
       final Eth2Network network, final UInt64 altairForkEpoch) {
-    return SpecConfigAndParent.requireAltair(
+    return requireAltair(
         SpecConfigLoader.loadConfig(
             network.configName(),
             builder -> builder.altairBuilder(a -> a.altairForkEpoch(altairForkEpoch))));
   }
 
-  private static SpecConfigAndParent<SpecConfigBellatrix> getBellatrixSpecConfig(
+  private static SpecConfigAndParent<? extends SpecConfig> getBellatrixSpecConfig(
       final Eth2Network network) {
     return getBellatrixSpecConfig(network, UInt64.ZERO, UInt64.ZERO);
   }
 
-  private static SpecConfigAndParent<SpecConfigBellatrix> getBellatrixSpecConfig(
+  private static SpecConfigAndParent<? extends SpecConfig> getBellatrixSpecConfig(
       final Eth2Network network, final UInt64 altairForkEpoch, final UInt64 bellatrixForkEpoch) {
     return getBellatrixSpecConfig(
         network,
@@ -312,9 +311,9 @@ public class TestSpecFactory {
                 .bellatrixBuilder(b -> b.bellatrixForkEpoch(bellatrixForkEpoch)));
   }
 
-  private static SpecConfigAndParent<SpecConfigBellatrix> getBellatrixSpecConfig(
+  private static SpecConfigAndParent<? extends SpecConfig> getBellatrixSpecConfig(
       final Eth2Network network, final Consumer<SpecConfigBuilder> configAdapter) {
-    return SpecConfigAndParent.requireBellatrix(
+    return requireBellatrix(
         SpecConfigLoader.loadConfig(
             network.configName(),
             builder -> {
@@ -325,12 +324,12 @@ public class TestSpecFactory {
             }));
   }
 
-  private static SpecConfigAndParent<SpecConfigCapella> getCapellaSpecConfig(
+  private static SpecConfigAndParent<? extends SpecConfig> getCapellaSpecConfig(
       final Eth2Network network) {
     return getCapellaSpecConfig(network, UInt64.ZERO);
   }
 
-  private static SpecConfigAndParent<SpecConfigCapella> getCapellaSpecConfig(
+  private static SpecConfigAndParent<? extends SpecConfig> getCapellaSpecConfig(
       final Eth2Network network, final UInt64 capellaForkEpoch) {
     return getCapellaSpecConfig(
         network,
@@ -341,9 +340,9 @@ public class TestSpecFactory {
                 .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch)));
   }
 
-  private static SpecConfigAndParent<SpecConfigCapella> getCapellaSpecConfig(
+  private static SpecConfigAndParent<? extends SpecConfig> getCapellaSpecConfig(
       final Eth2Network network, final Consumer<SpecConfigBuilder> configAdapter) {
-    return SpecConfigAndParent.requireCapella(
+    return requireCapella(
         SpecConfigLoader.loadConfig(
             network.configName(),
             builder -> {
@@ -355,12 +354,12 @@ public class TestSpecFactory {
             }));
   }
 
-  private static SpecConfigAndParent<SpecConfigDeneb> getDenebSpecConfig(
+  private static SpecConfigAndParent<? extends SpecConfig> getDenebSpecConfig(
       final Eth2Network network) {
     return getDenebSpecConfig(network, UInt64.ZERO, UInt64.ZERO);
   }
 
-  private static SpecConfigAndParent<SpecConfigDeneb> getDenebSpecConfig(
+  private static SpecConfigAndParent<? extends SpecConfig> getDenebSpecConfig(
       final Eth2Network network, final UInt64 capellaForkEpoch, final UInt64 denebForkEpoch) {
     return getDenebSpecConfig(
         network,
@@ -372,9 +371,9 @@ public class TestSpecFactory {
                 .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch)));
   }
 
-  private static SpecConfigAndParent<SpecConfigDeneb> getDenebSpecConfig(
+  private static SpecConfigAndParent<? extends SpecConfig> getDenebSpecConfig(
       final Eth2Network network, final Consumer<SpecConfigBuilder> configAdapter) {
-    return SpecConfigAndParent.requireDeneb(
+    return requireDeneb(
         SpecConfigLoader.loadConfig(
             network.configName(),
             builder -> {
@@ -387,12 +386,12 @@ public class TestSpecFactory {
             }));
   }
 
-  private static SpecConfigAndParent<SpecConfigElectra> getElectraSpecConfig(
+  private static SpecConfigAndParent<? extends SpecConfig> getElectraSpecConfig(
       final Eth2Network network) {
     return getElectraSpecConfig(network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO);
   }
 
-  private static SpecConfigAndParent<SpecConfigElectra> getElectraSpecConfig(
+  private static SpecConfigAndParent<? extends SpecConfig> getElectraSpecConfig(
       final Eth2Network network,
       final UInt64 capellaForkEpoch,
       final UInt64 denebForkEpoch,
@@ -408,9 +407,9 @@ public class TestSpecFactory {
                 .electraBuilder(e -> e.electraForkEpoch(electraForkEpoch)));
   }
 
-  private static SpecConfigAndParent<SpecConfigElectra> getElectraSpecConfig(
+  private static SpecConfigAndParent<? extends SpecConfig> getElectraSpecConfig(
       final Eth2Network network, final Consumer<SpecConfigBuilder> configAdapter) {
-    return SpecConfigAndParent.requireElectra(
+    return requireElectra(
         SpecConfigLoader.loadConfig(
             network.configName(),
             builder -> {
@@ -426,9 +425,44 @@ public class TestSpecFactory {
 
   public static Spec createMinimalWithCapellaDenebAndElectraForkEpoch(
       final UInt64 capellaForkEpoch, final UInt64 denebForkEpoch, final UInt64 electraForkEpoch) {
-    final SpecConfigAndParent<SpecConfigElectra> config =
+    final SpecConfigAndParent<? extends SpecConfig> config =
         getElectraSpecConfig(
             Eth2Network.MINIMAL, capellaForkEpoch, denebForkEpoch, electraForkEpoch);
     return create(config, SpecMilestone.ELECTRA);
+  }
+
+  // Our current config files contain ELECTRA params.
+  // So all specConfigs created from them will be ELECTRA.
+  // Here we just want to make sure that a given config supports the given milestone
+  // (which useless in theory because they are all ELECTRA)
+
+  private static SpecConfigAndParent<? extends SpecConfig> requireAltair(
+      final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
+    checkArgument(specConfigAndParent.specConfig().toVersionAltair().isPresent());
+    return specConfigAndParent;
+  }
+
+  private static SpecConfigAndParent<? extends SpecConfig> requireBellatrix(
+      final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
+    checkArgument(specConfigAndParent.specConfig().toVersionBellatrix().isPresent());
+    return specConfigAndParent;
+  }
+
+  private static SpecConfigAndParent<? extends SpecConfig> requireCapella(
+      final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
+    checkArgument(specConfigAndParent.specConfig().toVersionCapella().isPresent());
+    return specConfigAndParent;
+  }
+
+  private static SpecConfigAndParent<? extends SpecConfig> requireDeneb(
+      final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
+    checkArgument(specConfigAndParent.specConfig().toVersionDeneb().isPresent());
+    return specConfigAndParent;
+  }
+
+  private static SpecConfigAndParent<? extends SpecConfig> requireElectra(
+      final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
+    checkArgument(specConfigAndParent.specConfig().toVersionElectra().isPresent());
+    return specConfigAndParent;
   }
 }
