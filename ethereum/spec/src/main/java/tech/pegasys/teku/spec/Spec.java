@@ -948,13 +948,34 @@ public class Spec {
         .isLessThanOrEqualTo(specConfigDeneb.getMinEpochsForBlobSidecarsRequests());
   }
 
+  /**
+   * This method is used to setup caches and limits during the initialization of the node. We
+   * normally increase the blobs with each fork, but in case we will decrease them, let's consider
+   * the last two forks.
+   */
   public Optional<Integer> getMaxBlobsPerBlockForHighestMilestone() {
     final SpecMilestone highestSupportedMilestone =
         getForkSchedule().getHighestSupportedMilestone();
-    return forMilestone(highestSupportedMilestone)
-        .getConfig()
-        .toVersionDeneb()
-        .map(SpecConfigDeneb::getMaxBlobsPerBlock);
+    final Optional<Integer> highestMaxBlobsPerBlock =
+        forMilestone(highestSupportedMilestone)
+            .getConfig()
+            .toVersionDeneb()
+            .map(SpecConfigDeneb::getMaxBlobsPerBlock);
+
+    final Optional<Integer> secondHighestMaxBlobsPerBlock =
+        highestSupportedMilestone
+            .getPreviousMilestoneIfExists()
+            .map(this::forMilestone)
+            .map(SpecVersion::getConfig)
+            .flatMap(SpecConfig::toVersionDeneb)
+            .map(SpecConfigDeneb::getMaxBlobsPerBlock);
+
+    if (highestMaxBlobsPerBlock.isEmpty() && secondHighestMaxBlobsPerBlock.isEmpty()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(
+        Math.max(highestMaxBlobsPerBlock.orElse(0), secondHighestMaxBlobsPerBlock.orElse(0)));
   }
 
   public UInt64 computeSubnetForBlobSidecar(final BlobSidecar blobSidecar) {
