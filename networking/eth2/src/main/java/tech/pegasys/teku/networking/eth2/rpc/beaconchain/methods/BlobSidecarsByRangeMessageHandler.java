@@ -41,11 +41,10 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailableException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
@@ -86,12 +85,11 @@ public class BlobSidecarsByRangeMessageHandler
   public Optional<RpcException> validateRequest(
       final String protocolId, final BlobSidecarsByRangeRequestMessage request) {
 
-    final SpecMilestone latestMilestoneRequested =
-        spec.getForkSchedule().getSpecMilestoneAtSlot(request.getMaxSlot());
-    final MiscHelpers miscHelpers = spec.forMilestone(latestMilestoneRequested).miscHelpers();
+    final SpecConfigDeneb specConfig =
+        SpecConfigDeneb.required(spec.atSlot(request.getMaxSlot()).getConfig());
 
-    final int maxRequestBlobSidecars = miscHelpers.getMaxRequestBlobSidecars();
-    final int maxBlobsPerBlock = miscHelpers.getMaxBlobsPerBlock();
+    final int maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
+    final int maxBlobsPerBlock = specConfig.getMaxBlobsPerBlock();
 
     final long requestedCount = calculateRequestedCount(request, maxBlobsPerBlock);
 
@@ -123,10 +121,8 @@ public class BlobSidecarsByRangeMessageHandler
         message.getCount(),
         startSlot);
 
-    final SpecMilestone latestMilestoneRequested =
-        spec.getForkSchedule().getSpecMilestoneAtSlot(endSlot);
-    final MiscHelpers miscHelpers = spec.forMilestone(latestMilestoneRequested).miscHelpers();
-    final long requestedCount = calculateRequestedCount(message, miscHelpers.getMaxBlobsPerBlock());
+    final SpecConfigDeneb specConfig = SpecConfigDeneb.required(spec.atSlot(endSlot).getConfig());
+    final long requestedCount = calculateRequestedCount(message, specConfig.getMaxBlobsPerBlock());
 
     final Optional<RequestApproval> blobSidecarsRequestApproval =
         peer.approveBlobSidecarsRequest(callback, requestedCount);
@@ -167,7 +163,7 @@ public class BlobSidecarsByRangeMessageHandler
               } else {
                 canonicalHotRoots = ImmutableSortedMap.of();
               }
-              final int maxRequestBlobSidecars = miscHelpers.getMaxRequestBlobSidecars();
+
               final RequestState initialState =
                   new RequestState(
                       callback,
@@ -175,7 +171,7 @@ public class BlobSidecarsByRangeMessageHandler
                       endSlot,
                       canonicalHotRoots,
                       finalizedSlot,
-                      maxRequestBlobSidecars);
+                      specConfig.getMaxRequestBlobSidecars());
               if (message.getCount().isZero()) {
                 return SafeFuture.completedFuture(initialState);
               }

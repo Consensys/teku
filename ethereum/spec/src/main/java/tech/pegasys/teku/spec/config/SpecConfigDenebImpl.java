@@ -95,6 +95,11 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   }
 
   @Override
+  public int getTargetBlobsPerBlock() {
+    return maxBlobsPerBlock / 2;
+  }
+
+  @Override
   public int getKzgCommitmentInclusionProofDepth() {
     return kzgCommitmentInclusionProofDepth;
   }

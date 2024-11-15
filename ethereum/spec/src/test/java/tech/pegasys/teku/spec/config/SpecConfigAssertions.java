@@ -44,6 +44,7 @@ public class SpecConfigAssertions {
         .filter(m -> Modifier.isPublic(m.getModifiers()))
         .filter(m -> m.getParameterTypes().length == 0)
         .filter(m -> m.getName().startsWith("get"))
+        .filter(m -> !m.getName().endsWith("InEffect"))
         .collect(Collectors.toList());
   }
 }

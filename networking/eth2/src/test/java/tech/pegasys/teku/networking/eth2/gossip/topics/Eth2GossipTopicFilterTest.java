@@ -140,7 +140,8 @@ class Eth2GossipTopicFilterTest {
   @TestTemplate
   void shouldNotConsiderBlobSidecarWithIncorrectSubnetIdRelevant() {
     final int blobSidecarSubnetCount =
-        spec.forMilestone(specMilestone).miscHelpers().getBlobSidecarSubnetCount().orElseThrow();
+        SpecConfigDeneb.required(spec.forMilestone(specMilestone).getConfig())
+            .getBlobSidecarSubnetCount();
     assertThat(
             filter.isRelevantTopic(
                 getTopicName(getBlobSidecarSubnetTopicName(blobSidecarSubnetCount + 1))))

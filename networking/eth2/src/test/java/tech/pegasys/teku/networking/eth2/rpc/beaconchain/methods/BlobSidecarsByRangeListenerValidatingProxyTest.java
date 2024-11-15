@@ -25,6 +25,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -35,7 +36,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -57,7 +58,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
   private final RpcResponseListener<BlobSidecar> listener = mock(RpcResponseListener.class);
 
   @BeforeEach
-  void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
+  void setUp(final SpecContext specContext) {
     spec =
         switch (specContext.getSpecMilestone()) {
           case PHASE0 -> throw new IllegalArgumentException("Phase0 is an unsupported milestone");
@@ -70,7 +71,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
         };
     currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
     dataStructureUtil = new DataStructureUtil(spec);
-    maxBlobsPerBlock = spec.getMaxBlobsPerBlock().orElseThrow();
+    maxBlobsPerBlock = spec.getMaxBlobsPerBlockForHighestMilestone().orElseThrow();
 
     when(listener.onResponse(any())).thenReturn(SafeFuture.completedFuture(null));
     when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(true);
@@ -264,31 +265,22 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
         new BlobSidecarsByRangeListenerValidatingProxy(
             spec, peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
 
+    final int exceedingBlobCount = spec.getMaxBlobsPerBlockForHighestMilestone().orElseThrow() + 1;
+    final int exceedingBlobIndex = exceedingBlobCount - 1;
     final SignedBeaconBlock block1 =
-        dataStructureUtil.randomSignedBeaconBlockWithCommitments(currentForkFirstSlot, 7);
-    final BlobSidecar blobSidecar1_0 =
-        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);
-    final BlobSidecar blobSidecar1_1 =
-        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 1);
-    final BlobSidecar blobSidecar1_2 =
-        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 2);
-    final BlobSidecar blobSidecar1_3 =
-        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 3);
-    final BlobSidecar blobSidecar1_4 =
-        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 4);
-    final BlobSidecar blobSidecar1_5 =
-        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 5);
-    final BlobSidecar blobSidecar1_6 =
-        dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 6);
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(
+            currentForkFirstSlot, exceedingBlobCount);
 
-    safeJoin(listenerWrapper.onResponse(blobSidecar1_0));
-    safeJoin(listenerWrapper.onResponse(blobSidecar1_1));
-    safeJoin(listenerWrapper.onResponse(blobSidecar1_2));
-    safeJoin(listenerWrapper.onResponse(blobSidecar1_3));
-    safeJoin(listenerWrapper.onResponse(blobSidecar1_4));
-    safeJoin(listenerWrapper.onResponse(blobSidecar1_5));
+    IntStream.range(0, exceedingBlobCount - 1)
+        .mapToObj(
+            i -> dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, i))
+        .forEach(blobSidecar -> safeJoin(listenerWrapper.onResponse(blobSidecar)));
 
-    final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar1_6);
+    final SafeFuture<?> result =
+        listenerWrapper.onResponse(
+            dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(
+                block1, exceedingBlobIndex));
+
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
         .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);

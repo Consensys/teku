@@ -212,21 +212,6 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   }
 
   @Override
-  public int getMaxRequestBlobSidecars() {
-    return SpecConfigDeneb.required(specConfig).getMaxRequestBlobSidecars();
-  }
-
-  @Override
-  public int getMaxBlobsPerBlock() {
-    return SpecConfigDeneb.required(specConfig).getMaxBlobsPerBlock();
-  }
-
-  @Override
-  public Optional<Integer> getBlobSidecarSubnetCount() {
-    return Optional.of(SpecConfigDeneb.required(specConfig).getBlobSidecarSubnetCount());
-  }
-
-  @Override
   public int getBlobKzgCommitmentsCount(final SignedBeaconBlock signedBeaconBlock) {
     return signedBeaconBlock
         .getMessage()

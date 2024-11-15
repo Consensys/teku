@@ -388,18 +388,6 @@ public class MiscHelpers {
     return UInt64.valueOf(specConfig.getNetworkingConfig().getMaxRequestBlocks());
   }
 
-  public int getMaxRequestBlobSidecars() {
-    throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
-  }
-
-  public int getMaxBlobsPerBlock() {
-    throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
-  }
-
-  public Optional<Integer> getBlobSidecarSubnetCount() {
-    return Optional.empty();
-  }
-
   public int getBlobKzgCommitmentsCount(final SignedBeaconBlock signedBeaconBlock) {
     throw new UnsupportedOperationException("No Blob KZG Commitments before Deneb");
   }

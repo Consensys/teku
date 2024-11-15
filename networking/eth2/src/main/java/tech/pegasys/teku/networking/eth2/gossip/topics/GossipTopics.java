@@ -79,10 +79,12 @@ public class GossipTopics {
     }
 
     spec.forMilestone(specMilestone)
-        .miscHelpers()
-        .getBlobSidecarSubnetCount()
+        .getConfig()
+        .toVersionDeneb()
         .ifPresent(
-            integer -> addBlobSidecarSubnetTopics(integer, topics, forkDigest, gossipEncoding));
+            config ->
+                addBlobSidecarSubnetTopics(
+                    config.getBlobSidecarSubnetCount(), topics, forkDigest, gossipEncoding));
 
     for (GossipTopicName topicName : GossipTopicName.values()) {
       topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding));
