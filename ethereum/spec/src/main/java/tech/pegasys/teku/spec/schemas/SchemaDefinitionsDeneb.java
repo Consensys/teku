@@ -20,7 +20,6 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_KZG_COMMI
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECAR_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -44,9 +43,6 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
@@ -57,9 +53,6 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   private final BeaconStateSchemaDeneb beaconStateSchema;
-
-  private final ExecutionPayloadSchema<?> executionPayloadSchemaDeneb;
-  private final ExecutionPayloadHeaderSchemaDeneb executionPayloadHeaderSchemaDeneb;
 
   private final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema;
 
@@ -78,15 +71,12 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   public SchemaDefinitionsDeneb(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
     final SpecConfigDeneb specConfig = SpecConfigDeneb.required(schemaRegistry.getSpecConfig());
-    this.executionPayloadSchemaDeneb = schemaRegistry.get(EXECUTION_PAYLOAD_SCHEMA);
 
     this.beaconStateSchema = BeaconStateSchemaDeneb.create(specConfig);
-    this.executionPayloadHeaderSchemaDeneb =
-        beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.blobKzgCommitmentsSchema = schemaRegistry.get(BLOB_KZG_COMMITMENTS_SCHEMA);
     this.builderBidSchemaDeneb =
         new BuilderBidSchemaDeneb(
-            "BuilderBidDeneb", executionPayloadHeaderSchemaDeneb, blobKzgCommitmentsSchema);
+            "BuilderBidDeneb", getExecutionPayloadHeaderSchema(), blobKzgCommitmentsSchema);
     this.signedBuilderBidSchemaDeneb =
         new SignedBuilderBidSchema("SignedBuilderBidDeneb", builderBidSchemaDeneb);
 
@@ -101,7 +91,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
             specConfig, getSignedBeaconBlockSchema(), blobSchema, "SignedBlockContentsDeneb");
     this.blobsBundleSchema = schemaRegistry.get(BLOBS_BUNDLE_SCHEMA);
     this.executionPayloadAndBlobsBundleSchema =
-        new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaDeneb, blobsBundleSchema);
+        new ExecutionPayloadAndBlobsBundleSchema(getExecutionPayloadSchema(), blobsBundleSchema);
     this.blobSidecarsByRootRequestMessageSchema =
         schemaRegistry.get(BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA);
   }
@@ -129,16 +119,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   @Override
   public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlockContainerSchema() {
     return getSignedBlockContentsSchema().castTypeToSignedBlockContainer();
-  }
-
-  @Override
-  public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
-    return executionPayloadSchemaDeneb;
-  }
-
-  @Override
-  public ExecutionPayloadHeaderSchema<?> getExecutionPayloadHeaderSchema() {
-    return executionPayloadHeaderSchemaDeneb;
   }
 
   @Override
