@@ -976,8 +976,8 @@ public class Spec {
 
     final int highestMaxBlobsPerBlock = maybeHighestMaxBlobsPerBlock.orElse(0);
     final int secondHighestMaxBlobsPerBlock = maybeHecondHighestMaxBlobsPerBlock.orElse(0);
+    final int max = Math.max(highestMaxBlobsPerBlock, secondHighestMaxBlobsPerBlock);
 
-    int max = Math.max(highestMaxBlobsPerBlock, secondHighestMaxBlobsPerBlock);
     return Optional.of(max);
   }
 
