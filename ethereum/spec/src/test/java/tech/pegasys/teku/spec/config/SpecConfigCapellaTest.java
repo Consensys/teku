@@ -26,9 +26,9 @@ public class SpecConfigCapellaTest {
   @Test
   public void equals_mainnet() {
     SpecConfigCapella configA =
-        SpecConfigLoader.loadConfig("mainnet").toVersionCapella().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionCapella().orElseThrow();
     SpecConfigCapella configB =
-        SpecConfigLoader.loadConfig("mainnet").toVersionCapella().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionCapella().orElseThrow();
 
     assertThat(configA).isEqualTo(configB);
     assertThat(configA.hashCode()).isEqualTo(configB.hashCode());
@@ -37,7 +37,7 @@ public class SpecConfigCapellaTest {
   @Test
   public void equals_sameRandomValues() {
     SpecConfigBellatrix specConfigBellatrix =
-        SpecConfigLoader.loadConfig("mainnet").toVersionBellatrix().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionBellatrix().orElseThrow();
     ;
     SpecConfigBellatrix configA = createRandomCapellaConfig(specConfigBellatrix, 1);
     SpecConfigBellatrix configB = createRandomCapellaConfig(specConfigBellatrix, 1);
@@ -49,7 +49,7 @@ public class SpecConfigCapellaTest {
   @Test
   public void equals_differentRandomValues() {
     SpecConfigBellatrix specConfigBellatrix =
-        SpecConfigLoader.loadConfig("mainnet").toVersionBellatrix().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionBellatrix().orElseThrow();
     ;
     SpecConfigBellatrix configA = createRandomCapellaConfig(specConfigBellatrix, 1);
     SpecConfigBellatrix configB = createRandomCapellaConfig(specConfigBellatrix, 2);
@@ -61,7 +61,7 @@ public class SpecConfigCapellaTest {
   @Test
   public void equals_bellatrixConfigDiffer() {
     SpecConfigBellatrix bellatrixA =
-        SpecConfigLoader.loadConfig("mainnet").toVersionBellatrix().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionBellatrix().orElseThrow();
     SpecConfigBellatrix bellatrixB =
         SpecConfigLoader.loadConfig(
                 "mainnet",
@@ -69,6 +69,7 @@ public class SpecConfigCapellaTest {
                     b.bellatrixBuilder(
                         ab ->
                             ab.maxBytesPerTransaction(bellatrixA.getMaxBytesPerTransaction() + 4)))
+            .specConfig()
             .toVersionBellatrix()
             .orElseThrow();
 

@@ -26,9 +26,9 @@ public class SpecConfigElectraTest {
   @Test
   public void equals_mainnet() {
     final SpecConfigElectra configA =
-        SpecConfigLoader.loadConfig("mainnet").toVersionElectra().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionElectra().orElseThrow();
     final SpecConfigElectra configB =
-        SpecConfigLoader.loadConfig("mainnet").toVersionElectra().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionElectra().orElseThrow();
 
     assertThat(configA).isEqualTo(configB);
     assertThat(configA.hashCode()).isEqualTo(configB.hashCode());
@@ -37,7 +37,7 @@ public class SpecConfigElectraTest {
   @Test
   public void equals_sameRandomValues() {
     final SpecConfigDeneb specConfigDeneb =
-        SpecConfigLoader.loadConfig("mainnet").toVersionDeneb().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionDeneb().orElseThrow();
     final SpecConfigElectra configA = createRandomElectraConfig(specConfigDeneb, 1);
     final SpecConfigElectra configB = createRandomElectraConfig(specConfigDeneb, 1);
 
@@ -48,7 +48,7 @@ public class SpecConfigElectraTest {
   @Test
   public void equals_differentRandomValues() {
     final SpecConfigDeneb specConfigDeneb =
-        SpecConfigLoader.loadConfig("mainnet").toVersionDeneb().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionDeneb().orElseThrow();
     final SpecConfigElectra configA = createRandomElectraConfig(specConfigDeneb, 1);
     final SpecConfigElectra configB = createRandomElectraConfig(specConfigDeneb, 2);
 
@@ -59,11 +59,12 @@ public class SpecConfigElectraTest {
   @Test
   public void equals_denebConfigDiffer() {
     final SpecConfigDeneb denebA =
-        SpecConfigLoader.loadConfig("mainnet").toVersionDeneb().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionDeneb().orElseThrow();
     final SpecConfigDeneb denebB =
         SpecConfigLoader.loadConfig(
                 "mainnet",
                 b -> b.denebBuilder(db -> db.maxBlobsPerBlock(denebA.getMaxBlobsPerBlock() + 4)))
+            .specConfig()
             .toVersionDeneb()
             .orElseThrow();
 

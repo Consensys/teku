@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -47,7 +48,7 @@ public class TransitionTestExecutor implements TestExecutor {
   private void processUpgrade(final TestDefinition testDefinition, final MetaData metadata) {
     final SpecMilestone milestone = SpecMilestone.forName(metadata.postFork);
     final UInt64 forkEpoch = UInt64.valueOf(metadata.forkEpoch);
-    final SpecConfig config =
+    final SpecConfigAndParent<? extends SpecConfig> config =
         SpecConfigLoader.loadConfig(
             testDefinition.getConfigName(),
             builder -> {

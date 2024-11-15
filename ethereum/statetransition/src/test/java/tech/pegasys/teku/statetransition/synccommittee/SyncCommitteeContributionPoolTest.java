@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -47,7 +48,8 @@ class SyncCommitteeContributionPoolTest {
   private final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(forkEpoch);
   private final UInt64 forkSlot = spec.computeStartSlotAtEpoch(forkEpoch);
   private final UInt64 altairSlot = forkSlot.plus(2);
-  private final SpecConfigAltair config = SpecConfigAltair.required(spec.getGenesisSpecConfig());
+  private final SpecConfigAltair config =
+      SpecConfigAltair.required(spec.forMilestone(SpecMilestone.ALTAIR).getConfig());
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @SuppressWarnings("unchecked")

@@ -26,8 +26,10 @@ public class SpecConfigDenebTest {
 
   @Test
   public void equals_mainnet() {
-    SpecConfigDeneb configA = SpecConfigLoader.loadConfig("mainnet").toVersionDeneb().orElseThrow();
-    SpecConfigDeneb configB = SpecConfigLoader.loadConfig("mainnet").toVersionDeneb().orElseThrow();
+    SpecConfigDeneb configA =
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionDeneb().orElseThrow();
+    SpecConfigDeneb configB =
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionDeneb().orElseThrow();
 
     assertThat(configA).isEqualTo(configB);
     assertThat(configA.hashCode()).isEqualTo(configB.hashCode());
@@ -36,7 +38,7 @@ public class SpecConfigDenebTest {
   @Test
   public void equals_sameRandomValues() {
     SpecConfigCapella specConfigCapella =
-        SpecConfigLoader.loadConfig("mainnet").toVersionCapella().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionCapella().orElseThrow();
     SpecConfigDeneb configA = createRandomDenebConfig(specConfigCapella, 1);
     SpecConfigDeneb configB = createRandomDenebConfig(specConfigCapella, 1);
 
@@ -47,7 +49,7 @@ public class SpecConfigDenebTest {
   @Test
   public void equals_differentRandomValues() {
     SpecConfigCapella specConfigCapella =
-        SpecConfigLoader.loadConfig("mainnet").toVersionCapella().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionCapella().orElseThrow();
     SpecConfigDeneb configA = createRandomDenebConfig(specConfigCapella, 1);
     SpecConfigDeneb configB = createRandomDenebConfig(specConfigCapella, 2);
 
@@ -58,7 +60,7 @@ public class SpecConfigDenebTest {
   @Test
   public void equals_capellaConfigDiffer() {
     SpecConfigCapella capellaA =
-        SpecConfigLoader.loadConfig("mainnet").toVersionCapella().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionCapella().orElseThrow();
     SpecConfigCapella capellaB =
         SpecConfigLoader.loadConfig(
                 "mainnet",
@@ -67,6 +69,7 @@ public class SpecConfigDenebTest {
                         cb ->
                             cb.maxWithdrawalsPerPayload(
                                 capellaA.getMaxWithdrawalsPerPayload() + 4)))
+            .specConfig()
             .toVersionCapella()
             .orElseThrow();
 

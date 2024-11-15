@@ -93,7 +93,8 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
             "256");
     final Spec spec = config.eth2NetworkConfiguration().getSpec();
     assertThat(
-            spec.getGenesisSpecConfig()
+            spec.forMilestone(SpecMilestone.BELLATRIX)
+                .getConfig()
                 .toVersionBellatrix()
                 .orElseThrow()
                 .getSafeSlotsToImportOptimistically())
