@@ -13,6 +13,11 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_KZG_COMMITMENTS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_HEADER_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA;
+
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.Optional;
 import java.util.function.Function;
@@ -25,7 +30,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
@@ -39,9 +43,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
-import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
@@ -97,9 +99,6 @@ public class BlindedBeaconBlockBodySchemaDenebImpl
 
   public static BlindedBeaconBlockBodySchemaDenebImpl create(
       final SpecConfigDeneb specConfig,
-      final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema,
-      final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema,
-      final long maxValidatorsPerAttestation,
       final String containerName,
       final SchemaRegistry schemaRegistry) {
     return new BlindedBeaconBlockBodySchemaDenebImpl(
@@ -119,9 +118,7 @@ public class BlindedBeaconBlockBodySchemaDenebImpl
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
-                new AttestationPhase0Schema(maxValidatorsPerAttestation)
-                    .castTypeToAttestationSchema(),
-                specConfig.getMaxAttestations())),
+                schemaRegistry.get(ATTESTATION_SCHEMA), specConfig.getMaxAttestations())),
         namedSchema(
             BlockBodyFields.DEPOSITS,
             SszListSchema.create(Deposit.SSZ_SCHEMA, specConfig.getMaxDeposits())),
@@ -134,12 +131,14 @@ public class BlindedBeaconBlockBodySchemaDenebImpl
             SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
         namedSchema(
             BlockBodyFields.EXECUTION_PAYLOAD_HEADER,
-            new ExecutionPayloadHeaderSchemaDeneb(specConfig)),
+            schemaRegistry.get(EXECUTION_PAYLOAD_HEADER_SCHEMA).toVersionDenebRequired()),
         namedSchema(
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(
-                signedBlsToExecutionChangeSchema, specConfig.getMaxBlsToExecutionChanges())),
-        namedSchema(BlockBodyFields.BLOB_KZG_COMMITMENTS, blobKzgCommitmentsSchema));
+                schemaRegistry.get(SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA),
+                specConfig.getMaxBlsToExecutionChanges())),
+        namedSchema(
+            BlockBodyFields.BLOB_KZG_COMMITMENTS, schemaRegistry.get(BLOB_KZG_COMMITMENTS_SCHEMA)));
   }
 
   @Override

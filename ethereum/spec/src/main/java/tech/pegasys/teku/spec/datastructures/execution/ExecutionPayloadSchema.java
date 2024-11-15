@@ -64,14 +64,14 @@ public interface ExecutionPayloadSchema<T extends ExecutionPayload>
   ExecutionPayload createExecutionPayload(Consumer<ExecutionPayloadBuilder> builderConsumer);
 
   default ExecutionPayloadSchemaBellatrix toVersionBellatrixRequired() {
-    return (ExecutionPayloadSchemaBellatrix) this;
+    throw new UnsupportedOperationException("Not a Bellatrix schema");
   }
 
   default ExecutionPayloadSchemaCapella toVersionCapellaRequired() {
-    return (ExecutionPayloadSchemaCapella) this;
+    throw new UnsupportedOperationException("Not a Capella schema");
   }
 
   default ExecutionPayloadSchemaDeneb toVersionDenebRequired() {
-    return (ExecutionPayloadSchemaDeneb) this;
+    throw new UnsupportedOperationException("Not a Deneb schema");
   }
 }

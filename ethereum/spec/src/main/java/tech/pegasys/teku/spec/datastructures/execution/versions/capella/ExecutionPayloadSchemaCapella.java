@@ -197,4 +197,9 @@ public class ExecutionPayloadSchemaCapella
   public SszListSchema<Withdrawal, ?> getWithdrawalsSchema() {
     return (SszListSchema<Withdrawal, ?>) getFieldSchema14();
   }
+
+  @Override
+  public ExecutionPayloadSchemaCapella toVersionCapellaRequired() {
+    return this;
+  }
 }

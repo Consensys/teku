@@ -74,6 +74,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDenebImpl;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodySchemaDenebImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectraImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodySchemaElectraImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
@@ -150,7 +151,7 @@ public class SchemaRegistryBuilder {
   private static SchemaProvider<?> createBlindedBeaconBlockSchemaProvider() {
     return providerBuilder(BLINDED_BEACON_BLOCK_SCHEMA)
         .withCreator(
-            PHASE0,
+            BELLATRIX,
             (registry, specConfig) ->
                 new BeaconBlockSchema(
                     registry.get(BLINDED_BEACON_BLOCK_BODY_SCHEMA),
@@ -161,7 +162,7 @@ public class SchemaRegistryBuilder {
   private static SchemaProvider<?> createSignedBlindedBeaconBlockSchemaProvider() {
     return providerBuilder(SIGNED_BLINDED_BEACON_BLOCK_SCHEMA)
         .withCreator(
-            PHASE0,
+            BELLATRIX,
             (registry, specConfig) ->
                 new SignedBeaconBlockSchema(
                     registry.get(BLINDED_BEACON_BLOCK_SCHEMA),
@@ -214,6 +215,13 @@ public class SchemaRegistryBuilder {
             (registry, specConfig) ->
                 BlindedBeaconBlockBodySchemaCapellaImpl.create(
                     SpecConfigCapella.required(specConfig),
+                    BLINDED_BEACON_BLOCK_BODY_SCHEMA.getContainerName(registry),
+                    registry))
+        .withCreator(
+            DENEB,
+            (registry, specConfig) ->
+                BlindedBeaconBlockBodySchemaDenebImpl.create(
+                    SpecConfigDeneb.required(specConfig),
                     BLINDED_BEACON_BLOCK_BODY_SCHEMA.getContainerName(registry),
                     registry))
         .withCreator(

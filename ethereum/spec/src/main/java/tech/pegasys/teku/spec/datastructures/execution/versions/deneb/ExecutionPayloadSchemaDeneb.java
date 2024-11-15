@@ -203,4 +203,9 @@ public class ExecutionPayloadSchemaDeneb
   public SszListSchema<Withdrawal, ?> getWithdrawalsSchema() {
     return (SszListSchema<Withdrawal, ?>) getChildSchema(getFieldIndex(WITHDRAWALS));
   }
+
+  @Override
+  public ExecutionPayloadSchemaDeneb toVersionDenebRequired() {
+    return this;
+  }
 }

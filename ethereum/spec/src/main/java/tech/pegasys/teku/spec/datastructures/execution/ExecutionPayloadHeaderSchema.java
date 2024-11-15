@@ -42,14 +42,14 @@ public interface ExecutionPayloadHeaderSchema<T extends ExecutionPayloadHeader>
       Consumer<ExecutionPayloadHeaderBuilder> builderConsumer);
 
   default ExecutionPayloadHeaderSchemaBellatrix toVersionBellatrixRequired() {
-    return (ExecutionPayloadHeaderSchemaBellatrix) this;
+    throw new UnsupportedOperationException("Not a Bellatrix schema");
   }
 
   default ExecutionPayloadHeaderSchemaCapella toVersionCapellaRequired() {
-    return (ExecutionPayloadHeaderSchemaCapella) this;
+    throw new UnsupportedOperationException("Not a Capella schema");
   }
 
   default ExecutionPayloadHeaderSchemaDeneb toVersionDenebRequired() {
-    return (ExecutionPayloadHeaderSchemaDeneb) this;
+    throw new UnsupportedOperationException("Not a Deneb schema");
   }
 }
