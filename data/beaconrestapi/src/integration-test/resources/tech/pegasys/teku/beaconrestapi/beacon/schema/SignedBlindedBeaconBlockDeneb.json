@@ -1,10 +1,10 @@
 {
-  "title" : "SignedBlindedBlockDeneb",
+  "title" : "SignedBlindedBeaconBlockDeneb",
   "type" : "object",
   "required" : [ "message", "signature" ],
   "properties" : {
     "message" : {
-      "$ref" : "#/components/schemas/BlindedBlockDeneb"
+      "$ref" : "#/components/schemas/BlindedBeaconBlockDeneb"
     },
     "signature" : {
       "type" : "string",

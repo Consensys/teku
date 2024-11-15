@@ -29,13 +29,11 @@ public class BeaconBlockBodySchemaPhase0Test {
     final BeaconBlockBodySchemaPhase0 specA =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            specConfig.getMaxValidatorsPerCommittee(),
             "BeaconBlockBodyPhase0",
             spec.getGenesisSchemaDefinitions().getSchemaRegistry());
     final BeaconBlockBodySchemaPhase0 specB =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            specConfig.getMaxValidatorsPerCommittee(),
             "BeaconBlockBodyPhase0",
             spec.getGenesisSchemaDefinitions().getSchemaRegistry());
 
@@ -49,13 +47,11 @@ public class BeaconBlockBodySchemaPhase0Test {
     final BeaconBlockBodySchemaPhase0 specA =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            specConfig.getMaxValidatorsPerCommittee(),
             "BeaconBlockBodyPhase0",
             spec.getGenesisSchemaDefinitions().getSchemaRegistry());
     final BeaconBlockBodySchemaPhase0 specB =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            specConfig.getMaxValidatorsPerCommittee(),
             "BeaconBlockBodyPhase0",
             spec.getGenesisSchemaDefinitions().getSchemaRegistry());
 

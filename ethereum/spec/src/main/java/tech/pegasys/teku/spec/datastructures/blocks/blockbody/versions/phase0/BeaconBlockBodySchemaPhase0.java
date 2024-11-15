@@ -33,7 +33,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
@@ -76,7 +75,6 @@ public class BeaconBlockBodySchemaPhase0
 
   public static BeaconBlockBodySchemaPhase0 create(
       final SpecConfig specConfig,
-      final long maxValidatorsPerAttestation,
       final String containerName,
       final SchemaRegistry schemaRegistry) {
     return new BeaconBlockBodySchemaPhase0(
@@ -96,8 +94,7 @@ public class BeaconBlockBodySchemaPhase0
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
-                new AttestationPhase0Schema(maxValidatorsPerAttestation)
-                    .castTypeToAttestationSchema(),
+                schemaRegistry.get(SchemaTypes.ATTESTATION_SCHEMA),
                 specConfig.getMaxAttestations())),
         namedSchema(
             BlockBodyFields.DEPOSITS,

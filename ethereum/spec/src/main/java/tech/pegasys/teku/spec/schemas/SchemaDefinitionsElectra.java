@@ -15,22 +15,18 @@ package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOBS_BUNDLE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyBuilderElectra;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectraImpl;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodySchemaElectraImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
@@ -57,14 +53,6 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final BeaconStateSchemaElectra beaconStateSchema;
 
-  private final BeaconBlockBodySchemaElectraImpl beaconBlockBodySchema;
-  private final BlindedBeaconBlockBodySchemaElectraImpl blindedBeaconBlockBodySchema;
-
-  private final BeaconBlockSchema beaconBlockSchema;
-  private final BeaconBlockSchema blindedBeaconBlockSchema;
-  private final SignedBeaconBlockSchema signedBeaconBlockSchema;
-  private final SignedBeaconBlockSchema signedBlindedBeaconBlockSchema;
-
   private final BuilderBidSchema<?> builderBidSchemaElectra;
   private final SignedBuilderBidSchema signedBuilderBidSchemaElectra;
 
@@ -87,35 +75,9 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     super(schemaRegistry);
     final SpecConfigElectra specConfig = SpecConfigElectra.required(schemaRegistry.getSpecConfig());
 
-    final long maxValidatorsPerAttestation = getMaxValidatorsPerAttestation(specConfig);
-
-    this.executionRequestsSchema = new ExecutionRequestsSchema(specConfig);
+    this.executionRequestsSchema = schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA);
     this.beaconStateSchema = BeaconStateSchemaElectra.create(specConfig);
-    this.beaconBlockBodySchema =
-        BeaconBlockBodySchemaElectraImpl.create(
-            specConfig,
-            getSignedBlsToExecutionChangeSchema(),
-            getBlobKzgCommitmentsSchema(),
-            getExecutionRequestsSchema(),
-            maxValidatorsPerAttestation,
-            "BeaconBlockBodyElectra",
-            schemaRegistry);
-    this.blindedBeaconBlockBodySchema =
-        BlindedBeaconBlockBodySchemaElectraImpl.create(
-            specConfig,
-            getSignedBlsToExecutionChangeSchema(),
-            getBlobKzgCommitmentsSchema(),
-            getExecutionRequestsSchema(),
-            maxValidatorsPerAttestation,
-            "BlindedBlockBodyElectra",
-            schemaRegistry);
-    this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockElectra");
-    this.blindedBeaconBlockSchema =
-        new BeaconBlockSchema(blindedBeaconBlockBodySchema, "BlindedBlockElectra");
-    this.signedBeaconBlockSchema =
-        new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockElectra");
-    this.signedBlindedBeaconBlockSchema =
-        new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockElectra");
+
     this.builderBidSchemaElectra =
         new BuilderBidSchemaElectra(
             "BuilderBidElectra",
@@ -127,10 +89,13 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
     this.blockContentsSchema =
         BlockContentsSchema.create(
-            specConfig, beaconBlockSchema, getBlobSchema(), "BlockContentsElectra");
+            specConfig, getBeaconBlockSchema(), getBlobSchema(), "BlockContentsElectra");
     this.signedBlockContentsSchema =
         SignedBlockContentsSchema.create(
-            specConfig, signedBeaconBlockSchema, getBlobSchema(), "SignedBlockContentsElectra");
+            specConfig,
+            getSignedBeaconBlockSchema(),
+            getBlobSchema(),
+            "SignedBlockContentsElectra");
     this.executionPayloadAndBlobsBundleSchema =
         new ExecutionPayloadAndBlobsBundleSchema(
             getExecutionPayloadSchema(), schemaRegistry.get(BLOBS_BUNDLE_SCHEMA));
@@ -160,53 +125,13 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   }
 
   @Override
-  public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
-    return beaconBlockBodySchema;
-  }
-
-  @Override
-  public BeaconBlockBodySchema<?> getBlindedBeaconBlockBodySchema() {
-    return blindedBeaconBlockBodySchema;
-  }
-
-  @Override
-  public BeaconBlockSchema getBeaconBlockSchema() {
-    return beaconBlockSchema;
-  }
-
-  @Override
-  public BeaconBlockSchema getBlindedBeaconBlockSchema() {
-    return blindedBeaconBlockSchema;
-  }
-
-  @Override
-  public SignedBeaconBlockSchema getSignedBeaconBlockSchema() {
-    return signedBeaconBlockSchema;
-  }
-
-  @Override
-  public SignedBeaconBlockSchema getSignedBlindedBeaconBlockSchema() {
-    return signedBlindedBeaconBlockSchema;
-  }
-
-  @Override
   public BlockContainerSchema<BlockContainer> getBlockContainerSchema() {
     return getBlockContentsSchema().castTypeToBlockContainer();
   }
 
   @Override
-  public BlockContainerSchema<BlockContainer> getBlindedBlockContainerSchema() {
-    return getBlindedBeaconBlockSchema().castTypeToBlockContainer();
-  }
-
-  @Override
   public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlockContainerSchema() {
     return getSignedBlockContentsSchema().castTypeToSignedBlockContainer();
-  }
-
-  @Override
-  public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlindedBlockContainerSchema() {
-    return getSignedBlindedBeaconBlockSchema().castTypeToSignedBlockContainer();
   }
 
   @Override
@@ -226,7 +151,9 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   @Override
   public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
-    return new BeaconBlockBodyBuilderElectra(beaconBlockBodySchema, blindedBeaconBlockBodySchema);
+    return new BeaconBlockBodyBuilderElectra(
+        getBeaconBlockBodySchema().toVersionElectra().orElseThrow(),
+        getBlindedBeaconBlockBodySchema().toBlindedVersionElectra().orElseThrow());
   }
 
   @Override

@@ -1,10 +1,10 @@
 {
-  "title" : "SignedBlindedBlockBellatrix",
+  "title" : "SignedBlindedBeaconBlockCapella",
   "type" : "object",
   "required" : [ "message", "signature" ],
   "properties" : {
     "message" : {
-      "$ref" : "#/components/schemas/BlindedBlockBellatrix"
+      "$ref" : "#/components/schemas/BlindedBeaconBlockCapella"
     },
     "signature" : {
       "type" : "string",
