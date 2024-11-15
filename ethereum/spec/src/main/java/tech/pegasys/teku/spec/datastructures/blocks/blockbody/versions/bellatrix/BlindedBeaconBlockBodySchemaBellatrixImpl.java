@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTER_SLASH
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_HEADER_SCHEMA;
 
 import it.unimi.dsi.fastutil.longs.LongList;
+import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -41,7 +42,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
@@ -108,8 +108,7 @@ public class BlindedBeaconBlockBodySchemaBellatrixImpl
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
-                schemaRegistry.get(ATTESTATION_SCHEMA),
-                specConfig.getMaxAttestations())),
+                schemaRegistry.get(ATTESTATION_SCHEMA), specConfig.getMaxAttestations())),
         namedSchema(
             BlockBodyFields.DEPOSITS,
             SszListSchema.create(Deposit.SSZ_SCHEMA, specConfig.getMaxDeposits())),
@@ -120,7 +119,9 @@ public class BlindedBeaconBlockBodySchemaBellatrixImpl
         namedSchema(
             BlockBodyFields.SYNC_AGGREGATE,
             SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
-        namedSchema(BlockBodyFields.EXECUTION_PAYLOAD_HEADER, schemaRegistry.get(EXECUTION_PAYLOAD_HEADER_SCHEMA).toVersionBellatrixRequired()));
+        namedSchema(
+            BlockBodyFields.EXECUTION_PAYLOAD_HEADER,
+            schemaRegistry.get(EXECUTION_PAYLOAD_HEADER_SCHEMA).toVersionBellatrixRequired()));
   }
 
   @Override
@@ -178,6 +179,11 @@ public class BlindedBeaconBlockBodySchemaBellatrixImpl
   @Override
   public ExecutionPayloadHeaderSchemaBellatrix getExecutionPayloadHeaderSchema() {
     return (ExecutionPayloadHeaderSchemaBellatrix) getFieldSchema9();
+  }
+
+  @Override
+  public Optional<BlindedBeaconBlockBodySchemaBellatrix<?>> toBlindedVersionBellatrix() {
+    return Optional.of(this);
   }
 
   @Override

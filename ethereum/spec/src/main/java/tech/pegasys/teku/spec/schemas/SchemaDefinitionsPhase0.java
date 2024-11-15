@@ -15,7 +15,9 @@ package tech.pegasys.teku.spec.schemas;
 
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_BODY_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -28,7 +30,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyBuilderPhase0;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0.MetadataMessageSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -65,9 +66,8 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
     this.beaconStateSchema = BeaconStateSchemaPhase0.create(specConfig);
     this.beaconBlockBodySchema = schemaRegistry.get(BEACON_BLOCK_BODY_SCHEMA);
     this.metadataMessageSchema = new MetadataMessageSchemaPhase0(specConfig.getNetworkingConfig());
-    beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockPhase0");
-    signedBeaconBlockSchema =
-        new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockPhase0");
+    this.beaconBlockSchema = schemaRegistry.get(BEACON_BLOCK_SCHEMA);
+    this.signedBeaconBlockSchema = schemaRegistry.get(SIGNED_BEACON_BLOCK_SCHEMA);
   }
 
   @Override

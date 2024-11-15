@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
 
 import it.unimi.dsi.fastutil.longs.LongList;
+import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -222,5 +223,10 @@ public class BlindedBeaconBlockBodySchemaDenebImpl
     return GIndexUtil.gIdxComposeAll(
         getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD_HEADER)),
         getExecutionPayloadHeaderSchema().getBlindedNodeGeneralizedIndices());
+  }
+
+  @Override
+  public Optional<BlindedBeaconBlockBodySchemaDeneb<?>> toBlindedVersionDeneb() {
+    return Optional.of(this);
   }
 }

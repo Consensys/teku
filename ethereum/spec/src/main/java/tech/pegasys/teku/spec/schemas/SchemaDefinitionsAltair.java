@@ -15,7 +15,9 @@ package tech.pegasys.teku.spec.schemas;
 
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_BODY_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
 
 import com.google.common.base.Preconditions;
 import java.util.Optional;
@@ -30,7 +32,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyBuilderAltair;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltairImpl;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponseSchema;
@@ -83,9 +84,8 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
     this.signedAggregateAndProofSchema = schemaRegistry.get(SIGNED_AGGREGATE_AND_PROOF_SCHEMA);
     this.beaconStateSchema = BeaconStateSchemaAltair.create(specConfig);
     this.beaconBlockBodySchema = schemaRegistry.get(BEACON_BLOCK_BODY_SCHEMA);
-    this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockAltair");
-    this.signedBeaconBlockSchema =
-        new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockAltair");
+    this.beaconBlockSchema = schemaRegistry.get(BEACON_BLOCK_SCHEMA);
+    this.signedBeaconBlockSchema = schemaRegistry.get(SIGNED_BEACON_BLOCK_SCHEMA);
     this.syncCommitteeContributionSchema = SyncCommitteeContributionSchema.create(specConfig);
     this.contributionAndProofSchema =
         ContributionAndProofSchema.create(syncCommitteeContributionSchema);
