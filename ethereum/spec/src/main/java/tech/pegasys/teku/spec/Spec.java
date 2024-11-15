@@ -956,13 +956,13 @@ public class Spec {
   public Optional<Integer> getMaxBlobsPerBlockForHighestMilestone() {
     final SpecMilestone highestSupportedMilestone =
         getForkSchedule().getHighestSupportedMilestone();
-    final Optional<Integer> highestMaxBlobsPerBlock =
+    final Optional<Integer> maybeHighestMaxBlobsPerBlock =
         forMilestone(highestSupportedMilestone)
             .getConfig()
             .toVersionDeneb()
             .map(SpecConfigDeneb::getMaxBlobsPerBlock);
 
-    final Optional<Integer> secondHighestMaxBlobsPerBlock =
+    final Optional<Integer> maybeHecondHighestMaxBlobsPerBlock =
         highestSupportedMilestone
             .getPreviousMilestoneIfExists()
             .map(this::forMilestone)
@@ -970,18 +970,15 @@ public class Spec {
             .flatMap(SpecConfig::toVersionDeneb)
             .map(SpecConfigDeneb::getMaxBlobsPerBlock);
 
-    if (highestMaxBlobsPerBlock.isEmpty() && secondHighestMaxBlobsPerBlock.isEmpty()) {
+    if (maybeHighestMaxBlobsPerBlock.isEmpty() && maybeHecondHighestMaxBlobsPerBlock.isEmpty()) {
       return Optional.empty();
     }
 
-    final int highestMaxBlobsPerBlockInt = highestMaxBlobsPerBlock.orElse(0);
-    final int secondHighestMaxBlobsPerBlockInt = secondHighestMaxBlobsPerBlock.orElse(0);
+    final int highestMaxBlobsPerBlock = maybeHighestMaxBlobsPerBlock.orElse(0);
+    final int secondHighestMaxBlobsPerBlock = maybeHecondHighestMaxBlobsPerBlock.orElse(0);
 
-    // avoid Math.max to avoid MathTargetType warning
-    return Optional.of(
-        highestMaxBlobsPerBlockInt > secondHighestMaxBlobsPerBlockInt
-            ? highestMaxBlobsPerBlockInt
-            : secondHighestMaxBlobsPerBlockInt);
+    int max = Math.max(highestMaxBlobsPerBlock, secondHighestMaxBlobsPerBlock);
+    return Optional.of(max);
   }
 
   public UInt64 computeSubnetForBlobSidecar(final BlobSidecar blobSidecar) {
