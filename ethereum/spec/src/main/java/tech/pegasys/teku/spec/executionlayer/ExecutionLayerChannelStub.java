@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
@@ -624,7 +625,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
             blobsToGenerate.orElseGet(
                 () ->
                     random.nextInt(
-                        spec.atSlot(slot).getConfig().getMaxBlobsPerBlockInEffect() + 1)));
+                        SpecConfigDeneb.required(spec.atSlot(slot).getConfig())
+                                .getMaxBlobsPerBlock()
+                            + 1)));
     final List<KZGCommitment> commitments = blobsUtil.blobsToKzgCommitments(blobs);
     final List<KZGProof> proofs = blobsUtil.computeKzgProofs(blobs, commitments);
 

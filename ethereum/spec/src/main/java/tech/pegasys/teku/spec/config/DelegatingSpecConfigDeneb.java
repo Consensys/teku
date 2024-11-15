@@ -57,9 +57,13 @@ public class DelegatingSpecConfigDeneb extends DelegatingSpecConfigCapella
   }
 
   @Override
-  @Deprecated
   public int getMaxBlobsPerBlock() {
     return specConfigDeneb.getMaxBlobsPerBlock();
+  }
+
+  @Override
+  public int getTargetBlobsPerBlock() {
+    return specConfigDeneb.getTargetBlobsPerBlock();
   }
 
   @Override
@@ -88,7 +92,6 @@ public class DelegatingSpecConfigDeneb extends DelegatingSpecConfigCapella
   }
 
   @Override
-  @Deprecated
   public int getBlobSidecarSubnetCount() {
     return specConfigDeneb.getBlobSidecarSubnetCount();
   }

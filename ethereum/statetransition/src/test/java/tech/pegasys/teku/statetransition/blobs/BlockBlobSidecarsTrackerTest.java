@@ -36,6 +36,7 @@ import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -47,7 +48,7 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAnd
 public class BlockBlobSidecarsTrackerTest {
   private final Spec spec = TestSpecFactory.createMainnetDeneb();
   private final UInt64 maxBlobsPerBlock =
-      UInt64.valueOf(spec.getGenesisSpecConfig().getMaxBlobsPerBlockInEffect());
+      UInt64.valueOf(SpecConfigDeneb.required(spec.getGenesisSpecConfig()).getMaxBlobsPerBlock());
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final SignedBeaconBlock block =

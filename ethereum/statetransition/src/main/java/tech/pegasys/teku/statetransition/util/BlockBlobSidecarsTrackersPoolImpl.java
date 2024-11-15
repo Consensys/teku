@@ -48,6 +48,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -213,7 +214,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     return new BlockBlobSidecarsTracker(
         slotAndBlockRoot,
         UInt64.valueOf(
-            spec.atSlot(slotAndBlockRoot.getSlot()).getConfig().getMaxBlobsPerBlockInEffect()));
+            SpecConfigDeneb.required(spec.atSlot(slotAndBlockRoot.getSlot()).getConfig())
+                .getMaxBlobsPerBlock()));
   }
 
   @Override

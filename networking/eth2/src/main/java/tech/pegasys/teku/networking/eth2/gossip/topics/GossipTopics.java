@@ -84,10 +84,7 @@ public class GossipTopics {
         .ifPresent(
             config ->
                 addBlobSidecarSubnetTopics(
-                    config.getBlobSidecarSubnetCountInEffect(),
-                    topics,
-                    forkDigest,
-                    gossipEncoding));
+                    config.getBlobSidecarSubnetCount(), topics, forkDigest, gossipEncoding));
 
     for (GossipTopicName topicName : GossipTopicName.values()) {
       topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding));

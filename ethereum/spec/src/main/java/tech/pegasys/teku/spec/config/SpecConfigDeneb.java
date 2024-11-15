@@ -52,8 +52,9 @@ public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfig
    */
   int getMaxBlobCommitmentsPerBlock();
 
-  @Deprecated
   int getMaxBlobsPerBlock();
+
+  int getTargetBlobsPerBlock();
 
   int getKzgCommitmentInclusionProofDepth();
 

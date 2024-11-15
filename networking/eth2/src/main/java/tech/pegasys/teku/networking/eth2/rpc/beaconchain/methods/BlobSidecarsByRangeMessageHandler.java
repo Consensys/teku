@@ -41,7 +41,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailableException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
@@ -85,10 +85,11 @@ public class BlobSidecarsByRangeMessageHandler
   public Optional<RpcException> validateRequest(
       final String protocolId, final BlobSidecarsByRangeRequestMessage request) {
 
-    final SpecConfig specConfig = spec.atSlot(request.getMaxSlot()).getConfig();
+    final SpecConfigDeneb specConfig =
+        SpecConfigDeneb.required(spec.atSlot(request.getMaxSlot()).getConfig());
 
-    final int maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecarsInEffect();
-    final int maxBlobsPerBlock = specConfig.getMaxBlobsPerBlockInEffect();
+    final int maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
+    final int maxBlobsPerBlock = specConfig.getMaxBlobsPerBlock();
 
     final long requestedCount = calculateRequestedCount(request, maxBlobsPerBlock);
 
@@ -120,9 +121,8 @@ public class BlobSidecarsByRangeMessageHandler
         message.getCount(),
         startSlot);
 
-    final SpecConfig specConfig = spec.atSlot(endSlot).getConfig();
-    final long requestedCount =
-        calculateRequestedCount(message, specConfig.getMaxBlobsPerBlockInEffect());
+    final SpecConfigDeneb specConfig = SpecConfigDeneb.required(spec.atSlot(endSlot).getConfig());
+    final long requestedCount = calculateRequestedCount(message, specConfig.getMaxBlobsPerBlock());
 
     final Optional<RequestApproval> blobSidecarsRequestApproval =
         peer.approveBlobSidecarsRequest(callback, requestedCount);
@@ -171,7 +171,7 @@ public class BlobSidecarsByRangeMessageHandler
                       endSlot,
                       canonicalHotRoots,
                       finalizedSlot,
-                      specConfig.getMaxRequestBlobSidecarsInEffect());
+                      specConfig.getMaxRequestBlobSidecars());
               if (message.getCount().isZero()) {
                 return SafeFuture.completedFuture(initialState);
               }

@@ -2310,7 +2310,11 @@ public final class DataStructureUtil {
 
   public BlobIdentifier randomBlobIdentifier(final Bytes32 blockRoot) {
     final int maxBlobsPerBlock =
-        spec.forMilestone(SpecMilestone.DENEB).getConfig().getMaxBlobsPerBlockInEffect();
+        spec.forMilestone(SpecMilestone.DENEB)
+            .getConfig()
+            .toVersionDeneb()
+            .orElseThrow()
+            .getMaxBlobsPerBlock();
     return new BlobIdentifier(blockRoot, randomUInt64(maxBlobsPerBlock));
   }
 
@@ -2618,7 +2622,9 @@ public final class DataStructureUtil {
     return randomUInt64(
         spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
             .getConfig()
-            .getMaxBlobsPerBlockInEffect());
+            .toVersionDeneb()
+            .orElseThrow()
+            .getMaxBlobsPerBlock());
   }
 
   private int randomNumberOfBlobsPerBlock() {
@@ -2627,7 +2633,9 @@ public final class DataStructureUtil {
         1,
         spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
                 .getConfig()
-                .getMaxBlobsPerBlockInEffect()
+                .toVersionDeneb()
+                .orElseThrow()
+                .getMaxBlobsPerBlock()
             + 1);
   }
 

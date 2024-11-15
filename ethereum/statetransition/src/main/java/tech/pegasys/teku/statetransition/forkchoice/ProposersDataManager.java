@@ -241,9 +241,9 @@ public class ProposersDataManager implements SlotEventsChannel {
     final Optional<SpecConfigDeneb> maybeDenebConfig =
         spec.atSlot(blockSlot).getConfig().toVersionDeneb();
     final Optional<UInt64> maxBlobsPerBlock =
-        maybeDenebConfig.map(SpecConfigDeneb::getMaxBlobsPerBlockInEffect).map(UInt64::valueOf);
+        maybeDenebConfig.map(SpecConfigDeneb::getMaxBlobsPerBlock).map(UInt64::valueOf);
     final Optional<UInt64> targetBlobsPerBlock =
-        maybeDenebConfig.map(SpecConfigDeneb::getTargetBlobsPerBlockInEffect).map(UInt64::valueOf);
+        maybeDenebConfig.map(SpecConfigDeneb::getTargetBlobsPerBlock).map(UInt64::valueOf);
 
     return Optional.of(
         new PayloadBuildingAttributes(

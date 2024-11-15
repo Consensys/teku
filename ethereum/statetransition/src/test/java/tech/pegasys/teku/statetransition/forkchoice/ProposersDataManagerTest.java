@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
-import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -155,14 +155,14 @@ class ProposersDataManagerTest {
             spec.atSlot(currentForkFirstSlot)
                 .getConfig()
                 .toVersionDeneb()
-                .map(SpecConfig::getTargetBlobsPerBlockInEffect)
+                .map(SpecConfigDeneb::getTargetBlobsPerBlock)
                 .map(UInt64::valueOf));
     assertThat(maybePayloadBuildingAttributes.get().getMaximumBlobCount())
         .isEqualTo(
             spec.atSlot(currentForkFirstSlot)
                 .getConfig()
                 .toVersionDeneb()
-                .map(SpecConfig::getMaxBlobsPerBlockInEffect)
+                .map(SpecConfigDeneb::getMaxBlobsPerBlock)
                 .map(UInt64::valueOf));
   }
 }

@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
@@ -112,7 +113,9 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         };
 
     dataStructureUtil = new DataStructureUtil(spec);
-    maxBlobsPerBlock = spec.forMilestone(specMilestone).getConfig().getMaxBlobsPerBlockInEffect();
+    maxBlobsPerBlock =
+        SpecConfigDeneb.required(spec.forMilestone(specMilestone).getConfig())
+            .getMaxBlobsPerBlock();
     slotsPerEpoch = spec.getSlotsPerEpoch(ZERO);
     startSlot = currentForkEpoch.increment().times(slotsPerEpoch);
     handler = new BlobSidecarsByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
@@ -147,7 +150,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   public void validateRequest_shouldRejectRequestWhenCountIsTooBig() {
     final UInt64 maxRequestBlobSidecars =
         UInt64.valueOf(
-            spec.forMilestone(specMilestone).getConfig().getMaxRequestBlobSidecarsInEffect());
+            SpecConfigDeneb.required(spec.forMilestone(specMilestone).getConfig())
+                .getMaxRequestBlobSidecars());
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(
             startSlot, maxRequestBlobSidecars.increment(), maxBlobsPerBlock);

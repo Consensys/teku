@@ -33,6 +33,7 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -68,7 +69,8 @@ public class BlobSidecarGossipManager implements GossipManager {
     final Int2ObjectMap<Eth2TopicHandler<BlobSidecar>> subnetIdToTopicHandler =
         new Int2ObjectOpenHashMap<>();
     final int blobSidecarSubnetCount =
-        spec.atEpoch(forkInfo.getFork().getEpoch()).getConfig().getBlobSidecarSubnetCountInEffect();
+        SpecConfigDeneb.required(spec.atEpoch(forkInfo.getFork().getEpoch()).getConfig())
+            .getBlobSidecarSubnetCount();
 
     IntStream.range(0, blobSidecarSubnetCount)
         .forEach(

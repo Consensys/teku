@@ -44,6 +44,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
@@ -664,7 +665,7 @@ class ExecutionLayerManagerImplTest {
     setupDeneb();
     final List<VersionedHash> versionedHashes =
         dataStructureUtil.randomVersionedHashes(
-            spec.getGenesisSpecConfig().getMaxBlobsPerBlockInEffect());
+            SpecConfigDeneb.required(spec.getGenesisSpecConfig()).getMaxBlobsPerBlock());
     final UInt64 slot = dataStructureUtil.randomSlot();
     final List<BlobAndProof> getBlobsResponse =
         prepareEngineGetBlobsResponse(versionedHashes, slot);
@@ -806,7 +807,7 @@ class ExecutionLayerManagerImplTest {
       final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
     final List<BlobSidecar> blobSidecars =
         dataStructureUtil.randomBlobSidecars(
-            spec.getGenesisSpecConfig().getMaxBlobsPerBlockInEffect());
+            SpecConfigDeneb.required(spec.getGenesisSpecConfig()).getMaxBlobsPerBlock());
     final List<BlobAndProof> getBlobsResponse =
         blobSidecars.stream()
             .map(blobSidecar -> new BlobAndProof(blobSidecar.getBlob(), blobSidecar.getKZGProof()))

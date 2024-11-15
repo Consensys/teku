@@ -169,18 +169,6 @@ public interface SpecConfig extends NetworkingSpecConfig {
 
   int getReorgParentWeightThreshold();
 
-  // Effective configs, the following configurations related to values that changes throughout the
-  // spec versions.
-  // they need to have different names due to how yaml files are structured.
-  // This way we can unify the access to these values in the codebase abstracting the spec version.
-  default int getMaxBlobsPerBlockInEffect() {
-    throw new UnsupportedOperationException("Blobs not supported by this spec version");
-  }
-
-  default int getTargetBlobsPerBlockInEffect() {
-    throw new UnsupportedOperationException("Blobs not supported by this spec version");
-  }
-
   // Casters
   default Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.empty();

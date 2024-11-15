@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -135,7 +136,8 @@ public class BlobSidecarGossipManagerTest {
 
     safeJoin(blobSidecarGossipManager.publishBlobSidecar(blobSidecar));
     final int blobSidecarSubnetCount =
-        spec.forMilestone(specMilestone).getConfig().getBlobSidecarSubnetCountInEffect();
+        SpecConfigDeneb.required(spec.forMilestone(specMilestone).getConfig())
+            .getBlobSidecarSubnetCount();
 
     topicChannels.forEach(
         (subnetId, channel) -> {

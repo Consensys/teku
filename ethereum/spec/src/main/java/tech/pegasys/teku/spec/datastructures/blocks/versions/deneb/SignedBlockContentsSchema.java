@@ -47,11 +47,9 @@ public class SignedBlockContentsSchema
         namedSchema("signed_block", signedBeaconBlockSchema),
         namedSchema(
             FIELD_KZG_PROOFS,
-            SszListSchema.create(
-                SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobsPerBlockInEffect())),
+            SszListSchema.create(SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())),
         namedSchema(
-            FIELD_BLOBS,
-            SszListSchema.create(blobSchema, specConfig.getMaxBlobsPerBlockInEffect())));
+            FIELD_BLOBS, SszListSchema.create(blobSchema, specConfig.getMaxBlobsPerBlock())));
   }
 
   public static SignedBlockContentsSchema create(

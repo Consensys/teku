@@ -178,47 +178,23 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   }
 
   @Override
-  @Deprecated
-  public int getMaxBlobsPerBlockElectra() {
+  public int getMaxBlobsPerBlock() {
     return maxBlobsPerBlockElectra;
   }
 
   @Override
-  @Deprecated
-  public int getTargetBlobsPerBlockElectra() {
+  public int getTargetBlobsPerBlock() {
     return targetBlobsPerBlockElectra;
   }
 
   @Override
-  @Deprecated
-  public int getBlobSidecarSubnetCountElectra() {
+  public int getBlobSidecarSubnetCount() {
     return blobSidecarSubnetCountElectra;
   }
 
   @Override
-  @Deprecated
-  public int getMaxRequestBlobSidecarsElectra() {
+  public int getMaxRequestBlobSidecars() {
     return maxRequestBlobSidecarsElectra;
-  }
-
-  @Override
-  public int getMaxRequestBlobSidecarsInEffect() {
-    return maxRequestBlobSidecarsElectra;
-  }
-
-  @Override
-  public int getBlobSidecarSubnetCountInEffect() {
-    return blobSidecarSubnetCountElectra;
-  }
-
-  @Override
-  public int getMaxBlobsPerBlockInEffect() {
-    return maxBlobsPerBlockElectra;
-  }
-
-  @Override
-  public int getTargetBlobsPerBlockInEffect() {
-    return targetBlobsPerBlockElectra;
   }
 
   @Override
