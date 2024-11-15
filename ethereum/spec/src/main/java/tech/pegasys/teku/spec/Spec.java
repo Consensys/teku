@@ -956,13 +956,14 @@ public class Spec {
   public Optional<Integer> getMaxBlobsPerBlockForHighestMilestone() {
     final SpecMilestone highestSupportedMilestone =
         getForkSchedule().getHighestSupportedMilestone();
+
     final Optional<Integer> maybeHighestMaxBlobsPerBlock =
         forMilestone(highestSupportedMilestone)
             .getConfig()
             .toVersionDeneb()
             .map(SpecConfigDeneb::getMaxBlobsPerBlock);
 
-    final Optional<Integer> maybeHecondHighestMaxBlobsPerBlock =
+    final Optional<Integer> maybeSecondHighestMaxBlobsPerBlock =
         highestSupportedMilestone
             .getPreviousMilestoneIfExists()
             .map(this::forMilestone)
@@ -970,12 +971,12 @@ public class Spec {
             .flatMap(SpecConfig::toVersionDeneb)
             .map(SpecConfigDeneb::getMaxBlobsPerBlock);
 
-    if (maybeHighestMaxBlobsPerBlock.isEmpty() && maybeHecondHighestMaxBlobsPerBlock.isEmpty()) {
+    if (maybeHighestMaxBlobsPerBlock.isEmpty() && maybeSecondHighestMaxBlobsPerBlock.isEmpty()) {
       return Optional.empty();
     }
 
     final int highestMaxBlobsPerBlock = maybeHighestMaxBlobsPerBlock.orElse(0);
-    final int secondHighestMaxBlobsPerBlock = maybeHecondHighestMaxBlobsPerBlock.orElse(0);
+    final int secondHighestMaxBlobsPerBlock = maybeSecondHighestMaxBlobsPerBlock.orElse(0);
     final int max = Math.max(highestMaxBlobsPerBlock, secondHighestMaxBlobsPerBlock);
 
     return Optional.of(max);
