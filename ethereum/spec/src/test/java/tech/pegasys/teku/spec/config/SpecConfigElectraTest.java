@@ -91,10 +91,10 @@ public class SpecConfigElectraTest {
     assertThat(denebConfig.getBlobSidecarSubnetCount()).isEqualTo(8);
     assertThat(denebConfig.getMaxRequestBlobSidecars()).isEqualTo(16);
 
-    assertThat(denebConfig.getMaxBlobsPerBlock()).isEqualTo(8);
-    assertThat(denebConfig.getTargetBlobsPerBlock()).isEqualTo(5);
-    assertThat(denebConfig.getBlobSidecarSubnetCount()).isEqualTo(10);
-    assertThat(denebConfig.getMaxRequestBlobSidecars()).isEqualTo(13);
+    assertThat(electraConfig.getMaxBlobsPerBlock()).isEqualTo(8);
+    assertThat(electraConfig.getTargetBlobsPerBlock()).isEqualTo(5);
+    assertThat(electraConfig.getBlobSidecarSubnetCount()).isEqualTo(10);
+    assertThat(electraConfig.getMaxRequestBlobSidecars()).isEqualTo(13);
   }
 
   @Test
