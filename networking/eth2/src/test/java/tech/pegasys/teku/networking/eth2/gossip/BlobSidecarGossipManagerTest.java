@@ -42,9 +42,8 @@ import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
-import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -72,7 +71,7 @@ public class BlobSidecarGossipManagerTest {
   private SpecMilestone specMilestone;
 
   @BeforeEach
-  public void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
+  public void setup(final SpecContext specContext) {
     spec = specContext.getSpec();
     dataStructureUtil = specContext.getDataStructureUtil();
     specMilestone = specContext.getSpecMilestone();
@@ -136,7 +135,9 @@ public class BlobSidecarGossipManagerTest {
     final Bytes serialized = gossipEncoding.encode(blobSidecar);
 
     safeJoin(blobSidecarGossipManager.publishBlobSidecar(blobSidecar));
-    final int blobSidecarSubnetCount = getBlobSidecarSubnetCount();
+    final int blobSidecarSubnetCount =
+        SpecConfigDeneb.required(spec.forMilestone(specMilestone).getConfig())
+            .getBlobSidecarSubnetCount();
 
     topicChannels.forEach(
         (subnetId, channel) -> {
@@ -190,13 +191,5 @@ public class BlobSidecarGossipManagerTest {
     assertThat(validationResult.isReject()).isTrue();
     assertThat(validationResult.getDescription())
         .hasValue("blob sidecar with subnet_id 2 does not match the topic subnet_id 1");
-  }
-
-  private int getBlobSidecarSubnetCount() {
-    return specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)
-        ? SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig())
-            .getBlobSidecarSubnetCountElectra()
-        : SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
-            .getBlobSidecarSubnetCount();
   }
 }

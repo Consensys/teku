@@ -178,22 +178,22 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   }
 
   @Override
-  public int getMaxBlobsPerBlockElectra() {
+  public int getMaxBlobsPerBlock() {
     return maxBlobsPerBlockElectra;
   }
 
   @Override
-  public int getTargetBlobsPerBlockElectra() {
+  public int getTargetBlobsPerBlock() {
     return targetBlobsPerBlockElectra;
   }
 
   @Override
-  public int getBlobSidecarSubnetCountElectra() {
+  public int getBlobSidecarSubnetCount() {
     return blobSidecarSubnetCountElectra;
   }
 
   @Override
-  public int getMaxRequestBlobSidecarsElectra() {
+  public int getMaxRequestBlobSidecars() {
     return maxRequestBlobSidecarsElectra;
   }
 

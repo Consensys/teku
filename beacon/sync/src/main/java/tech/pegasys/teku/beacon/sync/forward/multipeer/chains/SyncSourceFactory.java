@@ -45,7 +45,8 @@ public class SyncSourceFactory {
     // Limit request rate to just a little under what we'd accept
     final int maxBlocksPerMinute = this.maxBlocksPerMinute - batchSize - 1;
     final Optional<Integer> maxBlobSidecarsPerMinute =
-        spec.getMaxBlobsPerBlock().map(maxBlobsPerBlock -> maxBlocksPerMinute * maxBlobsPerBlock);
+        spec.getMaxBlobsPerBlockForHighestMilestone()
+            .map(maxBlobsPerBlock -> maxBlocksPerMinute * maxBlobsPerBlock);
 
     return syncSourcesByPeer.computeIfAbsent(
         peer,

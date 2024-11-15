@@ -17,7 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface SpecConfigElectra extends SpecConfigDeneb, NetworkingSpecConfigElectra {
+public interface SpecConfigElectra extends SpecConfigDeneb, NetworkingSpecConfigDeneb {
 
   UInt64 UNSET_DEPOSIT_REQUESTS_START_INDEX = UInt64.MAX_VALUE;
   UInt64 FULL_EXIT_REQUEST_AMOUNT = UInt64.ZERO;
@@ -65,10 +65,6 @@ public interface SpecConfigElectra extends SpecConfigDeneb, NetworkingSpecConfig
   int getMaxPendingPartialsPerWithdrawalsSweep();
 
   int getMaxPendingDepositsPerEpoch();
-
-  int getMaxBlobsPerBlockElectra();
-
-  int getTargetBlobsPerBlockElectra();
 
   @Override
   Optional<SpecConfigElectra> toVersionElectra();

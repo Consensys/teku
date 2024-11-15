@@ -149,7 +149,8 @@ public class BlobSidecarsByRootMessageHandlerTest {
   @TestTemplate
   public void validateRequest_shouldNotAllowRequestLargerThanMaximumAllowed() {
     final int maxRequestBlobSidecars =
-        spec.forMilestone(specMilestone).miscHelpers().getMaxRequestBlobSidecars();
+        SpecConfigDeneb.required(spec.forMilestone(specMilestone).getConfig())
+            .getMaxRequestBlobSidecars();
     when(recentChainData.getCurrentEpoch())
         .thenReturn(Optional.of(dataStructureUtil.randomEpoch()));
     final BlobSidecarsByRootRequestMessage request =

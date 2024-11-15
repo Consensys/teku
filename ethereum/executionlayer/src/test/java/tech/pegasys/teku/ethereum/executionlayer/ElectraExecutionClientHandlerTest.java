@@ -37,6 +37,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
@@ -127,11 +128,12 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
   }
 
   @Test
-  void engineForkChoiceUpdated_shouldCallEngineForkChoiceUpdatedV3() {
+  void engineForkChoiceUpdated_shouldCallEngineForkChoiceUpdatedV4() {
     final ExecutionClientHandler handler = getHandler();
     final ForkChoiceState forkChoiceState = dataStructureUtil.randomForkChoiceState(false);
     final ForkChoiceStateV1 forkChoiceStateV1 =
         ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState);
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(spec.getGenesisSpecConfig());
     final PayloadBuildingAttributes attributes =
         new PayloadBuildingAttributes(
             dataStructureUtil.randomUInt64(),
@@ -142,8 +144,8 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
             Optional.empty(),
             Optional.of(List.of()),
             dataStructureUtil.randomBytes32(),
-            spec.getMaxBlobsPerBlock().map(max -> UInt64.valueOf(max / 2)),
-            spec.getMaxBlobsPerBlock().map(UInt64::valueOf));
+            Optional.of(UInt64.valueOf(specConfigDeneb.getTargetBlobsPerBlock())),
+            Optional.of(UInt64.valueOf(specConfigDeneb.getMaxBlobsPerBlock())));
     final Optional<PayloadAttributesV4> payloadAttributes =
         PayloadAttributesV4.fromInternalPayloadBuildingAttributesV4(Optional.of(attributes));
     final ForkChoiceUpdatedResult responseData =
@@ -164,7 +166,8 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
   @Test
   void engineGetBlobs_shouldCallGetBlobsV1() {
     final ExecutionClientHandler handler = getHandler();
-    final int maxBlobsPerBlock = spec.getMaxBlobsPerBlock().orElseThrow();
+    final int maxBlobsPerBlock =
+        SpecConfigDeneb.required(spec.getGenesisSpecConfig()).getMaxBlobsPerBlock();
     final List<VersionedHash> versionedHashes =
         dataStructureUtil.randomVersionedHashes(maxBlobsPerBlock);
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(maxBlobsPerBlock);
