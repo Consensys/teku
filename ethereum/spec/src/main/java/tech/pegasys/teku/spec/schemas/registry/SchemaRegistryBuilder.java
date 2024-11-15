@@ -155,7 +155,7 @@ public class SchemaRegistryBuilder {
             (registry, specConfig) ->
                 new BeaconBlockSchema(
                     registry.get(BLINDED_BEACON_BLOCK_BODY_SCHEMA),
-                    BEACON_BLOCK_SCHEMA.getContainerName(registry)))
+                    BLINDED_BEACON_BLOCK_SCHEMA.getContainerName(registry)))
         .build();
   }
 
@@ -166,7 +166,7 @@ public class SchemaRegistryBuilder {
             (registry, specConfig) ->
                 new SignedBeaconBlockSchema(
                     registry.get(BLINDED_BEACON_BLOCK_SCHEMA),
-                    BEACON_BLOCK_SCHEMA.getContainerName(registry)))
+                    SIGNED_BLINDED_BEACON_BLOCK_SCHEMA.getContainerName(registry)))
         .build();
   }
 
@@ -188,7 +188,7 @@ public class SchemaRegistryBuilder {
             (registry, specConfig) ->
                 new SignedBeaconBlockSchema(
                     registry.get(BEACON_BLOCK_SCHEMA),
-                    BEACON_BLOCK_SCHEMA.getContainerName(registry)))
+                    SIGNED_BEACON_BLOCK_SCHEMA.getContainerName(registry)))
         .build();
   }
 
