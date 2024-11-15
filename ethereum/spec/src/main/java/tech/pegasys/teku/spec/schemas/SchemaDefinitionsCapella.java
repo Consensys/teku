@@ -26,8 +26,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.B
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
@@ -41,9 +39,6 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
 
   private final BeaconStateSchemaCapella beaconStateSchema;
-
-  private final ExecutionPayloadHeaderSchemaCapella executionPayloadHeaderSchemaCapella;
-
   private final WithdrawalSchema withdrawalSchema;
 
   private final BlsToExecutionChangeSchema blsToExecutionChangeSchema;
@@ -64,10 +59,8 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
     this.withdrawalSchema = schemaRegistry.get(WITHDRAWAL_SCHEMA);
 
     this.beaconStateSchema = BeaconStateSchemaCapella.create(specConfig);
-    this.executionPayloadHeaderSchemaCapella =
-        beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.builderBidSchemaCapella =
-        new BuilderBidSchemaBellatrix("BuilderBidCapella", executionPayloadHeaderSchemaCapella);
+        new BuilderBidSchemaBellatrix("BuilderBidCapella", getExecutionPayloadHeaderSchema());
     this.signedBuilderBidSchemaCapella =
         new SignedBuilderBidSchema("SignedBuilderBidCapella", builderBidSchemaCapella);
   }
@@ -85,11 +78,6 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   public BeaconStateSchema<? extends BeaconStateCapella, ? extends MutableBeaconStateCapella>
       getBeaconStateSchema() {
     return beaconStateSchema;
-  }
-
-  @Override
-  public ExecutionPayloadHeaderSchema<?> getExecutionPayloadHeaderSchema() {
-    return executionPayloadHeaderSchemaCapella;
   }
 
   @Override
