@@ -27,8 +27,8 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -36,6 +36,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
+import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -89,14 +90,17 @@ class GetBlobSidecarsTest extends AbstractMigratedBeaconHandlerWithChainDataProv
   }
 
   @Test
-  void metadata_shouldHandle200() throws IOException {
+  void metadata_shouldHandle200() throws Exception {
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(3);
     final BlobSidecarsAndMetaData blobSidecarsAndMetaData =
         new BlobSidecarsAndMetaData(blobSidecars, SpecMilestone.DENEB, true, false, false);
-    final String data = getResponseStringFromMetadata(handler, SC_OK, blobSidecarsAndMetaData);
-    final String expected =
-        Resources.toString(
-            Resources.getResource(GetBlobSidecarsTest.class, "getBlobSidecars.json"), UTF_8);
+    final JsonNode data =
+        JsonTestUtil.parseAsJsonNode(
+            getResponseStringFromMetadata(handler, SC_OK, blobSidecarsAndMetaData));
+    final JsonNode expected =
+        JsonTestUtil.parseAsJsonNode(
+            Resources.toString(
+                Resources.getResource(GetBlobSidecarsTest.class, "getBlobSidecars.json"), UTF_8));
     assertThat(data).isEqualTo(expected);
   }
 

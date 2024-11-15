@@ -119,10 +119,15 @@ public class BlobSidecarGossipValidator {
     /*
      * [REJECT] The sidecar's index is consistent with `MAX_BLOBS_PER_BLOCK` -- i.e. `blob_sidecar.index < MAX_BLOBS_PER_BLOCK`.
      */
-    final int maxBlobsPerBlockAtSlot =
-        SpecConfigDeneb.required(spec.atSlot(blobSidecar.getSlot()).getConfig())
-            .getMaxBlobsPerBlock();
-    if (blobSidecar.getIndex().isGreaterThanOrEqualTo(maxBlobsPerBlockAtSlot)) {
+    final Optional<Integer> maxBlobsPerBlockAtSlot =
+        spec.atSlot(blobSidecar.getSlot())
+            .getConfig()
+            .toVersionDeneb()
+            .map(SpecConfigDeneb::getMaxBlobsPerBlock);
+    if (maxBlobsPerBlockAtSlot.isEmpty()) {
+      return completedFuture(reject("BlobSidecar's slot is pre-Deneb"));
+    }
+    if (blobSidecar.getIndex().isGreaterThanOrEqualTo(maxBlobsPerBlockAtSlot.get())) {
       return completedFuture(reject("BlobSidecar index is greater than MAX_BLOBS_PER_BLOCK"));
     }
 
