@@ -974,8 +974,14 @@ public class Spec {
       return Optional.empty();
     }
 
+    final int highestMaxBlobsPerBlockInt = highestMaxBlobsPerBlock.orElse(0);
+    final int secondHighestMaxBlobsPerBlockInt = secondHighestMaxBlobsPerBlock.orElse(0);
+
+    // avoid Math.max to avoid MathTargetType warning
     return Optional.of(
-        Math.max(highestMaxBlobsPerBlock.orElse(0), secondHighestMaxBlobsPerBlock.orElse(0)));
+        highestMaxBlobsPerBlockInt > secondHighestMaxBlobsPerBlockInt
+            ? highestMaxBlobsPerBlockInt
+            : secondHighestMaxBlobsPerBlockInt);
   }
 
   public UInt64 computeSubnetForBlobSidecar(final BlobSidecar blobSidecar) {
