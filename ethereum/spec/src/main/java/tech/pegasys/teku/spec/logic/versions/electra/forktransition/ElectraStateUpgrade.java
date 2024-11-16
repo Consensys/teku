@@ -58,9 +58,7 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
     final PredicatesElectra predicatesElectra = new PredicatesElectra(specConfig);
     final MiscHelpersElectra miscHelpersElectra =
         new MiscHelpersElectra(specConfig, predicatesElectra, schemaDefinitions);
-    return schemaDefinitions
-        .getBeaconStateSchema()
-        .createEmpty()
+    return BeaconStateElectra.required(schemaDefinitions.getBeaconStateSchema().createEmpty())
         .updatedElectra(
             state -> {
               BeaconStateFields.copyCommonFieldsFromSource(state, preState);

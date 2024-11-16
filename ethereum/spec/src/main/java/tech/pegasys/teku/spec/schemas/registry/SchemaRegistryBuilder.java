@@ -28,6 +28,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTNETS_ENR_FI
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCKS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_BODY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_STATE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLINDED_BEACON_BLOCK_BODY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLINDED_BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOBS_BUNDLE_SCHEMA;
@@ -43,6 +44,9 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQU
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_BATCH_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_ATTESTATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_CONSOLIDATIONS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_DEPOSITS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_PARTIAL_WITHDRAWALS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLINDED_BEACON_BLOCK_SCHEMA;
@@ -98,7 +102,16 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary.HistoricalSummarySchema;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation.PendingConsolidationSchema;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit.PendingDepositSchema;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal.PendingPartialWithdrawalSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
 public class SchemaRegistryBuilder {
@@ -122,6 +135,7 @@ public class SchemaRegistryBuilder {
         .addProvider(createBeaconBlockBodySchemaProvider())
         .addProvider(createBeaconBlockSchemaProvider())
         .addProvider(createSignedBeaconBlockSchemaProvider())
+        .addProvider(createBeaconStateSchemaProvider())
 
         // BELLATRIX
         .addProvider(createExecutionPayloadSchemaProvider())
@@ -145,7 +159,64 @@ public class SchemaRegistryBuilder {
         .addProvider(createBlobsBundleSchemaProvider())
 
         // ELECTRA
+        .addProvider(createPendingConsolidationsSchemaProvider())
+        .addProvider(createPendingPartialWithdrawalsSchemaProvider())
+        .addProvider(createPendingDepositsSchemaProvider())
         .addProvider(createExecutionRequestsSchemaProvider());
+  }
+
+  private static SchemaProvider<?> createPendingDepositsSchemaProvider() {
+    return providerBuilder(PENDING_DEPOSITS_SCHEMA)
+        .withCreator(
+            ELECTRA,
+            (registry, specConfig) ->
+                SszListSchema.create(
+                    new PendingDepositSchema(),
+                    SpecConfigElectra.required(specConfig).getPendingDepositsLimit()))
+        .build();
+  }
+
+  private static SchemaProvider<?> createPendingPartialWithdrawalsSchemaProvider() {
+    return providerBuilder(PENDING_PARTIAL_WITHDRAWALS_SCHEMA)
+        .withCreator(
+            ELECTRA,
+            (registry, specConfig) ->
+                SszListSchema.create(
+                    new PendingPartialWithdrawalSchema(),
+                    SpecConfigElectra.required(specConfig).getPendingPartialWithdrawalsLimit()))
+        .build();
+  }
+
+  private static SchemaProvider<?> createPendingConsolidationsSchemaProvider() {
+    return providerBuilder(PENDING_CONSOLIDATIONS_SCHEMA)
+        .withCreator(
+            ELECTRA,
+            (registry, specConfig) ->
+                SszListSchema.create(
+                    new PendingConsolidationSchema(),
+                    SpecConfigElectra.required(specConfig).getPendingConsolidationsLimit()))
+        .build();
+  }
+
+  private static SchemaProvider<?> createBeaconStateSchemaProvider() {
+    return providerBuilder(BEACON_STATE_SCHEMA)
+        .withCreator(PHASE0, (registry, specConfig) -> BeaconStateSchemaPhase0.create(specConfig))
+        .withCreator(ALTAIR, (registry, specConfig) -> BeaconStateSchemaAltair.create(specConfig))
+        .withCreator(
+            BELLATRIX,
+            (registry, specConfig) -> BeaconStateSchemaBellatrix.create(specConfig, registry))
+        .withCreator(
+            CAPELLA,
+            (registry, specConfig) -> BeaconStateSchemaCapella.create(specConfig, registry))
+        .withCreator(
+            DENEB,
+            (registry, specConfig) ->
+                BeaconStateSchemaDeneb.create(SpecConfigDeneb.required(specConfig), registry))
+        .withCreator(
+            ELECTRA,
+            (registry, specConfig) ->
+                BeaconStateSchemaElectra.create(SpecConfigElectra.required(specConfig), registry))
+        .build();
   }
 
   private static SchemaProvider<?> createBlindedBeaconBlockSchemaProvider() {

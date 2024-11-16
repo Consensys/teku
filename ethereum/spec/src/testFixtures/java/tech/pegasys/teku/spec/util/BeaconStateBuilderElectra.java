@@ -69,7 +69,9 @@ public class BeaconStateBuilderElectra
 
   @Override
   protected BeaconStateElectra getEmptyState() {
-    return BeaconStateSchemaElectra.create(spec.getConfig()).createEmpty();
+    return BeaconStateSchemaElectra.create(
+            spec.getConfig(), spec.getSchemaDefinitions().getSchemaRegistry())
+        .createEmpty();
   }
 
   @Override
