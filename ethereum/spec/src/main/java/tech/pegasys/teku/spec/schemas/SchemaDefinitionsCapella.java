@@ -15,11 +15,12 @@ package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLS_TO_EXECUTION_CHANGE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARY_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARIES_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.WITHDRAWAL_SCHEMA;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyBuilderCapella;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdraw
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
+import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary.HistoricalSummarySchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
@@ -40,11 +42,11 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   private final BuilderBidSchema<?> builderBidSchemaCapella;
   private final SignedBuilderBidSchema signedBuilderBidSchemaCapella;
 
-  private final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema;
+  private final SszListSchema<HistoricalSummary, ?> historicalSummariesSchema;
 
   public SchemaDefinitionsCapella(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
-    this.historicalSummarySchema = schemaRegistry.get(HISTORICAL_SUMMARY_SCHEMA);
+    this.historicalSummariesSchema = schemaRegistry.get(HISTORICAL_SUMMARIES_SCHEMA);
     this.blsToExecutionChangeSchema = schemaRegistry.get(BLS_TO_EXECUTION_CHANGE_SCHEMA);
     this.signedBlsToExecutionChangeSchema =
         schemaRegistry.get(SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA);
@@ -83,8 +85,8 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
     return signedBlsToExecutionChangeSchema;
   }
 
-  public HistoricalSummary.HistoricalSummarySchema getHistoricalSummarySchema() {
-    return historicalSummarySchema;
+  public HistoricalSummarySchema getHistoricalSummarySchema() {
+    return (HistoricalSummarySchema) historicalSummariesSchema.getElementSchema();
   }
 
   @Override

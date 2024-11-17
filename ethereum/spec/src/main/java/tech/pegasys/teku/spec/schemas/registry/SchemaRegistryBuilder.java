@@ -42,7 +42,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYL
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_BATCH_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARY_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARIES_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_CONSOLIDATIONS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_DEPOSITS_SCHEMA;
@@ -148,7 +148,7 @@ public class SchemaRegistryBuilder {
         .addProvider(createWithdrawalSchemaProvider())
         .addProvider(createBlsToExecutionChangeSchemaProvider())
         .addProvider(createSignedBlsToExecutionChangeSchemaProvider())
-        .addProvider(createHistoricalSummarySchemaProvider())
+        .addProvider(createHistoricalSummariesSchemaProvider())
 
         // DENEB
         .addProvider(createBlobKzgCommitmentsSchemaProvider())
@@ -441,9 +441,13 @@ public class SchemaRegistryBuilder {
         .build();
   }
 
-  private static SchemaProvider<?> createHistoricalSummarySchemaProvider() {
-    return providerBuilder(HISTORICAL_SUMMARY_SCHEMA)
-        .withCreator(CAPELLA, (registry, specConfig) -> new HistoricalSummarySchema())
+  private static SchemaProvider<?> createHistoricalSummariesSchemaProvider() {
+    return providerBuilder(HISTORICAL_SUMMARIES_SCHEMA)
+        .withCreator(
+            CAPELLA,
+            (registry, specConfig) ->
+                SszListSchema.create(
+                    new HistoricalSummarySchema(), specConfig.getHistoricalRootsLimit()))
         .build();
   }
 

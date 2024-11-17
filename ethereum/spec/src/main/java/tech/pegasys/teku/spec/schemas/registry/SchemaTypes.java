@@ -56,7 +56,7 @@ import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary.HistoricalSummarySchema;
+import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
@@ -118,8 +118,8 @@ public class SchemaTypes {
       create("BLS_TO_EXECUTION_CHANGE_SCHEMA");
   public static final SchemaId<SignedBlsToExecutionChangeSchema>
       SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA = create("SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA");
-  public static final SchemaId<HistoricalSummarySchema> HISTORICAL_SUMMARY_SCHEMA =
-      create("HISTORICAL_SUMMARY_SCHEMA");
+  public static final SchemaId<SszListSchema<HistoricalSummary, ?>> HISTORICAL_SUMMARIES_SCHEMA =
+      create("HISTORICAL_SUMMARIES_SCHEMA");
 
   // Deneb
   public static final SchemaId<BlobKzgCommitmentsSchema> BLOB_KZG_COMMITMENTS_SCHEMA =

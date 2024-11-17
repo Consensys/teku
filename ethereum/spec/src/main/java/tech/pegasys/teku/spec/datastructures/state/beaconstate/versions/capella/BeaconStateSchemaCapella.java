@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARY_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARIES_SCHEMA;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -62,7 +62,7 @@ public class BeaconStateSchemaCapella
             new SszField(
                 HISTORICAL_SUMMARIES_FIELD_INDEX,
                 BeaconStateFields.HISTORICAL_SUMMARIES,
-                () -> schemaRegistry.get(HISTORICAL_SUMMARY_SCHEMA)));
+                () -> schemaRegistry.get(HISTORICAL_SUMMARIES_SCHEMA)));
 
     return Stream.concat(
             BeaconStateSchemaBellatrix.getUniqueFields(specConfig, schemaRegistry).stream(),
