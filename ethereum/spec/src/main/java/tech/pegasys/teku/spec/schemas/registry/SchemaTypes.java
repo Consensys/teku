@@ -181,11 +181,11 @@ public class SchemaTypes {
       return name;
     }
 
-    public String getContainerName(final SchemaRegistry schemaRegistry) {
-      return getContainerName() + capitalizeMilestone(schemaRegistry.getMilestone());
+    public String getSchemaName(final SpecMilestone milestone) {
+      return getSchemaName() + capitalizeMilestone(milestone);
     }
 
-    public String getContainerName() {
+    public String getSchemaName() {
       return upperSnakeCaseToUpperCamel(name.replace("_SCHEMA", ""));
     }
 

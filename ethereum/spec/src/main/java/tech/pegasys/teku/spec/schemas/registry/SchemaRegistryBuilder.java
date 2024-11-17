@@ -169,7 +169,7 @@ public class SchemaRegistryBuilder {
     return providerBuilder(PENDING_DEPOSITS_SCHEMA)
         .withCreator(
             ELECTRA,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 SszListSchema.create(
                     new PendingDepositSchema(),
                     SpecConfigElectra.required(specConfig).getPendingDepositsLimit()))
@@ -180,7 +180,7 @@ public class SchemaRegistryBuilder {
     return providerBuilder(PENDING_PARTIAL_WITHDRAWALS_SCHEMA)
         .withCreator(
             ELECTRA,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 SszListSchema.create(
                     new PendingPartialWithdrawalSchema(),
                     SpecConfigElectra.required(specConfig).getPendingPartialWithdrawalsLimit()))
@@ -191,7 +191,7 @@ public class SchemaRegistryBuilder {
     return providerBuilder(PENDING_CONSOLIDATIONS_SCHEMA)
         .withCreator(
             ELECTRA,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 SszListSchema.create(
                     new PendingConsolidationSchema(),
                     SpecConfigElectra.required(specConfig).getPendingConsolidationsLimit()))
@@ -200,21 +200,27 @@ public class SchemaRegistryBuilder {
 
   private static SchemaProvider<?> createBeaconStateSchemaProvider() {
     return providerBuilder(BEACON_STATE_SCHEMA)
-        .withCreator(PHASE0, (registry, specConfig) -> BeaconStateSchemaPhase0.create(specConfig))
-        .withCreator(ALTAIR, (registry, specConfig) -> BeaconStateSchemaAltair.create(specConfig))
+        .withCreator(
+            PHASE0,
+            (registry, specConfig, schemaName) -> BeaconStateSchemaPhase0.create(specConfig))
+        .withCreator(
+            ALTAIR,
+            (registry, specConfig, schemaName) -> BeaconStateSchemaAltair.create(specConfig))
         .withCreator(
             BELLATRIX,
-            (registry, specConfig) -> BeaconStateSchemaBellatrix.create(specConfig, registry))
+            (registry, specConfig, schemaName) ->
+                BeaconStateSchemaBellatrix.create(specConfig, registry))
         .withCreator(
             CAPELLA,
-            (registry, specConfig) -> BeaconStateSchemaCapella.create(specConfig, registry))
+            (registry, specConfig, schemaName) ->
+                BeaconStateSchemaCapella.create(specConfig, registry))
         .withCreator(
             DENEB,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 BeaconStateSchemaDeneb.create(SpecConfigDeneb.required(specConfig), registry))
         .withCreator(
             ELECTRA,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 BeaconStateSchemaElectra.create(SpecConfigElectra.required(specConfig), registry))
         .build();
   }
@@ -223,10 +229,8 @@ public class SchemaRegistryBuilder {
     return providerBuilder(BLINDED_BEACON_BLOCK_SCHEMA)
         .withCreator(
             BELLATRIX,
-            (registry, specConfig) ->
-                new BeaconBlockSchema(
-                    registry.get(BLINDED_BEACON_BLOCK_BODY_SCHEMA),
-                    BLINDED_BEACON_BLOCK_SCHEMA.getContainerName(registry)))
+            (registry, specConfig, schemaName) ->
+                new BeaconBlockSchema(registry.get(BLINDED_BEACON_BLOCK_BODY_SCHEMA), schemaName))
         .build();
   }
 
@@ -234,10 +238,8 @@ public class SchemaRegistryBuilder {
     return providerBuilder(SIGNED_BLINDED_BEACON_BLOCK_SCHEMA)
         .withCreator(
             BELLATRIX,
-            (registry, specConfig) ->
-                new SignedBeaconBlockSchema(
-                    registry.get(BLINDED_BEACON_BLOCK_SCHEMA),
-                    SIGNED_BLINDED_BEACON_BLOCK_SCHEMA.getContainerName(registry)))
+            (registry, specConfig, schemaName) ->
+                new SignedBeaconBlockSchema(registry.get(BLINDED_BEACON_BLOCK_SCHEMA), schemaName))
         .build();
   }
 
@@ -245,10 +247,8 @@ public class SchemaRegistryBuilder {
     return providerBuilder(BEACON_BLOCK_SCHEMA)
         .withCreator(
             PHASE0,
-            (registry, specConfig) ->
-                new BeaconBlockSchema(
-                    registry.get(BEACON_BLOCK_BODY_SCHEMA),
-                    BEACON_BLOCK_SCHEMA.getContainerName(registry)))
+            (registry, specConfig, schemaName) ->
+                new BeaconBlockSchema(registry.get(BEACON_BLOCK_BODY_SCHEMA), schemaName))
         .build();
   }
 
@@ -256,10 +256,8 @@ public class SchemaRegistryBuilder {
     return providerBuilder(SIGNED_BEACON_BLOCK_SCHEMA)
         .withCreator(
             PHASE0,
-            (registry, specConfig) ->
-                new SignedBeaconBlockSchema(
-                    registry.get(BEACON_BLOCK_SCHEMA),
-                    SIGNED_BEACON_BLOCK_SCHEMA.getContainerName(registry)))
+            (registry, specConfig, schemaName) ->
+                new SignedBeaconBlockSchema(registry.get(BEACON_BLOCK_SCHEMA), schemaName))
         .build();
   }
 
@@ -267,7 +265,7 @@ public class SchemaRegistryBuilder {
     return providerBuilder(EXECUTION_REQUESTS_SCHEMA)
         .withCreator(
             ELECTRA,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 new ExecutionRequestsSchema(SpecConfigElectra.required(specConfig)))
         .build();
   }
@@ -276,32 +274,24 @@ public class SchemaRegistryBuilder {
     return providerBuilder(BLINDED_BEACON_BLOCK_BODY_SCHEMA)
         .withCreator(
             BELLATRIX,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 BlindedBeaconBlockBodySchemaBellatrixImpl.create(
-                    SpecConfigBellatrix.required(specConfig),
-                    BLINDED_BEACON_BLOCK_BODY_SCHEMA.getContainerName(registry),
-                    registry))
+                    SpecConfigBellatrix.required(specConfig), schemaName, registry))
         .withCreator(
             CAPELLA,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 BlindedBeaconBlockBodySchemaCapellaImpl.create(
-                    SpecConfigCapella.required(specConfig),
-                    BLINDED_BEACON_BLOCK_BODY_SCHEMA.getContainerName(registry),
-                    registry))
+                    SpecConfigCapella.required(specConfig), schemaName, registry))
         .withCreator(
             DENEB,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 BlindedBeaconBlockBodySchemaDenebImpl.create(
-                    SpecConfigDeneb.required(specConfig),
-                    BLINDED_BEACON_BLOCK_BODY_SCHEMA.getContainerName(registry),
-                    registry))
+                    SpecConfigDeneb.required(specConfig), schemaName, registry))
         .withCreator(
             ELECTRA,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 BlindedBeaconBlockBodySchemaElectraImpl.create(
-                    SpecConfigElectra.required(specConfig),
-                    BLINDED_BEACON_BLOCK_BODY_SCHEMA.getContainerName(registry),
-                    registry))
+                    SpecConfigElectra.required(specConfig), schemaName, registry))
         .build();
   }
 
@@ -309,42 +299,32 @@ public class SchemaRegistryBuilder {
     return providerBuilder(BEACON_BLOCK_BODY_SCHEMA)
         .withCreator(
             PHASE0,
-            (registry, specConfig) ->
-                BeaconBlockBodySchemaPhase0.create(
-                    specConfig, BEACON_BLOCK_BODY_SCHEMA.getContainerName(registry), registry))
+            (registry, specConfig, schemaName) ->
+                BeaconBlockBodySchemaPhase0.create(specConfig, schemaName, registry))
         .withCreator(
             ALTAIR,
-            (registry, specConfig) ->
-                BeaconBlockBodySchemaAltairImpl.create(
-                    specConfig, BEACON_BLOCK_BODY_SCHEMA.getContainerName(registry), registry))
+            (registry, specConfig, schemaName) ->
+                BeaconBlockBodySchemaAltairImpl.create(specConfig, schemaName, registry))
         .withCreator(
             BELLATRIX,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 BeaconBlockBodySchemaBellatrixImpl.create(
-                    SpecConfigBellatrix.required(specConfig),
-                    BEACON_BLOCK_BODY_SCHEMA.getContainerName(registry),
-                    registry))
+                    SpecConfigBellatrix.required(specConfig), schemaName, registry))
         .withCreator(
             CAPELLA,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 BeaconBlockBodySchemaCapellaImpl.create(
-                    SpecConfigCapella.required(specConfig),
-                    BEACON_BLOCK_BODY_SCHEMA.getContainerName(registry),
-                    registry))
+                    SpecConfigCapella.required(specConfig), schemaName, registry))
         .withCreator(
             DENEB,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 BeaconBlockBodySchemaDenebImpl.create(
-                    SpecConfigDeneb.required(specConfig),
-                    BEACON_BLOCK_BODY_SCHEMA.getContainerName(registry),
-                    registry))
+                    SpecConfigDeneb.required(specConfig), schemaName, registry))
         .withCreator(
             ELECTRA,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 BeaconBlockBodySchemaElectraImpl.create(
-                    SpecConfigElectra.required(specConfig),
-                    BEACON_BLOCK_BODY_SCHEMA.getContainerName(registry),
-                    registry))
+                    SpecConfigElectra.required(specConfig), schemaName, registry))
         .build();
   }
 
@@ -352,15 +332,15 @@ public class SchemaRegistryBuilder {
     return providerBuilder(EXECUTION_PAYLOAD_HEADER_SCHEMA)
         .withCreator(
             BELLATRIX,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 new ExecutionPayloadHeaderSchemaBellatrix(SpecConfigBellatrix.required(specConfig)))
         .withCreator(
             CAPELLA,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 new ExecutionPayloadHeaderSchemaCapella(SpecConfigCapella.required(specConfig)))
         .withCreator(
             DENEB,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 new ExecutionPayloadHeaderSchemaDeneb(SpecConfigDeneb.required(specConfig)))
         // ELECTRA is same as DENEB
         .build();
@@ -370,15 +350,15 @@ public class SchemaRegistryBuilder {
     return providerBuilder(EXECUTION_PAYLOAD_SCHEMA)
         .withCreator(
             BELLATRIX,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 new ExecutionPayloadSchemaBellatrix(SpecConfigBellatrix.required(specConfig)))
         .withCreator(
             CAPELLA,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 new ExecutionPayloadSchemaCapella(SpecConfigCapella.required(specConfig)))
         .withCreator(
             DENEB,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 new ExecutionPayloadSchemaDeneb(SpecConfigDeneb.required(specConfig)))
         // ELECTRA is same as DENEB
         .build();
@@ -388,7 +368,7 @@ public class SchemaRegistryBuilder {
     return providerBuilder(BLOBS_BUNDLE_SCHEMA)
         .withCreator(
             DENEB,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 new BlobsBundleSchema(registry, SpecConfigDeneb.required(specConfig)))
         .build();
   }
@@ -397,7 +377,7 @@ public class SchemaRegistryBuilder {
     return providerBuilder(BLOB_KZG_COMMITMENTS_SCHEMA)
         .withCreator(
             DENEB,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 new BlobKzgCommitmentsSchema(SpecConfigDeneb.required(specConfig)))
         .build();
   }
@@ -405,7 +385,9 @@ public class SchemaRegistryBuilder {
   private static SchemaProvider<?> createBlobSchemaProvider() {
     return providerBuilder(BLOB_SCHEMA)
         .withCreator(
-            DENEB, (registry, specConfig) -> new BlobSchema(SpecConfigDeneb.required(specConfig)))
+            DENEB,
+            (registry, specConfig, schemaName) ->
+                new BlobSchema(SpecConfigDeneb.required(specConfig)))
         .build();
   }
 
@@ -413,7 +395,7 @@ public class SchemaRegistryBuilder {
     return providerBuilder(BLOBS_IN_BLOCK_SCHEMA)
         .withCreator(
             DENEB,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 SszListSchema.create(
                     registry.get(BLOB_SCHEMA),
                     SpecConfigDeneb.required(specConfig).getMaxBlobsPerBlock()))
@@ -424,7 +406,7 @@ public class SchemaRegistryBuilder {
     return providerBuilder(BLOB_SIDECAR_SCHEMA)
         .withCreator(
             DENEB,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 BlobSidecarSchema.create(
                     SignedBeaconBlockHeader.SSZ_SCHEMA,
                     registry.get(BLOB_SCHEMA),
@@ -436,7 +418,7 @@ public class SchemaRegistryBuilder {
     return providerBuilder(BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA)
         .withCreator(
             DENEB,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 new BlobSidecarsByRootRequestMessageSchema(SpecConfigDeneb.required(specConfig)))
         .build();
   }
@@ -445,7 +427,7 @@ public class SchemaRegistryBuilder {
     return providerBuilder(HISTORICAL_SUMMARIES_SCHEMA)
         .withCreator(
             CAPELLA,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 SszListSchema.create(
                     new HistoricalSummarySchema(), specConfig.getHistoricalRootsLimit()))
         .build();
@@ -454,19 +436,21 @@ public class SchemaRegistryBuilder {
   private static SchemaProvider<?> createSignedBlsToExecutionChangeSchemaProvider() {
     return providerBuilder(SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA)
         .withCreator(
-            CAPELLA, (registry, specConfig) -> new SignedBlsToExecutionChangeSchema(registry))
+            CAPELLA,
+            (registry, specConfig, schemaName) -> new SignedBlsToExecutionChangeSchema(registry))
         .build();
   }
 
   private static SchemaProvider<?> createBlsToExecutionChangeSchemaProvider() {
     return providerBuilder(BLS_TO_EXECUTION_CHANGE_SCHEMA)
-        .withCreator(CAPELLA, (registry, specConfig) -> new BlsToExecutionChangeSchema())
+        .withCreator(
+            CAPELLA, (registry, specConfig, schemaName) -> new BlsToExecutionChangeSchema())
         .build();
   }
 
   private static SchemaProvider<?> createWithdrawalSchemaProvider() {
     return providerBuilder(WITHDRAWAL_SCHEMA)
-        .withCreator(CAPELLA, (registry, specConfig) -> new WithdrawalSchema())
+        .withCreator(CAPELLA, (registry, specConfig, schemaName) -> new WithdrawalSchema())
         .build();
   }
 
@@ -474,7 +458,7 @@ public class SchemaRegistryBuilder {
     return providerBuilder(ATTNETS_ENR_FIELD_SCHEMA)
         .withCreator(
             PHASE0,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 SszBitvectorSchema.create(specConfig.getAttestationSubnetCount()))
         .build();
   }
@@ -483,7 +467,7 @@ public class SchemaRegistryBuilder {
     return providerBuilder(SYNCNETS_ENR_FIELD_SCHEMA)
         .withCreator(
             PHASE0,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT))
         .build();
   }
@@ -492,7 +476,8 @@ public class SchemaRegistryBuilder {
     return providerBuilder(BEACON_BLOCKS_BY_ROOT_REQUEST_MESSAGE_SCHEMA)
         .withCreator(
             PHASE0,
-            (registry, specConfig) -> new BeaconBlocksByRootRequestMessageSchema(specConfig))
+            (registry, specConfig, schemaName) ->
+                new BeaconBlocksByRootRequestMessageSchema(specConfig))
         .build();
   }
 
@@ -500,7 +485,7 @@ public class SchemaRegistryBuilder {
     return providerBuilder(HISTORICAL_BATCH_SCHEMA)
         .withCreator(
             PHASE0,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 new HistoricalBatchSchema(specConfig.getSlotsPerHistoricalRoot()))
         .build();
   }
@@ -509,14 +494,10 @@ public class SchemaRegistryBuilder {
     return providerBuilder(ATTESTER_SLASHING_SCHEMA)
         .withCreator(
             PHASE0,
-            (registry, specConfig) ->
-                new AttesterSlashingSchema(
-                    ATTESTER_SLASHING_SCHEMA.getContainerName(registry), registry))
+            (registry, specConfig, schemaName) -> new AttesterSlashingSchema(schemaName, registry))
         .withCreator(
             ELECTRA,
-            (registry, specConfig) ->
-                new AttesterSlashingSchema(
-                    ATTESTER_SLASHING_SCHEMA.getContainerName(registry), registry))
+            (registry, specConfig, schemaName) -> new AttesterSlashingSchema(schemaName, registry))
         .build();
   }
 
@@ -524,16 +505,14 @@ public class SchemaRegistryBuilder {
     return providerBuilder(INDEXED_ATTESTATION_SCHEMA)
         .withCreator(
             PHASE0,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 new IndexedAttestationSchema(
-                    INDEXED_ATTESTATION_SCHEMA.getContainerName(registry),
-                    getMaxValidatorsPerAttestationPhase0(specConfig)))
+                    schemaName, getMaxValidatorsPerAttestationPhase0(specConfig)))
         .withCreator(
             ELECTRA,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 new IndexedAttestationSchema(
-                    INDEXED_ATTESTATION_SCHEMA.getContainerName(registry),
-                    getMaxValidatorsPerAttestationElectra(specConfig)))
+                    schemaName, getMaxValidatorsPerAttestationElectra(specConfig)))
         .build();
   }
 
@@ -541,12 +520,12 @@ public class SchemaRegistryBuilder {
     return providerBuilder(ATTESTATION_SCHEMA)
         .withCreator(
             PHASE0,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 new AttestationPhase0Schema(getMaxValidatorsPerAttestationPhase0(specConfig))
                     .castTypeToAttestationSchema())
         .withCreator(
             ELECTRA,
-            (registry, specConfig) ->
+            (registry, specConfig, schemaName) ->
                 new AttestationElectraSchema(
                         getMaxValidatorsPerAttestationElectra(specConfig),
                         specConfig.getMaxCommitteesPerSlot())
@@ -558,14 +537,10 @@ public class SchemaRegistryBuilder {
     return providerBuilder(AGGREGATE_AND_PROOF_SCHEMA)
         .withCreator(
             PHASE0,
-            (registry, specConfig) ->
-                new AggregateAndProofSchema(
-                    AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry), registry))
+            (registry, specConfig, schemaName) -> new AggregateAndProofSchema(schemaName, registry))
         .withCreator(
             ELECTRA,
-            (registry, specConfig) ->
-                new AggregateAndProofSchema(
-                    AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry), registry))
+            (registry, specConfig, schemaName) -> new AggregateAndProofSchema(schemaName, registry))
         .build();
   }
 
@@ -573,14 +548,12 @@ public class SchemaRegistryBuilder {
     return providerBuilder(SIGNED_AGGREGATE_AND_PROOF_SCHEMA)
         .withCreator(
             PHASE0,
-            (registry, specConfig) ->
-                new SignedAggregateAndProofSchema(
-                    SIGNED_AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry), registry))
+            (registry, specConfig, schemaName) ->
+                new SignedAggregateAndProofSchema(schemaName, registry))
         .withCreator(
             ELECTRA,
-            (registry, specConfig) ->
-                new SignedAggregateAndProofSchema(
-                    SIGNED_AGGREGATE_AND_PROOF_SCHEMA.getContainerName(registry), registry))
+            (registry, specConfig, schemaName) ->
+                new SignedAggregateAndProofSchema(schemaName, registry))
         .build();
   }
 

@@ -67,7 +67,7 @@ public class SchemaRegistry {
 
   @SuppressWarnings("unchecked")
   public <T> T get(final SchemaId<T> schemaId) {
-    SchemaProvider<T> provider = (SchemaProvider<T>) providers.get(schemaId);
+    final SchemaProvider<T> provider = (SchemaProvider<T>) providers.get(schemaId);
     if (provider == null) {
       throw new IllegalArgumentException(
           "No provider registered for schema "
