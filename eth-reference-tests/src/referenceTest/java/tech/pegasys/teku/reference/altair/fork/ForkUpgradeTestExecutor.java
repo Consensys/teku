@@ -49,9 +49,18 @@ public class ForkUpgradeTestExecutor implements TestExecutor {
         switch (milestone) {
           case ALTAIR -> BeaconStateSchemaPhase0.create(spec.getConfig());
           case BELLATRIX -> BeaconStateSchemaAltair.create(spec.getConfig());
-          case CAPELLA -> BeaconStateSchemaBellatrix.create(spec.getConfig());
-          case DENEB -> BeaconStateSchemaCapella.create(spec.getConfig());
-          case ELECTRA -> BeaconStateSchemaDeneb.create(spec.getConfig());
+          case CAPELLA ->
+              BeaconStateSchemaBellatrix.create(
+                  spec.getConfig(),
+                  testDefinition.getSpec().getGenesisSchemaDefinitions().getSchemaRegistry());
+          case DENEB ->
+              BeaconStateSchemaCapella.create(
+                  spec.getConfig(),
+                  testDefinition.getSpec().getGenesisSchemaDefinitions().getSchemaRegistry());
+          case ELECTRA ->
+              BeaconStateSchemaDeneb.create(
+                  spec.getConfig(),
+                  testDefinition.getSpec().getGenesisSchemaDefinitions().getSchemaRegistry());
           default ->
               throw new IllegalStateException(
                   "Unhandled fork upgrade for test "
