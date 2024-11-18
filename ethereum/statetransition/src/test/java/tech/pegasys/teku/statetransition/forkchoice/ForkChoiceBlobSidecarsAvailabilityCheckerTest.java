@@ -31,7 +31,6 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableSortedMap;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -560,10 +559,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
 
     blobSidecarsAvailabilityChecker =
         new ForkChoiceBlobSidecarsAvailabilityChecker(
-            spec,
-            recentChainData,
-            blockBlobSidecarsTracker,
-            Duration.ofSeconds(30));
+            spec, recentChainData, blockBlobSidecarsTracker, Duration.ofSeconds(30));
   }
 
   private enum Availability {
