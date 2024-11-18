@@ -35,12 +35,6 @@ public interface BlobSidecarsAvailabilityChecker {
         public SafeFuture<BlobSidecarsAndValidationResult> getAvailabilityCheckResult() {
           return NOT_REQUIRED_RESULT_FUTURE;
         }
-
-        @Override
-        public BlobSidecarsAndValidationResult validateImmediately(
-            final List<BlobSidecar> blobSidecars) {
-          return BlobSidecarsAndValidationResult.NOT_REQUIRED;
-        }
       };
 
   BlobSidecarsAvailabilityChecker NOT_REQUIRED = NOOP;
@@ -55,7 +49,4 @@ public interface BlobSidecarsAvailabilityChecker {
   boolean initiateDataAvailabilityCheck();
 
   SafeFuture<BlobSidecarsAndValidationResult> getAvailabilityCheckResult();
-
-  /** Perform the data availability check immediately on the provided blob sidecars */
-  BlobSidecarsAndValidationResult validateImmediately(List<BlobSidecar> blobSidecars);
 }

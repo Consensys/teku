@@ -51,12 +51,6 @@ public interface BlobSidecarManager {
             final SignedBeaconBlock block) {
           return BlobSidecarsAvailabilityChecker.NOOP;
         }
-
-        @Override
-        public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
-            final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
-          return BlobSidecarsAndValidationResult.NOT_REQUIRED;
-        }
       };
 
   SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
@@ -69,9 +63,6 @@ public interface BlobSidecarManager {
   boolean isAvailabilityRequiredAtSlot(UInt64 slot);
 
   BlobSidecarsAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block);
-
-  BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
-      SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
 
   interface ReceivedBlobSidecarListener {
     void onBlobSidecarReceived(BlobSidecar blobSidecar);
