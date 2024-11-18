@@ -37,10 +37,8 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsChannel {
 
   private final Spec spec;
-  private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
   private final BlobSidecarGossipValidator validator;
-  private final KZG kzg;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final FutureItems<BlobSidecar> futureBlobSidecars;
   private final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots;
@@ -50,18 +48,14 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
   public BlobSidecarManagerImpl(
       final Spec spec,
-      final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final BlobSidecarGossipValidator validator,
-      final KZG kzg,
       final FutureItems<BlobSidecar> futureBlobSidecars,
       final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots) {
     this.spec = spec;
-    this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.validator = validator;
-    this.kzg = kzg;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.futureBlobSidecars = futureBlobSidecars;
     this.invalidBlobSidecarRoots = invalidBlobSidecarRoots;
@@ -129,26 +123,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
         blockBlobSidecarsTrackersPool.getOrCreateBlockBlobSidecarsTracker(block);
 
     return new ForkChoiceBlobSidecarsAvailabilityChecker(
-        spec, asyncRunner, recentChainData, blockBlobSidecarsTracker, kzg);
-  }
-
-  @Override
-  public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
-      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
-    // Block is pre-Deneb, blobs are not supported yet
-    if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
-      return BlobSidecarsAndValidationResult.NOT_REQUIRED;
-    }
-
-    // we don't care to set maxBlobsPerBlock since it isn't used with this immediate validation flow
-    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        new BlockBlobSidecarsTracker(block.getSlotAndBlockRoot(), UInt64.ZERO);
-
-    blockBlobSidecarsTracker.setBlock(block);
-
-    return new ForkChoiceBlobSidecarsAvailabilityChecker(
-            spec, asyncRunner, recentChainData, blockBlobSidecarsTracker, kzg)
-        .validateImmediately(blobSidecars);
+        spec, recentChainData, blockBlobSidecarsTracker);
   }
 
   @Override

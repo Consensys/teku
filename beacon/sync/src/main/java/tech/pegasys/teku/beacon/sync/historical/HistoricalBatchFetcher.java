@@ -402,20 +402,14 @@ public class HistoricalBatchFetcher {
     final List<BlobSidecar> blobSidecars =
         blobSidecarsBySlotToImport.getOrDefault(
             block.getSlotAndBlockRoot(), Collections.emptyList());
-    LOG.trace("Validating {} blob sidecars for block {}", blobSidecars.size(), block.getRoot());
-    final BlobSidecarsAndValidationResult validationResult =
-        blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, blobSidecars);
 
-    if (validationResult.isFailure()) {
-      final String causeMessage =
-          validationResult
-              .getCause()
-              .map(cause -> " (" + ExceptionUtil.getRootCauseMessage(cause) + ")")
-              .orElse("");
+    final boolean blobsBlockRootMatchBlockRoot = blobSidecars.stream().allMatch(blobSidecar -> blobSidecar.getBlockRoot().equals(block.getRoot()));
+
+    if (!blobsBlockRootMatchBlockRoot) {
       throw new IllegalArgumentException(
           String.format(
-              "Blob sidecars validation for block %s failed: %s%s",
-              block.getRoot(), validationResult.getValidationResult(), causeMessage));
+              "Blob sidecars' block root don't match block root %s",
+              block.getRoot()));
     }
   }
 
