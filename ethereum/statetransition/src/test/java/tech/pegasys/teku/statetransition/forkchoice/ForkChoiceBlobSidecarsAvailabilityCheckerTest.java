@@ -339,63 +339,6 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
                 "Validated blobs are less than commitments present in block.", cause)));
   }
 
-  @Test
-  void validateImmediately_shouldReturnAvailable() {
-    prepareInitialAvailability(Availability.FULL);
-
-    whenDataAvailability(blobSidecarsComplete).thenReturn(true);
-
-    assertAvailable(
-        SafeFuture.completedFuture(
-            blobSidecarsAvailabilityChecker.validateImmediately(blobSidecarsComplete)));
-  }
-
-  @Test
-  void validateImmediately_shouldReturnInvalidIfCompletenessCheckFails() {
-    prepareInitialAvailability(Availability.FULL);
-
-    whenDataAvailability(blobSidecarsComplete).thenReturn(true);
-    final Throwable cause = new IllegalArgumentException("oops");
-    doThrow(cause).when(miscHelpers).verifyBlobSidecarCompleteness(any(), any());
-
-    final BlobSidecarsAndValidationResult availabilityCheckResult =
-        blobSidecarsAvailabilityChecker.validateImmediately(blobSidecarsComplete);
-
-    assertInvalid(
-        SafeFuture.completedFuture(availabilityCheckResult),
-        blobSidecarsComplete,
-        Optional.of(
-            new IllegalArgumentException(
-                "Validated blobs are less than commitments present in block.", cause)));
-  }
-
-  @Test
-  void validateImmediately_shouldReturnNotAvailableWithEmptyBlobsButRequired() {
-    prepareInitialAvailability(Availability.FULL);
-
-    assertNotAvailable(
-        SafeFuture.completedFuture(
-            blobSidecarsAvailabilityChecker.validateImmediately(Collections.emptyList())));
-  }
-
-  @Test
-  void validateImmediately_shouldReturnAvailableOnEmptyBlobs() {
-    prepareInitialAvailabilityWithEmptyCommitmentsBlock();
-
-    assertAvailable(
-        SafeFuture.completedFuture(
-            blobSidecarsAvailabilityChecker.validateImmediately(Collections.emptyList())));
-  }
-
-  @Test
-  void validateImmediately_shouldReturnNotRequiredWhenBlockIsOutsideAvailabilityWindow() {
-    prepareBlockAndBlobSidecarsOutsideAvailabilityWindow();
-
-    assertNotRequired(
-        SafeFuture.completedFuture(
-            blobSidecarsAvailabilityChecker.validateImmediately(Collections.emptyList())));
-  }
-
   private void assertNotRequired(
       final SafeFuture<BlobSidecarsAndValidationResult> availabilityOrValidityCheck) {
     assertThat(availabilityOrValidityCheck)
@@ -531,7 +474,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
 
     blobSidecarsAvailabilityChecker =
         new ForkChoiceBlobSidecarsAvailabilityChecker(
-            spec, asyncRunner, recentChainData, blockBlobSidecarsTracker, kzg, timeout);
+            spec, recentChainData, blockBlobSidecarsTracker, timeout);
   }
 
   private void completeTrackerWith(final List<BlobSidecar> blobSidecars) {
@@ -618,10 +561,8 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     blobSidecarsAvailabilityChecker =
         new ForkChoiceBlobSidecarsAvailabilityChecker(
             spec,
-            asyncRunner,
             recentChainData,
             blockBlobSidecarsTracker,
-            kzg,
             Duration.ofSeconds(30));
   }
 

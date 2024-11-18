@@ -54,11 +54,9 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 public class BlobSidecarManagerTest {
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final BlobSidecarGossipValidator blobSidecarValidator =
       mock(BlobSidecarGossipValidator.class);
-  private final KZG kzg = mock(KZG.class);
   private final BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPool =
       mock(BlockBlobSidecarsTrackersPoolImpl.class);
   private final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots = new HashMap<>();
@@ -69,11 +67,9 @@ public class BlobSidecarManagerTest {
   private final BlobSidecarManagerImpl blobSidecarManager =
       new BlobSidecarManagerImpl(
           spec,
-          asyncRunner,
           recentChainData,
           blockBlobSidecarsTrackersPool,
           blobSidecarValidator,
-          kzg,
           futureBlobSidecars,
           invalidBlobSidecarRoots);
 
