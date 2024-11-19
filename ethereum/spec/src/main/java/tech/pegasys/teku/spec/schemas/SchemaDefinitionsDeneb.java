@@ -44,16 +44,9 @@ import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBun
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.MutableBeaconStateDeneb;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
-
-  private final BeaconStateSchemaDeneb beaconStateSchema;
-
   private final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema;
 
   private final BuilderBidSchema<?> builderBidSchemaDeneb;
@@ -71,8 +64,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   public SchemaDefinitionsDeneb(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
     final SpecConfigDeneb specConfig = SpecConfigDeneb.required(schemaRegistry.getSpecConfig());
-
-    this.beaconStateSchema = BeaconStateSchemaDeneb.create(specConfig);
     this.blobKzgCommitmentsSchema = schemaRegistry.get(BLOB_KZG_COMMITMENTS_SCHEMA);
     this.builderBidSchemaDeneb =
         new BuilderBidSchemaDeneb(
@@ -103,12 +94,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
         SchemaDefinitionsDeneb.class,
         schemaDefinitions.getClass());
     return (SchemaDefinitionsDeneb) schemaDefinitions;
-  }
-
-  @Override
-  public BeaconStateSchema<? extends BeaconStateDeneb, ? extends MutableBeaconStateDeneb>
-      getBeaconStateSchema() {
-    return beaconStateSchema;
   }
 
   @Override

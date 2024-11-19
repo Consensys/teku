@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix.LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARIES_SCHEMA;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -27,7 +27,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSche
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -35,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBe
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateSchemaCapella
     extends AbstractBeaconStateSchema<BeaconStateCapella, MutableBeaconStateCapella> {
@@ -43,23 +43,12 @@ public class BeaconStateSchemaCapella
   public static final int HISTORICAL_SUMMARIES_FIELD_INDEX = 27;
 
   @VisibleForTesting
-  BeaconStateSchemaCapella(final SpecConfig specConfig) {
-    super("BeaconStateCapella", getUniqueFields(specConfig), specConfig);
+  BeaconStateSchemaCapella(final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    super("BeaconStateCapella", getUniqueFields(specConfig, schemaRegistry), specConfig);
   }
 
-  public static List<SszField> getUniqueFields(final SpecConfig specConfig) {
-    final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema =
-        new HistoricalSummary.HistoricalSummarySchema();
-
-    final List<SszField> updatedFields =
-        List.of(
-            new SszField(
-                LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
-                BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
-                () ->
-                    new ExecutionPayloadHeaderSchemaCapella(
-                        SpecConfigCapella.required(specConfig))));
-
+  public static List<SszField> getUniqueFields(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
     final List<SszField> newFields =
         List.of(
             new SszField(
@@ -73,18 +62,11 @@ public class BeaconStateSchemaCapella
             new SszField(
                 HISTORICAL_SUMMARIES_FIELD_INDEX,
                 BeaconStateFields.HISTORICAL_SUMMARIES,
-                () ->
-                    SszListSchema.create(
-                        historicalSummarySchema, specConfig.getHistoricalRootsLimit())));
+                () -> schemaRegistry.get(HISTORICAL_SUMMARIES_SCHEMA)));
 
     return Stream.concat(
-            BeaconStateSchemaBellatrix.getUniqueFields(specConfig).stream(), newFields.stream())
-        .map(
-            field ->
-                updatedFields.stream()
-                    .filter(updatedField -> updatedField.getIndex() == field.getIndex())
-                    .findFirst()
-                    .orElse(field))
+            BeaconStateSchemaBellatrix.getUniqueFields(specConfig, schemaRegistry).stream(),
+            newFields.stream())
         .toList();
   }
 
@@ -126,8 +108,9 @@ public class BeaconStateSchemaCapella
     return new MutableBeaconStateCapellaImpl(createEmptyBeaconStateImpl(), true);
   }
 
-  public static BeaconStateSchemaCapella create(final SpecConfig specConfig) {
-    return new BeaconStateSchemaCapella(specConfig);
+  public static BeaconStateSchemaCapella create(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    return new BeaconStateSchemaCapella(specConfig, schemaRegistry);
   }
 
   public static BeaconStateSchemaCapella required(final BeaconStateSchema<?, ?> schema) {

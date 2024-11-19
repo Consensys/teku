@@ -14,6 +14,9 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_CONSOLIDATIONS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_DEPOSITS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_PARTIAL_WITHDRAWALS_SCHEMA;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -26,7 +29,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSche
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -37,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSu
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateSchemaElectra
     extends AbstractBeaconStateSchema<BeaconStateElectra, MutableBeaconStateElectra> {
@@ -51,19 +54,12 @@ public class BeaconStateSchemaElectra
   public static final int PENDING_CONSOLIDATIONS_FIELD_INDEX = 36;
 
   @VisibleForTesting
-  BeaconStateSchemaElectra(final SpecConfig specConfig) {
-    super("BeaconStateElectra", getUniqueFields(specConfig), specConfig);
+  BeaconStateSchemaElectra(final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    super("BeaconStateElectra", getUniqueFields(specConfig, schemaRegistry), specConfig);
   }
 
-  private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
-    final PendingDeposit.PendingDepositSchema pendingDepositSchema =
-        new PendingDeposit.PendingDepositSchema();
-    final PendingPartialWithdrawal.PendingPartialWithdrawalSchema pendingPartialWithdrawalSchema =
-        new PendingPartialWithdrawal.PendingPartialWithdrawalSchema();
-    final SpecConfigElectra specConfigElectra = SpecConfigElectra.required(specConfig);
-    final PendingConsolidation.PendingConsolidationSchema pendingConsolidationSchema =
-        new PendingConsolidation.PendingConsolidationSchema();
-
+  private static List<SszField> getUniqueFields(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
     final List<SszField> newFields =
         List.of(
             new SszField(
@@ -93,26 +89,19 @@ public class BeaconStateSchemaElectra
             new SszField(
                 PENDING_DEPOSITS_FIELD_INDEX,
                 BeaconStateFields.PENDING_DEPOSITS,
-                () ->
-                    SszListSchema.create(
-                        pendingDepositSchema, specConfigElectra.getPendingDepositsLimit())),
+                () -> schemaRegistry.get(PENDING_DEPOSITS_SCHEMA)),
             new SszField(
                 PENDING_PARTIAL_WITHDRAWALS_FIELD_INDEX,
                 BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS,
-                () ->
-                    SszListSchema.create(
-                        pendingPartialWithdrawalSchema,
-                        specConfigElectra.getPendingPartialWithdrawalsLimit())),
+                () -> schemaRegistry.get(PENDING_PARTIAL_WITHDRAWALS_SCHEMA)),
             new SszField(
                 PENDING_CONSOLIDATIONS_FIELD_INDEX,
                 BeaconStateFields.PENDING_CONSOLIDATIONS,
-                () ->
-                    SszListSchema.create(
-                        pendingConsolidationSchema,
-                        specConfigElectra.getPendingConsolidationsLimit())));
+                () -> schemaRegistry.get(PENDING_CONSOLIDATIONS_SCHEMA)));
 
     return Stream.concat(
-            BeaconStateSchemaDeneb.getUniqueFields(specConfig).stream(), newFields.stream())
+            BeaconStateSchemaDeneb.getUniqueFields(specConfig, schemaRegistry).stream(),
+            newFields.stream())
         .toList();
   }
 
@@ -148,8 +137,9 @@ public class BeaconStateSchemaElectra
     return new MutableBeaconStateElectraImpl(createEmptyBeaconStateImpl(), true);
   }
 
-  public static BeaconStateSchemaElectra create(final SpecConfig specConfig) {
-    return new BeaconStateSchemaElectra(specConfig);
+  public static BeaconStateSchemaElectra create(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    return new BeaconStateSchemaElectra(specConfig, schemaRegistry);
   }
 
   public static BeaconStateSchemaElectra required(final BeaconStateSchema<?, ?> schema) {

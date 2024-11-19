@@ -14,6 +14,7 @@
 package tech.pegasys.teku.reference.altair.fork;
 
 import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
+import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
@@ -44,14 +45,26 @@ public class ForkUpgradeTestExecutor implements TestExecutor {
   }
 
   private void processUpgrade(final TestDefinition testDefinition, final SpecMilestone milestone) {
-    final SpecVersion spec = testDefinition.getSpec().getGenesisSpec();
+    final SpecMilestone previousMilestone = milestone.getPreviousMilestone();
+    final SpecVersion previousMilestoneSpecVersion =
+        testDefinition.getSpec().forMilestone(previousMilestone);
     final BeaconStateSchema<?, ?> fromMilestoneSchema =
         switch (milestone) {
-          case ALTAIR -> BeaconStateSchemaPhase0.create(spec.getConfig());
-          case BELLATRIX -> BeaconStateSchemaAltair.create(spec.getConfig());
-          case CAPELLA -> BeaconStateSchemaBellatrix.create(spec.getConfig());
-          case DENEB -> BeaconStateSchemaCapella.create(spec.getConfig());
-          case ELECTRA -> BeaconStateSchemaDeneb.create(spec.getConfig());
+          case ALTAIR -> BeaconStateSchemaPhase0.create(previousMilestoneSpecVersion.getConfig());
+          case BELLATRIX ->
+              BeaconStateSchemaAltair.create(previousMilestoneSpecVersion.getConfig());
+          case CAPELLA ->
+              BeaconStateSchemaBellatrix.create(
+                  previousMilestoneSpecVersion.getConfig(),
+                  previousMilestoneSpecVersion.getSchemaDefinitions().getSchemaRegistry());
+          case DENEB ->
+              BeaconStateSchemaCapella.create(
+                  previousMilestoneSpecVersion.getConfig(),
+                  previousMilestoneSpecVersion.getSchemaDefinitions().getSchemaRegistry());
+          case ELECTRA ->
+              BeaconStateSchemaDeneb.create(
+                  previousMilestoneSpecVersion.getConfig(),
+                  previousMilestoneSpecVersion.getSchemaDefinitions().getSchemaRegistry());
           default ->
               throw new IllegalStateException(
                   "Unhandled fork upgrade for test "

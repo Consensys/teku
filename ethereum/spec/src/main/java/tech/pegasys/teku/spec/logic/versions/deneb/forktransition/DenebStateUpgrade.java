@@ -45,9 +45,7 @@ public class DenebStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
   public BeaconStateDeneb upgrade(final BeaconState preState) {
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
     final BeaconStateCapella preStateCapella = BeaconStateCapella.required(preState);
-    return schemaDefinitions
-        .getBeaconStateSchema()
-        .createEmpty()
+    return BeaconStateDeneb.required(schemaDefinitions.getBeaconStateSchema().createEmpty())
         .updatedDeneb(
             state -> {
               BeaconStateFields.copyCommonFieldsFromSource(state, preState);

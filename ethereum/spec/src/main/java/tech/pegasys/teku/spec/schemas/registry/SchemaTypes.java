@@ -56,7 +56,10 @@ import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary.HistoricalSummarySchema;
+import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public class SchemaTypes {
   // PHASE0
@@ -89,7 +92,8 @@ public class SchemaTypes {
   public static final SchemaId<SignedBeaconBlockSchema> SIGNED_BEACON_BLOCK_SCHEMA =
       create("SIGNED_BEACON_BLOCK_SCHEMA");
 
-  public static final SchemaId<BeaconStateSchema<BeaconState, MutableBeaconState>>
+  public static final SchemaId<
+          BeaconStateSchema<? extends BeaconState, ? extends MutableBeaconState>>
       BEACON_STATE_SCHEMA = create("BEACON_STATE_SCHEMA");
 
   // Altair
@@ -114,8 +118,8 @@ public class SchemaTypes {
       create("BLS_TO_EXECUTION_CHANGE_SCHEMA");
   public static final SchemaId<SignedBlsToExecutionChangeSchema>
       SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA = create("SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA");
-  public static final SchemaId<HistoricalSummarySchema> HISTORICAL_SUMMARY_SCHEMA =
-      create("HISTORICAL_SUMMARY_SCHEMA");
+  public static final SchemaId<SszListSchema<HistoricalSummary, ?>> HISTORICAL_SUMMARIES_SCHEMA =
+      create("HISTORICAL_SUMMARIES_SCHEMA");
 
   // Deneb
   public static final SchemaId<BlobKzgCommitmentsSchema> BLOB_KZG_COMMITMENTS_SCHEMA =
@@ -139,6 +143,12 @@ public class SchemaTypes {
 
   public static final SchemaId<ExecutionRequestsSchema> EXECUTION_REQUESTS_SCHEMA =
       create("EXECUTION_REQUESTS_SCHEMA");
+  public static final SchemaId<SszListSchema<PendingPartialWithdrawal, ?>>
+      PENDING_PARTIAL_WITHDRAWALS_SCHEMA = create("PENDING_PARTIAL_WITHDRAWALS_SCHEMA");
+  public static final SchemaId<SszListSchema<PendingConsolidation, ?>>
+      PENDING_CONSOLIDATIONS_SCHEMA = create("PENDING_CONSOLIDATIONS_SCHEMA");
+  public static final SchemaId<SszListSchema<PendingDeposit, ?>> PENDING_DEPOSITS_SCHEMA =
+      create("PENDING_DEPOSITS_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation

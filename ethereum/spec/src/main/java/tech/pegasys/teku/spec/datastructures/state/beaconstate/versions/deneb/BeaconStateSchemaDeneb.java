@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix.LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -25,7 +24,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSche
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -33,31 +31,19 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBe
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateSchemaDeneb
     extends AbstractBeaconStateSchema<BeaconStateDeneb, MutableBeaconStateDeneb> {
 
   @VisibleForTesting
-  BeaconStateSchemaDeneb(final SpecConfig specConfig) {
-    super("BeaconStateDeneb", getUniqueFields(specConfig), specConfig);
+  BeaconStateSchemaDeneb(final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    super("BeaconStateDeneb", getUniqueFields(specConfig, schemaRegistry), specConfig);
   }
 
-  public static List<SszField> getUniqueFields(final SpecConfig specConfig) {
-    final List<SszField> updatedFields =
-        List.of(
-            new SszField(
-                LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
-                BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
-                () -> new ExecutionPayloadHeaderSchemaDeneb(SpecConfigDeneb.required(specConfig))));
-
-    return BeaconStateSchemaCapella.getUniqueFields(specConfig).stream()
-        .map(
-            field ->
-                updatedFields.stream()
-                    .filter(updatedField -> updatedField.getIndex() == field.getIndex())
-                    .findFirst()
-                    .orElse(field))
-        .toList();
+  public static List<SszField> getUniqueFields(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    return BeaconStateSchemaCapella.getUniqueFields(specConfig, schemaRegistry).stream().toList();
   }
 
   @SuppressWarnings("unchecked")
@@ -92,8 +78,9 @@ public class BeaconStateSchemaDeneb
     return new MutableBeaconStateDenebImpl(createEmptyBeaconStateImpl(), true);
   }
 
-  public static BeaconStateSchemaDeneb create(final SpecConfig specConfig) {
-    return new BeaconStateSchemaDeneb(specConfig);
+  public static BeaconStateSchemaDeneb create(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    return new BeaconStateSchemaDeneb(specConfig, schemaRegistry);
   }
 
   public static BeaconStateSchemaDeneb required(final BeaconStateSchema<?, ?> schema) {

@@ -18,6 +18,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateTest;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateCapellaTest
     extends AbstractBeaconStateTest<BeaconStateCapella, MutableBeaconStateCapella> {
@@ -28,8 +29,8 @@ public class BeaconStateCapellaTest
 
   @Override
   protected BeaconStateSchema<BeaconStateCapella, MutableBeaconStateCapella> getSchema(
-      final SpecConfig specConfig) {
-    return BeaconStateSchemaCapella.create(specConfig);
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    return BeaconStateSchemaCapella.create(specConfig, schemaRegistry);
   }
 
   @Override
