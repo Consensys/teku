@@ -27,8 +27,10 @@ import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.schemas.registry.BaseSchemaProvider.providerBuilder;
 
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
 class BaseSchemaProviderTest {
@@ -38,21 +40,53 @@ class BaseSchemaProviderTest {
   private final SchemaRegistry mockRegistry = mock(SchemaRegistry.class);
 
   @Test
+  void shouldCallCreatorWithCorrectParams() {
+    final AtomicReference<SchemaRegistry> registryRef = new AtomicReference<>();
+    final AtomicReference<SpecConfig> configRef = new AtomicReference<>();
+    final AtomicReference<String> schemaNameRef = new AtomicReference<>();
+    final SpecConfig specConfig = mock(SpecConfig.class);
+
+    final SchemaProvider<?> provider =
+        providerBuilder(STRING_SCHEMA_ID)
+            .withCreator(
+                PHASE0,
+                (r, c, n) -> {
+                  registryRef.set(r);
+                  configRef.set(c);
+                  schemaNameRef.set(n);
+                  return "TestSchema";
+                })
+            .build();
+
+    when(mockRegistry.getMilestone()).thenReturn(PHASE0);
+    when(mockRegistry.getSpecConfig()).thenReturn(specConfig);
+    when(STRING_SCHEMA_ID.getSchemaName(PHASE0)).thenReturn("TestSchemaPhase0");
+    when(mockRegistry.getMilestone()).thenReturn(PHASE0);
+    when(mockRegistry.getSpecConfig()).thenReturn(specConfig);
+
+    assertEquals("TestSchema", provider.getSchema(mockRegistry));
+
+    assertEquals(mockRegistry, registryRef.get());
+    assertEquals(specConfig, configRef.get());
+    assertEquals("TestSchemaPhase0", schemaNameRef.get());
+  }
+
+  @Test
   void shouldSupportContinuousUntilHighestMilestone() {
     final SchemaProvider<?> provider =
         providerBuilder(STRING_SCHEMA_ID)
-            .withCreator(ALTAIR, (r, c) -> "TestSchemaAltair")
-            .withCreator(BELLATRIX, (r, c) -> "TestSchemaBellatrix")
+            .withCreator(ALTAIR, (r, c, n) -> "TestSchemaAltair")
+            .withCreator(BELLATRIX, (r, c, n) -> "TestSchemaBellatrix")
             .build();
 
     assertEquals(ALTAIR, provider.getBaseMilestone(ALTAIR));
     assertEquals(BELLATRIX, provider.getBaseMilestone(BELLATRIX));
 
     when(mockRegistry.getMilestone()).thenReturn(ALTAIR);
-    assertEquals(provider.getSchema(mockRegistry), "TestSchemaAltair");
+    assertEquals("TestSchemaAltair", provider.getSchema(mockRegistry));
 
     when(mockRegistry.getMilestone()).thenReturn(BELLATRIX);
-    assertEquals(provider.getSchema(mockRegistry), "TestSchemaBellatrix");
+    assertEquals("TestSchemaBellatrix", provider.getSchema(mockRegistry));
 
     assertThat(provider.getSupportedMilestones())
         .containsAll(SpecMilestone.getAllMilestonesFrom(ALTAIR));
@@ -62,8 +96,8 @@ class BaseSchemaProviderTest {
   void shouldSupportContinuousConstantWithUntil() {
     final SchemaProvider<?> provider =
         providerBuilder(STRING_SCHEMA_ID)
-            .withCreator(PHASE0, (r, c) -> "TestSchemaPhase0")
-            .withCreator(BELLATRIX, (r, c) -> "TestSchemaBellatrix")
+            .withCreator(PHASE0, (r, c, n) -> "TestSchemaPhase0")
+            .withCreator(BELLATRIX, (r, c, n) -> "TestSchemaBellatrix")
             .until(CAPELLA)
             .build();
 
@@ -73,16 +107,16 @@ class BaseSchemaProviderTest {
     assertEquals(BELLATRIX, provider.getBaseMilestone(CAPELLA));
 
     when(mockRegistry.getMilestone()).thenReturn(PHASE0);
-    assertEquals(provider.getSchema(mockRegistry), "TestSchemaPhase0");
+    assertEquals("TestSchemaPhase0", provider.getSchema(mockRegistry));
 
     when(mockRegistry.getMilestone()).thenReturn(ALTAIR);
-    assertEquals(provider.getSchema(mockRegistry), "TestSchemaPhase0");
+    assertEquals("TestSchemaPhase0", provider.getSchema(mockRegistry));
 
     when(mockRegistry.getMilestone()).thenReturn(BELLATRIX);
-    assertEquals(provider.getSchema(mockRegistry), "TestSchemaBellatrix");
+    assertEquals("TestSchemaBellatrix", provider.getSchema(mockRegistry));
 
     when(mockRegistry.getMilestone()).thenReturn(CAPELLA);
-    assertEquals(provider.getSchema(mockRegistry), "TestSchemaBellatrix");
+    assertEquals("TestSchemaBellatrix", provider.getSchema(mockRegistry));
 
     assertThat(provider.getSupportedMilestones())
         .containsExactly(PHASE0, ALTAIR, BELLATRIX, CAPELLA);
@@ -92,7 +126,7 @@ class BaseSchemaProviderTest {
   void shouldAlwaysCreateNewSchemaDisabledByDefault() {
     final SchemaProvider<?> provider =
         providerBuilder(STRING_SCHEMA_ID)
-            .withCreator(PHASE0, (r, c) -> "TestSchema" + r.getMilestone())
+            .withCreator(PHASE0, (r, c, n) -> "TestSchema" + r.getMilestone())
             .build();
 
     assertFalse(provider.alwaysCreateNewSchema());
@@ -102,7 +136,7 @@ class BaseSchemaProviderTest {
   void shouldSupportAlwaysCreateNewSchema() {
     final SchemaProvider<?> provider =
         providerBuilder(STRING_SCHEMA_ID)
-            .withCreator(PHASE0, (r, c) -> "TestSchema" + r.getMilestone())
+            .withCreator(PHASE0, (r, c, n) -> "TestSchema" + r.getMilestone())
             .alwaysCreateNewSchema()
             .build();
 
@@ -120,7 +154,7 @@ class BaseSchemaProviderTest {
   void shouldThrowWhenAskingForAnUnsupportedMilestone() {
     final SchemaProvider<?> provider =
         providerBuilder(STRING_SCHEMA_ID)
-            .withCreator(ALTAIR, (r, c) -> "TestSchemaAltair")
+            .withCreator(ALTAIR, (r, c, n) -> "TestSchemaAltair")
             .until(ALTAIR)
             .build();
 
@@ -136,16 +170,16 @@ class BaseSchemaProviderTest {
     assertThatThrownBy(
             () ->
                 providerBuilder(STRING_SCHEMA_ID)
-                    .withCreator(PHASE0, (r, c) -> "TestSchema")
-                    .withCreator(PHASE0, (r, c) -> "TestSchema"))
+                    .withCreator(PHASE0, (r, c, n) -> "TestSchema")
+                    .withCreator(PHASE0, (r, c, n) -> "TestSchema"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith("Creator's milestones must added in strict ascending order");
 
     assertThatThrownBy(
             () ->
                 providerBuilder(STRING_SCHEMA_ID)
-                    .withCreator(ALTAIR, (r, c) -> "TestSchema")
-                    .withCreator(PHASE0, (r, c) -> "TestSchema"))
+                    .withCreator(ALTAIR, (r, c, n) -> "TestSchema")
+                    .withCreator(PHASE0, (r, c, n) -> "TestSchema"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith("Creator's milestones must added in strict ascending order");
   }
@@ -155,8 +189,8 @@ class BaseSchemaProviderTest {
     assertThatThrownBy(
             () ->
                 providerBuilder(STRING_SCHEMA_ID)
-                    .withCreator(PHASE0, (r, c) -> "TestSchema")
-                    .withCreator(CAPELLA, (r, c) -> "TestSchema")
+                    .withCreator(PHASE0, (r, c, n) -> "TestSchema")
+                    .withCreator(CAPELLA, (r, c, n) -> "TestSchema")
                     .until(ALTAIR)
                     .build())
         .isInstanceOf(IllegalArgumentException.class)

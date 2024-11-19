@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.BiFunction;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
@@ -78,7 +77,9 @@ class BaseSchemaProvider<T> implements SchemaProvider<T> {
       final SchemaRegistry registry,
       final SpecMilestone effectiveMilestone,
       final SpecConfig specConfig) {
-    return getSchemaCreator(effectiveMilestone).creator.apply(registry, specConfig);
+    return getSchemaCreator(effectiveMilestone)
+        .creator
+        .create(registry, specConfig, schemaId.getSchemaName(registry.getMilestone()));
   }
 
   private SchemaProviderCreator<T> getSchemaCreator(final SpecMilestone milestone) {
@@ -95,8 +96,7 @@ class BaseSchemaProvider<T> implements SchemaProvider<T> {
     return milestoneToSchemaCreator.keySet();
   }
 
-  protected record SchemaProviderCreator<T>(
-      SpecMilestone baseMilestone, BiFunction<SchemaRegistry, SpecConfig, T> creator) {
+  protected record SchemaProviderCreator<T>(SpecMilestone baseMilestone, SchemaCreator<T> creator) {
 
     @Override
     public String toString() {
@@ -156,8 +156,7 @@ class BaseSchemaProvider<T> implements SchemaProvider<T> {
     }
 
     public Builder<T> withCreator(
-        final SpecMilestone milestone,
-        final BiFunction<SchemaRegistry, SpecConfig, T> creationSchema) {
+        final SpecMilestone milestone, final SchemaCreator<T> creationSchema) {
       checkArgument(
           schemaProviderCreators.isEmpty()
               || milestone.isGreaterThan(schemaProviderCreators.getLast().baseMilestone),
@@ -198,5 +197,10 @@ class BaseSchemaProvider<T> implements SchemaProvider<T> {
       return new BaseSchemaProvider<>(
           schemaId, schemaProviderCreators, untilMilestone, alwaysCreateNewSchema);
     }
+  }
+
+  @FunctionalInterface
+  public interface SchemaCreator<T> {
+    T create(SchemaRegistry registry, SpecConfig specConfig, String schemaName);
   }
 }
