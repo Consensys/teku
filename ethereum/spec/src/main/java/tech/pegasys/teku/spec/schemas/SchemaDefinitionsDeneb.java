@@ -38,19 +38,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bea
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
-import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema;
-
-  private final BuilderBidSchema<?> builderBidSchemaDeneb;
-  private final SignedBuilderBidSchema signedBuilderBidSchemaDeneb;
 
   private final BlobSchema blobSchema;
   private final SszListSchema<Blob, ? extends SszList<Blob>> blobsInBlockSchema;
@@ -65,11 +59,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     super(schemaRegistry);
     final SpecConfigDeneb specConfig = SpecConfigDeneb.required(schemaRegistry.getSpecConfig());
     this.blobKzgCommitmentsSchema = schemaRegistry.get(BLOB_KZG_COMMITMENTS_SCHEMA);
-    this.builderBidSchemaDeneb =
-        new BuilderBidSchemaDeneb(
-            "BuilderBidDeneb", getExecutionPayloadHeaderSchema(), blobKzgCommitmentsSchema);
-    this.signedBuilderBidSchemaDeneb =
-        new SignedBuilderBidSchema("SignedBuilderBidDeneb", builderBidSchemaDeneb);
 
     this.blobSchema = schemaRegistry.get(BLOB_SCHEMA);
     this.blobsInBlockSchema = schemaRegistry.get(BLOBS_IN_BLOCK_SCHEMA);
@@ -104,16 +93,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   @Override
   public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlockContainerSchema() {
     return getSignedBlockContentsSchema().castTypeToSignedBlockContainer();
-  }
-
-  @Override
-  public BuilderBidSchema<?> getBuilderBidSchema() {
-    return builderBidSchemaDeneb;
-  }
-
-  @Override
-  public SignedBuilderBidSchema getSignedBuilderBidSchema() {
-    return signedBuilderBidSchemaDeneb;
   }
 
   @Override

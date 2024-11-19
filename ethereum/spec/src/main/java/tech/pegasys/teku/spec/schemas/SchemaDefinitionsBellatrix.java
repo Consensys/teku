@@ -16,9 +16,11 @@ package tech.pegasys.teku.spec.schemas;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLINDED_BEACON_BLOCK_BODY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLINDED_BEACON_BLOCK_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_HEADER_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLINDED_BEACON_BLOCK_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BUILDER_BID_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
@@ -34,7 +36,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
-import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
@@ -55,10 +56,8 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
     this.blindedBeaconBlockBodySchema = schemaRegistry.get(BLINDED_BEACON_BLOCK_BODY_SCHEMA);
     this.blindedBeaconBlockSchema = schemaRegistry.get(BLINDED_BEACON_BLOCK_SCHEMA);
     this.signedBlindedBeaconBlockSchema = schemaRegistry.get(SIGNED_BLINDED_BEACON_BLOCK_SCHEMA);
-    this.builderBidSchema =
-        new BuilderBidSchemaBellatrix("BuilderBidBellatrix", executionPayloadHeaderSchema);
-    this.signedBuilderBidSchema =
-        new SignedBuilderBidSchema("SignedBuilderBidBellatrix", builderBidSchema);
+    this.builderBidSchema = schemaRegistry.get(BUILDER_BID_SCHEMA);
+    this.signedBuilderBidSchema = schemaRegistry.get(SIGNED_BUILDER_BID_SCHEMA);
   }
 
   public static SchemaDefinitionsBellatrix required(final SchemaDefinitions schemaDefinitions) {

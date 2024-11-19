@@ -32,11 +32,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyBuilderElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
-import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
-import tech.pegasys.teku.spec.datastructures.builder.versions.electra.BuilderBidSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
@@ -50,9 +47,6 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingParti
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
-  private final BuilderBidSchema<?> builderBidSchemaElectra;
-  private final SignedBuilderBidSchema signedBuilderBidSchemaElectra;
-
   private final BlockContentsSchema blockContentsSchema;
   private final SignedBlockContentsSchema signedBlockContentsSchema;
   private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
@@ -79,15 +73,6 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.pendingDepositsSchema = schemaRegistry.get(PENDING_DEPOSITS_SCHEMA);
     this.pendingPartialWithdrawalsSchema = schemaRegistry.get(PENDING_PARTIAL_WITHDRAWALS_SCHEMA);
     this.pendingConsolidationsSchema = schemaRegistry.get(PENDING_CONSOLIDATIONS_SCHEMA);
-
-    this.builderBidSchemaElectra =
-        new BuilderBidSchemaElectra(
-            "BuilderBidElectra",
-            getExecutionPayloadHeaderSchema(),
-            getBlobKzgCommitmentsSchema(),
-            executionRequestsSchema);
-    this.signedBuilderBidSchemaElectra =
-        new SignedBuilderBidSchema("SignedBuilderBidElectra", builderBidSchemaElectra);
 
     this.blockContentsSchema =
         BlockContentsSchema.create(
@@ -128,16 +113,6 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   @Override
   public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlockContainerSchema() {
     return getSignedBlockContentsSchema().castTypeToSignedBlockContainer();
-  }
-
-  @Override
-  public BuilderBidSchema<?> getBuilderBidSchema() {
-    return builderBidSchemaElectra;
-  }
-
-  @Override
-  public SignedBuilderBidSchema getSignedBuilderBidSchema() {
-    return signedBuilderBidSchemaElectra;
   }
 
   @Override

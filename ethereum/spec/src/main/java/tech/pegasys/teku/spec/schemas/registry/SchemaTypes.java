@@ -36,6 +36,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
@@ -111,6 +114,11 @@ public class SchemaTypes {
       BLINDED_BEACON_BLOCK_BODY_SCHEMA = create("BLINDED_BEACON_BLOCK_BODY_SCHEMA");
   public static final SchemaId<SignedBeaconBlockSchema> SIGNED_BLINDED_BEACON_BLOCK_SCHEMA =
       create("SIGNED_BLINDED_BEACON_BLOCK_SCHEMA");
+
+  public static final SchemaId<BuilderBidSchema<? extends BuilderBid>> BUILDER_BID_SCHEMA =
+      create("BUILDER_BID_SCHEMA");
+  public static final SchemaId<SignedBuilderBidSchema> SIGNED_BUILDER_BID_SCHEMA =
+      create("SIGNED_BUILDER_BID_SCHEMA");
 
   // Capella
   public static final SchemaId<WithdrawalSchema> WITHDRAWAL_SCHEMA = create("WITHDRAWAL_SCHEMA");
