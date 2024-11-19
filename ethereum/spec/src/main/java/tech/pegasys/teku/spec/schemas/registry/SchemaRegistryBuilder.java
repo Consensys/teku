@@ -87,6 +87,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.Be
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.builder.versions.electra.BuilderBidSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
@@ -186,6 +187,10 @@ public class SchemaRegistryBuilder {
             BELLATRIX,
             (registry, specConfig, schemaName) ->
                 new BuilderBidSchemaBellatrix(schemaName, registry))
+        // CAPELLA is same as BELLATRIX
+        .withCreator(
+            DENEB,
+            (registry, specConfig, schemaName) -> new BuilderBidSchemaDeneb(schemaName, registry))
         .withCreator(
             ELECTRA,
             (registry, specConfig, schemaName) -> new BuilderBidSchemaElectra(schemaName, registry))
