@@ -403,11 +403,11 @@ public class HistoricalBatchFetcher {
 
     final boolean blobsBlockRootMatchBlockRoot =
         blobSidecars.stream()
-            .allMatch(blobSidecar -> blobSidecar.getBlockRoot().equals(block.getRoot()));
+            .allMatch(blobSidecar -> blobSidecar.getSignedBeaconBlockHeader().hashTreeRoot().equals(block.hashTreeRoot()));
 
     if (!blobsBlockRootMatchBlockRoot) {
       throw new IllegalArgumentException(
-          String.format("Blob sidecars' block root don't match block root %s", block.getRoot()));
+          String.format("Blob sidecars' signed beacon block header don't match signed block for %s", block.toLogString()));
     }
   }
 
