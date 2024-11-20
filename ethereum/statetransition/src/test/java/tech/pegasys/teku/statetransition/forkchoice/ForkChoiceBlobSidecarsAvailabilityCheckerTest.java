@@ -15,48 +15,28 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.assertArg;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import com.google.common.collect.ImmutableSortedMap;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
-import org.mockito.stubbing.OngoingStubbing;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
-import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsValidationResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -105,7 +85,6 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
     verify(blockBlobSidecarsTracker, never()).getBlobSidecars();
 
-
     // let the tracker complete with all blobSidecars
     completeTrackerWith(blobSidecarsComplete);
 
@@ -119,7 +98,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     prepareInitialAvailability();
 
     final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
-            blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
+        blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
 
     assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
 
@@ -157,7 +136,6 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
 
     final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
         blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
-
 
     assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
 
@@ -246,8 +224,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   private void prepareInitialAvailability(
-      final Optional<SignedBeaconBlock> providedBlock,
-      final Duration timeout) {
+      final Optional<SignedBeaconBlock> providedBlock, final Duration timeout) {
     block = providedBlock.orElse(dataStructureUtil.randomSignedBeaconBlockWithCommitments(4));
     blobSidecarsComplete = dataStructureUtil.randomBlobSidecarsForBlock(block);
 
