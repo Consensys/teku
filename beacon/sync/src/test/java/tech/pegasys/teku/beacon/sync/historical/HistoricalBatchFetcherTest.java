@@ -210,6 +210,8 @@ public class HistoricalBatchFetcherTest {
     final SafeFuture<BeaconBlockSummary> future = fetcher.run();
     peer.completePendingRequests();
 
+    // TODO: find a way to provoke blob sidecar validation failure
+
     assertThat(future)
         .failsWithin(Duration.ZERO)
         .withThrowableThat()

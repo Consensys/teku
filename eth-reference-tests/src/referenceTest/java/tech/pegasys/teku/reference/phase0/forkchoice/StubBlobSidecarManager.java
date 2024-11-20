@@ -98,12 +98,6 @@ class StubBlobSidecarManager implements BlobSidecarManager {
         return SafeFuture.completedFuture(validateImmediately(block, blobsAndProofs));
       }
 
-      @Override
-      public BlobSidecarsAndValidationResult validateImmediately(
-          final List<BlobSidecar> blobSidecars) {
-        throw new UnsupportedOperationException("Not available in fork choice reference tests");
-      }
-
       private BlobSidecarsAndValidationResult validateImmediately(
           final SignedBeaconBlock block, final BlobsAndProofs blobsAndProofs) {
         final List<KZGCommitment> kzgCommitments =
@@ -113,22 +107,12 @@ class StubBlobSidecarManager implements BlobSidecarManager {
                 .map(SszKZGCommitment::getKZGCommitment)
                 .toList();
         final List<Bytes> blobs = blobsAndProofs.blobs.stream().map(Blob::getBytes).toList();
-        try {
-          if (!kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, blobsAndProofs.proofs)) {
-            return BlobSidecarsAndValidationResult.invalidResult(Collections.emptyList());
-          }
-        } catch (final Exception ex) {
-          return BlobSidecarsAndValidationResult.invalidResult(Collections.emptyList(), ex);
+        if (!kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, blobsAndProofs.proofs)) {
+          throw new RuntimeException("Invalid KZG proof");
         }
         return BlobSidecarsAndValidationResult.validResult(Collections.emptyList());
       }
     };
-  }
-
-  @Override
-  public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
-      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
-    throw new UnsupportedOperationException("Not available in fork choice reference tests");
   }
 
   private record BlobsAndProofs(List<Blob> blobs, List<KZGProof> proofs) {}
