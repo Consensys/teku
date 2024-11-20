@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
-import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsValidationResult.INVALID;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -72,6 +71,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsValidationResult;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
@@ -543,18 +543,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     LOG.debug("blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
 
-    switch (blobSidecarsAndValidationResult.getValidationResult()) {
-      case NOT_AVAILABLE -> {
-        return BlockImportResult.failedDataAvailabilityCheckNotAvailable(
-            blobSidecarsAndValidationResult.getCause());
-      }
-      case INVALID -> {
-        debugDataDumper.saveInvalidBlobSidecars(
-            blobSidecarsAndValidationResult.getBlobSidecars(), block);
-        return BlockImportResult.failedDataAvailabilityCheckInvalid(
-            blobSidecarsAndValidationResult.getCause());
-      }
-      default -> {}
+    if (blobSidecarsAndValidationResult.getValidationResult()
+        == BlobSidecarsValidationResult.NOT_AVAILABLE) {
+      return BlockImportResult.failedDataAvailabilityCheckNotAvailable(
+          blobSidecarsAndValidationResult.getCause());
     }
 
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();

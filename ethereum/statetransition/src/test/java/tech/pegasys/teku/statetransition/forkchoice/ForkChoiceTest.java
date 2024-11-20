@@ -248,31 +248,6 @@ class ForkChoiceTest {
   }
 
   @Test
-  void onBlock_shouldFailIfBlobsAreInvalid() {
-    setupWithSpec(TestSpecFactory.createMinimalDeneb());
-    final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
-    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
-    final List<BlobSidecar> blobSidecars =
-        storageSystem
-            .chainStorage()
-            .getBlobSidecarsBySlotAndBlockRoot(blockAndState.getSlotAndBlockRoot())
-            .join();
-
-    when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
-        .thenReturn(
-            SafeFuture.completedFuture(
-                BlobSidecarsAndValidationResult.invalidResult(blobSidecars)));
-
-    importBlockAndAssertFailure(
-        blockAndState, FailureReason.FAILED_DATA_AVAILABILITY_CHECK_INVALID);
-
-    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
-    verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
-    verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
-    verify(debugDataDumper).saveInvalidBlobSidecars(blobSidecars, blockAndState.getBlock());
-  }
-
-  @Test
   void onBlock_consensusValidationShouldNotResolveWhenDataAvailabilityFails() {
     setupWithSpec(TestSpecFactory.createMinimalDeneb());
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
