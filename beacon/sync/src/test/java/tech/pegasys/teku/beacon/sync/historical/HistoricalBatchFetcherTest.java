@@ -48,7 +48,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -206,7 +205,6 @@ public class HistoricalBatchFetcherTest {
   @Test
   public void run_failsOnBlobSidecarsValidationFailure() {
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
-
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     final SafeFuture<BeaconBlockSummary> future = fetcher.run();
