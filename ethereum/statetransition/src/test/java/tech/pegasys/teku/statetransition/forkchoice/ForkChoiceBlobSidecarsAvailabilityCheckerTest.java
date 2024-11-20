@@ -24,7 +24,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import com.google.common.collect.ImmutableSortedMap;
 import java.time.Duration;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.BeforeEach;
@@ -147,40 +146,11 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   private void assertNotRequired(
       final SafeFuture<BlobSidecarsAndValidationResult> availabilityOrValidityCheck) {
     assertThat(availabilityOrValidityCheck)
-        .isCompletedWithValueMatching(result -> !result.isFailure(), "is not failure")
         .isCompletedWithValueMatching(result -> !result.isValid(), "is not valid")
         .isCompletedWithValueMatching(
             BlobSidecarsAndValidationResult::isNotRequired, "is not required")
         .isCompletedWithValueMatching(
             result -> result.getBlobSidecars().isEmpty(), "doesn't have blob sidecars");
-  }
-
-  private void assertInvalid(
-      final SafeFuture<BlobSidecarsAndValidationResult> availabilityOrValidityCheck,
-      final List<BlobSidecar> invalidBlobs,
-      final Optional<Throwable> cause) {
-    assertThat(availabilityOrValidityCheck)
-        .isCompletedWithValueMatching(result -> !result.isValid(), "is not valid")
-        .isCompletedWithValueMatching(
-            result -> result.getValidationResult() == BlobSidecarsValidationResult.INVALID,
-            "is not available")
-        .isCompletedWithValueMatching(
-            result -> result.getBlobSidecars().equals(invalidBlobs), "doesn't have blob sidecars")
-        .isCompletedWithValueMatching(
-            result -> {
-              if (cause.isEmpty() != result.getCause().isEmpty()) {
-                return false;
-              }
-              return result
-                  .getCause()
-                  .map(
-                      resultCause ->
-                          resultCause.getClass().equals(cause.get().getClass())
-                              && Objects.equals(resultCause.getMessage(), cause.get().getMessage())
-                              && Objects.equals(resultCause.getCause(), cause.get().getCause()))
-                  .orElse(true);
-            },
-            "matches the cause");
   }
 
   private void assertNotAvailableDueToTimeout(
@@ -194,7 +164,6 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   private void assertNotAvailable(
       final SafeFuture<BlobSidecarsAndValidationResult> availabilityOrValidityCheck) {
     assertThat(availabilityOrValidityCheck)
-        .isCompletedWithValueMatching(BlobSidecarsAndValidationResult::isFailure, "is failure")
         .isCompletedWithValueMatching(result -> !result.isValid(), "is not valid")
         .isCompletedWithValueMatching(
             result -> result.getValidationResult() == BlobSidecarsValidationResult.NOT_AVAILABLE,
@@ -206,7 +175,6 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   private void assertAvailable(
       final SafeFuture<BlobSidecarsAndValidationResult> availabilityOrValidityCheck) {
     assertThat(availabilityOrValidityCheck)
-        .isCompletedWithValueMatching(result -> !result.isFailure(), "is not failure")
         .isCompletedWithValueMatching(BlobSidecarsAndValidationResult::isValid, "is valid")
         .isCompletedWithValueMatching(
             result -> result.getValidationResult() == BlobSidecarsValidationResult.VALID,
