@@ -184,8 +184,8 @@ public class BlobSidecarManagerTest {
     verify(futureBlobSidecars).onSlot(UInt64.ONE);
 
     verify(blockBlobSidecarsTrackersPool)
-        .onNewBlobSidecar(futureBlobSidecarsList.get(0), RemoteOrigin.GOSSIP);
-    verify(receivedBlobSidecarListener).onBlobSidecarReceived(futureBlobSidecarsList.get(0));
+        .onNewBlobSidecar(futureBlobSidecarsList.getFirst(), RemoteOrigin.GOSSIP);
+    verify(receivedBlobSidecarListener).onBlobSidecarReceived(futureBlobSidecarsList.getFirst());
   }
 
   @Test
@@ -196,17 +196,6 @@ public class BlobSidecarManagerTest {
 
     assertThat(blobSidecarManager.createAvailabilityChecker(block))
         .isEqualTo(BlobSidecarsAvailabilityChecker.NOT_REQUIRED);
-  }
-
-  @Test
-  void
-      createAvailabilityCheckerAndValidateImmediately_shouldReturnANotRequiredAvailabilityCheckerWhenBlockIsPreDeneb() {
-    final Spec spec = TestSpecFactory.createMainnetCapella();
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-
-    assertThat(blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, List.of()))
-        .isEqualTo(BlobSidecarsAndValidationResult.NOT_REQUIRED);
   }
 
   @Test
@@ -221,21 +210,5 @@ public class BlobSidecarManagerTest {
 
     assertThat(blobSidecarManager.createAvailabilityChecker(block))
         .isInstanceOf(ForkChoiceBlobSidecarsAvailabilityChecker.class);
-  }
-
-  @Test
-  void
-      createAvailabilityCheckerAndValidateImmediately_shouldReturnABlobSidecarsAndValidationResult() {
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
-
-    final UpdatableStore store = mock(UpdatableStore.class);
-    when(recentChainData.getStore()).thenReturn(store);
-    when(store.getTimeSeconds()).thenReturn(UInt64.ONE);
-    when(store.getGenesisTime()).thenReturn(UInt64.ZERO);
-
-    assertThat(blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, List.of()))
-        .isInstanceOf(BlobSidecarsAndValidationResult.class);
-
-    verifyNoInteractions(blockBlobSidecarsTrackersPool);
   }
 }
