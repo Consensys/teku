@@ -171,7 +171,7 @@ public class SchemaTypes {
   public static final SchemaId<ConsolidationRequestSchema> CONSOLIDATION_REQUEST_SCHEMA =
       create("CONSOLIDATION_REQUEST_SCHEMA");
   public static final SchemaId<SingleAttestationSchema> SINGLE_ATTESTATION_SCHEMA =
-          create("SINGLE_ATTESTATION_SCHEMA");
+      create("SINGLE_ATTESTATION_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation

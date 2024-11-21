@@ -191,12 +191,12 @@ public class SchemaRegistryBuilder {
         .addProvider(createWithdrawalRequestSchemaProvider())
         .addProvider(createConsolidationRequestSchemaProvider())
         .addProvider(createExecutionRequestsSchemaProvider())
-.addProvider(createSingleAttestationSchemaProvider());
+        .addProvider(createSingleAttestationSchemaProvider());
   }
 
   private static SchemaProvider<?> createSingleAttestationSchemaProvider() {
-    return constantProviderBuilder(SINGLE_ATTESTATION_SCHEMA)
-        .withCreator(ELECTRA, (registry, specConfig) -> new SingleAttestationSchema())
+    return providerBuilder(SINGLE_ATTESTATION_SCHEMA)
+        .withCreator(ELECTRA, (registry, specConfig, schemaName) -> new SingleAttestationSchema())
         .build();
   }
 
