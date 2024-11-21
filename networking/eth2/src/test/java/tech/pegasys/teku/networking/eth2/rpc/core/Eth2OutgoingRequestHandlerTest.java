@@ -19,7 +19,6 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -319,11 +318,6 @@ public class Eth2OutgoingRequestHandlerTest
 
   private void sendInitialPayload() {
     reqHandler.handleInitialPayloadSent(rpcStream);
-  }
-
-  private void deliverInitialBytes() throws IOException {
-    final Bytes firstByte = chunks.get(0).slice(0, 1);
-    deliverBytes(firstByte);
   }
 
   private Bytes chunkBytes(final int chunk) {
