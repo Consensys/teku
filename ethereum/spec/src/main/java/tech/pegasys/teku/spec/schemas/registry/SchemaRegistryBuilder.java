@@ -37,6 +37,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_KZG_COMMI
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECAR_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLS_TO_EXECUTION_CHANGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_HEADER_SCHEMA;
@@ -51,6 +52,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_PARTIA
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLINDED_BEACON_BLOCK_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLOCK_CONTENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BUILDER_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SYNCNETS_ENR_FIELD_SCHEMA;
@@ -84,6 +86,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bli
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectraImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodySchemaElectraImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
@@ -165,12 +169,33 @@ public class SchemaRegistryBuilder {
         .addProvider(createBlobSidecarSchemaProvider())
         .addProvider(createBlobSidecarsByRootRequestMessageSchemaProvider())
         .addProvider(createBlobsBundleSchemaProvider())
+        .addProvider(createBlockContentsSchema())
+        .addProvider(createSignedBlockContentsSchema())
 
         // ELECTRA
         .addProvider(createPendingConsolidationsSchemaProvider())
         .addProvider(createPendingPartialWithdrawalsSchemaProvider())
         .addProvider(createPendingDepositsSchemaProvider())
         .addProvider(createExecutionRequestsSchemaProvider());
+  }
+
+  private static SchemaProvider<?> createBlockContentsSchema() {
+    return providerBuilder(BLOCK_CONTENTS_SCHEMA)
+        .withCreator(
+            DENEB,
+            (registry, specConfig, schemaName) ->
+                new BlockContentsSchema(schemaName, SpecConfigDeneb.required(specConfig), registry))
+        .build();
+  }
+
+  private static SchemaProvider<?> createSignedBlockContentsSchema() {
+    return providerBuilder(SIGNED_BLOCK_CONTENTS_SCHEMA)
+        .withCreator(
+            DENEB,
+            (registry, specConfig, schemaName) ->
+                new SignedBlockContentsSchema(
+                    schemaName, SpecConfigDeneb.required(specConfig), registry))
+        .build();
   }
 
   private static SchemaProvider<?> createSignedBuilderBidSchemaProvider() {

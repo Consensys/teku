@@ -13,21 +13,22 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
-import java.util.List;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
+
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SignedBlockContentsSchema
     extends ContainerSchema3<
@@ -37,35 +38,20 @@ public class SignedBlockContentsSchema
   static final SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
   static final SszFieldName FIELD_BLOBS = () -> "blobs";
 
-  SignedBlockContentsSchema(
+  public SignedBlockContentsSchema(
       final String containerName,
       final SpecConfigDeneb specConfig,
-      final SignedBeaconBlockSchema signedBeaconBlockSchema,
-      final BlobSchema blobSchema) {
+      final SchemaRegistry schemaRegistry) {
     super(
         containerName,
-        namedSchema("signed_block", signedBeaconBlockSchema),
+        namedSchema("signed_block", schemaRegistry.get(SIGNED_BEACON_BLOCK_SCHEMA)),
         namedSchema(
             FIELD_KZG_PROOFS,
             SszListSchema.create(SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())),
         namedSchema(
-            FIELD_BLOBS, SszListSchema.create(blobSchema, specConfig.getMaxBlobsPerBlock())));
-  }
-
-  public static SignedBlockContentsSchema create(
-      final SpecConfigDeneb specConfig,
-      final SignedBeaconBlockSchema signedBeaconBlockSchema,
-      final BlobSchema blobSchema,
-      final String containerName) {
-    return new SignedBlockContentsSchema(
-        containerName, specConfig, signedBeaconBlockSchema, blobSchema);
-  }
-
-  public SignedBlockContents create(
-      final SignedBeaconBlock signedBeaconBlock,
-      final List<KZGProof> kzgProofs,
-      final List<Blob> blobs) {
-    return new SignedBlockContents(this, signedBeaconBlock, kzgProofs, blobs);
+            FIELD_BLOBS,
+            SszListSchema.create(
+                schemaRegistry.get(BLOB_SCHEMA), specConfig.getMaxBlobsPerBlock())));
   }
 
   public SignedBlockContents create(

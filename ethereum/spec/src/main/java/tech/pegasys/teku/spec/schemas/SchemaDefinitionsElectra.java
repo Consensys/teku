@@ -23,15 +23,8 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_PARTIA
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyBuilderElectra;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
@@ -47,8 +40,6 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingParti
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
-  private final BlockContentsSchema blockContentsSchema;
-  private final SignedBlockContentsSchema signedBlockContentsSchema;
   private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
 
   private final ExecutionRequestsSchema executionRequestsSchema;
@@ -67,22 +58,11 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   public SchemaDefinitionsElectra(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
-    final SpecConfigElectra specConfig = SpecConfigElectra.required(schemaRegistry.getSpecConfig());
-
     this.executionRequestsSchema = schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA);
     this.pendingDepositsSchema = schemaRegistry.get(PENDING_DEPOSITS_SCHEMA);
     this.pendingPartialWithdrawalsSchema = schemaRegistry.get(PENDING_PARTIAL_WITHDRAWALS_SCHEMA);
     this.pendingConsolidationsSchema = schemaRegistry.get(PENDING_CONSOLIDATIONS_SCHEMA);
 
-    this.blockContentsSchema =
-        BlockContentsSchema.create(
-            specConfig, getBeaconBlockSchema(), getBlobSchema(), "BlockContentsElectra");
-    this.signedBlockContentsSchema =
-        SignedBlockContentsSchema.create(
-            specConfig,
-            getSignedBeaconBlockSchema(),
-            getBlobSchema(),
-            "SignedBlockContentsElectra");
     this.executionPayloadAndBlobsBundleSchema =
         new ExecutionPayloadAndBlobsBundleSchema(
             getExecutionPayloadSchema(), schemaRegistry.get(BLOBS_BUNDLE_SCHEMA));
@@ -106,16 +86,6 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   }
 
   @Override
-  public BlockContainerSchema<BlockContainer> getBlockContainerSchema() {
-    return getBlockContentsSchema().castTypeToBlockContainer();
-  }
-
-  @Override
-  public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlockContainerSchema() {
-    return getSignedBlockContentsSchema().castTypeToSignedBlockContainer();
-  }
-
-  @Override
   public BuilderPayloadSchema<?> getBuilderPayloadSchema() {
     return getExecutionPayloadAndBlobsBundleSchema();
   }
@@ -125,16 +95,6 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return new BeaconBlockBodyBuilderElectra(
         getBeaconBlockBodySchema().toVersionElectra().orElseThrow(),
         getBlindedBeaconBlockBodySchema().toBlindedVersionElectra().orElseThrow());
-  }
-
-  @Override
-  public BlockContentsSchema getBlockContentsSchema() {
-    return blockContentsSchema;
-  }
-
-  @Override
-  public SignedBlockContentsSchema getSignedBlockContentsSchema() {
-    return signedBlockContentsSchema;
   }
 
   @Override
