@@ -16,11 +16,13 @@ package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
 
+import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -52,6 +54,13 @@ public class SignedBlockContentsSchema
             FIELD_BLOBS,
             SszListSchema.create(
                 schemaRegistry.get(BLOB_SCHEMA), specConfig.getMaxBlobsPerBlock())));
+  }
+
+  public SignedBlockContents create(
+      final SignedBeaconBlock signedBeaconBlock,
+      final List<KZGProof> kzgProofs,
+      final List<Blob> blobs) {
+    return new SignedBlockContents(this, signedBeaconBlock, kzgProofs, blobs);
   }
 
   public SignedBlockContents create(
