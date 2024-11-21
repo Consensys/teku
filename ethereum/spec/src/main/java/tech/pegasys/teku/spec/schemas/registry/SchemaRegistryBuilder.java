@@ -38,6 +38,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECAR_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLS_TO_EXECUTION_CHANGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_HEADER_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
@@ -51,6 +52,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGA
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLINDED_BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BUILDER_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SYNCNETS_ENR_FIELD_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.WITHDRAWAL_SCHEMA;
 
@@ -83,6 +85,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.B
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodySchemaElectraImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
+import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.builder.versions.electra.BuilderBidSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
@@ -143,6 +149,8 @@ public class SchemaRegistryBuilder {
         .addProvider(createBlindedBeaconBlockBodySchemaProvider())
         .addProvider(createBlindedBeaconBlockSchemaProvider())
         .addProvider(createSignedBlindedBeaconBlockSchemaProvider())
+        .addProvider(createBuilderBidSchemaProvider())
+        .addProvider(createSignedBuilderBidSchemaProvider())
 
         // CAPELLA
         .addProvider(createWithdrawalSchemaProvider())
@@ -163,6 +171,30 @@ public class SchemaRegistryBuilder {
         .addProvider(createPendingPartialWithdrawalsSchemaProvider())
         .addProvider(createPendingDepositsSchemaProvider())
         .addProvider(createExecutionRequestsSchemaProvider());
+  }
+
+  private static SchemaProvider<?> createSignedBuilderBidSchemaProvider() {
+    return providerBuilder(SIGNED_BUILDER_BID_SCHEMA)
+        .withCreator(
+            BELLATRIX,
+            (registry, specConfig, schemaName) -> new SignedBuilderBidSchema(schemaName, registry))
+        .build();
+  }
+
+  private static SchemaProvider<?> createBuilderBidSchemaProvider() {
+    return providerBuilder(BUILDER_BID_SCHEMA)
+        .withCreator(
+            BELLATRIX,
+            (registry, specConfig, schemaName) ->
+                new BuilderBidSchemaBellatrix(schemaName, registry))
+        // CAPELLA is same as BELLATRIX
+        .withCreator(
+            DENEB,
+            (registry, specConfig, schemaName) -> new BuilderBidSchemaDeneb(schemaName, registry))
+        .withCreator(
+            ELECTRA,
+            (registry, specConfig, schemaName) -> new BuilderBidSchemaElectra(schemaName, registry))
+        .build();
   }
 
   private static SchemaProvider<?> createPendingDepositsSchemaProvider() {

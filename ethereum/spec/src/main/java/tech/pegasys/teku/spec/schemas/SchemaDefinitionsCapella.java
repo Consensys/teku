@@ -23,9 +23,6 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyBuilderCapella;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
-import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
-import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
@@ -37,10 +34,7 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   private final WithdrawalSchema withdrawalSchema;
 
   private final BlsToExecutionChangeSchema blsToExecutionChangeSchema;
-
   private final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema;
-  private final BuilderBidSchema<?> builderBidSchemaCapella;
-  private final SignedBuilderBidSchema signedBuilderBidSchemaCapella;
 
   private final SszListSchema<HistoricalSummary, ?> historicalSummariesSchema;
 
@@ -51,10 +45,6 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
     this.signedBlsToExecutionChangeSchema =
         schemaRegistry.get(SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA);
     this.withdrawalSchema = schemaRegistry.get(WITHDRAWAL_SCHEMA);
-    this.builderBidSchemaCapella =
-        new BuilderBidSchemaBellatrix("BuilderBidCapella", getExecutionPayloadHeaderSchema());
-    this.signedBuilderBidSchemaCapella =
-        new SignedBuilderBidSchema("SignedBuilderBidCapella", builderBidSchemaCapella);
   }
 
   public static SchemaDefinitionsCapella required(final SchemaDefinitions schemaDefinitions) {
@@ -87,16 +77,6 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
 
   public HistoricalSummarySchema getHistoricalSummarySchema() {
     return (HistoricalSummarySchema) historicalSummariesSchema.getElementSchema();
-  }
-
-  @Override
-  public BuilderBidSchema<?> getBuilderBidSchema() {
-    return builderBidSchemaCapella;
-  }
-
-  @Override
-  public SignedBuilderBidSchema getSignedBuilderBidSchema() {
-    return signedBuilderBidSchemaCapella;
   }
 
   @Override
