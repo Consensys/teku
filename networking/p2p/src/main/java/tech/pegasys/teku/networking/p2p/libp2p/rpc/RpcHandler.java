@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.p2p.libp2p.rpc;
 
 import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
+import static tech.pegasys.teku.spec.config.Constants.RPC_REQUEST_TIMEOUT;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
@@ -31,6 +32,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -81,12 +83,17 @@ public class RpcHandler<
   public SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
       final Connection connection, final TRequest request, final TRespHandler responseHandler) {
 
-    if (!concurrentRequestsSemaphore.tryAcquire()) {
-      return SafeFuture.failedFuture(
-          new MaxConcurrentRequestsException(
-              String.format(
-                  "Maximum number of concurrent requests for protocol(s) %s has been reached",
-                  rpcMethod.getIds())));
+    try {
+      if (!concurrentRequestsSemaphore.tryAcquire(
+          RPC_REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {
+        return SafeFuture.failedFuture(
+            new MaxConcurrentRequestsException(
+                String.format(
+                    "Maximum number of concurrent requests for protocol(s) %s has been reached",
+                    rpcMethod.getIds())));
+      }
+    } catch (InterruptedException e) {
+      return SafeFuture.failedFuture(new RuntimeException("Thread interrupted", e));
     }
 
     final Bytes initialPayload;
