@@ -70,7 +70,7 @@
       }
     },
     "execution_requests" : {
-      "$ref" : "#/components/schemas/ExecutionRequests"
+      "$ref" : "#/components/schemas/ExecutionRequestsElectra"
     }
   }
 }

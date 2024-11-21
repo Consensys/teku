@@ -26,8 +26,6 @@ public class ConsolidationRequest
 
   public static final byte REQUEST_TYPE = 0x2;
 
-  public static final ConsolidationRequestSchema SSZ_SCHEMA = new ConsolidationRequestSchema();
-
   protected ConsolidationRequest(
       final ConsolidationRequestSchema schema,
       final Bytes20 sourceAddress,
