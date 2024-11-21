@@ -54,15 +54,14 @@ public class Eth2IncomingRequestHandler<
       final AsyncRunner asyncRunner,
       final PeerLookup peerLookup,
       final LocalMessageHandler<TRequest, TResponse> localMessageHandler,
-      @SuppressWarnings("unused") final NetworkingSpecConfig networkingConfig) {
+      final NetworkingSpecConfig networkingConfig) {
     this.protocolId = protocolId;
     this.asyncRunner = asyncRunner;
     this.peerLookup = peerLookup;
     this.localMessageHandler = localMessageHandler;
     this.responseEncoder = responseEncoder;
     this.requestDecoder = requestDecoder;
-    // TODO: figure out what we need to do here
-    this.respTimeout = Duration.ofSeconds(10);
+    this.respTimeout = Duration.ofSeconds(networkingConfig.getRespTimeout());
   }
 
   @Override
