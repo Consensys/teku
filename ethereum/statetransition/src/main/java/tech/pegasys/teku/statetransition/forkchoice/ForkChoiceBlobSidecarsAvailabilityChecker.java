@@ -98,7 +98,10 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
             new IllegalStateException("Blob sidecars are not validated"));
       }
       if (!blobSidecar.isSignatureValidated()
-          && blobSidecar.getSignedBeaconBlockHeader().hashTreeRoot() != block.hashTreeRoot()) {
+          && !blobSidecar
+              .getSignedBeaconBlockHeader()
+              .hashTreeRoot()
+              .equals(block.hashTreeRoot())) {
         return BlobSidecarsAndValidationResult.notAvailable(
             new IllegalStateException("Blob sidecars block header does not match signed block"));
       }
