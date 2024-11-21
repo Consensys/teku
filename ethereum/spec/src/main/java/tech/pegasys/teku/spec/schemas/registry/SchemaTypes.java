@@ -38,13 +38,17 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockCo
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
@@ -148,7 +152,6 @@ public class SchemaTypes {
       create("BLOBS_BUNDLE_SCHEMA");
 
   // Electra
-
   public static final SchemaId<ExecutionRequestsSchema> EXECUTION_REQUESTS_SCHEMA =
       create("EXECUTION_REQUESTS_SCHEMA");
   public static final SchemaId<SszListSchema<PendingPartialWithdrawal, ?>>
@@ -157,6 +160,15 @@ public class SchemaTypes {
       PENDING_CONSOLIDATIONS_SCHEMA = create("PENDING_CONSOLIDATIONS_SCHEMA");
   public static final SchemaId<SszListSchema<PendingDeposit, ?>> PENDING_DEPOSITS_SCHEMA =
       create("PENDING_DEPOSITS_SCHEMA");
+  public static final SchemaId<ExecutionPayloadAndBlobsBundleSchema>
+      EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA =
+          create("EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA");
+  public static final SchemaId<DepositRequestSchema> DEPOSIT_REQUEST_SCHEMA =
+      create("DEPOSIT_REQUEST_SCHEMA");
+  public static final SchemaId<WithdrawalRequestSchema> WITHDRAWAL_REQUEST_SCHEMA =
+      create("WITHDRAWAL_REQUEST_SCHEMA");
+  public static final SchemaId<ConsolidationRequestSchema> CONSOLIDATION_REQUEST_SCHEMA =
+      create("CONSOLIDATION_REQUEST_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation

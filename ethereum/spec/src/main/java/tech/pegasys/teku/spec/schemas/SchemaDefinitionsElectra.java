@@ -14,86 +14,63 @@
 package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOBS_BUNDLE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CONSOLIDATION_REQUEST_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DEPOSIT_REQUEST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_CONSOLIDATIONS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_DEPOSITS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_PARTIAL_WITHDRAWALS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.WITHDRAWAL_REQUEST_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyBuilderElectra;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
-import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation.PendingConsolidationSchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit.PendingDepositSchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal.PendingPartialWithdrawalSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
-  private final BlockContentsSchema blockContentsSchema;
-  private final SignedBlockContentsSchema signedBlockContentsSchema;
-  private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
-
   private final ExecutionRequestsSchema executionRequestsSchema;
   private final DepositRequestSchema depositRequestSchema;
   private final WithdrawalRequestSchema withdrawalRequestSchema;
   private final ConsolidationRequestSchema consolidationRequestSchema;
-  private final PendingDeposit.PendingDepositSchema pendingDepositSchema;
 
   private final SszListSchema<PendingDeposit, ?> pendingDepositsSchema;
   private final SszListSchema<PendingPartialWithdrawal, ?> pendingPartialWithdrawalsSchema;
   private final SszListSchema<PendingConsolidation, ?> pendingConsolidationsSchema;
 
-  private final PendingPartialWithdrawal.PendingPartialWithdrawalSchema
-      pendingPartialWithdrawalSchema;
-  private final PendingConsolidation.PendingConsolidationSchema pendingConsolidationSchema;
+  private final PendingDepositSchema pendingDepositSchema;
+  private final PendingPartialWithdrawalSchema pendingPartialWithdrawalSchema;
+  private final PendingConsolidationSchema pendingConsolidationSchema;
 
   public SchemaDefinitionsElectra(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
-    final SpecConfigElectra specConfig = SpecConfigElectra.required(schemaRegistry.getSpecConfig());
-
     this.executionRequestsSchema = schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA);
     this.pendingDepositsSchema = schemaRegistry.get(PENDING_DEPOSITS_SCHEMA);
     this.pendingPartialWithdrawalsSchema = schemaRegistry.get(PENDING_PARTIAL_WITHDRAWALS_SCHEMA);
     this.pendingConsolidationsSchema = schemaRegistry.get(PENDING_CONSOLIDATIONS_SCHEMA);
 
-    this.blockContentsSchema =
-        BlockContentsSchema.create(
-            specConfig, getBeaconBlockSchema(), getBlobSchema(), "BlockContentsElectra");
-    this.signedBlockContentsSchema =
-        SignedBlockContentsSchema.create(
-            specConfig,
-            getSignedBeaconBlockSchema(),
-            getBlobSchema(),
-            "SignedBlockContentsElectra");
-    this.executionPayloadAndBlobsBundleSchema =
-        new ExecutionPayloadAndBlobsBundleSchema(
-            getExecutionPayloadSchema(), schemaRegistry.get(BLOBS_BUNDLE_SCHEMA));
-
-    this.depositRequestSchema = DepositRequest.SSZ_SCHEMA;
-    this.withdrawalRequestSchema = WithdrawalRequest.SSZ_SCHEMA;
-    this.consolidationRequestSchema = ConsolidationRequest.SSZ_SCHEMA;
-    this.pendingDepositSchema = new PendingDeposit.PendingDepositSchema();
+    this.depositRequestSchema = schemaRegistry.get(DEPOSIT_REQUEST_SCHEMA);
+    this.withdrawalRequestSchema = schemaRegistry.get(WITHDRAWAL_REQUEST_SCHEMA);
+    this.consolidationRequestSchema = schemaRegistry.get(CONSOLIDATION_REQUEST_SCHEMA);
+    this.pendingDepositSchema =
+        (PendingDepositSchema) schemaRegistry.get(PENDING_DEPOSITS_SCHEMA).getElementSchema();
     this.pendingPartialWithdrawalSchema =
-        new PendingPartialWithdrawal.PendingPartialWithdrawalSchema();
-    this.pendingConsolidationSchema = new PendingConsolidation.PendingConsolidationSchema();
+        (PendingPartialWithdrawalSchema)
+            schemaRegistry.get(PENDING_PARTIAL_WITHDRAWALS_SCHEMA).getElementSchema();
+    this.pendingConsolidationSchema =
+        (PendingConsolidationSchema)
+            schemaRegistry.get(PENDING_CONSOLIDATIONS_SCHEMA).getElementSchema();
   }
 
   public static SchemaDefinitionsElectra required(final SchemaDefinitions schemaDefinitions) {
@@ -106,40 +83,10 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   }
 
   @Override
-  public BlockContainerSchema<BlockContainer> getBlockContainerSchema() {
-    return getBlockContentsSchema().castTypeToBlockContainer();
-  }
-
-  @Override
-  public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlockContainerSchema() {
-    return getSignedBlockContentsSchema().castTypeToSignedBlockContainer();
-  }
-
-  @Override
-  public BuilderPayloadSchema<?> getBuilderPayloadSchema() {
-    return getExecutionPayloadAndBlobsBundleSchema();
-  }
-
-  @Override
   public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
     return new BeaconBlockBodyBuilderElectra(
         getBeaconBlockBodySchema().toVersionElectra().orElseThrow(),
         getBlindedBeaconBlockBodySchema().toBlindedVersionElectra().orElseThrow());
-  }
-
-  @Override
-  public BlockContentsSchema getBlockContentsSchema() {
-    return blockContentsSchema;
-  }
-
-  @Override
-  public SignedBlockContentsSchema getSignedBlockContentsSchema() {
-    return signedBlockContentsSchema;
-  }
-
-  @Override
-  public ExecutionPayloadAndBlobsBundleSchema getExecutionPayloadAndBlobsBundleSchema() {
-    return executionPayloadAndBlobsBundleSchema;
   }
 
   public ExecutionRequestsSchema getExecutionRequestsSchema() {

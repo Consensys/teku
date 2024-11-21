@@ -28,8 +28,6 @@ public class WithdrawalRequest
 
   public static final byte REQUEST_TYPE = 0x1;
 
-  public static final WithdrawalRequestSchema SSZ_SCHEMA = new WithdrawalRequestSchema();
-
   protected WithdrawalRequest(
       final WithdrawalRequestSchema schema,
       final Bytes20 sourceAddress,
