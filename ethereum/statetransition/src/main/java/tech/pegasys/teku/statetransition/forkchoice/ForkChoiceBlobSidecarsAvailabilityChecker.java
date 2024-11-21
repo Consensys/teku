@@ -21,6 +21,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
@@ -67,10 +69,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
     blockBlobSidecarsTracker
         .getCompletionFuture()
         .orTimeout(waitForTrackerCompletionTimeout)
-        .thenApply(
-            __ ->
-                BlobSidecarsAndValidationResult.validResult(
-                    List.copyOf(blockBlobSidecarsTracker.getBlobSidecars().values())))
+        .thenApply(__ -> validateCompletedBlobSidecars())
         .exceptionallyCompose(
             error ->
                 ExceptionUtil.getCause(error, TimeoutException.class)
@@ -86,6 +85,26 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
                     .orElseGet(() -> SafeFuture.failedFuture(error)))
         .propagateTo(validationResult);
     return true;
+  }
+
+  private BlobSidecarsAndValidationResult validateCompletedBlobSidecars() {
+    final List<BlobSidecar> blobSidecars =
+        List.copyOf(blockBlobSidecarsTracker.getBlobSidecars().values());
+    final SignedBeaconBlock block = blockBlobSidecarsTracker.getBlock().orElseThrow();
+
+    for (final BlobSidecar blobSidecar : blobSidecars) {
+      if (!blobSidecar.isKzgAndInclusionProofValidated()) {
+        return BlobSidecarsAndValidationResult.notAvailable(
+            new IllegalStateException("Blob sidecars are not validated"));
+      }
+      if (!blobSidecar.isSignatureValidated()
+          && blobSidecar.getSignedBeaconBlockHeader().hashTreeRoot() != block.hashTreeRoot()) {
+        return BlobSidecarsAndValidationResult.notAvailable(
+            new IllegalStateException("Blob sidecars block header does not match signed block"));
+      }
+    }
+
+    return BlobSidecarsAndValidationResult.validResult(blobSidecars);
   }
 
   @Override
