@@ -52,8 +52,9 @@ public class RpcHandlerTest {
 
   StubAsyncRunner asyncRunner = new StubAsyncRunner();
   RpcMethod<RpcRequestHandler, Object, RpcResponseHandler<?>> rpcMethod = mock(RpcMethod.class);
+  int maxConcurrentRequests = 2;
   RpcHandler<RpcRequestHandler, Object, RpcResponseHandler<?>> rpcHandler =
-      new RpcHandler<>(asyncRunner, rpcMethod);
+      new RpcHandler<>(asyncRunner, rpcMethod, maxConcurrentRequests);
 
   Connection connection = mock(Connection.class);
   Session session = mock(Session.class);

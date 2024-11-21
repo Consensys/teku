@@ -41,7 +41,6 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -66,7 +65,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private final int eth2RpcOutstandingPingThreshold;
 
   private final Duration eth2StatusUpdateInterval;
-  private final SpecConfig specConfig;
 
   Eth2PeerManager(
       final Spec spec,
@@ -99,7 +97,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     this.eth2RpcPingInterval = eth2RpcPingInterval;
     this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
     this.eth2StatusUpdateInterval = eth2StatusUpdateInterval;
-    this.specConfig = spec.getGenesisSpecConfig();
   }
 
   public static Eth2PeerManager create(
@@ -237,7 +234,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                     .ifExceptionGetsHereRaiseABug();
               }
             },
-            Duration.ofSeconds(specConfig.getRespTimeout()))
+            // TODO: change with a constant
+            Duration.ofSeconds(10))
         .finish(
             () -> {},
             error -> {

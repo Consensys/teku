@@ -112,8 +112,6 @@ public class SpecConfigBuilder {
   private Integer maxChunkSize;
   private Integer maxRequestBlocks;
   private Integer epochsPerSubnetSubscription;
-  private Integer ttfbTimeout;
-  private Integer respTimeout;
   private Integer attestationPropagationSlotRange;
   private Integer maximumGossipClockDisparity;
   private Bytes4 messageDomainInvalidSnappy;
@@ -123,6 +121,7 @@ public class SpecConfigBuilder {
   private Integer attestationSubnetCount;
   private Integer attestationSubnetExtraBits;
   private Integer attestationSubnetPrefixBits;
+  private Integer maxConcurrentRequests;
 
   // added after Phase0, so add default values, or will be compatibility issue
   private Integer reorgMaxEpochsSinceFinalization = 2;
@@ -205,8 +204,6 @@ public class SpecConfigBuilder {
                 maxRequestBlocks,
                 epochsPerSubnetSubscription,
                 minEpochsForBlockRequests,
-                ttfbTimeout,
-                respTimeout,
                 attestationPropagationSlotRange,
                 maximumGossipClockDisparity,
                 messageDomainInvalidSnappy,
@@ -215,6 +212,7 @@ public class SpecConfigBuilder {
                 attestationSubnetCount,
                 attestationSubnetExtraBits,
                 attestationSubnetPrefixBits,
+                maxConcurrentRequests,
                 reorgMaxEpochsSinceFinalization,
                 reorgHeadWeightThreshold,
                 reorgParentWeightThreshold,
@@ -279,8 +277,6 @@ public class SpecConfigBuilder {
     constants.put("maxRequestBlocks", maxRequestBlocks);
     constants.put("epochsPerSubnetSubscription", epochsPerSubnetSubscription);
     constants.put("minEpochsForBlockRequests", minEpochsForBlockRequests);
-    constants.put("ttfbTimeout", ttfbTimeout);
-    constants.put("respTimeout", respTimeout);
     constants.put("attestationPropagationSlotRange", attestationPropagationSlotRange);
     constants.put("maximumGossipClockDisparity", maximumGossipClockDisparity);
     constants.put("messageDomainInvalidSnappy", messageDomainInvalidSnappy);
@@ -289,6 +285,7 @@ public class SpecConfigBuilder {
     constants.put("attestationSubnetCount", attestationSubnetCount);
     constants.put("attestationSubnetExtraBits", attestationSubnetExtraBits);
     constants.put("attestationSubnetPrefixBits", attestationSubnetPrefixBits);
+    constants.put("maxConcurrentRequests", maxConcurrentRequests);
     constants.put("reorgMaxEpochsSinceFinalization", reorgMaxEpochsSinceFinalization);
     constants.put("reorgHeadWeightThreshold", reorgHeadWeightThreshold);
     constants.put("reorgParentWeightThreshold", reorgParentWeightThreshold);
@@ -651,16 +648,6 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder ttfbTimeout(final Integer ttfbTimeout) {
-    this.ttfbTimeout = ttfbTimeout;
-    return this;
-  }
-
-  public SpecConfigBuilder respTimeout(final Integer respTimeout) {
-    this.respTimeout = respTimeout;
-    return this;
-  }
-
   public SpecConfigBuilder attestationPropagationSlotRange(
       final Integer attestationPropagationSlotRange) {
     this.attestationPropagationSlotRange = attestationPropagationSlotRange;
@@ -699,6 +686,11 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder attestationSubnetPrefixBits(final Integer attestationSubnetPrefixBits) {
     this.attestationSubnetPrefixBits = attestationSubnetPrefixBits;
+    return this;
+  }
+
+  public SpecConfigBuilder maxConcurrentRequests(final Integer maxConcurrentRequests) {
+    this.maxConcurrentRequests = maxConcurrentRequests;
     return this;
   }
 
