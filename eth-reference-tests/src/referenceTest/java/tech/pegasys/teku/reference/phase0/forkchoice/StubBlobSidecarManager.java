@@ -95,7 +95,11 @@ class StubBlobSidecarManager implements BlobSidecarManager {
         if (blobsAndProofs == null) {
           return SafeFuture.completedFuture(BlobSidecarsAndValidationResult.NOT_REQUIRED);
         }
-        return SafeFuture.completedFuture(validateImmediately(block, blobsAndProofs));
+        try {
+          return SafeFuture.completedFuture(validateImmediately(block, blobsAndProofs));
+        } catch (RuntimeException e) {
+          return SafeFuture.completedFuture(BlobSidecarsAndValidationResult.notAvailable(e));
+        }
       }
 
       private BlobSidecarsAndValidationResult validateImmediately(
