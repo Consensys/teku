@@ -159,6 +159,7 @@ public class BlobSidecarGossipValidator {
     // Optimization: If we have already completely verified BlobSidecar with the same
     // SignedBlockHeader, we can skip most steps and jump to shortened validation
     if (validSignedBlockHeaders.contains(blobSidecar.getSignedBeaconBlockHeader().hashTreeRoot())) {
+      blobSidecar.markSignatureAsValidated();
       return validateBlobSidecarWithKnownValidHeader(blobSidecar, blockHeader);
     }
 
@@ -225,6 +226,8 @@ public class BlobSidecarGossipValidator {
       return completedFuture(reject("BlobSidecar does not pass kzg validation"));
     }
 
+    blobSidecar.markKzgAndInclusionProofAsValidated();
+
     return gossipValidationHelper
         .getParentStateInBlockEpoch(
             parentBlockSlot, blockHeader.getParentRoot(), blockHeader.getSlot())
@@ -259,6 +262,8 @@ public class BlobSidecarGossipValidator {
                   postState, blobSidecar.getSignedBeaconBlockHeader())) {
                 return reject("BlobSidecar block header signature is invalid.");
               }
+
+              blobSidecar.markSignatureAsValidated();
 
               /*
                * Checking it again at the very end because whole method is not synchronized
@@ -316,6 +321,8 @@ public class BlobSidecarGossipValidator {
       return completedFuture(
           reject("BlobSidecar block header does not descend from finalized checkpoint"));
     }
+
+    blobSidecar.markKzgAndInclusionProofAsValidated();
 
     /*
      * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, blob_sidecar.index)

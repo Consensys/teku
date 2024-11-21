@@ -401,16 +401,25 @@ public class HistoricalBatchFetcher {
         blobSidecarsBySlotToImport.getOrDefault(
             block.getSlotAndBlockRoot(), Collections.emptyList());
 
-    final boolean blobsBlockRootMatchBlockRoot =
+    final boolean blobsBlockHeaderRootMatchBlockRoot =
         blobSidecars.stream()
             .allMatch(
-                blobSidecar ->
-                    blobSidecar
-                        .getSignedBeaconBlockHeader()
-                        .hashTreeRoot()
-                        .equals(block.hashTreeRoot()));
+                blobSidecar -> {
+                  final boolean signedHeaderMatchesBlock =
+                      blobSidecar
+                          .getSignedBeaconBlockHeader()
+                          .hashTreeRoot()
+                          .equals(block.hashTreeRoot());
 
-    if (!blobsBlockRootMatchBlockRoot) {
+                  if (signedHeaderMatchesBlock) {
+                    // since we already validated block's signature, we can mark the blob sidecar's
+                    // signature as validated
+                    blobSidecar.markSignatureAsValidated();
+                  }
+                  return signedHeaderMatchesBlock;
+                });
+
+    if (!blobsBlockHeaderRootMatchBlockRoot) {
       throw new IllegalArgumentException(
           String.format(
               "Blob sidecars' signed beacon block header don't match signed block for %s",

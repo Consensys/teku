@@ -142,6 +142,10 @@ public class BlockBlobSidecarsTracker {
         blobSidecar.getBlockRoot().equals(slotAndBlockRoot.getBlockRoot()),
         "Wrong blobSidecar block root");
 
+    checkArgument(
+        blobSidecar.isKzgAndInclusionProofValidated(),
+        "BlobSidecar must be validated before adding");
+
     if (blobSidecarsComplete.isDone()) {
       // already completed
       return false;

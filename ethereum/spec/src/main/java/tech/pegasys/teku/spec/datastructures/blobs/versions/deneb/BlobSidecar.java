@@ -39,6 +39,9 @@ public class BlobSidecar
         SignedBeaconBlockHeader,
         SszBytes32Vector> {
 
+  private volatile boolean kzgAndInclusionProofValidated = false;
+  private volatile boolean signatureValidated = false;
+
   BlobSidecar(final BlobSidecarSchema blobSidecarSchema, final TreeNode backingTreeNode) {
     super(blobSidecarSchema, backingTreeNode);
   }
@@ -137,6 +140,22 @@ public class BlobSidecar
         getBlob().toBriefString(),
         getKZGCommitment().toAbbreviatedString(),
         getKZGProof().toAbbreviatedString());
+  }
+
+  public boolean isKzgAndInclusionProofValidated() {
+    return kzgAndInclusionProofValidated;
+  }
+
+  public void markKzgAndInclusionProofAsValidated() {
+    kzgAndInclusionProofValidated = true;
+  }
+
+  public boolean isSignatureValidated() {
+    return signatureValidated;
+  }
+
+  public void markSignatureAsValidated() {
+    signatureValidated = true;
   }
 
   @Override
