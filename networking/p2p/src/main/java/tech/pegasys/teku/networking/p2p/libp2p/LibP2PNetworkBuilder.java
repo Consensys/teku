@@ -152,7 +152,9 @@ public class LibP2PNetworkBuilder {
   }
 
   protected List<? extends RpcHandler<?, ?, ?>> createRpcHandlers() {
-    return rpcMethods.stream().map(m -> new RpcHandler<>(asyncRunner, m)).toList();
+    return rpcMethods.stream()
+        .map(m -> new RpcHandler<>(asyncRunner, m, networkingSpecConfig.getMaxConcurrentRequests()))
+        .toList();
   }
 
   protected LibP2PGossipNetwork createGossipNetwork() {
