@@ -47,8 +47,6 @@ public class DepositRequest
         SszUInt64.of(index));
   }
 
-  public static final DepositRequestSchema SSZ_SCHEMA = new DepositRequestSchema();
-
   DepositRequest(final DepositRequestSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
