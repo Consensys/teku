@@ -110,10 +110,9 @@ public class Eth2OutgoingRequestHandler<
       for (TResponse maybeResponse : maybeResponses) {
         getResponseProcessor(rpcStream).processResponse(maybeResponse);
       }
-      if (chunksReceived == maximumResponseChunks) {
-        if (!transferToState(DATA_COMPLETED, List.of(EXPECT_DATA))) {
-          abortRequest(rpcStream, new IllegalStateException("Unexpected state: " + state));
-        }
+      if (chunksReceived >= maximumResponseChunks
+          && !transferToState(DATA_COMPLETED, List.of(EXPECT_DATA))) {
+        abortRequest(rpcStream, new IllegalStateException("Unexpected state: " + state));
       }
     } catch (final RpcException e) {
       abortRequest(rpcStream, e);
