@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.p2p.libp2p;
 
 import static tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork.REMOTE_OPEN_STREAMS_RATE_LIMIT;
 import static tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork.REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT;
-import static tech.pegasys.teku.spec.config.Constants.RPC_REQUEST_TIMEOUT;
 
 import com.google.common.base.Preconditions;
 import identify.pb.IdentifyOuterClass;
@@ -154,13 +153,7 @@ public class LibP2PNetworkBuilder {
 
   protected List<? extends RpcHandler<?, ?, ?>> createRpcHandlers() {
     return rpcMethods.stream()
-        .map(
-            m ->
-                new RpcHandler<>(
-                    asyncRunner,
-                    m,
-                    networkingSpecConfig.getMaxConcurrentRequests(),
-                    RPC_REQUEST_TIMEOUT))
+        .map(m -> new RpcHandler<>(asyncRunner, m, networkingSpecConfig.getMaxConcurrentRequests()))
         .toList();
   }
 

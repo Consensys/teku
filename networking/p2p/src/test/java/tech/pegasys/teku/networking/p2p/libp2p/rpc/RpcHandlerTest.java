@@ -28,7 +28,6 @@ import io.libp2p.core.Stream;
 import io.libp2p.core.StreamPromise;
 import io.libp2p.core.multistream.ProtocolBinding;
 import io.libp2p.core.mux.StreamMuxer.Session;
-import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
@@ -39,11 +38,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.Controller;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
-import tech.pegasys.teku.networking.p2p.rpc.MaxConcurrentRequestsException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
@@ -57,10 +54,8 @@ public class RpcHandlerTest {
   StubAsyncRunner asyncRunner = new StubAsyncRunner();
   RpcMethod<RpcRequestHandler, Object, RpcResponseHandler<?>> rpcMethod = mock(RpcMethod.class);
   int maxConcurrentRequests = 2;
-  Duration concurrentRequestsQueueTimeout = Duration.ofMillis(200);
   RpcHandler<RpcRequestHandler, Object, RpcResponseHandler<?>> rpcHandler =
-      new RpcHandler<>(
-          asyncRunner, rpcMethod, maxConcurrentRequests, concurrentRequestsQueueTimeout);
+      new RpcHandler<>(asyncRunner, rpcMethod, maxConcurrentRequests);
 
   Connection connection = mock(Connection.class);
   Session session = mock(Session.class);
@@ -256,34 +251,35 @@ public class RpcHandlerTest {
 
   @Test
   @SuppressWarnings("FutureReturnValueIgnored")
-  void requestThrowsIfThereIsNoConcurrentRequestsAvailabilityInTime() {
+  void requestIsThrottledIfQueueIsFull() {
     // fill the queue
     IntStream.range(0, maxConcurrentRequests)
         .forEach(__ -> rpcHandler.sendRequest(connection, request, responseHandler));
 
-    // request should fail after the timeout
-    SafeFutureAssert.assertThatSafeFuture(
-            rpcHandler.sendRequest(connection, request, responseHandler))
-        .isCompletedExceptionallyWith(MaxConcurrentRequestsException.class);
-  }
-
-  @Test
-  @SuppressWarnings("FutureReturnValueIgnored")
-  void requestCompletesIfConcurrentRequestsQueueIsFreed() {
-    // fill the queue
-    IntStream.range(0, maxConcurrentRequests)
-        .forEach(__ -> rpcHandler.sendRequest(connection, request, responseHandler));
-
+    final StreamPromise<Controller<RpcRequestHandler>> streamPromise =
+        new StreamPromise<>(new CompletableFuture<>(), new CompletableFuture<>());
+    when(session.createStream((ProtocolBinding<Controller<RpcRequestHandler>>) any()))
+        .thenReturn(streamPromise);
+    final Stream stream = mock(Stream.class);
     streamPromise.getStream().complete(stream);
     streamPromise.getController().complete(controller);
-    stream.getProtocol().complete("test");
-    writeFuture.complete(null);
+    CompletableFuture<String> protocolIdFuture = new CompletableFuture<>();
+    when(stream.getProtocol()).thenReturn(protocolIdFuture);
+    protocolIdFuture.complete("test");
 
-    // request should complete since queue is freed
-    final SafeFuture<RpcStreamController<RpcRequestHandler>> future =
+    final SafeFuture<RpcStreamController<RpcRequestHandler>> throttledResult =
         rpcHandler.sendRequest(connection, request, responseHandler);
 
-    assertThat(future).isCompleted();
+    assertThat(throttledResult).isNotDone();
+
+    // empty the queue
+    this.streamPromise.getStream().complete(stream);
+    this.streamPromise.getController().complete(controller);
+    this.stream.getProtocol().complete("test");
+    writeFuture.complete(null);
+
+    // throttled request should have completed now
+    assertThat(throttledResult).isCompleted();
   }
 
   @SuppressWarnings("UnnecessaryAsync")
