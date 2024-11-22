@@ -720,11 +720,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                         blobAndProof.get(),
                         beaconBlockBodyDeneb,
                         signedBeaconBlockHeader);
-
-                blobSidecar.markSignatureAsValidated();
-                // assume kzg validation done by local EL
-                blobSidecar.markKzgAndInclusionProofAsValidated();
-
                 onNewBlobSidecar(blobSidecar, LOCAL_EL);
               }
             });
@@ -741,14 +736,22 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     final SszKZGCommitment sszKZGCommitment =
         beaconBlockBodyDeneb.getBlobKzgCommitments().get(blobIdentifier.getIndex().intValue());
 
-    return blobSidecarSchema.create(
-        blobIdentifier.getIndex(),
-        blobAndProof.blob(),
-        sszKZGCommitment,
-        new SszKZGProof(blobAndProof.proof()),
-        signedBeaconBlockHeader,
-        miscHelpersDeneb.computeKzgCommitmentInclusionProof(
-            blobIdentifier.getIndex(), beaconBlockBodyDeneb));
+    final BlobSidecar blobSidecar =
+        blobSidecarSchema.create(
+            blobIdentifier.getIndex(),
+            blobAndProof.blob(),
+            sszKZGCommitment,
+            new SszKZGProof(blobAndProof.proof()),
+            signedBeaconBlockHeader,
+            miscHelpersDeneb.computeKzgCommitmentInclusionProof(
+                blobIdentifier.getIndex(), beaconBlockBodyDeneb));
+
+    blobSidecar.markSignatureAsValidated();
+    blobSidecar.markKzgCommitmentInclusionProofAsValidated();
+    // assume kzg validation done by local EL
+    blobSidecar.markKzgAsValidated();
+
+    return blobSidecar;
   }
 
   private synchronized void fetchMissingContentFromRemotePeers(

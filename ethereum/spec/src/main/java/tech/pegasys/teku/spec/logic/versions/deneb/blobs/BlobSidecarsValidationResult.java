@@ -16,5 +16,6 @@ package tech.pegasys.teku.spec.logic.versions.deneb.blobs;
 public enum BlobSidecarsValidationResult {
   NOT_REQUIRED,
   NOT_AVAILABLE,
+  INVALID,
   VALID
 }

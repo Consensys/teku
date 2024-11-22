@@ -14,9 +14,7 @@
 package tech.pegasys.teku.statetransition.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -157,29 +155,12 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   }
 
   @Test
-  public void onNewBlobSidecar_shouldThrowIfNotMarkedKzgAndInclusionProofAsValidated() {
-    final BlobSidecar blobSidecar =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot))
-            .build();
-
-    assertThat(blobSidecar.isKzgAndInclusionProofValidated()).isFalse();
-
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP));
-  }
-
-  @Test
   public void onNewBlobSidecar_addTrackerWithBlobSidecarIgnoringDuplicates() {
     final BlobSidecar blobSidecar =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
             .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot))
             .build();
-
-    blobSidecar.markKzgAndInclusionProofAsValidated();
 
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP);
 
@@ -208,8 +189,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .createRandomBlobSidecarBuilder()
             .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot))
             .build();
-
-    blobSidecar.markKzgAndInclusionProofAsValidated();
 
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP);
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP);
@@ -246,10 +225,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot))
             .build();
 
-    blobSidecar1.markKzgAndInclusionProofAsValidated();
-    blobSidecar2.markKzgAndInclusionProofAsValidated();
-    blobSidecar3.markKzgAndInclusionProofAsValidated();
-
     when(blobSidecarGossipValidator.markForEquivocation(blobSidecar1)).thenReturn(true);
 
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar1, RemoteOrigin.LOCAL_EL);
@@ -271,8 +246,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot))
             .build();
 
-    blobSidecar1.markKzgAndInclusionProofAsValidated();
-
     when(blobSidecarGossipValidator.markForEquivocation(blobSidecar1)).thenReturn(false);
 
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar1, RemoteOrigin.LOCAL_EL);
@@ -291,8 +264,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .createRandomBlobSidecarBuilder()
             .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot))
             .build();
-
-    blobSidecar1.markKzgAndInclusionProofAsValidated();
 
     when(blobSidecarGossipValidator.markForEquivocation(blobSidecar1)).thenReturn(false);
     blockBlobSidecarsTrackersPool.onSlot(currentSlot.plus(1));
@@ -381,8 +352,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
     final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecarsForBlock(block).get(0);
 
-    blobSidecar.markKzgAndInclusionProofAsValidated();
-
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP);
     blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
 
@@ -424,10 +393,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .signedBeaconBlockHeader(block.asHeader())
             .index(UInt64.ONE)
             .build();
-
-    blobSidecar0.markKzgAndInclusionProofAsValidated();
-    blobSidecar1.markKzgAndInclusionProofAsValidated();
-    blobSidecar1bis.markKzgAndInclusionProofAsValidated();
 
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar0, RemoteOrigin.GOSSIP);
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar1, RemoteOrigin.GOSSIP);
@@ -481,8 +446,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
 
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
-
-    blobSidecars.forEach(BlobSidecar::markKzgAndInclusionProofAsValidated);
 
     blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
 
@@ -751,21 +714,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     engineGetBlobsResponse.complete(blobAndProofsFromEL);
 
-    verify(tracker)
-        .add(
-            argThat(
-                b ->
-                    b.equals(missingBlobSidecars.getFirst())
-                        && b.isKzgAndInclusionProofValidated()
-                        && b.isSignatureValidated())); // 0
-    verify(tracker)
-        .add(
-            argThat(
-                b ->
-                    b.equals(missingBlobSidecars.getLast())
-                        && b.isKzgAndInclusionProofValidated()
-                        && b.isSignatureValidated())); // 2)
-
+    verify(tracker).add(missingBlobSidecars.getFirst()); // 0
+    verify(tracker).add(missingBlobSidecars.getLast()); // 2
     verify(tracker, times(2)).add(any());
 
     assertStats("blob_sidecar", "local_el_fetch", 3);
@@ -976,8 +926,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .createRandomBlobSidecarBuilder()
             .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(slot))
             .build();
-
-    blobSidecar.markKzgAndInclusionProofAsValidated();
 
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP);
 
@@ -1297,8 +1245,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot))
             .build();
 
-    blobSidecar.markKzgAndInclusionProofAsValidated();
-
     // new from gossip
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP);
 
@@ -1324,8 +1270,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
                 dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot.increment()))
             .build();
 
-    blobSidecar2.markKzgAndInclusionProofAsValidated();
-
     // new from RPC
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar2, RemoteOrigin.RPC);
 
@@ -1340,8 +1284,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .signedBeaconBlockHeader(
                 dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot.increment()))
             .build();
-
-    blobSidecar3.markKzgAndInclusionProofAsValidated();
 
     // new from LOCAL_EL
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar3, RemoteOrigin.LOCAL_EL);
@@ -1406,8 +1348,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .createRandomBlobSidecarBuilder()
             .signedBeaconBlockHeader(block4.asHeader())
             .build();
-
-    blobSidecar4.markKzgAndInclusionProofAsValidated();
 
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar4, RemoteOrigin.RPC);
 
