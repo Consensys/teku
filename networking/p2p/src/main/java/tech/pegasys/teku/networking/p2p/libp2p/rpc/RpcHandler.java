@@ -30,8 +30,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,12 +38,12 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFuture.Interruptor;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.Controller;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
-import tech.pegasys.teku.networking.p2p.rpc.MaxConcurrentRequestsException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
@@ -64,18 +62,15 @@ public class RpcHandler<
 
   private final AsyncRunner asyncRunner;
   private final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod;
-  private final Semaphore concurrentRequestsSemaphore;
-  private final Duration concurrentRequestsQueueTimeout;
+  private final ThrottlingTaskQueue concurrentRequestsQueue;
 
   public RpcHandler(
       final AsyncRunner asyncRunner,
       final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod,
-      final int maxConcurrentRequests,
-      final Duration concurrentRequestsQueueTimeout) {
+      final int maxConcurrentRequests) {
     this.asyncRunner = asyncRunner;
     this.rpcMethod = rpcMethod;
-    concurrentRequestsSemaphore = new Semaphore(maxConcurrentRequests);
-    this.concurrentRequestsQueueTimeout = concurrentRequestsQueueTimeout;
+    concurrentRequestsQueue = ThrottlingTaskQueue.create(maxConcurrentRequests);
   }
 
   public RpcMethod<TOutgoingHandler, TRequest, TRespHandler> getRpcMethod() {
@@ -84,25 +79,18 @@ public class RpcHandler<
 
   public SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
       final Connection connection, final TRequest request, final TRespHandler responseHandler) {
+    return concurrentRequestsQueue.queueTask(
+        () -> sendRequestInternal(connection, request, responseHandler));
+  }
+
+  public SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequestInternal(
+      final Connection connection, final TRequest request, final TRespHandler responseHandler) {
 
     final Bytes initialPayload;
     try {
       initialPayload = rpcMethod.encodeRequest(request);
     } catch (Exception e) {
       return SafeFuture.failedFuture(e);
-    }
-
-    try {
-      if (!concurrentRequestsSemaphore.tryAcquire(
-          concurrentRequestsQueueTimeout.toMillis(), TimeUnit.MILLISECONDS)) {
-        return SafeFuture.failedFuture(
-            new MaxConcurrentRequestsException(
-                String.format(
-                    "Timed out while waiting for concurrent requests availability for protocol(s) %s",
-                    rpcMethod.getIds())));
-      }
-    } catch (InterruptedException e) {
-      return SafeFuture.failedFuture(new RuntimeException("Thread interrupted", e));
     }
 
     final Interruptor closeInterruptor =
@@ -146,8 +134,7 @@ public class RpcHandler<
               if (ExceptionUtil.hasCause(err, ConnectionClosedException.class)) {
                 throw new PeerDisconnectedException(err);
               }
-            })
-        .alwaysRun(concurrentRequestsSemaphore::release);
+            });
   }
 
   private void closeStreamAbruptly(final Stream stream) {
