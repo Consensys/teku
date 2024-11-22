@@ -111,7 +111,7 @@ public class BlobSidecarGossipValidatorTest {
             any(), eq(proposerIndex), any(), eq(postState)))
         .thenReturn(true);
     when(miscHelpersDeneb.verifyBlobKzgProof(any(), any(BlobSidecar.class))).thenReturn(true);
-    when(miscHelpersDeneb.verifyBlobSidecarMerkleProof(any())).thenReturn(true);
+    when(miscHelpersDeneb.verifyBlobKzgCommitmentInclusionProof(any())).thenReturn(true);
   }
 
   @TestTemplate
@@ -224,7 +224,7 @@ public class BlobSidecarGossipValidatorTest {
 
   @TestTemplate
   void shouldRejectWhenInclusionProofFailsValidation() {
-    when(miscHelpersDeneb.verifyBlobSidecarMerkleProof(any())).thenReturn(false);
+    when(miscHelpersDeneb.verifyBlobKzgCommitmentInclusionProof(any())).thenReturn(false);
 
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
@@ -292,7 +292,7 @@ public class BlobSidecarGossipValidatorTest {
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
-    verify(miscHelpersDeneb).verifyBlobSidecarMerkleProof(blobSidecar);
+    verify(miscHelpersDeneb).verifyBlobKzgCommitmentInclusionProof(blobSidecar);
     verify(miscHelpersDeneb).verifyBlobKzgProof(kzg, blobSidecar);
     verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
     verify(gossipValidationHelper).isProposerTheExpectedProposer(any(), any(), any());
@@ -304,7 +304,7 @@ public class BlobSidecarGossipValidatorTest {
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
 
-    verify(miscHelpersDeneb, never()).verifyBlobSidecarMerkleProof(blobSidecar);
+    verify(miscHelpersDeneb, never()).verifyBlobKzgCommitmentInclusionProof(blobSidecar);
     verify(miscHelpersDeneb, never()).verifyBlobKzgProof(kzg, blobSidecar);
     verify(gossipValidationHelper, never()).getParentStateInBlockEpoch(any(), any(), any());
     verify(gossipValidationHelper, never()).isProposerTheExpectedProposer(any(), any(), any());
@@ -317,7 +317,7 @@ public class BlobSidecarGossipValidatorTest {
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
-    verify(miscHelpersDeneb).verifyBlobSidecarMerkleProof(blobSidecar);
+    verify(miscHelpersDeneb).verifyBlobKzgCommitmentInclusionProof(blobSidecar);
     verify(miscHelpersDeneb).verifyBlobKzgProof(kzg, blobSidecar);
     verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
     verify(gossipValidationHelper).isProposerTheExpectedProposer(any(), any(), any());
@@ -336,7 +336,7 @@ public class BlobSidecarGossipValidatorTest {
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar0))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
-    verify(miscHelpersDeneb).verifyBlobSidecarMerkleProof(blobSidecar0);
+    verify(miscHelpersDeneb).verifyBlobKzgCommitmentInclusionProof(blobSidecar0);
     verify(miscHelpersDeneb).verifyBlobKzgProof(kzg, blobSidecar0);
     verify(gossipValidationHelper, never()).getParentStateInBlockEpoch(any(), any(), any());
     verify(gossipValidationHelper, never()).isProposerTheExpectedProposer(any(), any(), any());
@@ -365,7 +365,7 @@ public class BlobSidecarGossipValidatorTest {
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecarNew))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
 
-    verify(miscHelpersDeneb).verifyBlobSidecarMerkleProof(blobSidecarNew);
+    verify(miscHelpersDeneb).verifyBlobKzgCommitmentInclusionProof(blobSidecarNew);
     verify(miscHelpersDeneb).verifyBlobKzgProof(kzg, blobSidecarNew);
     verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
   }
