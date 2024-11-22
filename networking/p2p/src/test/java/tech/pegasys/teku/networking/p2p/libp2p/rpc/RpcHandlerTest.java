@@ -31,6 +31,7 @@ import io.libp2p.core.mux.StreamMuxer.Session;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 import kotlin.Unit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,9 +39,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.Controller;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
+import tech.pegasys.teku.networking.p2p.rpc.MaxConcurrentRequestsException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
@@ -54,7 +57,7 @@ public class RpcHandlerTest {
   StubAsyncRunner asyncRunner = new StubAsyncRunner();
   RpcMethod<RpcRequestHandler, Object, RpcResponseHandler<?>> rpcMethod = mock(RpcMethod.class);
   int maxConcurrentRequests = 2;
-  Duration concurrentRequestsQueueTimeout = Duration.ofMillis(100);
+  Duration concurrentRequestsQueueTimeout = Duration.ofMillis(200);
   RpcHandler<RpcRequestHandler, Object, RpcResponseHandler<?>> rpcHandler =
       new RpcHandler<>(
           asyncRunner, rpcMethod, maxConcurrentRequests, concurrentRequestsQueueTimeout);
@@ -249,6 +252,36 @@ public class RpcHandlerTest {
     assertThatThrownBy(future::get).hasRootCauseInstanceOf(expectedException);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
     verify(stream).close();
+  }
+
+  @Test
+  void requestThrowsIfThereIsNoConcurrentRequestsAvailabilityInTime() {
+    // fill the queue
+    IntStream.range(0, maxConcurrentRequests)
+        .forEach(__ -> rpcHandler.sendRequest(connection, request, responseHandler));
+
+    // request should fail after the timeout
+    SafeFutureAssert.assertThatSafeFuture(
+            rpcHandler.sendRequest(connection, request, responseHandler))
+        .isCompletedExceptionallyWith(MaxConcurrentRequestsException.class);
+  }
+
+  @Test
+  void requestCompletesIfConcurrentRequestsQueueIsFreed() {
+    // fill the queue
+    IntStream.range(0, maxConcurrentRequests)
+        .forEach(__ -> rpcHandler.sendRequest(connection, request, responseHandler));
+
+    streamPromise.getStream().complete(stream);
+    streamPromise.getController().complete(controller);
+    stream.getProtocol().complete("test");
+    writeFuture.complete(null);
+
+    // request should complete since queue is freed
+    final SafeFuture<RpcStreamController<RpcRequestHandler>> future =
+        rpcHandler.sendRequest(connection, request, responseHandler);
+
+    assertThat(future).isCompleted();
   }
 
   @SuppressWarnings("UnnecessaryAsync")
