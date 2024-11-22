@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.p2p.libp2p.rpc;
 
 import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
-import static tech.pegasys.teku.spec.config.Constants.RPC_REQUEST_TIMEOUT;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
@@ -66,14 +65,17 @@ public class RpcHandler<
   private final AsyncRunner asyncRunner;
   private final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod;
   private final Semaphore concurrentRequestsSemaphore;
+  private final Duration concurrentRequestsQueueTimeout;
 
   public RpcHandler(
       final AsyncRunner asyncRunner,
       final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod,
-      final int maxConcurrentRequests) {
+      final int maxConcurrentRequests,
+      final Duration concurrentRequestsQueueTimeout) {
     this.asyncRunner = asyncRunner;
     this.rpcMethod = rpcMethod;
     concurrentRequestsSemaphore = new Semaphore(maxConcurrentRequests);
+    this.concurrentRequestsQueueTimeout = concurrentRequestsQueueTimeout;
   }
 
   public RpcMethod<TOutgoingHandler, TRequest, TRespHandler> getRpcMethod() {
@@ -83,25 +85,24 @@ public class RpcHandler<
   public SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
       final Connection connection, final TRequest request, final TRespHandler responseHandler) {
 
-    try {
-      if (!concurrentRequestsSemaphore.tryAcquire(
-          RPC_REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {
-        return SafeFuture.failedFuture(
-            new MaxConcurrentRequestsException(
-                String.format(
-                    "Maximum number of concurrent requests for protocol(s) %s has been reached",
-                    rpcMethod.getIds())));
-      }
-    } catch (InterruptedException e) {
-      return SafeFuture.failedFuture(new RuntimeException("Thread interrupted", e));
-    }
-
     final Bytes initialPayload;
     try {
       initialPayload = rpcMethod.encodeRequest(request);
     } catch (Exception e) {
-      concurrentRequestsSemaphore.release();
       return SafeFuture.failedFuture(e);
+    }
+
+    try {
+      if (!concurrentRequestsSemaphore.tryAcquire(
+          concurrentRequestsQueueTimeout.toMillis(), TimeUnit.MILLISECONDS)) {
+        return SafeFuture.failedFuture(
+            new MaxConcurrentRequestsException(
+                String.format(
+                    "Timed out while waiting for concurrent requests availability for protocol(s) %s",
+                    rpcMethod.getIds())));
+      }
+    } catch (InterruptedException e) {
+      return SafeFuture.failedFuture(new RuntimeException("Thread interrupted", e));
     }
 
     final Interruptor closeInterruptor =

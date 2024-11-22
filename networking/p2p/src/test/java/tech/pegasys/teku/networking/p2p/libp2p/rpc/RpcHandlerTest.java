@@ -28,6 +28,7 @@ import io.libp2p.core.Stream;
 import io.libp2p.core.StreamPromise;
 import io.libp2p.core.multistream.ProtocolBinding;
 import io.libp2p.core.mux.StreamMuxer.Session;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import kotlin.Unit;
@@ -53,8 +54,10 @@ public class RpcHandlerTest {
   StubAsyncRunner asyncRunner = new StubAsyncRunner();
   RpcMethod<RpcRequestHandler, Object, RpcResponseHandler<?>> rpcMethod = mock(RpcMethod.class);
   int maxConcurrentRequests = 2;
+  Duration concurrentRequestsQueueTimeout = Duration.ofMillis(100);
   RpcHandler<RpcRequestHandler, Object, RpcResponseHandler<?>> rpcHandler =
-      new RpcHandler<>(asyncRunner, rpcMethod, maxConcurrentRequests);
+      new RpcHandler<>(
+          asyncRunner, rpcMethod, maxConcurrentRequests, concurrentRequestsQueueTimeout);
 
   Connection connection = mock(Connection.class);
   Session session = mock(Session.class);
