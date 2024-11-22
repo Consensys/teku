@@ -721,6 +721,10 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                         beaconBlockBodyDeneb,
                         signedBeaconBlockHeader);
 
+                blobSidecar.markSignatureAsValidated();
+                // assume kzg validation done by local EL
+                blobSidecar.markKzgAndInclusionProofAsValidated();
+
                 onNewBlobSidecar(blobSidecar, LOCAL_EL);
               }
             });
