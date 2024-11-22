@@ -302,7 +302,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final Optional<ChainHead> originalChainHead = chainHead;
 
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy = store.getForkChoiceStrategy();
-      // FIXME: with transitioned stateRoot already, clarify with Dmitrii what he meant by fix me here
+
       final Optional<ProtoNodeData> maybeBlockData = forkChoiceStrategy.getBlockData(root);
       if (maybeBlockData.isEmpty()) {
         LOG.error(
