@@ -70,8 +70,7 @@ public class GetStateByBlockRoot extends RestApiEndpoint {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
 
     final String blockId = request.getPathParameter(PARAMETER_BLOCK_ID);
-    // FIXME: not sure. Are we ok to return here transitioned state on keyword finalized?
-    SafeFuture<Optional<BeaconState>> future = chainDataProvider.getBeaconStateByBlockId(blockId);
+        SafeFuture<Optional<BeaconState>> future = chainDataProvider.getBeaconStateByBlockId(blockId);
 
     request.respondAsync(
         future.thenApply(
