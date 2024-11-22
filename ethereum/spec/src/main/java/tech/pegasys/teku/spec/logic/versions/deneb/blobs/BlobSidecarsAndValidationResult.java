@@ -43,6 +43,18 @@ public class BlobSidecarsAndValidationResult {
         BlobSidecarsValidationResult.VALID, blobSidecars, Optional.empty());
   }
 
+  public static BlobSidecarsAndValidationResult invalidResult(
+      final List<BlobSidecar> blobSidecars) {
+    return new BlobSidecarsAndValidationResult(
+        BlobSidecarsValidationResult.INVALID, blobSidecars, Optional.empty());
+  }
+
+  public static BlobSidecarsAndValidationResult invalidResult(
+      final List<BlobSidecar> blobSidecars, final Throwable cause) {
+    return new BlobSidecarsAndValidationResult(
+        BlobSidecarsValidationResult.INVALID, blobSidecars, Optional.of(cause));
+  }
+
   public static BlobSidecarsAndValidationResult notAvailable(final Throwable cause) {
     return new BlobSidecarsAndValidationResult(
         BlobSidecarsValidationResult.NOT_AVAILABLE, Collections.emptyList(), Optional.of(cause));
@@ -75,6 +87,18 @@ public class BlobSidecarsAndValidationResult {
 
   public boolean isNotRequired() {
     return validationResult.equals(BlobSidecarsValidationResult.NOT_REQUIRED);
+  }
+
+  public boolean isInvalid() {
+    return validationResult.equals(BlobSidecarsValidationResult.INVALID);
+  }
+
+  public boolean isNotAvailable() {
+    return validationResult.equals(BlobSidecarsValidationResult.NOT_AVAILABLE);
+  }
+
+  public boolean isFailure() {
+    return isInvalid() || isNotAvailable();
   }
 
   public boolean isSuccess() {

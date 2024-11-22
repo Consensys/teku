@@ -29,7 +29,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
@@ -62,11 +61,6 @@ public class BlockBlobSidecarsTrackerTest {
           .map(
               blobSidecar -> new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex()))
           .collect(Collectors.toList());
-
-  @BeforeEach
-  void setUp() {
-    blobSidecarsForBlock.forEach(BlobSidecar::markKzgAndInclusionProofAsValidated);
-  }
 
   @Test
   void isNotCompletedJustAfterCreation() {
@@ -367,8 +361,6 @@ public class BlockBlobSidecarsTrackerTest {
             .index(UInt64.valueOf(100))
             .build();
 
-    toAdd.markKzgAndInclusionProofAsValidated();
-
     blockBlobSidecarsTracker.add(toAdd);
 
     final List<BlobIdentifier> knownMissing =
@@ -445,13 +437,10 @@ public class BlockBlobSidecarsTrackerTest {
   }
 
   private BlobSidecar createBlobSidecar(final UInt64 index) {
-    final BlobSidecar blobSidecar =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .signedBeaconBlockHeader(block.asHeader())
-            .index(index)
-            .build();
-    blobSidecar.markKzgAndInclusionProofAsValidated();
-    return blobSidecar;
+    return dataStructureUtil
+        .createRandomBlobSidecarBuilder()
+        .signedBeaconBlockHeader(block.asHeader())
+        .index(index)
+        .build();
   }
 }

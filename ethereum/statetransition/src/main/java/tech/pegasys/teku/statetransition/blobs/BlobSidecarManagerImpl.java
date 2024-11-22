@@ -20,6 +20,7 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -35,6 +36,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final BlobSidecarGossipValidator validator;
+  private final KZG kzg;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final FutureItems<BlobSidecar> futureBlobSidecars;
   private final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots;
@@ -47,11 +49,13 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
       final RecentChainData recentChainData,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final BlobSidecarGossipValidator validator,
+      final KZG kzg,
       final FutureItems<BlobSidecar> futureBlobSidecars,
       final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.validator = validator;
+    this.kzg = kzg;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.futureBlobSidecars = futureBlobSidecars;
     this.invalidBlobSidecarRoots = invalidBlobSidecarRoots;
@@ -119,7 +123,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
         blockBlobSidecarsTrackersPool.getOrCreateBlockBlobSidecarsTracker(block);
 
     return new ForkChoiceBlobSidecarsAvailabilityChecker(
-        spec, recentChainData, blockBlobSidecarsTracker);
+        spec, recentChainData, blockBlobSidecarsTracker, kzg);
   }
 
   @Override

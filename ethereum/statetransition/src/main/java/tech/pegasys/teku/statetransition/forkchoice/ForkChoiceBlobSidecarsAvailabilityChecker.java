@@ -20,6 +20,7 @@ import java.util.concurrent.TimeoutException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -36,6 +37,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final BlockBlobSidecarsTracker blockBlobSidecarsTracker;
+  private final KZG kzg;
 
   private final SafeFuture<BlobSidecarsAndValidationResult> validationResult = new SafeFuture<>();
 
@@ -44,10 +46,12 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   public ForkChoiceBlobSidecarsAvailabilityChecker(
       final Spec spec,
       final RecentChainData recentChainData,
-      final BlockBlobSidecarsTracker blockBlobSidecarsTracker) {
+      final BlockBlobSidecarsTracker blockBlobSidecarsTracker,
+      final KZG kzg) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.blockBlobSidecarsTracker = blockBlobSidecarsTracker;
+    this.kzg = kzg;
     this.waitForTrackerCompletionTimeout =
         calculateCompletionTimeout(spec, blockBlobSidecarsTracker.getSlotAndBlockRoot().getSlot());
   }
@@ -57,10 +61,12 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
       final Spec spec,
       final RecentChainData recentChainData,
       final BlockBlobSidecarsTracker blockBlobSidecarsTracker,
+      final KZG kzg,
       final Duration waitForTrackerCompletionTimeout) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.blockBlobSidecarsTracker = blockBlobSidecarsTracker;
+    this.kzg = kzg;
     this.waitForTrackerCompletionTimeout = waitForTrackerCompletionTimeout;
   }
 
@@ -92,11 +98,15 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
         List.copyOf(blockBlobSidecarsTracker.getBlobSidecars().values());
     final SignedBeaconBlock block = blockBlobSidecarsTracker.getBlock().orElseThrow();
 
-    for (final BlobSidecar blobSidecar : blobSidecars) {
-      if (!blobSidecar.isKzgAndInclusionProofValidated()) {
-        return BlobSidecarsAndValidationResult.notAvailable(
-            new IllegalStateException("Blob sidecars are not validated"));
+    try {
+      if (!spec.atSlot(block.getSlot()).miscHelpers().verifyBlobKzgProofBatch(kzg, blobSidecars)) {
+        return BlobSidecarsAndValidationResult.invalidResult(blobSidecars);
       }
+    } catch (final Exception ex) {
+      return BlobSidecarsAndValidationResult.invalidResult(blobSidecars, ex);
+    }
+
+    for (final BlobSidecar blobSidecar : blobSidecars) {
       if (!blobSidecar.isSignatureValidated()
           && !blobSidecar
               .getSignedBeaconBlockHeader()

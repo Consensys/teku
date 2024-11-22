@@ -95,11 +95,7 @@ class StubBlobSidecarManager implements BlobSidecarManager {
         if (blobsAndProofs == null) {
           return SafeFuture.completedFuture(BlobSidecarsAndValidationResult.NOT_REQUIRED);
         }
-        try {
-          return SafeFuture.completedFuture(validateImmediately(block, blobsAndProofs));
-        } catch (RuntimeException e) {
-          return SafeFuture.completedFuture(BlobSidecarsAndValidationResult.notAvailable(e));
-        }
+        return SafeFuture.completedFuture(validateImmediately(block, blobsAndProofs));
       }
 
       private BlobSidecarsAndValidationResult validateImmediately(
@@ -111,8 +107,12 @@ class StubBlobSidecarManager implements BlobSidecarManager {
                 .map(SszKZGCommitment::getKZGCommitment)
                 .toList();
         final List<Bytes> blobs = blobsAndProofs.blobs.stream().map(Blob::getBytes).toList();
-        if (!kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, blobsAndProofs.proofs)) {
-          throw new RuntimeException("Invalid KZG proof");
+        try {
+          if (!kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, blobsAndProofs.proofs)) {
+            return BlobSidecarsAndValidationResult.invalidResult(Collections.emptyList());
+          }
+        } catch (final Exception ex) {
+          return BlobSidecarsAndValidationResult.invalidResult(Collections.emptyList(), ex);
         }
         return BlobSidecarsAndValidationResult.validResult(Collections.emptyList());
       }

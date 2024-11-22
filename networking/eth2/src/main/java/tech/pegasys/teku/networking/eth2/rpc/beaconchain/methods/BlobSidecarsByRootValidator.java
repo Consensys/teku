@@ -47,7 +47,5 @@ public class BlobSidecarsByRootValidator extends AbstractBlobSidecarsValidator {
 
     verifyInclusionProof(blobSidecar);
     verifyKzg(blobSidecar);
-
-    blobSidecar.markKzgAndInclusionProofAsValidated();
   }
 }

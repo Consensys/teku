@@ -65,7 +65,7 @@ public class AbstractBlobSidecarsValidator {
   private boolean verifyBlobSidecarInclusionProof(final BlobSidecar blobSidecar) {
     try {
       return MiscHelpersDeneb.required(spec.atSlot(blobSidecar.getSlot()).miscHelpers())
-          .verifyBlobSidecarMerkleProof(blobSidecar);
+          .verifyBlobKzgCommitmentInclusionProof(blobSidecar);
     } catch (final Exception ex) {
       LOG.debug(
           "Block inclusion proof verification failed for BlobSidecar {}",

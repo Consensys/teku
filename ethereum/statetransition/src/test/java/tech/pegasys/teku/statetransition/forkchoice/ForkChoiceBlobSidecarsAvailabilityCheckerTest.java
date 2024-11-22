@@ -24,6 +24,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import com.google.common.collect.ImmutableSortedMap;
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,11 +32,13 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsValidationResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -50,6 +53,8 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
 
   private final Spec spec = mock(Spec.class);
   private final SpecVersion specVersion = mock(SpecVersion.class);
+  private final MiscHelpers miscHelpers = mock(MiscHelpers.class);
+  private final KZG kzg = mock(KZG.class);
   private final UpdatableStore store = mock(UpdatableStore.class);
   private final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
       mock(BlockBlobSidecarsTracker.class);
@@ -65,6 +70,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   @BeforeEach
   void setUp() {
     when(spec.atSlot(any())).thenReturn(specVersion);
+    when(specVersion.miscHelpers()).thenReturn(miscHelpers);
     when(recentChainData.getStore()).thenReturn(store);
     when(blockBlobSidecarsTracker.getCompletionFuture()).thenReturn(trackerCompletionFuture);
   }
@@ -72,6 +78,8 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   @Test
   void shouldVerifyAvailableBlobs() throws Exception {
     prepareInitialAvailability();
+
+    when(miscHelpers.verifyBlobKzgProofBatch(any(), any())).thenReturn(true);
 
     final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
         blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
@@ -90,6 +98,58 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     Waiter.waitFor(availabilityCheckResult);
 
     assertAvailable(availabilityCheckResult);
+  }
+
+  @Test
+  void shouldVerifyInvalidBlobs() throws Exception {
+    prepareInitialAvailability();
+
+    when(miscHelpers.verifyBlobKzgProofBatch(any(), any())).thenReturn(false);
+
+    final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
+        blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
+
+    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
+
+    // initiate availability check
+    assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
+
+    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
+    verify(blockBlobSidecarsTracker, never()).getBlobSidecars();
+
+    // let the tracker complete with all blobSidecars
+    completeTrackerWith(blobSidecarsComplete);
+
+    Waiter.waitFor(availabilityCheckResult);
+
+    assertInvalid(availabilityCheckResult, blobSidecarsComplete, Optional.empty());
+  }
+
+  @Test
+  void shouldVerifyInvalidBlobsWhenValidationThrows() throws Exception {
+    prepareInitialAvailability();
+
+    final RuntimeException error = new RuntimeException("oops");
+
+    when(miscHelpers.verifyBlobKzgProofBatch(any(), any())).thenThrow(error);
+
+    final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
+        blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
+
+    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
+
+    // initiate availability check
+    assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
+
+    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
+    verify(blockBlobSidecarsTracker, never()).getBlobSidecars();
+
+    // let the tracker complete with all blobSidecars
+    completeTrackerWith(blobSidecarsComplete);
+
+    Waiter.waitFor(availabilityCheckResult);
+
+    assertInvalid(availabilityCheckResult, blobSidecarsComplete, Optional.of(error));
   }
 
   @Test
@@ -141,6 +201,34 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     Waiter.waitFor(availabilityCheckResult);
 
     assertNotRequired(availabilityCheckResult);
+  }
+
+  private void assertInvalid(
+      final SafeFuture<BlobSidecarsAndValidationResult> availabilityOrValidityCheck,
+      final List<BlobSidecar> invalidBlobs,
+      final Optional<Throwable> cause) {
+    assertThat(availabilityOrValidityCheck)
+        .isCompletedWithValueMatching(result -> !result.isValid(), "is not valid")
+        .isCompletedWithValueMatching(
+            result -> result.getValidationResult() == BlobSidecarsValidationResult.INVALID,
+            "is not available")
+        .isCompletedWithValueMatching(
+            result -> result.getBlobSidecars().equals(invalidBlobs), "doesn't have blob sidecars")
+        .isCompletedWithValueMatching(
+            result -> {
+              if (cause.isEmpty() != result.getCause().isEmpty()) {
+                return false;
+              }
+              return result
+                  .getCause()
+                  .map(
+                      resultCause ->
+                          resultCause.getClass().equals(cause.get().getClass())
+                              && Objects.equals(resultCause.getMessage(), cause.get().getMessage())
+                              && Objects.equals(resultCause.getCause(), cause.get().getCause()))
+                  .orElse(true);
+            },
+            "matches the cause");
   }
 
   private void assertNotRequired(
@@ -204,7 +292,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
 
     blobSidecarsAvailabilityChecker =
         new ForkChoiceBlobSidecarsAvailabilityChecker(
-            spec, recentChainData, blockBlobSidecarsTracker, timeout);
+            spec, recentChainData, blockBlobSidecarsTracker, kzg, timeout);
   }
 
   private void completeTrackerWith(final List<BlobSidecar> blobSidecars) {
@@ -232,6 +320,6 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
 
     blobSidecarsAvailabilityChecker =
         new ForkChoiceBlobSidecarsAvailabilityChecker(
-            spec, recentChainData, blockBlobSidecarsTracker, Duration.ZERO);
+            spec, recentChainData, blockBlobSidecarsTracker, kzg, Duration.ZERO);
   }
 }
