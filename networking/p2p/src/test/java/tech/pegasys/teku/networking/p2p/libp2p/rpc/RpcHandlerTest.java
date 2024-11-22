@@ -255,6 +255,7 @@ public class RpcHandlerTest {
   }
 
   @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
   void requestThrowsIfThereIsNoConcurrentRequestsAvailabilityInTime() {
     // fill the queue
     IntStream.range(0, maxConcurrentRequests)
@@ -267,6 +268,7 @@ public class RpcHandlerTest {
   }
 
   @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
   void requestCompletesIfConcurrentRequestsQueueIsFreed() {
     // fill the queue
     IntStream.range(0, maxConcurrentRequests)
