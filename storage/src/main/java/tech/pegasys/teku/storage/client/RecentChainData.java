@@ -377,7 +377,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return optionalReorgContext;
   }
 
-  // TODO: Test the consequences of having transitioned chainHead
   private ChainHead createNewChainHead(
       final Bytes32 root, final UInt64 currentSlot, final ProtoNodeData blockData) {
     final SafeFuture<StateAndBlockSummary> chainHeadStateFuture =
