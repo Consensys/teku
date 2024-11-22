@@ -164,6 +164,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot))
             .build();
 
+    assertThat(blobSidecar.isKzgAndInclusionProofValidated()).isFalse();
+
     assertThrows(
         IllegalArgumentException.class,
         () -> blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP));
