@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
@@ -61,6 +62,11 @@ public class BlockBlobSidecarsTrackerTest {
           .map(
               blobSidecar -> new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex()))
           .collect(Collectors.toList());
+
+  @BeforeEach
+  void setUp() {
+    blobSidecarsForBlock.forEach(BlobSidecar::markKzgAndInclusionProofAsValidated);
+  }
 
   @Test
   void isNotCompletedJustAfterCreation() {
@@ -163,6 +169,21 @@ public class BlockBlobSidecarsTrackerTest {
     // other futures are now completed
     SafeFutureAssert.assertThatSafeFuture(completionFuture1).isCompleted();
     SafeFutureAssert.assertThatSafeFuture(completionFuture3).isCompleted();
+  }
+
+  @Test
+  void add_shouldFailIfBlobsIsNotMarkedAsKzgAndInclusionProofValidated() {
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
+        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
+    final BlobSidecar toAdd =
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .signedBeaconBlockHeader(block.asHeader())
+            .build();
+
+    assertThatThrownBy(() -> blockBlobSidecarsTracker.add(toAdd))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("BlobSidecar must be validated before adding");
   }
 
   @Test
@@ -346,6 +367,8 @@ public class BlockBlobSidecarsTrackerTest {
             .index(UInt64.valueOf(100))
             .build();
 
+    toAdd.markKzgAndInclusionProofAsValidated();
+
     blockBlobSidecarsTracker.add(toAdd);
 
     final List<BlobIdentifier> knownMissing =
@@ -422,10 +445,13 @@ public class BlockBlobSidecarsTrackerTest {
   }
 
   private BlobSidecar createBlobSidecar(final UInt64 index) {
-    return dataStructureUtil
-        .createRandomBlobSidecarBuilder()
-        .signedBeaconBlockHeader(block.asHeader())
-        .index(index)
-        .build();
+    final BlobSidecar blobSidecar =
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .signedBeaconBlockHeader(block.asHeader())
+            .index(index)
+            .build();
+    blobSidecar.markKzgAndInclusionProofAsValidated();
+    return blobSidecar;
   }
 }
