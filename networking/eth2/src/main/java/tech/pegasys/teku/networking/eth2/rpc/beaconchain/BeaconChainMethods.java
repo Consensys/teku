@@ -115,8 +115,8 @@ public class BeaconChainMethods {
       final MetadataMessagesFactory metadataMessagesFactory,
       final RpcEncoding rpcEncoding) {
     return new BeaconChainMethods(
-        createStatus(spec, asyncRunner, statusMessageFactory, peerLookup, rpcEncoding),
-        createGoodBye(spec, asyncRunner, metricsSystem, peerLookup, rpcEncoding),
+        createStatus(asyncRunner, statusMessageFactory, peerLookup, rpcEncoding),
+        createGoodBye(asyncRunner, metricsSystem, peerLookup, rpcEncoding),
         createBeaconBlocksByRoot(
             spec, metricsSystem, asyncRunner, recentChainData, peerLookup, rpcEncoding),
         createBeaconBlocksByRange(
@@ -144,11 +144,10 @@ public class BeaconChainMethods {
             rpcEncoding,
             recentChainData),
         createMetadata(spec, asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding),
-        createPing(spec, asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding));
+        createPing(asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding));
   }
 
   private static Eth2RpcMethod<StatusMessage, StatusMessage> createStatus(
-      final Spec spec,
       final AsyncRunner asyncRunner,
       final StatusMessageFactory statusMessageFactory,
       final PeerLookup peerLookup,
@@ -169,7 +168,6 @@ public class BeaconChainMethods {
   }
 
   private static Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> createGoodBye(
-      final Spec spec,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final PeerLookup peerLookup,
@@ -385,8 +383,7 @@ public class BeaconChainMethods {
               expectResponse,
               altairContextCodec,
               messageHandler,
-              peerLookup,
-              spec.getNetworkingConfig());
+              peerLookup);
       return VersionedEth2RpcMethod.create(
           rpcEncoding, requestType, expectResponse, List.of(v2Method, v1Method));
     } else {
@@ -395,7 +392,6 @@ public class BeaconChainMethods {
   }
 
   private static Eth2RpcMethod<PingMessage, PingMessage> createPing(
-      final Spec spec,
       final AsyncRunner asyncRunner,
       final MetadataMessagesFactory metadataMessagesFactory,
       final PeerLookup peerLookup,
