@@ -97,7 +97,6 @@ public class SingleProtocolEth2RpcMethod<
       final Eth2RpcResponseHandler<TResponse, ?> responseHandler) {
     return new Eth2OutgoingRequestHandler<>(
         asyncRunner,
-        asyncRunner,
         protocolId,
         createResponseDecoder(),
         expectResponseToRequest,
