@@ -18,11 +18,13 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHand
 import static tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler.State.DATA_COMPLETED;
 import static tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler.State.EXPECT_DATA;
 import static tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler.State.READ_COMPLETE;
+import static tech.pegasys.teku.spec.config.Constants.RPC_TIMEOUT;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
@@ -53,10 +55,12 @@ public class Eth2OutgoingRequestHandler<
   private static final Logger LOG = LogManager.getLogger();
 
   private final AsyncRunner asyncRunner;
+  private final AsyncRunner timeoutRunner;
   private final int maximumResponseChunks;
   private final Eth2RpcResponseHandler<TResponse, ?> responseHandler;
   private final ResponseStream<TResponse> responseStream;
 
+  private final AtomicBoolean hasReceivedInitialBytes = new AtomicBoolean(false);
   private final AtomicInteger currentChunkCount = new AtomicInteger(0);
   private final AtomicReference<State> state;
   private final AtomicReference<AsyncResponseProcessor<TResponse>> responseProcessor =
@@ -64,19 +68,23 @@ public class Eth2OutgoingRequestHandler<
 
   private final String protocolId;
   private final RpcResponseDecoder<TResponse, ?> responseDecoder;
+  private final boolean shouldReceiveResponse;
 
   public Eth2OutgoingRequestHandler(
       final AsyncRunner asyncRunner,
+      final AsyncRunner timeoutRunner,
       final String protocolId,
       final RpcResponseDecoder<TResponse, ?> responseDecoder,
       final boolean shouldReceiveResponse,
       final TRequest request,
       final Eth2RpcResponseHandler<TResponse, ?> responseHandler) {
     this.asyncRunner = asyncRunner;
+    this.timeoutRunner = timeoutRunner;
     this.maximumResponseChunks = request.getMaximumResponseChunks();
     this.responseHandler = responseHandler;
     responseStream = new ResponseStream<>(responseHandler);
     this.responseDecoder = responseDecoder;
+    this.shouldReceiveResponse = shouldReceiveResponse;
     this.protocolId = protocolId;
     this.state = new AtomicReference<>(shouldReceiveResponse ? EXPECT_DATA : DATA_COMPLETED);
   }
@@ -84,6 +92,9 @@ public class Eth2OutgoingRequestHandler<
   public void handleInitialPayloadSent(final RpcStream stream) {
     // Close the write side of the stream
     stream.closeWriteStream().ifExceptionGetsHereRaiseABug();
+    if (!shouldReceiveResponse) {
+      ensureReadCompleteArrivesInTime(stream);
+    }
   }
 
   @Override
@@ -100,6 +111,8 @@ public class Eth2OutgoingRequestHandler<
         throw new RpcException.ExtraDataAppendedException(" extra data: " + bufToString(data));
       }
 
+      onFirstByteReceived(rpcStream);
+
       List<TResponse> maybeResponses = responseDecoder.decodeNextResponses(data);
       final int chunksReceived = currentChunkCount.addAndGet(maybeResponses.size());
 
@@ -110,9 +123,16 @@ public class Eth2OutgoingRequestHandler<
       for (TResponse maybeResponse : maybeResponses) {
         getResponseProcessor(rpcStream).processResponse(maybeResponse);
       }
-      if (chunksReceived >= maximumResponseChunks
-          && !transferToState(DATA_COMPLETED, List.of(EXPECT_DATA))) {
-        abortRequest(rpcStream, new IllegalStateException("Unexpected state: " + state));
+      if (chunksReceived < maximumResponseChunks) {
+        if (!maybeResponses.isEmpty()) {
+          ensureNextResponseChunkArrivesInTime(rpcStream, chunksReceived, currentChunkCount);
+        }
+      } else {
+        if (!transferToState(DATA_COMPLETED, List.of(EXPECT_DATA))) {
+          abortRequest(rpcStream, new IllegalStateException("Unexpected state: " + state));
+          return;
+        }
+        ensureReadCompleteArrivesInTime(rpcStream);
       }
     } catch (final RpcException e) {
       abortRequest(rpcStream, e);
@@ -184,6 +204,13 @@ public class Eth2OutgoingRequestHandler<
     return false;
   }
 
+  private void onFirstByteReceived(final RpcStream rpcStream) {
+    if (hasReceivedInitialBytes.compareAndSet(false, true)) {
+      // Setup initial chunk timeout
+      ensureNextResponseChunkArrivesInTime(rpcStream, currentChunkCount.get(), currentChunkCount);
+    }
+  }
+
   private void completeRequest(final RpcStream rpcStream) {
     getResponseProcessor(rpcStream)
         .finishProcessing()
@@ -225,6 +252,40 @@ public class Eth2OutgoingRequestHandler<
           .finishProcessing()
           .always(() -> responseStream.completeWithError(error));
     }
+  }
+
+  private void ensureNextResponseChunkArrivesInTime(
+      final RpcStream stream,
+      final int previousResponseCount,
+      final AtomicInteger currentResponseCount) {
+    timeoutRunner
+        .getDelayedFuture(RPC_TIMEOUT)
+        .thenAccept(
+            (__) -> {
+              if (previousResponseCount == currentResponseCount.get()) {
+                abortRequest(
+                    stream,
+                    new RpcTimeoutException(
+                        "Timed out waiting for response chunk " + previousResponseCount,
+                        RPC_TIMEOUT));
+              }
+            })
+        .ifExceptionGetsHereRaiseABug();
+  }
+
+  private void ensureReadCompleteArrivesInTime(final RpcStream stream) {
+    timeoutRunner
+        .getDelayedFuture(RPC_TIMEOUT)
+        .thenAccept(
+            (__) -> {
+              if (!(state.get() == READ_COMPLETE || state.get() == CLOSED)) {
+                abortRequest(
+                    stream,
+                    new RpcTimeoutException(
+                        "Timed out waiting for read channel close", RPC_TIMEOUT));
+              }
+            })
+        .ifExceptionGetsHereRaiseABug();
   }
 
   @VisibleForTesting

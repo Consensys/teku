@@ -256,16 +256,16 @@ public class RpcHandlerTest {
     IntStream.range(0, maxConcurrentRequests)
         .forEach(__ -> rpcHandler.sendRequest(connection, request, responseHandler));
 
-    final StreamPromise<Controller<RpcRequestHandler>> streamPromise =
+    final StreamPromise<Controller<RpcRequestHandler>> streamPromise1 =
         new StreamPromise<>(new CompletableFuture<>(), new CompletableFuture<>());
     when(session.createStream((ProtocolBinding<Controller<RpcRequestHandler>>) any()))
-        .thenReturn(streamPromise);
-    final Stream stream = mock(Stream.class);
-    streamPromise.getStream().complete(stream);
-    streamPromise.getController().complete(controller);
-    CompletableFuture<String> protocolIdFuture = new CompletableFuture<>();
-    when(stream.getProtocol()).thenReturn(protocolIdFuture);
-    protocolIdFuture.complete("test");
+        .thenReturn(streamPromise1);
+    final Stream stream1 = mock(Stream.class);
+    streamPromise1.getStream().complete(stream1);
+    streamPromise1.getController().complete(controller);
+    final CompletableFuture<String> protocolIdFuture1 = new CompletableFuture<>();
+    when(stream1.getProtocol()).thenReturn(protocolIdFuture1);
+    protocolIdFuture1.complete("test");
 
     final SafeFuture<RpcStreamController<RpcRequestHandler>> throttledResult =
         rpcHandler.sendRequest(connection, request, responseHandler);
@@ -273,9 +273,9 @@ public class RpcHandlerTest {
     assertThat(throttledResult).isNotDone();
 
     // empty the queue
-    this.streamPromise.getStream().complete(stream);
-    this.streamPromise.getController().complete(controller);
-    this.stream.getProtocol().complete("test");
+    streamPromise.getStream().complete(stream);
+    streamPromise.getController().complete(controller);
+    stream.getProtocol().complete("test");
     writeFuture.complete(null);
 
     // throttled request should have completed now
