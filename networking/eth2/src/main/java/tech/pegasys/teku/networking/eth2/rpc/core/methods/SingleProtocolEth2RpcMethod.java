@@ -91,8 +91,7 @@ public class SingleProtocolEth2RpcMethod<
         createRequestDecoder(),
         asyncRunner,
         peerLookup,
-        localMessageHandler,
-        networkingConfig);
+        localMessageHandler);
   }
 
   @Override
@@ -101,6 +100,7 @@ public class SingleProtocolEth2RpcMethod<
       final TRequest request,
       final Eth2RpcResponseHandler<TResponse, ?> responseHandler) {
     return new Eth2OutgoingRequestHandler<>(
+        asyncRunner,
         asyncRunner,
         protocolId,
         createResponseDecoder(),
