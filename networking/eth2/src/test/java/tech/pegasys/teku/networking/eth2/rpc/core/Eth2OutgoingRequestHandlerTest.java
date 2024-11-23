@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static tech.pegasys.teku.spec.config.Constants.RPC_TIMEOUT;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -96,7 +95,6 @@ public class Eth2OutgoingRequestHandlerTest
             getRpcEncoding(), spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema());
     return new Eth2OutgoingRequestHandler<>(
         asyncRequestRunner,
-        timeoutRunner,
         method.getIds().get(0),
         responseDecoder,
         method.shouldReceiveResponse(),
@@ -264,33 +262,6 @@ public class Eth2OutgoingRequestHandlerTest
   }
 
   @Test
-  public void disconnectsIfFirstChunkIsNotReceivedInTime() {
-    sendInitialPayload();
-
-    deliverInitialBytes();
-
-    // Run timeouts
-    timeProvider.advanceTimeByMillis(RPC_TIMEOUT.toMillis());
-    timeoutRunner.executeDueActions();
-    verify(rpcStream).closeAbruptly();
-  }
-
-  @Test
-  public void disconnectsIfSecondChunkNotReceivedInTime() {
-    sendInitialPayload();
-
-    timeProvider.advanceTimeByMillis(100);
-    deliverChunk(0);
-    asyncRequestRunner.executeQueuedActions();
-    assertThat(blocks.size()).isEqualTo(1);
-
-    // Run timeouts
-    timeProvider.advanceTimeByMillis(RPC_TIMEOUT.toMillis());
-    timeoutRunner.executeDueActions();
-    verify(rpcStream).closeAbruptly();
-  }
-
-  @Test
   public void shouldCompleteExceptionallyWhenClosedWithTruncatedMessage() {
     sendInitialPayload();
 
@@ -303,29 +274,6 @@ public class Eth2OutgoingRequestHandlerTest
     complete();
 
     assertThat(finishedProcessingFuture).isCompletedExceptionally();
-  }
-
-  @Test
-  public void doNotDisconnectsIfSecondChunkReceivedInTime() {
-    sendInitialPayload();
-
-    timeProvider.advanceTimeByMillis(100);
-    deliverChunk(0);
-    asyncRequestRunner.executeQueuedActions();
-    assertThat(blocks.size()).isEqualTo(1);
-
-    // Second chunk is received just in time
-    timeProvider.advanceTimeByMillis(RPC_TIMEOUT.toMillis() - 1);
-    timeoutRunner.executeDueActions();
-    deliverChunk(1);
-    asyncRequestRunner.executeQueuedActions();
-
-    // Go past the time the second chunk would have timed out but not enough to trigger timeout on
-    // the third chunk and ensure the timeout never fires.
-    timeProvider.advanceTimeByMillis(RPC_TIMEOUT.toMillis() - 1);
-    timeoutRunner.executeDueActions();
-    verify(rpcStream, never()).closeAbruptly();
-    assertThat(blocks.size()).isEqualTo(2);
   }
 
   @Test

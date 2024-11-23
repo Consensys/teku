@@ -13,10 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
-import static tech.pegasys.teku.spec.config.Constants.RPC_TIMEOUT;
-
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
@@ -35,6 +34,7 @@ public class Eth2IncomingRequestHandler<
         TRequest extends RpcRequest & SszData, TResponse extends SszData>
     implements RpcRequestHandler {
   private static final Logger LOG = LogManager.getLogger();
+  private static final Duration RECEIVE_INCOMING_REQUEST_TIMEOUT = Duration.ofSeconds(10);
 
   private final PeerLookup peerLookup;
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
@@ -119,13 +119,13 @@ public class Eth2IncomingRequestHandler<
 
   private void ensureRequestReceivedWithinTimeLimit(final RpcStream stream) {
     asyncRunner
-        .getDelayedFuture(RPC_TIMEOUT)
+        .getDelayedFuture(RECEIVE_INCOMING_REQUEST_TIMEOUT)
         .thenAccept(
             (__) -> {
               if (!requestHandled.get()) {
                 LOG.debug(
                     "Failed to receive incoming request data within {} sec for protocol {}. Close stream.",
-                    RPC_TIMEOUT.toSeconds(),
+                    RECEIVE_INCOMING_REQUEST_TIMEOUT.toSeconds(),
                     protocolId);
                 stream.closeAbruptly().ifExceptionGetsHereRaiseABug();
               }
