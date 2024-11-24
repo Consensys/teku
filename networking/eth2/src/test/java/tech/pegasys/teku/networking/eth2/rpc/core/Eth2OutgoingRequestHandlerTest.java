@@ -320,11 +320,6 @@ public class Eth2OutgoingRequestHandlerTest
     reqHandler.handleInitialPayloadSent(rpcStream);
   }
 
-  private void deliverInitialBytes() {
-    final Bytes firstByte = chunks.get(0).slice(0, 1);
-    deliverBytes(firstByte);
-  }
-
   private Bytes chunkBytes(final int chunk) {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(chunk);
     return responseEncoder.encodeSuccessfulResponse(block);
