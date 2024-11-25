@@ -3,7 +3,7 @@
     "tags" : [ "Beacon" ],
     "operationId" : "getBlockHeaders",
     "summary" : "Get block headers",
-    "description" : "Retrieves block headers matching given query. By default it will fetch current head slot blocks.",
+    "description" : "Retrieves block headers matching given query. By default, it will fetch current head slot blocks.",
     "parameters" : [ {
       "name" : "slot",
       "in" : "query",
