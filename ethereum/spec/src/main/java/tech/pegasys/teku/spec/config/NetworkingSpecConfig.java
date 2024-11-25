@@ -27,12 +27,6 @@ public interface NetworkingSpecConfig {
 
   int getMinEpochsForBlockRequests();
 
-  // in seconds
-  int getTtfbTimeout();
-
-  // in seconds
-  int getRespTimeout();
-
   int getAttestationPropagationSlotRange();
 
   // in millis
@@ -53,8 +47,6 @@ public interface NetworkingSpecConfig {
 
   // int(ceillog2(ATTESTATION_SUBNET_COUNT) + ATTESTATION_SUBNET_EXTRA_BITS)
   int getAttestationSubnetPrefixBits();
-
-  int getMaxConcurrentRequests();
 
   default NetworkingSpecConfig getNetworkingConfig() {
     return this;
