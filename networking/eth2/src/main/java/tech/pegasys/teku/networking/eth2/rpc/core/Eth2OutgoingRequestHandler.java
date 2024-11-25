@@ -21,6 +21,7 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHand
 
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -53,11 +54,15 @@ public class Eth2OutgoingRequestHandler<
 
   private static final Logger LOG = LogManager.getLogger();
 
+  @VisibleForTesting static final Duration READ_COMPLETE_TIMEOUT = Duration.ofSeconds(10);
+  @VisibleForTesting static final Duration RESPONSE_CHUNK_ARRIVAL_TIMEOUT = Duration.ofSeconds(30);
+
   private final AsyncRunner asyncRunner;
   private final int maximumResponseChunks;
   private final Eth2RpcResponseHandler<TResponse, ?> responseHandler;
   private final ResponseStream<TResponse> responseStream;
 
+  private final AsyncRunner timeoutRunner;
   private final AtomicInteger currentChunkCount = new AtomicInteger(0);
   private final AtomicReference<State> state;
   private final AtomicReference<AsyncResponseProcessor<TResponse>> responseProcessor =
@@ -65,19 +70,23 @@ public class Eth2OutgoingRequestHandler<
 
   private final String protocolId;
   private final RpcResponseDecoder<TResponse, ?> responseDecoder;
+  private final boolean shouldReceiveResponse;
 
   public Eth2OutgoingRequestHandler(
       final AsyncRunner asyncRunner,
+      final AsyncRunner timeoutRunner,
       final String protocolId,
       final RpcResponseDecoder<TResponse, ?> responseDecoder,
       final boolean shouldReceiveResponse,
       final TRequest request,
       final Eth2RpcResponseHandler<TResponse, ?> responseHandler) {
     this.asyncRunner = asyncRunner;
+    this.timeoutRunner = timeoutRunner;
     this.maximumResponseChunks = request.getMaximumResponseChunks();
     this.responseHandler = responseHandler;
     responseStream = new ResponseStream<>(responseHandler);
     this.responseDecoder = responseDecoder;
+    this.shouldReceiveResponse = shouldReceiveResponse;
     this.protocolId = protocolId;
     this.state = new AtomicReference<>(shouldReceiveResponse ? EXPECT_DATA : DATA_COMPLETED);
   }
@@ -85,6 +94,12 @@ public class Eth2OutgoingRequestHandler<
   public void handleInitialPayloadSent(final RpcStream stream) {
     // Close the write side of the stream
     stream.closeWriteStream().ifExceptionGetsHereRaiseABug();
+    if (shouldReceiveResponse) {
+      // Setup initial chunk timeout
+      ensureNextResponseChunkArrivesInTime(stream, currentChunkCount.get(), currentChunkCount);
+    } else {
+      ensureReadCompleteArrivesInTime(stream);
+    }
   }
 
   @Override
@@ -111,9 +126,16 @@ public class Eth2OutgoingRequestHandler<
       for (TResponse maybeResponse : maybeResponses) {
         getResponseProcessor(rpcStream).processResponse(maybeResponse);
       }
-      if (chunksReceived >= maximumResponseChunks
-          && !transferToState(DATA_COMPLETED, List.of(EXPECT_DATA))) {
-        abortRequest(rpcStream, new IllegalStateException("Unexpected state: " + state));
+      if (chunksReceived < maximumResponseChunks) {
+        if (!maybeResponses.isEmpty()) {
+          ensureNextResponseChunkArrivesInTime(rpcStream, chunksReceived, currentChunkCount);
+        }
+      } else {
+        if (!transferToState(DATA_COMPLETED, List.of(EXPECT_DATA))) {
+          abortRequest(rpcStream, new IllegalStateException("Unexpected state: " + state));
+          return;
+        }
+        ensureReadCompleteArrivesInTime(rpcStream);
       }
     } catch (final RpcException e) {
       abortRequest(rpcStream, e);
@@ -226,6 +248,40 @@ public class Eth2OutgoingRequestHandler<
           .finishProcessing()
           .always(() -> responseStream.completeWithError(error));
     }
+  }
+
+  private void ensureNextResponseChunkArrivesInTime(
+      final RpcStream stream,
+      final int previousResponseCount,
+      final AtomicInteger currentResponseCount) {
+    timeoutRunner
+        .getDelayedFuture(RESPONSE_CHUNK_ARRIVAL_TIMEOUT)
+        .thenAccept(
+            (__) -> {
+              if (previousResponseCount == currentResponseCount.get()) {
+                abortRequest(
+                    stream,
+                    new RpcTimeoutException(
+                        "Timed out waiting for response chunk " + previousResponseCount,
+                        RESPONSE_CHUNK_ARRIVAL_TIMEOUT));
+              }
+            })
+        .ifExceptionGetsHereRaiseABug();
+  }
+
+  private void ensureReadCompleteArrivesInTime(final RpcStream stream) {
+    timeoutRunner
+        .getDelayedFuture(READ_COMPLETE_TIMEOUT)
+        .thenAccept(
+            (__) -> {
+              if (!(state.get() == READ_COMPLETE || state.get() == CLOSED)) {
+                abortRequest(
+                    stream,
+                    new RpcTimeoutException(
+                        "Timed out waiting for read channel close", READ_COMPLETE_TIMEOUT));
+              }
+            })
+        .ifExceptionGetsHereRaiseABug();
   }
 
   @VisibleForTesting
