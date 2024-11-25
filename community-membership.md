@@ -63,12 +63,12 @@ Code approvers are members that have signed an ICLA and have been granted additi
 
 ### Requirements
 
-- Includes all of the requirements of a Member user
+- Includes all the requirements of a Member user
 - Signed ICLA, as described in [CLA.md]
 - Approver status granted by Project Sponsor or the Open Source Circle
 
 ### Responsibilities and privileges
-- Includes all of the responsibilities and privileges of a Member user
+- Includes all the responsibilities and privileges of a Member user
 - Approver status may be a precondition to accepting large code contributions
 - Demonstrate sound technical judgement
 - Responsible for project quality control via code reviews
@@ -89,7 +89,7 @@ The Project Sponsor role provides a user with the ability to contribute addition
 - Project Sponsor status granted by the Open Source Circle
 
 ### Responsibilities and privileges
-- Includes all of the responsibilities and privileges of a Member user
+- Includes all the responsibilities and privileges of a Member user
 - Approval of new users to the Approver role, and access to Circle reports.
 
 ## Project Evangelist
@@ -97,12 +97,12 @@ The Project Evangelist role is for those who wish to promote the project to the 
 **Defined by:** Consensys
 
 ### Requirements
-- Includes all of the requirements of a Member user
+- Includes all the requirements of a Member user
 - Signed ICLA, as described in [CLA.md]
 - Project Evangelist status granted by the Open Source Circle
 
 ### Responsibilities and privileges
-- Includes all of the responsibilities and privileges of a Member user
+- Includes all the responsibilities and privileges of a Member user
 - Project Evangelist have the standard public access permissions
 - Organise talks
 - Work with marketing to manage web and graphical assets
