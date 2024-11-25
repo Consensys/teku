@@ -328,16 +328,6 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public int getTtfbTimeout() {
-    return specConfig.getTtfbTimeout();
-  }
-
-  @Override
-  public int getRespTimeout() {
-    return specConfig.getRespTimeout();
-  }
-
-  @Override
   public int getAttestationPropagationSlotRange() {
     return specConfig.getAttestationPropagationSlotRange();
   }
@@ -390,11 +380,6 @@ public class DelegatingSpecConfig implements SpecConfig {
   @Override
   public int getAttestationSubnetPrefixBits() {
     return specConfig.getAttestationSubnetPrefixBits();
-  }
-
-  @Override
-  public int getMaxConcurrentRequests() {
-    return specConfig.getMaxConcurrentRequests();
   }
 
   @Override
