@@ -460,32 +460,41 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     final SszUInt64List balances = state.getBalances();
     final UInt64 hysteresisUpwardMultiplier = specConfig.getHysteresisUpwardMultiplier();
     final UInt64 hysteresisDownwardMultiplier = specConfig.getHysteresisDownwardMultiplier();
-    final UInt64 maxEffectiveBalance = specConfig.getMaxEffectiveBalance();
     final UInt64 hysteresisQuotient = specConfig.getHysteresisQuotient();
     final UInt64 effectiveBalanceIncrement = specConfig.getEffectiveBalanceIncrement();
-    for (int index = 0; index < validators.size(); index++) {
-      final ValidatorStatus status = statuses.get(index);
-      final UInt64 balance = balances.getElement(index);
 
-      final UInt64 hysteresisIncrement = effectiveBalanceIncrement.dividedBy(hysteresisQuotient);
-      final UInt64 currentEffectiveBalance = status.getCurrentEpochEffectiveBalance();
-      if (shouldDecreaseEffectiveBalance(
-              balance, hysteresisIncrement, currentEffectiveBalance, hysteresisDownwardMultiplier)
-          || shouldIncreaseEffectiveBalance(
-              balance,
-              hysteresisIncrement,
-              currentEffectiveBalance,
-              hysteresisUpwardMultiplier,
-              maxEffectiveBalance)) {
-        final Validator validator = validators.get(index);
-        final UInt64 effectiveBalanceLimit = getEffectiveBalanceLimitForValidator(validator);
-        final UInt64 newEffectiveBalance =
-            effectiveBalanceLimit.min(
-                balance.minus(balance.mod(effectiveBalanceIncrement)).min(maxEffectiveBalance));
-        BeaconStateCache.getTransitionCaches(state)
-            .getProgressiveTotalBalances()
-            .onEffectiveBalanceChange(status, newEffectiveBalance);
+    for (int index = 0; index < validators.size(); index++) {
+      final UInt64 balance = balances.getElement(index);
+      final Validator validator = validators.get(index);
+      final UInt64 effectiveBalanceLimit = getEffectiveBalanceLimitForValidator(validator);
+
+      // In Electra, it is possible that the validator set is updated within epoch processing. To
+      // avoid recalculating the ValidatorStatuses cache, we are manually updating the effective
+      // balance of any new
+      // validators that are not in the cache.
+      if (index >= statuses.size()) {
+        final UInt64 newEffectiveBalance = balance.min(effectiveBalanceLimit);
         validators.set(index, validator.withEffectiveBalance(newEffectiveBalance));
+      } else {
+        final ValidatorStatus status = statuses.get(index);
+
+        final UInt64 hysteresisIncrement = effectiveBalanceIncrement.dividedBy(hysteresisQuotient);
+        final UInt64 currentEffectiveBalance = status.getCurrentEpochEffectiveBalance();
+        if (shouldDecreaseEffectiveBalance(
+                balance, hysteresisIncrement, currentEffectiveBalance, hysteresisDownwardMultiplier)
+            || shouldIncreaseEffectiveBalance(
+                balance,
+                hysteresisIncrement,
+                currentEffectiveBalance,
+                hysteresisUpwardMultiplier,
+                effectiveBalanceLimit)) {
+          final UInt64 newEffectiveBalance =
+              effectiveBalanceLimit.min(balance.minus(balance.mod(effectiveBalanceIncrement)));
+          BeaconStateCache.getTransitionCaches(state)
+              .getProgressiveTotalBalances()
+              .onEffectiveBalanceChange(status, newEffectiveBalance);
+          validators.set(index, validator.withEffectiveBalance(newEffectiveBalance));
+        }
       }
     }
   }
