@@ -112,7 +112,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
      Up until Electra, the only function that uses validatorStatuses after process_pending_deposits is
      process_effective_balance_updates, and in this particular case it is ok that we don't have the new validators
-     in validatorStatuses.
+     in validatorStatuses (we had to add a little fix to handle an edge-case).
     */
     final ValidatorStatuses validatorStatuses =
         validatorStatusFactory.createValidatorStatuses(preState);
@@ -470,8 +470,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
       // In Electra, it is possible that the validator set is updated within epoch processing. To
       // avoid recalculating the ValidatorStatuses cache, we are manually updating the effective
-      // balance of any new
-      // validators that are not in the cache.
+      // balance of any new validators that are not in the cache.
       if (index >= statuses.size()) {
         final UInt64 newEffectiveBalance = balance.min(effectiveBalanceLimit);
         validators.set(index, validator.withEffectiveBalance(newEffectiveBalance));
