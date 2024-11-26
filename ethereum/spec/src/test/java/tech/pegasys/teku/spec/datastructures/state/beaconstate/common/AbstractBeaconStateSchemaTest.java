@@ -70,18 +70,19 @@ public abstract class AbstractBeaconStateSchemaTest<
 
   @Test
   public void changeSpecConfigTest() {
-    final Spec standardSpec = TestSpecFactory.createMinimalPhase0();
+    final Spec standardSpec = TestSpecFactory.createMinimal(genesisConfig.getMilestone());
     final SpecConfig modifiedConfig =
         SpecConfigLoader.loadConfig(
-            "minimal",
-            b ->
-                b.slotsPerHistoricalRoot(123)
-                    .historicalRootsLimit(123)
-                    .epochsPerEth1VotingPeriod(123)
-                    .validatorRegistryLimit(123L)
-                    .epochsPerHistoricalVector(123)
-                    .epochsPerSlashingsVector(123)
-                    .maxAttestations(123));
+                "minimal",
+                b ->
+                    b.slotsPerHistoricalRoot(123)
+                        .historicalRootsLimit(123)
+                        .epochsPerEth1VotingPeriod(123)
+                        .validatorRegistryLimit(123L)
+                        .epochsPerHistoricalVector(123)
+                        .epochsPerSlashingsVector(123)
+                        .maxAttestations(123))
+            .specConfig();
 
     BeaconState s1 = getSchema(modifiedConfig).createEmpty();
     BeaconState s2 = getSchema(standardSpec.getGenesisSpecConfig()).createEmpty();
@@ -109,9 +110,11 @@ public abstract class AbstractBeaconStateSchemaTest<
   @Test
   public void create_compareDifferentSpecs() {
     final BeaconStateSchema<T, TMutable> minimalState =
-        getSchema(TestSpecFactory.createMinimalPhase0().getGenesisSpecConfig());
+        getSchema(
+            TestSpecFactory.createMinimal(genesisConfig.getMilestone()).getGenesisSpecConfig());
     final BeaconStateSchema<T, TMutable> mainnetState =
-        getSchema(TestSpecFactory.createMainnetPhase0().getGenesisSpecConfig());
+        getSchema(
+            TestSpecFactory.createMainnet(genesisConfig.getMilestone()).getGenesisSpecConfig());
 
     assertThat(minimalState).isNotEqualTo(mainnetState);
   }

@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
+
 import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
@@ -22,12 +25,11 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BlockContentsSchema
     extends ContainerSchema3<BlockContents, BeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
@@ -36,27 +38,20 @@ public class BlockContentsSchema
   static final SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
   static final SszFieldName FIELD_BLOBS = () -> "blobs";
 
-  BlockContentsSchema(
+  public BlockContentsSchema(
       final String containerName,
       final SpecConfigDeneb specConfig,
-      final BeaconBlockSchema beaconBlockSchema,
-      final BlobSchema blobSchema) {
+      final SchemaRegistry schemaRegistry) {
     super(
         containerName,
-        namedSchema("block", beaconBlockSchema),
+        namedSchema("block", schemaRegistry.get(BEACON_BLOCK_SCHEMA)),
         namedSchema(
             FIELD_KZG_PROOFS,
             SszListSchema.create(SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())),
         namedSchema(
-            FIELD_BLOBS, SszListSchema.create(blobSchema, specConfig.getMaxBlobsPerBlock())));
-  }
-
-  public static BlockContentsSchema create(
-      final SpecConfigDeneb specConfig,
-      final BeaconBlockSchema beaconBlockSchema,
-      final BlobSchema blobSchema,
-      final String containerName) {
-    return new BlockContentsSchema(containerName, specConfig, beaconBlockSchema, blobSchema);
+            FIELD_BLOBS,
+            SszListSchema.create(
+                schemaRegistry.get(BLOB_SCHEMA), specConfig.getMaxBlobsPerBlock())));
   }
 
   public BlockContents create(

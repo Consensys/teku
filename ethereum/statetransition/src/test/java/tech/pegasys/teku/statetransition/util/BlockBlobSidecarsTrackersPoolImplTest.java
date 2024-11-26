@@ -1401,6 +1401,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
       return mockedTrackersFactory.get().apply(slotAndBlockRoot);
     }
     return new BlockBlobSidecarsTracker(
-        slotAndBlockRoot, UInt64.valueOf(spec.getMaxBlobsPerBlock().orElseThrow()));
+        slotAndBlockRoot,
+        UInt64.valueOf(spec.getMaxBlobsPerBlockForHighestMilestone().orElseThrow()));
   }
 }

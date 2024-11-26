@@ -178,4 +178,9 @@ public class ExecutionPayloadHeaderSchemaCapella
         SszBytes32.of(executionPayload.getTransactions().hashTreeRoot()),
         SszBytes32.of(executionPayload.getWithdrawals().hashTreeRoot()));
   }
+
+  @Override
+  public ExecutionPayloadHeaderSchemaCapella toVersionCapellaRequired() {
+    return this;
+  }
 }

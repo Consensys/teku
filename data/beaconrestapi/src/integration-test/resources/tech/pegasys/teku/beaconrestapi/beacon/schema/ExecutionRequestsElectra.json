@@ -1,5 +1,5 @@
 {
-  "title" : "ExecutionRequests",
+  "title" : "ExecutionRequestsElectra",
   "type" : "object",
   "required" : [ "deposits", "withdrawals", "consolidations" ],
   "properties" : {

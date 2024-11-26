@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
@@ -66,16 +67,19 @@ public class StorageService extends Service implements StorageServiceFacade {
   private final boolean depositSnapshotStorageEnabled;
   private final boolean blobSidecarsStorageCountersEnabled;
   private static final Logger LOG = LogManager.getLogger();
+  private final Optional<Eth2Network> maybeNetwork;
 
   public StorageService(
       final ServiceConfig serviceConfig,
       final StorageConfiguration storageConfiguration,
       final boolean depositSnapshotStorageEnabled,
-      final boolean blobSidecarsStorageCountersEnabled) {
+      final boolean blobSidecarsStorageCountersEnabled,
+      final Optional<Eth2Network> eth2Network) {
     this.serviceConfig = serviceConfig;
     this.config = storageConfiguration;
     this.depositSnapshotStorageEnabled = depositSnapshotStorageEnabled;
     this.blobSidecarsStorageCountersEnabled = blobSidecarsStorageCountersEnabled;
+    this.maybeNetwork = eth2Network;
   }
 
   @Override
@@ -92,7 +96,8 @@ public class StorageService extends Service implements StorageServiceFacade {
                   new VersionedDatabaseFactory(
                       serviceConfig.getMetricsSystem(),
                       serviceConfig.getDataDirLayout().getBeaconDataDirectory(),
-                      config);
+                      config,
+                      maybeNetwork);
               try {
                 database = dbFactory.createDatabase();
               } catch (EphemeryException e) {

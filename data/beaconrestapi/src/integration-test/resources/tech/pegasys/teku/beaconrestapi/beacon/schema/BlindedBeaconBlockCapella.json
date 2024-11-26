@@ -1,5 +1,5 @@
 {
-  "title" : "BlindedBlockCapella",
+  "title" : "BlindedBeaconBlockCapella",
   "type" : "object",
   "required" : [ "slot", "proposer_index", "parent_root", "state_root", "body" ],
   "properties" : {
@@ -28,7 +28,7 @@
       "format" : "byte"
     },
     "body" : {
-      "$ref" : "#/components/schemas/BlindedBlockBodyCapella"
+      "$ref" : "#/components/schemas/BlindedBeaconBlockBodyCapella"
     }
   }
 }

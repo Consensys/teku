@@ -70,7 +70,7 @@ class RemoteSpecLoaderTest {
     final ObjectMapper objectMapper = new ObjectMapper();
     TypeReference<Map<String, String>> typeReference = new TypeReference<>() {};
     Map<String, String> data = objectMapper.readValue(jsonConfig, typeReference);
-    final SpecConfig specConfig = SpecConfigLoader.loadRemoteConfig(data);
+    final SpecConfig specConfig = SpecConfigLoader.loadRemoteConfig(data).specConfig();
 
     // Check values not assigned, using default values
     assertThat(specConfig.getGossipMaxSize()).isEqualTo(10485760);

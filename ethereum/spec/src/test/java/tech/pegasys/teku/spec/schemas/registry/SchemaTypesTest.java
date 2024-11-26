@@ -28,8 +28,8 @@ public class SchemaTypesTest {
   @Test
   public void shouldProvideContainerNameViaSchemaId() {
     final SchemaId<String> schemaId = SchemaTypes.create("MY_TEST_SCHEMA");
-    assertEquals(schemaId.getContainerName(), "MyTest");
-    assertEquals(schemaId.getContainerName(SpecMilestone.DENEB), "MyTestDeneb");
+    assertEquals("MyTest", schemaId.getSchemaName());
+    assertEquals("MyTestDeneb", schemaId.getSchemaName(SpecMilestone.DENEB));
   }
 
   @Test

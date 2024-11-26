@@ -170,13 +170,13 @@ public class Web3jEth1ProviderTest {
 
     // advance less then required
     timeProvider.advanceTimeBySeconds(
-        Constants.ETH1_INVALID_ENDPOINT_CHECK_INTERVAL.getSeconds() - 10);
+        Constants.ETH1_INVALID_ENDPOINT_CHECK_INTERVAL.toSeconds() - 10);
 
     // just failed, no need to validate
     assertThat(provider.needsToBeValidated()).isFalse();
 
     // advance to go after
-    timeProvider.advanceTimeBySeconds(Constants.ETH1_INVALID_ENDPOINT_CHECK_INTERVAL.getSeconds());
+    timeProvider.advanceTimeBySeconds(Constants.ETH1_INVALID_ENDPOINT_CHECK_INTERVAL.toSeconds());
 
     // after the interval needs to be validated
     assertThat(provider.needsToBeValidated()).isTrue();
@@ -186,8 +186,7 @@ public class Web3jEth1ProviderTest {
     // just validated, no need to validate
     assertThat(provider.needsToBeValidated()).isFalse();
 
-    timeProvider.advanceTimeBySeconds(
-        Constants.ETH1_VALID_ENDPOINT_CHECK_INTERVAL.getSeconds() + 1);
+    timeProvider.advanceTimeBySeconds(Constants.ETH1_VALID_ENDPOINT_CHECK_INTERVAL.toSeconds() + 1);
 
     // after the interval needs to be validated
     assertThat(provider.needsToBeValidated()).isTrue();
@@ -198,13 +197,13 @@ public class Web3jEth1ProviderTest {
 
     // advance less then required
     timeProvider.advanceTimeBySeconds(
-        Constants.ETH1_FAILED_ENDPOINT_CHECK_INTERVAL.getSeconds() - 10);
+        Constants.ETH1_FAILED_ENDPOINT_CHECK_INTERVAL.toSeconds() - 10);
 
     // just failed a call, no need to validate
     assertThat(provider.needsToBeValidated()).isFalse();
 
     // advance to go after
-    timeProvider.advanceTimeBySeconds(Constants.ETH1_FAILED_ENDPOINT_CHECK_INTERVAL.getSeconds());
+    timeProvider.advanceTimeBySeconds(Constants.ETH1_FAILED_ENDPOINT_CHECK_INTERVAL.toSeconds());
 
     // after the interval needs to be validated
     assertThat(provider.needsToBeValidated()).isTrue();

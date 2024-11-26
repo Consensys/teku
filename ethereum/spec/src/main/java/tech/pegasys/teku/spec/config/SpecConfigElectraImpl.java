@@ -17,6 +17,7 @@ import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements SpecConfigElectra {
 
@@ -39,6 +40,10 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   private final int maxConsolidationRequestsPerPayload;
   private final int maxPendingPartialsPerWithdrawalsSweep;
   private final int maxPendingDepositsPerEpoch;
+  private final int maxBlobsPerBlockElectra;
+  private final int targetBlobsPerBlockElectra;
+  private final int maxRequestBlobSidecarsElectra;
+  private final int blobSidecarSubnetCountElectra;
 
   public SpecConfigElectraImpl(
       final SpecConfigDeneb specConfig,
@@ -58,7 +63,11 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
       final int maxWithdrawalRequestsPerPayload,
       final int maxConsolidationRequestsPerPayload,
       final int maxPendingPartialsPerWithdrawalsSweep,
-      final int maxPendingDepositsPerEpoch) {
+      final int maxPendingDepositsPerEpoch,
+      final int maxBlobsPerBlockElectra,
+      final int targetBlobsPerBlockElectra,
+      final int maxRequestBlobSidecarsElectra,
+      final int blobSidecarSubnetCountElectra) {
     super(specConfig);
     this.electraForkVersion = electraForkVersion;
     this.electraForkEpoch = electraForkEpoch;
@@ -77,6 +86,10 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
     this.maxConsolidationRequestsPerPayload = maxConsolidationRequestsPerPayload;
     this.maxPendingPartialsPerWithdrawalsSweep = maxPendingPartialsPerWithdrawalsSweep;
     this.maxPendingDepositsPerEpoch = maxPendingDepositsPerEpoch;
+    this.maxBlobsPerBlockElectra = maxBlobsPerBlockElectra;
+    this.targetBlobsPerBlockElectra = targetBlobsPerBlockElectra;
+    this.maxRequestBlobSidecarsElectra = maxRequestBlobSidecarsElectra;
+    this.blobSidecarSubnetCountElectra = blobSidecarSubnetCountElectra;
   }
 
   @Override
@@ -165,8 +178,33 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   }
 
   @Override
+  public int getMaxBlobsPerBlock() {
+    return maxBlobsPerBlockElectra;
+  }
+
+  @Override
+  public int getTargetBlobsPerBlock() {
+    return targetBlobsPerBlockElectra;
+  }
+
+  @Override
+  public int getBlobSidecarSubnetCount() {
+    return blobSidecarSubnetCountElectra;
+  }
+
+  @Override
+  public int getMaxRequestBlobSidecars() {
+    return maxRequestBlobSidecarsElectra;
+  }
+
+  @Override
   public Optional<SpecConfigElectra> toVersionElectra() {
     return Optional.of(this);
+  }
+
+  @Override
+  public SpecMilestone getMilestone() {
+    return SpecMilestone.ELECTRA;
   }
 
   @Override
@@ -195,7 +233,11 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
         && maxWithdrawalRequestsPerPayload == that.maxWithdrawalRequestsPerPayload
         && maxConsolidationRequestsPerPayload == that.maxConsolidationRequestsPerPayload
         && maxPendingPartialsPerWithdrawalsSweep == that.maxPendingPartialsPerWithdrawalsSweep
-        && maxPendingDepositsPerEpoch == that.maxPendingDepositsPerEpoch;
+        && maxPendingDepositsPerEpoch == that.maxPendingDepositsPerEpoch
+        && maxBlobsPerBlockElectra == that.maxBlobsPerBlockElectra
+        && targetBlobsPerBlockElectra == that.targetBlobsPerBlockElectra
+        && maxRequestBlobSidecarsElectra == that.maxRequestBlobSidecarsElectra
+        && blobSidecarSubnetCountElectra == that.blobSidecarSubnetCountElectra;
   }
 
   @Override
@@ -218,6 +260,10 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
         maxWithdrawalRequestsPerPayload,
         maxConsolidationRequestsPerPayload,
         maxPendingPartialsPerWithdrawalsSweep,
-        maxPendingDepositsPerEpoch);
+        maxPendingDepositsPerEpoch,
+        maxBlobsPerBlockElectra,
+        targetBlobsPerBlockElectra,
+        maxRequestBlobSidecarsElectra,
+        blobSidecarSubnetCountElectra);
   }
 }

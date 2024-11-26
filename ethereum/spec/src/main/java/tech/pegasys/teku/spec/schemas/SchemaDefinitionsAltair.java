@@ -14,7 +14,11 @@
 package tech.pegasys.teku.spec.schemas;
 
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATE_AND_PROOF_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_BODY_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_STATE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
 
 import com.google.common.base.Preconditions;
 import java.util.Optional;
@@ -29,7 +33,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyBuilderAltair;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltairImpl;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponseSchema;
@@ -46,10 +49,9 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionDataSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessageSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
@@ -59,8 +61,9 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   private final AttestationSchema<Attestation> attestationSchema;
   private final SignedAggregateAndProofSchema signedAggregateAndProofSchema;
   private final AggregateAndProofSchema aggregateAndProofSchema;
-  private final BeaconStateSchemaAltair beaconStateSchema;
-  private final BeaconBlockBodySchemaAltairImpl beaconBlockBodySchema;
+  private final BeaconStateSchema<? extends BeaconState, ? extends MutableBeaconState>
+      beaconStateSchema;
+  private final BeaconBlockBodySchema<?> beaconBlockBodySchema;
   private final BeaconBlockSchema beaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
   private final SyncCommitteeContributionSchema syncCommitteeContributionSchema;
@@ -80,16 +83,10 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
     this.attestationSchema = schemaRegistry.get(SchemaTypes.ATTESTATION_SCHEMA);
     this.aggregateAndProofSchema = schemaRegistry.get(AGGREGATE_AND_PROOF_SCHEMA);
     this.signedAggregateAndProofSchema = schemaRegistry.get(SIGNED_AGGREGATE_AND_PROOF_SCHEMA);
-    this.beaconStateSchema = BeaconStateSchemaAltair.create(specConfig);
-    this.beaconBlockBodySchema =
-        BeaconBlockBodySchemaAltairImpl.create(
-            specConfig,
-            getMaxValidatorsPerAttestation(specConfig),
-            "BeaconBlockBodyAltair",
-            schemaRegistry);
-    this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockAltair");
-    this.signedBeaconBlockSchema =
-        new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockAltair");
+    this.beaconStateSchema = schemaRegistry.get(BEACON_STATE_SCHEMA);
+    this.beaconBlockBodySchema = schemaRegistry.get(BEACON_BLOCK_BODY_SCHEMA);
+    this.beaconBlockSchema = schemaRegistry.get(BEACON_BLOCK_SCHEMA);
+    this.signedBeaconBlockSchema = schemaRegistry.get(SIGNED_BEACON_BLOCK_SCHEMA);
     this.syncCommitteeContributionSchema = SyncCommitteeContributionSchema.create(specConfig);
     this.contributionAndProofSchema =
         ContributionAndProofSchema.create(syncCommitteeContributionSchema);
@@ -137,7 +134,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   }
 
   @Override
-  public BeaconStateSchema<? extends BeaconStateAltair, ? extends MutableBeaconStateAltair>
+  public BeaconStateSchema<? extends BeaconState, ? extends MutableBeaconState>
       getBeaconStateSchema() {
     return beaconStateSchema;
   }

@@ -41,7 +41,7 @@ public class EphemeryNetwork {
   }
 
   static void updateConfig(final SpecConfigBuilder builder, final TimeProvider timeProvider) {
-    final SpecConfig config = SpecConfigLoader.loadConfig("ephemery");
+    final SpecConfig config = SpecConfigLoader.loadConfig("ephemery").specConfig();
     final SpecConfigBuilder rawConfigBuilder = builder.rawConfig(config.getRawConfig());
     final long periodsSinceInitialGenesis = getPeriodsSinceGenesis(timeProvider);
 

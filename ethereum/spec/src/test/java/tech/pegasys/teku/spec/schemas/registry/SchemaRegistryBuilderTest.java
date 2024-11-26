@@ -22,6 +22,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
+import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import java.util.EnumSet;
@@ -48,7 +49,7 @@ public class SchemaRegistryBuilderTest {
     when(mockProvider.getSchemaId()).thenReturn(stringId);
     when(mockProvider.getSchema(any())).thenReturn(stringSchema);
     when(mockProvider.getSupportedMilestones()).thenReturn(supportedMilestones);
-    when(mockProvider.getEffectiveMilestone(any())).thenReturn(PHASE0);
+    when(mockProvider.getBaseMilestone(any())).thenReturn(PHASE0);
   }
 
   @Test
@@ -71,10 +72,40 @@ public class SchemaRegistryBuilderTest {
   @Test
   void shouldPrimeRegistry() {
     builder.addProvider(mockProvider);
-    builder.build(ALTAIR, specConfig);
+    builder.build(PHASE0, specConfig);
 
     // we should have it in cache immediately
+    verify(cache).put(PHASE0, stringId, stringSchema);
+  }
+
+  @Test
+  void shouldAutomaticallyBuildPreviousMilestones() {
+    builder.addProvider(mockProvider);
+    builder.build(ALTAIR, specConfig);
+
+    verify(cache).put(PHASE0, stringId, stringSchema);
     verify(cache).put(ALTAIR, stringId, stringSchema);
+  }
+
+  @Test
+  void shouldThrowWhenNotBuildingInOrder() {
+    builder.build(PHASE0, specConfig);
+
+    assertThatThrownBy(() -> builder.build(BELLATRIX, specConfig))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            "Build must follow the milestone ordering. Last built milestone: PHASE0, requested milestone: BELLATRIX");
+  }
+
+  @Test
+  void shouldThrowWhenBuildingSameMilestoneTwice() {
+    builder.build(PHASE0, specConfig);
+    builder.build(ALTAIR, specConfig);
+
+    assertThatThrownBy(() -> builder.build(ALTAIR, specConfig))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            "Build must follow the milestone ordering. Last built milestone: ALTAIR, requested milestone: ALTAIR");
   }
 
   @Test

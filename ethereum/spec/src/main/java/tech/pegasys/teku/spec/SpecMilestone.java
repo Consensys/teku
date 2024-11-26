@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Arrays;
@@ -55,12 +56,21 @@ public enum SpecMilestone {
   }
 
   /** Returns the milestone prior to this milestone */
+  @SuppressWarnings("EnumOrdinal")
   public SpecMilestone getPreviousMilestone() {
-    if (equals(PHASE0)) {
-      throw new IllegalArgumentException("There is no milestone prior to Phase0");
+    checkArgument(!equals(PHASE0), "There is no milestone prior to Phase0");
+    final SpecMilestone[] values = SpecMilestone.values();
+    return values[ordinal() - 1];
+  }
+
+  /** Returns the milestone prior to this milestone */
+  @SuppressWarnings("EnumOrdinal")
+  public Optional<SpecMilestone> getPreviousMilestoneIfExists() {
+    if (this.equals(PHASE0)) {
+      return Optional.empty();
     }
-    final List<SpecMilestone> priorMilestones = getAllPriorMilestones(this);
-    return priorMilestones.getLast();
+    final SpecMilestone[] values = SpecMilestone.values();
+    return Optional.of(values[ordinal() - 1]);
   }
 
   /**

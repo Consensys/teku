@@ -1,11 +1,11 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.2'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.17.2'
-    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.17.2'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.18.1'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.18.1'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.18.1'
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.18.1'
 
-    dependencySet(group: 'com.google.errorprone', version: '2.34.0') {
+    dependencySet(group: 'com.google.errorprone', version: '2.35.1') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'
@@ -38,11 +38,11 @@ dependencyManagement {
 
     dependency 'org.hdrhistogram:HdrHistogram:2.2.2'
 
-    dependency 'org.jetbrains.kotlin:kotlin-stdlib:2.0.20'
+    dependency 'org.jetbrains.kotlin:kotlin-stdlib:2.0.21'
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.15.0'
 
-    dependencySet(group: 'io.swagger.core.v3', version: '2.2.23') {
+    dependencySet(group: 'io.swagger.core.v3', version: '2.2.25') {
       entry 'swagger-parser'
       entry 'swagger-core'
       entry 'swagger-models'
@@ -53,26 +53,26 @@ dependencyManagement {
     dependency 'org.webjars:swagger-ui:5.17.14'
 
     dependency 'org.thymeleaf:thymeleaf:3.1.2.RELEASE'
-    dependency 'io.github.classgraph:classgraph:4.8.175'
-    dependencySet(group: 'com.github.oshi', version: '6.6.3') {
+    dependency 'io.github.classgraph:classgraph:4.8.177'
+    dependencySet(group: 'com.github.oshi', version: '6.6.5') {
       entry 'oshi-core'
       entry 'oshi-core-java11'
     }
 
-    dependencySet(group: 'io.netty', version: '4.1.112.Final') {
+    dependencySet(group: 'io.netty', version: '4.1.115.Final') {
       entry 'netty-handler'
       entry 'netty-codec-http'
     }
 
-    dependencySet(group: 'io.vertx', version: '4.5.9') {
+    dependencySet(group: 'io.vertx', version: '4.5.10') {
       entry 'vertx-codegen'
       entry 'vertx-core'
       entry 'vertx-unit'
       entry 'vertx-web'
     }
-    dependency 'io.projectreactor:reactor-core:3.6.9'
+    dependency 'io.projectreactor:reactor-core:3.6.11'
 
-    dependency 'it.unimi.dsi:fastutil:8.5.14'
+    dependency 'it.unimi.dsi:fastutil:8.5.15'
 
     dependency 'javax.annotation:javax.annotation-api:1.3.2'
 
@@ -86,10 +86,10 @@ dependencyManagement {
 
     dependency 'org.apache.commons:commons-text:1.12.0'
     dependency 'org.apache.commons:commons-lang3:3.17.0'
-    dependency 'commons-io:commons-io:2.16.1'
+    dependency 'commons-io:commons-io:2.17.0'
     dependency 'org.commonjava.mimeparse:mimeparse:0.1.3.3'
 
-    dependencySet(group: 'org.apache.logging.log4j', version: '2.23.1') {
+    dependencySet(group: 'org.apache.logging.log4j', version: '2.24.1') {
       entry 'log4j-api'
       entry 'log4j-core'
       entry 'log4j-slf4j-impl'
@@ -102,20 +102,20 @@ dependencyManagement {
 
     dependency 'org.awaitility:awaitility:4.2.2'
 
-    dependencySet(group: 'org.bouncycastle', version: '1.78.1') {
+    dependencySet(group: 'org.bouncycastle', version: '1.79') {
       entry 'bcprov-jdk18on'
       entry 'bcpkix-jdk18on'
     }
 
-    dependencySet(group: 'org.junit.jupiter', version: '5.11.0') {
+    dependencySet(group: 'org.junit.jupiter', version: '5.11.3') {
       entry 'junit-jupiter-api'
       entry 'junit-jupiter-engine'
       entry 'junit-jupiter-params'
     }
 
-    dependency 'net.java.dev.jna:jna:5.14.0'
+    dependency 'net.java.dev.jna:jna:5.15.0'
 
-    dependencySet(group: 'org.mockito', version: '5.13.0') {
+    dependencySet(group: 'org.mockito', version: '5.14.2') {
       entry 'mockito-core'
       entry 'mockito-junit-jupiter'
     }
@@ -137,22 +137,22 @@ dependencyManagement {
       entry 'utils'
     }
 
-    dependency 'org.xerial.snappy:snappy-java:1.1.10.6'
+    dependency 'org.xerial.snappy:snappy-java:1.1.10.7'
 
     dependency 'io.prometheus:simpleclient:0.16.0'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '24.7.0') {
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '24.10.0') {
       entry('metrics-core')
       entry('core')
       entry('config')
     }
-    dependencySet(group: 'org.hyperledger.besu', version: '24.8.0') {
+    dependencySet(group: 'org.hyperledger.besu', version: '24.10.0') {
       entry('besu-datatypes')
       entry('evm')
       entry('plugin-api')
     }
 
-    dependencySet(group: 'org.testcontainers', version: '1.20.1') {
+    dependencySet(group: 'org.testcontainers', version: '1.20.3') {
       entry "testcontainers"
       entry "junit-jupiter"
     }
@@ -176,6 +176,6 @@ dependencyManagement {
       entry 'jjwt-jackson'
     }
 
-    dependency 'net.jqwik:jqwik:1.9.0'
+    dependency 'net.jqwik:jqwik:1.9.1'
   }
 }

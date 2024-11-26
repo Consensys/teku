@@ -18,22 +18,55 @@ import com.google.common.base.CaseFormat;
 import com.google.common.base.Converter;
 import com.google.common.base.MoreObjects;
 import java.util.Locale;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
+import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
+import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
+import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public class SchemaTypes {
   // PHASE0
@@ -59,19 +92,83 @@ public class SchemaTypes {
   public static final SchemaId<SignedAggregateAndProofSchema> SIGNED_AGGREGATE_AND_PROOF_SCHEMA =
       create("SIGNED_AGGREGATE_AND_PROOF_SCHEMA");
 
-  public static final SchemaId<ExecutionPayloadHeaderSchema<? extends ExecutionPayloadHeader>>
-      EXECUTION_PAYLOAD_HEADER_SCHEMA = create("EXECUTION_PAYLOAD_HEADER_SCHEMA");
+  public static final SchemaId<BeaconBlockBodySchema<? extends BeaconBlockBody>>
+      BEACON_BLOCK_BODY_SCHEMA = create("BEACON_BLOCK_BODY_SCHEMA");
+  public static final SchemaId<BeaconBlockSchema> BEACON_BLOCK_SCHEMA =
+      create("BEACON_BLOCK_SCHEMA");
+  public static final SchemaId<SignedBeaconBlockSchema> SIGNED_BEACON_BLOCK_SCHEMA =
+      create("SIGNED_BEACON_BLOCK_SCHEMA");
 
-  public static final SchemaId<BeaconStateSchema<BeaconState, MutableBeaconState>>
+  public static final SchemaId<
+          BeaconStateSchema<? extends BeaconState, ? extends MutableBeaconState>>
       BEACON_STATE_SCHEMA = create("BEACON_STATE_SCHEMA");
 
   // Altair
 
   // Bellatrix
+  public static final SchemaId<ExecutionPayloadSchema<? extends ExecutionPayload>>
+      EXECUTION_PAYLOAD_SCHEMA = create("EXECUTION_PAYLOAD_SCHEMA");
+  public static final SchemaId<ExecutionPayloadHeaderSchema<? extends ExecutionPayloadHeader>>
+      EXECUTION_PAYLOAD_HEADER_SCHEMA = create("EXECUTION_PAYLOAD_HEADER_SCHEMA");
+
+  public static final SchemaId<BeaconBlockSchema> BLINDED_BEACON_BLOCK_SCHEMA =
+      create("BLINDED_BEACON_BLOCK_SCHEMA");
+  public static final SchemaId<
+          BlindedBeaconBlockBodySchemaBellatrix<? extends BlindedBeaconBlockBodyBellatrix>>
+      BLINDED_BEACON_BLOCK_BODY_SCHEMA = create("BLINDED_BEACON_BLOCK_BODY_SCHEMA");
+  public static final SchemaId<SignedBeaconBlockSchema> SIGNED_BLINDED_BEACON_BLOCK_SCHEMA =
+      create("SIGNED_BLINDED_BEACON_BLOCK_SCHEMA");
+
+  public static final SchemaId<BuilderBidSchema<? extends BuilderBid>> BUILDER_BID_SCHEMA =
+      create("BUILDER_BID_SCHEMA");
+  public static final SchemaId<SignedBuilderBidSchema> SIGNED_BUILDER_BID_SCHEMA =
+      create("SIGNED_BUILDER_BID_SCHEMA");
 
   // Capella
+  public static final SchemaId<WithdrawalSchema> WITHDRAWAL_SCHEMA = create("WITHDRAWAL_SCHEMA");
+  public static final SchemaId<BlsToExecutionChangeSchema> BLS_TO_EXECUTION_CHANGE_SCHEMA =
+      create("BLS_TO_EXECUTION_CHANGE_SCHEMA");
+  public static final SchemaId<SignedBlsToExecutionChangeSchema>
+      SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA = create("SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA");
+  public static final SchemaId<SszListSchema<HistoricalSummary, ?>> HISTORICAL_SUMMARIES_SCHEMA =
+      create("HISTORICAL_SUMMARIES_SCHEMA");
 
   // Deneb
+  public static final SchemaId<BlobKzgCommitmentsSchema> BLOB_KZG_COMMITMENTS_SCHEMA =
+      create("BLOB_KZG_COMMITMENTS_SCHEMA");
+  public static final SchemaId<BlobSchema> BLOB_SCHEMA = create("BLOB_SCHEMA");
+  public static final SchemaId<SszListSchema<Blob, ? extends SszList<Blob>>> BLOBS_IN_BLOCK_SCHEMA =
+      create("BLOBS_IN_BLOCK_SCHEMA");
+  public static final SchemaId<BlobSidecarSchema> BLOB_SIDECAR_SCHEMA =
+      create("BLOB_SIDECAR_SCHEMA");
+  public static final SchemaId<BlobSidecarsByRootRequestMessageSchema>
+      BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA =
+          create("BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA");
+  public static final SchemaId<BlockContentsSchema> BLOCK_CONTENTS_SCHEMA =
+      create("BLOCK_CONTENTS_SCHEMA");
+  public static final SchemaId<SignedBlockContentsSchema> SIGNED_BLOCK_CONTENTS_SCHEMA =
+      create("SIGNED_BLOCK_CONTENTS_SCHEMA");
+  public static final SchemaId<BlobsBundleSchema> BLOBS_BUNDLE_SCHEMA =
+      create("BLOBS_BUNDLE_SCHEMA");
+
+  // Electra
+  public static final SchemaId<ExecutionRequestsSchema> EXECUTION_REQUESTS_SCHEMA =
+      create("EXECUTION_REQUESTS_SCHEMA");
+  public static final SchemaId<SszListSchema<PendingPartialWithdrawal, ?>>
+      PENDING_PARTIAL_WITHDRAWALS_SCHEMA = create("PENDING_PARTIAL_WITHDRAWALS_SCHEMA");
+  public static final SchemaId<SszListSchema<PendingConsolidation, ?>>
+      PENDING_CONSOLIDATIONS_SCHEMA = create("PENDING_CONSOLIDATIONS_SCHEMA");
+  public static final SchemaId<SszListSchema<PendingDeposit, ?>> PENDING_DEPOSITS_SCHEMA =
+      create("PENDING_DEPOSITS_SCHEMA");
+  public static final SchemaId<ExecutionPayloadAndBlobsBundleSchema>
+      EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA =
+          create("EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA");
+  public static final SchemaId<DepositRequestSchema> DEPOSIT_REQUEST_SCHEMA =
+      create("DEPOSIT_REQUEST_SCHEMA");
+  public static final SchemaId<WithdrawalRequestSchema> WITHDRAWAL_REQUEST_SCHEMA =
+      create("WITHDRAWAL_REQUEST_SCHEMA");
+  public static final SchemaId<ConsolidationRequestSchema> CONSOLIDATION_REQUEST_SCHEMA =
+      create("CONSOLIDATION_REQUEST_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation
@@ -104,11 +201,11 @@ public class SchemaTypes {
       return name;
     }
 
-    public String getContainerName(final SpecMilestone milestone) {
-      return getContainerName() + capitalizeMilestone(milestone);
+    public String getSchemaName(final SpecMilestone milestone) {
+      return getSchemaName() + capitalizeMilestone(milestone);
     }
 
-    public String getContainerName() {
+    public String getSchemaName() {
       return upperSnakeCaseToUpperCamel(name.replace("_SCHEMA", ""));
     }
 

@@ -1,7 +1,7 @@
 {
-  "title" : "BlindedBlockBodyElectra",
+  "title" : "BlindedBeaconBlockBodyCapella",
   "type" : "object",
-  "required" : [ "randao_reveal", "eth1_data", "graffiti", "proposer_slashings", "attester_slashings", "attestations", "deposits", "voluntary_exits", "sync_aggregate", "execution_payload_header", "bls_to_execution_changes", "blob_kzg_commitments", "execution_requests" ],
+  "required" : [ "randao_reveal", "eth1_data", "graffiti", "proposer_slashings", "attester_slashings", "attestations", "deposits", "voluntary_exits", "sync_aggregate", "execution_payload_header", "bls_to_execution_changes" ],
   "properties" : {
     "randao_reveal" : {
       "type" : "string",
@@ -27,13 +27,13 @@
     "attester_slashings" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/AttesterSlashingElectra"
+        "$ref" : "#/components/schemas/AttesterSlashingPhase0"
       }
     },
     "attestations" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/AttestationElectra"
+        "$ref" : "#/components/schemas/AttestationPhase0"
       }
     },
     "deposits" : {
@@ -52,25 +52,13 @@
       "$ref" : "#/components/schemas/SyncAggregate"
     },
     "execution_payload_header" : {
-      "$ref" : "#/components/schemas/ExecutionPayloadHeaderDeneb"
+      "$ref" : "#/components/schemas/ExecutionPayloadHeaderCapella"
     },
     "bls_to_execution_changes" : {
       "type" : "array",
       "items" : {
         "$ref" : "#/components/schemas/SignedBLSToExecutionChange"
       }
-    },
-    "blob_kzg_commitments" : {
-      "type" : "array",
-      "items" : {
-        "type" : "string",
-        "pattern" : "^0x[a-fA-F0-9]{2,}$",
-        "description" : "Bytes48 hexadecimal",
-        "format" : "bytes"
-      }
-    },
-    "execution_requests" : {
-      "$ref" : "#/components/schemas/ExecutionRequests"
     }
   }
 }

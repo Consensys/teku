@@ -1095,7 +1095,8 @@ class ForkChoiceNotifierTest {
         overrideFeeRecipient.orElse(dataStructureUtil.randomEth1Address());
     final UInt64 timestamp = spec.computeTimeAtSlot(headState, blockSlot);
     final Bytes32 random = spec.getRandaoMix(headState, UInt64.ZERO);
-    final Optional<UInt64> maxBlobsPerBlock = spec.getMaxBlobsPerBlock().map(UInt64::valueOf);
+    final Optional<UInt64> maxBlobsPerBlock =
+        spec.getMaxBlobsPerBlockForHighestMilestone().map(UInt64::valueOf);
     return new PayloadBuildingAttributes(
         proposerIndex,
         blockSlot,

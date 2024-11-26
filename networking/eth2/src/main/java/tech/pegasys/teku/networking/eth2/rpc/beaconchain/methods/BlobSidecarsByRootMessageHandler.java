@@ -52,7 +52,6 @@ public class BlobSidecarsByRootMessageHandler
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final SpecConfigDeneb specConfigDeneb;
   private final CombinedChainDataClient combinedChainDataClient;
 
   private final LabelledMetric<Counter> requestCounter;
@@ -60,11 +59,9 @@ public class BlobSidecarsByRootMessageHandler
 
   public BlobSidecarsByRootMessageHandler(
       final Spec spec,
-      final SpecConfigDeneb specConfigDeneb,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient) {
     this.spec = spec;
-    this.specConfigDeneb = specConfigDeneb;
     this.combinedChainDataClient = combinedChainDataClient;
     requestCounter =
         metricsSystem.createLabelledCounter(
@@ -82,7 +79,7 @@ public class BlobSidecarsByRootMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final BlobSidecarsByRootRequestMessage request) {
-    final int maxRequestBlobSidecars = specConfigDeneb.getMaxRequestBlobSidecars();
+    final int maxRequestBlobSidecars = getMaxRequestBlobSidecars();
     if (request.size() > maxRequestBlobSidecars) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
@@ -154,6 +151,12 @@ public class BlobSidecarsByRootMessageHandler
           peer.adjustBlobSidecarsRequest(blobSidecarsRequestApproval.get(), 0);
           handleError(callback, err);
         });
+  }
+
+  private int getMaxRequestBlobSidecars() {
+    final UInt64 epoch =
+        combinedChainDataClient.getRecentChainData().getCurrentEpoch().orElse(UInt64.ZERO);
+    return SpecConfigDeneb.required(spec.atEpoch(epoch).getConfig()).getMaxRequestBlobSidecars();
   }
 
   private UInt64 getFinalizedEpoch() {

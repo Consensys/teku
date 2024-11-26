@@ -85,7 +85,6 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
@@ -2310,7 +2309,10 @@ public final class DataStructureUtil {
 
   public BlobIdentifier randomBlobIdentifier(final Bytes32 blockRoot) {
     final int maxBlobsPerBlock =
-        SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+        spec.forMilestone(SpecMilestone.DENEB)
+            .getConfig()
+            .toVersionDeneb()
+            .orElseThrow()
             .getMaxBlobsPerBlock();
     return new BlobIdentifier(blockRoot, randomUInt64(maxBlobsPerBlock));
   }
@@ -2540,7 +2542,7 @@ public final class DataStructureUtil {
 
   public ExecutionRequests randomExecutionRequests() {
     return new ExecutionRequestsBuilderElectra(
-            SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig()))
+            spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions().getSchemaRegistry())
         .deposits(randomDepositRequests())
         .withdrawals(randomWithdrawalRequests())
         .consolidations(randomConsolidationRequests())
@@ -2616,12 +2618,24 @@ public final class DataStructureUtil {
   }
 
   public UInt64 randomBlobSidecarIndex() {
-    return randomUInt64(spec.getMaxBlobsPerBlock().orElseThrow());
+    return randomUInt64(
+        spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+            .getConfig()
+            .toVersionDeneb()
+            .orElseThrow()
+            .getMaxBlobsPerBlock());
   }
 
   private int randomNumberOfBlobsPerBlock() {
     // minimum 1 blob
-    return randomInt(1, spec.getMaxBlobsPerBlock().orElseThrow() + 1);
+    return randomInt(
+        1,
+        spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+                .getConfig()
+                .toVersionDeneb()
+                .orElseThrow()
+                .getMaxBlobsPerBlock()
+            + 1);
   }
 
   private int randomInt(final int origin, final int bound) {

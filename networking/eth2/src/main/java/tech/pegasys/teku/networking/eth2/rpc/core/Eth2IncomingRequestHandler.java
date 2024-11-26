@@ -129,7 +129,7 @@ public class Eth2IncomingRequestHandler<
               if (!requestHandled.get()) {
                 LOG.debug(
                     "Failed to receive incoming request data within {} sec for protocol {}. Close stream.",
-                    timeout.getSeconds(),
+                    timeout.toSeconds(),
                     protocolId);
                 stream.closeAbruptly().ifExceptionGetsHereRaiseABug();
               }

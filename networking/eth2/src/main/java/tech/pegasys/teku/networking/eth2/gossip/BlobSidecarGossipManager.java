@@ -68,8 +68,11 @@ public class BlobSidecarGossipManager implements GossipManager {
             .getBlobSidecarSchema();
     final Int2ObjectMap<Eth2TopicHandler<BlobSidecar>> subnetIdToTopicHandler =
         new Int2ObjectOpenHashMap<>();
-    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(forkSpecVersion.getConfig());
-    IntStream.range(0, specConfigDeneb.getBlobSidecarSubnetCount())
+    final int blobSidecarSubnetCount =
+        SpecConfigDeneb.required(spec.atEpoch(forkInfo.getFork().getEpoch()).getConfig())
+            .getBlobSidecarSubnetCount();
+
+    IntStream.range(0, blobSidecarSubnetCount)
         .forEach(
             subnetId -> {
               final Eth2TopicHandler<BlobSidecar> topicHandler =

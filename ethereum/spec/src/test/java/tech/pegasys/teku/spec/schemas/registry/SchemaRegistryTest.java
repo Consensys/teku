@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.schemas.registry;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -24,6 +25,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container1;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema1;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
@@ -34,22 +40,22 @@ public class SchemaRegistryTest {
   private final SchemaCache schemaCache = spy(SchemaCache.createDefault());
 
   @SuppressWarnings("unchecked")
-  private final SchemaProvider<String> schemaProvider = mock(SchemaProvider.class);
+  private final SchemaProvider<TestSchema> schemaProvider = mock(SchemaProvider.class);
 
   @SuppressWarnings("unchecked")
-  private final SchemaId<String> schemaId = mock(SchemaId.class);
+  private final SchemaId<TestSchema> schemaId = mock(SchemaId.class);
 
   private final SchemaRegistry schemaRegistry =
       new SchemaRegistry(SpecMilestone.ALTAIR, specConfig, schemaCache);
 
   @Test
   void shouldGetSchemaFromCache() {
-    final String cachedSchema = "schema";
+    final TestSchema cachedSchema = new TestSchema("test", 2);
     when(schemaProvider.getSchemaId()).thenReturn(schemaId);
     when(schemaCache.get(SpecMilestone.ALTAIR, schemaId)).thenReturn(cachedSchema);
 
     schemaRegistry.registerProvider(schemaProvider);
-    final String result = schemaRegistry.get(schemaId);
+    final TestSchema result = schemaRegistry.get(schemaId);
 
     assertEquals(cachedSchema, result);
     verify(schemaCache).get(SpecMilestone.ALTAIR, schemaId);
@@ -57,58 +63,128 @@ public class SchemaRegistryTest {
   }
 
   @Test
-  void shouldGetSchemaFromProvider() {
-    final String newSchema = "schema";
+  void shouldGetNewInstanceWhenSchemaEqualityCheckIsDisabled() {
+
+    // two different schema instances but equal
+    final TestSchema newSchema = new TestSchema("test", 2);
+    final TestSchema cachedPhase0Schema = new TestSchema("test1", 2);
+
+    assertThat(newSchema).isNotSameAs(cachedPhase0Schema);
+    assertThat(newSchema).isEqualTo(cachedPhase0Schema);
+
     when(schemaProvider.getSchemaId()).thenReturn(schemaId);
-    when(schemaProvider.getEffectiveMilestone(SpecMilestone.ALTAIR))
-        .thenReturn(SpecMilestone.ALTAIR);
+    when(schemaCache.get(SpecMilestone.PHASE0, schemaId)).thenReturn(cachedPhase0Schema);
+    when(schemaProvider.getBaseMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.PHASE0);
     when(schemaProvider.getSchema(schemaRegistry)).thenReturn(newSchema);
+    when(schemaProvider.alwaysCreateNewSchema()).thenReturn(true);
 
     schemaRegistry.registerProvider(schemaProvider);
-    final String result = schemaRegistry.get(schemaId);
+    final TestSchema result = schemaRegistry.get(schemaId);
 
-    assertEquals(newSchema, result);
+    assertThat(result).isSameAs(newSchema);
+
+    verify(schemaCache, never()).get(SpecMilestone.PHASE0, schemaId);
     verify(schemaCache).get(SpecMilestone.ALTAIR, schemaId);
     verify(schemaProvider).getSchema(schemaRegistry);
-    verify(schemaCache).put(SpecMilestone.ALTAIR, schemaId, newSchema);
+    verify(schemaCache).put(SpecMilestone.ALTAIR, schemaId, result);
   }
 
   @Test
-  void shouldCacheMilestoneAndEffectiveMilestoneFromProvider() {
-    final String newSchema = "schema";
+  void shouldGetPreviousMilestoneInstanceWhenSchemaAreEqual() {
+
+    // two different schema instances but equal
+    final TestSchema newSchema = new TestSchema("test", 2);
+    final TestSchema cachedPhase0Schema = new TestSchema("test1", 2);
+
+    assertThat(newSchema).isNotSameAs(cachedPhase0Schema);
+    assertThat(newSchema).isEqualTo(cachedPhase0Schema);
+
     when(schemaProvider.getSchemaId()).thenReturn(schemaId);
-    when(schemaProvider.getEffectiveMilestone(SpecMilestone.ALTAIR))
-        .thenReturn(SpecMilestone.PHASE0);
+    when(schemaCache.get(SpecMilestone.PHASE0, schemaId)).thenReturn(cachedPhase0Schema);
+    when(schemaProvider.getBaseMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.PHASE0);
     when(schemaProvider.getSchema(schemaRegistry)).thenReturn(newSchema);
+    when(schemaProvider.alwaysCreateNewSchema()).thenReturn(false);
 
     schemaRegistry.registerProvider(schemaProvider);
-    final String result = schemaRegistry.get(schemaId);
+    final TestSchema result = schemaRegistry.get(schemaId);
 
-    assertEquals(newSchema, result);
+    assertThat(result).isSameAs(cachedPhase0Schema);
+
     verify(schemaCache).get(SpecMilestone.PHASE0, schemaId);
     verify(schemaCache).get(SpecMilestone.ALTAIR, schemaId);
     verify(schemaProvider).getSchema(schemaRegistry);
-    verify(schemaCache).put(SpecMilestone.PHASE0, schemaId, newSchema);
-    verify(schemaCache).put(SpecMilestone.ALTAIR, schemaId, newSchema);
+    verify(schemaCache).put(SpecMilestone.ALTAIR, schemaId, result);
   }
 
   @Test
-  void shouldGetFromCachedOfEffectiveMilestone() {
-    final String newSchema = "schema";
+  void shouldGetNewInstanceWhenSchemaAreNotEqual() {
+
+    // two different schema instances but equal
+    final TestSchema newSchema = new TestSchema("test", 3);
+    final TestSchema cachedPhase0Schema = new TestSchema("test1", 2);
+
+    assertThat(newSchema).isNotEqualTo(cachedPhase0Schema);
+
     when(schemaProvider.getSchemaId()).thenReturn(schemaId);
-    when(schemaCache.get(SpecMilestone.PHASE0, schemaId)).thenReturn(newSchema);
-    when(schemaProvider.getEffectiveMilestone(SpecMilestone.ALTAIR))
-        .thenReturn(SpecMilestone.PHASE0);
+    when(schemaCache.get(SpecMilestone.PHASE0, schemaId)).thenReturn(cachedPhase0Schema);
+    when(schemaProvider.getBaseMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.PHASE0);
     when(schemaProvider.getSchema(schemaRegistry)).thenReturn(newSchema);
+    when(schemaProvider.alwaysCreateNewSchema()).thenReturn(false);
 
     schemaRegistry.registerProvider(schemaProvider);
-    final String result = schemaRegistry.get(schemaId);
+    final TestSchema result = schemaRegistry.get(schemaId);
 
-    assertEquals(newSchema, result);
-    verify(schemaCache).put(SpecMilestone.ALTAIR, schemaId, newSchema);
-    verify(schemaProvider).getEffectiveMilestone(SpecMilestone.ALTAIR);
+    assertThat(result).isSameAs(newSchema);
 
-    verify(schemaProvider, never()).getSchema(schemaRegistry);
+    verify(schemaCache).get(SpecMilestone.PHASE0, schemaId);
+    verify(schemaCache).get(SpecMilestone.ALTAIR, schemaId);
+    verify(schemaProvider).getSchema(schemaRegistry);
+    verify(schemaCache).put(SpecMilestone.ALTAIR, schemaId, result);
+  }
+
+  @Test
+  void shouldGetNewInstanceWhenNoPreviousCachedSchemaExists() {
+    final TestSchema newSchema = new TestSchema("test", 3);
+
+    when(schemaProvider.getSchemaId()).thenReturn(schemaId);
+    when(schemaCache.get(SpecMilestone.PHASE0, schemaId)).thenReturn(null);
+    when(schemaProvider.getBaseMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.PHASE0);
+    when(schemaProvider.getSchema(schemaRegistry)).thenReturn(newSchema);
+    when(schemaProvider.alwaysCreateNewSchema()).thenReturn(false);
+
+    schemaRegistry.registerProvider(schemaProvider);
+    final TestSchema result = schemaRegistry.get(schemaId);
+
+    assertThat(result).isSameAs(newSchema);
+
+    verify(schemaCache).get(SpecMilestone.PHASE0, schemaId);
+    verify(schemaCache).get(SpecMilestone.ALTAIR, schemaId);
+    verify(schemaProvider).getSchema(schemaRegistry);
+    verify(schemaCache).put(SpecMilestone.ALTAIR, schemaId, result);
+  }
+
+  @Test
+  void shouldGetNewInstanceWhenPhase0() {
+    final SchemaRegistry schemaRegistry =
+        new SchemaRegistry(SpecMilestone.PHASE0, specConfig, schemaCache);
+
+    // two different schema instances but equal
+    final TestSchema newSchema = new TestSchema("test", 3);
+
+    when(schemaProvider.getSchemaId()).thenReturn(schemaId);
+    when(schemaCache.get(SpecMilestone.PHASE0, schemaId)).thenReturn(null);
+    when(schemaProvider.getBaseMilestone(SpecMilestone.PHASE0)).thenReturn(SpecMilestone.PHASE0);
+    when(schemaProvider.getSchema(schemaRegistry)).thenReturn(newSchema);
+    when(schemaProvider.alwaysCreateNewSchema()).thenReturn(false);
+
+    schemaRegistry.registerProvider(schemaProvider);
+    final TestSchema result = schemaRegistry.get(schemaId);
+
+    assertThat(result).isSameAs(newSchema);
+
+    verify(schemaCache).get(SpecMilestone.PHASE0, schemaId);
+    verify(schemaProvider).getSchema(schemaRegistry);
+    verify(schemaCache).put(SpecMilestone.PHASE0, schemaId, result);
   }
 
   @Test
@@ -204,8 +280,8 @@ public class SchemaRegistryTest {
     final SchemaId<String> id1 = mock(SchemaId.class);
     final SchemaId<Integer> id2 = mock(SchemaId.class);
 
-    when(provider1.getEffectiveMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.ALTAIR);
-    when(provider2.getEffectiveMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.ALTAIR);
+    when(provider1.getBaseMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.ALTAIR);
+    when(provider2.getBaseMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.ALTAIR);
     when(provider1.getSchemaId()).thenReturn(id1);
     when(provider2.getSchemaId()).thenReturn(id2);
 
@@ -235,8 +311,8 @@ public class SchemaRegistryTest {
     final SchemaId<String> id1 = mock(SchemaId.class);
     final SchemaId<Integer> id2 = mock(SchemaId.class);
 
-    when(provider1.getEffectiveMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.ALTAIR);
-    when(provider2.getEffectiveMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.ALTAIR);
+    when(provider1.getBaseMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.ALTAIR);
+    when(provider2.getBaseMilestone(SpecMilestone.ALTAIR)).thenReturn(SpecMilestone.ALTAIR);
     when(provider1.getSchemaId()).thenReturn(id1);
     when(provider2.getSchemaId()).thenReturn(id2);
 
@@ -265,5 +341,22 @@ public class SchemaRegistryTest {
     assertThatThrownBy(() -> schemaRegistry.registerProvider(provider1))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("has been already added via another provider");
+  }
+
+  static class TestView extends Container1<TestView, SszByteList> {
+    public TestView(final TestSchema schema, final SszByteList field0) {
+      super(schema, field0);
+    }
+  }
+
+  static class TestSchema extends ContainerSchema1<TestView, SszByteList> {
+    public TestSchema(final String containerName, final int size) {
+      super(containerName, namedSchema("field0", SszByteListSchema.create(size)));
+    }
+
+    @Override
+    public TestView createFromBackingNode(final TreeNode node) {
+      return null;
+    }
   }
 }

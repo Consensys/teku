@@ -58,18 +58,15 @@ public class BlobSidecarsByRangeMessageHandler
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final SpecConfigDeneb specConfigDeneb;
   private final CombinedChainDataClient combinedChainDataClient;
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalBlobSidecarsRequestedCounter;
 
   public BlobSidecarsByRangeMessageHandler(
       final Spec spec,
-      final SpecConfigDeneb specConfigDeneb,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient) {
     this.spec = spec;
-    this.specConfigDeneb = specConfigDeneb;
     this.combinedChainDataClient = combinedChainDataClient;
     requestCounter =
         metricsSystem.createLabelledCounter(
@@ -88,16 +85,22 @@ public class BlobSidecarsByRangeMessageHandler
   public Optional<RpcException> validateRequest(
       final String protocolId, final BlobSidecarsByRangeRequestMessage request) {
 
-    final long requestedCount = calculateRequestedCount(request);
+    final SpecConfigDeneb specConfig =
+        SpecConfigDeneb.required(spec.atSlot(request.getMaxSlot()).getConfig());
 
-    if (requestedCount > specConfigDeneb.getMaxRequestBlobSidecars()) {
+    final int maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
+    final int maxBlobsPerBlock = specConfig.getMaxBlobsPerBlock();
+
+    final long requestedCount = calculateRequestedCount(request, maxBlobsPerBlock);
+
+    if (requestedCount > maxRequestBlobSidecars) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(
               INVALID_REQUEST_CODE,
               String.format(
                   "Only a maximum of %s blob sidecars can be requested per request",
-                  specConfigDeneb.getMaxRequestBlobSidecars())));
+                  maxRequestBlobSidecars)));
     }
 
     return Optional.empty();
@@ -118,7 +121,8 @@ public class BlobSidecarsByRangeMessageHandler
         message.getCount(),
         startSlot);
 
-    final long requestedCount = calculateRequestedCount(message);
+    final SpecConfigDeneb specConfig = SpecConfigDeneb.required(spec.atSlot(endSlot).getConfig());
+    final long requestedCount = calculateRequestedCount(message, specConfig.getMaxBlobsPerBlock());
 
     final Optional<RequestApproval> blobSidecarsRequestApproval =
         peer.approveBlobSidecarsRequest(callback, requestedCount);
@@ -161,7 +165,13 @@ public class BlobSidecarsByRangeMessageHandler
               }
 
               final RequestState initialState =
-                  new RequestState(callback, startSlot, endSlot, canonicalHotRoots, finalizedSlot);
+                  new RequestState(
+                      callback,
+                      startSlot,
+                      endSlot,
+                      canonicalHotRoots,
+                      finalizedSlot,
+                      specConfig.getMaxRequestBlobSidecars());
               if (message.getCount().isZero()) {
                 return SafeFuture.completedFuture(initialState);
               }
@@ -182,8 +192,9 @@ public class BlobSidecarsByRangeMessageHandler
             });
   }
 
-  private long calculateRequestedCount(final BlobSidecarsByRangeRequestMessage message) {
-    return specConfigDeneb.getMaxBlobsPerBlock() * message.getCount().longValue();
+  private long calculateRequestedCount(
+      final BlobSidecarsByRangeRequestMessage message, final int maxBlobsPerBlock) {
+    return maxBlobsPerBlock * message.getCount().longValue();
   }
 
   private boolean checkBlobSidecarsAreAvailable(
@@ -234,6 +245,7 @@ public class BlobSidecarsByRangeMessageHandler
     private final UInt64 endSlot;
     private final UInt64 finalizedSlot;
     private final Map<UInt64, Bytes32> canonicalHotRoots;
+    private final int maxRequestBlobSidecars;
 
     private final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
 
@@ -247,12 +259,14 @@ public class BlobSidecarsByRangeMessageHandler
         final UInt64 startSlot,
         final UInt64 endSlot,
         final Map<UInt64, Bytes32> canonicalHotRoots,
-        final UInt64 finalizedSlot) {
+        final UInt64 finalizedSlot,
+        final int maxRequestBlobSidecars) {
       this.callback = callback;
       this.startSlot = startSlot;
       this.endSlot = endSlot;
       this.finalizedSlot = finalizedSlot;
       this.canonicalHotRoots = canonicalHotRoots;
+      this.maxRequestBlobSidecars = maxRequestBlobSidecars;
     }
 
     SafeFuture<Void> sendBlobSidecar(final BlobSidecar blobSidecar) {
@@ -262,7 +276,7 @@ public class BlobSidecarsByRangeMessageHandler
     SafeFuture<Optional<BlobSidecar>> loadNextBlobSidecar() {
       if (blobSidecarKeysIterator.isEmpty()) {
         return combinedChainDataClient
-            .getBlobSidecarKeys(startSlot, endSlot, specConfigDeneb.getMaxRequestBlobSidecars())
+            .getBlobSidecarKeys(startSlot, endSlot, maxRequestBlobSidecars)
             .thenCompose(
                 keys -> {
                   blobSidecarKeysIterator = Optional.of(keys.iterator());
