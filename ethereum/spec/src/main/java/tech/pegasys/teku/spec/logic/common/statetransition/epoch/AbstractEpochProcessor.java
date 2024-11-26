@@ -131,7 +131,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processEth1DataReset(state);
     processPendingDeposits(state);
     // This is only being used in Mekong temporarily
-    validatorStatuses = validatorStatusFactory.createValidatorStatuses(preState);
+    validatorStatuses = validatorStatusFactory.createValidatorStatuses(state);
     processPendingConsolidations(state);
     processEffectiveBalanceUpdates(state, validatorStatuses.getStatuses());
     processSlashingsReset(state);
