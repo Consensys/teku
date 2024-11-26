@@ -69,7 +69,6 @@ class AttestationStateSelectorTest {
         AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
   }
 
-
   private void setUp() {
     chainUpdater.initializeGenesis(false);
     chainUpdater.updateBestBlock(chainUpdater.advanceChain(5));
@@ -187,7 +186,11 @@ class AttestationStateSelectorTest {
   }
 
   @Test
-  void shouldAttestToPreviousSlotUsingTransitionedState() throws SlotProcessingException, EpochProcessingException, ExecutionException, InterruptedException {
+  void shouldAttestToPreviousSlotUsingTransitionedState()
+      throws SlotProcessingException,
+          EpochProcessingException,
+          ExecutionException,
+          InterruptedException {
 
     final StorageSystem storageSystem2 = InMemoryStorageSystemBuilder.buildDefault(spec);
     final ChainUpdater chainUpdater2 = storageSystem2.chainUpdater();
@@ -196,25 +199,30 @@ class AttestationStateSelectorTest {
     chainUpdater2.initializeGenesis(false);
     chainUpdater2.updateBestBlock(chainUpdater2.advanceChain(11));
 
-//    chainUpdater2.updateBestBlock(chainUpdater.advanceChain(11));
-    BeaconState transitionedState = spec.processSlots(recentChainData2.getBestState().get().get(),UInt64.valueOf(12));
+    //    chainUpdater2.updateBestBlock(chainUpdater.advanceChain(11));
+    BeaconState transitionedState =
+        spec.processSlots(recentChainData2.getBestState().get().get(), UInt64.valueOf(12));
     chainUpdater2.finalizeEpoch(UInt64.valueOf(0));
 
     final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, transitionedState);
-    recentChainData.initializeFromAnchorPoint(anchorPoint,UInt64.valueOf(1000));
+    recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.valueOf(1000));
 
     final UInt64 attestationSlot = recentChainData2.getHeadSlot();
     final Bytes32 blockRoot = recentChainData2.getBlockRootInEffectBySlot(attestationSlot).get();
 
     final AttestationData attestationData = attestationFor(attestationSlot, blockRoot);
-    final SafeFuture<Optional<BeaconState>> result = selectStateFor(attestationData.getSlot(), attestationData.getBeaconBlockRoot());
+    final SafeFuture<Optional<BeaconState>> result =
+        selectStateFor(attestationData.getSlot(), attestationData.getBeaconBlockRoot());
     final BeaconState selectedState = safeJoin(result).orElseThrow();
     assertThat(selectedState).isEqualTo(transitionedState);
-
   }
 
   @Test
-  void shouldAttestToNextSlotUsingTransitionedState() throws SlotProcessingException, EpochProcessingException, ExecutionException, InterruptedException {
+  void shouldAttestToNextSlotUsingTransitionedState()
+      throws SlotProcessingException,
+          EpochProcessingException,
+          ExecutionException,
+          InterruptedException {
 
     final StorageSystem storageSystem2 = InMemoryStorageSystemBuilder.buildDefault(spec);
     final ChainUpdater chainUpdater2 = storageSystem2.chainUpdater();
@@ -223,26 +231,26 @@ class AttestationStateSelectorTest {
     chainUpdater2.initializeGenesis(false);
     chainUpdater2.updateBestBlock(chainUpdater2.advanceChain(11));
 
-
-    BeaconState transitionedState = spec.processSlots(recentChainData2.getBestState().get().get(),UInt64.valueOf(12));
+    BeaconState transitionedState =
+        spec.processSlots(recentChainData2.getBestState().get().get(), UInt64.valueOf(12));
     chainUpdater2.finalizeEpoch(UInt64.valueOf(0));
 
     chainUpdater2.updateBestBlock(chainUpdater2.advanceChain(13));
     final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, transitionedState);
-    recentChainData.initializeFromAnchorPoint(anchorPoint,UInt64.valueOf(1000));
+    recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.valueOf(1000));
 
     final UInt64 attestationSlot = recentChainData2.getHeadSlot();
     final Bytes32 blockRoot = recentChainData2.getBlockRootInEffectBySlot(attestationSlot).get();
 
     final AttestationData attestationData = attestationFor(attestationSlot, blockRoot);
-    final SafeFuture<Optional<BeaconState>> result = selectStateFor(attestationData.getSlot(), attestationData.getBeaconBlockRoot());
+    final SafeFuture<Optional<BeaconState>> result =
+        selectStateFor(attestationData.getSlot(), attestationData.getBeaconBlockRoot());
     final BeaconState selectedState = safeJoin(result).orElseThrow();
     assertThat(selectedState).isEqualTo(transitionedState);
-
   }
 
   private SafeFuture<Optional<BeaconState>> selectStateFor(
-          final UInt64 attestationSlot, final Bytes32 blockRoot) {
+      final UInt64 attestationSlot, final Bytes32 blockRoot) {
     final AttestationData attestationData = attestationFor(attestationSlot, blockRoot);
     final SafeFuture<Optional<BeaconState>> result = selector.getStateToValidate(attestationData);
     final Optional<BeaconState> maybeState = safeJoin(result);

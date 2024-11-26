@@ -254,7 +254,8 @@ class RecentChainDataTest {
   }
 
   @Test
-  void createHead_upOnStatingWithNonTransitionedState() throws SlotProcessingException, EpochProcessingException {
+  void createHead_upOnStatingWithNonTransitionedState()
+      throws SlotProcessingException, EpochProcessingException {
     initPreGenesis();
     final long lastNonEmptyBlockSlot = 7;
     final ChainBuilder chainBuilder = ChainBuilder.create(spec);
@@ -267,13 +268,14 @@ class RecentChainDataTest {
     recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.valueOf(10000));
 
     assertThat(recentChainData.getChainHead().map(MinimalBeaconBlockSummary::getRoot))
-            .contains(anchorPoint.getRoot());
+        .contains(anchorPoint.getRoot());
     assertThat(recentChainData.getChainHead().map(MinimalBeaconBlockSummary::getSlot))
-            .contains(UInt64.valueOf(lastNonEmptyBlockSlot));
+        .contains(UInt64.valueOf(lastNonEmptyBlockSlot));
   }
 
   @Test
-  void createHead_upOnStatingWithTransitionedStateWithEmptyBlock() throws SlotProcessingException, EpochProcessingException {
+  void createHead_upOnStatingWithTransitionedStateWithEmptyBlock()
+      throws SlotProcessingException, EpochProcessingException {
     initPreGenesis();
     final long lastNonEmptyBlockSlot = 7;
     final ChainBuilder chainBuilder = ChainBuilder.create(spec);
@@ -282,18 +284,20 @@ class RecentChainDataTest {
     chainBuilder.generateBlocksUpToSlot(7);
 
     final SignedBlockAndState lastState = chainBuilder.getBlockAndStateAtSlot(7);
-    final BeaconState transitionedState = spec.processSlots(lastState.getState(), UInt64.valueOf(8));
+    final BeaconState transitionedState =
+        spec.processSlots(lastState.getState(), UInt64.valueOf(8));
     final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, transitionedState);
     recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.valueOf(10000));
 
     assertThat(recentChainData.getChainHead().map(MinimalBeaconBlockSummary::getRoot))
-            .contains(anchorPoint.getRoot());
+        .contains(anchorPoint.getRoot());
     assertThat(recentChainData.getChainHead().map(MinimalBeaconBlockSummary::getSlot))
-            .contains(UInt64.valueOf(lastNonEmptyBlockSlot));
+        .contains(UInt64.valueOf(lastNonEmptyBlockSlot));
   }
 
   @Test
-  void updateHead_afterStatingWithNonTransitionedState() throws SlotProcessingException, EpochProcessingException {
+  void updateHead_afterStatingWithNonTransitionedState()
+      throws SlotProcessingException, EpochProcessingException {
     initPreGenesis();
     final ChainBuilder chainBuilder = ChainBuilder.create(spec);
     final UInt64 genesisTime = UInt64.valueOf(5000);
@@ -301,18 +305,19 @@ class RecentChainDataTest {
     chainBuilder.generateBlocksUpToSlot(7);
 
     final SignedBlockAndState lastState = chainBuilder.getBlockAndStateAtSlot(7);
-        final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, lastState.getState());
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, lastState.getState());
     recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.valueOf(10000));
 
     final SignedBlockAndState transitionedStateAfterABlock = chainBuilder.generateBlockAtSlot(9);
 
     updateHead(recentChainData, transitionedStateAfterABlock);
     assertThat(recentChainData.getChainHead().map(MinimalBeaconBlockSummary::getParentRoot))
-            .contains(anchorPoint.getRoot());
+        .contains(anchorPoint.getRoot());
   }
 
   @Test
-  void updateHead_afterStatingWithTransitionedStateWithEmptyBlock() throws SlotProcessingException, EpochProcessingException {
+  void updateHead_afterStatingWithTransitionedStateWithEmptyBlock()
+      throws SlotProcessingException, EpochProcessingException {
     initPreGenesis();
     final ChainBuilder chainBuilder = ChainBuilder.create(spec);
     final UInt64 genesisTime = UInt64.valueOf(5000);
@@ -320,7 +325,8 @@ class RecentChainDataTest {
     chainBuilder.generateBlocksUpToSlot(7);
 
     final SignedBlockAndState lastState = chainBuilder.getBlockAndStateAtSlot(7);
-    final BeaconState transitionedState = spec.processSlots(lastState.getState(), UInt64.valueOf(8));
+    final BeaconState transitionedState =
+        spec.processSlots(lastState.getState(), UInt64.valueOf(8));
     final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, transitionedState);
     recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.valueOf(10000));
 
@@ -328,7 +334,7 @@ class RecentChainDataTest {
 
     updateHead(recentChainData, transitionedStateAfterABlock);
     assertThat(recentChainData.getChainHead().map(MinimalBeaconBlockSummary::getParentRoot))
-            .contains(anchorPoint.getRoot());
+        .contains(anchorPoint.getRoot());
   }
 
   @Test
