@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
@@ -250,6 +251,19 @@ public class AbstractBlockPublisherTest {
         .importBlock(
             signedBlock, BroadcastValidationLevel.NOT_REQUIRED, BlockPublishingPerformance.NOOP);
     verify(blockPublisher).importBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+  }
+
+  @Test
+  public void sendSignedBlock_shouldTrackBlockAsProducedIfUnblindingTimeouts() {
+    when(blockFactory.unblindSignedBlockIfBlinded(signedBlock, BlockPublishingPerformance.NOOP))
+        .thenReturn(SafeFuture.failedFuture(new TimeoutException()));
+
+    blockPublisher.sendSignedBlock(
+        signedBlockContents,
+        BroadcastValidationLevel.NOT_REQUIRED,
+        BlockPublishingPerformance.NOOP);
+
+    verify(performanceTracker).saveProducedBlock(signedBlockContents.getSignedBlock());
   }
 
   private SafeFuture<BlockImportAndBroadcastValidationResults> prepareBlockImportResult(

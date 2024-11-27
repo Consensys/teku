@@ -18,12 +18,14 @@ import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockI
 
 import com.google.common.base.Suppliers;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -75,7 +77,18 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
       final BlockPublishingPerformance blockPublishingPerformance) {
     return blockFactory
         .unblindSignedBlockIfBlinded(blockContainer.getSignedBlock(), blockPublishingPerformance)
-        .thenPeek(performanceTracker::saveProducedBlock)
+        .whenComplete(
+            (block, ex) -> {
+              if (ex != null) {
+                // in case of relay API timeouts when unblinding, we still want to assume the block
+                // as produced, since the relay could have published it
+                if (ExceptionUtil.hasCause(ex, TimeoutException.class)) {
+                  performanceTracker.saveProducedBlock(blockContainer.getSignedBlock());
+                }
+              } else {
+                performanceTracker.saveProducedBlock(block);
+              }
+            })
         .thenCompose(
             // creating blob sidecars after unblinding the block to ensure in the blinded flow we
             // will have the cached builder payload
