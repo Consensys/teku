@@ -132,11 +132,10 @@ public class TransitionedAnchorAcceptanceTest extends AcceptanceTestBase {
     beaconNode2.waitUntilInSyncWith(beaconNode1);
     beaconNode2.waitForBlockSatisfying(
         block -> {
-          assertThat(block).isInstanceOf(SignedBeaconBlockBellatrix.class);
-          final SignedBeaconBlockBellatrix bellatrixBlock = (SignedBeaconBlockBellatrix) block;
+          final Bytes20 blockFeeRecipient =  block.getMessage().getBody().getOptionalExecutionPayload().get().getFeeRecipient();
           assertEquals(
               Bytes20.fromHexString(node2FeeRecipient),
-              bellatrixBlock.getMessage().getBody().executionPayload.feeRecipient);
+                  blockFeeRecipient);
         });
     beaconNode2.waitForNewFinalization();
   }
