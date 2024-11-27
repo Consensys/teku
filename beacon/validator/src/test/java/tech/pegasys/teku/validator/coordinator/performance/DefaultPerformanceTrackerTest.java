@@ -74,7 +74,7 @@ public class DefaultPerformanceTrackerTest {
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
 
-    chainUpdater = new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
+    chainUpdater = new ChainUpdater(storageSystem.recentChainData(), chainBuilder, spec);
 
     performanceTracker =
         new DefaultPerformanceTracker(
@@ -245,7 +245,9 @@ public class DefaultPerformanceTrackerTest {
     chainUpdater.saveBlock(blockAndState1);
     chainUpdater.updateBestBlock(blockAndState1);
 
-    SignedBlockAndState blockAndState = chainUpdaterFork.advanceChainUntil(8);
+    chainUpdaterFork.advanceChainUntil(7);
+    SignedBlockAndState blockAndState = chainBuilder.getBlockAndStateAtSlot(8);
+    chainUpdaterFork.updateBestBlock(blockAndState);
     ChainBuilder.BlockOptions block2Options = ChainBuilder.BlockOptions.create();
     AttestationGenerator attestationGenerator =
         new AttestationGenerator(spec, chainBuilder.getValidatorKeys());
