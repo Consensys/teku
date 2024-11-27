@@ -136,6 +136,7 @@ public class SyncStateTracker extends Service
       currentState = SyncState.SYNCING;
     } else if (startingUp) {
       currentState = SyncState.START_UP;
+
     } else {
       currentState = SyncState.IN_SYNC;
     }

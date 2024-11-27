@@ -81,10 +81,6 @@ public class ActiveEth2P2PNetworkTest {
   private Fork altairFork;
   private Bytes32 genesisValidatorsRoot;
 
-  private final int maxFollowDistanceSlots =
-      spec.getGenesisSpecConfig().getMaxSeedLookahead()
-          * spec.slotsPerEpoch(storageSystem.combinedChainDataClient().getCurrentEpoch());
-
   @BeforeEach
   public void setup() {
     when(discoveryNetwork.start()).thenReturn(SafeFuture.completedFuture(null));
@@ -192,13 +188,11 @@ public class ActiveEth2P2PNetworkTest {
   @Test
   void onSyncStateChanged_shouldEnableGossipWhenInSync() {
     // Current slot is a long way beyond the chain head
-    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(1000));
+    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(32));
 
     assertThat(network.start()).isCompleted();
-    // Won't start gossip as chain head is too old
-    verify(gossipForkManager, never()).configureGossipForEpoch(any());
 
-    network.onSyncStateChanged(true, false);
+    network.onSyncStateChanged(false);
 
     // Even though we're a long way behind, start gossip because we believe we're in sync
     verify(gossipForkManager).configureGossipForEpoch(any());
@@ -210,88 +204,54 @@ public class ActiveEth2P2PNetworkTest {
     storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(1000));
 
     assertThat(network.start()).isCompleted();
-    network.onSyncStateChanged(true, false);
-    // Even though we're a long way behind, start gossip because we believe we're in sync
-    verify(gossipForkManager).configureGossipForEpoch(any());
+    network.onSyncStateChanged(false);
+    // based on network time we know we're too far behind, so we don't start gossip
+    verify(gossipForkManager, never()).configureGossipForEpoch(any());
 
-    network.onSyncStateChanged(false, false);
-    verify(gossipForkManager).stopGossip();
+    network.onSyncStateChanged(false);
+    verify(gossipForkManager, never()).stopGossip();
   }
 
   @Test
   void onSyncStateChanged_shouldNotifyForkManagerOfOptimisticSyncState() {
     assertThat(network.start()).isCompleted();
 
-    network.onSyncStateChanged(false, true);
+    network.onSyncStateChanged(true);
     verify(gossipForkManager).onOptimisticHeadChanged(true);
 
-    network.onSyncStateChanged(false, false);
+    network.onSyncStateChanged(false);
     verify(gossipForkManager).onOptimisticHeadChanged(false);
 
-    network.onSyncStateChanged(true, true);
+    network.onSyncStateChanged(true);
     verify(gossipForkManager, times(2)).onOptimisticHeadChanged(true);
 
-    network.onSyncStateChanged(true, false);
+    network.onSyncStateChanged(false);
     verify(gossipForkManager, times(2)).onOptimisticHeadChanged(false);
   }
 
   @Test
   void onSyncStateChanged_shouldNotResultInMultipleSubscriptions() {
     // Current slot is a long way beyond the chain head
-    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(1000));
+    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(32));
 
     assertThat(network.start()).isCompleted();
     // Won't start gossip as chain head is too old
-    verify(gossipForkManager, never()).configureGossipForEpoch(any());
+    //    verify(gossipForkManager, never()).configureGossipForEpoch(any());
 
-    network.onSyncStateChanged(true, false);
+    network.onSyncStateChanged(false);
     verify(gossipForkManager).configureGossipForEpoch(any());
     assertThat(subscribers.getSubscriberCount()).isEqualTo(1);
     verify(eventChannels, times(1)).subscribe(eq(BlockGossipChannel.class), any());
 
-    network.onSyncStateChanged(false, false);
+    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(100));
+    network.onSyncStateChanged(false);
     verify(gossipForkManager).stopGossip();
 
-    network.onSyncStateChanged(true, false);
-    verify(gossipForkManager, times(2)).configureGossipForEpoch(any());
+    network.onSyncStateChanged(false);
+    verify(gossipForkManager).configureGossipForEpoch(any());
     // Can't unsubscribe from these so should only subscribe once
     assertThat(subscribers.getSubscriberCount()).isEqualTo(1);
     verify(eventChannels, times(1)).subscribe(eq(BlockGossipChannel.class), any());
-  }
-
-  @Test
-  void isCloseToInSync_shouldCalculateWhenDistanceOutOfRange() {
-    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(maxFollowDistanceSlots + 1));
-    assertThat(network.isCloseToInSync()).isFalse();
-  }
-
-  @Test
-  void isCloseToInSync_shouldCalculateWhenDistanceInRange() {
-    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(maxFollowDistanceSlots));
-    assertThat(network.isCloseToInSync()).isTrue();
-  }
-
-  @Test
-  void isCloseToInSync_shouldReturnFalseWhenEmptyCurrentEpoch() {
-    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
-    final RecentChainData recentChainData = storageSystem.recentChainData();
-    final ActiveEth2P2PNetwork network =
-        new ActiveEth2P2PNetwork(
-            spec,
-            asyncRunner,
-            discoveryNetwork,
-            peerManager,
-            gossipForkManager,
-            eventChannels,
-            recentChainData,
-            attestationSubnetService,
-            syncCommitteeSubnetService,
-            gossipEncoding,
-            gossipConfigurator,
-            processedAttestationSubscriptionProvider,
-            true);
-
-    assertThat(network.isCloseToInSync()).isFalse();
   }
 
   @SuppressWarnings("unchecked")

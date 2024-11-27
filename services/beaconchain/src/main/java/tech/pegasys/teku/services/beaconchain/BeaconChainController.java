@@ -1327,7 +1327,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     // p2pNetwork subscription so gossip can be enabled and disabled appropriately
     syncService.subscribeToSyncStateChangesAndUpdate(
-        state -> p2pNetwork.onSyncStateChanged(state.isInSync(), state.isOptimistic()));
+        state -> p2pNetwork.onSyncStateChanged(state.isOptimistic()));
   }
 
   protected void initOperationsReOrgManager() {
