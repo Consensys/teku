@@ -254,6 +254,7 @@ public class AbstractBlockPublisherTest {
   }
 
   @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void sendSignedBlock_shouldTrackBlockAsProducedIfUnblindingTimeouts() {
     when(blockFactory.unblindSignedBlockIfBlinded(signedBlock, BlockPublishingPerformance.NOOP))
         .thenReturn(SafeFuture.failedFuture(new TimeoutException()));
