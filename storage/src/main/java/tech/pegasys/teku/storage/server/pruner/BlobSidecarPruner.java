@@ -32,7 +32,6 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.storage.archive.DataArchive;
@@ -149,7 +148,7 @@ public class BlobSidecarPruner extends Service {
     final UInt64 latestPrunableSlot = getLatestPrunableSlot(currentSlot);
 
     if (latestPrunableSlot.isZero()) {
-      LOG.debug("Not pruning as slots to keep include genesis.");
+      LOG.debug("Not pruning as slots to keep include genesis or Deneb activation epoch");
       return;
     }
     LOG.debug("Pruning blobs up to slot {}, limit {}", latestPrunableSlot, pruneLimit);
@@ -213,10 +212,14 @@ public class BlobSidecarPruner extends Service {
     //   DA_boundary: 64
     //   latest_prunable_slot = 31
 
-    final SpecConfig config = spec.atSlot(currentSlot).getConfig();
-    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
+    final Optional<SpecConfigDeneb> denebSpecConfig =
+        spec.atSlot(currentSlot).getConfig().toVersionDeneb();
+    if (denebSpecConfig.isEmpty()) {
+      return UInt64.ZERO;
+    }
+
     final long slotsToKeep =
-        (((long) specConfigDeneb.getEpochsStoreBlobs() + 1)
+        (((long) denebSpecConfig.get().getEpochsStoreBlobs() + 1)
                 * spec.atSlot(currentSlot).getSlotsPerEpoch())
             + 1;
     return currentSlot.minusMinZero(slotsToKeep);
