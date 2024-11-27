@@ -288,11 +288,12 @@ class RecentChainDataTest {
         spec.processSlots(lastState.getState(), UInt64.valueOf(8));
     final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, transitionedState);
     recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.valueOf(10000));
-
+    // blockRoot should be from last non-empty block
     assertThat(recentChainData.getChainHead().map(MinimalBeaconBlockSummary::getRoot))
         .contains(anchorPoint.getRoot());
+    // head should be
     assertThat(recentChainData.getChainHead().map(MinimalBeaconBlockSummary::getSlot))
-        .contains(UInt64.valueOf(lastNonEmptyBlockSlot));
+        .contains(UInt64.valueOf(8));
   }
 
   @Test

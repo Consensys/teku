@@ -51,8 +51,6 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.EventType;
-import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
@@ -598,13 +596,13 @@ public class TekuBeaconNode extends TekuNode {
 
   private Optional<UInt64> fetchStateFinalityCheckpointEpoch() throws IOException {
     final String result =
-            httpClient.get(getRestApiUrl(), "/eth/v1/beacon/states/head/finality_checkpoints");
+        httpClient.get(getRestApiUrl(), "/eth/v1/beacon/states/head/finality_checkpoints");
     if (result.isEmpty()) {
       return Optional.empty();
     }
-    final JsonNode jsonNode =
-            OBJECT_MAPPER.readTree(result);
-    final UInt64 finalizedEpoch = UInt64.valueOf(jsonNode.get("data").get("finalized").get("epoch").asText());
+    final JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
+    final UInt64 finalizedEpoch =
+        UInt64.valueOf(jsonNode.get("data").get("finalized").get("epoch").asText());
     return Optional.of(finalizedEpoch);
   }
 

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -25,7 +24,6 @@ import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -132,10 +130,9 @@ public class TransitionedAnchorAcceptanceTest extends AcceptanceTestBase {
     beaconNode2.waitUntilInSyncWith(beaconNode1);
     beaconNode2.waitForBlockSatisfying(
         block -> {
-          final Bytes20 blockFeeRecipient =  block.getMessage().getBody().getOptionalExecutionPayload().get().getFeeRecipient();
-          assertEquals(
-              Bytes20.fromHexString(node2FeeRecipient),
-                  blockFeeRecipient);
+          final Bytes20 blockFeeRecipient =
+              block.getMessage().getBody().getOptionalExecutionPayload().get().getFeeRecipient();
+          assertEquals(Bytes20.fromHexString(node2FeeRecipient), blockFeeRecipient);
         });
     beaconNode2.waitForNewFinalization();
   }
