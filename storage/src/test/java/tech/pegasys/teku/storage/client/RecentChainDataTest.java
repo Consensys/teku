@@ -277,7 +277,6 @@ class RecentChainDataTest {
   void createHead_upOnStatingWithTransitionedStateWithEmptyBlock()
       throws SlotProcessingException, EpochProcessingException {
     initPreGenesis();
-    final long lastNonEmptyBlockSlot = 7;
     final ChainBuilder chainBuilder = ChainBuilder.create(spec);
     final UInt64 genesisTime = UInt64.valueOf(1000);
     chainBuilder.generateGenesis(genesisTime, true);
