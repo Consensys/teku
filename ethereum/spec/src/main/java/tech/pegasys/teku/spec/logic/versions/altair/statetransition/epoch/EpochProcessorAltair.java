@@ -134,7 +134,7 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
   }
 
   @Override
-  public void applyPendingDeposits(final MutableBeaconState state, final PendingDeposit deposit) {
+  public void applyPendingDeposit(final MutableBeaconState state, final PendingDeposit deposit) {
     // Nothing to do
   }
 

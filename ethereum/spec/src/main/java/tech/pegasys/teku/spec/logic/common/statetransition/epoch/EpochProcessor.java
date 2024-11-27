@@ -101,7 +101,7 @@ public interface EpochProcessor {
 
   void processSyncCommitteeUpdates(MutableBeaconState state);
 
-  void applyPendingDeposits(MutableBeaconState state, PendingDeposit deposit);
+  void applyPendingDeposit(MutableBeaconState state, PendingDeposit deposit);
 
   void processPendingDeposits(MutableBeaconState state);
 

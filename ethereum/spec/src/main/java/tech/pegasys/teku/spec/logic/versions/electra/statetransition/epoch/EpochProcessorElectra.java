@@ -29,7 +29,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.impl.BlsException;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -39,7 +38,6 @@ import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
@@ -156,48 +154,9 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
     return miscHelpers.getMaxEffectiveBalance(validator);
   }
 
-  // process_effective_balance_updates
-  @Override
-  public void processEffectiveBalanceUpdates(
-      final MutableBeaconState state, final List<ValidatorStatus> statuses) {
-    // Update effective balances with hysteresis
-    final SszMutableList<Validator> validators = state.getValidators();
-    final SszUInt64List balances = state.getBalances();
-    final UInt64 hysteresisUpwardMultiplier = specConfig.getHysteresisUpwardMultiplier();
-    final UInt64 hysteresisDownwardMultiplier = specConfig.getHysteresisDownwardMultiplier();
-    final UInt64 hysteresisQuotient = specConfig.getHysteresisQuotient();
-    final UInt64 effectiveBalanceIncrement = specConfig.getEffectiveBalanceIncrement();
-    for (int index = 0; index < statuses.size(); index++) {
-      final ValidatorStatus status = statuses.get(index);
-      final UInt64 balance = balances.getElement(index);
-
-      final UInt64 hysteresisIncrement = effectiveBalanceIncrement.dividedBy(hysteresisQuotient);
-      final UInt64 currentEffectiveBalance = status.getCurrentEpochEffectiveBalance();
-      final Validator validator = validators.get(index);
-      final UInt64 maxEffectiveBalance = getEffectiveBalanceLimitForValidator(validator);
-      if (shouldDecreaseEffectiveBalance(
-              balance, hysteresisIncrement, currentEffectiveBalance, hysteresisDownwardMultiplier)
-          || shouldIncreaseEffectiveBalance(
-              balance,
-              hysteresisIncrement,
-              currentEffectiveBalance,
-              hysteresisUpwardMultiplier,
-              maxEffectiveBalance)) {
-        final UInt64 effectiveBalanceLimit = getEffectiveBalanceLimitForValidator(validator);
-        final UInt64 newEffectiveBalance =
-            effectiveBalanceLimit.min(
-                balance.minus(balance.mod(effectiveBalanceIncrement)).min(maxEffectiveBalance));
-        BeaconStateCache.getTransitionCaches(state)
-            .getProgressiveTotalBalances()
-            .onEffectiveBalanceChange(status, newEffectiveBalance);
-        validators.set(index, validator.withEffectiveBalance(newEffectiveBalance));
-      }
-    }
-  }
-
   /** apply_pending_deposit */
   @Override
-  public void applyPendingDeposits(final MutableBeaconState state, final PendingDeposit deposit) {
+  public void applyPendingDeposit(final MutableBeaconState state, final PendingDeposit deposit) {
     validatorsUtil
         .getValidatorIndex(state, deposit.getPublicKey())
         .ifPresentOrElse(
@@ -326,7 +285,7 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
 
       if (isValidatorWithdrawn) {
         // Deposited balance will never become active. Increase balance but do not consume churn
-        applyPendingDeposits(state, deposit);
+        applyPendingDeposit(state, deposit);
       } else if (isValidatorExited) {
         // Validator is exiting, postpone the deposit until after withdrawable epoch
         depositsToPostpone.add(deposit);
@@ -340,7 +299,7 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
         }
         // Consume churn and apply deposit
         processedAmount = processedAmount.plus(deposit.getAmount());
-        applyPendingDeposits(state, deposit);
+        applyPendingDeposit(state, deposit);
       }
 
       // Regardless of how the deposit was handled, we move on in the queue
