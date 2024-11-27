@@ -22,13 +22,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -200,7 +196,7 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
                 beaconStateMutators.increaseBalance(state, validatorIndex, deposit.getAmount()),
             () -> {
               if (isValidPendingDepositSignature(deposit)) {
-                addValidatorToRegistry(
+                beaconStateMutators.addValidatorToRegistry(
                     state,
                     deposit.getPublicKey(),
                     deposit.getWithdrawalCredentials(),
@@ -215,46 +211,6 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
         deposit.getWithdrawalCredentials(),
         deposit.getAmount(),
         deposit.getSignature());
-  }
-
-  // TODO-lucas Duplicates method addValidatorToRegistry from BlockProcessor
-  /** add_validator_to_registry */
-  public void addValidatorToRegistry(
-      final MutableBeaconState state,
-      final BLSPublicKey pubkey,
-      final Bytes32 withdrawalCredentials,
-      final UInt64 amount) {
-    final Validator validator = getValidatorFromDeposit(pubkey, withdrawalCredentials, amount);
-
-    final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
-    stateElectra.getValidators().append(validator);
-    stateElectra.getBalances().appendElement(amount);
-    stateElectra.getPreviousEpochParticipation().append(SszByte.ZERO);
-    stateElectra.getCurrentEpochParticipation().append(SszByte.ZERO);
-    stateElectra.getInactivityScores().append(SszUInt64.ZERO);
-  }
-
-  /** get_validator_from_deposit */
-  private Validator getValidatorFromDeposit(
-      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials, final UInt64 amount) {
-    final Validator validator =
-        new Validator(
-            pubkey,
-            withdrawalCredentials,
-            ZERO,
-            false,
-            FAR_FUTURE_EPOCH,
-            FAR_FUTURE_EPOCH,
-            FAR_FUTURE_EPOCH,
-            FAR_FUTURE_EPOCH);
-
-    final UInt64 maxEffectiveBalance = miscHelpers.getMaxEffectiveBalance(validator);
-    final UInt64 validatorEffectiveBalance =
-        amount
-            .minusMinZero(amount.mod(specConfig.getEffectiveBalanceIncrement()))
-            .min(maxEffectiveBalance);
-
-    return validator.withEffectiveBalance(validatorEffectiveBalance);
   }
 
   /** process_pending_deposits */
