@@ -16,17 +16,14 @@ package tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
-import static tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor.depositSignatureVerifier;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.bls.impl.BlsException;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
@@ -36,8 +33,6 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.constants.Domain;
-import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -204,7 +199,7 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
             validatorIndex ->
                 beaconStateMutators.increaseBalance(state, validatorIndex, deposit.getAmount()),
             () -> {
-              if (isValidDepositSignature(deposit)) {
+              if (isValidPendingDepositSignature(deposit)) {
                 addValidatorToRegistry(
                     state,
                     deposit.getPublicKey(),
@@ -214,25 +209,12 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
             });
   }
 
-  // TODO-lucas Duplicates method isValidDepositSignature from BlockProcessor
-  /** is_valid_deposit_signature */
-  public boolean isValidDepositSignature(final PendingDeposit deposit) {
-    try {
-      return depositSignatureVerifier.verify(
-          deposit.getPublicKey(),
-          computeDepositSigningRoot(
-              deposit.getPublicKey(), deposit.getWithdrawalCredentials(), deposit.getAmount()),
-          deposit.getSignature());
-    } catch (final BlsException e) {
-      return false;
-    }
-  }
-
-  private Bytes computeDepositSigningRoot(
-      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials, final UInt64 amount) {
-    final Bytes32 domain = miscHelpers.computeDomain(Domain.DEPOSIT);
-    final DepositMessage depositMessage = new DepositMessage(pubkey, withdrawalCredentials, amount);
-    return miscHelpers.computeSigningRoot(depositMessage, domain);
+  private boolean isValidPendingDepositSignature(final PendingDeposit deposit) {
+    return miscHelpers.isValidDepositSignature(
+        deposit.getPublicKey(),
+        deposit.getWithdrawalCredentials(),
+        deposit.getAmount(),
+        deposit.getSignature());
   }
 
   // TODO-lucas Duplicates method addValidatorToRegistry from BlockProcessor

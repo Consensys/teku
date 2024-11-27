@@ -17,10 +17,15 @@ import static tech.pegasys.teku.spec.constants.IncentivizationWeights.PROPOSER_W
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
 
 import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -34,6 +39,20 @@ public class BeaconStateMutatorsAltair extends BeaconStateMutators {
       final BeaconStateAccessors beaconStateAccessors) {
     super(specConfig, miscHelpers, beaconStateAccessors);
     this.specConfigAltair = specConfig;
+  }
+
+  @Override
+  public void addValidatorToRegistry(
+      final MutableBeaconState state,
+      final BLSPublicKey pubkey,
+      final Bytes32 withdrawalCredentials,
+      final UInt64 amount) {
+    super.addValidatorToRegistry(state, pubkey, withdrawalCredentials, amount);
+    final MutableBeaconStateAltair stateAltair = MutableBeaconStateAltair.required(state);
+
+    stateAltair.getPreviousEpochParticipation().append(SszByte.ZERO);
+    stateAltair.getCurrentEpochParticipation().append(SszByte.ZERO);
+    stateAltair.getInactivityScores().append(SszUInt64.ZERO);
   }
 
   @Override
