@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.ATTESTATION_INCLUSION_RANGE;
 
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.infrastructure.logging.LogCaptor;
@@ -42,7 +43,9 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.ChainUpdater;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
@@ -277,6 +280,41 @@ public class DefaultPerformanceTrackerTest {
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(UInt64.valueOf(2)));
     performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(1).getSlotAndBlockRoot());
     performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(2).getSlotAndBlockRoot());
+    performanceTracker.saveProducedAttestation(dataStructureUtil.randomAttestation(UInt64.ONE));
+    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(2)));
+    assertThat(performanceTracker.producedAttestationsByEpoch).isEmpty();
+    assertThat(performanceTracker.producedBlocksByEpoch).isEmpty();
+    assertThat(performanceTracker.blockProductionAttemptsByEpoch).isEmpty();
+  }
+
+  @TestTemplate
+  void shouldClearObjectsAfterFailure() {
+    chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(10));
+    final CombinedChainDataClient combinedChainDataClientMock = mock(CombinedChainDataClient.class);
+    // Make the attestation performance calculation fail
+    when(combinedChainDataClientMock.getBestState())
+        .thenReturn(Optional.of(SafeFuture.failedFuture(new IllegalArgumentException("failure"))));
+    final ChainHead chainHeadMock = mock(ChainHead.class);
+    // Make the block performance calculation fail
+    when(chainHeadMock.asStateAndBlockSummary())
+        .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("failure")));
+    when(combinedChainDataClientMock.getChainHead()).thenReturn(Optional.of(chainHeadMock));
+    performanceTracker =
+        new DefaultPerformanceTracker(
+            combinedChainDataClientMock,
+            log,
+            validatorPerformanceMetrics,
+            ValidatorPerformanceTrackingMode.ALL,
+            validatorTracker,
+            syncCommitteePerformanceTracker,
+            spec,
+            mock(SettableGauge.class));
+    performanceTracker.start(UInt64.ZERO);
+    performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(UInt64.valueOf(1)));
+    performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(UInt64.valueOf(2)));
+    performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(1));
+    performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
+    performanceTracker.saveProducedAttestation(dataStructureUtil.randomAttestation(UInt64.ZERO));
     performanceTracker.saveProducedAttestation(dataStructureUtil.randomAttestation(UInt64.ONE));
     performanceTracker.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(2)));
     assertThat(performanceTracker.producedAttestationsByEpoch).isEmpty();

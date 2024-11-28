@@ -170,6 +170,9 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
                   validatorPerformanceMetrics.updateBlockPerformanceMetrics(blockPerformance);
                 }
               }
+            })
+        .alwaysRun(
+            () -> {
               producedBlocksByEpoch.headMap(blockProductionEpoch, true).clear();
               blockProductionAttemptsByEpoch.headMap(blockProductionEpoch, true).clear();
             });
@@ -209,8 +212,8 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
                 validatorPerformanceMetrics.updateAttestationPerformanceMetrics(
                     attestationPerformance);
               }
-              producedAttestationsByEpoch.headMap(analyzedEpoch, true).clear();
-            });
+            })
+        .alwaysRun(() -> producedAttestationsByEpoch.headMap(analyzedEpoch, true).clear());
   }
 
   private SafeFuture<BlockPerformance> getBlockPerformanceForEpoch(final UInt64 currentEpoch) {
@@ -314,9 +317,9 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
         slotToBitlists.merge(
             entry.getKey(),
             AttestationBitsAggregator.of(attestation, committeesSize),
-            (first, second) -> {
-              first.or(second);
-              return first;
+            (firstBitsAggregator, secondBitAggregator) -> {
+              firstBitsAggregator.or(secondBitAggregator);
+              return firstBitsAggregator;
             });
       }
     }
