@@ -766,9 +766,7 @@ class RecentChainDataTest {
         specConfig.getMaxSeedLookahead()
             * specConfig.getSlotsPerEpoch()
             * specConfig.getSecondsPerSlot();
-    assertThat(
-            recentChainData.isCloseToInSync(Optional.of(UInt64.ZERO), UInt64.valueOf(seconds - 1)))
-        .isTrue();
+    assertThat(recentChainData.isCloseToInSync(UInt64.valueOf(seconds - 1))).isTrue();
   }
 
   @Test
@@ -779,8 +777,7 @@ class RecentChainDataTest {
         specConfig.getMaxSeedLookahead()
             * specConfig.getSlotsPerEpoch()
             * specConfig.getSecondsPerSlot();
-    assertThat(recentChainData.isCloseToInSync(Optional.of(UInt64.ZERO), UInt64.valueOf(seconds)))
-        .isTrue();
+    assertThat(recentChainData.isCloseToInSync(UInt64.valueOf(seconds))).isTrue();
   }
 
   @Test
@@ -791,9 +788,7 @@ class RecentChainDataTest {
         specConfig.getMaxSeedLookahead()
             * specConfig.getSlotsPerEpoch()
             * specConfig.getSecondsPerSlot();
-    assertThat(
-            recentChainData.isCloseToInSync(Optional.of(UInt64.ZERO), UInt64.valueOf(seconds + 8)))
-        .isFalse();
+    assertThat(recentChainData.isCloseToInSync(UInt64.valueOf(seconds + 8))).isFalse();
   }
 
   @Test

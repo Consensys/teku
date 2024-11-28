@@ -198,8 +198,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   @VisibleForTesting
-  boolean isCloseToInSync(final Optional<UInt64> currentEpoch, final UInt64 currentTimeSeconds) {
-    final SpecVersion specVersion = spec.atEpoch(currentEpoch.orElseThrow());
+  boolean isCloseToInSync(final UInt64 currentTimeSeconds) {
+    final SpecVersion specVersion = spec.getGenesisSpec();
     final MiscHelpers miscHelpers = specVersion.miscHelpers();
     final SpecConfig specConfig = specVersion.getConfig();
     final UInt64 networkSlot = miscHelpers.computeSlotAtTime(getGenesisTime(), currentTimeSeconds);
@@ -212,12 +212,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public boolean isCloseToInSync() {
-    // current epoch is time based, and gives network current epoch
-    final Optional<UInt64> currentEpoch = getCurrentEpoch();
-    if (currentEpoch.isEmpty()) {
+    if (store == null) {
       return false;
     }
-    return isCloseToInSync(currentEpoch, getStore().getTimeInSeconds());
+    return isCloseToInSync(store.getTimeInSeconds());
   }
 
   public Optional<GenesisData> getGenesisData() {
