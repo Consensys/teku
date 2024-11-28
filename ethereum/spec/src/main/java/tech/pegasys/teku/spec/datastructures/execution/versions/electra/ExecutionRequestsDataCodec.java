@@ -13,17 +13,15 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionRequestsBuilder;
 
 /*
  Implement the rules for decoding and hashing execution requests according to https://eips.ethereum.org/EIPS/eip-7685
 */
 public class ExecutionRequestsDataCodec {
-
-  private static final int EXPECTED_REQUEST_DATA_ELEMENTS = 3;
 
   private final ExecutionRequestsSchema executionRequestsSchema;
 
@@ -34,44 +32,47 @@ public class ExecutionRequestsDataCodec {
   /**
    * Decodes the execution requests received from the EL.
    *
-   * @param executionRequestData list of encoded execution requests from the EL
+   * @param executionRequests list of encoded execution requests from the EL
    * @return an ExecutionRequests object with the requests
    */
-  public ExecutionRequests decode(final List<Bytes> executionRequestData) {
-    if (executionRequestData.size() != EXPECTED_REQUEST_DATA_ELEMENTS) {
-      throw new IllegalArgumentException(
-          "Invalid number of execution request data elements: expected "
-              + EXPECTED_REQUEST_DATA_ELEMENTS
-              + ", received "
-              + executionRequestData.size());
-    }
-
+  public ExecutionRequests decode(final List<Bytes> executionRequests) {
     final ExecutionRequestsBuilder executionRequestsBuilder =
         new ExecutionRequestsBuilderElectra(executionRequestsSchema);
 
-    for (int index = 0; index < executionRequestData.size(); index++) {
-      // The request type is implicitly defined as the index of the element in executionRequestData
-      switch ((byte) index) {
+    byte previousRequestType = -1;
+    for (final Bytes request : executionRequests) {
+      if (request.isEmpty()) {
+        throw new IllegalArgumentException("Execution request data must not be empty");
+      }
+      final byte requestType = request.get(0);
+      if (requestType <= previousRequestType) {
+        throw new IllegalArgumentException(
+            "Execution requests are not in strictly ascending order");
+      }
+      final Bytes requestData = request.slice(1);
+      switch (requestType) {
         case DepositRequest.REQUEST_TYPE ->
             executionRequestsBuilder.deposits(
                 executionRequestsSchema
                     .getDepositRequestsSchema()
-                    .sszDeserialize(executionRequestData.get(index))
+                    .sszDeserialize(requestData)
                     .asList());
         case WithdrawalRequest.REQUEST_TYPE ->
             executionRequestsBuilder.withdrawals(
                 executionRequestsSchema
                     .getWithdrawalRequestsSchema()
-                    .sszDeserialize(executionRequestData.get(index))
+                    .sszDeserialize(requestData)
                     .asList());
         case ConsolidationRequest.REQUEST_TYPE ->
             executionRequestsBuilder.consolidations(
                 executionRequestsSchema
                     .getConsolidationRequestsSchema()
-                    .sszDeserialize(executionRequestData.get(index))
+                    .sszDeserialize(requestData)
                     .asList());
-        default -> throw new IllegalArgumentException("Invalid execution request type: " + index);
+        default ->
+            throw new IllegalArgumentException("Invalid execution request type: " + requestType);
       }
+      previousRequestType = requestType;
     }
 
     return executionRequestsBuilder.build();
@@ -84,22 +85,37 @@ public class ExecutionRequestsDataCodec {
    * @return list of encoded execution requests
    */
   public List<Bytes> encode(final ExecutionRequests executionRequests) {
-    final SszList<DepositRequest> depositRequestsSszList =
-        executionRequestsSchema
-            .getDepositRequestsSchema()
-            .createFromElements(executionRequests.getDeposits());
-    final SszList<WithdrawalRequest> withdrawalRequestsSszList =
-        executionRequestsSchema
-            .getWithdrawalRequestsSchema()
-            .createFromElements(executionRequests.getWithdrawals());
-    final SszList<ConsolidationRequest> consolidationRequestsSszList =
-        executionRequestsSchema
-            .getConsolidationRequestsSchema()
-            .createFromElements(executionRequests.getConsolidations());
-
-    return List.of(
-        depositRequestsSszList.sszSerialize(),
-        withdrawalRequestsSszList.sszSerialize(),
-        consolidationRequestsSszList.sszSerialize());
+    final List<Bytes> executionRequestsData = new ArrayList<>();
+    final List<DepositRequest> deposits = executionRequests.getDeposits();
+    if (!deposits.isEmpty()) {
+      final Bytes depositRequestsData =
+          executionRequestsSchema
+              .getDepositRequestsSchema()
+              .createFromElements(deposits)
+              .sszSerialize();
+      executionRequestsData.add(
+          Bytes.concatenate(DepositRequest.REQUEST_TYPE_PREFIX, depositRequestsData));
+    }
+    final List<WithdrawalRequest> withdrawals = executionRequests.getWithdrawals();
+    if (!withdrawals.isEmpty()) {
+      final Bytes withdrawalsRequestsData =
+          executionRequestsSchema
+              .getWithdrawalRequestsSchema()
+              .createFromElements(withdrawals)
+              .sszSerialize();
+      executionRequestsData.add(
+          Bytes.concatenate(WithdrawalRequest.REQUEST_TYPE_PREFIX, withdrawalsRequestsData));
+    }
+    final List<ConsolidationRequest> consolidations = executionRequests.getConsolidations();
+    if (!consolidations.isEmpty()) {
+      final Bytes consolidationRequestsData =
+          executionRequestsSchema
+              .getConsolidationRequestsSchema()
+              .createFromElements(consolidations)
+              .sszSerialize();
+      executionRequestsData.add(
+          Bytes.concatenate(ConsolidationRequest.REQUEST_TYPE_PREFIX, consolidationRequestsData));
+    }
+    return executionRequestsData;
   }
 }
