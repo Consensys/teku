@@ -420,11 +420,11 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   }
 
   @Override
-  public void saveProducedBlock(final SignedBeaconBlock block) {
-    final UInt64 epoch = spec.computeEpochAtSlot(block.getSlot());
+  public void saveProducedBlock(final SlotAndBlockRoot slotAndBlockRoot) {
+    final UInt64 epoch = spec.computeEpochAtSlot(slotAndBlockRoot.getSlot());
     final Set<SlotAndBlockRoot> blocksInEpoch =
         producedBlocksByEpoch.computeIfAbsent(epoch, __ -> concurrentSet());
-    blocksInEpoch.add(block.getSlotAndBlockRoot());
+    blocksInEpoch.add(slotAndBlockRoot);
   }
 
   @Override

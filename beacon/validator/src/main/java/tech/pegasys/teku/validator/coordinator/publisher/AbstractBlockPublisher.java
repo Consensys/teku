@@ -36,7 +36,6 @@ import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.Broa
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
-import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public abstract class AbstractBlockPublisher implements BlockPublisher {
   private static final Logger LOG = LogManager.getLogger();
@@ -48,7 +47,6 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
   protected final BlockFactory blockFactory;
   protected final BlockImportChannel blockImportChannel;
   protected final BlockGossipChannel blockGossipChannel;
-  protected final PerformanceTracker performanceTracker;
   protected final DutyMetrics dutyMetrics;
 
   public AbstractBlockPublisher(
@@ -56,14 +54,12 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
       final BlockFactory blockFactory,
       final BlockGossipChannel blockGossipChannel,
       final BlockImportChannel blockImportChannel,
-      final PerformanceTracker performanceTracker,
       final DutyMetrics dutyMetrics,
       final boolean gossipBlobsAfterBlock) {
     this.asyncRunner = asyncRunner;
     this.blockFactory = blockFactory;
     this.blockImportChannel = blockImportChannel;
     this.blockGossipChannel = blockGossipChannel;
-    this.performanceTracker = performanceTracker;
     this.dutyMetrics = dutyMetrics;
     this.gossipBlobsAfterBlock = gossipBlobsAfterBlock;
   }
@@ -75,7 +71,6 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
       final BlockPublishingPerformance blockPublishingPerformance) {
     return blockFactory
         .unblindSignedBlockIfBlinded(blockContainer.getSignedBlock(), blockPublishingPerformance)
-        .thenPeek(performanceTracker::saveProducedBlock)
         .thenCompose(
             // creating blob sidecars after unblinding the block to ensure in the blinded flow we
             // will have the cached builder payload

@@ -198,7 +198,6 @@ public class ValidatorApiHandlerIntegrationTest {
                 blockGossipChannel,
                 blockBlobSidecarsTrackersPool,
                 blobSidecarGossipChannel,
-                performanceTracker,
                 dutyMetrics,
                 P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED));
   }
