@@ -263,7 +263,8 @@ public class AbstractBlockPublisherTest {
         BroadcastValidationLevel.NOT_REQUIRED,
         BlockPublishingPerformance.NOOP);
 
-    verify(performanceTracker).saveProducedBlock(signedBlockContents.getSignedBlock());
+    verify(performanceTracker)
+        .saveProducedBlock(signedBlockContents.getSignedBlock().getSlotAndBlockRoot());
   }
 
   private SafeFuture<BlockImportAndBroadcastValidationResults> prepareBlockImportResult(

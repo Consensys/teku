@@ -90,8 +90,10 @@ public class DefaultPerformanceTrackerTest {
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(10));
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(UInt64.valueOf(1)));
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(UInt64.valueOf(2)));
-    performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(1));
-    performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
+    performanceTracker.saveProducedBlock(
+        chainUpdater.chainBuilder.getBlockAtSlot(1).getSlotAndBlockRoot());
+    performanceTracker.saveProducedBlock(
+        chainUpdater.chainBuilder.getBlockAtSlot(2).getSlotAndBlockRoot());
     performanceTracker.onSlot(spec.computeStartSlotAtEpoch(UInt64.ONE));
     BlockPerformance expectedBlockPerformance = new BlockPerformance(UInt64.ZERO, 2, 2, 2);
     verify(log).performance(expectedBlockPerformance.toString());
@@ -103,7 +105,7 @@ public class DefaultPerformanceTrackerTest {
     final SignedBlockAndState bestBlock = chainUpdater.advanceChainUntil(2);
     chainUpdater.updateBestBlock(bestBlock);
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(bestBlock.getSlot()));
-    performanceTracker.saveProducedBlock(bestBlock.getBlock());
+    performanceTracker.saveProducedBlock(bestBlock.getBlock().getSlotAndBlockRoot());
     performanceTracker.onSlot(lastSlot);
     BlockPerformance expectedBlockPerformance = new BlockPerformance(UInt64.ZERO, 1, 1, 1);
     verify(log).performance(expectedBlockPerformance.toString());
@@ -115,9 +117,12 @@ public class DefaultPerformanceTrackerTest {
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(UInt64.valueOf(1)));
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(UInt64.valueOf(2)));
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(UInt64.valueOf(3)));
-    performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(1));
-    performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
-    performanceTracker.saveProducedBlock(dataStructureUtil.randomSignedBeaconBlock(3));
+    performanceTracker.saveProducedBlock(
+        chainUpdater.chainBuilder.getBlockAtSlot(1).getSlotAndBlockRoot());
+    performanceTracker.saveProducedBlock(
+        chainUpdater.chainBuilder.getBlockAtSlot(2).getSlotAndBlockRoot());
+    performanceTracker.saveProducedBlock(
+        dataStructureUtil.randomSignedBeaconBlock(3).getSlotAndBlockRoot());
     performanceTracker.onSlot(spec.computeStartSlotAtEpoch(UInt64.ONE));
     BlockPerformance expectedBlockPerformance = new BlockPerformance(UInt64.ZERO, 3, 2, 3);
     verify(log).performance(expectedBlockPerformance.toString());
@@ -258,8 +263,10 @@ public class DefaultPerformanceTrackerTest {
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(10));
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(UInt64.valueOf(1)));
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(UInt64.valueOf(2)));
-    performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(1));
-    performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
+    performanceTracker.saveProducedBlock(
+        chainUpdater.chainBuilder.getBlockAtSlot(1).getSlotAndBlockRoot());
+    performanceTracker.saveProducedBlock(
+        chainUpdater.chainBuilder.getBlockAtSlot(2).getSlotAndBlockRoot());
     performanceTracker.saveProducedAttestation(
         spec.getGenesisSchemaDefinitions()
             .getAttestationSchema()

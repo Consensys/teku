@@ -73,6 +73,10 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
       final SignedBlockContainer blockContainer,
       final BroadcastValidationLevel broadcastValidationLevel,
       final BlockPublishingPerformance blockPublishingPerformance) {
+    // always track the block as produced even in case of publishing failures (e.g.
+    // relay API timeouts during unblinding), because we later do comparison against the chain data
+    // anyway
+    performanceTracker.saveProducedBlock(blockContainer.getSignedBlock().getSlotAndBlockRoot());
     return blockFactory
         .unblindSignedBlockIfBlinded(blockContainer.getSignedBlock(), blockPublishingPerformance)
         .thenCompose(
@@ -84,13 +88,7 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
                     Suppliers.memoize(() -> blockFactory.createBlobSidecars(blockContainer)),
                     broadcastValidationLevel,
                     blockPublishingPerformance))
-        .thenCompose(result -> calculateResult(blockContainer, result, blockPublishingPerformance))
-        .alwaysRun(
-            () ->
-                // always track the block as produced even in case of publishing failures (e.g.
-                // relay API timeouts during unblinding), because we later do comparison against the
-                // chain data anyway
-                performanceTracker.saveProducedBlock(blockContainer.getSignedBlock()));
+        .thenCompose(result -> calculateResult(blockContainer, result, blockPublishingPerformance));
   }
 
   private SafeFuture<BlockImportAndBroadcastValidationResults>
