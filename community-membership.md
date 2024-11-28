@@ -57,7 +57,7 @@ issues and PRs assigned to them.
 
 ## Approver
 
-Code approvers are members that have signed an ICLA and have been granted additional commit privileges. While members are expected to provided code reviews that focus on code quality and correctness, approval is focused on holistic acceptance of a contribution including: backwards / forwards compatibility, adhering to API and flag conventions, subtle performance and correctness issues, interactions with other parts of the system, etc.
+Code approvers are members that have signed an ICLA and have been granted additional commit privileges. While members are expected to provide code reviews that focus on code quality and correctness, approval is focused on holistic acceptance of a contribution including: backwards / forwards compatibility, adhering to API and flag conventions, subtle performance and correctness issues, interactions with other parts of the system, etc.
 
 **Defined by:** write permissions on master branch
 
@@ -103,7 +103,7 @@ The Project Evangelist role is for those who wish to promote the project to the 
 
 ### Responsibilities and privileges
 - Includes all of the responsibilities and privileges of a Member user
-- Project Evangelist have the standard public access permissions
+- Project Evangelists have the standard public access permissions
 - Organise talks
 - Work with marketing to manage web and graphical assets
 
