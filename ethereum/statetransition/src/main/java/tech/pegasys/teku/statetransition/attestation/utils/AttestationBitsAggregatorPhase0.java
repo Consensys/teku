@@ -33,9 +33,8 @@ class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
   }
 
   @Override
-  public AttestationBitsAggregator or(final AttestationBitsAggregator other) {
+  public void or(final AttestationBitsAggregator other) {
     aggregationBits = aggregationBits.or(other.getAggregationBits());
-    return this;
   }
 
   @Override

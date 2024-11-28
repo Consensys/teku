@@ -62,7 +62,7 @@ public interface AttestationBitsAggregator {
         .orElseGet(() -> new AttestationBitsAggregatorPhase0(attestation.getAggregationBits()));
   }
 
-  AttestationBitsAggregator or(AttestationBitsAggregator other);
+  void or(AttestationBitsAggregator other);
 
   boolean aggregateWith(Attestation other);
 
