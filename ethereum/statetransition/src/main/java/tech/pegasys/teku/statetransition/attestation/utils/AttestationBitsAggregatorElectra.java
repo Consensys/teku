@@ -48,8 +48,9 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   }
 
   @Override
-  public void or(final AttestationBitsAggregator other) {
+  public AttestationBitsAggregator or(final AttestationBitsAggregator other) {
     or(other.getCommitteeBits(), other.getAggregationBits(), false);
+    return this;
   }
 
   @Override

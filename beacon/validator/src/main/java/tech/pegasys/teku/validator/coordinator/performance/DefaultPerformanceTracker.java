@@ -317,10 +317,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
         slotToBitlists.merge(
             entry.getKey(),
             AttestationBitsAggregator.of(attestation, committeesSize),
-            (firstBitsAggregator, secondBitAggregator) -> {
-              firstBitsAggregator.or(secondBitAggregator);
-              return firstBitsAggregator;
-            });
+            AttestationBitsAggregator::or);
       }
     }
 
