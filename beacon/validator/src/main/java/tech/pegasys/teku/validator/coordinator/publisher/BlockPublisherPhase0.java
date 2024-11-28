@@ -25,7 +25,6 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
-import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class BlockPublisherPhase0 extends AbstractBlockPublisher {
 
@@ -34,7 +33,6 @@ public class BlockPublisherPhase0 extends AbstractBlockPublisher {
       final BlockFactory blockFactory,
       final BlockGossipChannel blockGossipChannel,
       final BlockImportChannel blockImportChannel,
-      final PerformanceTracker performanceTracker,
       final DutyMetrics dutyMetrics,
       final boolean gossipBlobsAfterBlock) {
     super(
@@ -42,7 +40,6 @@ public class BlockPublisherPhase0 extends AbstractBlockPublisher {
         blockFactory,
         blockGossipChannel,
         blockImportChannel,
-        performanceTracker,
         dutyMetrics,
         gossipBlobsAfterBlock);
   }

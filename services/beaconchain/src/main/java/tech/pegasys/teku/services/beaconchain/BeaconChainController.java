@@ -981,7 +981,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockGossipChannel,
             blockBlobSidecarsTrackersPool,
             blobSidecarGossipChannel,
-            performanceTracker,
             dutyMetrics,
             beaconConfig.p2pConfig().isGossipBlobsAfterBlockEnabled());
 

@@ -24,7 +24,6 @@ import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
-import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class BlockPublisherDeneb extends BlockPublisherPhase0 {
 
@@ -38,7 +37,6 @@ public class BlockPublisherDeneb extends BlockPublisherPhase0 {
       final BlockGossipChannel blockGossipChannel,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final BlobSidecarGossipChannel blobSidecarGossipChannel,
-      final PerformanceTracker performanceTracker,
       final DutyMetrics dutyMetrics,
       final boolean gossipBlobsAfterBlock) {
     super(
@@ -46,7 +44,6 @@ public class BlockPublisherDeneb extends BlockPublisherPhase0 {
         blockFactory,
         blockGossipChannel,
         blockImportChannel,
-        performanceTracker,
         dutyMetrics,
         gossipBlobsAfterBlock);
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
