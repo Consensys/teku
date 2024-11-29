@@ -39,8 +39,10 @@ import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
+import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
@@ -183,6 +185,33 @@ public class ActiveEth2P2PNetworkTest {
     assertThat(capturedValues.get(1)).containsExactlyInAnyOrder(1, 2);
     assertThat(capturedValues.get(2)).containsExactlyInAnyOrder(1, 2, 3);
     assertThat(capturedValues.get(3)).containsExactlyInAnyOrder(1, 3);
+  }
+
+  @Test
+  void shouldStartGossipOnPeerConnect() {
+    @SuppressWarnings("unchecked")
+    final ArgumentCaptor<PeerConnectedSubscriber<Eth2Peer>> peerManagerCaptor =
+        ArgumentCaptor.forClass(PeerConnectedSubscriber.class);
+    // Current slot is a long way beyond the chain head
+    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(64));
+
+    assertThat(network.start()).isCompleted();
+    verify(peerManager).subscribeConnect(peerManagerCaptor.capture());
+
+    network.onSyncStateChanged(false);
+    // based on network time we know we're too far behind, so we don't start gossip
+    verify(gossipForkManager, never()).configureGossipForEpoch(any());
+
+    // we are still too far behind, so on peer connect gossip is not started
+    peerManagerCaptor.getValue().onConnected(mock(Eth2Peer.class));
+    verify(gossipForkManager, never()).configureGossipForEpoch(any());
+
+    // Advance the chain
+    storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain(64));
+
+    // on peer connect gossip is started
+    peerManagerCaptor.getValue().onConnected(mock(Eth2Peer.class));
+    verify(gossipForkManager).configureGossipForEpoch(any());
   }
 
   @Test

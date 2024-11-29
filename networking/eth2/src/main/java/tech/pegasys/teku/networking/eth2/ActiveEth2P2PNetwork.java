@@ -133,6 +133,16 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     if (recentChainData.isCloseToInSync()) {
       startGossip();
     }
+    peerManager.subscribeConnect(peer -> onPeerConnected());
+  }
+
+  private void onPeerConnected() {
+    if (gossipStarted.get() || state.get() != State.RUNNING) {
+      return;
+    }
+    if (recentChainData.isCloseToInSync()) {
+      startGossip();
+    }
   }
 
   private synchronized void startGossip() {
