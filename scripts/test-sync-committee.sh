@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Instructs the beacon node to subscribe to all sync committee subnets.
-# Then each slot monitors the number of peers available on those subnets.
+# Each slot then monitors the number of peers available on those subnets.
 # Useful for simulating a validator in a sync committee without needing a real validator.
 
 
