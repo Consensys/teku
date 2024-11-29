@@ -519,6 +519,19 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           "process_consolidation_request: target validator {} is exiting", targetValidatorIndex);
       return;
     }
+    // Verify the source has been active long enough
+    if (currentEpoch.isLessThan(
+        sourceValidator.getActivationEpoch().plus(specConfig.getShardCommitteePeriod()))) {
+      LOG.debug("process_consolidation_request: source has not been active long enough");
+      return;
+    }
+    // Verify the source has no pending withdrawals in the queue
+    if (beaconStateAccessorsElectra
+        .getPendingBalanceToWithdraw(state, sourceValidatorIndex)
+        .isGreaterThan(ZERO)) {
+      LOG.debug("process_consolidation_request: source has pending withdrawals in the queue");
+      return;
+    }
 
     // Initiate source validator exit and append pending consolidation
     final UInt64 exitEpoch =
