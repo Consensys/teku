@@ -177,13 +177,13 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   }
 
   @Override
-  public void onSyncStateChanged(final boolean isOptimistic) {
+  public void onSyncStateChanged(final boolean isCloseToInSync, final boolean isOptimistic) {
     gossipForkManager.onOptimisticHeadChanged(isOptimistic);
 
     if (state.get() != State.RUNNING) {
       return;
     }
-    if (recentChainData.isCloseToInSync()) {
+    if (isCloseToInSync) {
       startGossip();
     } else {
       stopGossip();

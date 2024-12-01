@@ -198,7 +198,7 @@ public class ActiveEth2P2PNetworkTest {
     assertThat(network.start()).isCompleted();
     verify(peerManager).subscribeConnect(peerManagerCaptor.capture());
 
-    network.onSyncStateChanged(false);
+    network.onSyncStateChanged(false, false);
     // based on network time we know we're too far behind, so we don't start gossip
     verify(gossipForkManager, never()).configureGossipForEpoch(any());
 
@@ -221,7 +221,7 @@ public class ActiveEth2P2PNetworkTest {
 
     assertThat(network.start()).isCompleted();
 
-    network.onSyncStateChanged(false);
+    network.onSyncStateChanged(true, false);
 
     // Even though we're a long way behind, start gossip because we believe we're in sync
     verify(gossipForkManager).configureGossipForEpoch(any());
@@ -233,51 +233,50 @@ public class ActiveEth2P2PNetworkTest {
     storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(1000));
 
     assertThat(network.start()).isCompleted();
-    network.onSyncStateChanged(false);
-    // based on network time we know we're too far behind, so we don't start gossip
-    verify(gossipForkManager, never()).configureGossipForEpoch(any());
+    network.onSyncStateChanged(true, false);
+    // Even though we're a long way behind, start gossip because we believe we're in sync
+    verify(gossipForkManager).configureGossipForEpoch(any());
 
-    network.onSyncStateChanged(false);
-    verify(gossipForkManager, never()).stopGossip();
+    network.onSyncStateChanged(false, false);
+    verify(gossipForkManager).stopGossip();
   }
 
   @Test
   void onSyncStateChanged_shouldNotifyForkManagerOfOptimisticSyncState() {
     assertThat(network.start()).isCompleted();
 
-    network.onSyncStateChanged(true);
+    network.onSyncStateChanged(false, true);
     verify(gossipForkManager).onOptimisticHeadChanged(true);
 
-    network.onSyncStateChanged(false);
+    network.onSyncStateChanged(false, false);
     verify(gossipForkManager).onOptimisticHeadChanged(false);
 
-    network.onSyncStateChanged(true);
+    network.onSyncStateChanged(true, true);
     verify(gossipForkManager, times(2)).onOptimisticHeadChanged(true);
 
-    network.onSyncStateChanged(false);
+    network.onSyncStateChanged(true, false);
     verify(gossipForkManager, times(2)).onOptimisticHeadChanged(false);
   }
 
   @Test
   void onSyncStateChanged_shouldNotResultInMultipleSubscriptions() {
     // Current slot is a long way beyond the chain head
-    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(32));
+    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(1000));
 
     assertThat(network.start()).isCompleted();
     // Won't start gossip as chain head is too old
-    //    verify(gossipForkManager, never()).configureGossipForEpoch(any());
+    verify(gossipForkManager, never()).configureGossipForEpoch(any());
 
-    network.onSyncStateChanged(false);
+    network.onSyncStateChanged(true, false);
     verify(gossipForkManager).configureGossipForEpoch(any());
     assertThat(subscribers.getSubscriberCount()).isEqualTo(1);
     verify(eventChannels, times(1)).subscribe(eq(BlockGossipChannel.class), any());
 
-    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(100));
-    network.onSyncStateChanged(false);
+    network.onSyncStateChanged(false, false);
     verify(gossipForkManager).stopGossip();
 
-    network.onSyncStateChanged(false);
-    verify(gossipForkManager).configureGossipForEpoch(any());
+    network.onSyncStateChanged(true, false);
+    verify(gossipForkManager, times(2)).configureGossipForEpoch(any());
     // Can't unsubscribe from these so should only subscribe once
     assertThat(subscribers.getSubscriberCount()).isEqualTo(1);
     verify(eventChannels, times(1)).subscribe(eq(BlockGossipChannel.class), any());
