@@ -825,7 +825,6 @@ public final class DataStructureUtil {
         .toVersionElectra()
         .orElseThrow()
         .getSingleAttestationSchema()
-        .toSingleAttestationSchemaRequired()
         .create(randomUInt64(), randomUInt64(), randomAttestationData(), randomSignature());
   }
 

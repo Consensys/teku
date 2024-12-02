@@ -32,8 +32,6 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Consolid
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation.PendingConsolidationSchema;
@@ -134,7 +132,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return pendingPartialWithdrawalsSchema;
   }
 
-  public AttestationSchema<SingleAttestation> getSingleAttestationSchema() {
+  public SingleAttestationSchema getSingleAttestationSchema() {
     return singleAttestationSchema;
   }
 
