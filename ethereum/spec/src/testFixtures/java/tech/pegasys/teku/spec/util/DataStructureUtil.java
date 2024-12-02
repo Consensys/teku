@@ -821,14 +821,12 @@ public final class DataStructureUtil {
   }
 
   public SingleAttestation randomSingleAttestation() {
-    return spec.getGenesisSchemaDefinitions().toVersionElectra().orElseThrow()
+    return spec.getGenesisSchemaDefinitions()
+        .toVersionElectra()
+        .orElseThrow()
         .getSingleAttestationSchema()
-            .toSingleAttestationSchemaRequired()
-        .create(
-            randomUInt64(),
-                randomUInt64(),
-                randomAttestationData(),
-            randomSignature());
+        .toSingleAttestationSchemaRequired()
+        .create(randomUInt64(), randomUInt64(), randomAttestationData(), randomSignature());
   }
 
   public Attestation randomAttestation(final long slot) {

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.propertytest.suppliers.operations;
 
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
