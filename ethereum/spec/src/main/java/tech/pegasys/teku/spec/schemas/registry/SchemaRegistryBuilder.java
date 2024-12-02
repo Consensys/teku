@@ -58,6 +58,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLINDED
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLOCK_CONTENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BUILDER_BID_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SINGLE_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SYNCNETS_ENR_FIELD_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.WITHDRAWAL_REQUEST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.WITHDRAWAL_SCHEMA;
@@ -117,6 +118,7 @@ import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSche
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0Schema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
@@ -188,7 +190,14 @@ public class SchemaRegistryBuilder {
         .addProvider(createDepositRequestSchemaProvider())
         .addProvider(createWithdrawalRequestSchemaProvider())
         .addProvider(createConsolidationRequestSchemaProvider())
-        .addProvider(createExecutionRequestsSchemaProvider());
+        .addProvider(createExecutionRequestsSchemaProvider())
+        .addProvider(createSingleAttestationSchemaProvider());
+  }
+
+  private static SchemaProvider<?> createSingleAttestationSchemaProvider() {
+    return providerBuilder(SINGLE_ATTESTATION_SCHEMA)
+        .withCreator(ELECTRA, (registry, specConfig, schemaName) -> new SingleAttestationSchema())
+        .build();
   }
 
   private static SchemaProvider<?> createDepositRequestSchemaProvider() {
