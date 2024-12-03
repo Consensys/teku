@@ -258,24 +258,27 @@ public abstract class AbstractValidatorStatusFactoryTest {
   }
 
   @Test
-  public void recreateValidatorStatusesShouldAppendNewValidatorsAndKeepOrder() {
+  public void recreateValidatorStatusesShouldAppendNewValidatorsAndKeepOrder()
+      throws IllegalAccessException {
     final BeaconState state =
         dataStructureUtil
             .stateBuilder(spec.getGenesisSpec().getMilestone(), 3, 1)
             .setSlotToStartOfEpoch(UInt64.ONE)
             .build();
-    final ValidatorStatuses validatorStatuses =
-        validatorStatusFactory.createValidatorStatuses(state);
+    // Magic to get around requiring a full state with valid previous and current epoch attestations
+    // (only on Phase0)
+    final ValidatorStatusFactory factory = createFactory();
+    FieldUtils.writeField(factory, "attestationUtil", mock(AttestationUtil.class), true);
+
+    final ValidatorStatuses validatorStatuses = factory.createValidatorStatuses(state);
 
     final UInt64 currentEpoch = spec.computeEpochAtSlot(state.getSlot());
     final Validator newValidator = dataStructureUtil.validatorBuilder().slashed(true).build();
     final ValidatorStatus newValidatorStatus =
-        validatorStatusFactory.createValidatorStatus(
-            newValidator, currentEpoch.minusMinZero(1), currentEpoch);
+        factory.createValidatorStatus(newValidator, currentEpoch.minusMinZero(1), currentEpoch);
 
     final ValidatorStatuses updatedValidatorStatuses =
-        validatorStatusFactory.recreateValidatorStatuses(
-            validatorStatuses, List.of(newValidatorStatus));
+        factory.recreateValidatorStatuses(validatorStatuses, List.of(newValidatorStatus));
 
     final ValidatorStatus[] expectedStatuses =
         Stream.concat(validatorStatuses.getStatuses().stream(), Stream.of(newValidatorStatus))
