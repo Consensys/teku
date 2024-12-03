@@ -29,7 +29,6 @@ import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
-import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 class BlockPublisherPhase0Test {
   private final BlockGossipChannel blockGossipChannel = mock(BlockGossipChannel.class);
@@ -41,7 +40,6 @@ class BlockPublisherPhase0Test {
           mock(BlockFactory.class),
           blockGossipChannel,
           blockImportChannel,
-          mock(PerformanceTracker.class),
           mock(DutyMetrics.class),
           false);
 

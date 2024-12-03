@@ -36,12 +36,19 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
+import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
@@ -52,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSche
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -112,6 +120,11 @@ public class SchemaTypes {
   public static final SchemaId<SignedBeaconBlockSchema> SIGNED_BLINDED_BEACON_BLOCK_SCHEMA =
       create("SIGNED_BLINDED_BEACON_BLOCK_SCHEMA");
 
+  public static final SchemaId<BuilderBidSchema<? extends BuilderBid>> BUILDER_BID_SCHEMA =
+      create("BUILDER_BID_SCHEMA");
+  public static final SchemaId<SignedBuilderBidSchema> SIGNED_BUILDER_BID_SCHEMA =
+      create("SIGNED_BUILDER_BID_SCHEMA");
+
   // Capella
   public static final SchemaId<WithdrawalSchema> WITHDRAWAL_SCHEMA = create("WITHDRAWAL_SCHEMA");
   public static final SchemaId<BlsToExecutionChangeSchema> BLS_TO_EXECUTION_CHANGE_SCHEMA =
@@ -140,7 +153,6 @@ public class SchemaTypes {
       create("BLOBS_BUNDLE_SCHEMA");
 
   // Electra
-
   public static final SchemaId<ExecutionRequestsSchema> EXECUTION_REQUESTS_SCHEMA =
       create("EXECUTION_REQUESTS_SCHEMA");
   public static final SchemaId<SszListSchema<PendingPartialWithdrawal, ?>>
@@ -149,6 +161,17 @@ public class SchemaTypes {
       PENDING_CONSOLIDATIONS_SCHEMA = create("PENDING_CONSOLIDATIONS_SCHEMA");
   public static final SchemaId<SszListSchema<PendingDeposit, ?>> PENDING_DEPOSITS_SCHEMA =
       create("PENDING_DEPOSITS_SCHEMA");
+  public static final SchemaId<ExecutionPayloadAndBlobsBundleSchema>
+      EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA =
+          create("EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA");
+  public static final SchemaId<DepositRequestSchema> DEPOSIT_REQUEST_SCHEMA =
+      create("DEPOSIT_REQUEST_SCHEMA");
+  public static final SchemaId<WithdrawalRequestSchema> WITHDRAWAL_REQUEST_SCHEMA =
+      create("WITHDRAWAL_REQUEST_SCHEMA");
+  public static final SchemaId<ConsolidationRequestSchema> CONSOLIDATION_REQUEST_SCHEMA =
+      create("CONSOLIDATION_REQUEST_SCHEMA");
+  public static final SchemaId<SingleAttestationSchema> SINGLE_ATTESTATION_SCHEMA =
+      create("SINGLE_ATTESTATION_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation

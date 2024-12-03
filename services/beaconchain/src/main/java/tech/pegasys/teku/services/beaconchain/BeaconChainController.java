@@ -981,7 +981,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockGossipChannel,
             blockBlobSidecarsTrackersPool,
             blobSidecarGossipChannel,
-            performanceTracker,
             dutyMetrics,
             beaconConfig.p2pConfig().isGossipBlobsAfterBlockEnabled());
 
@@ -1327,7 +1326,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     // p2pNetwork subscription so gossip can be enabled and disabled appropriately
     syncService.subscribeToSyncStateChangesAndUpdate(
-        state -> p2pNetwork.onSyncStateChanged(state.isInSync(), state.isOptimistic()));
+        state ->
+            p2pNetwork.onSyncStateChanged(recentChainData.isCloseToInSync(), state.isOptimistic()));
   }
 
   protected void initOperationsReOrgManager() {

@@ -20,11 +20,13 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_KZG_COMMI
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECAR_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLOCK_CONTENTS_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
@@ -38,19 +40,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bea
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
-import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema;
-
-  private final BuilderBidSchema<?> builderBidSchemaDeneb;
-  private final SignedBuilderBidSchema signedBuilderBidSchemaDeneb;
 
   private final BlobSchema blobSchema;
   private final SszListSchema<Blob, ? extends SszList<Blob>> blobsInBlockSchema;
@@ -63,26 +59,16 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   public SchemaDefinitionsDeneb(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
-    final SpecConfigDeneb specConfig = SpecConfigDeneb.required(schemaRegistry.getSpecConfig());
-    this.blobKzgCommitmentsSchema = schemaRegistry.get(BLOB_KZG_COMMITMENTS_SCHEMA);
-    this.builderBidSchemaDeneb =
-        new BuilderBidSchemaDeneb(
-            "BuilderBidDeneb", getExecutionPayloadHeaderSchema(), blobKzgCommitmentsSchema);
-    this.signedBuilderBidSchemaDeneb =
-        new SignedBuilderBidSchema("SignedBuilderBidDeneb", builderBidSchemaDeneb);
 
+    this.blobKzgCommitmentsSchema = schemaRegistry.get(BLOB_KZG_COMMITMENTS_SCHEMA);
     this.blobSchema = schemaRegistry.get(BLOB_SCHEMA);
     this.blobsInBlockSchema = schemaRegistry.get(BLOBS_IN_BLOCK_SCHEMA);
     this.blobSidecarSchema = schemaRegistry.get(BLOB_SIDECAR_SCHEMA);
-    this.blockContentsSchema =
-        BlockContentsSchema.create(
-            specConfig, getBeaconBlockSchema(), blobSchema, "BlockContentsDeneb");
-    this.signedBlockContentsSchema =
-        SignedBlockContentsSchema.create(
-            specConfig, getSignedBeaconBlockSchema(), blobSchema, "SignedBlockContentsDeneb");
+    this.blockContentsSchema = schemaRegistry.get(BLOCK_CONTENTS_SCHEMA);
+    this.signedBlockContentsSchema = schemaRegistry.get(SIGNED_BLOCK_CONTENTS_SCHEMA);
     this.blobsBundleSchema = schemaRegistry.get(BLOBS_BUNDLE_SCHEMA);
     this.executionPayloadAndBlobsBundleSchema =
-        new ExecutionPayloadAndBlobsBundleSchema(getExecutionPayloadSchema(), blobsBundleSchema);
+        schemaRegistry.get(EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA);
     this.blobSidecarsByRootRequestMessageSchema =
         schemaRegistry.get(BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA);
   }
@@ -104,16 +90,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   @Override
   public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlockContainerSchema() {
     return getSignedBlockContentsSchema().castTypeToSignedBlockContainer();
-  }
-
-  @Override
-  public BuilderBidSchema<?> getBuilderBidSchema() {
-    return builderBidSchemaDeneb;
-  }
-
-  @Override
-  public SignedBuilderBidSchema getSignedBuilderBidSchema() {
-    return signedBuilderBidSchemaDeneb;
   }
 
   @Override

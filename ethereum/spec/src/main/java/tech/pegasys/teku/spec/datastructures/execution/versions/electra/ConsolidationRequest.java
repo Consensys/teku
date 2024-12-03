@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
@@ -25,8 +26,7 @@ public class ConsolidationRequest
     extends Container3<ConsolidationRequest, SszByteVector, SszPublicKey, SszPublicKey> {
 
   public static final byte REQUEST_TYPE = 0x2;
-
-  public static final ConsolidationRequestSchema SSZ_SCHEMA = new ConsolidationRequestSchema();
+  public static final Bytes REQUEST_TYPE_PREFIX = Bytes.of(REQUEST_TYPE);
 
   protected ConsolidationRequest(
       final ConsolidationRequestSchema schema,

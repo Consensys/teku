@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
@@ -27,8 +28,7 @@ public class WithdrawalRequest
     extends Container3<WithdrawalRequest, SszByteVector, SszPublicKey, SszUInt64> {
 
   public static final byte REQUEST_TYPE = 0x1;
-
-  public static final WithdrawalRequestSchema SSZ_SCHEMA = new WithdrawalRequestSchema();
+  public static final Bytes REQUEST_TYPE_PREFIX = Bytes.of(REQUEST_TYPE);
 
   protected WithdrawalRequest(
       final WithdrawalRequestSchema schema,

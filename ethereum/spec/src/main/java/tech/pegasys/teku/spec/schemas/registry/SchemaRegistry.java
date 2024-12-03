@@ -67,6 +67,11 @@ public class SchemaRegistry {
 
   @SuppressWarnings("unchecked")
   public <T> T get(final SchemaId<T> schemaId) {
+    final T schema = cache.get(milestone, schemaId);
+    if (schema != null) {
+      return schema;
+    }
+
     final SchemaProvider<T> provider = (SchemaProvider<T>) providers.get(schemaId);
     if (provider == null) {
       throw new IllegalArgumentException(
@@ -74,10 +79,6 @@ public class SchemaRegistry {
               + schemaId
               + " or it does not support milestone "
               + milestone);
-    }
-    final T schema = cache.get(milestone, schemaId);
-    if (schema != null) {
-      return schema;
     }
 
     // The schema was not found.

@@ -11,7 +11,7 @@ OUT="$(cd "${OUT}" &>/dev/null && pwd)"
 
 FIRST_BLOCK=$(($START + 1))
 echo "Starting state download"
-curl --fail -H 'Accept: application/octet-stream' http://localhost:$PORT/eth/v2/debug/beacon/states/{$START} -o "${OUT}/state.ssz" &
+curl --fail -H 'Accept: application/octet-stream' http://localhost:$PORT/eth/v2/debug/beacon/states/${START} -o "${OUT}/state.ssz" &
 
 BLOCK_ARGS=""
 for i in $(seq -f "%0.f" ${FIRST_BLOCK} ${END})
