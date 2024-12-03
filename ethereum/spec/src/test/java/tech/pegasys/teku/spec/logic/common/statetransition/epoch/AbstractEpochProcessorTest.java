@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -23,6 +24,8 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.time.Duration;
+import java.util.List;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.commons.util.ReflectionUtils;
@@ -36,6 +39,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.versions.capella.statetransition.epoch.EpochProcessorCapella;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -43,11 +48,7 @@ class AbstractEpochProcessorTest {
 
   private final Spec spec = TestSpecFactory.createMinimalCapella();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100_000L);
-  private final EpochProcessorCapella epochProcessor =
-      new EpochProcessorCapella(
-          (EpochProcessorCapella) spec.getGenesisSpec().getEpochProcessor(), timeProvider);
-
+  private final EpochProcessor epochProcessor = spec.getGenesisSpec().getEpochProcessor();
   private final int throttlingPeriod = 1; // expect maximum of one call per second
   private static final Logger LOGGER = mock(Logger.class);
   private final Throttler<Logger> loggerThrottler = spyLogThrottler(LOGGER, throttlingPeriod);
@@ -56,6 +57,10 @@ class AbstractEpochProcessorTest {
 
   @Test
   public void shouldThrottleInactivityLeakLogs() throws Exception {
+    final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100_000L);
+    final EpochProcessor epochProcessor = spec.getGenesisSpec().getEpochProcessor();
+    FieldUtils.writeField(epochProcessor, "timeProvider", timeProvider, true);
+
     // First two processEpoch calls within the same second
     epochProcessor.processEpoch(state);
     epochProcessor.processEpoch(advanceNSlots(state, 1));
@@ -110,5 +115,63 @@ class AbstractEpochProcessorTest {
     }
 
     return loggerThrottler;
+  }
+
+  @Test
+  public void shouldCheckNewValidatorsDuringEpochProcessingReturnsFalse() {
+    assertThat(
+            ((AbstractEpochProcessor) epochProcessor)
+                .shouldCheckNewValidatorsDuringEpochProcessing())
+        .isFalse();
+  }
+
+  @Test
+  public void recreateValidatorStatusWithNoNewValidators() {
+    final BeaconState preState =
+        dataStructureUtil.stateBuilder(spec.getGenesisSpec().getMilestone(), 10, 3).build();
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(preState.getSlot());
+    final ValidatorStatusFactory validatorStatusFactory =
+        spec.atSlot(preState.getSlot()).getValidatorStatusFactory();
+
+    final ValidatorStatuses validatorStatuses =
+        validatorStatusFactory.createValidatorStatuses(preState);
+
+    final ValidatorStatuses newValidatorStatuses =
+        ((AbstractEpochProcessor) epochProcessor)
+            .recreateValidatorStatusIfNewValidatorsAreFound(
+                preState, validatorStatuses, currentEpoch);
+
+    assertThat(preState.getValidators().size())
+        .isEqualTo(newValidatorStatuses.getStatuses().size());
+  }
+
+  @Test
+  public void recreateValidatorStatusWithNewValidators() {
+    final BeaconState preState =
+        dataStructureUtil.stateBuilder(spec.getGenesisSpec().getMilestone(), 10, 3).build();
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(preState.getSlot());
+    final ValidatorStatusFactory validatorStatusFactory =
+        spec.atSlot(preState.getSlot()).getValidatorStatusFactory();
+
+    final ValidatorStatuses validatorStatuses =
+        validatorStatusFactory.createValidatorStatuses(preState);
+
+    final List<Validator> newValidators =
+        List.of(
+            dataStructureUtil.randomValidator(),
+            dataStructureUtil.randomValidator(),
+            dataStructureUtil.randomValidator());
+    final BeaconState postState =
+        preState.updated(state -> newValidators.forEach(state.getValidators()::append));
+
+    final ValidatorStatuses newValidatorStatuses =
+        ((AbstractEpochProcessor) epochProcessor)
+            .recreateValidatorStatusIfNewValidatorsAreFound(
+                postState, validatorStatuses, currentEpoch);
+
+    assertThat(preState.getValidators().size() + newValidators.size())
+        .isEqualTo(newValidatorStatuses.getStatuses().size());
+    assertThat(postState.getValidators().size())
+        .isEqualTo(newValidatorStatuses.getStatuses().size());
   }
 }
