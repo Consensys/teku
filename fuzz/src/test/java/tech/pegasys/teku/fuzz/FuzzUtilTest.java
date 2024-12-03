@@ -15,6 +15,7 @@ package tech.pegasys.teku.fuzz;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.SyncAggregateFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
 import tech.pegasys.teku.fuzz.input.WithdrawalRequestFuzzInput;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.spec.Spec;
@@ -62,6 +64,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
@@ -166,23 +169,26 @@ class FuzzUtilTest {
   }
 
   @Test
-  public void fuzzBlockHeader_minimal() {
+  public void fuzzBlockHeader_minimal() throws JsonProcessingException {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
 
     final Path testCaseDir =
         Path.of("minimal/operations/block_header/pyspec_tests/basic_block_header");
     final BeaconBlock data = loadSsz(testCaseDir.resolve("block.ssz_snappy"), beaconBlockSchema);
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz_snappy"), beaconStateSchema);
-    final BeaconState postState =
+    final BeaconStateElectra postState =
         loadSsz(testCaseDir.resolve("post.ssz_snappy"), beaconStateSchema);
 
-    BlockHeaderFuzzInput input = new BlockHeaderFuzzInput(spec, preState, data);
-    byte[] rawInput = input.sszSerialize().toArrayUnsafe();
-    Optional<Bytes> result = fuzzUtil.fuzzBlockHeader(rawInput).map(Bytes::wrap);
+    final BlockHeaderFuzzInput input = new BlockHeaderFuzzInput(spec, preState, data);
+    final byte[] rawInput = input.sszSerialize().toArrayUnsafe();
+    final Optional<Bytes> result = fuzzUtil.fuzzBlockHeader(rawInput).map(Bytes::wrap);
 
-    Bytes expected = postState.sszSerialize();
     assertThat(result).isNotEmpty();
-    assertThat(result.get()).isEqualTo(expected);
+    final BeaconStateElectra resultState =
+        BeaconStateElectra.required(
+            spec.getGenesisSchemaDefinitions().getBeaconStateSchema().sszDeserialize(result.get()));
+    assertThat(JsonUtil.prettySerialize(resultState, beaconStateSchema.getJsonTypeDefinition()))
+        .isEqualTo(JsonUtil.prettySerialize(postState, beaconStateSchema.getJsonTypeDefinition()));
   }
 
   @Test
@@ -377,7 +383,7 @@ class FuzzUtilTest {
   }
 
   @Test
-  public void fuzzConsolidationRequest_minimal() {
+  public void fuzzConsolidationRequest_minimal() throws JsonProcessingException {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
 
     final Path testCaseDir =
@@ -391,16 +397,20 @@ class FuzzUtilTest {
                 .getConsolidationRequestsSchema()
                 .getElementSchema());
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz_snappy"), beaconStateSchema);
-    final BeaconState postState =
+    final BeaconStateElectra postState =
         loadSsz(testCaseDir.resolve("post.ssz_snappy"), beaconStateSchema);
 
-    ConsolidationRequestFuzzInput input = new ConsolidationRequestFuzzInput(spec, preState, data);
-    byte[] rawInput = input.sszSerialize().toArrayUnsafe();
-    Optional<Bytes> result = fuzzUtil.fuzzConsolidationRequest(rawInput).map(Bytes::wrap);
+    final ConsolidationRequestFuzzInput input =
+        new ConsolidationRequestFuzzInput(spec, preState, data);
+    final byte[] rawInput = input.sszSerialize().toArrayUnsafe();
+    final Optional<Bytes> result = fuzzUtil.fuzzConsolidationRequest(rawInput).map(Bytes::wrap);
 
-    Bytes expected = postState.sszSerialize();
     assertThat(result).isNotEmpty();
-    assertThat(result.get()).isEqualTo(expected);
+    final BeaconStateElectra resultState =
+        BeaconStateElectra.required(
+            spec.getGenesisSchemaDefinitions().getBeaconStateSchema().sszDeserialize(result.get()));
+    assertThat(JsonUtil.prettySerialize(resultState, beaconStateSchema.getJsonTypeDefinition()))
+        .isEqualTo(JsonUtil.prettySerialize(postState, beaconStateSchema.getJsonTypeDefinition()));
   }
 
   @Test
