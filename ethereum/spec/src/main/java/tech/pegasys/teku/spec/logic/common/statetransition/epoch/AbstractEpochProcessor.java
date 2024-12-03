@@ -162,7 +162,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       for (int i = preValidatorCount; i < postValidatorCount; i++) {
         final ValidatorStatus status =
             validatorStatusFactory.createValidatorStatus(
-                state.getValidators().get(i), currentEpoch.minus(1), currentEpoch);
+                state.getValidators().get(i), currentEpoch.minusMinZero(1), currentEpoch);
         newValidatorStatuses.add(status);
       }
       return validatorStatusFactory.recreateValidatorStatuses(
