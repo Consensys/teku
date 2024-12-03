@@ -20,7 +20,7 @@ import org.hyperledger.besu.ethereum.chain.BadBlockManager;
 import org.hyperledger.besu.ethereum.chain.GenesisState;
 import org.hyperledger.besu.ethereum.core.Block;
 import org.hyperledger.besu.ethereum.core.BlockHeader;
-import org.hyperledger.besu.ethereum.core.MiningParameters;
+import org.hyperledger.besu.ethereum.core.MiningConfiguration;
 import org.hyperledger.besu.ethereum.mainnet.MainnetProtocolSchedule;
 import org.hyperledger.besu.ethereum.mainnet.ProtocolSchedule;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -40,7 +40,7 @@ public class MergedGenesisTestBuilder {
     final ProtocolSchedule protocolSchedule =
         MainnetProtocolSchedule.fromConfig(
             genesisConfigOptions,
-            MiningParameters.MINING_DISABLED,
+            MiningConfiguration.MINING_DISABLED,
             badBlockManager,
             false,
             new NoOpMetricsSystem());

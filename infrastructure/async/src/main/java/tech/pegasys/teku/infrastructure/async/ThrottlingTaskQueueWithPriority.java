@@ -17,7 +17,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
+import org.hyperledger.besu.plugin.services.metrics.LabelledSuppliedMetric;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class ThrottlingTaskQueueWithPriority extends ThrottlingTaskQueue {
@@ -31,8 +31,8 @@ public class ThrottlingTaskQueueWithPriority extends ThrottlingTaskQueue {
       final String metricName) {
     final ThrottlingTaskQueueWithPriority taskQueue =
         new ThrottlingTaskQueueWithPriority(maximumConcurrentTasks);
-    final LabelledGauge taskQueueGauge =
-        metricsSystem.createLabelledGauge(
+    final LabelledSuppliedMetric taskQueueGauge =
+        metricsSystem.createLabelledSuppliedGauge(
             metricCategory, metricName, "Number of tasks queued", "priority");
     taskQueueGauge.labels(taskQueue.queuedTasks::size, "normal");
     taskQueueGauge.labels(taskQueue.queuedPrioritizedTasks::size, "high");
