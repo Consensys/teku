@@ -379,4 +379,9 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
       }
     }
   }
+
+  @Override
+  protected boolean shouldCheckNewValidatorsDuringEpochProcessing() {
+    return true;
+  }
 }

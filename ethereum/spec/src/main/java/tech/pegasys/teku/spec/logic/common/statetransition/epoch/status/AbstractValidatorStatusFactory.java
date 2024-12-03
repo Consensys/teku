@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.common.statetransition.epoch.status;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.MAX_VALUE;
 
 import java.util.List;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -68,6 +69,16 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
     processParticipation(statuses, state, previousEpoch, currentEpoch);
 
     return new ValidatorStatuses(statuses, createTotalBalances(state, statuses));
+  }
+
+  @Override
+  public ValidatorStatuses recreateValidatorStatuses(
+      final ValidatorStatuses validatorStatuses,
+      final List<ValidatorStatus> validatorStatusesToAppend) {
+    final List<ValidatorStatus> validatorStatusesList =
+        Stream.concat(validatorStatuses.getStatuses().stream(), validatorStatusesToAppend.stream())
+            .toList();
+    return new ValidatorStatuses(validatorStatusesList, validatorStatuses.getTotalBalances());
   }
 
   private TotalBalances createTotalBalances(
