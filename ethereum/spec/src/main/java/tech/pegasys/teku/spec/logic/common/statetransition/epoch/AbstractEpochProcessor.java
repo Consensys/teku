@@ -153,13 +153,13 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       final BeaconState state,
       final ValidatorStatuses validatorStatuses,
       final UInt64 currentEpoch) {
-    final int preValidatorCount = validatorStatuses.getValidatorCount();
-    final int postValidatorCount = state.getValidators().size();
-    if (postValidatorCount > preValidatorCount) {
+    final int cachedValidatorCount = validatorStatuses.getValidatorCount();
+    final int stateValidatorCount = state.getValidators().size();
+    if (stateValidatorCount > cachedValidatorCount) {
       // New validators added, create new  validator statuses
       final List<ValidatorStatus> newValidatorStatuses =
-          new ArrayList<>(postValidatorCount - preValidatorCount);
-      for (int i = preValidatorCount; i < postValidatorCount; i++) {
+          new ArrayList<>(stateValidatorCount - cachedValidatorCount);
+      for (int i = cachedValidatorCount; i < stateValidatorCount; i++) {
         final ValidatorStatus status =
             validatorStatusFactory.createValidatorStatus(
                 state.getValidators().get(i), currentEpoch.minusMinZero(1), currentEpoch);
