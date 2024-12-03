@@ -92,12 +92,14 @@ class ExecutionRequestsDataCodecTest {
 
   @Test
   public void decodeExecutionRequestsDataWithInvalidRequestType() {
+    final Bytes invalidRequestType = Bytes.of(9);
+    final Bytes invalidTypeEncodedList = Bytes.concatenate(invalidRequestType, Bytes.random(10));
     final List<Bytes> invalidExecutionRequestsData =
-        List.of(depositRequestListEncoded, withdrawalRequestsListEncoded, Bytes.of(9));
+        List.of(depositRequestListEncoded, withdrawalRequestsListEncoded, invalidTypeEncodedList);
 
     assertThatThrownBy(() -> codec.decode(invalidExecutionRequestsData))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Invalid execution request type: 9");
+        .hasMessage("Invalid execution request type: " + invalidRequestType.toInt());
   }
 
   @Test
@@ -124,6 +126,29 @@ class ExecutionRequestsDataCodecTest {
     assertThatThrownBy(() -> codec.decode(invalidExecutionRequestsData))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Execution requests are not in strictly ascending order");
+  }
+
+  @Test
+  public void decodeExecutionRequestsDataWithEmptyRequestData() {
+    // Element containing only the type by but no data
+    final List<Bytes> invalidEmptyRequestsData = List.of(DepositRequest.REQUEST_TYPE_PREFIX);
+
+    assertThatThrownBy(() -> codec.decode(invalidEmptyRequestsData))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Empty data for request type 0");
+  }
+
+  @Test
+  public void decodeExecutionRequestsDataWithOneInvalidEmptyRequestData() {
+    final List<Bytes> invalidExecutionRequestsData =
+        List.of(
+            depositRequestListEncoded,
+            withdrawalRequestsListEncoded,
+            ConsolidationRequest.REQUEST_TYPE_PREFIX);
+
+    assertThatThrownBy(() -> codec.decode(invalidExecutionRequestsData))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Empty data for request type 2");
   }
 
   @Test
