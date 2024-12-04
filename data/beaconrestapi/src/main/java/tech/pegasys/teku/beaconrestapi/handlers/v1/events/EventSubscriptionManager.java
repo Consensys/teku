@@ -211,8 +211,14 @@ public class EventSubscriptionManager
   }
 
   protected void onNewAttestation(final ValidatableAttestation attestation) {
-    final AttestationEvent attestationEvent = new AttestationEvent(attestation.getAttestation());
-    notifySubscribersOfEvent(EventType.attestation, attestationEvent);
+    if (!attestation.getAttestation().isSingleAttestation()) {
+      final AttestationEvent attestationEvent = new AttestationEvent(attestation.getAttestation());
+      notifySubscribersOfEvent(EventType.attestation, attestationEvent);
+    } else {
+      final SingleAttestationEvent attestationEvent =
+          new SingleAttestationEvent(attestation.getAttestation().toSingleAttestationRequired());
+      notifySubscribersOfEvent(EventType.single_attestation, attestationEvent);
+    }
   }
 
   protected void onNewBlock(final SignedBeaconBlock block, final boolean executionOptimistic) {
