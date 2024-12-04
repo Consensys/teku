@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.attestation;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
@@ -24,6 +26,7 @@ import java.util.OptionalInt;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
@@ -31,11 +34,12 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ValidatableAttestation {
   private final Spec spec;
-  private final Attestation attestation;
+  private volatile Attestation attestation;
   private final Optional<SignedAggregateAndProof> maybeAggregate;
   private final Supplier<Bytes32> hashTreeRoot;
   private final AtomicBoolean gossiped = new AtomicBoolean(false);
@@ -48,6 +52,28 @@ public class ValidatableAttestation {
   private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
   private volatile Optional<Bytes32> committeeShufflingSeed = Optional.empty();
   private volatile Optional<Int2IntMap> committeesSize = Optional.empty();
+
+  public void convertFromSingleAttestation(final SszBitlist singleAttestationAggregationBits) {
+    final Attestation localAttestation = attestation;
+    checkState(localAttestation.isSingleAttestation());
+
+    final AttestationElectraSchema attestationElectraSchema =
+        spec.atSlot(localAttestation.getData().getSlot())
+            .getSchemaDefinitions()
+            .getAttestationSchema()
+            .toVersionElectra()
+            .orElseThrow();
+
+    attestation =
+        attestationElectraSchema.create(
+            singleAttestationAggregationBits,
+            localAttestation.getData(),
+            localAttestation.getAggregateSignature(),
+            attestationElectraSchema
+                .getCommitteeBitsSchema()
+                .orElseThrow()
+                .ofBits(localAttestation.getFirstCommitteeIndex().intValue()));
+  }
 
   public static ValidatableAttestation from(final Spec spec, final Attestation attestation) {
     return new ValidatableAttestation(

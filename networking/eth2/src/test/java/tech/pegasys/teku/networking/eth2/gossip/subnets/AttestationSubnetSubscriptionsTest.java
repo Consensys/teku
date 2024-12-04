@@ -37,17 +37,17 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
-import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class AttestationSubnetSubscriptionsTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
-
+  private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
+  private final RecentChainData recentChainData = storageSystem.recentChainData();
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
 
@@ -59,7 +59,7 @@ public class AttestationSubnetSubscriptionsTest {
 
   @BeforeEach
   void setUp() {
-    BeaconChainUtil.create(spec, 0, recentChainData).initializeStorage();
+    storageSystem.chainUpdater().initializeGenesis();
     subnetSubscriptions =
         new AttestationSubnetSubscriptions(
             spec,
@@ -146,6 +146,24 @@ public class AttestationSubnetSubscriptionsTest {
     subnetSubscriptions.unsubscribeFromSubnetId(subnetId);
 
     verify(topicChannel).close();
+  }
+
+  @Test
+  void shouldCreateHandlerForSingleAttestationWhenMilestoneIsElectra() {
+    final Spec spec = TestSpecFactory.createMinimalElectra();
+    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    storageSystem.chainUpdater().initializeGenesis();
+    subnetSubscriptions =
+        new AttestationSubnetSubscriptions(
+            spec,
+            asyncRunner,
+            gossipNetwork,
+            gossipEncoding,
+            storageSystem.recentChainData(),
+            processor,
+            storageSystem.recentChainData().getCurrentForkInfo().orElseThrow(),
+            DebugDataDumper.NOOP);
+    subnetSubscriptions.getAttestationSchema().toSingleAttestationSchemaRequired();
   }
 
   private int computeSubnetId(final Attestation attestation) {
