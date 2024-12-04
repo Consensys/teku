@@ -215,7 +215,8 @@ public class BeaconRestApiTypes {
                   + EnumSet.allOf(EventType.class).stream()
                       .map(val -> "`" + val.toString() + "`")
                       .sorted()
-                      .collect(Collectors.joining(", ")),
+                      .collect(Collectors.joining(", "))
+                  + "]",
               "head"));
 
   public static final SerializableTypeDefinition<Bytes32> ROOT_TYPE =
