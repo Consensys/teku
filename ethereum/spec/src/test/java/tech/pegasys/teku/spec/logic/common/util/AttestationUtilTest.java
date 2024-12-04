@@ -65,6 +65,7 @@ class AttestationUtilTest {
   private final BeaconStateAccessors beaconStateAccessors = mock(BeaconStateAccessors.class);
   private final AsyncBLSSignatureVerifier asyncBLSSignatureVerifier =
       mock(AsyncBLSSignatureVerifier.class);
+  final Int2IntOpenHashMap committeesSize = new Int2IntOpenHashMap();
 
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
@@ -73,14 +74,13 @@ class AttestationUtilTest {
 
   @BeforeEach
   void setUp(final SpecContext specContext) {
-    spec = specContext.getSpec();
+    spec = spy(specContext.getSpec());
     dataStructureUtil = specContext.getDataStructureUtil();
     final SpecVersion specVersion = spec.forMilestone(specContext.getSpecMilestone());
     doAnswer(invocation -> createBeaconCommittee(specVersion, invocation.getArgument(2)))
         .when(beaconStateAccessors)
         .getBeaconCommittee(any(), any(), any());
-    when(beaconStateAccessors.getBeaconCommitteesSize(any(), any()))
-        .thenReturn(new Int2IntOpenHashMap());
+    doAnswer(invocation -> committeesSize).when(spec).getBeaconCommitteesSize(any(), any());
     when(beaconStateAccessors.getValidatorPubKey(any(), any()))
         .thenReturn(Optional.of(dataStructureUtil.randomPublicKey()));
     when(beaconStateAccessors.getDomain(any(), any(), any(), any()))
@@ -142,13 +142,9 @@ class AttestationUtilTest {
 
   @TestTemplate
   void createsAndValidatesIndexedAttestation(final SpecContext specContext) {
-    final Spec mockedSpec = spy(spec);
-    final Int2IntOpenHashMap committeesSize = new Int2IntOpenHashMap();
-    doAnswer(invocation -> committeesSize).when(mockedSpec).getBeaconCommitteesSize(any(), any());
-
     final Attestation attestation = dataStructureUtil.randomAttestation();
     final ValidatableAttestation validatableAttestation =
-        ValidatableAttestation.from(mockedSpec, attestation);
+        ValidatableAttestation.from(spec, attestation);
 
     final SafeFuture<AttestationProcessingResult> result =
         executeValidation(validatableAttestation);
@@ -172,17 +168,13 @@ class AttestationUtilTest {
       final SpecContext specContext) {
     specContext.assumeElectraActive();
 
-    final Spec mockedSpec = spy(spec);
-    final Int2IntOpenHashMap committeesSize = new Int2IntOpenHashMap();
-    doAnswer(invocation -> committeesSize).when(mockedSpec).getBeaconCommitteesSize(any(), any());
-
     final UInt64 committeeIndex = UInt64.valueOf(2);
     final UInt64 validatorIndex = UInt64.valueOf(5);
 
     final Attestation attestation =
         dataStructureUtil.randomSingleAttestation(validatorIndex, committeeIndex);
     final ValidatableAttestation validatableAttestation =
-        ValidatableAttestation.fromNetwork(mockedSpec, attestation, 1);
+        ValidatableAttestation.fromNetwork(spec, attestation, 1);
 
     // single pubkey signature verification
     when(asyncBLSSignatureVerifier.verify(
@@ -226,14 +218,10 @@ class AttestationUtilTest {
   void createsButDoesNotValidateIndexedAttestationBecauseItHasAlreadyBeenValidated(
       final SpecContext specContext) {
     final Attestation attestation = dataStructureUtil.randomAttestation();
-    final Spec mockedSpec = spy(spec);
-    final Int2IntOpenHashMap committeesSize = new Int2IntOpenHashMap();
-    doAnswer(invocation -> committeesSize).when(mockedSpec).getBeaconCommitteesSize(any(), any());
-
     // reorged block does not require indexed attestation validation, however it requires the
     // creation of it
     final ValidatableAttestation validatableAttestation =
-        ValidatableAttestation.fromReorgedBlock(mockedSpec, attestation);
+        ValidatableAttestation.fromReorgedBlock(spec, attestation);
 
     final SafeFuture<AttestationProcessingResult> result =
         executeValidation(validatableAttestation);
