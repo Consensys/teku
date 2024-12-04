@@ -220,6 +220,11 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas ->
                       SchemaDefinitionsElectra.required(schemas)
                           .getPendingPartialWithdrawalSchema()))
+          .put(
+              "ssz_static/SingleAttestation",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsElectra.required(schemas).getSingleAttestationSchema()))
 
           // Legacy Schemas (Not yet migrated to SchemaDefinitions)
           .put(
