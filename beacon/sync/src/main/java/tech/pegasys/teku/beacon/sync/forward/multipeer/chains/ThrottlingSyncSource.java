@@ -65,6 +65,10 @@ public class ThrottlingSyncSource implements SyncSource {
       LOG.debug("Sending request for {} blocks", count);
       return delegate.requestBlocksByRange(startSlot, count, listener);
     } else {
+      LOG.debug(
+          "Rate limiting request for {} blocks. Retry in {} seconds",
+          count,
+          PEER_REQUEST_DELAY.toSeconds());
       return asyncRunner.runAfterDelay(
           () -> requestBlocksByRange(startSlot, count, listener), PEER_REQUEST_DELAY);
     }
@@ -77,6 +81,10 @@ public class ThrottlingSyncSource implements SyncSource {
       LOG.debug("Sending request for {} blob sidecars", count);
       return delegate.requestBlobSidecarsByRange(startSlot, count, listener);
     } else {
+      LOG.debug(
+          "Rate limiting request for {} blob sidecars. Retry in {} seconds",
+          count,
+          PEER_REQUEST_DELAY.toSeconds());
       return asyncRunner.runAfterDelay(
           () -> requestBlobSidecarsByRange(startSlot, count, listener), PEER_REQUEST_DELAY);
     }
