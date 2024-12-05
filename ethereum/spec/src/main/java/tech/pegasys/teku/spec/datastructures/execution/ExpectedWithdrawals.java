@@ -233,15 +233,16 @@ public class ExpectedWithdrawals {
       if (predicates.hasExecutionWithdrawalCredential(validator)) {
         final UInt64 uInt64validatorIndex = UInt64.valueOf(validatorIndex);
         final UInt64 balance;
-        if(preState.toVersionElectra().isPresent()) {
+        if (preState.toVersionElectra().isPresent()) {
           final UInt64 partiallyWithdrawalBalance =
-                  partialWithdrawals.stream()
-                          .filter(partialWithdrawal -> partialWithdrawal.getIndex().equals(uInt64validatorIndex))
-                          .map(Withdrawal::getAmount)
-                          .reduce(UInt64.ZERO, UInt64::plus);
+              partialWithdrawals.stream()
+                  .filter(
+                      partialWithdrawal ->
+                          partialWithdrawal.getIndex().equals(uInt64validatorIndex))
+                  .map(Withdrawal::getAmount)
+                  .reduce(UInt64.ZERO, UInt64::plus);
           balance = balances.get(validatorIndex).get().minus(partiallyWithdrawalBalance);
-        }
-        else{
+        } else {
           balance = balances.get(validatorIndex).get();
         }
 
