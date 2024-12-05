@@ -839,6 +839,45 @@ class RecentChainDataTest {
   }
 
   @Test
+  public void isCloseToInSync_preGenesis() {
+    initPreGenesis();
+    assertThat(recentChainData.isCloseToInSync()).isFalse();
+  }
+
+  @Test
+  public void isCloseToSync_belowBoundary() {
+    initPostGenesis();
+    final SpecConfig specConfig = spec.getGenesisSpecConfig();
+    final int seconds =
+        specConfig.getMaxSeedLookahead()
+            * specConfig.getSlotsPerEpoch()
+            * specConfig.getSecondsPerSlot();
+    assertThat(recentChainData.isCloseToInSync(UInt64.valueOf(seconds - 1))).isTrue();
+  }
+
+  @Test
+  public void isCloseToSync_atBoundary() {
+    initPostGenesis();
+    final SpecConfig specConfig = spec.getGenesisSpecConfig();
+    final int seconds =
+        specConfig.getMaxSeedLookahead()
+            * specConfig.getSlotsPerEpoch()
+            * specConfig.getSecondsPerSlot();
+    assertThat(recentChainData.isCloseToInSync(UInt64.valueOf(seconds))).isTrue();
+  }
+
+  @Test
+  public void isCloseToSync_aboveBoundary() {
+    initPostGenesis();
+    final SpecConfig specConfig = spec.getGenesisSpecConfig();
+    final int seconds =
+        specConfig.getMaxSeedLookahead()
+            * specConfig.getSlotsPerEpoch()
+            * specConfig.getSecondsPerSlot();
+    assertThat(recentChainData.isCloseToInSync(UInt64.valueOf(seconds + 8))).isFalse();
+  }
+
+  @Test
   public void getBlockRootBySlotWithHeadRoot_withForkRoot() {
     initPostGenesis();
     // Build small chain

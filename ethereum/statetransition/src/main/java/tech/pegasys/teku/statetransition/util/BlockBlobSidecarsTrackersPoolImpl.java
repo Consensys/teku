@@ -93,7 +93,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   static final String GAUGE_BLOB_SIDECARS_TRACKERS_LABEL = "blob_sidecars_trackers";
 
   static final UInt64 MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS = UInt64.valueOf(1500);
-  static final UInt64 MIN_WAIT_MILLIS = UInt64.valueOf(500);
+  static final UInt64 MIN_WAIT_MILLIS = UInt64.ZERO;
   static final UInt64 TARGET_WAIT_MILLIS = UInt64.valueOf(1000);
 
   private final SettableLabelledGauge sizeGauge;

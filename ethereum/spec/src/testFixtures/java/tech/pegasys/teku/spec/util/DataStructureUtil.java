@@ -160,6 +160,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
@@ -817,6 +818,27 @@ public final class DataStructureUtil {
             randomAttestationData(),
             randomSignature(),
             this::randomCommitteeBitvector);
+  }
+
+  public SingleAttestation randomSingleAttestation() {
+    return spec.getGenesisSchemaDefinitions()
+        .toVersionElectra()
+        .orElseThrow()
+        .getSingleAttestationSchema()
+        .create(
+            randomUInt64(Integer.MAX_VALUE),
+            randomUInt64(Integer.MAX_VALUE),
+            randomAttestationData(),
+            randomSignature());
+  }
+
+  public SingleAttestation randomSingleAttestation(
+      final UInt64 validatorIndex, final UInt64 committeeIndex) {
+    return spec.getGenesisSchemaDefinitions()
+        .toVersionElectra()
+        .orElseThrow()
+        .getSingleAttestationSchema()
+        .create(committeeIndex, validatorIndex, randomAttestationData(), randomSignature());
   }
 
   public Attestation randomAttestation(final long slot) {

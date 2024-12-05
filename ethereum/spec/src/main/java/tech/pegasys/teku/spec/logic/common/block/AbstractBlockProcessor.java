@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.common.block;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -54,7 +53,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
-import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -682,7 +680,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         final BLSPublicKey pubkey = deposit.getData().getPubkey();
         publicKeys.add(List.of(pubkey));
         messages.add(
-            computeDepositSigningRoot(
+            miscHelpers.computeDepositSigningRoot(
                 pubkey,
                 deposit.getData().getWithdrawalCredentials(),
                 deposit.getData().getAmount()));
@@ -760,32 +758,16 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       // Verify the deposit signature (proof of possession) which is not checked by the deposit
       // contract
       if (signatureAlreadyVerified
-          || isValidDepositSignature(pubkey, withdrawalCredentials, amount, signature)) {
-        addValidatorToRegistry(state, pubkey, withdrawalCredentials, amount);
+          || miscHelpers.isValidDepositSignature(
+              pubkey, withdrawalCredentials, amount, signature)) {
+        beaconStateMutators.addValidatorToRegistry(state, pubkey, withdrawalCredentials, amount);
       } else {
         handleInvalidDeposit(pubkey, maybePubkeyToIndexMap);
       }
     } else {
-      applyDepositToValidatorIndex(
-          state,
-          withdrawalCredentials,
-          signatureAlreadyVerified,
-          existingIndex.get(),
-          amount,
-          pubkey,
-          signature);
+      // Increase balance by deposit amount
+      beaconStateMutators.increaseBalance(state, existingIndex.get(), amount);
     }
-  }
-
-  protected void applyDepositToValidatorIndex(
-      final MutableBeaconState state,
-      final Bytes32 withdrawalCredentials,
-      final boolean signatureAlreadyVerified,
-      final int validatorIndex,
-      final UInt64 amount,
-      final BLSPublicKey pubkey,
-      final BLSSignature signature) {
-    beaconStateMutators.increaseBalance(state, validatorIndex, amount);
   }
 
   protected void handleInvalidDeposit(
@@ -797,55 +779,6 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           // The validator won't be created so the calculated index won't be correct
           pubkeyToIndexMap.removeInt(pubkey);
         });
-  }
-
-  /** is_valid_deposit_signature */
-  protected boolean isValidDepositSignature(
-      final BLSPublicKey pubkey,
-      final Bytes32 withdrawalCredentials,
-      final UInt64 amount,
-      final BLSSignature signature) {
-    try {
-      return depositSignatureVerifier.verify(
-          pubkey, computeDepositSigningRoot(pubkey, withdrawalCredentials, amount), signature);
-    } catch (final BlsException e) {
-      return false;
-    }
-  }
-
-  private Bytes computeDepositSigningRoot(
-      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials, final UInt64 amount) {
-    final Bytes32 domain = miscHelpers.computeDomain(Domain.DEPOSIT);
-    final DepositMessage depositMessage = new DepositMessage(pubkey, withdrawalCredentials, amount);
-    return miscHelpers.computeSigningRoot(depositMessage, domain);
-  }
-
-  protected void addValidatorToRegistry(
-      final MutableBeaconState state,
-      final BLSPublicKey pubkey,
-      final Bytes32 withdrawalCredentials,
-      final UInt64 amount) {
-    final Validator validator = getValidatorFromDeposit(pubkey, withdrawalCredentials, amount);
-    LOG.debug("Adding new validator with index {} to state", state.getValidators().size());
-    state.getValidators().append(validator);
-    state.getBalances().appendElement(amount);
-  }
-
-  protected Validator getValidatorFromDeposit(
-      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials, final UInt64 amount) {
-    final UInt64 effectiveBalance =
-        amount
-            .minus(amount.mod(specConfig.getEffectiveBalanceIncrement()))
-            .min(specConfig.getMaxEffectiveBalance());
-    return new Validator(
-        pubkey,
-        withdrawalCredentials,
-        effectiveBalance,
-        false,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH);
   }
 
   @Override
@@ -905,13 +838,6 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     return BlockValidationResult.SUCCESSFUL;
   }
 
-  protected void processWithdrawalRequests(
-      final MutableBeaconState state,
-      final BeaconBlockBody beaconBlockBody,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
-    // No WithdrawalRequests until Electra
-  }
-
   @Override
   public void processDepositRequests(
       final MutableBeaconState state, final List<DepositRequest> depositRequests) {
@@ -949,13 +875,6 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     } catch (ArithmeticException | IllegalArgumentException | IndexOutOfBoundsException e) {
       LOG.warn("Failed to process block", e);
       throw new BlockProcessingException(e);
-    }
-  }
-
-  protected void assertCondition(final boolean condition, final String errorMessage)
-      throws BlockProcessingException {
-    if (!condition) {
-      throw new BlockProcessingException(errorMessage);
     }
   }
 

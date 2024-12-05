@@ -364,6 +364,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     requestedBuilderBoostFactor,
                     blockSlotState,
                     blockProductionPerformance))
+        .thenPeek(
+            maybeBlock ->
+                maybeBlock.ifPresent(
+                    block ->
+                        performanceTracker.saveProducedBlock(
+                            block.blockContainer().getBlock().getSlotAndBlockRoot())))
         .alwaysRun(blockProductionPerformance::complete);
   }
 

@@ -531,6 +531,11 @@ class ValidatorApiHandlerTest {
             Optional.empty(),
             Optional.of(ONE),
             BlockProductionPerformance.NOOP);
+
+    verify(performanceTracker).reportBlockProductionAttempt(spec.computeEpochAtSlot(newSlot));
+    verify(performanceTracker)
+        .saveProducedBlock(
+            blockContainerAndMetaData.blockContainer().getBlock().getSlotAndBlockRoot());
   }
 
   @Test

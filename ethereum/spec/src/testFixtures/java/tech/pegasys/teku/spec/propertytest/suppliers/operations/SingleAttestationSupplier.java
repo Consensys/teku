@@ -11,29 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.v1;
+package tech.pegasys.teku.spec.propertytest.suppliers.operations;
 
-import java.util.List;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
+import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@SuppressWarnings("JavaCase")
-public enum EventType {
-  head,
-  block,
-  attestation,
-  voluntary_exit,
-  finalized_checkpoint,
-  chain_reorg,
-  sync_state,
-  contribution_and_proof,
-  bls_to_execution_change,
-  blob_sidecar,
-  attester_slashing,
-  proposer_slashing,
-  payload_attributes,
-  block_gossip,
-  single_attestation;
-
-  public static List<EventType> getTopics(final List<String> topics) {
-    return topics.stream().map(EventType::valueOf).toList();
+public class SingleAttestationSupplier extends DataStructureUtilSupplier<SingleAttestation> {
+  public SingleAttestationSupplier() {
+    super(DataStructureUtil::randomSingleAttestation, SpecMilestone.ELECTRA);
   }
 }

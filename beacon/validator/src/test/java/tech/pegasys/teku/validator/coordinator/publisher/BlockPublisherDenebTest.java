@@ -32,7 +32,6 @@ import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
-import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 class BlockPublisherDenebTest {
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
@@ -47,7 +46,6 @@ class BlockPublisherDenebTest {
           mock(BlockGossipChannel.class),
           blockBlobSidecarsTrackersPool,
           blobSidecarGossipChannel,
-          mock(PerformanceTracker.class),
           mock(DutyMetrics.class),
           true);
 

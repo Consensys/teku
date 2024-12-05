@@ -68,7 +68,7 @@ public class ForkChoiceUtil {
   }
 
   public UInt64 getSlotsSinceGenesis(final ReadOnlyStore store, final boolean useUnixTime) {
-    UInt64 time =
+    final UInt64 time =
         useUnixTime ? UInt64.valueOf(Instant.now().getEpochSecond()) : store.getTimeSeconds();
     return getCurrentSlot(time, store.getGenesisTime());
   }
