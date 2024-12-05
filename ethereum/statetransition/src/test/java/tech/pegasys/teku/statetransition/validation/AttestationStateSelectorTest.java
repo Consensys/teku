@@ -199,7 +199,6 @@ class AttestationStateSelectorTest {
     chainUpdater2.initializeGenesis(false);
     chainUpdater2.updateBestBlock(chainUpdater2.advanceChain(11));
 
-    //    chainUpdater2.updateBestBlock(chainUpdater.advanceChain(11));
     BeaconState transitionedState =
         spec.processSlots(recentChainData2.getBestState().get().get(), UInt64.valueOf(12));
     chainUpdater2.finalizeEpoch(UInt64.valueOf(0));

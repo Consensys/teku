@@ -290,7 +290,7 @@ class RecentChainDataTest {
     // blockRoot should be from last non-empty block
     assertThat(recentChainData.getChainHead().map(MinimalBeaconBlockSummary::getRoot))
         .contains(anchorPoint.getRoot());
-    // head should be
+    // head should the last slot processed independently of the empty block
     assertThat(recentChainData.getChainHead().map(MinimalBeaconBlockSummary::getSlot))
         .contains(UInt64.valueOf(8));
   }

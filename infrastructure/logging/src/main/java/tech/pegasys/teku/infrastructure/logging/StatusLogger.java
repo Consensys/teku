@@ -330,7 +330,7 @@ public class StatusLogger {
   }
 
   public void warnFailedToLoadInitialState(final Throwable throwable) {
-    log.warn("Failed to load initial state", throwable);
+    log.warn("Failed to load initial state", throwable.getMessage());
   }
 
   public void warnOnInitialStateWithSkippedSlots(
