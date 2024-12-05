@@ -238,7 +238,7 @@ public class ExpectedWithdrawals {
               partialWithdrawals.stream()
                   .filter(
                       partialWithdrawal ->
-                          partialWithdrawal.getIndex().equals(uInt64validatorIndex))
+                          partialWithdrawal.getValidatorIndex().equals(uInt64validatorIndex))
                   .map(Withdrawal::getAmount)
                   .reduce(UInt64.ZERO, UInt64::plus);
           balance = balances.get(validatorIndex).get().minus(partiallyWithdrawalBalance);
