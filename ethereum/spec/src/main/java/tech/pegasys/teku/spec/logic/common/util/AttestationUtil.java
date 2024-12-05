@@ -284,7 +284,7 @@ public abstract class AttestationUtil {
               if (isValidSignature) {
                 return AttestationProcessingResult.SUCCESSFUL;
               } else {
-                LOG.debug("AttestationUtil.validateAttestationSignature: Verify signature");
+                LOG.debug("AttestationUtil.validateAttestationDataSignature: Verify signature");
                 return AttestationProcessingResult.invalid("Signature is invalid");
               }
             });
