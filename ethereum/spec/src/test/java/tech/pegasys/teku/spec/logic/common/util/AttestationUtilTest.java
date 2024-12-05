@@ -166,7 +166,7 @@ class AttestationUtilTest {
   }
 
   @TestTemplate
-  void createsValidatesIndexedAttestationAndConcertsFromSingleAttestation(
+  void createsValidatesIndexedAttestationAndConvertsFromSingleAttestation(
       final SpecContext specContext) {
     specContext.assumeElectraActive();
 
