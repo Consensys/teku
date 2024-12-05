@@ -161,13 +161,20 @@ public class AttestationProductionDuty implements Duty {
         .toVersionElectra()
         .<SignedAttestationProducer>map(
             schemaDefinitionsElectra ->
-                (a, b, c) ->
+                (attestationData, validator, signature) ->
                     createSignedSingleAttestation(
-                        schemaDefinitionsElectra.getSingleAttestationSchema(), a, b, c))
+                        schemaDefinitionsElectra.getSingleAttestationSchema(),
+                        attestationData,
+                        validator,
+                        signature))
         .orElseGet(
             () ->
-                (a, b, c) ->
-                    createSignedAttestation(schemaDefinitions.getAttestationSchema(), a, b, c));
+                (attestationData, validator, signature) ->
+                    createSignedAttestation(
+                        schemaDefinitions.getAttestationSchema(),
+                        attestationData,
+                        validator,
+                        signature));
   }
 
   private SafeFuture<ProductionResult<Attestation>> signAttestationForValidatorInCommittee(
