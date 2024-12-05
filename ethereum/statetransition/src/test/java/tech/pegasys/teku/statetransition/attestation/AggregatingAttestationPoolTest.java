@@ -645,7 +645,7 @@ class AggregatingAttestationPoolTest {
 
     if (attestationFromValidators.isSingleAttestation()) {
       attestation = createAttestation(data, spec, validators);
-      validatableAttestation.setAggregatedFormatFromSingleAttestation(attestation);
+      validatableAttestation.convertToAggregatedFormatFromSingleAttestation(attestation);
     } else {
       attestation = attestationFromValidators;
     }

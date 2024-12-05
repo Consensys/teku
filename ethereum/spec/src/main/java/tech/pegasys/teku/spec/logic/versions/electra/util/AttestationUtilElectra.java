@@ -179,7 +179,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
                     convertSingleAttestationToAggregated(
                         singleAttestation, singleAttestationAggregationBits);
 
-                attestation.setAggregatedFormatFromSingleAttestation(convertedAttestation);
+                attestation.convertToAggregatedFormatFromSingleAttestation(convertedAttestation);
                 attestation.saveCommitteeShufflingSeedAndCommitteesSize(state);
                 attestation.setIndexedAttestation(indexedAttestation);
                 attestation.setValidIndexedAttestation();

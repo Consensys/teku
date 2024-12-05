@@ -393,7 +393,7 @@ class MatchingDataAttestationGroupTest {
         ValidatableAttestation.from(spec, singleAttestation.orElse(attestation), committeeSizes);
 
     singleAttestation.ifPresent(
-        __ -> validatableAttestation.setAggregatedFormatFromSingleAttestation(attestation));
+        __ -> validatableAttestation.convertToAggregatedFormatFromSingleAttestation(attestation));
 
     return validatableAttestation;
   }
