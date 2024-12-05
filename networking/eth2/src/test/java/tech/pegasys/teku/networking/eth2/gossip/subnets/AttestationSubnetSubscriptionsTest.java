@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.contains;
@@ -163,7 +164,8 @@ public class AttestationSubnetSubscriptionsTest {
             processor,
             storageSystem.recentChainData().getCurrentForkInfo().orElseThrow(),
             DebugDataDumper.NOOP);
-    subnetSubscriptions.getAttestationSchema().toSingleAttestationSchemaRequired();
+    assertDoesNotThrow(
+        () -> subnetSubscriptions.getAttestationSchema().toSingleAttestationSchemaRequired());
   }
 
   private int computeSubnetId(final Attestation attestation) {

@@ -23,15 +23,11 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -228,25 +224,13 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
           AttestationProcessingResult.invalid("Attesting index include non-existent validator"));
     }
 
-    final BLSSignature signature = singleAttestation.getSignature();
-    final Bytes32 domain =
-        beaconStateAccessors.getDomain(
-            Domain.BEACON_ATTESTER,
-            singleAttestation.getData().getTarget().getEpoch(),
-            fork,
-            state.getGenesisValidatorsRoot());
-    final Bytes signingRoot = miscHelpers.computeSigningRoot(singleAttestation.getData(), domain);
-
-    return signatureVerifier
-        .verify(pubkey.get(), signingRoot, signature)
-        .thenApply(
-            isValidSignature -> {
-              if (isValidSignature) {
-                return AttestationProcessingResult.SUCCESSFUL;
-              } else {
-                return AttestationProcessingResult.invalid("Signature is invalid");
-              }
-            });
+    return validateAttestationDataSignature(
+        fork,
+        state,
+        List.of(pubkey.get()),
+        singleAttestation.getSignature(),
+        singleAttestation.getData(),
+        signatureVerifier);
   }
 
   private SszBitlist getSingleAttestationAggregationBits(
@@ -257,9 +241,8 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
             singleAttestation.getData().getSlot(),
             singleAttestation.getFirstCommitteeIndex());
 
-    int validatorIndex = singleAttestation.getValidatorIndexRequired().intValue();
-
-    int validatorCommitteeBit = committee.indexOf(validatorIndex);
+    final int validatorIndex = singleAttestation.getValidatorIndexRequired().intValue();
+    final int validatorCommitteeBit = committee.indexOf(validatorIndex);
 
     checkArgument(
         validatorCommitteeBit >= 0,

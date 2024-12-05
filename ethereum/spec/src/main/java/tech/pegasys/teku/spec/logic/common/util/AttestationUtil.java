@@ -252,24 +252,39 @@ public abstract class AttestationUtil {
           AttestationProcessingResult.invalid("Attesting indices include non-existent validator"));
     }
 
-    final BLSSignature signature = indexedAttestation.getSignature();
+    return validateAttestationDataSignature(
+        fork,
+        state,
+        pubkeys,
+        indexedAttestation.getSignature(),
+        indexedAttestation.getData(),
+        signatureVerifier);
+  }
+
+  protected SafeFuture<AttestationProcessingResult> validateAttestationDataSignature(
+      final Fork fork,
+      final BeaconState state,
+      final List<BLSPublicKey> publicKeys,
+      final BLSSignature signature,
+      final AttestationData attestationData,
+      final AsyncBLSSignatureVerifier signatureVerifier) {
+
     final Bytes32 domain =
         beaconStateAccessors.getDomain(
             Domain.BEACON_ATTESTER,
-            indexedAttestation.getData().getTarget().getEpoch(),
+            attestationData.getTarget().getEpoch(),
             fork,
             state.getGenesisValidatorsRoot());
-    final Bytes signingRoot = miscHelpers.computeSigningRoot(indexedAttestation.getData(), domain);
+    final Bytes signingRoot = miscHelpers.computeSigningRoot(attestationData, domain);
 
     return signatureVerifier
-        .verify(pubkeys, signingRoot, signature)
+        .verify(publicKeys, signingRoot, signature)
         .thenApply(
             isValidSignature -> {
               if (isValidSignature) {
                 return AttestationProcessingResult.SUCCESSFUL;
               } else {
-                LOG.debug(
-                    "AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
+                LOG.debug("AttestationUtil.validateAttestationSignature: Verify signature");
                 return AttestationProcessingResult.invalid("Signature is invalid");
               }
             });

@@ -37,7 +37,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
@@ -179,10 +178,12 @@ class AttestationUtilTest {
     final ValidatableAttestation validatableAttestation =
         ValidatableAttestation.fromNetwork(spec, attestation, 1);
 
-    // single pubkey signature verification
-    when(asyncBLSSignatureVerifier.verify(
-            any(BLSPublicKey.class), any(Bytes.class), any(BLSSignature.class)))
-        .thenReturn(SafeFuture.completedFuture(true));
+    // we want to make sure that we do signature verification before we do the committee lookup,
+    // that may trigger shuffling calculation
+    // To do that, let's control signature verification result
+    final SafeFuture<Boolean> signatureVerificationResult = new SafeFuture<>();
+    when(asyncBLSSignatureVerifier.verify(anyList(), any(Bytes.class), any(BLSSignature.class)))
+        .thenReturn(signatureVerificationResult);
 
     // let validator be the second in the committee
     doAnswer(invocation -> IntList.of(validatorIndex.intValue() + 1, validatorIndex.intValue()))
@@ -192,6 +193,19 @@ class AttestationUtilTest {
     final SafeFuture<AttestationProcessingResult> result =
         executeValidation(validatableAttestation);
 
+    // no beacon committee lookup before signature verification
+    verify(beaconStateAccessors, never()).getBeaconCommittee(any(), any(), any());
+
+    // validation still in progress
+    assertThat(result).isNotDone();
+
+    // signature verification completed
+    signatureVerificationResult.complete(true);
+
+    // now we should have the beacon committee lookup
+    verify(beaconStateAccessors).getBeaconCommittee(any(), any(), any());
+
+    // now we have successful validation
     assertThat(result).isCompletedWithValue(AttestationProcessingResult.SUCCESSFUL);
 
     assertThat(validatableAttestation.getUnconvertedAttestation().isSingleAttestation())
@@ -215,9 +229,6 @@ class AttestationUtilTest {
     } else {
       assertThat(validatableAttestation.getCommitteesSize()).isEmpty();
     }
-
-    verify(asyncBLSSignatureVerifier)
-        .verify(any(BLSPublicKey.class), any(Bytes.class), any(BLSSignature.class));
   }
 
   @TestTemplate
