@@ -151,6 +151,9 @@ class AttestationUtilTest {
 
     assertThat(result).isCompletedWithValue(AttestationProcessingResult.SUCCESSFUL);
 
+    assertThat(validatableAttestation.getAttestation())
+        .isSameAs(validatableAttestation.getUnconvertedAttestation());
+    assertThat(validatableAttestation.getAttestation().isSingleAttestation()).isFalse();
     assertThat(validatableAttestation.isValidIndexedAttestation()).isTrue();
     assertThat(validatableAttestation.getIndexedAttestation()).isPresent();
     assertThat(validatableAttestation.getCommitteeShufflingSeed()).isPresent();
@@ -191,8 +194,11 @@ class AttestationUtilTest {
 
     assertThat(result).isCompletedWithValue(AttestationProcessingResult.SUCCESSFUL);
 
+    assertThat(validatableAttestation.getUnconvertedAttestation().isSingleAttestation())
+        .describedAs("Original is still single attestation")
+        .isTrue();
     assertThat(validatableAttestation.getAttestation().isSingleAttestation())
-        .describedAs("converted to regular attestation")
+        .describedAs("Aggregated format is not single attestation")
         .isFalse();
     assertThat(validatableAttestation.getAttestation().getAggregationBits().getBitCount())
         .describedAs("Refers to a single validator")

@@ -51,6 +51,8 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator.AttestationInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -630,9 +632,24 @@ class AggregatingAttestationPoolTest {
       final AttestationData data,
       final Spec spec,
       final int... validators) {
-    final Attestation attestation = createAttestation(data, spec, validators);
-    ValidatableAttestation validatableAttestation =
-        ValidatableAttestation.from(spec, attestation, committeeSizes);
+    final Attestation attestationFromValidators;
+    final Attestation attestation;
+    if (specMilestone.isGreaterThanOrEqualTo(ELECTRA) && validators.length == 1) {
+      attestationFromValidators = createSingleAttestation(data, validators[0]);
+    } else {
+      attestationFromValidators = createAttestation(data, spec, validators);
+    }
+
+    final ValidatableAttestation validatableAttestation =
+        ValidatableAttestation.from(spec, attestationFromValidators, committeeSizes);
+
+    if (attestationFromValidators.isSingleAttestation()) {
+      attestation = createAttestation(data, spec, validators);
+      validatableAttestation.setAggregatedFormatFromSingleAttestation(attestation);
+    } else {
+      attestation = attestationFromValidators;
+    }
+
     validatableAttestation.saveCommitteeShufflingSeedAndCommitteesSize(
         dataStructureUtil.randomBeaconState(100, 15, data.getSlot()));
     aggregatingAttestationPool.add(validatableAttestation);
@@ -641,6 +658,21 @@ class AggregatingAttestationPoolTest {
 
   private Attestation createAttestation(final AttestationData data, final int... validators) {
     return createAttestation(data, spec, validators);
+  }
+
+  private SingleAttestation createSingleAttestation(
+      final AttestationData data, final int validatorIndex) {
+    final SingleAttestationSchema attestationSchema =
+        spec.getGenesisSchemaDefinitions()
+            .toVersionElectra()
+            .orElseThrow()
+            .getSingleAttestationSchema();
+
+    return attestationSchema.create(
+        committeeIndex.orElseThrow(),
+        UInt64.valueOf(validatorIndex),
+        data,
+        dataStructureUtil.randomSignature());
   }
 
   private Attestation createAttestation(
