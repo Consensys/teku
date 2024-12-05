@@ -356,7 +356,6 @@ class MatchingDataAttestationGroupTest {
     final boolean isElectra = spec.atSlot(SLOT).getMilestone().isGreaterThanOrEqualTo(ELECTRA);
     final Supplier<SszBitvector> committeeBits;
     final Optional<Attestation> singleAttestation;
-    final Attestation attestation;
     final int resolvedCommitteeIndex = committeeIndex.orElse(0);
 
     if (validators.length == 1 && isElectra) {
@@ -386,12 +385,12 @@ class MatchingDataAttestationGroupTest {
       committeeBits = () -> null;
     }
 
-    attestation =
+    final Attestation attestation =
         attestationSchema.create(
             aggregationBits, attestationData, dataStructureUtil.randomSignature(), committeeBits);
 
     final ValidatableAttestation validatableAttestation =
-        ValidatableAttestation.from(spec, attestation, committeeSizes);
+        ValidatableAttestation.from(spec, singleAttestation.orElse(attestation), committeeSizes);
 
     singleAttestation.ifPresent(
         __ -> validatableAttestation.setAggregatedFormatFromSingleAttestation(attestation));
