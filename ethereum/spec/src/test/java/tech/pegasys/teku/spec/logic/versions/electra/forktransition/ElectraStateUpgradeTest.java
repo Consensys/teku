@@ -78,7 +78,10 @@ class ElectraStateUpgradeTest {
     // = (64 *10^9) - (64 *10^9) MOD 10^9
     // = (64 *10^9) - 0
     assertThat(post.getExitBalanceToConsume()).isEqualTo(UInt64.valueOf(64_000_000_000L));
-    assertThat(post.getEarliestExitEpoch()).isEqualTo(slot.dividedBy(8).increment());
+    assertThat(post.getEarliestExitEpoch())
+        .isEqualTo(
+            miscHelpersElectra.computeActivationExitEpoch(
+                spec.computeEpochAtSlot(slot).increment()));
     assertThat(post.getConsolidationBalanceToConsume()).isEqualTo(UInt64.ZERO);
     // 80_000/8 (slots -> epochs) + max_seed_lookahead + 1
     assertThat(post.getEarliestConsolidationEpoch()).isEqualTo(UInt64.valueOf(10005));
