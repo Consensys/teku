@@ -407,7 +407,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   }
 
   @Override
-  public synchronized Optional<BlobSidecar> getBlobSidecar(final Bytes32 blockRoot, final UInt64 index) {
+  public synchronized Optional<BlobSidecar> getBlobSidecar(
+      final Bytes32 blockRoot, final UInt64 index) {
     return Optional.ofNullable(blockBlobSidecarsTrackers.get(blockRoot))
         .flatMap(tracker -> tracker.getBlobSidecar(index));
   }
