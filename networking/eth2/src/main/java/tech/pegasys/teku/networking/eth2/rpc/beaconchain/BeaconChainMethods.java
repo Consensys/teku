@@ -115,8 +115,8 @@ public class BeaconChainMethods {
       final MetadataMessagesFactory metadataMessagesFactory,
       final RpcEncoding rpcEncoding) {
     return new BeaconChainMethods(
-        createStatus(spec, asyncRunner, statusMessageFactory, peerLookup, rpcEncoding),
-        createGoodBye(spec, asyncRunner, metricsSystem, peerLookup, rpcEncoding),
+        createStatus(asyncRunner, statusMessageFactory, peerLookup, rpcEncoding),
+        createGoodBye(asyncRunner, metricsSystem, peerLookup, rpcEncoding),
         createBeaconBlocksByRoot(
             spec, metricsSystem, asyncRunner, recentChainData, peerLookup, rpcEncoding),
         createBeaconBlocksByRange(
@@ -144,11 +144,10 @@ public class BeaconChainMethods {
             rpcEncoding,
             recentChainData),
         createMetadata(spec, asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding),
-        createPing(spec, asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding));
+        createPing(asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding));
   }
 
   private static Eth2RpcMethod<StatusMessage, StatusMessage> createStatus(
-      final Spec spec,
       final AsyncRunner asyncRunner,
       final StatusMessageFactory statusMessageFactory,
       final PeerLookup peerLookup,
@@ -165,12 +164,10 @@ public class BeaconChainMethods {
         true,
         contextCodec,
         statusHandler,
-        peerLookup,
-        spec.getNetworkingConfig());
+        peerLookup);
   }
 
   private static Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> createGoodBye(
-      final Spec spec,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final PeerLookup peerLookup,
@@ -187,8 +184,7 @@ public class BeaconChainMethods {
         false,
         contextCodec,
         goodbyeHandler,
-        peerLookup,
-        spec.getNetworkingConfig());
+        peerLookup);
   }
 
   private static Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock>
@@ -221,8 +217,7 @@ public class BeaconChainMethods {
                 expectResponseToRequest,
                 forkDigestContextCodec,
                 beaconBlocksByRootHandler,
-                peerLookup,
-                spec.getNetworkingConfig());
+                peerLookup);
 
     return VersionedEth2RpcMethod.create(
         rpcEncoding, requestType, expectResponseToRequest, List.of(v2Method));
@@ -259,8 +254,7 @@ public class BeaconChainMethods {
                 expectResponseToRequest,
                 forkDigestContextCodec,
                 beaconBlocksByRangeHandler,
-                peerLookup,
-                spec.getNetworkingConfig());
+                peerLookup);
 
     return VersionedEth2RpcMethod.create(
         rpcEncoding, requestType, expectResponseToRequest, List.of(v2Method));
@@ -299,8 +293,7 @@ public class BeaconChainMethods {
             true,
             forkDigestContextCodec,
             blobSidecarsByRootHandler,
-            peerLookup,
-            spec.getNetworkingConfig()));
+            peerLookup));
   }
 
   private static Optional<Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar>>
@@ -336,8 +329,7 @@ public class BeaconChainMethods {
             true,
             forkDigestContextCodec,
             blobSidecarsByRangeHandler,
-            peerLookup,
-            spec.getNetworkingConfig()));
+            peerLookup));
   }
 
   private static Eth2RpcMethod<EmptyMessage, MetadataMessage> createMetadata(
@@ -369,8 +361,7 @@ public class BeaconChainMethods {
             expectResponse,
             phase0ContextCodec,
             messageHandler,
-            peerLookup,
-            spec.getNetworkingConfig());
+            peerLookup);
 
     if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
       final SszSchema<MetadataMessage> altairMetadataSchema =
@@ -392,8 +383,7 @@ public class BeaconChainMethods {
               expectResponse,
               altairContextCodec,
               messageHandler,
-              peerLookup,
-              spec.getNetworkingConfig());
+              peerLookup);
       return VersionedEth2RpcMethod.create(
           rpcEncoding, requestType, expectResponse, List.of(v2Method, v1Method));
     } else {
@@ -402,7 +392,6 @@ public class BeaconChainMethods {
   }
 
   private static Eth2RpcMethod<PingMessage, PingMessage> createPing(
-      final Spec spec,
       final AsyncRunner asyncRunner,
       final MetadataMessagesFactory metadataMessagesFactory,
       final PeerLookup peerLookup,
@@ -419,8 +408,7 @@ public class BeaconChainMethods {
         true,
         contextCodec,
         statusHandler,
-        peerLookup,
-        spec.getNetworkingConfig());
+        peerLookup);
   }
 
   public Collection<RpcMethod<?, ?, ?>> all() {

@@ -38,6 +38,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFuture.Interruptor;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.Controller;
@@ -56,17 +57,21 @@ public class RpcHandler<
         TRequest,
         TRespHandler extends RpcResponseHandler<?>>
     implements ProtocolBinding<Controller<TOutgoingHandler>> {
-  private static final Duration TIMEOUT = Duration.ofSeconds(5);
   private static final Logger LOG = LogManager.getLogger();
 
-  private final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod;
+  private static final Duration STREAM_INITIALIZE_TIMEOUT = Duration.ofSeconds(5);
+
   private final AsyncRunner asyncRunner;
+  private final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod;
+  private final ThrottlingTaskQueue concurrentRequestsQueue;
 
   public RpcHandler(
       final AsyncRunner asyncRunner,
-      final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod) {
+      final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod,
+      final int maxConcurrentRequests) {
     this.asyncRunner = asyncRunner;
     this.rpcMethod = rpcMethod;
+    concurrentRequestsQueue = ThrottlingTaskQueue.create(maxConcurrentRequests);
   }
 
   public RpcMethod<TOutgoingHandler, TRequest, TRespHandler> getRpcMethod() {
@@ -74,6 +79,12 @@ public class RpcHandler<
   }
 
   public SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
+      final Connection connection, final TRequest request, final TRespHandler responseHandler) {
+    return concurrentRequestsQueue.queueTask(
+        () -> sendRequestInternal(connection, request, responseHandler));
+  }
+
+  public SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequestInternal(
       final Connection connection, final TRequest request, final TRespHandler responseHandler) {
 
     final Bytes initialPayload;
@@ -83,11 +94,11 @@ public class RpcHandler<
       return SafeFuture.failedFuture(e);
     }
 
-    Interruptor closeInterruptor =
+    final Interruptor closeInterruptor =
         SafeFuture.createInterruptor(connection.closeFuture(), PeerDisconnectedException::new);
-    Interruptor timeoutInterruptor =
+    final Interruptor timeoutInterruptor =
         SafeFuture.createInterruptor(
-            asyncRunner.getDelayedFuture(TIMEOUT),
+            asyncRunner.getDelayedFuture(STREAM_INITIALIZE_TIMEOUT),
             () ->
                 new StreamTimeoutException(
                     "Timed out waiting to initialize stream for protocol(s): "
