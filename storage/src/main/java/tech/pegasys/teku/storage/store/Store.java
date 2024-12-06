@@ -173,7 +173,9 @@ class Store extends CacheableStore {
     // Track latest finalized block
     this.finalizedAnchor = finalizedAnchor;
     this.maybeEpochStates = maybeEpochStates;
-    states.cache(finalizedAnchor.getRoot(), finalizedAnchor);
+    if (!finalizedAnchor.isTransitioned()) {
+      states.cache(finalizedAnchor.getRoot(), finalizedAnchor);
+    }
     this.finalizedOptimisticTransitionPayload = finalizedOptimisticTransitionPayload;
 
     // Set up block provider to draw from in-memory blocks
@@ -466,6 +468,7 @@ class Store extends CacheableStore {
     }
   }
 
+  // TODO: Test me
   @Override
   public AnchorPoint getLatestFinalized() {
     readLock.lock();
@@ -674,6 +677,7 @@ class Store extends CacheableStore {
         new StateAtSlotTask(spec, slotAndBlockRoot, this::retrieveBlockState));
   }
 
+  // TODO: Test me
   @Override
   public SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState() {
     final AnchorPoint finalized;
@@ -842,6 +846,7 @@ class Store extends CacheableStore {
             });
   }
 
+  // TODO: Test me, will return transitioned state
   private SafeFuture<Optional<StateAndBlockSummary>> getOrRegenerateBlockAndState(
       final Bytes32 blockRoot) {
     // Avoid generating the hash tree to rebuild if the state is already available.
@@ -858,13 +863,10 @@ class Store extends CacheableStore {
       return SafeFuture.completedFuture(maybeEpochState);
     }
 
-    // if finalized is gone from cache we can still reconstruct that without regenerating
+    // if finalized is gone from cache we can use the finalized anchor without regenerating
     if (finalizedAnchor.getRoot().equals(blockRoot)) {
       LOG.trace("epochCache GET finalizedAnchor {}", finalizedAnchor::getSlot);
-      return SafeFuture.completedFuture(
-          Optional.of(
-              StateAndBlockSummary.create(
-                  finalizedAnchor.getBlockSummary(), finalizedAnchor.getState())));
+      return SafeFuture.completedFuture(Optional.of(finalizedAnchor));
     }
 
     maybeEpochStates.ifPresent(
@@ -993,7 +995,7 @@ class Store extends CacheableStore {
       // If we haven't found a base state yet, we must have walked back to the latest finalized
       // block, check here for the base state
       final AnchorPoint finalized = getLatestFinalized();
-      if (!treeBuilder.contains(finalized.getRoot())) {
+      if (!treeBuilder.contains(finalized.getRoot()) || finalized.isTransitioned()) {
         // We must have finalized a new block while processing and moved past our target root
         return Optional.empty();
       }

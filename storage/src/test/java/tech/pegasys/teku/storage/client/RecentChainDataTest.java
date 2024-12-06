@@ -52,6 +52,8 @@ import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.generator.ChainProperties;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.HeadEvent;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
@@ -249,6 +251,90 @@ class RecentChainDataTest {
     recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
     assertThat(recentChainData.getChainHead().map(MinimalBeaconBlockSummary::getRoot))
         .contains(genesis.getRoot());
+  }
+
+  @Test
+  void createHead_upOnStatingWithNonTransitionedState()
+      throws SlotProcessingException, EpochProcessingException {
+    initPreGenesis();
+    final long lastNonEmptyBlockSlot = 7;
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+    final UInt64 genesisTime = UInt64.valueOf(1000);
+    chainBuilder.generateGenesis(genesisTime, true);
+    chainBuilder.generateBlocksUpToSlot(7);
+
+    final SignedBlockAndState lastState = chainBuilder.getBlockAndStateAtSlot(7);
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, lastState.getState());
+    recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.valueOf(10000));
+
+    assertThat(recentChainData.getChainHead().map(MinimalBeaconBlockSummary::getRoot))
+        .contains(anchorPoint.getRoot());
+    assertThat(recentChainData.getChainHead().map(MinimalBeaconBlockSummary::getSlot))
+        .contains(UInt64.valueOf(lastNonEmptyBlockSlot));
+  }
+
+  @Test
+  void createHead_upOnStatingWithTransitionedStateWithEmptyBlock()
+      throws SlotProcessingException, EpochProcessingException {
+    initPreGenesis();
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+    final UInt64 genesisTime = UInt64.valueOf(1000);
+    chainBuilder.generateGenesis(genesisTime, true);
+    chainBuilder.generateBlocksUpToSlot(7);
+
+    final SignedBlockAndState lastState = chainBuilder.getBlockAndStateAtSlot(7);
+    final BeaconState transitionedState =
+        spec.processSlots(lastState.getState(), UInt64.valueOf(8));
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, transitionedState);
+    recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.valueOf(10000));
+    // blockRoot should be from last non-empty block
+    assertThat(recentChainData.getChainHead().map(MinimalBeaconBlockSummary::getRoot))
+        .contains(anchorPoint.getRoot());
+    // head should the last slot processed independently of the empty block
+    assertThat(recentChainData.getChainHead().map(MinimalBeaconBlockSummary::getSlot))
+        .contains(UInt64.valueOf(8));
+  }
+
+  @Test
+  void updateHead_afterStatingWithNonTransitionedState()
+      throws SlotProcessingException, EpochProcessingException {
+    initPreGenesis();
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+    final UInt64 genesisTime = UInt64.valueOf(5000);
+    chainBuilder.generateGenesis(genesisTime, true);
+    chainBuilder.generateBlocksUpToSlot(7);
+
+    final SignedBlockAndState lastState = chainBuilder.getBlockAndStateAtSlot(7);
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, lastState.getState());
+    recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.valueOf(10000));
+
+    final SignedBlockAndState transitionedStateAfterABlock = chainBuilder.generateBlockAtSlot(9);
+
+    updateHead(recentChainData, transitionedStateAfterABlock);
+    assertThat(recentChainData.getChainHead().map(MinimalBeaconBlockSummary::getParentRoot))
+        .contains(anchorPoint.getRoot());
+  }
+
+  @Test
+  void updateHead_afterStatingWithTransitionedStateWithEmptyBlock()
+      throws SlotProcessingException, EpochProcessingException {
+    initPreGenesis();
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+    final UInt64 genesisTime = UInt64.valueOf(5000);
+    chainBuilder.generateGenesis(genesisTime, true);
+    chainBuilder.generateBlocksUpToSlot(7);
+
+    final SignedBlockAndState lastState = chainBuilder.getBlockAndStateAtSlot(7);
+    final BeaconState transitionedState =
+        spec.processSlots(lastState.getState(), UInt64.valueOf(8));
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, transitionedState);
+    recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.valueOf(10000));
+
+    final SignedBlockAndState transitionedStateAfterABlock = chainBuilder.generateBlockAtSlot(9);
+
+    updateHead(recentChainData, transitionedStateAfterABlock);
+    assertThat(recentChainData.getChainHead().map(MinimalBeaconBlockSummary::getParentRoot))
+        .contains(anchorPoint.getRoot());
   }
 
   @Test

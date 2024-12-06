@@ -326,6 +326,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final Optional<ChainHead> originalChainHead = chainHead;
 
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy = store.getForkChoiceStrategy();
+
       final Optional<ProtoNodeData> maybeBlockData = forkChoiceStrategy.getBlockData(root);
       if (maybeBlockData.isEmpty()) {
         LOG.error(
