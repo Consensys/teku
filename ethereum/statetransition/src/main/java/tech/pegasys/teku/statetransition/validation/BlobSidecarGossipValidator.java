@@ -213,7 +213,7 @@ public class BlobSidecarGossipValidator {
     /*
      * [REJECT] The sidecar's inclusion proof is valid as verified by `verify_blob_sidecar_inclusion_proof(blob_sidecar)`.
      */
-    if (!miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)) {
+    if (!miscHelpersDeneb.verifyBlobKzgCommitmentInclusionProof(blobSidecar)) {
       return completedFuture(reject("BlobSidecar inclusion proof validation failed"));
     }
 
@@ -294,7 +294,7 @@ public class BlobSidecarGossipValidator {
     /*
      * [REJECT] The sidecar's inclusion proof is valid as verified by `verify_blob_sidecar_inclusion_proof(blob_sidecar)`.
      */
-    if (!miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)) {
+    if (!miscHelpersDeneb.verifyBlobKzgCommitmentInclusionProof(blobSidecar)) {
       return completedFuture(reject("BlobSidecar inclusion proof validation failed"));
     }
 

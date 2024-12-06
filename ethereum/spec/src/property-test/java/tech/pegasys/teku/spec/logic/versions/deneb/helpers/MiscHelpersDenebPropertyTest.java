@@ -119,7 +119,7 @@ public class MiscHelpersDenebPropertyTest {
     try {
       final BlobSidecar blobSidecar =
           miscHelpers.constructBlobSidecar(signedBeaconBlock, index, blob, proof);
-      miscHelpers.verifyBlobSidecarMerkleProof(blobSidecar);
+      miscHelpers.verifyBlobKzgCommitmentInclusionProof(blobSidecar);
     } catch (Exception e) {
       assertThat(e).isInstanceOf(IllegalArgumentException.class);
     }
