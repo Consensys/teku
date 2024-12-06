@@ -88,11 +88,20 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
     final SubmitDataError secondSubmitDataError =
         new SubmitDataError(UInt64.ONE, "Very bad attestation");
 
-    final List<Attestation> attestations =
-        List.of(
-            dataStructureUtil.randomAttestation(),
-            dataStructureUtil.randomAttestation(),
-            dataStructureUtil.randomAttestation());
+    final List<Attestation> attestations;
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      attestations =
+          List.of(
+              dataStructureUtil.randomAttestation(),
+              dataStructureUtil.randomAttestation(),
+              dataStructureUtil.randomAttestation());
+    } else {
+      attestations =
+          List.of(
+              dataStructureUtil.randomAttestation(),
+              dataStructureUtil.randomAttestation(),
+              dataStructureUtil.randomAttestation());
+    }
 
     when(validatorApiChannel.sendSignedAttestations(attestations))
         .thenReturn(
