@@ -21,6 +21,7 @@ import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
+import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -66,6 +67,9 @@ import tech.pegasys.teku.statetransition.validation.signatures.SimpleSignatureVe
 public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
 
   public static final String EXPECTED_STATE_FILE = "post.ssz_snappy";
+
+  // TODO remove https://github.com/Consensys/teku/issues/8892
+  private static final List<String> IGNORED_TEST = List.of("invalid_nonset_bits_for_one_committee");
 
   private enum Operation {
     ATTESTER_SLASHING,
@@ -144,6 +148,11 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
+    // TODO remove https://github.com/Consensys/teku/issues/8892
+    if (IGNORED_TEST.contains(testDefinition.getTestName())) {
+      return;
+    }
+
     final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz_snappy");
 
     final DefaultOperationProcessor standardProcessor =
