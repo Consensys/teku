@@ -26,8 +26,8 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
-import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import org.hyperledger.besu.plugin.services.metrics.LabelledSuppliedMetric;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
@@ -88,8 +88,8 @@ public class CachingTaskQueue<K, V> {
   }
 
   public void startMetrics() {
-    final LabelledGauge taskQueueMetrics =
-        metricsSystem.createLabelledGauge(
+    final LabelledSuppliedMetric taskQueueMetrics =
+        metricsSystem.createLabelledSuppliedGauge(
             TekuMetricCategory.STORAGE,
             metricsPrefix + "_tasks",
             "Labelled task queue metrics",
