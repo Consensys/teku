@@ -825,7 +825,20 @@ public final class DataStructureUtil {
         .toVersionElectra()
         .orElseThrow()
         .getSingleAttestationSchema()
-        .create(randomUInt64(), randomUInt64(), randomAttestationData(), randomSignature());
+        .create(
+            randomUInt64(Integer.MAX_VALUE),
+            randomUInt64(Integer.MAX_VALUE),
+            randomAttestationData(),
+            randomSignature());
+  }
+
+  public SingleAttestation randomSingleAttestation(
+      final UInt64 validatorIndex, final UInt64 committeeIndex) {
+    return spec.getGenesisSchemaDefinitions()
+        .toVersionElectra()
+        .orElseThrow()
+        .getSingleAttestationSchema()
+        .create(committeeIndex, validatorIndex, randomAttestationData(), randomSignature());
   }
 
   public Attestation randomAttestation(final long slot) {

@@ -30,7 +30,8 @@ public enum EventType {
   attester_slashing,
   proposer_slashing,
   payload_attributes,
-  block_gossip;
+  block_gossip,
+  single_attestation;
 
   public static List<EventType> getTopics(final List<String> topics) {
     return topics.stream().map(EventType::valueOf).toList();

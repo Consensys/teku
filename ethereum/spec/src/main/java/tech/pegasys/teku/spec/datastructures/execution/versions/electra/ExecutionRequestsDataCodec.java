@@ -44,12 +44,18 @@ public class ExecutionRequestsDataCodec {
       if (request.isEmpty()) {
         throw new IllegalArgumentException("Execution request data must not be empty");
       }
+
       final byte requestType = request.get(0);
       if (requestType <= previousRequestType) {
         throw new IllegalArgumentException(
             "Execution requests are not in strictly ascending order");
       }
+
       final Bytes requestData = request.slice(1);
+      if (requestData.isEmpty()) {
+        throw new IllegalArgumentException("Empty data for request type " + requestType);
+      }
+
       switch (requestType) {
         case DepositRequest.REQUEST_TYPE ->
             executionRequestsBuilder.deposits(
