@@ -726,26 +726,25 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final BeaconState state,
       final UInt64 slot,
       final SszBitlist aggregationBits) {
-    int participantsCount = 0;
+    int committeeOffset = 0;
     for (final UInt64 committeeIndex : committeeIndices) {
       if (committeeIndex.isGreaterThanOrEqualTo(committeeCountPerSlot)) {
         return Optional.of(AttestationInvalidReason.COMMITTEE_INDEX_TOO_HIGH);
       }
       final IntList committee =
           beaconStateAccessorsElectra.getBeaconCommittee(state, slot, committeeIndex);
-      final int committeeOffset = participantsCount;
-      final long committeeAttesterCount =
+      int currentCommitteeOffset = committeeOffset;
+      final boolean hasAtLeastOneParticipant =
           IntStream.range(0, committee.size())
-              .filter(
+              .anyMatch(
                   committeeParticipantIndex ->
-                      aggregationBits.isSet(committeeOffset + committeeParticipantIndex))
-              .count();
-      if (committeeAttesterCount == 0) {
+                      aggregationBits.isSet(currentCommitteeOffset + committeeParticipantIndex));
+      if (!hasAtLeastOneParticipant) {
         return Optional.of(AttestationInvalidReason.PARTICIPANTS_COUNT_MISMATCH);
       }
-      participantsCount += committee.size();
+      committeeOffset += committee.size();
     }
-    if (participantsCount != aggregationBits.size()) {
+    if (committeeOffset != aggregationBits.size()) {
       return Optional.of(AttestationInvalidReason.PARTICIPANTS_COUNT_MISMATCH);
     }
     return Optional.empty();
