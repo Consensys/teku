@@ -734,12 +734,12 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final IntList committee =
           beaconStateAccessorsElectra.getBeaconCommittee(state, slot, committeeIndex);
       final int currentCommitteeOffset = committeeOffset;
-      final boolean hasAtLeastOneParticipant =
+      final boolean committeeHasAtLeastOneAttester =
           IntStream.range(0, committee.size())
               .anyMatch(
                   committeeParticipantIndex ->
                       aggregationBits.isSet(currentCommitteeOffset + committeeParticipantIndex));
-      if (!hasAtLeastOneParticipant) {
+      if (!committeeHasAtLeastOneAttester) {
         return Optional.of(AttestationInvalidReason.PARTICIPANTS_COUNT_MISMATCH);
       }
       committeeOffset += committee.size();
