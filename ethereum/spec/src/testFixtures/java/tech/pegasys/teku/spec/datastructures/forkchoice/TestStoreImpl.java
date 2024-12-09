@@ -157,6 +157,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public boolean getPayloadWithholdBoostFull() {
+    return false;
+  }
+
+  @Override
   public ReadOnlyForkChoiceStrategy getForkChoiceStrategy() {
     return forkChoiceStrategy;
   }

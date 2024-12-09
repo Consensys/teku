@@ -337,6 +337,12 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   }
 
   @Override
+  public void processExecutionPayloadHeader(final MutableBeaconState state, final BeaconBlock block)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No ExecutionPayloadHeader in Altair");
+  }
+
+  @Override
   public ExpectedWithdrawals getExpectedWithdrawals(final BeaconState preState) {
     return ExpectedWithdrawals.NOOP;
   }

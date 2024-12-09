@@ -128,7 +128,7 @@ class Store extends CacheableStore {
   private boolean payloadWithholdBoostFull = false;
   private Optional<Bytes32> payloadRevealBoostRoot = Optional.empty();
   private final CachingTaskQueue<Bytes32, StateAndExecutionPayloadSummary> executionPayloadStates;
-  private Map<Bytes32, List<Byte>> ptcVote;
+  private final Map<Bytes32, List<Byte>> ptcVote;
 
   private Store(
       final MetricsSystem metricsSystem,

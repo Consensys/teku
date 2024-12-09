@@ -41,9 +41,12 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelopeSchema;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
@@ -51,12 +54,16 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage.ExecutionPayloadEnvelopesByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessageSchema;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
@@ -172,6 +179,23 @@ public class SchemaTypes {
       create("CONSOLIDATION_REQUEST_SCHEMA");
   public static final SchemaId<SingleAttestationSchema> SINGLE_ATTESTATION_SCHEMA =
       create("SINGLE_ATTESTATION_SCHEMA");
+
+  // EIP7732
+  public static final SchemaId<PayloadAttestationSchema> PAYLOAD_ATTESTATION_SCHEMA =
+      create("PAYLOAD_ATTESTATION_SCHEMA");
+  public static final SchemaId<IndexedPayloadAttestationSchema> INDEXED_PAYLOAD_ATTESTATION_SCHEMA =
+      create("INDEXED_PAYLOAD_ATTESTATION_SCHEMA");
+  public static final SchemaId<SignedExecutionPayloadHeaderSchema>
+      SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA = create("SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA");
+  public static final SchemaId<ExecutionPayloadEnvelopeSchema> EXECUTION_PAYLOAD_ENVELOPE_SCHEMA =
+      create("EXECUTION_PAYLOAD_ENVELOPE_SCHEMA");
+  public static final SchemaId<SignedExecutionPayloadEnvelopeSchema>
+      SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA = create("SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA");
+  public static final SchemaId<ExecutionPayloadEnvelopesByRootRequestMessageSchema>
+      EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA =
+          create("EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA");
+  public static final SchemaId<PayloadAttestationMessageSchema> PAYLOAD_ATTESTATION_MESSAGE_SCHEMA =
+      create("PAYLOAD_ATTESTATION_MESSAGE_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation

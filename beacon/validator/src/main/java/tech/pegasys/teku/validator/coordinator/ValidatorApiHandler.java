@@ -122,7 +122,6 @@ import tech.pegasys.teku.validator.coordinator.duties.AttesterDutiesGenerator;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
-import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
 
 public class ValidatorApiHandler implements ValidatorApiChannel {
 
