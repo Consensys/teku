@@ -23,6 +23,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -732,6 +733,16 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       }
       final IntList committee =
           beaconStateAccessorsElectra.getBeaconCommittee(state, slot, committeeIndex);
+      final int committeeOffset = participantsCount;
+      long committeeAttesters =
+          IntStream.range(0, committee.size())
+              .filter(
+                  committeeParticipantIndex ->
+                      aggregationBits.isSet(committeeOffset + committeeParticipantIndex))
+              .count();
+      if (committeeAttesters == 0) {
+        return Optional.of(AttestationInvalidReason.PARTICIPANTS_COUNT_MISMATCH);
+      }
       participantsCount += committee.size();
     }
     if (participantsCount != aggregationBits.size()) {
