@@ -50,7 +50,7 @@ dependencyManagement {
     }
 
     // On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder
-    dependency 'org.webjars:swagger-ui:5.18.02'
+    dependency 'org.webjars:swagger-ui:5.18.2'
 
     dependency 'org.thymeleaf:thymeleaf:3.1.2.RELEASE'
     dependency 'io.github.classgraph:classgraph:4.8.179'
