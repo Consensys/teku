@@ -49,11 +49,6 @@ public class SnappyBlockCompressor {
     }
   }
 
-  public Bytes uncompress(final Bytes compressedData, final SszLengthBounds lengthBounds)
-      throws DecodingException {
-    return uncompress(compressedData, lengthBounds, lengthBounds.getMaxBytes());
-  }
-
   public Bytes compress(final Bytes data) {
     try {
       return Bytes.wrap(Snappy.compress(data.toArrayUnsafe()));
