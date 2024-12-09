@@ -18,15 +18,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
+import org.hyperledger.besu.plugin.services.metrics.LabelledSuppliedMetric;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
 public class SettableLabelledGauge {
 
   private final Map<List<String>, AtomicDouble> valueHolders = new ConcurrentHashMap<>();
-  private final LabelledGauge labelledGauge;
+  private final LabelledSuppliedMetric labelledGauge;
 
-  private SettableLabelledGauge(final LabelledGauge labelledGauge) {
+  private SettableLabelledGauge(final LabelledSuppliedMetric labelledGauge) {
     this.labelledGauge = labelledGauge;
   }
 
@@ -36,8 +36,8 @@ public class SettableLabelledGauge {
       final String name,
       final String help,
       final String... labels) {
-    final LabelledGauge labelledGauge =
-        metricsSystem.createLabelledGauge(category, name, help, labels);
+    final LabelledSuppliedMetric labelledGauge =
+        metricsSystem.createLabelledSuppliedGauge(category, name, help, labels);
     return new SettableLabelledGauge(labelledGauge);
   }
 
