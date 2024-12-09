@@ -61,15 +61,15 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
         .filter(fork -> fork.getEpoch().isGreaterThan(forkInfo.getFork().getEpoch()))
         .forEach(
             futureFork -> {
-              final SpecVersion currentSpecVersion = spec.atEpoch(futureFork.getEpoch());
+              final SpecVersion futureSpecVersion = spec.atEpoch(futureFork.getEpoch());
               final Bytes4 futureForkDigest =
-                  currentSpecVersion
+                  futureSpecVersion
                       .miscHelpers()
                       .computeForkDigest(
                           futureFork.getCurrentVersion(), forkInfo.getGenesisValidatorsRoot());
               topics.addAll(
                   getAllTopics(
-                      gossipEncoding, futureForkDigest, spec, currentSpecVersion.getMilestone()));
+                      gossipEncoding, futureForkDigest, spec, futureSpecVersion.getMilestone()));
             });
     return topics;
   }
