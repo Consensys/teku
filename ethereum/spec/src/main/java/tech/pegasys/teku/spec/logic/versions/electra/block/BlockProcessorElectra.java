@@ -734,7 +734,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final IntList committee =
           beaconStateAccessorsElectra.getBeaconCommittee(state, slot, committeeIndex);
       final int committeeOffset = participantsCount;
-      long committeeAttesters =
+      final long committeeAttesters =
           IntStream.range(0, committee.size())
               .filter(
                   committeeParticipantIndex ->
