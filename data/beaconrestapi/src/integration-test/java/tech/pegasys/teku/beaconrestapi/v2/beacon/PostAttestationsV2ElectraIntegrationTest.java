@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class PostAttestationsV2ElectraIntegrationTest extends PostAttestationsV2IntegrationTest {
   protected SerializableTypeDefinition<List<SingleAttestation>> attestationsListTypeDef;
 
+  @Override
   @BeforeEach
   void setup() {
     spec = TestSpecFactory.createMinimalElectra();
