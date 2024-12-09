@@ -491,8 +491,8 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       return;
     }
 
-    // Verify that target has execution withdrawal credentials
-    if (!predicatesElectra.hasExecutionWithdrawalCredential(targetValidator)) {
+    // Verify that target has compounding withdrawal credentials
+    if (!predicatesElectra.hasCompoundingWithdrawalCredential(targetValidator)) {
       LOG.debug("process_consolidation_request: invalid target credentials");
       return;
     }
@@ -559,11 +559,6 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
             SszUInt64.of(UInt64.valueOf(sourceValidatorIndex)),
             SszUInt64.of(UInt64.valueOf(targetValidatorIndex)));
     state.getPendingConsolidations().append(pendingConsolidation);
-
-    // Churn any target excess active balance of target and raise its max
-    if (predicatesElectra.hasEth1WithdrawalCredential(targetValidator)) {
-      beaconStateMutatorsElectra.switchToCompoundingValidator(state, targetValidatorIndex);
-    }
 
     LOG.debug("process_consolidation_request: created {}", pendingConsolidation);
   }
