@@ -72,6 +72,7 @@ class Eth2GossipTopicFilterTest {
           case CAPELLA -> throw new IllegalArgumentException("Capella is an unsupported milestone");
           case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(nextMilestoneForkEpoch);
           case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(nextMilestoneForkEpoch);
+          case EIP7732 -> TestSpecFactory.createMinimalWithEip7732ForkEpoch(nextMilestoneForkEpoch);
         };
 
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
