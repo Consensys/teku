@@ -820,6 +820,53 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
+  void sendSignedAttestations_shouldSaveConvertedAttestationFromSingleAttestation() {
+    spec = TestSpecFactory.createMinimalElectra();
+    dataStructureUtil = new DataStructureUtil(spec);
+    validatorApiHandler =
+        new ValidatorApiHandler(
+            chainDataProvider,
+            nodeDataProvider,
+            networkDataProvider,
+            chainDataClient,
+            syncStateProvider,
+            blockFactory,
+            attestationPool,
+            attestationManager,
+            attestationTopicSubscriptions,
+            activeValidatorTracker,
+            dutyMetrics,
+            performanceTracker,
+            spec,
+            forkChoiceTrigger,
+            proposersDataManager,
+            syncCommitteeMessagePool,
+            syncCommitteeContributionPool,
+            syncCommitteeSubscriptionManager,
+            blockProductionPerformanceFactory,
+            blockPublisher);
+
+    final Attestation attestation = dataStructureUtil.randomSingleAttestation();
+    final Attestation convertedAttestation = dataStructureUtil.randomAttestation();
+    doAnswer(
+            invocation -> {
+              invocation
+                  .getArgument(0, ValidatableAttestation.class)
+                  .convertToAggregatedFormatFromSingleAttestation(convertedAttestation);
+              return completedFuture(InternalValidationResult.ACCEPT);
+            })
+        .when(attestationManager)
+        .addAttestation(any(ValidatableAttestation.class), any());
+
+    final SafeFuture<List<SubmitDataError>> result =
+        validatorApiHandler.sendSignedAttestations(List.of(attestation));
+    assertThat(result).isCompletedWithValue(emptyList());
+
+    verify(dutyMetrics).onAttestationPublished(convertedAttestation.getData().getSlot());
+    verify(performanceTracker).saveProducedAttestation(convertedAttestation);
+  }
+
+  @Test
   void sendSignedAttestations_shouldAddToDutyMetricsAndPerformanceTrackerWhenNotInvalid() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     when(attestationManager.addAttestation(any(ValidatableAttestation.class), any()))
