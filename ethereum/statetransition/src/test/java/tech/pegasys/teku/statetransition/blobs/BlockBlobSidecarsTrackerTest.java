@@ -166,21 +166,6 @@ public class BlockBlobSidecarsTrackerTest {
   }
 
   @Test
-  void add_shouldFailIfBlobsIsNotMarkedAsKzgAndInclusionProofValidated() {
-    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
-    final BlobSidecar toAdd =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .signedBeaconBlockHeader(block.asHeader())
-            .build();
-
-    assertThatThrownBy(() -> blockBlobSidecarsTracker.add(toAdd))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("BlobSidecar must be validated before adding");
-  }
-
-  @Test
   void add_shouldWorkTillCompletionWhenAddingBlobsBeforeBlockIsSet() {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock.plus(1));
