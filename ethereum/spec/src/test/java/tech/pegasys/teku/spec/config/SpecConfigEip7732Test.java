@@ -26,9 +26,9 @@ public class SpecConfigEip7732Test {
   @Test
   public void equals_mainnet() {
     final SpecConfigEip7732 configA =
-        SpecConfigLoader.loadConfig("mainnet").toVersionEip7732().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionEip7732().orElseThrow();
     final SpecConfigEip7732 configB =
-        SpecConfigLoader.loadConfig("mainnet").toVersionEip7732().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionEip7732().orElseThrow();
 
     assertThat(configA).isEqualTo(configB);
     assertThat(configA.hashCode()).isEqualTo(configB.hashCode());
@@ -37,7 +37,7 @@ public class SpecConfigEip7732Test {
   @Test
   public void equals_sameRandomValues() {
     final SpecConfigElectra specConfigElectra =
-        SpecConfigLoader.loadConfig("mainnet").toVersionElectra().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionElectra().orElseThrow();
     final SpecConfigEip7732 configA = createRandomEip7732Config(specConfigElectra, 1);
     final SpecConfigEip7732 configB = createRandomEip7732Config(specConfigElectra, 1);
 
@@ -48,7 +48,7 @@ public class SpecConfigEip7732Test {
   @Test
   public void equals_differentRandomValues() {
     final SpecConfigElectra specConfigElectra =
-        SpecConfigLoader.loadConfig("mainnet").toVersionElectra().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionElectra().orElseThrow();
     final SpecConfigEip7732 configA = createRandomEip7732Config(specConfigElectra, 1);
     final SpecConfigEip7732 configB = createRandomEip7732Config(specConfigElectra, 2);
 
@@ -59,13 +59,14 @@ public class SpecConfigEip7732Test {
   @Test
   public void equals_electraConfigDiffer() {
     final SpecConfigElectra electraA =
-        SpecConfigLoader.loadConfig("mainnet").toVersionElectra().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionElectra().orElseThrow();
     final SpecConfigElectra electraB =
         SpecConfigLoader.loadConfig(
                 "mainnet",
                 b ->
                     b.electraBuilder(
                         eb -> eb.maxAttestationsElectra(electraA.getMaxAttestationsElectra() + 4)))
+            .specConfig()
             .toVersionElectra()
             .orElseThrow();
 

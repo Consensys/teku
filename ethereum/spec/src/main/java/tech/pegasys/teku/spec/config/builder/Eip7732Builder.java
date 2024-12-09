@@ -50,7 +50,8 @@ public class Eip7732Builder implements ForkConfigBuilder<SpecConfigElectra, Spec
             ptcSize,
             maxPayloadAttestations,
             kzgCommitmentInclusionProofDepthEip7732,
-            maxRequestPayloads));
+            maxRequestPayloads),
+        specConfigAndParent);
   }
 
   public Eip7732Builder eip7732ForkEpoch(final UInt64 eip7732ForkEpoch) {
