@@ -30,11 +30,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsResponseInvalidResponseException.InvalidResponseType;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
@@ -57,7 +58,7 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
   private BlobSidecarsByRootListenerValidatingProxy listenerWrapper;
 
   @BeforeEach
-  void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
+  void setUp(final SpecContext specContext) {
     spec =
         switch (specContext.getSpecMilestone()) {
           case PHASE0 -> throw new IllegalArgumentException("Phase0 is an unsupported milestone");
@@ -67,6 +68,7 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
           case CAPELLA -> throw new IllegalArgumentException("Capella is an unsupported milestone");
           case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(currentForkEpoch);
           case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(currentForkEpoch);
+          case EIP7732 -> TestSpecFactory.createMinimalWithEip7732ForkEpoch(currentForkEpoch);
         };
     dataStructureUtil = new DataStructureUtil(spec);
     currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
@@ -140,10 +142,7 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
     assertThatThrownBy(result::get)
         .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
-        .hasMessageContaining(
-            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
-                .BLOB_SIDECAR_UNEXPECTED_IDENTIFIER
-                .describe());
+        .hasMessageContaining(InvalidResponseType.BLOB_SIDECAR_UNEXPECTED_IDENTIFIER.describe());
   }
 
   @TestTemplate
@@ -166,10 +165,7 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
     assertThatThrownBy(result::get)
         .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
-        .hasMessageContaining(
-            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
-                .BLOB_SIDECAR_KZG_VERIFICATION_FAILED
-                .describe());
+        .hasMessageContaining(InvalidResponseType.BLOB_SIDECAR_KZG_VERIFICATION_FAILED.describe());
   }
 
   @TestTemplate
@@ -193,8 +189,6 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
         .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
         .hasMessageContaining(
-            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
-                .BLOB_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED
-                .describe());
+            InvalidResponseType.BLOB_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED.describe());
   }
 }
