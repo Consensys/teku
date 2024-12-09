@@ -25,7 +25,7 @@ import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 public class SnappyBlockCompressor {
 
   public Bytes uncompress(
-      final Bytes compressedData, final SszLengthBounds lengthBounds, long maxBytesLength)
+      final Bytes compressedData, final SszLengthBounds lengthBounds, final long maxBytesLength)
       throws DecodingException {
     try {
       final int uncompressedLength = Snappy.uncompressedLength(compressedData.toArrayUnsafe());
