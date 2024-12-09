@@ -130,7 +130,7 @@ public class BesuNode extends Node {
    Defined on https://eips.ethereum.org/EIPS/eip-7002 (WITHDRAWAL_REQUEST_PREDEPLOY_ADDRESS)
   */
   public Eth1Address getWithdrawalRequestContractAddress() {
-    return Eth1Address.fromHexString("0x00A3ca265EBcb825B45F985A16CEFB49958cE017");
+    return Eth1Address.fromHexString("0x0c15F14308530b7CDB8460094BbB9cC28b9AaaAA");
   }
 
   /*
