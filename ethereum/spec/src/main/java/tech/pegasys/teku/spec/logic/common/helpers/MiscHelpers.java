@@ -380,20 +380,6 @@ public class MiscHelpers {
     return false;
   }
 
-  public void validateBlobSidecarsBatchAgainstBlock(
-      final List<BlobSidecar> blobSidecars,
-      final BeaconBlock block,
-      final List<KZGCommitment> kzgCommitmentsFromBlock) {
-    throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
-  }
-
-  public void verifyBlobSidecarCompleteness(
-      final List<BlobSidecar> verifiedBlobSidecars,
-      final List<KZGCommitment> kzgCommitmentsFromBlock)
-      throws IllegalArgumentException {
-    throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
-  }
-
   public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
     throw new UnsupportedOperationException("No KZGCommitments before Deneb");
   }

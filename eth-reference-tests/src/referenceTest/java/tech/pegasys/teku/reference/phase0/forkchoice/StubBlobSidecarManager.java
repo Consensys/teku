@@ -98,12 +98,6 @@ class StubBlobSidecarManager implements BlobSidecarManager {
         return SafeFuture.completedFuture(validateImmediately(block, blobsAndProofs));
       }
 
-      @Override
-      public BlobSidecarsAndValidationResult validateImmediately(
-          final List<BlobSidecar> blobSidecars) {
-        throw new UnsupportedOperationException("Not available in fork choice reference tests");
-      }
-
       private BlobSidecarsAndValidationResult validateImmediately(
           final SignedBeaconBlock block, final BlobsAndProofs blobsAndProofs) {
         final List<KZGCommitment> kzgCommitments =
@@ -123,12 +117,6 @@ class StubBlobSidecarManager implements BlobSidecarManager {
         return BlobSidecarsAndValidationResult.validResult(Collections.emptyList());
       }
     };
-  }
-
-  @Override
-  public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
-      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
-    throw new UnsupportedOperationException("Not available in fork choice reference tests");
   }
 
   private record BlobsAndProofs(List<Blob> blobs, List<KZGProof> proofs) {}
