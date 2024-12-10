@@ -13,13 +13,9 @@
 
 package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
-
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
@@ -76,34 +72,6 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
   }
 
   @Override
-  public Validator getValidatorFromDeposit(
-      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials, final UInt64 amount) {
-    final Validator validator =
-        new Validator(
-            pubkey,
-            withdrawalCredentials,
-            ZERO,
-            false,
-            FAR_FUTURE_EPOCH,
-            FAR_FUTURE_EPOCH,
-            FAR_FUTURE_EPOCH,
-            FAR_FUTURE_EPOCH);
-
-    final UInt64 maxEffectiveBalance = getMaxEffectiveBalance(validator);
-    final UInt64 validatorEffectiveBalance =
-        amount
-            .minusMinZero(amount.mod(specConfig.getEffectiveBalanceIncrement()))
-            .min(maxEffectiveBalance);
-
-    return validator.withEffectiveBalance(validatorEffectiveBalance);
-  }
-
-  @Override
-  public Optional<MiscHelpersElectra> toVersionElectra() {
-    return Optional.of(this);
-  }
-
-  @Override
   public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
     // if the next deposit to be processed by Eth1Data poll has the index of the first deposit
     // processed with the new deposit flow, i.e. `eth1_deposit_index ==
@@ -111,5 +79,10 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
     return state
         .getEth1DepositIndex()
         .equals(BeaconStateElectra.required(state).getDepositRequestsStartIndex());
+  }
+
+  @Override
+  public Optional<MiscHelpersElectra> toVersionElectra() {
+    return Optional.of(this);
   }
 }

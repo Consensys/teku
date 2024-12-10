@@ -14,11 +14,13 @@
 package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.COMPOUNDING_WITHDRAWAL_BYTE;
 
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -267,5 +269,28 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
   @Override
   protected int getMinSlashingPenaltyQuotient() {
     return specConfigElectra.getMinSlashingPenaltyQuotientElectra();
+  }
+
+  @Override
+  protected Validator getValidatorFromDeposit(
+      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials, final UInt64 amount) {
+    final Validator validator =
+        new Validator(
+            pubkey,
+            withdrawalCredentials,
+            ZERO,
+            false,
+            FAR_FUTURE_EPOCH,
+            FAR_FUTURE_EPOCH,
+            FAR_FUTURE_EPOCH,
+            FAR_FUTURE_EPOCH);
+
+    final UInt64 maxEffectiveBalance = miscHelpers.getMaxEffectiveBalance(validator);
+    final UInt64 validatorEffectiveBalance =
+        amount
+            .minusMinZero(amount.mod(specConfig.getEffectiveBalanceIncrement()))
+            .min(maxEffectiveBalance);
+
+    return validator.withEffectiveBalance(validatorEffectiveBalance);
   }
 }

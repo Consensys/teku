@@ -60,9 +60,8 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
    */
   public UInt64 getActiveBalance(final BeaconState state, final int validatorIndex) {
     final Validator validator = state.getValidators().get(validatorIndex);
-    final UInt64 maxEffectiveBalance = miscHelpers.getMaxEffectiveBalance(validator);
     final UInt64 validatorBalance = state.getBalances().get(validatorIndex).get();
-    return validatorBalance.min(maxEffectiveBalance);
+    return validatorBalance.min(validator.getEffectiveBalance());
   }
 
   /**

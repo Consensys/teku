@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.logic.common.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor.depositSignatureVerifier;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
@@ -364,6 +363,20 @@ public class MiscHelpers {
     return new ForkData(currentVersion, genesisValidatorsRoot).hashTreeRoot();
   }
 
+  /** is_valid_deposit_signature */
+  public boolean isValidDepositSignature(
+      final BLSPublicKey pubkey,
+      final Bytes32 withdrawalCredentials,
+      final UInt64 amount,
+      final BLSSignature signature) {
+    try {
+      return depositSignatureVerifier.verify(
+          pubkey, computeDepositSigningRoot(pubkey, withdrawalCredentials, amount), signature);
+    } catch (final BlsException e) {
+      return false;
+    }
+  }
+
   public boolean isMergeTransitionComplete(final BeaconState state) {
     return false;
   }
@@ -412,38 +425,6 @@ public class MiscHelpers {
 
   public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
     return false;
-  }
-
-  /** is_valid_deposit_signature */
-  public boolean isValidDepositSignature(
-      final BLSPublicKey pubkey,
-      final Bytes32 withdrawalCredentials,
-      final UInt64 amount,
-      final BLSSignature signature) {
-    try {
-      return depositSignatureVerifier.verify(
-          pubkey, computeDepositSigningRoot(pubkey, withdrawalCredentials, amount), signature);
-    } catch (final BlsException e) {
-      return false;
-    }
-  }
-
-  /** get_validator_from_deposit */
-  public Validator getValidatorFromDeposit(
-      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials, final UInt64 amount) {
-    final UInt64 effectiveBalance =
-        amount
-            .minus(amount.mod(specConfig.getEffectiveBalanceIncrement()))
-            .min(specConfig.getMaxEffectiveBalance());
-    return new Validator(
-        pubkey,
-        withdrawalCredentials,
-        effectiveBalance,
-        false,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH);
   }
 
   public Optional<MiscHelpersDeneb> toVersionDeneb() {

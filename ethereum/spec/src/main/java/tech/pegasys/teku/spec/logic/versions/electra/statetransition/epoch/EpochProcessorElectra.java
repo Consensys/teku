@@ -322,8 +322,10 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
         break;
       }
 
+      // Calculate the consolidated balance
       final UInt64 activeBalance =
           stateAccessorsElectra.getActiveBalance(state, pendingConsolidation.getSourceIndex());
+      // Move active balance to target. Excess balance is withdrawable.
       beaconStateMutators.decreaseBalance(
           state, pendingConsolidation.getSourceIndex(), activeBalance);
       beaconStateMutators.increaseBalance(
