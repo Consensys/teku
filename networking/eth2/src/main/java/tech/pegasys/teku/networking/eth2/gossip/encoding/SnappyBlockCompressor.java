@@ -34,14 +34,14 @@ public class SnappyBlockCompressor {
         throw new DecodingException(
             String.format(
                 "Uncompressed length %d exceeds max length in bytes of %s",
-                uncompressedLength, lengthBounds.toString()));
+                uncompressedLength, maxBytesLength));
       }
 
       if (!lengthBounds.isWithinBounds(uncompressedLength)) {
         throw new DecodingException(
             String.format(
                 "Uncompressed length %d is not within expected bounds %s",
-                uncompressedLength, lengthBounds.toString()));
+                uncompressedLength, lengthBounds));
       }
       return Bytes.wrap(Snappy.uncompress(compressedData.toArrayUnsafe()));
     } catch (IOException e) {
