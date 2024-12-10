@@ -268,6 +268,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile WeakSubjectivityValidator weakSubjectivityValidator;
   protected volatile PerformanceTracker performanceTracker;
   protected volatile PendingPool<SignedBeaconBlock> pendingBlocks;
+  protected volatile PendingPool<ValidatableAttestation> pendingAttestations;
   protected volatile BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   protected volatile Map<Bytes32, BlockImportResult> invalidBlockRoots;
   protected volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
@@ -1050,8 +1051,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initAttestationManager() {
-    final PendingPool<ValidatableAttestation> pendingAttestations =
-        poolFactory.createPendingPoolForAttestations(spec);
+    pendingAttestations = poolFactory.createPendingPoolForAttestations(spec);
     final FutureItems<ValidatableAttestation> futureAttestations =
         FutureItems.create(
             ValidatableAttestation::getEarliestSlotForForkChoiceProcessing,
@@ -1293,6 +1293,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         blockImporter,
         blobSidecarManager,
         pendingBlocks,
+        pendingAttestations,
         blockBlobSidecarsTrackersPool,
         beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),
         signatureVerificationService,
