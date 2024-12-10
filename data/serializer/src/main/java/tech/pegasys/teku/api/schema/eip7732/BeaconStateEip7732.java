@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateSchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.MutableBeaconStateEip7732;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 
 public class BeaconStateEip7732 extends BeaconStateAltair {
 
@@ -241,13 +242,13 @@ public class BeaconStateEip7732 extends BeaconStateAltair {
                     BeaconStateSchemaEip7732.required(
                             mutableBeaconStateEip7732.getBeaconStateSchema())
                         .getHistoricalSummariesSchema(),
-                    BeaconStateSchemaEip7732.required(
+                    BeaconStateSchemaElectra.required(
                             mutableBeaconStateEip7732.getBeaconStateSchema())
                         .getPendingDepositsSchema(),
-                    BeaconStateSchemaEip7732.required(
+                    BeaconStateSchemaElectra.required(
                             mutableBeaconStateEip7732.getBeaconStateSchema())
                         .getPendingPartialWithdrawalsSchema(),
-                    BeaconStateSchemaEip7732.required(
+                    BeaconStateSchemaElectra.required(
                             mutableBeaconStateEip7732.getBeaconStateSchema())
                         .getPendingConsolidationsSchema(),
                     this));

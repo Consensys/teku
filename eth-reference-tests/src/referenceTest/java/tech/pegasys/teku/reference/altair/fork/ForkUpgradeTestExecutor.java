@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.B
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 
@@ -63,6 +64,10 @@ public class ForkUpgradeTestExecutor implements TestExecutor {
                   previousMilestoneSpecVersion.getSchemaDefinitions().getSchemaRegistry());
           case ELECTRA ->
               BeaconStateSchemaDeneb.create(
+                  previousMilestoneSpecVersion.getConfig(),
+                  previousMilestoneSpecVersion.getSchemaDefinitions().getSchemaRegistry());
+          case EIP7732 ->
+              BeaconStateSchemaElectra.create(
                   previousMilestoneSpecVersion.getConfig(),
                   previousMilestoneSpecVersion.getSchemaDefinitions().getSchemaRegistry());
           default ->

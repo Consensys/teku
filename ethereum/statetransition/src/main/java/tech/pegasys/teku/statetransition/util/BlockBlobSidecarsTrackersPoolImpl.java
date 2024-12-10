@@ -76,7 +76,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   private static final Logger LOG = LogManager.getLogger();
 
   static final String COUNTER_BLOCK_TYPE = "block";
-  static final String COUNTER_EXECUTION_PAYLOAD_ENVELOPE_TYPE = "execution_payload_envelope";
   static final String COUNTER_SIDECAR_TYPE = "blob_sidecar";
 
   static final String COUNTER_GOSSIP_SUBTYPE = "gossip";
@@ -548,7 +547,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             newTracker -> {
               newTracker.setBlockAndExecutionPayloadEnvelope(block, executionPayloadEnvelope);
               countBlock(remoteOrigin);
-              onFirstSeen(slotAndBlockRoot);
+              onFirstSeen(slotAndBlockRoot, remoteOrigin);
             },
             existingTracker -> {
               if (!existingTracker.setBlockAndExecutionPayloadEnvelope(

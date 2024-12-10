@@ -34,7 +34,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
@@ -61,7 +61,7 @@ class ProposersDataManagerTest {
   private UInt64 currentForkFirstSlot;
 
   @BeforeEach
-  public void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
+  public void setUp(final SpecContext specContext) {
     spec =
         switch (specContext.getSpecMilestone()) {
           case PHASE0 -> TestSpecFactory.createMinimalPhase0();
@@ -70,6 +70,7 @@ class ProposersDataManagerTest {
           case CAPELLA -> TestSpecFactory.createMinimalWithCapellaForkEpoch(currentForkEpoch);
           case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(currentForkEpoch);
           case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(currentForkEpoch);
+          case EIP7732 -> TestSpecFactory.createMinimalWithEip7732ForkEpoch(currentForkEpoch);
         };
     currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
     dataStructureUtil = specContext.getDataStructureUtil();
