@@ -854,8 +854,10 @@ class ValidatorApiHandlerTest {
             chainDataClient,
             syncStateProvider,
             blockFactory,
+            executionPayloadHeaderFactory,
             attestationPool,
             attestationManager,
+            payloadAttestationManager,
             attestationTopicSubscriptions,
             activeValidatorTracker,
             dutyMetrics,
@@ -866,6 +868,9 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
+            executionPayloadHeaderPool,
+            executionPayloadAndBlobSidecarsRevealer,
+            executionPayloadPublisher,
             blockProductionPerformanceFactory,
             blockPublisher);
 
