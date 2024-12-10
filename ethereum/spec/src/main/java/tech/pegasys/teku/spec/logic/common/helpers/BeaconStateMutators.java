@@ -232,7 +232,8 @@ public class BeaconStateMutators {
       final BLSPublicKey pubkey,
       final Bytes32 withdrawalCredentials,
       final UInt64 amount) {
-    final Validator validator = getValidatorFromDeposit(pubkey, withdrawalCredentials, amount);
+    final Validator validator =
+        miscHelpers.getValidatorFromDeposit(pubkey, withdrawalCredentials, amount);
     LOG.debug("Adding new validator with index {} to state", state.getValidators().size());
     state.getValidators().append(validator);
     state.getBalances().appendElement(amount);
@@ -303,23 +304,5 @@ public class BeaconStateMutators {
 
   protected int getWhistleblowerRewardQuotient() {
     return specConfig.getWhistleblowerRewardQuotient();
-  }
-
-  /** get_validator_from_deposit */
-  protected Validator getValidatorFromDeposit(
-      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials, final UInt64 amount) {
-    final UInt64 effectiveBalance =
-        amount
-            .minus(amount.mod(specConfig.getEffectiveBalanceIncrement()))
-            .min(specConfig.getMaxEffectiveBalance());
-    return new Validator(
-        pubkey,
-        withdrawalCredentials,
-        effectiveBalance,
-        false,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH);
   }
 }
