@@ -18,3 +18,4 @@
 - Set `is_syncing` to `false` instead of `true` for the `/eth/v1/node/syncing` API endpoint when the head is optimistic and the sync distance is 0
 - Fix libp2p direct peers handling
 - Added check for gossip message maximum uncompressed size
+- updated the gas change check for block building so that warnings only get raised if the change is off spec.
