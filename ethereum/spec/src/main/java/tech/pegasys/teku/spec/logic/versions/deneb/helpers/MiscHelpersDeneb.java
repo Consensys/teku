@@ -13,12 +13,15 @@
 
 package tech.pegasys.teku.spec.logic.versions.deneb.helpers;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.stream.IntStream;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
@@ -33,6 +36,7 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
@@ -134,6 +138,55 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
     }
 
     return result;
+  }
+
+  @Override
+  public boolean verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(final BlobSidecar blobSidecar, final SignedBeaconBlock signedBeaconBlock) {
+    if (blobSidecar.isSignatureValidated()) {
+      return true;
+    }
+
+    final boolean result = blobSidecar
+            .getSignedBeaconBlockHeader()
+            .hashTreeRoot()
+            .equals(signedBeaconBlock.hashTreeRoot());
+
+    if(result) {
+      blobSidecar.markSignatureAsValidated();
+    }
+
+    return result;
+  }
+
+  /**
+   * Verifies that blob sidecars are complete and with expected indexes
+   *
+   * @param completeVerifiedBlobSidecars blob sidecars to verify, It is assumed that it is an
+   *     ordered list based on BlobSidecar index
+   * @param signedBeaconBlock block with commitments
+   */
+  @Override
+  public void verifyBlobSidecarCompleteness(
+          final List<BlobSidecar> completeVerifiedBlobSidecars,
+          final SignedBeaconBlock signedBeaconBlock)
+          throws IllegalArgumentException {
+    int commitmentCount = signedBeaconBlock.getBeaconBlock().map(BeaconBlock::getBody).flatMap(BeaconBlockBody::getOptionalBlobKzgCommitments).orElseThrow().size();
+    checkArgument(
+            completeVerifiedBlobSidecars.size() == commitmentCount,
+            "Blob sidecars are not complete");
+
+    IntStream.range(0, completeVerifiedBlobSidecars.size())
+            .forEach(
+                    index -> {
+                      final BlobSidecar blobSidecar = completeVerifiedBlobSidecars.get(index);
+                      final UInt64 blobIndex = blobSidecar.getIndex();
+
+                      checkArgument(
+                              blobIndex.longValue() == index,
+                              "Blob sidecar index mismatch, expected %s, got %s",
+                              index,
+                              blobIndex);
+                    });
   }
 
   /**

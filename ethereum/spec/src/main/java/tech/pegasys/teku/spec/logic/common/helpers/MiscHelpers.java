@@ -380,6 +380,21 @@ public class MiscHelpers {
     return false;
   }
 
+  public boolean verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(final List<BlobSidecar> blobSidecars, final SignedBeaconBlock signedBeaconBlock) {
+    return blobSidecars.stream().allMatch(blobSidecar -> verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(blobSidecar, signedBeaconBlock));
+  }
+
+  public boolean verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(final BlobSidecar blobSidecar, final SignedBeaconBlock signedBeaconBlock) {
+    throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
+  }
+
+  public void verifyBlobSidecarCompleteness(
+          final List<BlobSidecar> verifiedBlobSidecars,
+          final SignedBeaconBlock signedBeaconBlock)
+          throws IllegalArgumentException {
+    throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
+  }
+
   public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
     throw new UnsupportedOperationException("No KZGCommitments before Deneb");
   }

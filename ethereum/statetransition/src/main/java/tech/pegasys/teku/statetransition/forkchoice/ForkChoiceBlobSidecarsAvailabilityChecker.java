@@ -24,6 +24,7 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
@@ -94,28 +95,24 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   }
 
   private BlobSidecarsAndValidationResult validateCompletedBlobSidecars() {
+    final MiscHelpers miscHelpers = spec.atSlot(blockBlobSidecarsTracker.getSlotAndBlockRoot().getSlot()).miscHelpers();
     final List<BlobSidecar> blobSidecars =
         List.copyOf(blockBlobSidecarsTracker.getBlobSidecars().values());
     final SignedBeaconBlock block = blockBlobSidecarsTracker.getBlock().orElseThrow();
 
     try {
-      if (!spec.atSlot(block.getSlot()).miscHelpers().verifyBlobKzgProofBatch(kzg, blobSidecars)) {
+      if (!miscHelpers.verifyBlobKzgProofBatch(kzg, blobSidecars)) {
         return BlobSidecarsAndValidationResult.invalidResult(blobSidecars);
       }
     } catch (final Exception ex) {
       return BlobSidecarsAndValidationResult.invalidResult(blobSidecars, ex);
     }
 
-    for (final BlobSidecar blobSidecar : blobSidecars) {
-      if (!blobSidecar.isSignatureValidated()
-          && !blobSidecar
-              .getSignedBeaconBlockHeader()
-              .hashTreeRoot()
-              .equals(block.hashTreeRoot())) {
-        return BlobSidecarsAndValidationResult.notAvailable(
-            new IllegalStateException("Blob sidecars block header does not match signed block"));
-      }
+    if (!miscHelpers.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(blobSidecars, block)) {
+      return BlobSidecarsAndValidationResult.invalidResult(blobSidecars, new IllegalStateException("Blob sidecars block header does not match signed block"));
     }
+
+      miscHelpers.verifyBlobSidecarCompleteness(blobSidecars, block);
 
     return BlobSidecarsAndValidationResult.validResult(blobSidecars);
   }

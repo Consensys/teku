@@ -48,9 +48,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -401,23 +404,12 @@ public class HistoricalBatchFetcher {
         blobSidecarsBySlotToImport.getOrDefault(
             block.getSlotAndBlockRoot(), Collections.emptyList());
 
+    final MiscHelpers miscHelpers = spec.atSlot(block.getSlot()).miscHelpers();
+
     final boolean blobsBlockHeaderRootMatchBlockRoot =
         blobSidecars.stream()
             .allMatch(
-                blobSidecar -> {
-                  final boolean signedHeaderMatchesBlock =
-                      blobSidecar
-                          .getSignedBeaconBlockHeader()
-                          .hashTreeRoot()
-                          .equals(block.hashTreeRoot());
-
-                  if (signedHeaderMatchesBlock) {
-                    // since we already validated block's signature, we can mark the blob sidecar's
-                    // signature as validated
-                    blobSidecar.markSignatureAsValidated();
-                  }
-                  return signedHeaderMatchesBlock;
-                });
+                blobSidecar -> miscHelpers.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(blobSidecar, block));
 
     if (!blobsBlockHeaderRootMatchBlockRoot) {
       throw new IllegalArgumentException(
@@ -425,6 +417,8 @@ public class HistoricalBatchFetcher {
               "Blob sidecars' signed beacon block header don't match signed block for %s",
               block.toLogString()));
     }
+
+    miscHelpers.verifyBlobSidecarCompleteness(blobSidecars, block);
   }
 
   private RequestParameters calculateRequestParams() {
