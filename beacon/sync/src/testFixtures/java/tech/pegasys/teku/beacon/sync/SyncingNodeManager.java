@@ -50,6 +50,7 @@ import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
@@ -140,6 +141,8 @@ public class SyncingNodeManager {
     final PoolFactory poolFactory = new PoolFactory(new NoOpMetricsSystem());
     final PendingPool<SignedBeaconBlock> pendingBlocks =
         poolFactory.createPendingPoolForBlocks(spec);
+    final PendingPool<ValidatableAttestation> pendingAttestations =
+        poolFactory.createPendingPoolForAttestations(spec);
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
     final Map<Bytes32, BlockImportResult> invalidBlockRoots = LimitedMap.createSynchronizedLRU(500);
@@ -206,6 +209,7 @@ public class SyncingNodeManager {
         RecentBlocksFetchService.create(
             asyncRunner,
             pendingBlocks,
+            pendingAttestations,
             BlockBlobSidecarsTrackersPool.NOOP,
             syncService,
             fetchBlockTaskFactory);
