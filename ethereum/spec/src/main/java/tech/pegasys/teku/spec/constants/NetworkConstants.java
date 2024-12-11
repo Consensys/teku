@@ -20,7 +20,4 @@ public class NetworkConstants {
   public static final int DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY = 128;
 
   public static final int NODE_ID_BITS = 256;
-
-  // https://github.com/ethereum/consensus-specs/pull/3767
-  public static final int MAX_CONCURRENT_REQUESTS = 2;
 }

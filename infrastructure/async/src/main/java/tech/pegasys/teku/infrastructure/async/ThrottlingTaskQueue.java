@@ -28,10 +28,6 @@ public class ThrottlingTaskQueue {
 
   private int inflightTaskCount = 0;
 
-  public static ThrottlingTaskQueue create(final int maximumConcurrentTasks) {
-    return new ThrottlingTaskQueue(maximumConcurrentTasks);
-  }
-
   public static ThrottlingTaskQueue create(
       final int maximumConcurrentTasks,
       final MetricsSystem metricsSystem,
