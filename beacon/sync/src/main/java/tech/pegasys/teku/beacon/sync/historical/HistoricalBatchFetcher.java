@@ -36,6 +36,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
@@ -55,6 +56,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -404,21 +406,21 @@ public class HistoricalBatchFetcher {
         blobSidecarsBySlotToImport.getOrDefault(
             block.getSlotAndBlockRoot(), Collections.emptyList());
 
-    final MiscHelpers miscHelpers = spec.atSlot(block.getSlot()).miscHelpers();
+    LOG.trace("Validating {} blob sidecars for block {}", blobSidecars.size(), block.getRoot());
+    final BlobSidecarsAndValidationResult validationResult =
+            blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, blobSidecars);
 
-    final boolean blobsBlockHeaderRootMatchBlockRoot =
-        blobSidecars.stream()
-            .allMatch(
-                blobSidecar -> miscHelpers.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(blobSidecar, block));
-
-    if (!blobsBlockHeaderRootMatchBlockRoot) {
+    if (validationResult.isFailure()) {
+      final String causeMessage =
+              validationResult
+                      .getCause()
+                      .map(cause -> " (" + ExceptionUtil.getRootCauseMessage(cause) + ")")
+                      .orElse("");
       throw new IllegalArgumentException(
-          String.format(
-              "Blob sidecars' signed beacon block header don't match signed block for %s",
-              block.toLogString()));
+              String.format(
+                      "Blob sidecars validation for block %s failed: %s%s",
+                      block.getRoot(), validationResult.getValidationResult(), causeMessage));
     }
-
-    miscHelpers.verifyBlobSidecarCompleteness(blobSidecars, block);
   }
 
   private RequestParameters calculateRequestParams() {

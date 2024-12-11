@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.blobs;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -24,6 +25,7 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.util.FutureItems;
@@ -124,6 +126,38 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
     return new ForkChoiceBlobSidecarsAvailabilityChecker(
         spec, recentChainData, blockBlobSidecarsTracker, kzg);
+  }
+
+  @Override
+  public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
+          final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+    // Block is pre-Deneb, blobs are not supported yet
+    if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
+      return BlobSidecarsAndValidationResult.NOT_REQUIRED;
+    }
+
+    // we don't care to set maxBlobsPerBlock since it isn't used with this immediate validation flow
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
+            new BlockBlobSidecarsTracker(block.getSlotAndBlockRoot(), UInt64.ZERO);
+
+    blockBlobSidecarsTracker.setBlock(block);
+    boolean allAdded = blobSidecars.stream().allMatch(blockBlobSidecarsTracker::add);
+    if(!allAdded) {
+      return BlobSidecarsAndValidationResult.invalidResult(blobSidecars, new IllegalStateException("Failed to add all blobs to tracker, possible blobs with same index or index out of blocks commitment range"));
+    }
+
+    if(!blockBlobSidecarsTracker.isCompleted()) {
+      return BlobSidecarsAndValidationResult.NOT_AVAILABLE;
+    }
+
+    final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =  new ForkChoiceBlobSidecarsAvailabilityChecker(
+            spec, recentChainData, blockBlobSidecarsTracker, kzg).getAvailabilityCheckResult();
+
+    if(availabilityCheckResult.isDone()) {
+      return availabilityCheckResult.join();
+    } else {
+      throw new IllegalStateException("Availability check should be done immediately");
+    }
   }
 
   @Override
