@@ -25,7 +25,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.infrastructure.metrics.StubCounter;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -177,15 +176,13 @@ public class AttestationGossipManagerTest {
   }
 
   private long getPublishSuccessCounterValue() {
-    return getPublishCounter().getValue("success");
+    return metricsSystem.getCounterValue(
+        TekuMetricCategory.BEACON, "published_attestation_total", "success");
   }
 
   private long getPublishFailureCounterValue() {
-    return getPublishCounter().getValue("failure");
-  }
-
-  private StubCounter getPublishCounter() {
-    return metricsSystem.getCounter(TekuMetricCategory.BEACON, "published_attestation_total");
+    return metricsSystem.getCounterValue(
+        TekuMetricCategory.BEACON, "published_attestation_total", "failure");
   }
 
   private Integer computeSubnetId(final Attestation attestation) {
