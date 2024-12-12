@@ -182,5 +182,5 @@ class MiscHelpersDenebTest {
     }
   }
 
-  // TODO test mark as validated
+  // TODO test mark as validated and verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock
 }

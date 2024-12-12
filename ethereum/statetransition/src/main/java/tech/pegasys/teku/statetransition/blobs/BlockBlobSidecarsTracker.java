@@ -341,7 +341,7 @@ public class BlockBlobSidecarsTracker {
     return MoreObjects.toStringHelper(this)
         .add("slotAndBlockRoot", slotAndBlockRoot)
         .add("isBlockPresent", block.get().isPresent())
-        .add("isCompleted", isComplete())
+        .add("isComplete", isComplete())
         .add("rpcFetchTriggered", rpcFetchTriggered)
         .add("localElFetchTriggered", localElFetchTriggered)
         .add("blockImportOnCompletionEnabled", blockImportOnCompletionEnabled.get())
