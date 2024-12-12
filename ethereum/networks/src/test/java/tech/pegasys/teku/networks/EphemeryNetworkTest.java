@@ -109,7 +109,7 @@ public class EphemeryNetworkTest {
 
   @Test
   public void read_missingConfig() {
-    processFileAsInputStream(getInvalidConfigPath("missingChurnLimit"), this::readConfig);
+    processFileAsInputStream(getInvalidConfigPath("missingChurnLimit"), reader::readAndApply);
 
     assertThatThrownBy(reader::build)
         .isInstanceOf(IllegalArgumentException.class)
@@ -249,10 +249,6 @@ public class EphemeryNetworkTest {
 
   private interface InputStreamHandler {
     void accept(InputStream inputStream) throws IOException;
-  }
-
-  private void readConfig(final InputStream preset) throws IOException {
-    reader.readAndApply(preset, false);
   }
 
   private Spec getSpec(final Consumer<SpecConfigBuilder> consumer) {

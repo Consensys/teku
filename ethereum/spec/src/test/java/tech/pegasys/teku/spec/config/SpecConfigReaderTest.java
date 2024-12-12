@@ -54,20 +54,10 @@ public class SpecConfigReaderTest {
   }
 
   @Test
-  void read_unknownConstant() {
-    assertThatThrownBy(
-            () -> processFileAsInputStream(getInvalidConfigPath("unknownField"), this::readConfig))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Detected unknown spec config entries: UNKNOWN_CONSTANT");
-  }
-
-  @Test
-  void read_ignoringUnknownConstant() {
+  void read_ignoresUnknownConstant() {
     Assertions.assertThatCode(
             () -> {
-              processFileAsInputStream(
-                  getInvalidConfigPath("unknownField"),
-                  source -> reader.readAndApply(source, true));
+              processFileAsInputStream(getInvalidConfigPath("unknownField"), this::readConfig);
               assertAllAltairFieldsSet(reader.build().specConfig());
             })
         .doesNotThrowAnyException();
@@ -210,7 +200,7 @@ public class SpecConfigReaderTest {
   }
 
   private void readConfig(final InputStream preset) throws IOException {
-    reader.readAndApply(preset, false);
+    reader.readAndApply(preset);
   }
 
   private static String getInvalidConfigPath(final String name) {

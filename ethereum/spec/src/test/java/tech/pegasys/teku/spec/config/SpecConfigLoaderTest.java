@@ -41,7 +41,7 @@ public class SpecConfigLoaderTest {
   @ParameterizedTest(name = "{0}")
   @EnumSource(Eth2Network.class)
   public void shouldLoadAllKnownNetworks(final Eth2Network network) throws Exception {
-    final SpecConfig config = SpecConfigLoader.loadConfigStrict(network.configName()).specConfig();
+    final SpecConfig config = SpecConfigLoader.loadConfig(network.configName()).specConfig();
     // testing latest SpecConfig ensures all fields will be asserted on
     assertAllFieldsSet(config, SpecConfigElectra.class);
   }
@@ -136,8 +136,7 @@ public class SpecConfigLoaderTest {
   @Test
   public void shouldBeAbleToOverridePresetValues() {
     final URL configUrl = SpecConfigLoaderTest.class.getResource("standard/with-overrides.yaml");
-    final SpecConfig config =
-        SpecConfigLoader.loadConfig(configUrl.toString(), false, __ -> {}).specConfig();
+    final SpecConfig config = SpecConfigLoader.loadConfig(configUrl.toString()).specConfig();
     assertThat(config).isNotNull();
     assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(12); // Mainnet preset is 64.
   }

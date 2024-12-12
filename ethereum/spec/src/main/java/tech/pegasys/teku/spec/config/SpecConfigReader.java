@@ -127,14 +127,12 @@ public class SpecConfigReader {
    * @param source The source to read
    * @throws IOException Thrown if an error occurs reading the source
    */
-  public void readAndApply(final InputStream source, final boolean ignoreUnknownConfigItems)
-      throws IOException {
+  public void readAndApply(final InputStream source) throws IOException {
     final Map<String, String> rawValues = readValues(source);
-    loadFromMap(rawValues, ignoreUnknownConfigItems);
+    loadFromMap(rawValues);
   }
 
-  public void loadFromMap(
-      final Map<String, String> rawValues, final boolean ignoreUnknownConfigItems) {
+  public void loadFromMap(final Map<String, String> rawValues) {
     final Map<String, String> unprocessedConfig = new HashMap<>(rawValues);
     final Map<String, String> apiSpecConfig = new HashMap<>(rawValues);
     // Remove any keys that we're ignoring
@@ -220,11 +218,7 @@ public class SpecConfigReader {
 
     if (unprocessedConfig.size() > 0) {
       final String unknownKeys = String.join(",", unprocessedConfig.keySet());
-      if (!ignoreUnknownConfigItems) {
-        throw new IllegalArgumentException("Detected unknown spec config entries: " + unknownKeys);
-      } else {
-        LOG.warn("Ignoring unknown items in network configuration: {}", unknownKeys);
-      }
+      LOG.warn("Ignoring unknown items in network configuration: {}", unknownKeys);
     }
   }
 

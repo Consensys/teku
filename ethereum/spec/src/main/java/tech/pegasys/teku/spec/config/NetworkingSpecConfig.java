@@ -27,12 +27,6 @@ public interface NetworkingSpecConfig {
 
   int getMinEpochsForBlockRequests();
 
-  // in seconds
-  int getTtfbTimeout();
-
-  // in seconds
-  int getRespTimeout();
-
   int getAttestationPropagationSlotRange();
 
   // in millis
