@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -205,12 +206,15 @@ public class HistoricalBatchFetcherTest {
   @Test
   public void run_failsOnBlobSidecarsValidationFailure() {
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
+    when(blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(any(), anyList()))
+            .thenAnswer(
+                    i ->
+                            BlobSidecarsAndValidationResult.invalidResult(
+                                    i.getArgument(1), new IllegalStateException("oopsy")));
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     final SafeFuture<BeaconBlockSummary> future = fetcher.run();
     peer.completePendingRequests();
-
-    // TODO: find a way to provoke blob sidecar validation failure
 
     assertThat(future)
         .failsWithin(Duration.ZERO)

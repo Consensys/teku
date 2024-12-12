@@ -95,7 +95,8 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   }
 
   private BlobSidecarsAndValidationResult validateCompletedBlobSidecars() {
-    final MiscHelpers miscHelpers = spec.atSlot(blockBlobSidecarsTracker.getSlotAndBlockRoot().getSlot()).miscHelpers();
+    final MiscHelpers miscHelpers =
+        spec.atSlot(blockBlobSidecarsTracker.getSlotAndBlockRoot().getSlot()).miscHelpers();
     final List<BlobSidecar> blobSidecars =
         List.copyOf(blockBlobSidecarsTracker.getBlobSidecars().values());
     final SignedBeaconBlock block = blockBlobSidecarsTracker.getBlock().orElseThrow();
@@ -108,11 +109,14 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
       return BlobSidecarsAndValidationResult.invalidResult(blobSidecars, ex);
     }
 
-    if (!miscHelpers.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(blobSidecars, block)) {
-      return BlobSidecarsAndValidationResult.invalidResult(blobSidecars, new IllegalStateException("Blob sidecars block header does not match signed block"));
+    if (!miscHelpers.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
+        blobSidecars, block)) {
+      return BlobSidecarsAndValidationResult.invalidResult(
+          blobSidecars,
+          new IllegalStateException("Blob sidecars block header does not match signed block"));
     }
 
-      miscHelpers.verifyBlobSidecarCompleteness(blobSidecars, block);
+    miscHelpers.verifyBlobSidecarCompleteness(blobSidecars, block);
 
     return BlobSidecarsAndValidationResult.validResult(blobSidecars);
   }

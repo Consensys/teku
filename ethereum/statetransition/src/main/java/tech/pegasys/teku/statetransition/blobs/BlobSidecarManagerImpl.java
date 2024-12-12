@@ -130,7 +130,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
   @Override
   public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
-          final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
     // Block is pre-Deneb, blobs are not supported yet
     if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
       return BlobSidecarsAndValidationResult.NOT_REQUIRED;
@@ -138,22 +138,31 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
     // we don't care to set maxBlobsPerBlock since it isn't used with this immediate validation flow
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-            new BlockBlobSidecarsTracker(block.getSlotAndBlockRoot(), UInt64.ZERO);
+        new BlockBlobSidecarsTracker(block.getSlotAndBlockRoot(), UInt64.ZERO);
 
     blockBlobSidecarsTracker.setBlock(block);
     boolean allAdded = blobSidecars.stream().allMatch(blockBlobSidecarsTracker::add);
-    if(!allAdded) {
-      return BlobSidecarsAndValidationResult.invalidResult(blobSidecars, new IllegalStateException("Failed to add all blobs to tracker, possible blobs with same index or index out of blocks commitment range"));
+    if (!allAdded) {
+      return BlobSidecarsAndValidationResult.invalidResult(
+          blobSidecars,
+          new IllegalStateException(
+              "Failed to add all blobs to tracker, possible blobs with same index or index out of blocks commitment range"));
     }
 
-    if(!blockBlobSidecarsTracker.isCompleted()) {
+    if (!blockBlobSidecarsTracker.isCompleted()) {
       return BlobSidecarsAndValidationResult.NOT_AVAILABLE;
     }
 
-    final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =  new ForkChoiceBlobSidecarsAvailabilityChecker(
-            spec, recentChainData, blockBlobSidecarsTracker, kzg).getAvailabilityCheckResult();
+    final ForkChoiceBlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker  =new ForkChoiceBlobSidecarsAvailabilityChecker(
+            spec, recentChainData, blockBlobSidecarsTracker, kzg);
 
-    if(availabilityCheckResult.isDone()) {
+    forkChoiceBlobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
+
+    final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
+            forkChoiceBlobSidecarsAvailabilityChecker
+            .getAvailabilityCheckResult();
+
+    if (availabilityCheckResult.isDone()) {
       return availabilityCheckResult.join();
     } else {
       throw new IllegalStateException("Availability check should be done immediately");

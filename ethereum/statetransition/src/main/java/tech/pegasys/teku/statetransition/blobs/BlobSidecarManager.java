@@ -54,7 +54,7 @@ public interface BlobSidecarManager {
 
         @Override
         public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
-                final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+            final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
           return BlobSidecarsAndValidationResult.NOT_REQUIRED;
         }
       };
@@ -71,7 +71,7 @@ public interface BlobSidecarManager {
   BlobSidecarsAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block);
 
   BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
-          SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
+      SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
 
   interface ReceivedBlobSidecarListener {
     void onBlobSidecarReceived(BlobSidecar blobSidecar);

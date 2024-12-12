@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.IntStream;
-
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
@@ -141,17 +140,19 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   }
 
   @Override
-  public boolean verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(final BlobSidecar blobSidecar, final SignedBeaconBlock signedBeaconBlock) {
+  public boolean verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
+      final BlobSidecar blobSidecar, final SignedBeaconBlock signedBeaconBlock) {
     if (blobSidecar.isSignatureValidated()) {
       return true;
     }
 
-    final boolean result = blobSidecar
+    final boolean result =
+        blobSidecar
             .getSignedBeaconBlockHeader()
             .hashTreeRoot()
             .equals(signedBeaconBlock.hashTreeRoot());
 
-    if(result) {
+    if (result) {
       blobSidecar.markSignatureAsValidated();
     }
 
@@ -167,26 +168,31 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
    */
   @Override
   public void verifyBlobSidecarCompleteness(
-          final List<BlobSidecar> completeVerifiedBlobSidecars,
-          final SignedBeaconBlock signedBeaconBlock)
-          throws IllegalArgumentException {
-    int commitmentCount = signedBeaconBlock.getBeaconBlock().map(BeaconBlock::getBody).flatMap(BeaconBlockBody::getOptionalBlobKzgCommitments).orElseThrow().size();
+      final List<BlobSidecar> completeVerifiedBlobSidecars,
+      final SignedBeaconBlock signedBeaconBlock)
+      throws IllegalArgumentException {
+    int commitmentCount =
+        signedBeaconBlock
+            .getBeaconBlock()
+            .map(BeaconBlock::getBody)
+            .flatMap(BeaconBlockBody::getOptionalBlobKzgCommitments)
+            .orElseThrow()
+            .size();
     checkArgument(
-            completeVerifiedBlobSidecars.size() == commitmentCount,
-            "Blob sidecars are not complete");
+        completeVerifiedBlobSidecars.size() == commitmentCount, "Blob sidecars are not complete");
 
     IntStream.range(0, completeVerifiedBlobSidecars.size())
-            .forEach(
-                    index -> {
-                      final BlobSidecar blobSidecar = completeVerifiedBlobSidecars.get(index);
-                      final UInt64 blobIndex = blobSidecar.getIndex();
+        .forEach(
+            index -> {
+              final BlobSidecar blobSidecar = completeVerifiedBlobSidecars.get(index);
+              final UInt64 blobIndex = blobSidecar.getIndex();
 
-                      checkArgument(
-                              blobIndex.longValue() == index,
-                              "Blob sidecar index mismatch, expected %s, got %s",
-                              index,
-                              blobIndex);
-                    });
+              checkArgument(
+                  blobIndex.longValue() == index,
+                  "Blob sidecar index mismatch, expected %s, got %s",
+                  index,
+                  blobIndex);
+            });
   }
 
   /**

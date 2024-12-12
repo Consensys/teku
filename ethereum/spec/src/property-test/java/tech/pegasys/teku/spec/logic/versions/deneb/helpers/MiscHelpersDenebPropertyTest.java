@@ -84,6 +84,25 @@ public class MiscHelpersDenebPropertyTest {
   }
 
   @Property(tries = 100)
+  void fuzzVerifyBlobSidecarCompleteness(
+          @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecar> blobSidecars,
+          @ForAll(supplier = SignedBeaconBlockSupplier.class) final SignedBeaconBlock signedBeaconBlock) {
+    try {
+      miscHelpers.verifyBlobSidecarCompleteness(blobSidecars, signedBeaconBlock);
+    } catch (Exception e) {
+      assertThat(e).isInstanceOf(IllegalArgumentException.class);
+    }
+  }
+
+  @Property(tries = 100)
+  void fuzzVerifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
+          @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecar> blobSidecars,
+          @ForAll(supplier = SignedBeaconBlockSupplier.class) final SignedBeaconBlock signedBeaconBlock) {
+
+    miscHelpers.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(blobSidecars, signedBeaconBlock);
+  }
+
+  @Property(tries = 100)
   void fuzzConstructBlobSidecarAndVerifyMerkleProof(
       @ForAll(supplier = SignedBeaconBlockSupplier.class) final SignedBeaconBlock signedBeaconBlock,
       @ForAll(supplier = BlobSidecarIndexSupplier.class) final UInt64 index,

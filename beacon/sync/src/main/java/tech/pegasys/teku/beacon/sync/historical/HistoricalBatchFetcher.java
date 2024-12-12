@@ -49,12 +49,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
@@ -408,18 +405,18 @@ public class HistoricalBatchFetcher {
 
     LOG.trace("Validating {} blob sidecars for block {}", blobSidecars.size(), block.getRoot());
     final BlobSidecarsAndValidationResult validationResult =
-            blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, blobSidecars);
+        blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, blobSidecars);
 
     if (validationResult.isFailure()) {
       final String causeMessage =
-              validationResult
-                      .getCause()
-                      .map(cause -> " (" + ExceptionUtil.getRootCauseMessage(cause) + ")")
-                      .orElse("");
+          validationResult
+              .getCause()
+              .map(cause -> " (" + ExceptionUtil.getRootCauseMessage(cause) + ")")
+              .orElse("");
       throw new IllegalArgumentException(
-              String.format(
-                      "Blob sidecars validation for block %s failed: %s%s",
-                      block.getRoot(), validationResult.getValidationResult(), causeMessage));
+          String.format(
+              "Blob sidecars validation for block %s failed: %s%s",
+              block.getRoot(), validationResult.getValidationResult(), causeMessage));
     }
   }
 
