@@ -149,22 +149,6 @@ public class BeaconStateMutators {
   }
 
   /**
-   * <a
-   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#deposits">add_validator_to_registry</a>
-   */
-  public void addValidatorToRegistry(
-      final MutableBeaconState state,
-      final BLSPublicKey pubkey,
-      final Bytes32 withdrawalCredentials,
-      final UInt64 amount) {
-    final Validator validator =
-        miscHelpers.getValidatorFromDeposit(pubkey, withdrawalCredentials, amount);
-    LOG.debug("Adding new validator with index {} to state", state.getValidators().size());
-    state.getValidators().append(validator);
-    state.getBalances().appendElement(amount);
-  }
-
-  /**
    * This function implements an optimized version of exitQueueEpoch and exitQueueChurn calculation,
    * compared to the `initiate_validator_exit` reference implementation.
    *
@@ -237,6 +221,22 @@ public class BeaconStateMutators {
     public void setExitQueueChurn(final UInt64 exitQueueChurn) {
       this.exitQueueChurn = exitQueueChurn;
     }
+  }
+
+  /**
+   * <a
+   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#deposits">add_validator_to_registry</a>
+   */
+  public void addValidatorToRegistry(
+      final MutableBeaconState state,
+      final BLSPublicKey pubkey,
+      final Bytes32 withdrawalCredentials,
+      final UInt64 amount) {
+    final Validator validator =
+        miscHelpers.getValidatorFromDeposit(pubkey, withdrawalCredentials, amount);
+    LOG.debug("Adding new validator with index {} to state", state.getValidators().size());
+    state.getValidators().append(validator);
+    state.getBalances().appendElement(amount);
   }
 
   public void slashValidator(

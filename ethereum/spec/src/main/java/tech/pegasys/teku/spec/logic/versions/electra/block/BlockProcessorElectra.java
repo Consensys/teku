@@ -164,10 +164,10 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           final ExecutionRequests executionRequests =
               BeaconBlockBodyElectra.required(body).getExecutionRequests();
 
-          this.processDepositRequests(state, executionRequests.getDeposits());
-          this.processWithdrawalRequests(
+          processDepositRequests(state, executionRequests.getDeposits());
+          processWithdrawalRequests(
               state, executionRequests.getWithdrawals(), validatorExitContextSupplier);
-          this.processConsolidationRequests(state, executionRequests.getConsolidations());
+          processConsolidationRequests(state, executionRequests.getConsolidations());
         });
   }
 
@@ -208,6 +208,36 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         schemaDefinitionsElectra,
         beaconStateMutators,
         specConfigElectra);
+  }
+
+  /*
+   Implements process_deposit_request from consensus-specs (EIP-6110)
+  */
+  @Override
+  public void processDepositRequests(
+      final MutableBeaconState state, final List<DepositRequest> depositRequests) {
+    final MutableBeaconStateElectra electraState = MutableBeaconStateElectra.required(state);
+    final SszMutableList<PendingDeposit> pendingDeposits =
+        MutableBeaconStateElectra.required(state).getPendingDeposits();
+    for (DepositRequest depositRequest : depositRequests) {
+      // process_deposit_request
+      if (electraState
+          .getDepositRequestsStartIndex()
+          .equals(SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX)) {
+        electraState.setDepositRequestsStartIndex(depositRequest.getIndex());
+      }
+
+      final PendingDeposit deposit =
+          schemaDefinitionsElectra
+              .getPendingDepositSchema()
+              .create(
+                  new SszPublicKey(depositRequest.getPubkey()),
+                  SszBytes32.of(depositRequest.getWithdrawalCredentials()),
+                  SszUInt64.of(depositRequest.getAmount()),
+                  new SszSignature(depositRequest.getSignature()),
+                  SszUInt64.of(state.getSlot()));
+      pendingDeposits.append(deposit);
+    }
   }
 
   /** Implements process_withdrawal_request from consensus-specs (EIP-7002 & EIP-7251). */
@@ -358,36 +388,6 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
                             SszUInt64.of(withdrawableEpoch)));
           }
         });
-  }
-
-  /*
-   Implements process_deposit_request from consensus-specs (EIP-6110)
-  */
-  @Override
-  public void processDepositRequests(
-      final MutableBeaconState state, final List<DepositRequest> depositRequests) {
-    final MutableBeaconStateElectra electraState = MutableBeaconStateElectra.required(state);
-    final SszMutableList<PendingDeposit> pendingDeposits =
-        MutableBeaconStateElectra.required(state).getPendingDeposits();
-    for (DepositRequest depositRequest : depositRequests) {
-      // process_deposit_request
-      if (electraState
-          .getDepositRequestsStartIndex()
-          .equals(SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX)) {
-        electraState.setDepositRequestsStartIndex(depositRequest.getIndex());
-      }
-
-      final PendingDeposit deposit =
-          schemaDefinitionsElectra
-              .getPendingDepositSchema()
-              .create(
-                  new SszPublicKey(depositRequest.getPubkey()),
-                  SszBytes32.of(depositRequest.getWithdrawalCredentials()),
-                  SszUInt64.of(depositRequest.getAmount()),
-                  new SszSignature(depositRequest.getSignature()),
-                  SszUInt64.of(state.getSlot()));
-      pendingDeposits.append(deposit);
-    }
   }
 
   /**

@@ -69,13 +69,6 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
   }
 
   @Override
-  public UInt64 getMaxEffectiveBalance(final Validator validator) {
-    return predicatesElectra.hasCompoundingWithdrawalCredential(validator)
-        ? specConfigElectra.getMaxEffectiveBalanceElectra()
-        : specConfigElectra.getMinActivationBalance();
-  }
-
-  @Override
   public Validator getValidatorFromDeposit(
       final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials, final UInt64 amount) {
     final Validator validator =
@@ -99,8 +92,10 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
   }
 
   @Override
-  public Optional<MiscHelpersElectra> toVersionElectra() {
-    return Optional.of(this);
+  public UInt64 getMaxEffectiveBalance(final Validator validator) {
+    return predicatesElectra.hasCompoundingWithdrawalCredential(validator)
+        ? specConfigElectra.getMaxEffectiveBalanceElectra()
+        : specConfigElectra.getMinActivationBalance();
   }
 
   @Override
@@ -111,5 +106,10 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
     return state
         .getEth1DepositIndex()
         .equals(BeaconStateElectra.required(state).getDepositRequestsStartIndex());
+  }
+
+  @Override
+  public Optional<MiscHelpersElectra> toVersionElectra() {
+    return Optional.of(this);
   }
 }

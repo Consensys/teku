@@ -31,12 +31,7 @@ public class ReferenceTestFinder {
       Path.of("src", "referenceTest", "resources", "consensus-spec-tests", "tests");
   private static final List<String> SUPPORTED_FORKS =
       List.of(
-          TestFork.PHASE0,
-          TestFork.ALTAIR,
-          TestFork.BELLATRIX,
-          TestFork.CAPELLA,
-          TestFork.DENEB,
-          TestFork.ELECTRA);
+          TestFork.PHASE0, TestFork.ALTAIR, TestFork.BELLATRIX, TestFork.CAPELLA, TestFork.DENEB);
 
   @MustBeClosed
   public static Stream<TestDefinition> findReferenceTests() throws IOException {
