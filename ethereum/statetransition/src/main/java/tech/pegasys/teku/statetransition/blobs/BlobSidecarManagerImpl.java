@@ -13,11 +13,10 @@
 
 package tech.pegasys.teku.statetransition.blobs;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -43,9 +42,9 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final FutureItems<BlobSidecar> futureBlobSidecars;
   private final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots;
-private final ForkChoiceBlobSidecarsAvailabilityCheckerProvider forkChoiceBlobSidecarsAvailabilityCheckerProvider;
-private final UnpooledBlockBlobSidecarsTrackerProvider unpooledBlockBlobSidecarsTrackerProvider;
-
+  private final ForkChoiceBlobSidecarsAvailabilityCheckerProvider
+      forkChoiceBlobSidecarsAvailabilityCheckerProvider;
+  private final UnpooledBlockBlobSidecarsTrackerProvider unpooledBlockBlobSidecarsTrackerProvider;
 
   private final Subscribers<ReceivedBlobSidecarListener> receivedBlobSidecarSubscribers =
       Subscribers.create(true);
@@ -59,34 +58,38 @@ private final UnpooledBlockBlobSidecarsTrackerProvider unpooledBlockBlobSidecars
       final FutureItems<BlobSidecar> futureBlobSidecars,
       final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots) {
     this(
-            spec,
-            recentChainData,
-            blockBlobSidecarsTrackersPool,
-            validator,
-            futureBlobSidecars,
-            invalidBlobSidecarRoots,
-            (tracker) -> new ForkChoiceBlobSidecarsAvailabilityChecker(spec, recentChainData, tracker, kzg),
-            // we don't care to set maxBlobsPerBlock since it isn't used with this immediate validation flow
-            (block) -> new BlockBlobSidecarsTracker(block.getSlotAndBlockRoot(), UInt64.ZERO));
+        spec,
+        recentChainData,
+        blockBlobSidecarsTrackersPool,
+        validator,
+        futureBlobSidecars,
+        invalidBlobSidecarRoots,
+        (tracker) ->
+            new ForkChoiceBlobSidecarsAvailabilityChecker(spec, recentChainData, tracker, kzg),
+        // we don't care to set maxBlobsPerBlock since it isn't used with this immediate validation
+        // flow
+        (block) -> new BlockBlobSidecarsTracker(block.getSlotAndBlockRoot(), UInt64.ZERO));
   }
 
   @VisibleForTesting
   BlobSidecarManagerImpl(
-          final Spec spec,
-          final RecentChainData recentChainData,
-          final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
-          final BlobSidecarGossipValidator validator,
-          final FutureItems<BlobSidecar> futureBlobSidecars,
-          final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots,
-          final ForkChoiceBlobSidecarsAvailabilityCheckerProvider forkChoiceBlobSidecarsAvailabilityCheckerProvider,
-          final UnpooledBlockBlobSidecarsTrackerProvider unpooledBlockBlobSidecarsTrackerProvider) {
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final BlobSidecarGossipValidator validator,
+      final FutureItems<BlobSidecar> futureBlobSidecars,
+      final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots,
+      final ForkChoiceBlobSidecarsAvailabilityCheckerProvider
+          forkChoiceBlobSidecarsAvailabilityCheckerProvider,
+      final UnpooledBlockBlobSidecarsTrackerProvider unpooledBlockBlobSidecarsTrackerProvider) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.validator = validator;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.futureBlobSidecars = futureBlobSidecars;
     this.invalidBlobSidecarRoots = invalidBlobSidecarRoots;
-    this.forkChoiceBlobSidecarsAvailabilityCheckerProvider = forkChoiceBlobSidecarsAvailabilityCheckerProvider;
+    this.forkChoiceBlobSidecarsAvailabilityCheckerProvider =
+        forkChoiceBlobSidecarsAvailabilityCheckerProvider;
     this.unpooledBlockBlobSidecarsTrackerProvider = unpooledBlockBlobSidecarsTrackerProvider;
   }
 
@@ -162,7 +165,8 @@ private final UnpooledBlockBlobSidecarsTrackerProvider unpooledBlockBlobSidecars
       return BlobSidecarsAndValidationResult.NOT_REQUIRED;
     }
 
-    final BlockBlobSidecarsTracker blockBlobSidecarsTracker = unpooledBlockBlobSidecarsTrackerProvider.create(block);
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
+        unpooledBlockBlobSidecarsTrackerProvider.create(block);
     blockBlobSidecarsTracker.setBlock(block);
 
     boolean allAdded = blobSidecars.stream().allMatch(blockBlobSidecarsTracker::add);
@@ -177,13 +181,13 @@ private final UnpooledBlockBlobSidecarsTrackerProvider unpooledBlockBlobSidecars
       return BlobSidecarsAndValidationResult.NOT_AVAILABLE;
     }
 
-    final ForkChoiceBlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker = forkChoiceBlobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker);
+    final ForkChoiceBlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker =
+        forkChoiceBlobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker);
 
     forkChoiceBlobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
 
     final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
-            forkChoiceBlobSidecarsAvailabilityChecker
-            .getAvailabilityCheckResult();
+        forkChoiceBlobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
 
     if (availabilityCheckResult.isDone()) {
       return availabilityCheckResult.join();
@@ -205,11 +209,11 @@ private final UnpooledBlockBlobSidecarsTrackerProvider unpooledBlockBlobSidecars
                     .ifExceptionGetsHereRaiseABug());
   }
 
-
   @VisibleForTesting
   @FunctionalInterface
   interface ForkChoiceBlobSidecarsAvailabilityCheckerProvider {
-    ForkChoiceBlobSidecarsAvailabilityChecker create(final BlockBlobSidecarsTracker blockBlobSidecarsTracker);
+    ForkChoiceBlobSidecarsAvailabilityChecker create(
+        final BlockBlobSidecarsTracker blockBlobSidecarsTracker);
   }
 
   @VisibleForTesting

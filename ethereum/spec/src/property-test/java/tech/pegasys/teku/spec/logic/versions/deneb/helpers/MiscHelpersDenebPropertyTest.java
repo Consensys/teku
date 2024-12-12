@@ -85,8 +85,9 @@ public class MiscHelpersDenebPropertyTest {
 
   @Property(tries = 100)
   void fuzzVerifyBlobSidecarCompleteness(
-          @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecar> blobSidecars,
-          @ForAll(supplier = SignedBeaconBlockSupplier.class) final SignedBeaconBlock signedBeaconBlock) {
+      @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecar> blobSidecars,
+      @ForAll(supplier = SignedBeaconBlockSupplier.class)
+          final SignedBeaconBlock signedBeaconBlock) {
     try {
       miscHelpers.verifyBlobSidecarCompleteness(blobSidecars, signedBeaconBlock);
     } catch (Exception e) {
@@ -96,10 +97,12 @@ public class MiscHelpersDenebPropertyTest {
 
   @Property(tries = 100)
   void fuzzVerifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
-          @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecar> blobSidecars,
-          @ForAll(supplier = SignedBeaconBlockSupplier.class) final SignedBeaconBlock signedBeaconBlock) {
+      @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecar> blobSidecars,
+      @ForAll(supplier = SignedBeaconBlockSupplier.class)
+          final SignedBeaconBlock signedBeaconBlock) {
 
-    miscHelpers.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(blobSidecars, signedBeaconBlock);
+    miscHelpers.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
+        blobSidecars, signedBeaconBlock);
   }
 
   @Property(tries = 100)
