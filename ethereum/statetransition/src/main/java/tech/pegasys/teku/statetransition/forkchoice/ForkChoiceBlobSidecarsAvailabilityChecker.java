@@ -105,6 +105,8 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
       if (!miscHelpers.verifyBlobKzgProofBatch(kzg, blobSidecars)) {
         return BlobSidecarsAndValidationResult.invalidResult(blobSidecars);
       }
+
+      miscHelpers.verifyBlobSidecarCompleteness(blobSidecars, block);
     } catch (final Exception ex) {
       return BlobSidecarsAndValidationResult.invalidResult(blobSidecars, ex);
     }
@@ -115,8 +117,6 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
           blobSidecars,
           new IllegalStateException("Blob sidecars block header does not match signed block"));
     }
-
-    miscHelpers.verifyBlobSidecarCompleteness(blobSidecars, block);
 
     return BlobSidecarsAndValidationResult.validResult(blobSidecars);
   }

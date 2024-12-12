@@ -15,6 +15,8 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -76,10 +78,12 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   @Test
-  void shouldVerifyAvailableBlobs() throws Exception {
+  void shouldVerifyValidAvailableBlobs() throws Exception {
     prepareInitialAvailability();
 
     when(miscHelpers.verifyBlobKzgProofBatch(any(), any())).thenReturn(true);
+    when(miscHelpers.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(anyList(), any()))
+        .thenReturn(true);
 
     final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
         blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
@@ -101,10 +105,43 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   @Test
-  void shouldVerifyInvalidBlobs() throws Exception {
+  void shouldVerifyInvalidBlobsDueToWrongBlockHeader() throws Exception {
+    prepareInitialAvailability();
+
+    when(miscHelpers.verifyBlobKzgProofBatch(any(), any())).thenReturn(true);
+    when(miscHelpers.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(anyList(), any()))
+        .thenReturn(false);
+
+    final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
+        blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
+
+    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
+
+    // initiate availability check
+    assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
+
+    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
+    verify(blockBlobSidecarsTracker, never()).getBlobSidecars();
+
+    // let the tracker complete with all blobSidecars
+    completeTrackerWith(blobSidecarsComplete);
+
+    Waiter.waitFor(availabilityCheckResult);
+
+    assertInvalid(
+        availabilityCheckResult,
+        blobSidecarsComplete,
+        Optional.of(
+            new IllegalStateException("Blob sidecars block header does not match signed block")));
+  }
+
+  @Test
+  void shouldVerifyInvalidBlobsDueToWrongKzg() throws Exception {
     prepareInitialAvailability();
 
     when(miscHelpers.verifyBlobKzgProofBatch(any(), any())).thenReturn(false);
+    when(miscHelpers.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(anyList(), any()))
+        .thenReturn(true);
 
     final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
         blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
@@ -126,12 +163,42 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   @Test
-  void shouldVerifyInvalidBlobsWhenValidationThrows() throws Exception {
+  void shouldVerifyInvalidBlobsWhenKzgValidationThrows() throws Exception {
     prepareInitialAvailability();
 
     final RuntimeException error = new RuntimeException("oops");
 
     when(miscHelpers.verifyBlobKzgProofBatch(any(), any())).thenThrow(error);
+
+    final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
+        blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
+
+    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
+
+    // initiate availability check
+    assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
+
+    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
+    verify(blockBlobSidecarsTracker, never()).getBlobSidecars();
+
+    // let the tracker complete with all blobSidecars
+    completeTrackerWith(blobSidecarsComplete);
+
+    Waiter.waitFor(availabilityCheckResult);
+
+    assertInvalid(availabilityCheckResult, blobSidecarsComplete, Optional.of(error));
+  }
+
+  @Test
+  void shouldVerifyInvalidBlobsWhenCompletenessValidationThrows() throws Exception {
+    prepareInitialAvailability();
+
+    final RuntimeException error = new RuntimeException("oops");
+
+    when(miscHelpers.verifyBlobKzgProofBatch(any(), any())).thenReturn(true);
+    when(miscHelpers.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(anyList(), any()))
+        .thenReturn(true);
+    doThrow(error).when(miscHelpers).verifyBlobSidecarCompleteness(anyList(), any());
 
     final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
         blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
