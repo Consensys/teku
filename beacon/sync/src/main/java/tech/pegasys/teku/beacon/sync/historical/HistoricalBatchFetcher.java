@@ -36,7 +36,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
@@ -53,7 +52,6 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifie
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -402,20 +400,30 @@ public class HistoricalBatchFetcher {
     final List<BlobSidecar> blobSidecars =
         blobSidecarsBySlotToImport.getOrDefault(
             block.getSlotAndBlockRoot(), Collections.emptyList());
-    LOG.trace("Validating {} blob sidecars for block {}", blobSidecars.size(), block.getRoot());
-    final BlobSidecarsAndValidationResult validationResult =
-        blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, blobSidecars);
 
-    if (validationResult.isFailure()) {
-      final String causeMessage =
-          validationResult
-              .getCause()
-              .map(cause -> " (" + ExceptionUtil.getRootCauseMessage(cause) + ")")
-              .orElse("");
+    final boolean blobsBlockHeaderRootMatchBlockRoot =
+        blobSidecars.stream()
+            .allMatch(
+                blobSidecar -> {
+                  final boolean signedHeaderMatchesBlock =
+                      blobSidecar
+                          .getSignedBeaconBlockHeader()
+                          .hashTreeRoot()
+                          .equals(block.hashTreeRoot());
+
+                  if (signedHeaderMatchesBlock) {
+                    // since we already validated block's signature, we can mark the blob sidecar's
+                    // signature as validated
+                    blobSidecar.markSignatureAsValidated();
+                  }
+                  return signedHeaderMatchesBlock;
+                });
+
+    if (!blobsBlockHeaderRootMatchBlockRoot) {
       throw new IllegalArgumentException(
           String.format(
-              "Blob sidecars validation for block %s failed: %s%s",
-              block.getRoot(), validationResult.getValidationResult(), causeMessage));
+              "Blob sidecars' signed beacon block header don't match signed block for %s",
+              block.toLogString()));
     }
   }
 

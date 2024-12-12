@@ -13,14 +13,12 @@
 
 package tech.pegasys.teku.spec.logic.versions.deneb.helpers;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
@@ -35,7 +33,6 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
@@ -84,10 +81,20 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
    */
   @Override
   public boolean verifyBlobKzgProof(final KZG kzg, final BlobSidecar blobSidecar) {
-    return kzg.verifyBlobKzgProof(
-        blobSidecar.getBlob().getBytes(),
-        blobSidecar.getKZGCommitment(),
-        blobSidecar.getKZGProof());
+    if (blobSidecar.isKzgValidated()) {
+      return true;
+    }
+    final boolean result =
+        kzg.verifyBlobKzgProof(
+            blobSidecar.getBlob().getBytes(),
+            blobSidecar.getKZGCommitment(),
+            blobSidecar.getKZGProof());
+
+    if (result) {
+      blobSidecar.markKzgAsValidated();
+    }
+
+    return result;
   }
 
   /**
@@ -105,90 +112,28 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
     final List<KZGCommitment> kzgCommitments = new ArrayList<>();
     final List<KZGProof> kzgProofs = new ArrayList<>();
 
-    blobSidecars.forEach(
-        blobSidecar -> {
-          blobs.add(blobSidecar.getBlob().getBytes());
-          kzgCommitments.add(blobSidecar.getKZGCommitment());
-          kzgProofs.add(blobSidecar.getKZGProof());
-        });
-
-    return kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs);
-  }
-
-  /**
-   * Validates blob sidecars against block. We need to check block root and kzg commitment, it's
-   * enough to guarantee BlobSidecars belong to block
-   *
-   * @param blobSidecars blob sidecars to validate
-   * @param block block to validate blob sidecar against
-   * @param kzgCommitmentsFromBlock kzg commitments from block. They could be extracted from block
-   *     but since we already have them we can avoid extracting them again.
-   */
-  @Override
-  public void validateBlobSidecarsBatchAgainstBlock(
-      final List<BlobSidecar> blobSidecars,
-      final BeaconBlock block,
-      final List<KZGCommitment> kzgCommitmentsFromBlock) {
-
-    final String slotAndBlockRoot = block.getSlotAndBlockRoot().toLogString();
-
-    blobSidecars.forEach(
-        blobSidecar -> {
-          final UInt64 blobIndex = blobSidecar.getIndex();
-
-          checkArgument(
-              blobSidecar.getBlockRoot().equals(block.getRoot()),
-              "Block and blob sidecar root mismatch for %s, blob index %s",
-              slotAndBlockRoot,
-              blobIndex);
-
-          final KZGCommitment kzgCommitmentFromBlock;
-
-          try {
-            kzgCommitmentFromBlock = kzgCommitmentsFromBlock.get(blobIndex.intValue());
-          } catch (IndexOutOfBoundsException e) {
-            throw new IllegalArgumentException(
-                String.format(
-                    "Blob sidecar index out of bound with respect to block %s, blob index %s",
-                    slotAndBlockRoot, blobIndex));
-          }
-
-          checkArgument(
-              blobSidecar.getKZGCommitment().equals(kzgCommitmentFromBlock),
-              "Block and blob sidecar kzg commitments mismatch for %s, blob index %s",
-              slotAndBlockRoot,
-              blobIndex);
-        });
-  }
-
-  /**
-   * Verifies that blob sidecars are complete and with expected indexes
-   *
-   * @param completeVerifiedBlobSidecars blob sidecars to verify, It is assumed that it is an
-   *     ordered list based on BlobSidecar index
-   * @param kzgCommitmentsFromBlock kzg commitments from block.
-   */
-  @Override
-  public void verifyBlobSidecarCompleteness(
-      final List<BlobSidecar> completeVerifiedBlobSidecars,
-      final List<KZGCommitment> kzgCommitmentsFromBlock)
-      throws IllegalArgumentException {
-    checkArgument(
-        completeVerifiedBlobSidecars.size() == kzgCommitmentsFromBlock.size(),
-        "Blob sidecars are not complete");
-
-    IntStream.range(0, completeVerifiedBlobSidecars.size())
+    blobSidecars.stream()
+        .filter(blobSidecar -> !blobSidecar.isKzgValidated())
         .forEach(
-            index -> {
-              final BlobSidecar blobSidecar = completeVerifiedBlobSidecars.get(index);
-              final UInt64 blobIndex = blobSidecar.getIndex();
-
-              checkArgument(
-                  blobIndex.longValue() == index,
-                  "Blob sidecar index mismatch, expected %s, got %s",
-                  index,
-                  blobIndex);
+            blobSidecar -> {
+              blobs.add(blobSidecar.getBlob().getBytes());
+              kzgCommitments.add(blobSidecar.getKZGCommitment());
+              kzgProofs.add(blobSidecar.getKZGProof());
             });
+
+    if (blobs.isEmpty()) {
+      return true;
+    }
+
+    final boolean result = kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs);
+
+    if (result) {
+      blobSidecars.stream()
+          .filter(blobSidecar -> !blobSidecar.isKzgValidated())
+          .forEach(BlobSidecar::markKzgAsValidated);
+    }
+
+    return result;
   }
 
   /**
@@ -262,12 +207,22 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
         index, blob, commitment, proof, signedBeaconBlock.asHeader(), kzgCommitmentInclusionProof);
   }
 
-  public boolean verifyBlobSidecarMerkleProof(final BlobSidecar blobSidecar) {
-    return predicates.isValidMerkleBranch(
-        blobSidecar.getSszKZGCommitment().hashTreeRoot(),
-        blobSidecar.getKzgCommitmentInclusionProof(),
-        SpecConfigDeneb.required(specConfig).getKzgCommitmentInclusionProofDepth(),
-        getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecar.getIndex()),
-        blobSidecar.getBlockBodyRoot());
+  public boolean verifyBlobKzgCommitmentInclusionProof(final BlobSidecar blobSidecar) {
+    if (blobSidecar.isKzgCommitmentInclusionProofValidated()) {
+      return true;
+    }
+    final boolean result =
+        predicates.isValidMerkleBranch(
+            blobSidecar.getSszKZGCommitment().hashTreeRoot(),
+            blobSidecar.getKzgCommitmentInclusionProof(),
+            SpecConfigDeneb.required(specConfig).getKzgCommitmentInclusionProofDepth(),
+            getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecar.getIndex()),
+            blobSidecar.getBlockBodyRoot());
+
+    if (result) {
+      blobSidecar.markKzgCommitmentInclusionProofAsValidated();
+    }
+
+    return result;
   }
 }

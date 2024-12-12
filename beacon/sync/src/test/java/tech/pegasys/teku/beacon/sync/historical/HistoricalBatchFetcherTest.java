@@ -48,7 +48,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -117,7 +116,7 @@ public class HistoricalBatchFetcherTest {
             .map(SignedBlockAndState::getBlock)
             .collect(Collectors.toList());
     lastBlockInBatch = chainBuilder.getLatestBlockAndState().getBlock();
-    firstBlockInBatch = blockBatch.get(0);
+    firstBlockInBatch = blockBatch.getFirst();
     blobSidecarsBatch =
         chainBuilder
             .streamBlobSidecars(10, 20)
@@ -148,8 +147,6 @@ public class HistoricalBatchFetcherTest {
 
     when(signatureVerifier.verify(any(), any(), anyList()))
         .thenReturn(SafeFuture.completedFuture(true));
-    when(blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(any(), anyList()))
-        .thenAnswer(i -> BlobSidecarsAndValidationResult.validResult(i.getArgument(1)));
   }
 
   @Test
@@ -202,21 +199,18 @@ public class HistoricalBatchFetcherTest {
             earliestBlobSidecarSlotCaptor.capture());
     assertThat(blockCaptor.getValue()).containsExactlyElementsOf(blockBatch);
     assertThat(blobSidecarCaptor.getValue()).isEqualTo(blobSidecarsBatch);
-    assertThat(earliestBlobSidecarSlotCaptor.getValue()).contains(blockBatch.get(0).getSlot());
+    assertThat(earliestBlobSidecarSlotCaptor.getValue()).contains(blockBatch.getFirst().getSlot());
   }
 
   @Test
   public void run_failsOnBlobSidecarsValidationFailure() {
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
-    when(blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(any(), anyList()))
-        .thenAnswer(
-            i ->
-                BlobSidecarsAndValidationResult.invalidResult(
-                    i.getArgument(1), new IllegalStateException("oopsy")));
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     final SafeFuture<BeaconBlockSummary> future = fetcher.run();
     peer.completePendingRequests();
+
+    // TODO: find a way to provoke blob sidecar validation failure
 
     assertThat(future)
         .failsWithin(Duration.ZERO)

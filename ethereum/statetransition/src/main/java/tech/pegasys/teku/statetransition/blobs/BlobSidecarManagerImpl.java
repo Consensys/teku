@@ -13,12 +13,10 @@
 
 package tech.pegasys.teku.statetransition.blobs;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -26,7 +24,6 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.util.FutureItems;
@@ -37,7 +34,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsChannel {
 
   private final Spec spec;
-  private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
   private final BlobSidecarGossipValidator validator;
   private final KZG kzg;
@@ -50,7 +46,6 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
   public BlobSidecarManagerImpl(
       final Spec spec,
-      final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final BlobSidecarGossipValidator validator,
@@ -58,7 +53,6 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
       final FutureItems<BlobSidecar> futureBlobSidecars,
       final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots) {
     this.spec = spec;
-    this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.validator = validator;
     this.kzg = kzg;
@@ -129,26 +123,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
         blockBlobSidecarsTrackersPool.getOrCreateBlockBlobSidecarsTracker(block);
 
     return new ForkChoiceBlobSidecarsAvailabilityChecker(
-        spec, asyncRunner, recentChainData, blockBlobSidecarsTracker, kzg);
-  }
-
-  @Override
-  public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
-      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
-    // Block is pre-Deneb, blobs are not supported yet
-    if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
-      return BlobSidecarsAndValidationResult.NOT_REQUIRED;
-    }
-
-    // we don't care to set maxBlobsPerBlock since it isn't used with this immediate validation flow
-    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        new BlockBlobSidecarsTracker(block.getSlotAndBlockRoot(), UInt64.ZERO);
-
-    blockBlobSidecarsTracker.setBlock(block);
-
-    return new ForkChoiceBlobSidecarsAvailabilityChecker(
-            spec, asyncRunner, recentChainData, blockBlobSidecarsTracker, kzg)
-        .validateImmediately(blobSidecars);
+        spec, recentChainData, blockBlobSidecarsTracker, kzg);
   }
 
   @Override
