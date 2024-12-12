@@ -36,26 +36,14 @@ public class SpecConfigLoader {
   private static final String CONFIG_PATH = "configs/";
   private static final String PRESET_PATH = "presets/";
 
-  public static SpecConfigAndParent<? extends SpecConfig> loadConfigStrict(
-      final String configName) {
-    return loadConfig(configName, false, __ -> {});
-  }
-
   public static SpecConfigAndParent<? extends SpecConfig> loadConfig(final String configName) {
     return loadConfig(configName, __ -> {});
   }
 
   public static SpecConfigAndParent<? extends SpecConfig> loadConfig(
       final String configName, final Consumer<SpecConfigBuilder> modifier) {
-    return loadConfig(configName, true, modifier);
-  }
-
-  public static SpecConfigAndParent<? extends SpecConfig> loadConfig(
-      final String configName,
-      final boolean ignoreUnknownConfigItems,
-      final Consumer<SpecConfigBuilder> modifier) {
     final SpecConfigReader reader = new SpecConfigReader();
-    processConfig(configName, reader, ignoreUnknownConfigItems);
+    processConfig(configName, reader);
     return reader.build(modifier);
   }
 
@@ -64,7 +52,7 @@ public class SpecConfigLoader {
     final SpecConfigReader reader = new SpecConfigReader();
     if (config.containsKey(SpecConfigReader.PRESET_KEY)) {
       try {
-        applyPreset("remote", reader, true, config.get(SpecConfigReader.PRESET_KEY));
+        applyPreset("remote", reader, config.get(SpecConfigReader.PRESET_KEY));
       } catch (IOException e) {
         throw new UncheckedIOException(e);
       }
@@ -72,7 +60,7 @@ public class SpecConfigLoader {
     if (config.containsKey(SpecConfigReader.CONFIG_NAME_KEY)) {
       final String configNameKey = config.get(SpecConfigReader.CONFIG_NAME_KEY);
       try {
-        processConfig(configNameKey, reader, true);
+        processConfig(configNameKey, reader);
       } catch (IllegalArgumentException exception) {
         LOG.debug(
             "Failed to load base configuration from {}, {}",
@@ -80,12 +68,11 @@ public class SpecConfigLoader {
             exception::getMessage);
       }
     }
-    reader.loadFromMap(config, true);
+    reader.loadFromMap(config);
     return reader.build();
   }
 
-  static void processConfig(
-      final String source, final SpecConfigReader reader, final boolean ignoreUnknownConfigItems) {
+  static void processConfig(final String source, final SpecConfigReader reader) {
     try (final InputStream configFile = loadConfigurationFile(source)) {
       final Map<String, String> configValues = reader.readValues(configFile);
       final Optional<String> maybePreset =
@@ -94,10 +81,10 @@ public class SpecConfigLoader {
       // Legacy config files won't have a preset field
       if (maybePreset.isPresent()) {
         final String preset = maybePreset.get();
-        applyPreset(source, reader, ignoreUnknownConfigItems, preset);
+        applyPreset(source, reader, preset);
       }
 
-      reader.loadFromMap(configValues, ignoreUnknownConfigItems);
+      reader.loadFromMap(configValues);
     } catch (IOException | IllegalArgumentException e) {
       throw new IllegalArgumentException(
           "Unable to load configuration for network \"" + source + "\": " + e.getMessage(), e);
@@ -105,15 +92,11 @@ public class SpecConfigLoader {
   }
 
   private static void applyPreset(
-      final String source,
-      final SpecConfigReader reader,
-      final boolean ignoreUnknownConfigItems,
-      final String preset)
-      throws IOException {
+      final String source, final SpecConfigReader reader, final String preset) throws IOException {
     for (String resource : AVAILABLE_PRESETS) {
       try (final InputStream inputStream = loadPreset(preset, resource).orElse(null)) {
         if (inputStream != null) {
-          reader.readAndApply(inputStream, ignoreUnknownConfigItems);
+          reader.readAndApply(inputStream);
         } else if (resource.equals("phase0")) {
           throw new FileNotFoundException(
               String.format(

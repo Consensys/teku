@@ -53,7 +53,7 @@ public class SchemaDefinitionCacheTest {
   void shouldGetSchemasForAllMilestonesOnAllNetworks(
       final Eth2Network network, final SpecMilestone specMilestone) {
     final SpecConfigAndParent<? extends SpecConfig> specConfig =
-        SpecConfigLoader.loadConfigStrict(network.configName());
+        SpecConfigLoader.loadConfig(network.configName());
     final Spec spec = SpecFactory.create(specConfig);
     final SchemaDefinitionCache cache = new SchemaDefinitionCache(spec);
     assertThat(cache.getSchemaDefinition(specMilestone)).isNotNull();
