@@ -13,13 +13,19 @@
 
 package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.crypto.Sha256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
@@ -33,6 +39,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class MiscHelpersElectra extends MiscHelpersDeneb {
+  public static final UInt64 MAX_RANDOM_VALUE = UInt64.valueOf(65535);
   private final SpecConfigElectra specConfigElectra;
   private final PredicatesElectra predicatesElectra;
 
@@ -66,6 +73,37 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
         indices,
         seed,
         SpecConfigElectra.required(specConfig).getMaxEffectiveBalanceElectra());
+  }
+
+  @Override
+  protected int computeProposerIndex(
+      final BeaconState state,
+      final IntList indices,
+      final Bytes32 seed,
+      final UInt64 maxEffectiveBalance) {
+    checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
+
+    final Sha256 sha256 = getSha256Instance();
+
+    int i = 0;
+    final int total = indices.size();
+    Bytes randomBytes = null;
+    while (true) {
+      final int candidateIndex = indices.getInt(computeShuffledIndex(i % total, total, seed));
+      if (i % 16 == 0) {
+        randomBytes = Bytes.wrap(sha256.digest(seed, uint64ToBytes(Math.floorDiv(i, 16L))));
+      }
+      final int offset = i % 16 * 2;
+      final UInt64 randomValue = bytesToUInt64(randomBytes.slice(offset, 2));
+      final UInt64 validatorEffectiveBalance =
+          state.getValidators().get(candidateIndex).getEffectiveBalance();
+      if (validatorEffectiveBalance
+          .times(MAX_RANDOM_VALUE)
+          .isGreaterThanOrEqualTo(maxEffectiveBalance.times(randomValue))) {
+        return candidateIndex;
+      }
+      i++;
+    }
   }
 
   @Override
