@@ -340,7 +340,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     totalBlobSidecars += (int) addedBlobs;
     sizeGauge.set(totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
 
-    if (!blobSidecarsTracker.isCompleted()) {
+    if (!blobSidecarsTracker.isComplete()) {
       LOG.error(
           "Tracker for block {} is supposed to be completed but it is not. Missing blob sidecars: {}",
           block.toLogString(),
@@ -510,7 +510,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                 // if we attempted to fetch via RPC, we missed the opportunity to complete the
                 // tracker via local EL (local El fetch requires the block to be known)
                 // Let's try now
-                if (!existingTracker.isLocalElFetchTriggered() && !existingTracker.isCompleted()) {
+                if (!existingTracker.isLocalElFetchTriggered() && !existingTracker.isComplete()) {
                   fetchMissingContentFromLocalEL(slotAndBlockRoot)
                       .finish(this::logLocalElBlobsLookupFailure);
                 }
@@ -650,7 +650,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       return SafeFuture.COMPLETE;
     }
 
-    if (blockBlobSidecarsTracker.isCompleted()) {
+    if (blockBlobSidecarsTracker.isComplete()) {
       return SafeFuture.COMPLETE;
     }
 
@@ -764,7 +764,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       return;
     }
 
-    if (blockBlobSidecarsTracker.isCompleted()) {
+    if (blockBlobSidecarsTracker.isComplete()) {
       return;
     }
 

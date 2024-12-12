@@ -16,6 +16,8 @@ package tech.pegasys.teku.statetransition.blobs;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -38,10 +40,12 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final BlobSidecarGossipValidator validator;
-  private final KZG kzg;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final FutureItems<BlobSidecar> futureBlobSidecars;
   private final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots;
+private final ForkChoiceBlobSidecarsAvailabilityCheckerProvider forkChoiceBlobSidecarsAvailabilityCheckerProvider;
+private final UnpooledBlockBlobSidecarsTrackerProvider unpooledBlockBlobSidecarsTrackerProvider;
+
 
   private final Subscribers<ReceivedBlobSidecarListener> receivedBlobSidecarSubscribers =
       Subscribers.create(true);
@@ -54,13 +58,36 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
       final KZG kzg,
       final FutureItems<BlobSidecar> futureBlobSidecars,
       final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots) {
+    this(
+            spec,
+            recentChainData,
+            blockBlobSidecarsTrackersPool,
+            validator,
+            futureBlobSidecars,
+            invalidBlobSidecarRoots,
+            (tracker) -> new ForkChoiceBlobSidecarsAvailabilityChecker(spec, recentChainData, tracker, kzg),
+            // we don't care to set maxBlobsPerBlock since it isn't used with this immediate validation flow
+            (block) -> new BlockBlobSidecarsTracker(block.getSlotAndBlockRoot(), UInt64.ZERO));
+  }
+
+  @VisibleForTesting
+  BlobSidecarManagerImpl(
+          final Spec spec,
+          final RecentChainData recentChainData,
+          final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+          final BlobSidecarGossipValidator validator,
+          final FutureItems<BlobSidecar> futureBlobSidecars,
+          final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots,
+          final ForkChoiceBlobSidecarsAvailabilityCheckerProvider forkChoiceBlobSidecarsAvailabilityCheckerProvider,
+          final UnpooledBlockBlobSidecarsTrackerProvider unpooledBlockBlobSidecarsTrackerProvider) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.validator = validator;
-    this.kzg = kzg;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.futureBlobSidecars = futureBlobSidecars;
     this.invalidBlobSidecarRoots = invalidBlobSidecarRoots;
+    this.forkChoiceBlobSidecarsAvailabilityCheckerProvider = forkChoiceBlobSidecarsAvailabilityCheckerProvider;
+    this.unpooledBlockBlobSidecarsTrackerProvider = unpooledBlockBlobSidecarsTrackerProvider;
   }
 
   @Override
@@ -124,8 +151,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         blockBlobSidecarsTrackersPool.getOrCreateBlockBlobSidecarsTracker(block);
 
-    return new ForkChoiceBlobSidecarsAvailabilityChecker(
-        spec, recentChainData, blockBlobSidecarsTracker, kzg);
+    return forkChoiceBlobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker);
   }
 
   @Override
@@ -136,11 +162,9 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
       return BlobSidecarsAndValidationResult.NOT_REQUIRED;
     }
 
-    // we don't care to set maxBlobsPerBlock since it isn't used with this immediate validation flow
-    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        new BlockBlobSidecarsTracker(block.getSlotAndBlockRoot(), UInt64.ZERO);
-
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker = unpooledBlockBlobSidecarsTrackerProvider.create(block);
     blockBlobSidecarsTracker.setBlock(block);
+
     boolean allAdded = blobSidecars.stream().allMatch(blockBlobSidecarsTracker::add);
     if (!allAdded) {
       return BlobSidecarsAndValidationResult.invalidResult(
@@ -149,12 +173,11 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
               "Failed to add all blobs to tracker, possible blobs with same index or index out of blocks commitment range"));
     }
 
-    if (!blockBlobSidecarsTracker.isCompleted()) {
+    if (!blockBlobSidecarsTracker.isComplete()) {
       return BlobSidecarsAndValidationResult.NOT_AVAILABLE;
     }
 
-    final ForkChoiceBlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker  =new ForkChoiceBlobSidecarsAvailabilityChecker(
-            spec, recentChainData, blockBlobSidecarsTracker, kzg);
+    final ForkChoiceBlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker = forkChoiceBlobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker);
 
     forkChoiceBlobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
 
@@ -180,5 +203,18 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
             blobSidecar ->
                 validateAndPrepareForBlockImport(blobSidecar, Optional.empty())
                     .ifExceptionGetsHereRaiseABug());
+  }
+
+
+  @VisibleForTesting
+  @FunctionalInterface
+  interface ForkChoiceBlobSidecarsAvailabilityCheckerProvider {
+    ForkChoiceBlobSidecarsAvailabilityChecker create(final BlockBlobSidecarsTracker blockBlobSidecarsTracker);
+  }
+
+  @VisibleForTesting
+  @FunctionalInterface
+  interface UnpooledBlockBlobSidecarsTrackerProvider {
+    BlockBlobSidecarsTracker create(final SignedBeaconBlock block);
   }
 }

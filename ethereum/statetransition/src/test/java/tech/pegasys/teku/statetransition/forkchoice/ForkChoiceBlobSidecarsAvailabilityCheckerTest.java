@@ -300,7 +300,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
         ImmutableSortedMap.naturalOrder();
     blobSidecars.forEach(blobSidecar -> mapBuilder.put(blobSidecar.getIndex(), blobSidecar));
     when(blockBlobSidecarsTracker.getBlobSidecars()).thenReturn(mapBuilder.build());
-    when(blockBlobSidecarsTracker.isCompleted()).thenReturn(true);
+    when(blockBlobSidecarsTracker.isComplete()).thenReturn(true);
     trackerCompletionFuture.complete(null);
   }
 
