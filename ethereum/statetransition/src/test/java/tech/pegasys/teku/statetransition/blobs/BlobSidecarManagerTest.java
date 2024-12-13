@@ -350,7 +350,8 @@ public class BlobSidecarManagerTest {
                 blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(
                     block, blobSidecars))
         .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Availability check should be done immediately");
+        .hasMessage(
+            "Availability check expected to be done synchronously when providing immediate blobs");
 
     result.complete(BlobSidecarsAndValidationResult.validResult(blobSidecars));
 

@@ -192,7 +192,8 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
     if (availabilityCheckResult.isDone()) {
       return availabilityCheckResult.join();
     } else {
-      throw new IllegalStateException("Availability check should be done immediately");
+      throw new IllegalStateException(
+          "Availability check expected to be done synchronously when providing immediate blobs");
     }
   }
 
