@@ -86,20 +86,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
         .thenReturn(true);
 
     final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
-        blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
-
-    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
-
-    // initiate availability check
-    assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
-
-    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
-    verify(blockBlobSidecarsTracker, never()).getBlobSidecars();
-
-    // let the tracker complete with all blobSidecars
-    completeTrackerWith(blobSidecarsComplete);
-
-    Waiter.waitFor(availabilityCheckResult);
+        runAvailabilityCheck();
 
     assertAvailable(availabilityCheckResult);
   }
@@ -113,20 +100,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
         .thenReturn(false);
 
     final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
-        blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
-
-    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
-
-    // initiate availability check
-    assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
-
-    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
-    verify(blockBlobSidecarsTracker, never()).getBlobSidecars();
-
-    // let the tracker complete with all blobSidecars
-    completeTrackerWith(blobSidecarsComplete);
-
-    Waiter.waitFor(availabilityCheckResult);
+        runAvailabilityCheck();
 
     assertInvalid(
         availabilityCheckResult,
@@ -144,20 +118,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
         .thenReturn(true);
 
     final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
-        blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
-
-    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
-
-    // initiate availability check
-    assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
-
-    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
-    verify(blockBlobSidecarsTracker, never()).getBlobSidecars();
-
-    // let the tracker complete with all blobSidecars
-    completeTrackerWith(blobSidecarsComplete);
-
-    Waiter.waitFor(availabilityCheckResult);
+        runAvailabilityCheck();
 
     assertInvalid(availabilityCheckResult, blobSidecarsComplete, Optional.empty());
   }
@@ -171,20 +132,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     when(miscHelpers.verifyBlobKzgProofBatch(any(), any())).thenThrow(error);
 
     final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
-        blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
-
-    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
-
-    // initiate availability check
-    assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
-
-    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
-    verify(blockBlobSidecarsTracker, never()).getBlobSidecars();
-
-    // let the tracker complete with all blobSidecars
-    completeTrackerWith(blobSidecarsComplete);
-
-    Waiter.waitFor(availabilityCheckResult);
+        runAvailabilityCheck();
 
     assertInvalid(availabilityCheckResult, blobSidecarsComplete, Optional.of(error));
   }
@@ -201,20 +149,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     doThrow(error).when(miscHelpers).verifyBlobSidecarCompleteness(anyList(), any());
 
     final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
-        blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
-
-    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
-
-    // initiate availability check
-    assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
-
-    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
-    verify(blockBlobSidecarsTracker, never()).getBlobSidecars();
-
-    // let the tracker complete with all blobSidecars
-    completeTrackerWith(blobSidecarsComplete);
-
-    Waiter.waitFor(availabilityCheckResult);
+        runAvailabilityCheck();
 
     assertInvalid(availabilityCheckResult, blobSidecarsComplete, Optional.of(error));
   }
@@ -268,6 +203,26 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     Waiter.waitFor(availabilityCheckResult);
 
     assertNotRequired(availabilityCheckResult);
+  }
+
+  private SafeFuture<BlobSidecarsAndValidationResult> runAvailabilityCheck() throws Exception {
+    final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
+        blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
+
+    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
+
+    // initiate availability check
+    assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
+
+    assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
+    verify(blockBlobSidecarsTracker, never()).getBlobSidecars();
+
+    // let the tracker complete with all blobSidecars
+    completeTrackerWith(blobSidecarsComplete);
+
+    Waiter.waitFor(availabilityCheckResult);
+
+    return availabilityCheckResult;
   }
 
   private void assertInvalid(
