@@ -255,8 +255,7 @@ public class BlobSidecarGossipValidator {
                * [REJECT] The proposer signature of `blob_sidecar.signed_block_header`, is valid
                * with respect to the `block_header.proposer_index` pubkey.
                */
-              if (!verifyBlockHeaderSignature(
-                  postState, blobSidecar.getSignedBeaconBlockHeader())) {
+              if (!verifyBlockHeaderSignature(postState, blobSidecar)) {
                 return reject("BlobSidecar block header signature is invalid.");
               }
 
@@ -290,6 +289,8 @@ public class BlobSidecarGossipValidator {
 
   private SafeFuture<InternalValidationResult> validateBlobSidecarWithKnownValidHeader(
       final BlobSidecar blobSidecar, final BeaconBlockHeader blockHeader) {
+
+    blobSidecar.markSignatureAsValidated();
 
     /*
      * [REJECT] The sidecar's inclusion proof is valid as verified by `verify_blob_sidecar_inclusion_proof(blob_sidecar)`.
@@ -330,7 +331,8 @@ public class BlobSidecarGossipValidator {
   }
 
   private boolean verifyBlockHeaderSignature(
-      final BeaconState state, final SignedBeaconBlockHeader signedBlockHeader) {
+      final BeaconState state, final BlobSidecar blobSidecar) {
+    final SignedBeaconBlockHeader signedBlockHeader = blobSidecar.getSignedBeaconBlockHeader();
     final Bytes32 domain =
         spec.getDomain(
             Domain.BEACON_PROPOSER,
@@ -339,11 +341,18 @@ public class BlobSidecarGossipValidator {
             state.getGenesisValidatorsRoot());
     final Bytes signingRoot = spec.computeSigningRoot(signedBlockHeader.getMessage(), domain);
 
-    return gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
-        signingRoot,
-        signedBlockHeader.getMessage().getProposerIndex(),
-        signedBlockHeader.getSignature(),
-        state);
+    final boolean result =
+        gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
+            signingRoot,
+            signedBlockHeader.getMessage().getProposerIndex(),
+            signedBlockHeader.getSignature(),
+            state);
+
+    if (result) {
+      blobSidecar.markSignatureAsValidated();
+    }
+
+    return result;
   }
 
   private boolean isFirstValidForSlotProposerIndexAndBlobIndex(

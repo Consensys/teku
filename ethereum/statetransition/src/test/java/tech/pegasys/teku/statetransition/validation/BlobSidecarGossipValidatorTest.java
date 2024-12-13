@@ -118,6 +118,7 @@ public class BlobSidecarGossipValidatorTest {
   void shouldAccept() {
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+    assertThat(blobSidecar.isSignatureValidated()).isTrue();
   }
 
   @TestTemplate
@@ -184,6 +185,8 @@ public class BlobSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
+
+    assertThat(blobSidecar.isSignatureValidated()).isFalse();
   }
 
   @TestTemplate
@@ -342,6 +345,9 @@ public class BlobSidecarGossipValidatorTest {
     verify(gossipValidationHelper, never()).isProposerTheExpectedProposer(any(), any(), any());
     verify(gossipValidationHelper, never())
         .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
+
+    assertThat(blobSidecar.isSignatureValidated()).isTrue();
+
     clearInvocations(gossipValidationHelper);
 
     // BlobSidecar from the new block
