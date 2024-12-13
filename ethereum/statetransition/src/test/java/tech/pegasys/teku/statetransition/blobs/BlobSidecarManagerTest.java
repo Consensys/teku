@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.blobs;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -340,10 +341,18 @@ public class BlobSidecarManagerTest {
     when(blockBlobSidecarsTracker.add(any())).thenReturn(true);
     when(blockBlobSidecarsTracker.isComplete()).thenReturn(true);
 
-    final SafeFuture<BlobSidecarsAndValidationResult> result =
-        SafeFuture.completedFuture(BlobSidecarsAndValidationResult.validResult(blobSidecars));
+    final SafeFuture<BlobSidecarsAndValidationResult> result = new SafeFuture<>();
 
     when(forkChoiceBlobSidecarsAvailabilityChecker.getAvailabilityCheckResult()).thenReturn(result);
+
+    assertThatThrownBy(
+            () ->
+                blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(
+                    block, blobSidecars))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Availability check should be done immediately");
+
+    result.complete(BlobSidecarsAndValidationResult.validResult(blobSidecars));
 
     assertThat(
             blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, blobSidecars))
