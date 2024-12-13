@@ -73,11 +73,11 @@ class MiscHelpersDenebTest {
   void verifyBlobSidecarCompleteness_shouldThrowWhenSizesDoNotMatch() {
     assertThatThrownBy(
             () ->
-                    miscHelpersDeneb.verifyBlobSidecarCompleteness(
-                            dataStructureUtil.randomBlobSidecars(1),
-                            dataStructureUtil.randomSignedBeaconBlockWithCommitments(2)))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("Blob sidecars are not complete");
+                miscHelpersDeneb.verifyBlobSidecarCompleteness(
+                    dataStructureUtil.randomBlobSidecars(1),
+                    dataStructureUtil.randomSignedBeaconBlockWithCommitments(2)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Blob sidecars are not complete");
   }
 
   @Test
@@ -85,21 +85,21 @@ class MiscHelpersDenebTest {
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(1);
     assertThatThrownBy(
             () ->
-                    miscHelpersDeneb.verifyBlobSidecarCompleteness(
-                            blobSidecars, dataStructureUtil.randomSignedBeaconBlockWithCommitments(1)))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage(
-                    "Blob sidecar index mismatch, expected 0, got %s", blobSidecars.getFirst().getIndex());
+                miscHelpersDeneb.verifyBlobSidecarCompleteness(
+                    blobSidecars, dataStructureUtil.randomSignedBeaconBlockWithCommitments(1)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "Blob sidecar index mismatch, expected 0, got %s", blobSidecars.getFirst().getIndex());
   }
 
   @Test
   void verifyBlobSidecarCompleteness_shouldNotThrow() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlockWithCommitments(2);
-    final List<BlobSidecar> blobSidecars = List.of(dataStructureUtil.randomBlobSidecarForBlock(block, 0), dataStructureUtil.randomBlobSidecarForBlock(block, 1));
-    assertDoesNotThrow(
-            () ->
-                    miscHelpersDeneb.verifyBlobSidecarCompleteness(
-                            blobSidecars, block));
+    final List<BlobSidecar> blobSidecars =
+        List.of(
+            dataStructureUtil.randomBlobSidecarForBlock(block, 0),
+            dataStructureUtil.randomBlobSidecarForBlock(block, 1));
+    assertDoesNotThrow(() -> miscHelpersDeneb.verifyBlobSidecarCompleteness(blobSidecars, block));
   }
 
   @Test
@@ -183,8 +183,7 @@ class MiscHelpersDenebTest {
               .kzgCommitmentInclusionProof(merkleProof)
               .build();
       assertThat(miscHelpersDeneb.verifyBlobKzgCommitmentInclusionProof(blobSidecar)).isTrue();
-assertThat(blobSidecar.isKzgCommitmentInclusionProofValidated()).isTrue();
-
+      assertThat(blobSidecar.isKzgCommitmentInclusionProofValidated()).isTrue();
 
       // And the same blobSidecar but with wrong merkle proof
       for (int j = 0; j < numberOfCommitments; ++j) {
@@ -220,24 +219,28 @@ assertThat(blobSidecar.isKzgCommitmentInclusionProofValidated()).isTrue();
     }
   }
 
-
   @Test
   void verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock_returnsTrue() {
     final SignedBeaconBlock signedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(1);
     final BlobSidecar blobSidecar =
         dataStructureUtil.randomBlobSidecarForBlock(signedBeaconBlock, 0);
-    assertThat(miscHelpersDeneb.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(blobSidecar, signedBeaconBlock)).isTrue();
+    assertThat(
+            miscHelpersDeneb.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
+                blobSidecar, signedBeaconBlock))
+        .isTrue();
     assertThat(blobSidecar.isSignatureValidated()).isTrue();
   }
 
   @Test
   void verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock_returnsFalse() {
     final SignedBeaconBlock signedBeaconBlock =
-            dataStructureUtil.randomSignedBeaconBlockWithCommitments(1);
-    final BlobSidecar blobSidecar =
-            dataStructureUtil.randomBlobSidecar();
-    assertThat(miscHelpersDeneb.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(blobSidecar, signedBeaconBlock)).isFalse();
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(1);
+    final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
+    assertThat(
+            miscHelpersDeneb.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
+                blobSidecar, signedBeaconBlock))
+        .isFalse();
     assertThat(blobSidecar.isSignatureValidated()).isFalse();
   }
 }
