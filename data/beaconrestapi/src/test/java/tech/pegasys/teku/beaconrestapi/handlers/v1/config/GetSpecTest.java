@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.SpecFactory;
 
 class GetSpecTest extends AbstractMigratedBeaconHandlerTest {
   private final ConfigProvider configProvider = new ConfigProvider(spec);
-  private final SpecConfigData response = new SpecConfigData(configProvider.getGenesisSpecConfig());
+  private final SpecConfigData response = new SpecConfigData(configProvider.getSpecConfig());
 
   @BeforeEach
   void setUp() {
