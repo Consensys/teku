@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.config;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
@@ -21,19 +20,20 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
-import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.SpecConfigData;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.spec.SpecFactory;
 
 class GetSpecTest extends AbstractMigratedBeaconHandlerTest {
   private final ConfigProvider configProvider = new ConfigProvider(spec);
   private final SpecConfigData response = new SpecConfigData(configProvider.getSpecConfig());
+  private final ObjectMapper mapper = new ObjectMapper();
 
   @BeforeEach
   void setUp() {
@@ -63,11 +63,10 @@ class GetSpecTest extends AbstractMigratedBeaconHandlerTest {
     final ConfigProvider configProvider = new ConfigProvider(SpecFactory.create("mainnet"));
     setHandler(new GetSpec(configProvider));
     handler.handleRequest(request);
-    final Map<String, String> data = (Map<String, String>) request.getResponseBody();
-    final Map<String, String> expected =
-        JsonTestUtil.parseStringMap(
-            Resources.toString(
-                Resources.getResource(GetSpecTest.class, "mainnetConfig.json"), UTF_8));
-    assertThat(data).isEqualTo(expected);
+    final JsonNode data = mapper.valueToTree(request.getResponseBody());
+    // re-parsing so that the output is consistent, then we can use the same prettyPrint
+    final JsonNode expected =
+        mapper.readTree(Resources.getResource(GetSpecTest.class, "mainnetConfig.json"));
+    assertThat(data.toPrettyString()).isEqualTo(expected.toPrettyString());
   }
 }
