@@ -586,13 +586,20 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private SafeFuture<InternalValidationResult> processAttestation(final Attestation attestation) {
+    final ValidatableAttestation validatableAttestation =
+        ValidatableAttestation.fromValidator(spec, attestation);
     return attestationManager
-        .addAttestation(ValidatableAttestation.fromValidator(spec, attestation), Optional.empty())
+        .addAttestation(validatableAttestation, Optional.empty())
         .thenPeek(
             result -> {
               if (!result.isReject()) {
-                dutyMetrics.onAttestationPublished(attestation.getData().getSlot());
-                performanceTracker.saveProducedAttestation(attestation);
+                // When saving the attestation in performance tracker, we want to make sure we save
+                // the converted attestation.
+                // The conversion happens during processing and is saved in the validatable
+                // attestation.
+                final Attestation convertedAttestation = validatableAttestation.getAttestation();
+                dutyMetrics.onAttestationPublished(convertedAttestation.getData().getSlot());
+                performanceTracker.saveProducedAttestation(convertedAttestation);
               } else {
                 VALIDATOR_LOGGER.producedInvalidAttestation(
                     attestation.getData().getSlot(),
