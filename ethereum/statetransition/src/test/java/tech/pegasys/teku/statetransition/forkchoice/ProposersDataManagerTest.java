@@ -113,7 +113,7 @@ class ProposersDataManagerTest {
   }
 
   @TestTemplate
-  void shouldSetMaxAndTargetBlobCount() throws ExecutionException, InterruptedException {
+  void shouldSetMaxBlobCount() throws ExecutionException, InterruptedException {
     final Spec specMock = mock(Spec.class);
     when(specMock.computeEpochAtSlot(any())).thenReturn(currentForkEpoch);
     final UInt64 timestamp = dataStructureUtil.randomUInt64();
@@ -150,13 +150,6 @@ class ProposersDataManagerTest {
     final Optional<PayloadBuildingAttributes> maybePayloadBuildingAttributes =
         payloadBuildingAttributesFuture.get();
     assertThat(maybePayloadBuildingAttributes).isPresent();
-    assertThat(maybePayloadBuildingAttributes.get().getTargetBlobCount())
-        .isEqualTo(
-            spec.atSlot(currentForkFirstSlot)
-                .getConfig()
-                .toVersionDeneb()
-                .map(SpecConfigDeneb::getTargetBlobsPerBlock)
-                .map(UInt64::valueOf));
     assertThat(maybePayloadBuildingAttributes.get().getMaximumBlobCount())
         .isEqualTo(
             spec.atSlot(currentForkFirstSlot)

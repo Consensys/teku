@@ -34,7 +34,6 @@ public class PayloadBuildingAttributes {
   private final Optional<SignedValidatorRegistration> validatorRegistration;
   private final Optional<List<Withdrawal>> withdrawals;
   private final Bytes32 parentBeaconBlockRoot;
-  private final Optional<UInt64> targetBlobCount;
   private final Optional<UInt64> maximumBlobCount;
 
   public PayloadBuildingAttributes(
@@ -55,7 +54,6 @@ public class PayloadBuildingAttributes {
         validatorRegistration,
         withdrawals,
         parentBeaconBlockRoot,
-        Optional.empty(),
         Optional.empty());
   }
 
@@ -68,7 +66,6 @@ public class PayloadBuildingAttributes {
       final Optional<SignedValidatorRegistration> validatorRegistration,
       final Optional<List<Withdrawal>> withdrawals,
       final Bytes32 parentBeaconBlockRoot,
-      final Optional<UInt64> targetBlobCount,
       final Optional<UInt64> maximumBlobCount) {
     this.proposerIndex = proposerIndex;
     this.proposalSlot = proposalSlot;
@@ -78,7 +75,6 @@ public class PayloadBuildingAttributes {
     this.validatorRegistration = validatorRegistration;
     this.withdrawals = withdrawals;
     this.parentBeaconBlockRoot = parentBeaconBlockRoot;
-    this.targetBlobCount = targetBlobCount;
     this.maximumBlobCount = maximumBlobCount;
   }
 
@@ -104,10 +100,6 @@ public class PayloadBuildingAttributes {
 
   public Bytes32 getParentBeaconBlockRoot() {
     return parentBeaconBlockRoot;
-  }
-
-  public Optional<UInt64> getTargetBlobCount() {
-    return targetBlobCount;
   }
 
   public Optional<UInt64> getMaximumBlobCount() {
@@ -144,7 +136,6 @@ public class PayloadBuildingAttributes {
         && Objects.equals(validatorRegistration, that.validatorRegistration)
         && Objects.equals(withdrawals, that.withdrawals)
         && Objects.equals(parentBeaconBlockRoot, that.parentBeaconBlockRoot)
-        && Objects.equals(targetBlobCount, that.targetBlobCount)
         && Objects.equals(maximumBlobCount, that.maximumBlobCount);
   }
 
@@ -159,7 +150,6 @@ public class PayloadBuildingAttributes {
         validatorRegistration,
         withdrawals,
         parentBeaconBlockRoot,
-        targetBlobCount,
         maximumBlobCount);
   }
 
@@ -174,7 +164,6 @@ public class PayloadBuildingAttributes {
         .add("validatorRegistration", validatorRegistration)
         .add("withdrawals", withdrawals)
         .add("parentBeaconBlockRoot", parentBeaconBlockRoot)
-        .add("targetBlobCount", targetBlobCount)
         .add("maximumBlobCount", maximumBlobCount)
         .toString();
   }

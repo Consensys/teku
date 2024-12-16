@@ -1106,7 +1106,6 @@ class ForkChoiceNotifierTest {
         validatorRegistration,
         dataStructureUtil.randomWithdrawalList(),
         forkChoiceState.getHeadBlockRoot(),
-        maxBlobsPerBlock.map(maxBlobs -> maxBlobs.dividedBy(2)),
         maxBlobsPerBlock);
   }
 

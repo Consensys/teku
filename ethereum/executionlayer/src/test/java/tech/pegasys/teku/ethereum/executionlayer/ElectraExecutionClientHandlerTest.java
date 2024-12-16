@@ -31,7 +31,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
-import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -128,7 +128,7 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
   }
 
   @Test
-  void engineForkChoiceUpdated_shouldCallEngineForkChoiceUpdatedV4() {
+  void engineForkChoiceUpdated_shouldCallEngineForkChoiceUpdatedV3() {
     final ExecutionClientHandler handler = getHandler();
     final ForkChoiceState forkChoiceState = dataStructureUtil.randomForkChoiceState(false);
     final ForkChoiceStateV1 forkChoiceStateV1 =
@@ -144,10 +144,9 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
             Optional.empty(),
             Optional.of(List.of()),
             dataStructureUtil.randomBytes32(),
-            Optional.of(UInt64.valueOf(specConfigDeneb.getTargetBlobsPerBlock())),
             Optional.of(UInt64.valueOf(specConfigDeneb.getMaxBlobsPerBlock())));
-    final Optional<PayloadAttributesV4> payloadAttributes =
-        PayloadAttributesV4.fromInternalPayloadBuildingAttributesV4(Optional.of(attributes));
+    final Optional<PayloadAttributesV3> payloadAttributes =
+        PayloadAttributesV3.fromInternalPayloadBuildingAttributesV3(Optional.of(attributes));
     final ForkChoiceUpdatedResult responseData =
         new ForkChoiceUpdatedResult(
             new PayloadStatusV1(
@@ -155,11 +154,11 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
             dataStructureUtil.randomBytes8());
     final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
         SafeFuture.completedFuture(new Response<>(responseData));
-    when(executionEngineClient.forkChoiceUpdatedV4(forkChoiceStateV1, payloadAttributes))
+    when(executionEngineClient.forkChoiceUpdatedV3(forkChoiceStateV1, payloadAttributes))
         .thenReturn(dummyResponse);
     final SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> future =
         handler.engineForkChoiceUpdated(forkChoiceState, Optional.of(attributes));
-    verify(executionEngineClient).forkChoiceUpdatedV4(forkChoiceStateV1, payloadAttributes);
+    verify(executionEngineClient).forkChoiceUpdatedV3(forkChoiceStateV1, payloadAttributes);
     assertThat(future).isCompletedWithValue(responseData.asInternalExecutionPayload());
   }
 

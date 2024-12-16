@@ -1824,7 +1824,6 @@ public final class DataStructureUtil {
             : Optional.empty(),
         randomWithdrawalList(),
         randomBytes32(),
-        Optional.of(randomUInt64()),
         Optional.of(randomUInt64()));
   }
 
