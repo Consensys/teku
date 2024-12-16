@@ -30,7 +30,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -38,7 +37,6 @@ import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSidecarIndexSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSidecarSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSupplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.BeaconBlockSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.SignedBeaconBlockSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGCommitmentSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.SszKZGProofSupplier;
@@ -86,28 +84,25 @@ public class MiscHelpersDenebPropertyTest {
   }
 
   @Property(tries = 100)
-  void fuzzValidateBlobSidecarsBatchAgainstBlock(
+  void fuzzVerifyBlobSidecarCompleteness(
       @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecar> blobSidecars,
-      @ForAll(supplier = BeaconBlockSupplier.class) final BeaconBlock block,
-      @ForAll
-          final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> kzgCommitments) {
+      @ForAll(supplier = SignedBeaconBlockSupplier.class)
+          final SignedBeaconBlock signedBeaconBlock) {
     try {
-      miscHelpers.validateBlobSidecarsBatchAgainstBlock(blobSidecars, block, kzgCommitments);
+      miscHelpers.verifyBlobSidecarCompleteness(blobSidecars, signedBeaconBlock);
     } catch (Exception e) {
       assertThat(e).isInstanceOf(IllegalArgumentException.class);
     }
   }
 
   @Property(tries = 100)
-  void fuzzVerifyBlobSidecarCompleteness(
+  void fuzzVerifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
       @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecar> blobSidecars,
-      @ForAll
-          final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> kzgCommitments) {
-    try {
-      miscHelpers.verifyBlobSidecarCompleteness(blobSidecars, kzgCommitments);
-    } catch (Exception e) {
-      assertThat(e).isInstanceOf(IllegalArgumentException.class);
-    }
+      @ForAll(supplier = SignedBeaconBlockSupplier.class)
+          final SignedBeaconBlock signedBeaconBlock) {
+
+    miscHelpers.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
+        blobSidecars, signedBeaconBlock);
   }
 
   @Property(tries = 100)
@@ -119,7 +114,7 @@ public class MiscHelpersDenebPropertyTest {
     try {
       final BlobSidecar blobSidecar =
           miscHelpers.constructBlobSidecar(signedBeaconBlock, index, blob, proof);
-      miscHelpers.verifyBlobSidecarMerkleProof(blobSidecar);
+      miscHelpers.verifyBlobKzgCommitmentInclusionProof(blobSidecar);
     } catch (Exception e) {
       assertThat(e).isInstanceOf(IllegalArgumentException.class);
     }

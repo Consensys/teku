@@ -9,6 +9,7 @@
 ### Breaking Changes
 
 ### Additions and Improvements
+- Optimized blobs validation pipeline
 
 ### Bug Fixes
 - Updated the gas change check for block building so that warnings only get raised if the change is off spec.
