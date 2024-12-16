@@ -182,14 +182,14 @@ public class FuzzUtil {
         deserialize(input, BlockHeaderFuzzInput.createType(specVersion));
 
     try {
-      BeaconState postState =
+      final BeaconState postState =
           structuredInput
               .getState()
               .updated(
                   state ->
                       spec.getBlockProcessor(state.getSlot())
                           .processBlockHeader(state, structuredInput.getBlock()));
-      Bytes output = postState.sszSerialize();
+      final Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
       // "expected error"

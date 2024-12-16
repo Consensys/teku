@@ -73,7 +73,7 @@ public interface OperationProcessor {
   void processWithdrawalRequest(MutableBeaconState state, List<WithdrawalRequest> withdrawalRequest)
       throws BlockProcessingException;
 
-  void processConsolidationRequest(
+  void processConsolidationRequests(
       MutableBeaconState state, List<ConsolidationRequest> consolidationRequest)
       throws BlockProcessingException;
 }
