@@ -37,8 +37,12 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -264,6 +268,26 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
         computeKzgCommitmentInclusionProof(index, beaconBlockBody);
     return blobSidecarSchema.create(
         index, blob, commitment, proof, signedBeaconBlock.asHeader(), kzgCommitmentInclusionProof);
+  }
+
+  public BlobSidecar constructBlobSidecarFromBlobAndProof(
+      final BlobIdentifier blobIdentifier,
+      final BlobAndProof blobAndProof,
+      final BeaconBlockBodyDeneb beaconBlockBodyDeneb,
+      final SignedBeaconBlockHeader signedBeaconBlockHeader) {
+
+    final SszKZGCommitment sszKZGCommitment =
+        beaconBlockBodyDeneb.getBlobKzgCommitments().get(blobIdentifier.getIndex().intValue());
+
+    return blobSidecarSchema.create(
+        blobIdentifier.getIndex(),
+        blobAndProof.blob(),
+        sszKZGCommitment,
+        new SszKZGProof(blobAndProof.proof()),
+        signedBeaconBlockHeader,
+        computeKzgCommitmentInclusionProof(blobIdentifier.getIndex(), beaconBlockBodyDeneb));
+    
+
   }
 
   public boolean verifyBlobKzgCommitmentInclusionProof(final BlobSidecar blobSidecar) {

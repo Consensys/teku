@@ -463,7 +463,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     assertThat(blockBlobSidecarsTracker.getBlobSidecars().values())
         .containsExactlyInAnyOrderElementsOf(blobSidecars);
     assertThat(blockBlobSidecarsTracker.getBlock()).isPresent();
-    assertThat(blockBlobSidecarsTracker.isRpcFetchTriggered()).isFalse();
+    assertThat(blockBlobSidecarsTracker.isRpcBlockFetchTriggered()).isFalse();
     assertThatSafeFuture(blockBlobSidecarsTracker.getCompletionFuture()).isCompleted();
 
     assertBlobSidecarsCount(blobSidecars.size());
@@ -493,7 +493,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     assertThat(blockBlobSidecarsTracker.getBlobSidecars().values())
         .containsExactlyInAnyOrderElementsOf(blobSidecars);
     assertThat(blockBlobSidecarsTracker.getBlock()).isPresent();
-    assertThat(blockBlobSidecarsTracker.isRpcFetchTriggered()).isFalse();
+    assertThat(blockBlobSidecarsTracker.isRpcBlockFetchTriggered()).isFalse();
     assertThatSafeFuture(blockBlobSidecarsTracker.getCompletionFuture()).isNotCompleted();
 
     assertBlobSidecarsCount(0);
@@ -511,7 +511,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
         blockBlobSidecarsTrackersPool.getOrCreateBlockBlobSidecarsTracker(block);
 
     assertThat(blockBlobSidecarsTracker.getBlock()).isPresent();
-    assertThat(blockBlobSidecarsTracker.isRpcFetchTriggered()).isFalse();
+    assertThat(blockBlobSidecarsTracker.isRpcBlockFetchTriggered()).isFalse();
     assertThatSafeFuture(blockBlobSidecarsTracker.getCompletionFuture()).isNotCompleted();
 
     assertBlobSidecarsCount(0);
@@ -670,7 +670,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
         Optional.of(
             (slotAndRoot) -> {
               when(tracker.add(any())).thenReturn(true);
-              when(tracker.getMissingBlobSidecars())
+              when(tracker.getMissingBlobSidecarsForBlock())
                   .thenAnswer(__ -> missingBlobIdentifiers.stream());
               when(tracker.getBlock()).thenReturn(Optional.of(block));
               return tracker;
@@ -694,7 +694,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
 
     // local el fetch triggered
-    verify(tracker).setLocalElFetchTriggered();
+    verify(tracker).setLocalElBlobsFetchTriggered();
 
     // prepare partial response of 3 blobAndProofs
     final List<Optional<BlobAndProof>> blobAndProofsFromEL =
@@ -734,7 +734,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
         Optional.of(
             (slotAndRoot) -> {
               BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
-              when(tracker.getMissingBlobSidecars()).thenAnswer(__ -> missingBlobs.stream());
+              when(tracker.getMissingBlobSidecarsForBlock())
+                  .thenAnswer(__ -> missingBlobs.stream());
               when(tracker.getBlock()).thenReturn(Optional.of(block));
               return tracker;
             });
@@ -770,7 +771,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
         Optional.of(
             (slotAndRoot) -> {
               BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
-              when(tracker.getMissingBlobSidecars()).thenAnswer(__ -> missingBlobs.stream());
+              when(tracker.getMissingBlobSidecarsForBlock())
+                  .thenAnswer(__ -> missingBlobs.stream());
               when(tracker.getBlock()).thenReturn(Optional.of(block));
               return tracker;
             });
@@ -810,7 +812,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     final BlockBlobSidecarsTracker mockedTracker = mock(BlockBlobSidecarsTracker.class);
     when(mockedTracker.getBlock()).thenReturn(Optional.empty());
-    when(mockedTracker.getMissingBlobSidecars()).thenReturn(missingBlobs.stream());
+    when(mockedTracker.getMissingBlobSidecarsForBlock()).thenReturn(missingBlobs.stream());
     when(mockedTracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
 
     mockedTrackersFactory = Optional.of((__) -> mockedTracker);
@@ -821,8 +823,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     asyncRunner.executeQueuedActions();
 
-    verify(mockedTracker).setRpcFetchTriggered();
-    verify(mockedTracker, never()).setLocalElFetchTriggered();
+    verify(mockedTracker).setRpcBlockFetchTriggered();
+    verify(mockedTracker, never()).setLocalElBlobsFetchTriggered();
 
     assertThat(requiredBlockRootEvents).containsExactly(block.getRoot());
     assertThat(requiredBlobSidecarEvents).containsExactlyElementsOf(missingBlobs);
@@ -858,9 +860,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
               when(tracker.getBlock()).thenReturn(Optional.empty());
               when(tracker.getSlotAndBlockRoot()).thenReturn(slotAndBlockRoot);
               when(tracker.setBlock(block)).thenReturn(true);
-              when(tracker.isRpcFetchTriggered()).thenReturn(true);
-              when(tracker.getUnusedBlobSidecarsForBlock())
-                  .thenReturn(blobsNotPresentInBlock.stream());
+              when(tracker.isRpcBlockFetchTriggered()).thenReturn(true);
               return tracker;
             });
 
@@ -895,9 +895,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
               when(tracker.getBlock()).thenReturn(Optional.empty());
               when(tracker.getSlotAndBlockRoot()).thenReturn(slotAndBlockRoot);
               when(tracker.setBlock(block)).thenReturn(true);
-              when(tracker.isRpcFetchTriggered()).thenReturn(false);
-              when(tracker.getUnusedBlobSidecarsForBlock())
-                  .thenReturn(blobsNotUserInBlock.stream());
+              when(tracker.isRpcBlockFetchTriggered()).thenReturn(false);
               return tracker;
             });
 
@@ -945,10 +943,10 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
         Optional.of(
             (slotAndRoot) -> {
               BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
-              when(tracker.getMissingBlobSidecars()).thenReturn(missingBlobs.stream());
+              when(tracker.getMissingBlobSidecarsForBlock()).thenReturn(missingBlobs.stream());
               when(tracker.getBlock()).thenReturn(Optional.of(block));
               when(tracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
-              when(tracker.isRpcFetchTriggered()).thenReturn(true);
+              when(tracker.isRpcBlockFetchTriggered()).thenReturn(true);
               return tracker;
             });
 
@@ -987,12 +985,13 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     mockedTrackersFactory =
         Optional.of(
             (slotAndRoot) -> {
-              when(tracker.getMissingBlobSidecars()).thenAnswer(__ -> missingBlobs.stream());
+              when(tracker.getMissingBlobSidecarsForBlock())
+                  .thenAnswer(__ -> missingBlobs.stream());
               when(tracker.getBlock()).thenReturn(Optional.empty());
               when(tracker.setBlock(any())).thenReturn(true);
               when(tracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
-              when(tracker.isRpcFetchTriggered()).thenReturn(true);
-              when(tracker.isLocalElFetchTriggered()).thenReturn(false);
+              when(tracker.isRpcBlockFetchTriggered()).thenReturn(true);
+              when(tracker.isLocalElBlobsFetchTriggered()).thenReturn(false);
               return tracker;
             });
 
@@ -1001,7 +1000,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
 
-    verify(tracker, never()).setLocalElFetchTriggered();
+    verify(tracker, never()).setLocalElBlobsFetchTriggered();
 
     when(tracker.getBlock()).thenReturn(Optional.of(block));
 
@@ -1011,7 +1010,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
 
-    verify(tracker).setLocalElFetchTriggered();
+    verify(tracker).setLocalElBlobsFetchTriggered();
     verify(executionLayer).engineGetBlobs(any(), any());
   }
 
@@ -1032,7 +1031,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
               when(tracker.getBlock()).thenReturn(Optional.empty());
               when(tracker.getSlotAndBlockRoot())
                   .thenReturn(signedBeaconBlock.getSlotAndBlockRoot());
-              when(tracker.isRpcFetchTriggered()).thenReturn(true);
+              when(tracker.isRpcBlockFetchTriggered()).thenReturn(true);
               return tracker;
             });
 
@@ -1067,7 +1066,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
               when(tracker.getBlock()).thenReturn(Optional.empty());
               when(tracker.getSlotAndBlockRoot())
                   .thenReturn(signedBeaconBlock.getSlotAndBlockRoot());
-              when(tracker.isRpcFetchTriggered()).thenReturn(false);
+              when(tracker.isRpcBlockFetchTriggered()).thenReturn(false);
               return tracker;
             });
 
@@ -1188,7 +1187,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
         Optional.of(
             (slotAndRoot) -> {
               BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
-              when(tracker.getMissingBlobSidecars()).thenReturn(missingBlobs1.stream());
+              when(tracker.getMissingBlobSidecarsForBlock()).thenReturn(missingBlobs1.stream());
               when(tracker.getBlock()).thenReturn(Optional.of(block1));
               return tracker;
             });
@@ -1206,7 +1205,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
         Optional.of(
             (slotAndRoot) -> {
               BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
-              when(tracker.getMissingBlobSidecars()).thenReturn(missingBlobs2.stream());
+              when(tracker.getMissingBlobSidecarsForBlock()).thenReturn(missingBlobs2.stream());
               when(tracker.getBlock()).thenReturn(Optional.of(block2));
               return tracker;
             });
@@ -1400,8 +1399,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     if (mockedTrackersFactory.isPresent()) {
       return mockedTrackersFactory.get().apply(slotAndBlockRoot);
     }
-    return new BlockBlobSidecarsTracker(
-        slotAndBlockRoot,
-        UInt64.valueOf(spec.getMaxBlobsPerBlockForHighestMilestone().orElseThrow()));
+    return new BlockBlobSidecarsTracker(slotAndBlockRoot);
   }
 }
