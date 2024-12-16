@@ -22,7 +22,6 @@ import static tech.pegasys.teku.infrastructure.json.JsonTestUtil.parseStringMap;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +34,6 @@ import tech.pegasys.teku.spec.SpecFactory;
 class GetSpecTest extends AbstractMigratedBeaconHandlerTest {
   private final ConfigProvider configProvider = new ConfigProvider(spec);
   private final SpecConfigData response = new SpecConfigData(configProvider.getSpecConfig());
-  private final ObjectMapper mapper = new ObjectMapper();
 
   @BeforeEach
   void setUp() {
