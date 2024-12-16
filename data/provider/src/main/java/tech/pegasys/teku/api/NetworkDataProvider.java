@@ -71,7 +71,7 @@ public class NetworkDataProvider {
   /**
    * Get the number of Peers
    *
-   * @return the the number of peers currently connected to the client
+   * @return the number of peers currently connected to the client
    */
   public long countPeers() {
     return network.streamPeers().count();

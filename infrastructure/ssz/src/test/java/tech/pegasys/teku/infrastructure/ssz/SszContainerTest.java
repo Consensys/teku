@@ -220,7 +220,7 @@ public class SszContainerTest implements SszCompositeTestBase, SszMutableRefComp
     // new container from backing tree without any cached views
     WritableContainer c2r =
         WritableContainer.SSZ_SCHEMA.createFromBackingNode(c1r.getBackingNode());
-    // concurrently traversing children of the the same view instance to make sure the internal
+    // concurrently traversing children of the same view instance to make sure the internal
     // cache is thread safe
     List<Future<Boolean>> futures =
         TestUtil.executeParallel(() -> SszDataAssert.isEqualByGetters(c2r, c1r), 512);

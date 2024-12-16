@@ -193,7 +193,7 @@ public class Eth2NetworkOptions {
       hidden = true,
       paramLabel = "<NUMBER>",
       description =
-          "Override the the number of slots that must pass before it is considered safe to optimistically import a "
+          "Override the number of slots that must pass before it is considered safe to optimistically import a "
               + "block",
       arity = "1")
   private Integer safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
