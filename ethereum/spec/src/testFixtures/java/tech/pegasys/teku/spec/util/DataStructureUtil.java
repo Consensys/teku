@@ -1823,9 +1823,7 @@ public final class DataStructureUtil {
             ? Optional.of(randomSignedValidatorRegistration())
             : Optional.empty(),
         randomWithdrawalList(),
-        randomBytes32(),
-        Optional.of(randomUInt64()),
-        Optional.of(randomUInt64()));
+        randomBytes32());
   }
 
   public ClientVersion randomClientVersion() {

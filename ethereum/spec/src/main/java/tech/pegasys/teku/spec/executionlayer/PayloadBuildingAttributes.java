@@ -34,8 +34,6 @@ public class PayloadBuildingAttributes {
   private final Optional<SignedValidatorRegistration> validatorRegistration;
   private final Optional<List<Withdrawal>> withdrawals;
   private final Bytes32 parentBeaconBlockRoot;
-  private final Optional<UInt64> targetBlobCount;
-  private final Optional<UInt64> maximumBlobCount;
 
   public PayloadBuildingAttributes(
       final UInt64 proposerIndex,
@@ -46,30 +44,6 @@ public class PayloadBuildingAttributes {
       final Optional<SignedValidatorRegistration> validatorRegistration,
       final Optional<List<Withdrawal>> withdrawals,
       final Bytes32 parentBeaconBlockRoot) {
-    this(
-        proposerIndex,
-        proposalSlot,
-        timestamp,
-        prevRandao,
-        feeRecipient,
-        validatorRegistration,
-        withdrawals,
-        parentBeaconBlockRoot,
-        Optional.empty(),
-        Optional.empty());
-  }
-
-  public PayloadBuildingAttributes(
-      final UInt64 proposerIndex,
-      final UInt64 proposalSlot,
-      final UInt64 timestamp,
-      final Bytes32 prevRandao,
-      final Eth1Address feeRecipient,
-      final Optional<SignedValidatorRegistration> validatorRegistration,
-      final Optional<List<Withdrawal>> withdrawals,
-      final Bytes32 parentBeaconBlockRoot,
-      final Optional<UInt64> targetBlobCount,
-      final Optional<UInt64> maximumBlobCount) {
     this.proposerIndex = proposerIndex;
     this.proposalSlot = proposalSlot;
     this.timestamp = timestamp;
@@ -78,8 +52,6 @@ public class PayloadBuildingAttributes {
     this.validatorRegistration = validatorRegistration;
     this.withdrawals = withdrawals;
     this.parentBeaconBlockRoot = parentBeaconBlockRoot;
-    this.targetBlobCount = targetBlobCount;
-    this.maximumBlobCount = maximumBlobCount;
   }
 
   public UInt64 getProposerIndex() {
@@ -104,14 +76,6 @@ public class PayloadBuildingAttributes {
 
   public Bytes32 getParentBeaconBlockRoot() {
     return parentBeaconBlockRoot;
-  }
-
-  public Optional<UInt64> getTargetBlobCount() {
-    return targetBlobCount;
-  }
-
-  public Optional<UInt64> getMaximumBlobCount() {
-    return maximumBlobCount;
   }
 
   public Optional<SignedValidatorRegistration> getValidatorRegistration() {
@@ -143,9 +107,7 @@ public class PayloadBuildingAttributes {
         && Objects.equals(feeRecipient, that.feeRecipient)
         && Objects.equals(validatorRegistration, that.validatorRegistration)
         && Objects.equals(withdrawals, that.withdrawals)
-        && Objects.equals(parentBeaconBlockRoot, that.parentBeaconBlockRoot)
-        && Objects.equals(targetBlobCount, that.targetBlobCount)
-        && Objects.equals(maximumBlobCount, that.maximumBlobCount);
+        && Objects.equals(parentBeaconBlockRoot, that.parentBeaconBlockRoot);
   }
 
   @Override
@@ -158,9 +120,7 @@ public class PayloadBuildingAttributes {
         feeRecipient,
         validatorRegistration,
         withdrawals,
-        parentBeaconBlockRoot,
-        targetBlobCount,
-        maximumBlobCount);
+        parentBeaconBlockRoot);
   }
 
   @Override
@@ -174,8 +134,6 @@ public class PayloadBuildingAttributes {
         .add("validatorRegistration", validatorRegistration)
         .add("withdrawals", withdrawals)
         .add("parentBeaconBlockRoot", parentBeaconBlockRoot)
-        .add("targetBlobCount", targetBlobCount)
-        .add("maximumBlobCount", maximumBlobCount)
         .toString();
   }
 }

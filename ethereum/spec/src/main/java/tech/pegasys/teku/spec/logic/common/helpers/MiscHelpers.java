@@ -412,16 +412,22 @@ public class MiscHelpers {
     return false;
   }
 
-  public void validateBlobSidecarsBatchAgainstBlock(
-      final List<BlobSidecar> blobSidecars,
-      final BeaconBlock block,
-      final List<KZGCommitment> kzgCommitmentsFromBlock) {
+  public boolean verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
+      final List<BlobSidecar> blobSidecars, final SignedBeaconBlock signedBeaconBlock) {
+    return blobSidecars.stream()
+        .allMatch(
+            blobSidecar ->
+                verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
+                    blobSidecar, signedBeaconBlock));
+  }
+
+  public boolean verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
+      final BlobSidecar blobSidecar, final SignedBeaconBlock signedBeaconBlock) {
     throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
   }
 
   public void verifyBlobSidecarCompleteness(
-      final List<BlobSidecar> verifiedBlobSidecars,
-      final List<KZGCommitment> kzgCommitmentsFromBlock)
+      final List<BlobSidecar> verifiedBlobSidecars, final SignedBeaconBlock signedBeaconBlock)
       throws IllegalArgumentException {
     throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
   }
