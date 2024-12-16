@@ -45,7 +45,7 @@ public class EventSubscriber {
   private final AtomicBoolean processingQueue;
   private final AsyncRunner asyncRunner;
   private final AtomicLong excessiveQueueingDisconnectionTime = new AtomicLong(Long.MAX_VALUE);
-  private volatile AtomicInteger successiveFailureCounter = new AtomicInteger(0);
+  private final AtomicInteger successiveFailureCounter = new AtomicInteger(0);
 
   public EventSubscriber(
       final List<String> eventTypes,

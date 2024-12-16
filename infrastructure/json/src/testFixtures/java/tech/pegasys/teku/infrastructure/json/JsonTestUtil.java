@@ -49,6 +49,14 @@ public class JsonTestUtil {
         .readValue(json);
   }
 
+  public static Map<String, String> parseStringMap(final String json) throws Exception {
+    return new ObjectMapper()
+        .readerFor(
+            TypeFactory.defaultInstance()
+                .constructMapType(LinkedHashMap.class, String.class, String.class))
+        .readValue(json);
+  }
+
   public static String parseString(final String json) throws Exception {
     return new ObjectMapper().readerFor(String.class).readValue(json);
   }
