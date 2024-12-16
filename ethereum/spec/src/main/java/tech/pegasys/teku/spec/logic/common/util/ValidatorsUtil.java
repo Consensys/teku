@@ -165,7 +165,7 @@ public class ValidatorsUtil {
 
   public UInt64 getPendingBalanceToWithdraw(final BeaconState state, final int validatorIndex) {
     return state.toVersionElectra().orElseThrow().getPendingPartialWithdrawals().stream()
-        .filter(withdrawal -> withdrawal.getIndex() == validatorIndex)
+        .filter(withdrawal -> withdrawal.getValidatorIndex() == validatorIndex)
         .map(PendingPartialWithdrawal::getAmount)
         .reduce(UInt64::plus)
         .orElse(UInt64.ZERO);
