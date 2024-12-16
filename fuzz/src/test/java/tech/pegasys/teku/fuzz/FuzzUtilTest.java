@@ -115,6 +115,8 @@ class FuzzUtilTest {
   }
 
   @Test
+  // TODO: re-enable when we merge #8916
+  @Disabled("requires Use 16-bit random value in validator filter #8916")
   public void fuzzAttesterSlashing_minimal() {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
 
@@ -140,6 +142,7 @@ class FuzzUtilTest {
   }
 
   @Test
+  // TODO: re-enable when we merge #8916
   @Disabled("requires Use 16-bit random value in validator filter #8916")
   public void fuzzBlock_minimal() {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
@@ -168,6 +171,7 @@ class FuzzUtilTest {
   }
 
   @Test
+  // TODO: re-enable when we merge #8916
   @Disabled("requires Use 16-bit random value in validator filter #8916")
   public void fuzzBlockHeader_minimal() {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
@@ -209,6 +213,8 @@ class FuzzUtilTest {
   }
 
   @Test
+  // TODO: re-enable when we merge #8916
+  @Disabled("requires Use 16-bit random value in validator filter #8916")
   public void fuzzProposerSlashing_minimal() {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
 
