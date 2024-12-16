@@ -279,15 +279,21 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
     final SszKZGCommitment sszKZGCommitment =
         beaconBlockBodyDeneb.getBlobKzgCommitments().get(blobIdentifier.getIndex().intValue());
 
-    return blobSidecarSchema.create(
-        blobIdentifier.getIndex(),
-        blobAndProof.blob(),
-        sszKZGCommitment,
-        new SszKZGProof(blobAndProof.proof()),
-        signedBeaconBlockHeader,
-        computeKzgCommitmentInclusionProof(blobIdentifier.getIndex(), beaconBlockBodyDeneb));
-    
+    final BlobSidecar blobSidecar =
+        blobSidecarSchema.create(
+            blobIdentifier.getIndex(),
+            blobAndProof.blob(),
+            sszKZGCommitment,
+            new SszKZGProof(blobAndProof.proof()),
+            signedBeaconBlockHeader,
+            computeKzgCommitmentInclusionProof(blobIdentifier.getIndex(), beaconBlockBodyDeneb));
 
+    blobSidecar.markSignatureAsValidated();
+    blobSidecar.markKzgCommitmentInclusionProofAsValidated();
+    // assume kzg validation done by local EL
+    blobSidecar.markKzgAsValidated();
+
+    return blobSidecar;
   }
 
   public boolean verifyBlobKzgCommitmentInclusionProof(final BlobSidecar blobSidecar) {

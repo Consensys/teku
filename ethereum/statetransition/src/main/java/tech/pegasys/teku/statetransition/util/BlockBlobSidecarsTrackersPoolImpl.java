@@ -493,7 +493,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                 // if we attempted to fetch this block via RPC, we missed the opportunity to
                 // complete the blob sidecars via local EL and RPC (since the block is required to
                 // be known) Let's try now
-                if (!existingTracker.isCompleted()) {
+                if (!existingTracker.isComplete()) {
                   fetchMissingContent(slotAndBlockRoot).finish(this::logMissingContentFetchFailure);
                 }
               }
