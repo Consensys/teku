@@ -68,8 +68,10 @@ public class LibP2PParamsFactory {
 
   private static void addGossipParamsMaxValues(
       final NetworkingSpecConfig networkingSpecConfig, final GossipParamsBuilder builder) {
+    final int gossipMaxSize = networkingSpecConfig.getGossipMaxSize();
+    final int compressedMaxGossipSize = 32 + gossipMaxSize + (gossipMaxSize / 6);
     builder
-        .maxGossipMessageSize(networkingSpecConfig.getGossipMaxSize())
+        .maxGossipMessageSize(compressedMaxGossipSize)
         .maxPublishedMessages(1000)
         .maxTopicsPerPublishedMessage(1)
         .maxSubscriptions(MAX_SUBSCRIPTIONS_PER_MESSAGE)
