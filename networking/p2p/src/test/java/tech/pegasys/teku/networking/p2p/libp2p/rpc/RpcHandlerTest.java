@@ -30,6 +30,7 @@ import io.libp2p.core.multistream.ProtocolBinding;
 import io.libp2p.core.mux.StreamMuxer.Session;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 import kotlin.Unit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,8 +53,9 @@ public class RpcHandlerTest {
 
   StubAsyncRunner asyncRunner = new StubAsyncRunner();
   RpcMethod<RpcRequestHandler, Object, RpcResponseHandler<?>> rpcMethod = mock(RpcMethod.class);
+  int maxConcurrentRequests = 2;
   RpcHandler<RpcRequestHandler, Object, RpcResponseHandler<?>> rpcHandler =
-      new RpcHandler<>(asyncRunner, rpcMethod);
+      new RpcHandler<>(asyncRunner, rpcMethod, maxConcurrentRequests);
 
   Connection connection = mock(Connection.class);
   Session session = mock(Session.class);
@@ -245,6 +247,39 @@ public class RpcHandlerTest {
     assertThatThrownBy(future::get).hasRootCauseInstanceOf(expectedException);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
     verify(stream).close();
+  }
+
+  @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
+  void requestIsThrottledIfQueueIsFull() {
+    // fill the queue
+    IntStream.range(0, maxConcurrentRequests)
+        .forEach(__ -> rpcHandler.sendRequest(connection, request, responseHandler));
+
+    final StreamPromise<Controller<RpcRequestHandler>> streamPromise1 =
+        new StreamPromise<>(new CompletableFuture<>(), new CompletableFuture<>());
+    when(session.createStream((ProtocolBinding<Controller<RpcRequestHandler>>) any()))
+        .thenReturn(streamPromise1);
+    final Stream stream1 = mock(Stream.class);
+    streamPromise1.getStream().complete(stream1);
+    streamPromise1.getController().complete(controller);
+    final CompletableFuture<String> protocolIdFuture1 = new CompletableFuture<>();
+    when(stream1.getProtocol()).thenReturn(protocolIdFuture1);
+    protocolIdFuture1.complete("test");
+
+    final SafeFuture<RpcStreamController<RpcRequestHandler>> throttledResult =
+        rpcHandler.sendRequest(connection, request, responseHandler);
+
+    assertThat(throttledResult).isNotDone();
+
+    // empty the queue
+    streamPromise.getStream().complete(stream);
+    streamPromise.getController().complete(controller);
+    stream.getProtocol().complete("test");
+    writeFuture.complete(null);
+
+    // throttled request should have completed now
+    assertThat(throttledResult).isCompleted();
   }
 
   @SuppressWarnings("UnnecessaryAsync")
