@@ -133,7 +133,6 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final ForkChoiceState forkChoiceState = dataStructureUtil.randomForkChoiceState(false);
     final ForkChoiceStateV1 forkChoiceStateV1 =
         ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState);
-    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(spec.getGenesisSpecConfig());
     final PayloadBuildingAttributes attributes =
         new PayloadBuildingAttributes(
             dataStructureUtil.randomUInt64(),
@@ -143,8 +142,7 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
             dataStructureUtil.randomEth1Address(),
             Optional.empty(),
             Optional.of(List.of()),
-            dataStructureUtil.randomBytes32(),
-            Optional.of(UInt64.valueOf(specConfigDeneb.getMaxBlobsPerBlock())));
+            dataStructureUtil.randomBytes32());
     final Optional<PayloadAttributesV3> payloadAttributes =
         PayloadAttributesV3.fromInternalPayloadBuildingAttributesV3(Optional.of(attributes));
     final ForkChoiceUpdatedResult responseData =

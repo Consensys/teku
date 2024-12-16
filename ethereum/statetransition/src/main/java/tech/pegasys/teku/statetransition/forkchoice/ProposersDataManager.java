@@ -32,7 +32,6 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -238,10 +237,6 @@ public class ProposersDataManager implements SlotEventsChannel {
             .map(RegisteredValidatorInfo::getSignedValidatorRegistration);
 
     final Eth1Address feeRecipient = getFeeRecipient(proposerInfo, blockSlot);
-    final Optional<SpecConfigDeneb> maybeDenebConfig =
-        spec.atSlot(blockSlot).getConfig().toVersionDeneb();
-    final Optional<UInt64> maxBlobsPerBlock =
-        maybeDenebConfig.map(SpecConfigDeneb::getMaxBlobsPerBlock).map(UInt64::valueOf);
 
     return Optional.of(
         new PayloadBuildingAttributes(
@@ -252,8 +247,7 @@ public class ProposersDataManager implements SlotEventsChannel {
             feeRecipient,
             validatorRegistration,
             spec.getExpectedWithdrawals(state),
-            currentHeadBlockRoot,
-            maxBlobsPerBlock));
+            currentHeadBlockRoot));
   }
 
   // this function MUST return a fee recipient.
