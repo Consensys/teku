@@ -1,9 +1,9 @@
 {
   "title" : "PendingPartialWithdrawal",
   "type" : "object",
-  "required" : [ "index", "amount", "withdrawable_epoch" ],
+  "required" : [ "validator_index", "amount", "withdrawable_epoch" ],
   "properties" : {
-    "index" : {
+    "validator_index" : {
       "type" : "string",
       "description" : "unsigned 64 bit integer",
       "example" : "1",
