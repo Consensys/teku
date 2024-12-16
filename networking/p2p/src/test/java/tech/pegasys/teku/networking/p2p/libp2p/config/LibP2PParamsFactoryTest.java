@@ -43,7 +43,7 @@ public class LibP2PParamsFactoryTest {
   public void createGossipParams_setGossipMaxSizeFromNetworkSpecConfig() {
     final GossipConfig gossipConfig = GossipConfig.builder().build();
     final NetworkingSpecConfig networkingSpecConfig = spy(spec.getNetworkingConfig());
-    final int expectedGossipMaxSize = networkingSpecConfig.getGossipMaxSize();
+    final int expectedGossipMaxSize = 12233418;
     reset(networkingSpecConfig);
 
     final GossipParams gossipParams =
