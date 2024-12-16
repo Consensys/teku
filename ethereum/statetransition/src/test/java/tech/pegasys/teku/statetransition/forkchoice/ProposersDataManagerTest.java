@@ -14,35 +14,24 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
-import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
-import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
-import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 @TestSpecContext(allMilestones = true)
@@ -58,7 +47,6 @@ class ProposersDataManagerTest {
   private DataStructureUtil dataStructureUtil;
   private ProposersDataManager manager;
   private Eth1Address defaultAddress;
-  private UInt64 currentForkFirstSlot;
 
   @BeforeEach
   public void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
@@ -71,7 +59,6 @@ class ProposersDataManagerTest {
           case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(currentForkEpoch);
           case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(currentForkEpoch);
         };
-    currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
     dataStructureUtil = specContext.getDataStructureUtil();
     defaultAddress = dataStructureUtil.randomEth1Address();
     manager =
@@ -110,59 +97,5 @@ class ProposersDataManagerTest {
   void validatorIsConnected_notFound_withExpiredPreparedProposer() {
     manager.updatePreparedProposers(proposers, UInt64.ONE);
     assertThat(manager.validatorIsConnected(UInt64.ONE, UInt64.valueOf(26))).isFalse();
-  }
-
-  @TestTemplate
-  void shouldSetMaxAndTargetBlobCount() throws ExecutionException, InterruptedException {
-    final Spec specMock = mock(Spec.class);
-    when(specMock.computeEpochAtSlot(any())).thenReturn(currentForkEpoch);
-    final UInt64 timestamp = dataStructureUtil.randomUInt64();
-    when(specMock.computeTimeAtSlot(any(), any())).thenReturn(timestamp);
-    final Bytes32 random = dataStructureUtil.randomBytes32();
-    when(specMock.getRandaoMix(any(), any())).thenReturn(random);
-    when(specMock.atSlot(currentForkFirstSlot)).thenReturn(spec.atSlot(currentForkFirstSlot));
-    final InlineEventThread eventThread = new InlineEventThread();
-    manager =
-        new ProposersDataManager(
-            eventThread,
-            specMock,
-            metricsSystem,
-            channel,
-            recentChainData,
-            Optional.of(defaultAddress),
-            true);
-    eventThread.markAsOnEventThread();
-    final ForkChoiceUpdateData forkChoiceUpdateDataMock = mock(ForkChoiceUpdateData.class);
-    when(forkChoiceUpdateDataMock.hasHeadBlockHash()).thenReturn(true);
-    final ForkChoiceState forkChoiceStateMock = mock(ForkChoiceState.class);
-    when(forkChoiceStateMock.getHeadBlockRoot()).thenReturn(dataStructureUtil.randomBytes32());
-    when(forkChoiceUpdateDataMock.getForkChoiceState()).thenReturn(forkChoiceStateMock);
-    when(recentChainData.isJustifiedCheckpointFullyValidated()).thenReturn(true);
-    final ChainHead chainHeadMock = mock(ChainHead.class);
-    when(chainHeadMock.getSlot()).thenReturn(UInt64.ZERO);
-    when(chainHeadMock.getRoot()).thenReturn(dataStructureUtil.randomBytes32());
-    when(recentChainData.getChainHead()).thenReturn(Optional.of(chainHeadMock));
-    final BeaconState beaconStateMock = mock(BeaconState.class);
-    when(chainHeadMock.getState()).thenReturn(SafeFuture.completedFuture(beaconStateMock));
-    final SafeFuture<Optional<PayloadBuildingAttributes>> payloadBuildingAttributesFuture =
-        manager.calculatePayloadBuildingAttributes(
-            currentForkFirstSlot, true, forkChoiceUpdateDataMock, false);
-    final Optional<PayloadBuildingAttributes> maybePayloadBuildingAttributes =
-        payloadBuildingAttributesFuture.get();
-    assertThat(maybePayloadBuildingAttributes).isPresent();
-    assertThat(maybePayloadBuildingAttributes.get().getTargetBlobCount())
-        .isEqualTo(
-            spec.atSlot(currentForkFirstSlot)
-                .getConfig()
-                .toVersionDeneb()
-                .map(SpecConfigDeneb::getTargetBlobsPerBlock)
-                .map(UInt64::valueOf));
-    assertThat(maybePayloadBuildingAttributes.get().getMaximumBlobCount())
-        .isEqualTo(
-            spec.atSlot(currentForkFirstSlot)
-                .getConfig()
-                .toVersionDeneb()
-                .map(SpecConfigDeneb::getMaxBlobsPerBlock)
-                .map(UInt64::valueOf));
   }
 }

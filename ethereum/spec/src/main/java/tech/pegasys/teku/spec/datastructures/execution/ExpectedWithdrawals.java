@@ -172,13 +172,14 @@ public class ExpectedWithdrawals {
       if (pendingPartialWithdrawal.getWithdrawableEpoch().isGreaterThan(epoch)) {
         break;
       }
-      final Validator validator = preState.getValidators().get(pendingPartialWithdrawal.getIndex());
+      final Validator validator =
+          preState.getValidators().get(pendingPartialWithdrawal.getValidatorIndex());
       final boolean hasSufficientBalance =
           validator
               .getEffectiveBalance()
               .isGreaterThanOrEqualTo(specConfig.getMinActivationBalance());
       final UInt64 validatorBalance =
-          preState.getBalances().get(pendingPartialWithdrawal.getIndex()).get();
+          preState.getBalances().get(pendingPartialWithdrawal.getValidatorIndex()).get();
       final boolean hasExcessBalance =
           validatorBalance.isGreaterThan(specConfig.getMinActivationBalance());
       if (validator.getExitEpoch().equals(FAR_FUTURE_EPOCH)
@@ -193,7 +194,7 @@ public class ExpectedWithdrawals {
                 .getWithdrawalSchema()
                 .create(
                     withdrawalIndex,
-                    UInt64.valueOf(pendingPartialWithdrawal.getIndex()),
+                    UInt64.valueOf(pendingPartialWithdrawal.getValidatorIndex()),
                     new Bytes20(validator.getWithdrawalCredentials().slice(12)),
                     withdrawableBalance));
         withdrawalIndex = withdrawalIndex.increment();

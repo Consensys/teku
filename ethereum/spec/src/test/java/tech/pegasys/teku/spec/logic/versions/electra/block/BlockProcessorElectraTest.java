@@ -522,7 +522,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
             .getPendingPartialWithdrawals()
             .get(postState.getPendingPartialWithdrawals().size() - 1);
 
-    assertThat(mostRecentPendingPartialWithdrawal.getIndex()).isEqualTo(validatorIndex);
+    assertThat(mostRecentPendingPartialWithdrawal.getValidatorIndex()).isEqualTo(validatorIndex);
     assertThat(mostRecentPendingPartialWithdrawal.getAmount())
         .isEqualTo(UInt64.valueOf(123_456_789));
     assertThat(mostRecentPendingPartialWithdrawal.getWithdrawableEpoch())

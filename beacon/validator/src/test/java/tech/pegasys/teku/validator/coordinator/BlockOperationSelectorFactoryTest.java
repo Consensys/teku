@@ -801,7 +801,8 @@ class BlockOperationSelectorFactoryTest {
               assertThat(blobSidecar.getSszKZGCommitment())
                   .isEqualTo(expectedCommitments.get(index));
               // verify the merkle proof
-              assertThat(miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)).isTrue();
+              assertThat(miscHelpersDeneb.verifyBlobKzgCommitmentInclusionProof(blobSidecar))
+                  .isTrue();
             });
   }
 
@@ -921,7 +922,8 @@ class BlockOperationSelectorFactoryTest {
               assertThat(blobSidecar.getSszKZGCommitment())
                   .isEqualTo(expectedCommitments.get(index));
               // verify the merkle proof
-              assertThat(miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)).isTrue();
+              assertThat(miscHelpersDeneb.verifyBlobKzgCommitmentInclusionProof(blobSidecar))
+                  .isTrue();
             });
   }
 
