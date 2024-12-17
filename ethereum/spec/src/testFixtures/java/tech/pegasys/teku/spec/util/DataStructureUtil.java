@@ -821,6 +821,10 @@ public final class DataStructureUtil {
   }
 
   public SingleAttestation randomSingleAttestation() {
+    return randomSingleAttestation(randomUInt64());
+  }
+
+  public SingleAttestation randomSingleAttestation(final UInt64 slot) {
     return spec.getGenesisSchemaDefinitions()
         .toVersionElectra()
         .orElseThrow()
@@ -828,7 +832,7 @@ public final class DataStructureUtil {
         .create(
             randomUInt64(Integer.MAX_VALUE),
             randomUInt64(Integer.MAX_VALUE),
-            randomAttestationData(),
+            randomAttestationData(slot),
             randomSignature());
   }
 
