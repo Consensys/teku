@@ -15,6 +15,7 @@ package tech.pegasys.teku.fuzz;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
@@ -22,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.junit.BouncyCastleExtension;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.xerial.snappy.Snappy;
@@ -39,6 +39,8 @@ import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.SyncAggregateFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
 import tech.pegasys.teku.fuzz.input.WithdrawalRequestFuzzInput;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.spec.Spec;
@@ -63,6 +65,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
@@ -92,7 +95,8 @@ class FuzzUtilTest {
   // https://github.com/ethereum/consensus-specs/tree/dev/tests/generators
 
   @Test
-  public void fuzzAttestation_minimal() {
+  @SuppressWarnings("unchecked")
+  public void fuzzAttestation_minimal() throws JsonProcessingException {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
 
     final Path testCaseDir =
@@ -102,21 +106,24 @@ class FuzzUtilTest {
             testCaseDir.resolve("attestation.ssz_snappy"),
             spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions().getAttestationSchema());
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz_snappy"), beaconStateSchema);
-    final BeaconState postState =
+    final BeaconStateElectra postState =
         loadSsz(testCaseDir.resolve("post.ssz_snappy"), beaconStateSchema);
 
-    AttestationFuzzInput input = new AttestationFuzzInput(spec, preState, data);
-    byte[] rawInput = input.sszSerialize().toArrayUnsafe();
-    Optional<Bytes> result = fuzzUtil.fuzzAttestation(rawInput).map(Bytes::wrap);
+    final AttestationFuzzInput input = new AttestationFuzzInput(spec, preState, data);
+    final byte[] rawInput = input.sszSerialize().toArrayUnsafe();
+    final Optional<Bytes> result = fuzzUtil.fuzzAttestation(rawInput).map(Bytes::wrap);
 
-    Bytes expected = postState.sszSerialize();
     assertThat(result).isNotEmpty();
-    assertThat(result.get()).isEqualTo(expected);
+    final BeaconStateElectra resultState =
+        BeaconStateElectra.required(spec.deserializeBeaconState(result.get()));
+    DeserializableTypeDefinition<BeaconStateElectra> t =
+        (DeserializableTypeDefinition<BeaconStateElectra>)
+            resultState.getSchema().getJsonTypeDefinition();
+    assertThat(JsonUtil.prettySerialize(resultState, t))
+        .isEqualTo(JsonUtil.prettySerialize(postState, t));
   }
 
   @Test
-  // TODO: re-enable when we merge #8916
-  @Disabled("requires Use 16-bit random value in validator filter #8916")
   public void fuzzAttesterSlashing_minimal() {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
 
@@ -142,8 +149,6 @@ class FuzzUtilTest {
   }
 
   @Test
-  // TODO: re-enable when we merge #8916
-  @Disabled("requires Use 16-bit random value in validator filter #8916")
   public void fuzzBlock_minimal() {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
 
@@ -171,8 +176,6 @@ class FuzzUtilTest {
   }
 
   @Test
-  // TODO: re-enable when we merge #8916
-  @Disabled("requires Use 16-bit random value in validator filter #8916")
   public void fuzzBlockHeader_minimal() {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
 
@@ -213,8 +216,6 @@ class FuzzUtilTest {
   }
 
   @Test
-  // TODO: re-enable when we merge #8916
-  @Disabled("requires Use 16-bit random value in validator filter #8916")
   public void fuzzProposerSlashing_minimal() {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
 
@@ -385,8 +386,6 @@ class FuzzUtilTest {
     assertThat(result.get()).isEqualTo(expected);
   }
 
-  // TODO fix as part of https://github.com/Consensys/teku/pull/8876
-  @Disabled("Disabling until we have a fix for this")
   @Test
   public void fuzzConsolidationRequest_minimal() {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
