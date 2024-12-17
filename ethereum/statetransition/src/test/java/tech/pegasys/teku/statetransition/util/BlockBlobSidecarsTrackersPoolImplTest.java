@@ -1092,14 +1092,15 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     // blocks arrives at slot start
     timeProvider.advanceTimeBySeconds(startSlotInSeconds.longValue());
 
-    final Duration fetchDelay = blockBlobSidecarsTrackersPool.calculateFetchDelay(slotAndBlockRoot);
+    final Duration fetchDelay =
+        blockBlobSidecarsTrackersPool.calculateBlockFetchDelay(slotAndBlockRoot);
 
     // we can wait the full target
     assertThat(fetchDelay).isEqualTo(Duration.ofMillis(TARGET_WAIT_MILLIS.longValue()));
   }
 
   @Test
-  void calculateFetchDelay_shouldRespectMinimumWhenBlockIsLate() {
+  void calculateBlockFetchDelay_shouldRespectMinimumWhenBlockIsLate() {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
 
@@ -1111,14 +1112,15 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     // blocks arrives 200ms before attestation due
     timeProvider.advanceTimeByMillis(startSlotInMillis.plus(3_800).longValue());
 
-    final Duration fetchDelay = blockBlobSidecarsTrackersPool.calculateFetchDelay(slotAndBlockRoot);
+    final Duration fetchDelay =
+        blockBlobSidecarsTrackersPool.calculateBlockFetchDelay(slotAndBlockRoot);
 
     // we can wait the full target
     assertThat(fetchDelay).isEqualTo(Duration.ofMillis(MIN_WAIT_MILLIS.longValue()));
   }
 
   @Test
-  void calculateFetchDelay_shouldRespectTargetWhenBlockIsVeryLate() {
+  void calculateBlockFetchDelay_shouldRespectTargetWhenBlockIsVeryLate() {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
 
@@ -1129,14 +1131,15 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     // blocks arrives 1s after attestation due
     timeProvider.advanceTimeBySeconds(startSlotInSeconds.plus(5).longValue());
 
-    final Duration fetchDelay = blockBlobSidecarsTrackersPool.calculateFetchDelay(slotAndBlockRoot);
+    final Duration fetchDelay =
+        blockBlobSidecarsTrackersPool.calculateBlockFetchDelay(slotAndBlockRoot);
 
     // we can wait the full target
     assertThat(fetchDelay).isEqualTo(Duration.ofMillis(TARGET_WAIT_MILLIS.longValue()));
   }
 
   @Test
-  void calculateFetchDelay_shouldRespectAttestationDueLimit() {
+  void calculateBlockFetchDelay_shouldRespectAttestationDueLimit() {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
 
@@ -1156,7 +1159,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     timeProvider.advanceTimeByMillis(blockArrivalTimeMillis.longValue());
 
-    final Duration fetchDelay = blockBlobSidecarsTrackersPool.calculateFetchDelay(slotAndBlockRoot);
+    final Duration fetchDelay =
+        blockBlobSidecarsTrackersPool.calculateBlockFetchDelay(slotAndBlockRoot);
 
     // we can only wait 200ms less than target
     assertThat(fetchDelay)
@@ -1165,11 +1169,12 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   }
 
   @Test
-  void calculateFetchDelay_shouldReturnZeroIfSlotIsOld() {
+  void calculateBlockFetchDelay_shouldReturnZeroIfSlotIsOld() {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(currentSlot.minus(1), dataStructureUtil.randomBytes32());
 
-    final Duration fetchDelay = blockBlobSidecarsTrackersPool.calculateFetchDelay(slotAndBlockRoot);
+    final Duration fetchDelay =
+        blockBlobSidecarsTrackersPool.calculateBlockFetchDelay(slotAndBlockRoot);
 
     assertThat(fetchDelay).isEqualTo(Duration.ZERO);
   }

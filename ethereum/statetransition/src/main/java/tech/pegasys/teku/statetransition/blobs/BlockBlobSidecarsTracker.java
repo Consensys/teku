@@ -314,7 +314,7 @@ public class BlockBlobSidecarsTracker {
           .append(debugTimings.get(LOCAL_EL_BLOBS_FETCH_TIMING_IDX) - creationTime)
           .append("ms - ");
     } else {
-      timingsReport.append("Local EL fetch wasn't required - ");
+      timingsReport.append("Local EL blobs fetch wasn't required - ");
     }
 
     if (debugTimings.containsKey(RPC_BLOCK_FETCH_TIMING_IDX)) {
