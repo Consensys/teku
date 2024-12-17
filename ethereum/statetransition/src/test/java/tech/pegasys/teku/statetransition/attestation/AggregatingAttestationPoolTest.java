@@ -46,7 +46,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -84,7 +84,7 @@ class AggregatingAttestationPoolTest {
   private Int2IntMap committeeSizes;
 
   @BeforeEach
-  public void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
+  public void setUp(final SpecContext specContext) {
     spec = specContext.getSpec();
     specMilestone = specContext.getSpecMilestone();
     dataStructureUtil = specContext.getDataStructureUtil();

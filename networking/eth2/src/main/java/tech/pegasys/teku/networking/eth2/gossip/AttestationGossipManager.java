@@ -53,7 +53,7 @@ public class AttestationGossipManager implements GossipManager {
     if (validatableAttestation.isAggregate() || !validatableAttestation.markGossiped()) {
       return;
     }
-    final Attestation attestation = validatableAttestation.getAttestation();
+    final Attestation attestation = validatableAttestation.getUnconvertedAttestation();
     subnetSubscriptions
         .gossip(attestation)
         .finish(
