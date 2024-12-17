@@ -63,19 +63,6 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
   }
 
   /**
-   * get_active_balance
-   *
-   * @param state The state to get the effective balance from
-   * @param validatorIndex the index of the validator
-   */
-  public UInt64 getActiveBalance(final BeaconState state, final int validatorIndex) {
-    final Validator validator = state.getValidators().get(validatorIndex);
-    final UInt64 maxEffectiveBalance = miscHelpers.getMaxEffectiveBalance(validator);
-    final UInt64 validatorBalance = state.getBalances().get(validatorIndex).get();
-    return validatorBalance.min(maxEffectiveBalance);
-  }
-
-  /**
    * get_pending_balance_to_withdraw
    *
    * @param state The state

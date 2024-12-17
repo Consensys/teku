@@ -137,11 +137,6 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
   }
 
   @Override
-  public Optional<MiscHelpersElectra> toVersionElectra() {
-    return Optional.of(this);
-  }
-
-  @Override
   public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
     // if the next deposit to be processed by Eth1Data poll has the index of the first deposit
     // processed with the new deposit flow, i.e. `eth1_deposit_index ==
@@ -149,5 +144,10 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
     return state
         .getEth1DepositIndex()
         .equals(BeaconStateElectra.required(state).getDepositRequestsStartIndex());
+  }
+
+  @Override
+  public Optional<MiscHelpersElectra> toVersionElectra() {
+    return Optional.of(this);
   }
 }
