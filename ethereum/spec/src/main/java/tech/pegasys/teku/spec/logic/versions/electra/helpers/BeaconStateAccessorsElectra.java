@@ -140,7 +140,7 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
       final int shuffledIndex =
           miscHelpers.computeShuffledIndex(i % activeValidatorCount, activeValidatorCount, seed);
       final int candidateIndex = activeValidatorIndices.getInt(shuffledIndex);
-      final int offset = i % 16 * 2;
+      final int offset = (i % 16) * 2;
       final UInt64 randomValue = bytesToUInt64(randomBytes.slice(offset, 2));
       final UInt64 effectiveBalance = validators.get(candidateIndex).getEffectiveBalance();
       if (effectiveBalance
