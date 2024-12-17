@@ -73,7 +73,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
   enum TrackerObject {
     BLOCK,
-    BLOB_SIDECAR;
+    BLOB_SIDECAR
   }
 
   static final String COUNTER_BLOCK_TYPE = "block";
@@ -596,7 +596,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
         final Duration blockFetchDelay = calculateBlockFetchDelay(slotAndBlockRoot);
         asyncRunner.runAfterDelay(() -> fetchMissingContent(slotAndBlockRoot), blockFetchDelay);
       }
-        // no delay for attempting to fetch blobs for when the block is first seen
+      // no delay for attempting to fetch blobs for when the block is first seen
       case BLOCK -> fetchMissingContent(slotAndBlockRoot);
     }
   }

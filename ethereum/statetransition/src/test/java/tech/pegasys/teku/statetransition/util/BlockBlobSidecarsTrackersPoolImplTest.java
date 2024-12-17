@@ -883,11 +883,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .index(UInt64.valueOf(2))
             .build();
 
-    final Set<BlobIdentifier> blobsNotUserInBlock =
-        Set.of(
-            new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), UInt64.valueOf(2)),
-            new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), UInt64.valueOf(3)));
-
     mockedTrackersFactory =
         Optional.of(
             (slotAndRoot) -> {
