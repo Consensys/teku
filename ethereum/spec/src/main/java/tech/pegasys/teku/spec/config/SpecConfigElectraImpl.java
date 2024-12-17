@@ -41,7 +41,6 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   private final int maxPendingPartialsPerWithdrawalsSweep;
   private final int maxPendingDepositsPerEpoch;
   private final int maxBlobsPerBlockElectra;
-  private final int targetBlobsPerBlockElectra;
   private final int maxRequestBlobSidecarsElectra;
   private final int blobSidecarSubnetCountElectra;
 
@@ -65,7 +64,6 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
       final int maxPendingPartialsPerWithdrawalsSweep,
       final int maxPendingDepositsPerEpoch,
       final int maxBlobsPerBlockElectra,
-      final int targetBlobsPerBlockElectra,
       final int maxRequestBlobSidecarsElectra,
       final int blobSidecarSubnetCountElectra) {
     super(specConfig);
@@ -87,7 +85,6 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
     this.maxPendingPartialsPerWithdrawalsSweep = maxPendingPartialsPerWithdrawalsSweep;
     this.maxPendingDepositsPerEpoch = maxPendingDepositsPerEpoch;
     this.maxBlobsPerBlockElectra = maxBlobsPerBlockElectra;
-    this.targetBlobsPerBlockElectra = targetBlobsPerBlockElectra;
     this.maxRequestBlobSidecarsElectra = maxRequestBlobSidecarsElectra;
     this.blobSidecarSubnetCountElectra = blobSidecarSubnetCountElectra;
   }
@@ -183,11 +180,6 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   }
 
   @Override
-  public int getTargetBlobsPerBlock() {
-    return targetBlobsPerBlockElectra;
-  }
-
-  @Override
   public int getBlobSidecarSubnetCount() {
     return blobSidecarSubnetCountElectra;
   }
@@ -235,7 +227,6 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
         && maxPendingPartialsPerWithdrawalsSweep == that.maxPendingPartialsPerWithdrawalsSweep
         && maxPendingDepositsPerEpoch == that.maxPendingDepositsPerEpoch
         && maxBlobsPerBlockElectra == that.maxBlobsPerBlockElectra
-        && targetBlobsPerBlockElectra == that.targetBlobsPerBlockElectra
         && maxRequestBlobSidecarsElectra == that.maxRequestBlobSidecarsElectra
         && blobSidecarSubnetCountElectra == that.blobSidecarSubnetCountElectra;
   }
@@ -262,7 +253,6 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
         maxPendingPartialsPerWithdrawalsSweep,
         maxPendingDepositsPerEpoch,
         maxBlobsPerBlockElectra,
-        targetBlobsPerBlockElectra,
         maxRequestBlobSidecarsElectra,
         blobSidecarSubnetCountElectra);
   }

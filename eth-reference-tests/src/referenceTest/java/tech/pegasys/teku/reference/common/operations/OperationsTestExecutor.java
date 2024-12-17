@@ -320,7 +320,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       case WITHDRAWAL -> processWithdrawal(testDefinition, state, processor);
       case DEPOSIT_REQUEST -> processDepositRequest(testDefinition, state, processor);
       case WITHDRAWAL_REQUEST -> processWithdrawalRequest(testDefinition, state, processor);
-      case CONSOLIDATION_REQUEST -> processConsolidation(testDefinition, state, processor);
+      case CONSOLIDATION_REQUEST -> processConsolidations(testDefinition, state, processor);
       default ->
           throw new UnsupportedOperationException(
               "Operation " + operation + " not implemented in OperationTestExecutor");
@@ -381,7 +381,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     processor.processWithdrawalRequest(state, withdrawalRequests.asList());
   }
 
-  private void processConsolidation(
+  private void processConsolidations(
       final TestDefinition testDefinition,
       final MutableBeaconState state,
       final OperationProcessor processor)
@@ -394,7 +394,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     final SszList<ConsolidationRequest> consolidationRequests =
         loadSsz(testDefinition, dataFileName, consolidationRequestsSchema);
 
-    processor.processConsolidationRequest(state, consolidationRequests.asList());
+    processor.processConsolidationRequests(state, consolidationRequests.asList());
   }
 
   private SignedVoluntaryExit loadVoluntaryExit(final TestDefinition testDefinition) {

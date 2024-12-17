@@ -75,7 +75,6 @@ public class SpecConfigElectraTest {
                   b.electraBuilder(
                       eb ->
                           eb.maxBlobsPerBlockElectra(8)
-                              .targetBlobsPerBlockElectra(5)
                               .blobSidecarSubnetCountElectra(10)
                               .maxRequestBlobSidecarsElectra(13));
                 });
@@ -87,12 +86,10 @@ public class SpecConfigElectraTest {
         specConfigAndParent.forMilestone(SpecMilestone.ELECTRA).toVersionDeneb().orElseThrow();
 
     assertThat(denebConfig.getMaxBlobsPerBlock()).isEqualTo(4);
-    assertThat(denebConfig.getTargetBlobsPerBlock()).isEqualTo(2);
     assertThat(denebConfig.getBlobSidecarSubnetCount()).isEqualTo(8);
     assertThat(denebConfig.getMaxRequestBlobSidecars()).isEqualTo(16);
 
     assertThat(electraConfig.getMaxBlobsPerBlock()).isEqualTo(8);
-    assertThat(electraConfig.getTargetBlobsPerBlock()).isEqualTo(5);
     assertThat(electraConfig.getBlobSidecarSubnetCount()).isEqualTo(10);
     assertThat(electraConfig.getMaxRequestBlobSidecars()).isEqualTo(13);
   }
@@ -140,7 +137,6 @@ public class SpecConfigElectraTest {
         dataStructureUtil.randomPositiveInt(8),
         dataStructureUtil.randomPositiveInt(16),
         dataStructureUtil.randomPositiveInt(8),
-        dataStructureUtil.randomPositiveInt(4),
         dataStructureUtil.randomPositiveInt(1024),
         dataStructureUtil.randomPositiveInt(8)) {};
   }

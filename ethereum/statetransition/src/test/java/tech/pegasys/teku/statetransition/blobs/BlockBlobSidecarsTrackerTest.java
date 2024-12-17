@@ -123,7 +123,7 @@ public class BlockBlobSidecarsTrackerTest {
     blockBlobSidecarsTracker.setBlock(block);
 
     SafeFutureAssert.assertThatSafeFuture(completionFuture).isCompleted();
-    assertThat(blockBlobSidecarsTracker.isCompleted()).isTrue();
+    assertThat(blockBlobSidecarsTracker.isComplete()).isTrue();
 
     assertThat(blockBlobSidecarsTracker.getMissingBlobSidecars()).isEmpty();
     assertThat(blockBlobSidecarsTracker.getBlobSidecars()).isEmpty();
@@ -210,15 +210,15 @@ public class BlockBlobSidecarsTrackerTest {
 
       if (idx == blobIdentifiersForBlock.size() - 1) {
         SafeFutureAssert.assertThatSafeFuture(completionFuture).isCompleted();
-        assertThat(blockBlobSidecarsTracker.isCompleted()).isTrue();
+        assertThat(blockBlobSidecarsTracker.isComplete()).isTrue();
       } else {
         SafeFutureAssert.assertThatSafeFuture(completionFuture).isNotCompleted();
-        assertThat(blockBlobSidecarsTracker.isCompleted()).isFalse();
+        assertThat(blockBlobSidecarsTracker.isComplete()).isFalse();
       }
     }
 
     SafeFutureAssert.assertThatSafeFuture(completionFuture).isCompleted();
-    assertThat(blockBlobSidecarsTracker.isCompleted()).isTrue();
+    assertThat(blockBlobSidecarsTracker.isComplete()).isTrue();
   }
 
   @Test
@@ -416,7 +416,7 @@ public class BlockBlobSidecarsTrackerTest {
 
     blobSidecarsForBlock.forEach(blockBlobSidecarsTracker::add);
 
-    assertThat(blockBlobSidecarsTracker.isCompleted()).isTrue();
+    assertThat(blockBlobSidecarsTracker.isComplete()).isTrue();
 
     verify(blockImportChannel, times(1)).importBlock(block);
   }
