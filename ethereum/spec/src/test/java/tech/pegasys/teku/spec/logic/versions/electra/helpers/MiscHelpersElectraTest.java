@@ -129,7 +129,7 @@ public class MiscHelpersElectraTest {
         proposerIndexCount++;
       }
     }
-    assertThat(proposerIndexCount).isEqualTo(4);
+    assertThat(proposerIndexCount).isEqualTo(5);
   }
 
   private BeaconState randomStateWithConsolidatedValidator(final int consolidationAmount) {
