@@ -483,6 +483,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     return blockBlobSidecarsTrackers.size();
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private BlockBlobSidecarsTracker internalOnNewBlock(
       final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
     final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
@@ -594,7 +595,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
         final Duration blockFetchDelay = calculateBlockFetchDelay(slotAndBlockRoot);
         asyncRunner.runAfterDelay(() -> fetchMissingContent(slotAndBlockRoot), blockFetchDelay);
       }
-        // no delay for attempting to fetch blobs for when the block is first seen
+      // no delay for attempting to fetch blobs for when the block is first seen
       case BLOCK -> asyncRunner.runAsync(() -> fetchMissingContent(slotAndBlockRoot));
     }
   }
