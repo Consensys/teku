@@ -887,7 +887,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   }
 
   @Test
-  void shouldTryToFetchFromLocalELWhenBlockArrivesAfterRPCFetch() {
+  void shouldTryToFetchBlobSidecarsWhenBlockArrivesAfterRPCFetch() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
 
     final Set<BlobIdentifier> missingBlobs =
@@ -912,7 +912,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
               when(tracker.setBlock(any())).thenReturn(true);
               when(tracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
               when(tracker.isRpcBlockFetchTriggered()).thenReturn(true);
-              when(tracker.isLocalElBlobsFetchTriggered()).thenReturn(false);
+              when(tracker.isLocalElBlobsFetchTriggered()).thenReturn(true);
               return tracker;
             });
 
@@ -930,6 +930,9 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
         .thenReturn(SafeFuture.completedFuture(List.of(Optional.empty(), Optional.empty())));
 
     blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
+
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    asyncRunner.executeQueuedActions();
 
     verify(tracker).setLocalElBlobsFetchTriggered();
     verify(executionLayer).engineGetBlobs(any(), any());

@@ -504,13 +504,11 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
               countBlock(remoteOrigin);
 
-              if (existingTracker.isRpcBlockFetchTriggered()) {
+              if (existingTracker.isRpcBlockFetchTriggered() && !existingTracker.isComplete()) {
                 // if we attempted to fetch this block via RPC, we missed the opportunity to
                 // complete the blob sidecars via local EL and RPC (since the block is required to
                 // be known) Let's try now
-                if (!existingTracker.isComplete()) {
-                  fetchMissingContent(slotAndBlockRoot);
-                }
+                asyncRunner.runAsync(() -> fetchMissingContent(slotAndBlockRoot));
               }
             });
 
@@ -596,7 +594,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
         final Duration blockFetchDelay = calculateBlockFetchDelay(slotAndBlockRoot);
         asyncRunner.runAfterDelay(() -> fetchMissingContent(slotAndBlockRoot), blockFetchDelay);
       }
-      // no delay for attempting to fetch blobs for when the block is first seen
+        // no delay for attempting to fetch blobs for when the block is first seen
       case BLOCK -> asyncRunner.runAsync(() -> fetchMissingContent(slotAndBlockRoot));
     }
   }

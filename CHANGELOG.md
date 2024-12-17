@@ -10,5 +10,6 @@
 
 ### Additions and Improvements
 - Optimized blobs validation pipeline
+- Remove delay when fetching blobs from the local EL on block arrival
 
 ### Bug Fixes
