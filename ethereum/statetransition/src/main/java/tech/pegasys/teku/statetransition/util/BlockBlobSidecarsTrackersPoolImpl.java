@@ -347,7 +347,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       LOG.error(
           "Tracker for block {} is supposed to be completed but it is not. Missing blob sidecars: {}",
           block.toLogString(),
-          blobSidecarsTracker.getMissingBlobSidecarsForBlock().count());
+          blobSidecarsTracker.getMissingBlobSidecars().count());
     }
 
     if (orderedBlobSidecarsTrackers.add(slotAndBlockRoot)) {
@@ -435,7 +435,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
               if (tracker.getBlock().isEmpty()) {
                 return Stream.empty();
               }
-              return tracker.getMissingBlobSidecarsForBlock();
+              return tracker.getMissingBlobSidecars();
             })
         .collect(Collectors.toSet());
   }
@@ -597,7 +597,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
         asyncRunner.runAfterDelay(() -> fetchMissingContent(slotAndBlockRoot), blockFetchDelay);
       }
       // no delay for attempting to fetch blobs for when the block is first seen
-      case BLOCK -> fetchMissingContent(slotAndBlockRoot);
+      case BLOCK -> asyncRunner.runAsync(() -> fetchMissingContent(slotAndBlockRoot));
     }
   }
 
@@ -632,6 +632,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     return Duration.ofMillis(finalTime.minus(nowMillis).intValue());
   }
 
+  /** Fetch missing block (when block is unknown) or fetch missing blob sidecars via EL and RPC */
   private void fetchMissingContent(final SlotAndBlockRoot slotAndBlockRoot) {
     fetchMissingBlobsFromLocalEL(slotAndBlockRoot)
         .handleException(
@@ -654,7 +655,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     }
 
     final List<BlobIdentifier> missingBlobsIdentifiers =
-        blockBlobSidecarsTracker.getMissingBlobSidecarsForBlock().toList();
+        blockBlobSidecarsTracker.getMissingBlobSidecars().toList();
 
     final SpecVersion specVersion = spec.atSlot(slotAndBlockRoot.getSlot());
     final MiscHelpersDeneb miscHelpersDeneb =
@@ -727,7 +728,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     }
 
     if (blockBlobSidecarsTracker.getBlock().isEmpty()) {
-      // fetch missing block
+
       blockBlobSidecarsTracker.setRpcBlockFetchTriggered();
 
       poolStatsCounters.labels(COUNTER_BLOCK_TYPE, COUNTER_RPC_FETCH_SUBTYPE).inc();
@@ -737,11 +738,10 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       return;
     }
 
-    // fetch missing blob sidecars
     blockBlobSidecarsTracker.setRpcBlobsFetchTriggered();
 
     blockBlobSidecarsTracker
-        .getMissingBlobSidecarsForBlock()
+        .getMissingBlobSidecars()
         .forEach(
             blobIdentifier -> {
               poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_RPC_FETCH_SUBTYPE).inc();
@@ -761,7 +761,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
     if (blockBlobSidecarsTracker.isRpcBlobsFetchTriggered()) {
       blockBlobSidecarsTracker
-          .getMissingBlobSidecarsForBlock()
+          .getMissingBlobSidecars()
           .forEach(
               blobIdentifier ->
                   requiredBlobSidecarDroppedSubscribers.deliver(

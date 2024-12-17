@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -123,6 +124,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     blockBlobSidecarsTrackersPool.subscribeRequiredBlobSidecarDropped(
         requiredBlobSidecarDroppedEvents::add);
     blockBlobSidecarsTrackersPool.subscribeNewBlobSidecar(newBlobSidecarEvents::add);
+    when(executionLayer.engineGetBlobs(any(), eq(currentSlot)))
+        .thenReturn(SafeFuture.completedFuture(List.of()));
     when(blobSidecarPublisher.apply(any())).thenReturn(SafeFuture.COMPLETE);
     setSlot(currentSlot);
   }
@@ -670,7 +673,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
         Optional.of(
             (slotAndRoot) -> {
               when(tracker.add(any())).thenReturn(true);
-              when(tracker.getMissingBlobSidecarsForBlock())
+              when(tracker.getMissingBlobSidecars())
                   .thenAnswer(__ -> missingBlobIdentifiers.stream());
               when(tracker.getBlock()).thenReturn(Optional.of(block));
               return tracker;
@@ -734,8 +737,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
         Optional.of(
             (slotAndRoot) -> {
               BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
-              when(tracker.getMissingBlobSidecarsForBlock())
-                  .thenAnswer(__ -> missingBlobs.stream());
+              when(tracker.getMissingBlobSidecars()).thenAnswer(__ -> missingBlobs.stream());
               when(tracker.getBlock()).thenReturn(Optional.of(block));
               return tracker;
             });
@@ -771,8 +773,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
         Optional.of(
             (slotAndRoot) -> {
               BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
-              when(tracker.getMissingBlobSidecarsForBlock())
-                  .thenAnswer(__ -> missingBlobs.stream());
+              when(tracker.getMissingBlobSidecars()).thenAnswer(__ -> missingBlobs.stream());
               when(tracker.getBlock()).thenReturn(Optional.of(block));
               return tracker;
             });
@@ -796,7 +797,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   }
 
   @Test
-  void shouldFetchMissingBlockAndBlobSidecars() {
+  void shouldFetchMissingBlock() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
     final BlobSidecar blobSidecar =
         dataStructureUtil
@@ -805,14 +806,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .index(UInt64.valueOf(2))
             .build();
 
-    final Set<BlobIdentifier> missingBlobs =
-        Set.of(
-            new BlobIdentifier(block.getRoot(), UInt64.ONE),
-            new BlobIdentifier(block.getRoot(), UInt64.ZERO));
-
     final BlockBlobSidecarsTracker mockedTracker = mock(BlockBlobSidecarsTracker.class);
     when(mockedTracker.getBlock()).thenReturn(Optional.empty());
-    when(mockedTracker.getMissingBlobSidecarsForBlock()).thenReturn(missingBlobs.stream());
     when(mockedTracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
 
     mockedTrackersFactory = Optional.of((__) -> mockedTracker);
@@ -827,78 +822,10 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     verify(mockedTracker, never()).setLocalElBlobsFetchTriggered();
 
     assertThat(requiredBlockRootEvents).containsExactly(block.getRoot());
-    assertThat(requiredBlobSidecarEvents).containsExactlyElementsOf(missingBlobs);
 
     assertStats("block", "rpc_fetch", 1);
-    assertStats("blob_sidecar", "rpc_fetch", missingBlobs.size());
 
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
-    assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
-  }
-
-  @Test
-  void shouldDropBlobSidecarsThatHasBeenFetchedButNotPresentInBlock() {
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
-
-    final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(currentSlot, block.getRoot());
-    final BlobSidecar blobSidecar =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .signedBeaconBlockHeader(block.asHeader())
-            .index(UInt64.valueOf(2))
-            .build();
-
-    final Set<BlobIdentifier> blobsNotPresentInBlock =
-        Set.of(
-            new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), UInt64.valueOf(2)),
-            new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), UInt64.valueOf(3)));
-
-    mockedTrackersFactory =
-        Optional.of(
-            (slotAndRoot) -> {
-              BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
-              when(tracker.getBlock()).thenReturn(Optional.empty());
-              when(tracker.getSlotAndBlockRoot()).thenReturn(slotAndBlockRoot);
-              when(tracker.setBlock(block)).thenReturn(true);
-              when(tracker.isRpcBlockFetchTriggered()).thenReturn(true);
-              return tracker;
-            });
-
-    blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP);
-
-    blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
-
-    assertThat(requiredBlobSidecarDroppedEvents).containsExactlyElementsOf(blobsNotPresentInBlock);
-  }
-
-  @Test
-  void shouldNotDropUnusedBlobSidecarsIfFetchingHasNotOccurred() {
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
-
-    final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(currentSlot, block.getRoot());
-    final BlobSidecar blobSidecar =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .signedBeaconBlockHeader(block.asHeader())
-            .index(UInt64.valueOf(2))
-            .build();
-
-    mockedTrackersFactory =
-        Optional.of(
-            (slotAndRoot) -> {
-              BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
-              when(tracker.getBlock()).thenReturn(Optional.empty());
-              when(tracker.getSlotAndBlockRoot()).thenReturn(slotAndBlockRoot);
-              when(tracker.setBlock(block)).thenReturn(true);
-              when(tracker.isRpcBlockFetchTriggered()).thenReturn(false);
-              return tracker;
-            });
-
-    blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP);
-
-    blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
-
-    assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
   }
 
   @Test
@@ -938,10 +865,10 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
         Optional.of(
             (slotAndRoot) -> {
               BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
-              when(tracker.getMissingBlobSidecarsForBlock()).thenReturn(missingBlobs.stream());
+              when(tracker.getMissingBlobSidecars()).thenAnswer(__ -> missingBlobs.stream());
               when(tracker.getBlock()).thenReturn(Optional.of(block));
               when(tracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
-              when(tracker.isRpcBlockFetchTriggered()).thenReturn(true);
+              when(tracker.isRpcBlobsFetchTriggered()).thenReturn(true);
               return tracker;
             });
 
@@ -980,8 +907,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     mockedTrackersFactory =
         Optional.of(
             (slotAndRoot) -> {
-              when(tracker.getMissingBlobSidecarsForBlock())
-                  .thenAnswer(__ -> missingBlobs.stream());
+              when(tracker.getMissingBlobSidecars()).thenAnswer(__ -> missingBlobs.stream());
               when(tracker.getBlock()).thenReturn(Optional.empty());
               when(tracker.setBlock(any())).thenReturn(true);
               when(tracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
@@ -1187,7 +1113,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
         Optional.of(
             (slotAndRoot) -> {
               BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
-              when(tracker.getMissingBlobSidecarsForBlock()).thenReturn(missingBlobs1.stream());
+              when(tracker.getMissingBlobSidecars()).thenReturn(missingBlobs1.stream());
               when(tracker.getBlock()).thenReturn(Optional.of(block1));
               return tracker;
             });
@@ -1205,7 +1131,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
         Optional.of(
             (slotAndRoot) -> {
               BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
-              when(tracker.getMissingBlobSidecarsForBlock()).thenReturn(missingBlobs2.stream());
+              when(tracker.getMissingBlobSidecars()).thenReturn(missingBlobs2.stream());
               when(tracker.getBlock()).thenReturn(Optional.of(block2));
               return tracker;
             });

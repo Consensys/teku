@@ -110,7 +110,7 @@ public class BlockBlobSidecarsTracker {
     return Optional.ofNullable(blobSidecars.get(index));
   }
 
-  public Stream<BlobIdentifier> getMissingBlobSidecarsForBlock() {
+  public Stream<BlobIdentifier> getMissingBlobSidecars() {
     final Optional<Integer> blockCommitmentsCount = getBlockKzgCommitmentsCount();
     checkState(blockCommitmentsCount.isPresent(), "Block must me known to call this method");
 
