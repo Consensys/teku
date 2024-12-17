@@ -15,13 +15,12 @@ package tech.pegasys.teku.fuzz;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Disabled;
@@ -116,9 +115,13 @@ class FuzzUtilTest {
     final Optional<Bytes> result = fuzzUtil.fuzzAttestation(rawInput).map(Bytes::wrap);
 
     assertThat(result).isNotEmpty();
-    final BeaconStateElectra resultState = BeaconStateElectra.required(spec.deserializeBeaconState(result.get()));
-    DeserializableTypeDefinition<BeaconStateElectra> t = (DeserializableTypeDefinition<BeaconStateElectra>)resultState.getSchema().getJsonTypeDefinition();
-    assertThat(JsonUtil.prettySerialize(resultState, t)).isEqualTo(JsonUtil.prettySerialize(postState, t));
+    final BeaconStateElectra resultState =
+        BeaconStateElectra.required(spec.deserializeBeaconState(result.get()));
+    DeserializableTypeDefinition<BeaconStateElectra> t =
+        (DeserializableTypeDefinition<BeaconStateElectra>)
+            resultState.getSchema().getJsonTypeDefinition();
+    assertThat(JsonUtil.prettySerialize(resultState, t))
+        .isEqualTo(JsonUtil.prettySerialize(postState, t));
   }
 
   @Test
