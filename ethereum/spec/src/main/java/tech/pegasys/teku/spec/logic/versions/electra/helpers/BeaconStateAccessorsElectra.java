@@ -21,7 +21,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
@@ -50,19 +49,6 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
    */
   public UInt64 getActivationExitChurnLimit(final BeaconStateElectra state) {
     return getBalanceChurnLimit(state).min(configElectra.getMaxPerEpochActivationExitChurnLimit());
-  }
-
-  /**
-   * get_active_balance
-   *
-   * @param state The state to get the effective balance from
-   * @param validatorIndex the index of the validator
-   */
-  public UInt64 getActiveBalance(final BeaconState state, final int validatorIndex) {
-    final Validator validator = state.getValidators().get(validatorIndex);
-    final UInt64 maxEffectiveBalance = miscHelpers.getMaxEffectiveBalance(validator);
-    final UInt64 validatorBalance = state.getBalances().get(validatorIndex).get();
-    return validatorBalance.min(maxEffectiveBalance);
   }
 
   /**
