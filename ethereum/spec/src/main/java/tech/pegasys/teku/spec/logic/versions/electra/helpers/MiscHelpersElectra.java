@@ -93,7 +93,7 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
       if (i % 16 == 0) {
         randomBytes = Bytes.wrap(sha256.digest(seed, uint64ToBytes(Math.floorDiv(i, 16L))));
       }
-      final int offset = i % 16 * 2;
+      final int offset = (i % 16) * 2;
       final UInt64 randomValue = bytesToUInt64(randomBytes.slice(offset, 2));
       final UInt64 validatorEffectiveBalance =
           state.getValidators().get(candidateIndex).getEffectiveBalance();
