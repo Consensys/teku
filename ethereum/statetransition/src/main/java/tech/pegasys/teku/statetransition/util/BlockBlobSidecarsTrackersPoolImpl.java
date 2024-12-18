@@ -94,7 +94,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   static final String GAUGE_BLOB_SIDECARS_LABEL = "blob_sidecars";
   static final String GAUGE_BLOB_SIDECARS_TRACKERS_LABEL = "blob_sidecars_trackers";
 
-  // Block fetching delay timings
+  // RPC fetching delay timings
   static final UInt64 MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS = UInt64.valueOf(1500);
   static final UInt64 MIN_WAIT_MILLIS = UInt64.valueOf(500);
   static final UInt64 TARGET_WAIT_MILLIS = UInt64.valueOf(1000);
@@ -509,7 +509,12 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                 // if we attempted to fetch this block via RPC, we missed the opportunity to
                 // complete the blob sidecars via local EL and RPC (since the block is required to
                 // be known) Let's try now
-                asyncRunner.runAsync(() -> fetchMissingContent(slotAndBlockRoot));
+                asyncRunner.runAsync(
+                    () ->
+                        fetchMissingBlobsFromLocalEL(slotAndBlockRoot)
+                            .handleException(this::logLocalElBlobsLookupFailure)
+                            .thenRun(() -> fetchMissingBlockOrBlobsFromRPC(slotAndBlockRoot))
+                            .finish(this::logBlockOrBlobsRPCFailure));
               }
             });
 
@@ -571,7 +576,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   }
 
   private void makeRoomForNewTracker() {
-    while (blockBlobSidecarsTrackers.size() > (maxTrackers - 1)) {
+    while (blockBlobSidecarsTrackers.size() > maxTrackers - 1) {
       final SlotAndBlockRoot toRemove = orderedBlobSidecarsTrackers.pollFirst();
       if (toRemove == null) {
         break;
@@ -590,18 +595,20 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     if (isLocalBlockProduction) {
       return;
     }
-    switch (trackerObject) {
-      case BLOB_SIDECAR -> {
-        final Duration blockFetchDelay = calculateBlockFetchDelay(slotAndBlockRoot);
-        asyncRunner.runAfterDelay(() -> fetchMissingContent(slotAndBlockRoot), blockFetchDelay);
-      }
-      // no delay for attempting to fetch blobs for when the block is first seen
-      case BLOCK -> asyncRunner.runAsync(() -> fetchMissingContent(slotAndBlockRoot));
+    if (trackerObject == TrackerObject.BLOCK) {
+      // run local EL blobs retrieval with no delay
+      asyncRunner
+          .runAsync(() -> fetchMissingBlobsFromLocalEL(slotAndBlockRoot))
+          .finish(this::logLocalElBlobsLookupFailure);
     }
+    final Duration rpcFetchDelay = calculateRpcFetchDelay(slotAndBlockRoot);
+    asyncRunner
+        .runAfterDelay(() -> fetchMissingBlockOrBlobsFromRPC(slotAndBlockRoot), rpcFetchDelay)
+        .finish(this::logBlockOrBlobsRPCFailure);
   }
 
   @VisibleForTesting
-  Duration calculateBlockFetchDelay(final SlotAndBlockRoot slotAndBlockRoot) {
+  Duration calculateRpcFetchDelay(final SlotAndBlockRoot slotAndBlockRoot) {
     final UInt64 slot = slotAndBlockRoot.getSlot();
 
     if (slot.isLessThan(getCurrentSlot())) {
@@ -629,17 +636,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
         targetMillis.min(upperLimitRelativeToAttDue).max(nowMillis.plus(MIN_WAIT_MILLIS));
 
     return Duration.ofMillis(finalTime.minus(nowMillis).intValue());
-  }
-
-  /** Fetch missing block (when block is unknown) or fetch missing blob sidecars via EL and RPC */
-  private void fetchMissingContent(final SlotAndBlockRoot slotAndBlockRoot) {
-    fetchMissingBlobsFromLocalEL(slotAndBlockRoot)
-        .handleException(
-            error -> LOG.warn("Local EL blobs lookup failed: {}", getRootCauseMessage(error)))
-        .thenRun(() -> fetchMissingContentFromRemotePeers(slotAndBlockRoot))
-        .finish(
-            error ->
-                LOG.error("An error occurred while attempting to fetch missing content.", error));
   }
 
   private synchronized SafeFuture<Void> fetchMissingBlobsFromLocalEL(
@@ -717,7 +713,11 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             });
   }
 
-  private synchronized void fetchMissingContentFromRemotePeers(
+  private void logLocalElBlobsLookupFailure(final Throwable error) {
+    LOG.warn("Local EL blobs lookup failed: {}", getRootCauseMessage(error));
+  }
+
+  private synchronized void fetchMissingBlockOrBlobsFromRPC(
       final SlotAndBlockRoot slotAndBlockRoot) {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         blockBlobSidecarsTrackers.get(slotAndBlockRoot.getBlockRoot());
@@ -747,6 +747,10 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
               requiredBlobSidecarSubscribers.deliver(
                   RequiredBlobSidecarSubscriber::onRequiredBlobSidecar, blobIdentifier);
             });
+  }
+
+  private void logBlockOrBlobsRPCFailure(final Throwable error) {
+    LOG.error("An error occurred while attempting to fetch block or blobs via RPC.", error);
   }
 
   private void dropMissingContent(final BlockBlobSidecarsTracker blockBlobSidecarsTracker) {

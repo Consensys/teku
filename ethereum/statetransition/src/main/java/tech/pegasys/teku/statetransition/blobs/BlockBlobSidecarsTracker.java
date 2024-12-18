@@ -321,7 +321,7 @@ public class BlockBlobSidecarsTracker {
       timingsReport
           .append("RPC block fetch delay ")
           .append(debugTimings.get(RPC_BLOCK_FETCH_TIMING_IDX) - creationTime)
-          .append("ms");
+          .append("ms - ");
     } else {
       timingsReport.append("RPC block fetch wasn't required");
     }

@@ -674,7 +674,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             (slotAndRoot) -> {
               when(tracker.add(any())).thenReturn(true);
               when(tracker.getMissingBlobSidecars())
-                  .thenAnswer(__ -> missingBlobIdentifiers.stream());
+                  .thenAnswer(__ -> missingBlobIdentifiers.stream())
+                  .thenAnswer(__ -> Stream.empty());
               when(tracker.getBlock()).thenReturn(Optional.of(block));
               return tracker;
             });
@@ -1017,14 +1018,14 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     timeProvider.advanceTimeBySeconds(startSlotInSeconds.longValue());
 
     final Duration fetchDelay =
-        blockBlobSidecarsTrackersPool.calculateBlockFetchDelay(slotAndBlockRoot);
+        blockBlobSidecarsTrackersPool.calculateRpcFetchDelay(slotAndBlockRoot);
 
     // we can wait the full target
     assertThat(fetchDelay).isEqualTo(Duration.ofMillis(TARGET_WAIT_MILLIS.longValue()));
   }
 
   @Test
-  void calculateBlockFetchDelay_shouldRespectMinimumWhenBlockIsLate() {
+  void calculateBlockFetchDelay_shouldRespectMinimumWhenRpcIsLate() {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
 
@@ -1037,14 +1038,14 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     timeProvider.advanceTimeByMillis(startSlotInMillis.plus(3_800).longValue());
 
     final Duration fetchDelay =
-        blockBlobSidecarsTrackersPool.calculateBlockFetchDelay(slotAndBlockRoot);
+        blockBlobSidecarsTrackersPool.calculateRpcFetchDelay(slotAndBlockRoot);
 
     // we can wait the full target
     assertThat(fetchDelay).isEqualTo(Duration.ofMillis(MIN_WAIT_MILLIS.longValue()));
   }
 
   @Test
-  void calculateBlockFetchDelay_shouldRespectTargetWhenBlockIsVeryLate() {
+  void calculateBlockFetchDelay_shouldRespectTargetWhenRpcIsVeryLate() {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
 
@@ -1056,14 +1057,14 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     timeProvider.advanceTimeBySeconds(startSlotInSeconds.plus(5).longValue());
 
     final Duration fetchDelay =
-        blockBlobSidecarsTrackersPool.calculateBlockFetchDelay(slotAndBlockRoot);
+        blockBlobSidecarsTrackersPool.calculateRpcFetchDelay(slotAndBlockRoot);
 
     // we can wait the full target
     assertThat(fetchDelay).isEqualTo(Duration.ofMillis(TARGET_WAIT_MILLIS.longValue()));
   }
 
   @Test
-  void calculateBlockFetchDelay_shouldRespectAttestationDueLimit() {
+  void calculateRpcFetchDelay_shouldRespectAttestationDueLimit() {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
 
@@ -1084,7 +1085,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     timeProvider.advanceTimeByMillis(blockArrivalTimeMillis.longValue());
 
     final Duration fetchDelay =
-        blockBlobSidecarsTrackersPool.calculateBlockFetchDelay(slotAndBlockRoot);
+        blockBlobSidecarsTrackersPool.calculateRpcFetchDelay(slotAndBlockRoot);
 
     // we can only wait 200ms less than target
     assertThat(fetchDelay)
@@ -1093,12 +1094,12 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   }
 
   @Test
-  void calculateBlockFetchDelay_shouldReturnZeroIfSlotIsOld() {
+  void calculateRpcFetchDelay_shouldReturnZeroIfSlotIsOld() {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(currentSlot.minus(1), dataStructureUtil.randomBytes32());
 
     final Duration fetchDelay =
-        blockBlobSidecarsTrackersPool.calculateBlockFetchDelay(slotAndBlockRoot);
+        blockBlobSidecarsTrackersPool.calculateRpcFetchDelay(slotAndBlockRoot);
 
     assertThat(fetchDelay).isEqualTo(Duration.ZERO);
   }
