@@ -323,7 +323,7 @@ public class BlockBlobSidecarsTracker {
           .append(debugTimings.get(RPC_BLOCK_FETCH_TIMING_IDX) - creationTime)
           .append("ms - ");
     } else {
-      timingsReport.append("RPC block fetch wasn't required");
+      timingsReport.append("RPC block fetch wasn't required - ");
     }
 
     if (debugTimings.containsKey(RPC_BLOBS_FETCH_TIMING_IDX)) {
