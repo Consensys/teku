@@ -137,6 +137,10 @@ public class AnchorPoint extends StateAndBlockSummary {
     return checkpoint;
   }
 
+  public Spec getSpec() {
+    return spec;
+  }
+
   public UInt64 getBlockSlot() {
     return blockSummary.getSlot();
   }
