@@ -16,9 +16,9 @@ package tech.pegasys.teku.spec.logic.common.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
-import com.google.common.collect.Comparators;
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.util.Comparator;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -236,26 +236,34 @@ public abstract class AttestationUtil {
       final AsyncBLSSignatureVerifier signatureVerifier) {
     final SszUInt64List indices = indexedAttestation.getAttestingIndices();
 
-    if (indices.isEmpty()
-        || !Comparators.isInStrictOrder(indices.asListUnboxed(), Comparator.naturalOrder())) {
+    if (indices.isEmpty()) {
       return completedFuture(
-          AttestationProcessingResult.invalid("Attesting indices are not sorted"));
+          AttestationProcessingResult.invalid("Attesting indices must not be empty"));
     }
 
-    final List<BLSPublicKey> pubkeys =
-        indices
-            .streamUnboxed()
-            .flatMap(i -> beaconStateAccessors.getValidatorPubKey(state, i).stream())
-            .toList();
-    if (pubkeys.size() < indices.size()) {
-      return completedFuture(
-          AttestationProcessingResult.invalid("Attesting indices include non-existent validator"));
+    UInt64 lastIndex = null;
+    final List<BLSPublicKey> pubkeys = new ArrayList<>(indices.size());
+
+    for (final UInt64 index : indices.asListUnboxed()) {
+      if (lastIndex != null && index.isLessThanOrEqualTo(lastIndex)) {
+        return completedFuture(
+            AttestationProcessingResult.invalid("Attesting indices are not sorted"));
+      }
+      lastIndex = index;
+      final Optional<BLSPublicKey> validatorPubKey =
+          beaconStateAccessors.getValidatorPubKey(state, index);
+      if (validatorPubKey.isEmpty()) {
+        return completedFuture(
+            AttestationProcessingResult.invalid(
+                "Attesting indices include non-existent validator"));
+      }
+      pubkeys.add(validatorPubKey.get());
     }
 
     return validateAttestationDataSignature(
         fork,
         state,
-        pubkeys,
+        Collections.unmodifiableList(pubkeys),
         indexedAttestation.getSignature(),
         indexedAttestation.getData(),
         signatureVerifier);
