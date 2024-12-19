@@ -509,7 +509,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                             .handleException(this::logLocalElBlobsLookupFailure)
                             .thenRun(
                                 () -> {
-                                  // only run if RPC block fetch has happened
+                                  // only run if RPC block fetch has happened ( no blobs RPC fetch
+                                  // has occurred)
                                   if (existingTracker.isRpcBlockFetchTriggered()) {
                                     fetchMissingBlockOrBlobsFromRPC(slotAndBlockRoot);
                                   }
