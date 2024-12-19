@@ -604,7 +604,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                 .handleException(this::logLocalElBlobsLookupFailure)
                 .thenCompose(__ -> rpcFetchDelay)
                 .thenRun(() -> fetchMissingBlockOrBlobsFromRPC(slotAndBlockRoot))
-                .handleException(this::logBlockOrBlobsRPCFailure));
+                .finish(this::logBlockOrBlobsRPCFailure));
   }
 
   @VisibleForTesting
