@@ -79,7 +79,6 @@ dependencyManagement {
     dependencySet(group: 'io.tmio', version: '2.4.2') {
       entry 'tuweni-bytes'
       entry 'tuweni-crypto'
-      entry 'tuweni-junit'
       entry 'tuweni-ssz'
       entry 'tuweni-units'
     }

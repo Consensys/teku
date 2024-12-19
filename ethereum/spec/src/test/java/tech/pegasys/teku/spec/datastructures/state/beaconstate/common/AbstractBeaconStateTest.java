@@ -15,9 +15,7 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -27,7 +25,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@ExtendWith(BouncyCastleExtension.class)
 public abstract class AbstractBeaconStateTest<
     T extends BeaconState, TMutable extends MutableBeaconState> {
 

@@ -24,15 +24,12 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.infrastructure.ssz.SszTestUtils;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@ExtendWith(BouncyCastleExtension.class)
 class DepositTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
