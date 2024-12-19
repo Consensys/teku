@@ -17,9 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
-import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -31,7 +29,6 @@ import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@ExtendWith(BouncyCastleExtension.class)
 public class BeaconStateUtilTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
