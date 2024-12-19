@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -262,7 +263,7 @@ public abstract class AttestationUtil {
     return validateAttestationDataSignature(
         fork,
         state,
-        pubkeys,
+        Collections.unmodifiableList(pubkeys),
         indexedAttestation.getSignature(),
         indexedAttestation.getData(),
         signatureVerifier);
