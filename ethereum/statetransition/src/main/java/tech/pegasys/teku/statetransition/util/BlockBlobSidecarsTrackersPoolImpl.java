@@ -505,15 +505,20 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
               countBlock(remoteOrigin);
 
-              if (existingTracker.isRpcBlockFetchTriggered() && !existingTracker.isComplete()) {
-                // if we attempted to fetch this block via RPC, we missed the opportunity to
-                // complete the blob sidecars via local EL and RPC (since the block is required to
-                // be known) Let's try now
+              if (!existingTracker.isComplete()) {
+                // we missed the opportunity to complete the blob sidecars via local EL and RPC
+                // (since the block is required to be known) Let's try now
                 asyncRunner.runAsync(
                     () ->
                         fetchMissingBlobsFromLocalEL(slotAndBlockRoot)
                             .handleException(this::logLocalElBlobsLookupFailure)
-                            .thenRun(() -> fetchMissingBlockOrBlobsFromRPC(slotAndBlockRoot))
+                            .thenRun(
+                                () -> {
+                                  // respect the RPC fetch delay
+                                  if (existingTracker.isRpcBlockFetchTriggered()) {
+                                    fetchMissingBlockOrBlobsFromRPC(slotAndBlockRoot);
+                                  }
+                                })
                             .finish(this::logBlockOrBlobsRPCFailure));
               }
             });
