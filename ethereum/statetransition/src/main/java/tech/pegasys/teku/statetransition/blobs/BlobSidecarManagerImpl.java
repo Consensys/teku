@@ -66,9 +66,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
         invalidBlobSidecarRoots,
         (tracker) ->
             new ForkChoiceBlobSidecarsAvailabilityChecker(spec, recentChainData, tracker, kzg),
-        // we don't care to set maxBlobsPerBlock since it isn't used with this immediate validation
-        // flow
-        (block) -> new BlockBlobSidecarsTracker(block.getSlotAndBlockRoot(), UInt64.ZERO));
+        (block) -> new BlockBlobSidecarsTracker(block.getSlotAndBlockRoot()));
   }
 
   @VisibleForTesting
