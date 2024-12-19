@@ -267,10 +267,10 @@ class MetricRecordingValidatorApiChannelTest {
   }
 
   private long getCounterValue(final String methodLabel, final RequestOutcome outcome) {
-    return metricsSystem
-        .getCounter(
-            TekuMetricCategory.VALIDATOR,
-            MetricRecordingValidatorApiChannel.BEACON_NODE_REQUESTS_COUNTER_NAME)
-        .getValue(methodLabel, outcome.toString());
+    return metricsSystem.getCounterValue(
+        TekuMetricCategory.VALIDATOR,
+        MetricRecordingValidatorApiChannel.BEACON_NODE_REQUESTS_COUNTER_NAME,
+        methodLabel,
+        outcome.toString());
   }
 }

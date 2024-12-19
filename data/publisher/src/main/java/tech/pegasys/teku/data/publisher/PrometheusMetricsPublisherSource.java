@@ -99,7 +99,7 @@ public class PrometheusMetricsPublisherSource implements MetricsPublisherSource 
   }
 
   private void storeObservationIfNeeded(final Observation observation) {
-    MetricCategory category = observation.getCategory();
+    MetricCategory category = observation.category();
     if (category.equals(PROCESS)) {
       readProcessCategoryItem(observation);
     } else if (category.equals(VALIDATOR)) {
@@ -113,37 +113,37 @@ public class PrometheusMetricsPublisherSource implements MetricsPublisherSource 
 
   private void readBeaconCategoryItem(final Observation observation) {
     isBeaconNodePresent = true;
-    switch (observation.getMetricName()) {
+    switch (observation.metricName()) {
       case "head_slot":
-        headSlot = getLongValue(observation.getValue());
+        headSlot = getLongValue(observation.value());
         break;
       case "eth1_request_queue_size":
         isEth1Connected = true;
         break;
       case "peer_count":
-        peerCount = getIntValue(observation.getValue());
+        peerCount = getIntValue(observation.value());
         break;
       case "node_syncing_active":
-        isEth2Synced = getIntValue(observation.getValue()) == 0;
+        isEth2Synced = getIntValue(observation.value()) == 0;
         break;
     }
   }
 
   private void readProcessCategoryItem(final Observation observation) {
-    if ("cpu_seconds_total".equals(observation.getMetricName())) {
-      cpuSecondsTotal = getLongValue(observation.getValue());
+    if ("cpu_seconds_total".equals(observation.metricName())) {
+      cpuSecondsTotal = getLongValue(observation.value());
     }
   }
 
   private void readJvmCategoryItem(final Observation observation) {
-    if ("memory_pool_bytes_used".equals(observation.getMetricName())) {
-      addToMemoryPoolBytesUsed((Double) observation.getValue());
+    if ("memory_pool_bytes_used".equals(observation.metricName())) {
+      addToMemoryPoolBytesUsed((Double) observation.value());
     }
   }
 
   private void readValidatorCategoryItem(final Observation observation) {
-    if ("local_validator_counts".equals(observation.getMetricName())) {
-      addToLocalValidators(observation.getLabels(), (Double) observation.getValue());
+    if ("local_validator_counts".equals(observation.metricName())) {
+      addToLocalValidators(observation.labels(), (Double) observation.value());
     }
   }
 

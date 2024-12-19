@@ -23,7 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
+import org.hyperledger.besu.plugin.services.metrics.LabelledSuppliedMetric;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -66,10 +66,10 @@ public class ProposersDataManager implements SlotEventsChannel {
       final RecentChainData recentChainData,
       final Optional<Eth1Address> proposerDefaultFeeRecipient,
       final boolean forkChoiceUpdatedAlwaysSendPayloadAttribute) {
-    final LabelledGauge labelledGauge =
-        metricsSystem.createLabelledGauge(
+    final LabelledSuppliedMetric labelledGauge =
+        metricsSystem.createLabelledSuppliedGauge(
             TekuMetricCategory.BEACON,
-            "proposers_data_total",
+            "proposers_data",
             "Total number proposers/validators under management",
             "type");
 
