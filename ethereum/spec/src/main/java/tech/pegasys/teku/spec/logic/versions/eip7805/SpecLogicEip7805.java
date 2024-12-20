@@ -13,9 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip7805;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.spec.config.SpecConfigEip7805;
-import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
@@ -48,166 +47,162 @@ import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.Attes
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.VoluntaryExitValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch.EpochProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7805;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7805;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
-
-import java.util.Optional;
 
 public class SpecLogicEip7805 extends AbstractSpecLogic {
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
   private final Optional<LightClientUtil> lightClientUtil;
 
   private SpecLogicEip7805(
-          final Predicates predicates,
-          final MiscHelpersDeneb miscHelpers,
-          final BeaconStateAccessorsElectra beaconStateAccessors,
-          final BeaconStateMutatorsBellatrix beaconStateMutators,
-          final OperationSignatureVerifier operationSignatureVerifier,
-          final ValidatorsUtil validatorsUtil,
-          final BeaconStateUtil beaconStateUtil,
-          final AttestationUtil attestationUtil,
-          final OperationValidator operationValidator,
-          final ValidatorStatusFactoryAltair validatorStatusFactory,
-          final EpochProcessorElectra epochProcessor,
-          final BlockProcessorElectra blockProcessor,
-          final ForkChoiceUtil forkChoiceUtil,
-          final BlockProposalUtil blockProposalUtil,
-          final BlindBlockUtil blindBlockUtil,
-          final SyncCommitteeUtil syncCommitteeUtil,
-          final LightClientUtil lightClientUtil,
-          final ElectraStateUpgrade stateUpgrade) {
+      final Predicates predicates,
+      final MiscHelpersDeneb miscHelpers,
+      final BeaconStateAccessorsElectra beaconStateAccessors,
+      final BeaconStateMutatorsBellatrix beaconStateMutators,
+      final OperationSignatureVerifier operationSignatureVerifier,
+      final ValidatorsUtil validatorsUtil,
+      final BeaconStateUtil beaconStateUtil,
+      final AttestationUtil attestationUtil,
+      final OperationValidator operationValidator,
+      final ValidatorStatusFactoryAltair validatorStatusFactory,
+      final EpochProcessorElectra epochProcessor,
+      final BlockProcessorElectra blockProcessor,
+      final ForkChoiceUtil forkChoiceUtil,
+      final BlockProposalUtil blockProposalUtil,
+      final BlindBlockUtil blindBlockUtil,
+      final SyncCommitteeUtil syncCommitteeUtil,
+      final LightClientUtil lightClientUtil,
+      final ElectraStateUpgrade stateUpgrade) {
     super(
-            predicates,
-            miscHelpers,
-            beaconStateAccessors,
-            beaconStateMutators,
-            operationSignatureVerifier,
-            validatorsUtil,
-            beaconStateUtil,
-            attestationUtil,
-            operationValidator,
-            validatorStatusFactory,
-            epochProcessor,
-            blockProcessor,
-            forkChoiceUtil,
-            blockProposalUtil,
-            Optional.of(blindBlockUtil),
-            Optional.of(stateUpgrade));
+        predicates,
+        miscHelpers,
+        beaconStateAccessors,
+        beaconStateMutators,
+        operationSignatureVerifier,
+        validatorsUtil,
+        beaconStateUtil,
+        attestationUtil,
+        operationValidator,
+        validatorStatusFactory,
+        epochProcessor,
+        blockProcessor,
+        forkChoiceUtil,
+        blockProposalUtil,
+        Optional.of(blindBlockUtil),
+        Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
     this.lightClientUtil = Optional.of(lightClientUtil);
   }
 
   public static SpecLogicEip7805 create(
-          final SpecConfigElectra config,
-          final SchemaDefinitionsElectra schemaDefinitions,
-          final TimeProvider timeProvider) {
+      final SpecConfigElectra config,
+      final SchemaDefinitionsElectra schemaDefinitions,
+      final TimeProvider timeProvider) {
     // Helpers
     final PredicatesElectra predicates = new PredicatesElectra(config);
     final MiscHelpersElectra miscHelpers =
-            new MiscHelpersElectra(config, predicates, schemaDefinitions);
+        new MiscHelpersElectra(config, predicates, schemaDefinitions);
     final BeaconStateAccessorsElectra beaconStateAccessors =
-            new BeaconStateAccessorsElectra(config, predicates, miscHelpers);
+        new BeaconStateAccessorsElectra(config, predicates, miscHelpers);
     final BeaconStateMutatorsElectra beaconStateMutators =
-            new BeaconStateMutatorsElectra(
-                    config, miscHelpers, beaconStateAccessors, schemaDefinitions);
+        new BeaconStateMutatorsElectra(
+            config, miscHelpers, beaconStateAccessors, schemaDefinitions);
 
     // Operation validation
     final OperationSignatureVerifier operationSignatureVerifier =
-            new OperationSignatureVerifier(miscHelpers, beaconStateAccessors);
+        new OperationSignatureVerifier(miscHelpers, beaconStateAccessors);
 
     // Util
     final ValidatorsUtil validatorsUtil =
-            new ValidatorsUtil(config, miscHelpers, beaconStateAccessors);
+        new ValidatorsUtil(config, miscHelpers, beaconStateAccessors);
     final BeaconStateUtil beaconStateUtil =
-            new BeaconStateUtil(
-                    config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
+        new BeaconStateUtil(
+            config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil =
-            new AttestationUtilElectra(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
+        new AttestationUtilElectra(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
     final AttestationDataValidator attestationDataValidator =
-            new AttestationDataValidatorElectra(config, miscHelpers, beaconStateAccessors);
+        new AttestationDataValidatorElectra(config, miscHelpers, beaconStateAccessors);
     final VoluntaryExitValidatorElectra voluntaryExitValidatorElectra =
-            new VoluntaryExitValidatorElectra(config, predicates, beaconStateAccessors);
+        new VoluntaryExitValidatorElectra(config, predicates, beaconStateAccessors);
     final OperationValidator operationValidator =
-            new OperationValidatorCapella(
-                    predicates,
-                    beaconStateAccessors,
-                    attestationDataValidator,
-                    attestationUtil,
-                    voluntaryExitValidatorElectra);
+        new OperationValidatorCapella(
+            predicates,
+            beaconStateAccessors,
+            attestationDataValidator,
+            attestationUtil,
+            voluntaryExitValidatorElectra);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
-            new ValidatorStatusFactoryAltair(
-                    config,
-                    beaconStateUtil,
-                    attestationUtil,
-                    predicates,
-                    miscHelpers,
-                    beaconStateAccessors);
+        new ValidatorStatusFactoryAltair(
+            config,
+            beaconStateUtil,
+            attestationUtil,
+            predicates,
+            miscHelpers,
+            beaconStateAccessors);
     final EpochProcessorElectra epochProcessor =
-            new EpochProcessorElectra(
-                    config,
-                    miscHelpers,
-                    beaconStateAccessors,
-                    beaconStateMutators,
-                    validatorsUtil,
-                    beaconStateUtil,
-                    validatorStatusFactory,
-                    schemaDefinitions,
-                    timeProvider);
+        new EpochProcessorElectra(
+            config,
+            miscHelpers,
+            beaconStateAccessors,
+            beaconStateMutators,
+            validatorsUtil,
+            beaconStateUtil,
+            validatorStatusFactory,
+            schemaDefinitions,
+            timeProvider);
     final SyncCommitteeUtil syncCommitteeUtil =
-            new SyncCommitteeUtil(
-                    beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
+        new SyncCommitteeUtil(
+            beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
     final LightClientUtil lightClientUtil =
-            new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
+        new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
     final ExecutionRequestsDataCodec executionRequestsDataCodec =
-            new ExecutionRequestsDataCodec(schemaDefinitions.getExecutionRequestsSchema());
+        new ExecutionRequestsDataCodec(schemaDefinitions.getExecutionRequestsSchema());
     final BlockProcessorElectra blockProcessor =
-            new BlockProcessorElectra(
-                    config,
-                    predicates,
-                    miscHelpers,
-                    syncCommitteeUtil,
-                    beaconStateAccessors,
-                    beaconStateMutators,
-                    operationSignatureVerifier,
-                    beaconStateUtil,
-                    attestationUtil,
-                    validatorsUtil,
-                    operationValidator,
-                    schemaDefinitions,
-                    executionRequestsDataCodec);
+        new BlockProcessorElectra(
+            config,
+            predicates,
+            miscHelpers,
+            syncCommitteeUtil,
+            beaconStateAccessors,
+            beaconStateMutators,
+            operationSignatureVerifier,
+            beaconStateUtil,
+            attestationUtil,
+            validatorsUtil,
+            operationValidator,
+            schemaDefinitions,
+            executionRequestsDataCodec);
     final ForkChoiceUtil forkChoiceUtil =
-            new ForkChoiceUtilDeneb(
-                    config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
+        new ForkChoiceUtilDeneb(
+            config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
-            new BlockProposalUtil(schemaDefinitions, blockProcessor);
+        new BlockProposalUtil(schemaDefinitions, blockProcessor);
 
     final BlindBlockUtilBellatrix blindBlockUtil = new BlindBlockUtilBellatrix(schemaDefinitions);
 
     // State upgrade
     final ElectraStateUpgrade stateUpgrade =
-            new ElectraStateUpgrade(
-                    config, schemaDefinitions, beaconStateAccessors, beaconStateMutators);
+        new ElectraStateUpgrade(
+            config, schemaDefinitions, beaconStateAccessors, beaconStateMutators);
 
     return new SpecLogicEip7805(
-            predicates,
-            miscHelpers,
-            beaconStateAccessors,
-            beaconStateMutators,
-            operationSignatureVerifier,
-            validatorsUtil,
-            beaconStateUtil,
-            attestationUtil,
-            operationValidator,
-            validatorStatusFactory,
-            epochProcessor,
-            blockProcessor,
-            forkChoiceUtil,
-            blockProposalUtil,
-            blindBlockUtil,
-            syncCommitteeUtil,
-            lightClientUtil,
-            stateUpgrade);
+        predicates,
+        miscHelpers,
+        beaconStateAccessors,
+        beaconStateMutators,
+        operationSignatureVerifier,
+        validatorsUtil,
+        beaconStateUtil,
+        attestationUtil,
+        operationValidator,
+        validatorStatusFactory,
+        epochProcessor,
+        blockProcessor,
+        forkChoiceUtil,
+        blockProposalUtil,
+        blindBlockUtil,
+        syncCommitteeUtil,
+        lightClientUtil,
+        stateUpgrade);
   }
 
   @Override
@@ -224,5 +219,4 @@ public class SpecLogicEip7805 extends AbstractSpecLogic {
   public Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers() {
     return Optional.empty();
   }
-
 }
