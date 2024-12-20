@@ -100,7 +100,7 @@ public class ProfilingRun {
       RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       final MergeTransitionBlockValidator transitionBlockValidator =
-          new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
+          new MergeTransitionBlockValidator(spec, recentChainData);
       ForkChoice forkChoice =
           new ForkChoice(
               spec,
@@ -195,7 +195,7 @@ public class ProfilingRun {
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       initialState = null;
       final MergeTransitionBlockValidator transitionBlockValidator =
-          new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
+          new MergeTransitionBlockValidator(spec, recentChainData);
       ForkChoice forkChoice =
           new ForkChoice(
               spec,
