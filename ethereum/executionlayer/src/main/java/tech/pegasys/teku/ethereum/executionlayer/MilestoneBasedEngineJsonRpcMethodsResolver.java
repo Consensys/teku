@@ -67,7 +67,7 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
                 case CAPELLA -> methodsByMilestone.put(milestone, capellaSupportedMethods());
                 case DENEB -> methodsByMilestone.put(milestone, denebSupportedMethods());
                 case ELECTRA -> methodsByMilestone.put(milestone, electraSupportedMethods());
-                case FULU -> methodsByMilestone.put(milestone, fuluSupportedMethods());
+                case FULU, EIP7805 -> methodsByMilestone.put(milestone, fuluSupportedMethods());
               }
             });
   }

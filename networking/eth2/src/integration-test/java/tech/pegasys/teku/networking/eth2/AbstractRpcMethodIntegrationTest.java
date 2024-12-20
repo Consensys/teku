@@ -91,6 +91,9 @@ public abstract class AbstractRpcMethodIntegrationTest {
         nextSpec = Optional.of(TestSpecFactory.createMinimalWithFuluForkEpoch(nextSpecEpoch));
       }
       case FULU -> throw new RuntimeException("Base spec is already latest supported milestone");
+      case EIP7805 ->
+          throw new UnsupportedOperationException(
+              "Base spec is already latest supported milestone");
     }
     nextSpecSlot = nextSpec.orElseThrow().computeStartSlotAtEpoch(nextSpecEpoch);
   }
@@ -299,7 +302,8 @@ public abstract class AbstractRpcMethodIntegrationTest {
       case BELLATRIX -> BeaconBlockBodyBellatrix.class;
       case CAPELLA -> BeaconBlockBodyCapella.class;
       case DENEB -> BeaconBlockBodyDeneb.class;
-      case ELECTRA, FULU -> BeaconBlockBodyElectra.class;
+      // TODO update for EIP7805
+      case ELECTRA, FULU, EIP7805 -> BeaconBlockBodyElectra.class;
     };
   }
 }

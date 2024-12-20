@@ -90,7 +90,7 @@ public class StateUpgradeTransitionTest {
             afterBeaconStateClass = BeaconStateDeneb.class;
             yield TestSpecFactory.createMinimalWithDenebForkEpoch(milestoneTransitionEpoch);
           }
-          case ELECTRA -> {
+          case ELECTRA, EIP7805 -> {
             beforeBeaconStateClass = BeaconStateDeneb.class;
             afterBeaconStateClass = BeaconStateElectra.class;
             yield TestSpecFactory.createMinimalWithElectraForkEpoch(milestoneTransitionEpoch);

@@ -84,6 +84,7 @@ class Eth2GossipTopicFilterTest {
                                       List.of(
                                           new BlobScheduleEntry(
                                               bpoFork.epoch(), bpoFork.maxBlobsPerBlock())))));
+          case EIP7805 -> TestSpecFactory.createMinimalWithEip7805ForkEpoch(nextMilestoneForkEpoch);
         };
 
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
