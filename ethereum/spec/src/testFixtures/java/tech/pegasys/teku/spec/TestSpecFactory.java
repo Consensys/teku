@@ -44,6 +44,7 @@ public class TestSpecFactory {
       case CAPELLA -> createMinimalCapella();
       case DENEB -> createMinimalDeneb();
       case ELECTRA -> createMinimalElectra();
+      case EIP7805 -> createMinimalEip7805();
     };
   }
 
@@ -55,6 +56,7 @@ public class TestSpecFactory {
       case CAPELLA -> createMainnetCapella();
       case DENEB -> createMainnetDeneb();
       case ELECTRA -> createMainnetElectra();
+      case EIP7805 -> createMainnetEip7805();
     };
   }
 
@@ -118,6 +120,12 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.ELECTRA);
   }
 
+  public static Spec createMinimalEip7805() {
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
+        getEip7805SpecConfig(Eth2Network.MINIMAL);
+    return create(specConfig, SpecMilestone.EIP7805);
+  }
+
   /**
    * Create a spec that forks to altair at the provided slot
    *
@@ -179,6 +187,19 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.ELECTRA);
   }
 
+  /**
+   * Create a spec that forks to EIP7805 at the provided epoch
+   *
+   * @param eip7805ForkEpoch The EIP7805 fork epoch
+   * @return A spec with EIP7805 enabled, forking to EIP7805 at the given epoch
+   */
+  public static Spec createMinimalWithEip7805ForkEpoch(final UInt64 eip7805ForkEpoch) {
+    final SpecConfigAndParent<? extends SpecConfig> config =
+        getEip7805SpecConfig(
+            Eth2Network.MINIMAL, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, eip7805ForkEpoch);
+    return create(config, SpecMilestone.EIP7805);
+  }
+
   public static Spec createMinimalPhase0() {
     final SpecConfigAndParent<? extends SpecConfig> configAndParent =
         SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
@@ -218,6 +239,12 @@ public class TestSpecFactory {
   public static Spec createMainnetElectra() {
     final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getElectraSpecConfig(Eth2Network.MAINNET);
+    return create(specConfig, SpecMilestone.ELECTRA);
+  }
+
+  public static Spec createMainnetEip7805() {
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
+        getEip7805SpecConfig(Eth2Network.MAINNET);
     return create(specConfig, SpecMilestone.ELECTRA);
   }
 
@@ -271,6 +298,15 @@ public class TestSpecFactory {
                       .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
                       .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
                       .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO));
+          case EIP7805 ->
+              builder ->
+                  builder
+                      .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                      .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                      .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                      .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
+                      .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO))
+                      .eip7805Builder(e -> e.eip7805ForkEpoch(UInt64.ZERO));
         };
     return create(
         SpecConfigLoader.loadConfig(network.configName(), defaultModifier.andThen(configModifier)),
@@ -391,6 +427,11 @@ public class TestSpecFactory {
     return getElectraSpecConfig(network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO);
   }
 
+  private static SpecConfigAndParent<? extends SpecConfig> getEip7805SpecConfig(
+      final Eth2Network network) {
+    return getEip7805SpecConfig(network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO);
+  }
+
   private static SpecConfigAndParent<? extends SpecConfig> getElectraSpecConfig(
       final Eth2Network network,
       final UInt64 capellaForkEpoch,
@@ -405,6 +446,24 @@ public class TestSpecFactory {
                 .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
                 .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch))
                 .electraBuilder(e -> e.electraForkEpoch(electraForkEpoch)));
+  }
+
+  private static SpecConfigAndParent<? extends SpecConfig> getEip7805SpecConfig(
+      final Eth2Network network,
+      final UInt64 capellaForkEpoch,
+      final UInt64 denebForkEpoch,
+      final UInt64 electraForkEpoch,
+      final UInt64 eip7805ForkEpoch) {
+    return getElectraSpecConfig(
+        network,
+        builder ->
+            builder
+                .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
+                .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch))
+                .electraBuilder(e -> e.electraForkEpoch(electraForkEpoch))
+                .eip7805Builder(e -> e.eip7805ForkEpoch(eip7805ForkEpoch)));
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getElectraSpecConfig(
