@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.config.builder.AltairBuilder;
 import tech.pegasys.teku.spec.config.builder.BellatrixBuilder;
 import tech.pegasys.teku.spec.config.builder.CapellaBuilder;
 import tech.pegasys.teku.spec.config.builder.DenebBuilder;
+import tech.pegasys.teku.spec.config.builder.Eip7805Builder;
 import tech.pegasys.teku.spec.config.builder.ElectraBuilder;
 import tech.pegasys.teku.spec.config.builder.FuluBuilder;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
@@ -53,7 +54,8 @@ class SpecConfigBuilderTest {
           CapellaBuilder.class,
           DenebBuilder.class,
           ElectraBuilder.class,
-          FuluBuilder.class);
+          FuluBuilder.class,
+          Eip7805Builder.class);
 
   /**
    * Ensures Builders have actually non-primitive setters, because primitive setters are silently

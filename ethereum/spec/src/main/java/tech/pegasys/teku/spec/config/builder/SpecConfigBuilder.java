@@ -135,6 +135,7 @@ public class SpecConfigBuilder {
   private final DenebBuilder denebBuilder = new DenebBuilder();
   private final ElectraBuilder electraBuilder = new ElectraBuilder();
   private final FuluBuilder fuluBuilder = new FuluBuilder();
+  private final Eip7805Builder eip7805Builder = new Eip7805Builder();
 
   // forks
   // altair fork information
@@ -144,12 +145,14 @@ public class SpecConfigBuilder {
   private Bytes4 denebForkVersion;
   private Bytes4 electraForkVersion;
   private Bytes4 fuluForkVersion;
+  private Bytes4 eip7805ForkVersion;
   private UInt64 altairForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 bellatrixForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 capellaForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 denebForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 electraForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 fuluForkEpoch = FAR_FUTURE_EPOCH;
+  private UInt64 eip7805ForkEpoch = FAR_FUTURE_EPOCH;
 
   private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
   private final BuilderChain<SpecConfig, SpecConfigFulu> builderChain =
@@ -158,7 +161,8 @@ public class SpecConfigBuilder {
           .appendBuilder(capellaBuilder)
           .appendBuilder(denebBuilder)
           .appendBuilder(electraBuilder)
-          .appendBuilder(fuluBuilder);
+          .appendBuilder(fuluBuilder)
+          .appendBuilder(eip7805Builder);
 
   public SpecConfigAndParent<SpecConfigFulu> build() {
     builderChain.addOverridableItemsToRawConfig(
@@ -346,6 +350,8 @@ public class SpecConfigBuilder {
     constants.put("electraForkEpoch", electraForkEpoch);
     constants.put("fuluForkVersion", fuluForkVersion);
     constants.put("fuluForkEpoch", fuluForkEpoch);
+    constants.put("eip7805ForkVersion", eip7805ForkVersion);
+    constants.put("eip7805ForkEpoch", eip7805ForkEpoch);
     return constants;
   }
 
@@ -370,6 +376,9 @@ public class SpecConfigBuilder {
     if (fuluForkEpoch.equals(FAR_FUTURE_EPOCH) && fuluForkVersion == null) {
       fuluForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
     }
+    if (eip7805ForkEpoch.equals(FAR_FUTURE_EPOCH) && eip7805ForkVersion == null) {
+      eip7805ForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
+    }
     // ensure raw config is accurate
     rawConfig.put("ALTAIR_FORK_EPOCH", altairForkEpoch);
     rawConfig.put("BELLATRIX_FORK_EPOCH", bellatrixForkEpoch);
@@ -392,6 +401,7 @@ public class SpecConfigBuilder {
     denebBuilder.setForkEpoch(denebForkEpoch);
     electraBuilder.setForkEpoch(electraForkEpoch);
     fuluBuilder.setForkEpoch(fuluForkEpoch);
+    eip7805Builder.setForkEpoch(eip7805ForkEpoch);
   }
 
   private void validate() {
@@ -598,6 +608,18 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder fuluForkEpoch(final UInt64 fuluForkEpoch) {
     checkNotNull(fuluForkEpoch);
     this.fuluForkEpoch = fuluForkEpoch;
+    return this;
+  }
+
+  public SpecConfigBuilder eip7805ForkVersion(final Bytes4 eip7805ForkVersion) {
+    checkNotNull(eip7805ForkVersion);
+    this.eip7805ForkVersion = eip7805ForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder eip7805Epoch(final UInt64 eip7805ForkVersion) {
+    checkNotNull(eip7805ForkVersion);
+    this.eip7805ForkVersion = eip7805ForkVersion;
     return this;
   }
 
@@ -904,6 +926,11 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder fuluBuilder(final Consumer<FuluBuilder> consumer) {
     builderChain.withBuilder(FuluBuilder.class, consumer);
+    return this;
+  }
+
+  public SpecConfigBuilder eip7805Builder(final Consumer<Eip7805Builder> consumer) {
+    builderChain.withBuilder(Eip7805Builder.class, consumer);
     return this;
   }
 }
