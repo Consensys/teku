@@ -73,7 +73,7 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
                 case DENEB:
                   methodsByMilestone.put(milestone, denebSupportedMethods());
                   break;
-                case ELECTRA:
+                case ELECTRA, EIP7805:
                   methodsByMilestone.put(milestone, electraSupportedMethods());
                   break;
               }

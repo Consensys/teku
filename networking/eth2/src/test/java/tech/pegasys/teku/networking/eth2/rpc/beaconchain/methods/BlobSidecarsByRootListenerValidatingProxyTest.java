@@ -67,6 +67,7 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
           case CAPELLA -> throw new IllegalArgumentException("Capella is an unsupported milestone");
           case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(currentForkEpoch);
           case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(currentForkEpoch);
+          case EIP7805 -> TestSpecFactory.createMinimalWithEip7805ForkEpoch(currentForkEpoch);
         };
     dataStructureUtil = new DataStructureUtil(spec);
     currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
