@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 
 public enum SpecMilestone {
@@ -35,7 +36,8 @@ public enum SpecMilestone {
   BELLATRIX,
   CAPELLA,
   DENEB,
-  ELECTRA;
+  ELECTRA,
+  EIP7805;
 
   /**
    * Returns true if this milestone is at or after the supplied milestone ({@code other})
@@ -131,6 +133,7 @@ public enum SpecMilestone {
       case CAPELLA -> specConfig.toVersionCapella().map(SpecConfigCapella::getCapellaForkVersion);
       case DENEB -> specConfig.toVersionDeneb().map(SpecConfigDeneb::getDenebForkVersion);
       case ELECTRA -> specConfig.toVersionElectra().map(SpecConfigElectra::getElectraForkVersion);
+      case EIP7805 -> specConfig.toVersionEip7805().map(SpecConfigEip7805::getEip7805ForkVersion);
     };
   }
 
@@ -146,6 +149,7 @@ public enum SpecMilestone {
       case CAPELLA -> specConfig.toVersionCapella().map(SpecConfigCapella::getCapellaForkEpoch);
       case DENEB -> specConfig.toVersionDeneb().map(SpecConfigDeneb::getDenebForkEpoch);
       case ELECTRA -> specConfig.toVersionElectra().map(SpecConfigElectra::getElectraForkEpoch);
+      case EIP7805 -> specConfig.toVersionEip7805().map(SpecConfigEip7805::getEip7805ForkEpoch);
     };
   }
 
