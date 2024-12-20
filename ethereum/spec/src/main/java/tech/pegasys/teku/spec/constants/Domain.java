@@ -33,4 +33,7 @@ public class Domain {
 
   // Capella
   public static final Bytes4 DOMAIN_BLS_TO_EXECUTION_CHANGE = Bytes4.fromHexString("0x0A000000");
+
+  // EIP-7805
+  public static final Bytes4 DOMAIN_IL_COMMITTEE = Bytes4.fromHexString("0x0C000000");
 }
