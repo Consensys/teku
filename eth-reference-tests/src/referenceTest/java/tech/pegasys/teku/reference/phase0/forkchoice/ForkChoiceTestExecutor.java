@@ -59,7 +59,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -123,7 +122,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         spec.getSlotStartTime(anchorBlock.getSlot(), anchorState.getGenesisTime()));
 
     final MergeTransitionBlockValidator transitionBlockValidator =
-        new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
+        new MergeTransitionBlockValidator(spec, recentChainData);
     final InlineEventThread eventThread = new InlineEventThread();
     final KZG kzg = KzgRetriever.getKzgWithLoadedTrustedSetup(spec, testDefinition.getConfigName());
     final StubBlobSidecarManager blobSidecarManager = new StubBlobSidecarManager(kzg);
@@ -251,7 +250,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                       .toUnsignedBigInteger(ByteOrder.LITTLE_ENDIAN));
           // We don't get a timestamp but as long as it's in the past that's fine
           final UInt64 timestamp = UInt64.ZERO;
-          return new PowBlock(blockHash, parentHash, totalDifficulty, timestamp);
+          return new PowBlock(blockHash, parentHash, timestamp);
         });
   }
 

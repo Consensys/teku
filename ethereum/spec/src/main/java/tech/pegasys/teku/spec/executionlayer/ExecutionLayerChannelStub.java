@@ -298,7 +298,6 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
             new PowBlock(
                 executionPayload.getBlockHash(),
                 executionPayload.getParentHash(),
-                UInt256.ZERO,
                 payloadAttributes.getTimestamp()));
 
     headAndAttrs.currentExecutionPayload = Optional.of(executionPayload);
@@ -586,11 +585,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       terminalBlockHash = configTerminalBlockHash;
     }
 
-    terminalBlockParent =
-        new PowBlock(TERMINAL_BLOCK_PARENT_HASH, Bytes32.ZERO, UInt256.ZERO, UInt64.ZERO);
-    terminalBlock =
-        new PowBlock(
-            terminalBlockHash, TERMINAL_BLOCK_PARENT_HASH, terminalTotalDifficulty, transitionTime);
+    terminalBlockParent = new PowBlock(TERMINAL_BLOCK_PARENT_HASH, Bytes32.ZERO, UInt64.ZERO);
+    terminalBlock = new PowBlock(terminalBlockHash, TERMINAL_BLOCK_PARENT_HASH, transitionTime);
   }
 
   private HeadAndAttributes getCachedHeadAndAttributes(
