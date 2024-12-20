@@ -46,6 +46,7 @@ public class TestSpecFactory {
       case DENEB -> createMinimalDeneb();
       case ELECTRA -> createMinimalElectra();
       case FULU -> createMinimalFulu();
+      case EIP7805 -> createMainnetEip7805();
     };
   }
 
@@ -58,6 +59,7 @@ public class TestSpecFactory {
       case DENEB -> createMainnetDeneb();
       case ELECTRA -> createMainnetElectra();
       case FULU -> createMainnetFulu();
+      case EIP7805 -> createMainnetEip7805();
     };
   }
 
@@ -255,6 +257,12 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.FULU);
   }
 
+  public static Spec createMainnetEip7805() {
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
+        getElectraSpecConfig(Eth2Network.MAINNET);
+    return create(specConfig, SpecMilestone.ELECTRA);
+  }
+
   public static Spec createPhase0(final SpecConfigAndParent<? extends SpecConfig> config) {
     return create(config, SpecMilestone.PHASE0);
   }
@@ -294,6 +302,9 @@ public class TestSpecFactory {
     }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
       defaultModifier = defaultModifier.andThen(builder -> builder.fuluForkEpoch(UInt64.ZERO));
+    }
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.EIP7805)) {
+      defaultModifier = defaultModifier.andThen(builder -> builder.eip7805Epoch(UInt64.ZERO));
     }
 
     return create(
@@ -406,6 +417,12 @@ public class TestSpecFactory {
     return getElectraSpecConfig(network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO);
   }
 
+  private static SpecConfigAndParent<? extends SpecConfig> getEip7805SpecConfig(
+      final Eth2Network network) {
+    return getEip7805SpecConfig(
+        network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO);
+  }
+
   private static SpecConfigAndParent<? extends SpecConfig> getElectraSpecConfig(
       final Eth2Network network,
       final UInt64 capellaForkEpoch,
@@ -420,6 +437,26 @@ public class TestSpecFactory {
                 .capellaForkEpoch(capellaForkEpoch)
                 .denebForkEpoch(denebForkEpoch)
                 .electraForkEpoch(electraForkEpoch));
+  }
+
+  private static SpecConfigAndParent<? extends SpecConfig> getEip7805SpecConfig(
+      final Eth2Network network,
+      final UInt64 capellaForkEpoch,
+      final UInt64 denebForkEpoch,
+      final UInt64 electraForkEpoch,
+      final UInt64 fuluForkEpoch,
+      final UInt64 eip7805ForkEpoch) {
+    return getElectraSpecConfig(
+        network,
+        builder ->
+            builder
+                .altairForkEpoch(ZERO)
+                .bellatrixForkEpoch(ZERO)
+                .capellaForkEpoch(capellaForkEpoch)
+                .denebForkEpoch(denebForkEpoch)
+                .electraForkEpoch(electraForkEpoch)
+                .fuluForkEpoch(fuluForkEpoch)
+                .eip7805Epoch(eip7805ForkEpoch));
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getElectraSpecConfig(
