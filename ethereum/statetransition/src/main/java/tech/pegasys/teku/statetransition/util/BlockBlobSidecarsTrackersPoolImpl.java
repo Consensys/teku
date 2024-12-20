@@ -600,6 +600,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
     asyncRunner.runAsync(
         () ->
+            // fetch blobs from EL with no delay
             fetchMissingBlobsFromLocalEL(slotAndBlockRoot)
                 .handleException(this::logLocalElBlobsLookupFailure)
                 .thenCompose(__ -> rpcFetchDelay)
