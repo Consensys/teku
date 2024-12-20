@@ -44,7 +44,7 @@ public class TestSpecFactory {
       case CAPELLA -> createMinimalCapella();
       case DENEB -> createMinimalDeneb();
       case ELECTRA -> createMinimalElectra();
-      case EIP7805 -> createMainnetEip7805();
+      case EIP7805 -> createMinimalEip7805();
     };
   }
 
@@ -120,6 +120,12 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.ELECTRA);
   }
 
+  public static Spec createMinimalEip7805() {
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
+        getEip7805SpecConfig(Eth2Network.MINIMAL);
+    return create(specConfig, SpecMilestone.EIP7805);
+  }
+
   /**
    * Create a spec that forks to altair at the provided slot
    *
@@ -181,6 +187,19 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.ELECTRA);
   }
 
+  /**
+   * Create a spec that forks to EIP7805 at the provided epoch
+   *
+   * @param eip7805ForkEpoch The EIP7805 fork epoch
+   * @return A spec with EIP7805 enabled, forking to EIP7805 at the given epoch
+   */
+  public static Spec createMinimalWithEip7805ForkEpoch(final UInt64 eip7805ForkEpoch) {
+    final SpecConfigAndParent<? extends SpecConfig> config =
+        getEip7805SpecConfig(
+            Eth2Network.MINIMAL, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, eip7805ForkEpoch);
+    return create(config, SpecMilestone.EIP7805);
+  }
+
   public static Spec createMinimalPhase0() {
     final SpecConfigAndParent<? extends SpecConfig> configAndParent =
         SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
@@ -225,7 +244,7 @@ public class TestSpecFactory {
 
   public static Spec createMainnetEip7805() {
     final SpecConfigAndParent<? extends SpecConfig> specConfig =
-        getElectraSpecConfig(Eth2Network.MAINNET);
+        getEip7805SpecConfig(Eth2Network.MAINNET);
     return create(specConfig, SpecMilestone.ELECTRA);
   }
 
