@@ -746,4 +746,9 @@ public class SpecConfigBuilder {
     builderChain.withBuilder(ElectraBuilder.class, consumer);
     return this;
   }
+
+  public SpecConfigBuilder eip7805Builder(final Consumer<Eip7805Builder> consumer) {
+    builderChain.withBuilder(Eip7805Builder.class, consumer);
+    return this;
+  }
 }
