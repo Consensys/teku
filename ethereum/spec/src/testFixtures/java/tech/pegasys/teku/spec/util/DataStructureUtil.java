@@ -1925,6 +1925,7 @@ public final class DataStructureUtil {
       case CAPELLA -> stateBuilderCapella(validatorCount, numItemsInSszLists);
       case DENEB -> stateBuilderDeneb(validatorCount, numItemsInSszLists);
       case ELECTRA -> stateBuilderElectra(validatorCount, numItemsInSszLists);
+      case EIP7805 -> stateBuilderElectra(validatorCount, numItemsInSszLists);
     };
   }
 
@@ -1971,6 +1972,13 @@ public final class DataStructureUtil {
 
   public BeaconStateBuilderElectra stateBuilderElectra(
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
+    return BeaconStateBuilderElectra.create(
+        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+  }
+
+  public BeaconStateBuilderElectra stateBuilderEip7805(
+      final int defaultValidatorCount, final int defaultItemsInSSZLists) {
+    // TODO update for EIP7805
     return BeaconStateBuilderElectra.create(
         this, spec, defaultValidatorCount, defaultItemsInSSZLists);
   }
