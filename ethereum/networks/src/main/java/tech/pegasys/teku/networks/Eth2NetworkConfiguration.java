@@ -751,6 +751,9 @@ public class Eth2NetworkConfiguration {
       eth1DepositContractAddress = null;
       eth1DepositContractDeployBlock = Optional.empty();
       trustedSetup = Optional.empty();
+      terminalBlockHashOverride = Optional.empty();
+      terminalBlockHashEpochOverride = Optional.empty();
+      totalTerminalDifficultyOverride = Optional.empty();
       return this;
     }
 
