@@ -34,7 +34,7 @@ public class RecentBlocksFetchService
 
   private static final Logger LOG = LogManager.getLogger();
 
-  public static final int MAX_CONCURRENT_REQUESTS = 3;
+  private static final int MAX_CONCURRENT_REQUESTS = 3;
 
   private final ForwardSync forwardSync;
   private final PendingPool<SignedBeaconBlock> pendingBlockPool;
@@ -106,7 +106,7 @@ public class RecentBlocksFetchService
       // We already have this block, waiting for blobs
       return;
     }
-    final FetchBlockTask task = createTask(blockRoot);
+    final FetchBlockTask task = fetchTaskFactory.createFetchBlockTask(blockRoot);
     if (allTasks.putIfAbsent(blockRoot, task) != null) {
       // We're already tracking this task
       task.cancel();
@@ -119,11 +119,6 @@ public class RecentBlocksFetchService
   @Override
   public void cancelRecentBlockRequest(final Bytes32 blockRoot) {
     cancelRequest(blockRoot);
-  }
-
-  @Override
-  public FetchBlockTask createTask(final Bytes32 key) {
-    return fetchTaskFactory.createFetchBlockTask(key);
   }
 
   @Override

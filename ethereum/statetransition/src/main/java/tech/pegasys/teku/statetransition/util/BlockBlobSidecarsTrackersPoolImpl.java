@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.stream.Collectors.toMap;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getRootCauseMessage;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin.LOCAL_EL;
@@ -25,14 +26,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NavigableSet;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -116,10 +116,10 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   private final Subscribers<RequiredBlockRootDroppedSubscriber>
       requiredBlockRootDroppedSubscribers = Subscribers.create(true);
 
-  private final Subscribers<RequiredBlobSidecarSubscriber> requiredBlobSidecarSubscribers =
+  private final Subscribers<RequiredBlobSidecarsSubscriber> requiredBlobSidecarsSubscribers =
       Subscribers.create(true);
-  private final Subscribers<RequiredBlobSidecarDroppedSubscriber>
-      requiredBlobSidecarDroppedSubscribers = Subscribers.create(true);
+  private final Subscribers<RequiredBlobSidecarsDroppedSubscriber>
+      requiredBlobSidecarsDroppedSubscribers = Subscribers.create(true);
 
   private final Subscribers<NewBlobSidecarSubscriber> newBlobSidecarSubscribers =
       Subscribers.create(true);
@@ -344,7 +344,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       LOG.error(
           "Tracker for block {} is supposed to be completed but it is not. Missing blob sidecars: {}",
           block.toLogString(),
-          blobSidecarsTracker.getMissingBlobSidecars().count());
+          blobSidecarsTracker.getMissingBlobSidecars().size());
     }
 
     if (orderedBlobSidecarsTrackers.add(slotAndBlockRoot)) {
@@ -425,28 +425,20 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   }
 
   @Override
-  public synchronized Set<BlobIdentifier> getAllRequiredBlobSidecars() {
-    return blockBlobSidecarsTrackers.values().stream()
-        .flatMap(BlockBlobSidecarsTracker::getMissingBlobSidecars)
-        .collect(Collectors.toSet());
+  public synchronized Map<Bytes32, List<BlobIdentifier>> getAllRequiredBlobSidecars() {
+    return blockBlobSidecarsTrackers.entrySet().stream()
+        .filter(
+            entry -> {
+              final BlockBlobSidecarsTracker tracker = entry.getValue();
+              return tracker.getBlock().isPresent() && !tracker.isComplete();
+            })
+        .collect(toMap(Entry::getKey, entry -> entry.getValue().getMissingBlobSidecars()));
   }
 
   @Override
   public synchronized void enableBlockImportOnCompletion(final SignedBeaconBlock block) {
     Optional.ofNullable(blockBlobSidecarsTrackers.get(block.getRoot()))
         .ifPresent(tracker -> tracker.enableBlockImportOnCompletion(blockImportChannel));
-  }
-
-  @Override
-  public void subscribeRequiredBlobSidecar(
-      final RequiredBlobSidecarSubscriber requiredBlobSidecarSubscriber) {
-    requiredBlobSidecarSubscribers.subscribe(requiredBlobSidecarSubscriber);
-  }
-
-  @Override
-  public void subscribeRequiredBlobSidecarDropped(
-      final RequiredBlobSidecarDroppedSubscriber requiredBlobSidecarDroppedSubscriber) {
-    requiredBlobSidecarDroppedSubscribers.subscribe(requiredBlobSidecarDroppedSubscriber);
   }
 
   @Override
@@ -459,6 +451,18 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   public void subscribeRequiredBlockRootDropped(
       final RequiredBlockRootDroppedSubscriber requiredBlockRootDroppedSubscriber) {
     requiredBlockRootDroppedSubscribers.subscribe(requiredBlockRootDroppedSubscriber);
+  }
+
+  @Override
+  public void subscribeRequiredBlobSidecars(
+      final RequiredBlobSidecarsSubscriber requiredBlobSidecarsSubscriber) {
+    requiredBlobSidecarsSubscribers.subscribe(requiredBlobSidecarsSubscriber);
+  }
+
+  @Override
+  public void subscribeRequiredBlobSidecarsDropped(
+      final RequiredBlobSidecarsDroppedSubscriber requiredBlobSidecarsDroppedSubscriber) {
+    requiredBlobSidecarsDroppedSubscribers.subscribe(requiredBlobSidecarsDroppedSubscriber);
   }
 
   @Override
@@ -496,17 +500,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
               countBlock(remoteOrigin);
 
               if (existingTracker.isRpcFetchTriggered()) {
-                // block has been set for the first time and we previously triggered fetching of
-                // missing blobSidecars. So we may have requested to fetch more sidecars
-                // than the block actually requires. Let's drop them.
-                existingTracker
-                    .getUnusedBlobSidecarsForBlock()
-                    .forEach(
-                        blobIdentifier ->
-                            requiredBlobSidecarDroppedSubscribers.deliver(
-                                RequiredBlobSidecarDroppedSubscriber::onRequiredBlobSidecarDropped,
-                                blobIdentifier));
-
                 // if we attempted to fetch via RPC, we missed the opportunity to complete the
                 // tracker via local EL (local El fetch requires the block to be known)
                 // Let's try now
@@ -680,7 +673,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
         beaconBlockBodyDeneb.getBlobKzgCommitments();
 
     final List<BlobIdentifier> missingBlobsIdentifiers =
-        blockBlobSidecarsTracker.getMissingBlobSidecars().toList();
+        blockBlobSidecarsTracker.getMissingBlobSidecars();
 
     final List<VersionedHash> versionedHashes =
         missingBlobsIdentifiers.stream()
@@ -702,7 +695,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             blobAndProofs -> {
               checkArgument(
                   blobAndProofs.size() == versionedHashes.size(),
-                  "Queried %s versionedHashed but got %s blobAndProofs",
+                  "Queried %d versionedHashed but got %s blobAndProofs",
                   versionedHashes.size(),
                   blobAndProofs.size());
 
@@ -777,14 +770,16 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
           blockBlobSidecarsTracker.getSlotAndBlockRoot().getBlockRoot());
     }
 
-    blockBlobSidecarsTracker
-        .getMissingBlobSidecars()
-        .forEach(
-            blobIdentifier -> {
-              poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_RPC_FETCH_SUBTYPE).inc();
-              requiredBlobSidecarSubscribers.deliver(
-                  RequiredBlobSidecarSubscriber::onRequiredBlobSidecar, blobIdentifier);
-            });
+    final List<BlobIdentifier> missingBlobIdentifiers =
+        blockBlobSidecarsTracker.getMissingBlobSidecars();
+
+    poolStatsCounters
+        .labels(COUNTER_SIDECAR_TYPE, COUNTER_RPC_FETCH_SUBTYPE)
+        .inc(missingBlobIdentifiers.size());
+    requiredBlobSidecarsSubscribers.deliver(
+        requiredBlobSidecarsSubscriber ->
+            requiredBlobSidecarsSubscriber.onRequiredBlobSidecars(
+                slotAndBlockRoot.getBlockRoot(), missingBlobIdentifiers));
   }
 
   private void dropMissingContent(final BlockBlobSidecarsTracker blockBlobSidecarsTracker) {
@@ -799,12 +794,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
           blockBlobSidecarsTracker.getSlotAndBlockRoot().getBlockRoot());
     }
 
-    blockBlobSidecarsTracker
-        .getMissingBlobSidecars()
-        .forEach(
-            blobIdentifier ->
-                requiredBlobSidecarDroppedSubscribers.deliver(
-                    RequiredBlobSidecarDroppedSubscriber::onRequiredBlobSidecarDropped,
-                    blobIdentifier));
+    requiredBlobSidecarsDroppedSubscribers.deliver(
+        RequiredBlobSidecarsDroppedSubscriber::onRequiredBlobSidecarsDropped,
+        blockBlobSidecarsTracker.getSlotAndBlockRoot().getBlockRoot());
   }
 }

@@ -14,11 +14,11 @@
 package tech.pegasys.teku.statetransition.blobs;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.MoreObjects;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -26,7 +26,6 @@ import java.util.SortedMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -110,31 +109,24 @@ public class BlockBlobSidecarsTracker {
     return Optional.ofNullable(blobSidecars.get(index));
   }
 
-  public Stream<BlobIdentifier> getMissingBlobSidecars() {
+  public List<BlobIdentifier> getMissingBlobSidecars() {
     final Optional<Integer> blockCommitmentsCount = getBlockKzgCommitmentsCount();
     if (blockCommitmentsCount.isPresent()) {
       return UInt64.range(UInt64.ZERO, UInt64.valueOf(blockCommitmentsCount.get()))
           .filter(blobIndex -> !blobSidecars.containsKey(blobIndex))
-          .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex));
+          .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex))
+          .toList();
     }
 
     if (blobSidecars.isEmpty()) {
-      return Stream.of();
+      return List.of();
     }
 
     // We may return maxBlobsPerBlock because we don't know the block
     return UInt64.range(UInt64.ZERO, maxBlobsPerBlock)
         .filter(blobIndex -> !blobSidecars.containsKey(blobIndex))
-        .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex));
-  }
-
-  public Stream<BlobIdentifier> getUnusedBlobSidecarsForBlock() {
-    final Optional<Integer> blockCommitmentsCount = getBlockKzgCommitmentsCount();
-    checkState(blockCommitmentsCount.isPresent(), "Block must me known to call this method");
-
-    final UInt64 firstUnusedIndex = UInt64.valueOf(blockCommitmentsCount.get());
-    return UInt64.range(firstUnusedIndex, maxBlobsPerBlock)
-        .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex));
+        .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex))
+        .toList();
   }
 
   public boolean add(final BlobSidecar blobSidecar) {

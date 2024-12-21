@@ -15,8 +15,8 @@ package tech.pegasys.teku.statetransition.blobs;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -80,20 +80,12 @@ public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
         }
 
         @Override
-        public Set<BlobIdentifier> getAllRequiredBlobSidecars() {
-          return Collections.emptySet();
+        public Map<Bytes32, List<BlobIdentifier>> getAllRequiredBlobSidecars() {
+          return Collections.emptyMap();
         }
 
         @Override
         public void enableBlockImportOnCompletion(final SignedBeaconBlock block) {}
-
-        @Override
-        public void subscribeRequiredBlobSidecar(
-            final RequiredBlobSidecarSubscriber requiredBlobSidecarSubscriber) {}
-
-        @Override
-        public void subscribeRequiredBlobSidecarDropped(
-            final RequiredBlobSidecarDroppedSubscriber requiredBlobSidecarDroppedSubscriber) {}
 
         @Override
         public void subscribeRequiredBlockRoot(
@@ -102,6 +94,14 @@ public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
         @Override
         public void subscribeRequiredBlockRootDropped(
             final RequiredBlockRootDroppedSubscriber requiredBlockRootDroppedSubscriber) {}
+
+        @Override
+        public void subscribeRequiredBlobSidecars(
+            final RequiredBlobSidecarsSubscriber requiredBlobSidecarsSubscriber) {}
+
+        @Override
+        public void subscribeRequiredBlobSidecarsDropped(
+            final RequiredBlobSidecarsDroppedSubscriber requiredBlobSidecarsDroppedSubscriber) {}
 
         @Override
         public void subscribeNewBlobSidecar(NewBlobSidecarSubscriber newBlobSidecarSubscriber) {}
@@ -123,7 +123,7 @@ public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
 
   Optional<SignedBeaconBlock> getBlock(Bytes32 blockRoot);
 
-  Set<BlobIdentifier> getAllRequiredBlobSidecars();
+  Map<Bytes32, List<BlobIdentifier>> getAllRequiredBlobSidecars();
 
   BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(SignedBeaconBlock block);
 
@@ -131,25 +131,17 @@ public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
 
   void enableBlockImportOnCompletion(SignedBeaconBlock block);
 
-  void subscribeRequiredBlobSidecar(RequiredBlobSidecarSubscriber requiredBlobSidecarSubscriber);
-
-  void subscribeRequiredBlobSidecarDropped(
-      RequiredBlobSidecarDroppedSubscriber requiredBlobSidecarDroppedSubscriber);
-
   void subscribeRequiredBlockRoot(RequiredBlockRootSubscriber requiredBlockRootSubscriber);
 
   void subscribeRequiredBlockRootDropped(
       RequiredBlockRootDroppedSubscriber requiredBlockRootDroppedSubscriber);
 
+  void subscribeRequiredBlobSidecars(RequiredBlobSidecarsSubscriber requiredBlobSidecarsSubscriber);
+
+  void subscribeRequiredBlobSidecarsDropped(
+      RequiredBlobSidecarsDroppedSubscriber requiredBlobSidecarsDroppedSubscriber);
+
   void subscribeNewBlobSidecar(NewBlobSidecarSubscriber newBlobSidecarSubscriber);
-
-  interface RequiredBlobSidecarSubscriber {
-    void onRequiredBlobSidecar(BlobIdentifier blobIdentifier);
-  }
-
-  interface RequiredBlobSidecarDroppedSubscriber {
-    void onRequiredBlobSidecarDropped(BlobIdentifier blobIdentifier);
-  }
 
   interface RequiredBlockRootSubscriber {
     void onRequiredBlockRoot(Bytes32 blockRoot);
@@ -157,6 +149,14 @@ public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
 
   interface RequiredBlockRootDroppedSubscriber {
     void onRequiredBlockRootDropped(Bytes32 blockRoot);
+  }
+
+  interface RequiredBlobSidecarsSubscriber {
+    void onRequiredBlobSidecars(Bytes32 blockRoot, List<BlobIdentifier> blobIdentifiers);
+  }
+
+  interface RequiredBlobSidecarsDroppedSubscriber {
+    void onRequiredBlobSidecarsDropped(Bytes32 blockRoot);
   }
 
   interface NewBlobSidecarSubscriber {
