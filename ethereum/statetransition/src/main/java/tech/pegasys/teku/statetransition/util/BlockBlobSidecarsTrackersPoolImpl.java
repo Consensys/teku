@@ -695,7 +695,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             blobAndProofs -> {
               checkArgument(
                   blobAndProofs.size() == versionedHashes.size(),
-                  "Queried %d versionedHashed but got %s blobAndProofs",
+                  "Queried %s versionedHashed but got %s blobAndProofs",
                   versionedHashes.size(),
                   blobAndProofs.size());
 
