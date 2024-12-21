@@ -102,7 +102,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -355,7 +354,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void startServices() {
     final RecentBlocksFetcher recentBlocksFetcher = syncService.getRecentBlocksFetcher();
     recentBlocksFetcher.subscribeBlockFetched(
-        (block) ->
+        block ->
             blockManager
                 .importBlock(block, RemoteOrigin.RPC)
                 .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult)
@@ -364,11 +363,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher =
         syncService.getRecentBlobSidecarsFetcher();
     recentBlobSidecarsFetcher.subscribeBlobSidecarFetched(
-        (blobSidecar) -> blobSidecarManager.prepareForBlockImport(blobSidecar, RemoteOrigin.RPC));
-    blobSidecarManager.subscribeToReceivedBlobSidecar(
-        blobSidecar ->
-            recentBlobSidecarsFetcher.cancelRecentBlobSidecarRequest(
-                new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex())));
+        blobSidecar -> blobSidecarManager.prepareForBlockImport(blobSidecar, RemoteOrigin.RPC));
 
     final Optional<Eth2Network> network = beaconConfig.eth2NetworkConfig().getEth2Network();
     if (network.isPresent() && network.get() == Eth2Network.EPHEMERY) {

@@ -15,6 +15,7 @@ package tech.pegasys.teku.beacon.sync;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
@@ -106,12 +107,13 @@ public class NoopSyncService
   }
 
   @Override
-  public void requestRecentBlobSidecar(final BlobIdentifier blobIdentifier) {
+  public void requestRecentBlobSidecars(
+      final Bytes32 blockRoot, final List<BlobIdentifier> blobIdentifiers) {
     // No-op
   }
 
   @Override
-  public void cancelRecentBlobSidecarRequest(final BlobIdentifier blobIdentifier) {
+  public void cancelRecentBlobSidecarsRequest(final Bytes32 blockRoot) {
     // No-op
   }
 
