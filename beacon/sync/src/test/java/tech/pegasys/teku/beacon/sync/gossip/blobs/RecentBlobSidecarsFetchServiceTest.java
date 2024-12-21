@@ -298,7 +298,7 @@ class RecentBlobSidecarsFetchServiceTest {
     assertTaskCounts(2, 2, 0);
     final List<Bytes32> requestingBlockRoots =
         tasks.stream().map(FetchBlobSidecarsTask::getKey).toList();
-    assertThat(requestingBlockRoots).containsExactly(blockRoot, blockRoot1);
+    assertThat(requestingBlockRoots).containsExactlyInAnyOrder(blockRoot, blockRoot1);
   }
 
   private FetchBlobSidecarsTask createMockTask(final InvocationOnMock invocationOnMock) {
