@@ -222,7 +222,7 @@ public class BlockBlobSidecarsTrackerTest {
 
     blockBlobSidecarsTracker.setBlock(block);
 
-    final BlobSidecar toAdd = blobSidecarsForBlock.get(0);
+    final BlobSidecar toAdd = blobSidecarsForBlock.getFirst();
     final Map<UInt64, BlobSidecar> added = new HashMap<>();
 
     final List<BlobIdentifier> stillMissing =

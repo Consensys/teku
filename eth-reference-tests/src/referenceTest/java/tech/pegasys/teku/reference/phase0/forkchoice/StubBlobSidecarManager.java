@@ -65,12 +65,6 @@ class StubBlobSidecarManager implements BlobSidecarManager {
   }
 
   @Override
-  public void subscribeToReceivedBlobSidecar(
-      final ReceivedBlobSidecarListener receivedBlobSidecarListener) {
-    // NOOP
-  }
-
-  @Override
   public boolean isAvailabilityRequiredAtSlot(final UInt64 slot) {
     // NOOP
     return false;

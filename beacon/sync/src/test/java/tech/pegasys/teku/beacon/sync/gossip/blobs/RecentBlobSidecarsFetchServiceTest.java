@@ -22,15 +22,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Map;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
-import tech.pegasys.teku.beacon.sync.fetch.FetchBlobSidecarTask;
+import tech.pegasys.teku.beacon.sync.fetch.FetchBlobSidecarsTask;
 import tech.pegasys.teku.beacon.sync.fetch.FetchResult;
 import tech.pegasys.teku.beacon.sync.fetch.FetchResult.Status;
 import tech.pegasys.teku.beacon.sync.fetch.FetchTaskFactory;
@@ -41,6 +40,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
@@ -62,8 +62,8 @@ class RecentBlobSidecarsFetchServiceTest {
 
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
-  private final List<FetchBlobSidecarTask> tasks = new ArrayList<>();
-  private final List<SafeFuture<FetchResult<BlobSidecar>>> taskFutures = new ArrayList<>();
+  private final List<FetchBlobSidecarsTask> tasks = new ArrayList<>();
+  private final List<SafeFuture<FetchResult<List<BlobSidecar>>>> taskFutures = new ArrayList<>();
   private final List<BlobSidecar> importedBlobSidecars = new ArrayList<>();
 
   private RecentBlobSidecarsFetchService recentBlobSidecarsFetcher;
@@ -79,7 +79,7 @@ class RecentBlobSidecarsFetchServiceTest {
             maxConcurrentRequests);
 
     lenient()
-        .when(fetchTaskFactory.createFetchBlobSidecarTask(any()))
+        .when(fetchTaskFactory.createFetchBlobSidecarsTask(any(), any()))
         .thenAnswer(this::createMockTask);
     recentBlobSidecarsFetcher.subscribeBlobSidecarFetched(importedBlobSidecars::add);
   }
@@ -88,57 +88,85 @@ class RecentBlobSidecarsFetchServiceTest {
   public void fetchSingleBlobSidecarSuccessfully() {
     final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
 
-    recentBlobSidecarsFetcher.requestRecentBlobSidecar(
-        new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex()));
+    recentBlobSidecarsFetcher.requestRecentBlobSidecars(
+        blobSidecar.getBlockRoot(),
+        List.of(new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex())));
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlobSidecars).isEmpty();
 
-    final SafeFuture<FetchResult<BlobSidecar>> future = taskFutures.get(0);
-    future.complete(FetchResult.createSuccessful(blobSidecar));
+    final SafeFuture<FetchResult<List<BlobSidecar>>> future = taskFutures.getFirst();
+    future.complete(FetchResult.createSuccessful(List.of(blobSidecar)));
 
     assertThat(importedBlobSidecars).containsExactly(blobSidecar);
     assertTaskCounts(0, 0, 0);
   }
 
   @Test
-  public void handleDuplicateRequiredBlobSidecars() {
+  public void fetchMultipleBlobSidecarsSuccessfully() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlockWithCommitments(3);
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+
+    recentBlobSidecarsFetcher.requestRecentBlobSidecars(
+        block.getRoot(),
+        blobSidecars.stream()
+            .map(sidecar -> new BlobIdentifier(sidecar.getBlockRoot(), sidecar.getIndex()))
+            .toList());
+
+    assertTaskCounts(1, 1, 0);
+    assertThat(importedBlobSidecars).isEmpty();
+
+    final SafeFuture<FetchResult<List<BlobSidecar>>> future = taskFutures.getFirst();
+    future.complete(FetchResult.createSuccessful(blobSidecars));
+
+    assertThat(importedBlobSidecars).containsExactlyElementsOf(blobSidecars);
+    assertTaskCounts(0, 0, 0);
+  }
+
+  @Test
+  public void handleRequiredBlobSidecarsWithSameBlockRoot() {
     final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
-    final BlobIdentifier blobIdentifier =
-        new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
+    final Bytes32 blockRoot = blobSidecar.getBlockRoot();
+    final BlobIdentifier blobIdentifier = dataStructureUtil.randomBlobIdentifier(blockRoot);
+    final BlobIdentifier anotherBlobIdentifier = dataStructureUtil.randomBlobIdentifier(blockRoot);
 
-    recentBlobSidecarsFetcher.requestRecentBlobSidecar(blobIdentifier);
-    recentBlobSidecarsFetcher.requestRecentBlobSidecar(blobIdentifier);
+    recentBlobSidecarsFetcher.requestRecentBlobSidecars(blockRoot, List.of(blobIdentifier));
+    recentBlobSidecarsFetcher.requestRecentBlobSidecars(blockRoot, List.of(anotherBlobIdentifier));
 
+    // only one task allowed per block root
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlobSidecars).isEmpty();
 
-    final SafeFuture<FetchResult<BlobSidecar>> future = taskFutures.get(0);
-    future.complete(FetchResult.createSuccessful(blobSidecar));
+    final SafeFuture<FetchResult<List<BlobSidecar>>> future = taskFutures.getFirst();
+    future.complete(FetchResult.createSuccessful(List.of(blobSidecar)));
 
     assertThat(importedBlobSidecars).containsExactly(blobSidecar);
     assertTaskCounts(0, 0, 0);
   }
 
   @Test
-  public void ignoreKnownBlobSidecar() {
-    final BlobIdentifier blobIdentifier = dataStructureUtil.randomBlobIdentifier();
-    when(blockBlobSidecarsTrackersPool.containsBlobSidecar(blobIdentifier)).thenReturn(true);
-    recentBlobSidecarsFetcher.requestRecentBlobSidecar(blobIdentifier);
+  public void ignoreIfNoBlobSidecarsAreRequired() {
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    final BlobIdentifier blobIdentifier = dataStructureUtil.randomBlobIdentifier(blockRoot);
+    final BlobIdentifier anotherBlobIdentifier = dataStructureUtil.randomBlobIdentifier(blockRoot);
+    when(blockBlobSidecarsTrackersPool.containsBlobSidecar(any())).thenReturn(true);
+    recentBlobSidecarsFetcher.requestRecentBlobSidecars(
+        blockRoot, List.of(blobIdentifier, anotherBlobIdentifier));
 
     assertTaskCounts(0, 0, 0);
     assertThat(importedBlobSidecars).isEmpty();
   }
 
   @Test
-  public void cancelBlobSidecarRequest() {
-    final BlobIdentifier blobIdentifier = dataStructureUtil.randomBlobIdentifier();
-    recentBlobSidecarsFetcher.requestRecentBlobSidecar(blobIdentifier);
-    recentBlobSidecarsFetcher.cancelRecentBlobSidecarRequest(blobIdentifier);
+  public void cancelBlobSidecarsRequest() {
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    final BlobIdentifier blobIdentifier = dataStructureUtil.randomBlobIdentifier(blockRoot);
+    recentBlobSidecarsFetcher.requestRecentBlobSidecars(blockRoot, List.of(blobIdentifier));
+    recentBlobSidecarsFetcher.cancelRecentBlobSidecarsRequest(blockRoot);
 
-    verify(tasks.get(0)).cancel();
+    verify(tasks.getFirst()).cancel();
     // Manually cancel future
-    taskFutures.get(0).complete(FetchResult.createFailed(Status.CANCELLED));
+    taskFutures.getFirst().complete(FetchResult.createFailed(Status.CANCELLED));
 
     // Task should be removed
     assertTaskCounts(0, 0, 0);
@@ -147,46 +175,49 @@ class RecentBlobSidecarsFetchServiceTest {
 
   @Test
   public void fetchSingleBlobSidecarWithRetry() {
-    final BlobIdentifier blobIdentifier = dataStructureUtil.randomBlobIdentifier();
-    recentBlobSidecarsFetcher.requestRecentBlobSidecar(blobIdentifier);
+    recentBlobSidecarsFetcher.requestRecentBlobSidecars(
+        dataStructureUtil.randomBytes32(), dataStructureUtil.randomBlobIdentifiers(2));
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlobSidecars).isEmpty();
 
-    final SafeFuture<FetchResult<BlobSidecar>> future = taskFutures.get(0);
+    final SafeFuture<FetchResult<List<BlobSidecar>>> future = taskFutures.getFirst();
     future.complete(FetchResult.createFailed(Status.FETCH_FAILED));
 
     // Task should be queued for a retry via the scheduled executor
-    verify(tasks.get(0)).getNumberOfRetries();
+    verify(tasks.getFirst()).getNumberOfRetries();
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
     assertTaskCounts(1, 0, 0);
 
     // Executor should requeue task
-    when(tasks.get(0).run()).thenReturn(new SafeFuture<>());
+    when(tasks.getFirst().run()).thenReturn(new SafeFuture<>());
     asyncRunner.executeQueuedActions();
     assertTaskCounts(1, 1, 0);
   }
 
   @Test
   public void cancelTaskWhileWaitingToRetry() {
-    final BlobIdentifier blobIdentifier = dataStructureUtil.randomBlobIdentifier();
-    recentBlobSidecarsFetcher.requestRecentBlobSidecar(blobIdentifier);
+    final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
+    final List<BlobIdentifier> blobIdentifiers =
+        List.of(new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex()));
+    recentBlobSidecarsFetcher.requestRecentBlobSidecars(
+        blobSidecar.getBlockRoot(), blobIdentifiers);
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlobSidecars).isEmpty();
 
-    final SafeFuture<FetchResult<BlobSidecar>> future = taskFutures.get(0);
+    final SafeFuture<FetchResult<List<BlobSidecar>>> future = taskFutures.getFirst();
     future.complete(FetchResult.createFailed(Status.FETCH_FAILED));
 
     // Task should be queued for a retry via the scheduled executor
-    verify(tasks.get(0)).getNumberOfRetries();
+    verify(tasks.getFirst()).getNumberOfRetries();
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
     assertTaskCounts(1, 0, 0);
 
     // Cancel task
-    recentBlobSidecarsFetcher.cancelRecentBlobSidecarRequest(blobIdentifier);
-    verify(tasks.get(0)).cancel();
-    when(tasks.get(0).run())
+    recentBlobSidecarsFetcher.cancelRecentBlobSidecarsRequest(blobSidecar.getBlockRoot());
+    verify(tasks.getFirst()).cancel();
+    when(tasks.getFirst().run())
         .thenReturn(SafeFuture.completedFuture(FetchResult.createFailed(Status.CANCELLED)));
 
     // Executor should requeue task, it should complete immediately and be removed
@@ -196,22 +227,22 @@ class RecentBlobSidecarsFetchServiceTest {
 
   @Test
   public void handlesPeersUnavailable() {
-    final BlobIdentifier blobIdentifier = dataStructureUtil.randomBlobIdentifier();
-    recentBlobSidecarsFetcher.requestRecentBlobSidecar(blobIdentifier);
+    recentBlobSidecarsFetcher.requestRecentBlobSidecars(
+        dataStructureUtil.randomBytes32(), dataStructureUtil.randomBlobIdentifiers(2));
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlobSidecars).isEmpty();
 
-    final SafeFuture<FetchResult<BlobSidecar>> future = taskFutures.get(0);
+    final SafeFuture<FetchResult<List<BlobSidecar>>> future = taskFutures.getFirst();
     future.complete(FetchResult.createFailed(Status.NO_AVAILABLE_PEERS));
 
     // Task should be queued for a retry via the scheduled executor
-    verify(tasks.get(0), never()).getNumberOfRetries();
+    verify(tasks.getFirst(), never()).getNumberOfRetries();
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
     assertTaskCounts(1, 0, 0);
 
     // Executor should requeue task
-    when(tasks.get(0).run()).thenReturn(new SafeFuture<>());
+    when(tasks.getFirst().run()).thenReturn(new SafeFuture<>());
     asyncRunner.executeQueuedActions();
     assertTaskCounts(1, 1, 0);
   }
@@ -220,16 +251,16 @@ class RecentBlobSidecarsFetchServiceTest {
   public void queueFetchTaskWhenConcurrencyLimitReached() {
     final int taskCount = maxConcurrentRequests + 1;
     for (int i = 0; i < taskCount; i++) {
-      final BlobIdentifier blobIdentifier = dataStructureUtil.randomBlobIdentifier();
-      recentBlobSidecarsFetcher.requestRecentBlobSidecar(blobIdentifier);
+      recentBlobSidecarsFetcher.requestRecentBlobSidecars(
+          dataStructureUtil.randomBytes32(), dataStructureUtil.randomBlobIdentifiers(2));
     }
 
     assertTaskCounts(taskCount, taskCount - 1, 1);
 
     // Complete first task
-    final SafeFuture<FetchResult<BlobSidecar>> future = taskFutures.get(0);
+    final SafeFuture<FetchResult<List<BlobSidecar>>> future = taskFutures.getFirst();
     final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
-    future.complete(FetchResult.createSuccessful(blobSidecar));
+    future.complete(FetchResult.createSuccessful(List.of(blobSidecar)));
 
     // After first task completes, remaining pending count should become active
     assertTaskCounts(taskCount - 1, taskCount - 1, 0);
@@ -239,14 +270,21 @@ class RecentBlobSidecarsFetchServiceTest {
   void shouldNotFetchBlobSidecarsWhileForwardSyncIsInProgress() {
     when(forwardSync.isSyncActive()).thenReturn(true);
 
-    recentBlobSidecarsFetcher.requestRecentBlobSidecar(dataStructureUtil.randomBlobIdentifier());
+    recentBlobSidecarsFetcher.requestRecentBlobSidecars(
+        dataStructureUtil.randomBytes32(), dataStructureUtil.randomBlobIdentifiers(2));
     assertTaskCounts(0, 0, 0);
   }
 
   @Test
   void shouldRequestRemainingRequiredBlobSidecarsWhenForwardSyncCompletes() {
-    final Set<BlobIdentifier> requiredBlobIdentifiers =
-        new HashSet<>(dataStructureUtil.randomBlobIdentifiers(2));
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
+    final Map<Bytes32, List<BlobIdentifier>> requiredBlobIdentifiers =
+        Map.of(
+            blockRoot,
+            List.of(dataStructureUtil.randomBlobIdentifier(blockRoot)),
+            blockRoot1,
+            List.of(dataStructureUtil.randomBlobIdentifier(blockRoot1)));
     when(blockBlobSidecarsTrackersPool.getAllRequiredBlobSidecars())
         .thenReturn(requiredBlobIdentifiers);
 
@@ -258,19 +296,18 @@ class RecentBlobSidecarsFetchServiceTest {
 
     syncSubscriber.onSyncingChange(false);
     assertTaskCounts(2, 2, 0);
-    final Set<BlobIdentifier> requestingBlobIdentifiers =
-        tasks.stream().map(FetchBlobSidecarTask::getKey).collect(Collectors.toSet());
-    assertThat(requestingBlobIdentifiers)
-        .containsExactlyInAnyOrderElementsOf(requiredBlobIdentifiers);
+    final List<Bytes32> requestingBlockRoots =
+        tasks.stream().map(FetchBlobSidecarsTask::getKey).toList();
+    assertThat(requestingBlockRoots).containsExactly(blockRoot, blockRoot1);
   }
 
-  private FetchBlobSidecarTask createMockTask(final InvocationOnMock invocationOnMock) {
-    final BlobIdentifier blobIdentifier = invocationOnMock.getArgument(0);
-    final FetchBlobSidecarTask task = mock(FetchBlobSidecarTask.class);
+  private FetchBlobSidecarsTask createMockTask(final InvocationOnMock invocationOnMock) {
+    final Bytes32 blockRoot = invocationOnMock.getArgument(0);
+    final FetchBlobSidecarsTask task = mock(FetchBlobSidecarsTask.class);
 
-    lenient().when(task.getKey()).thenReturn(blobIdentifier);
+    lenient().when(task.getKey()).thenReturn(blockRoot);
     lenient().when(task.getNumberOfRetries()).thenReturn(0);
-    final SafeFuture<FetchResult<BlobSidecar>> future = new SafeFuture<>();
+    final SafeFuture<FetchResult<List<BlobSidecar>>> future = new SafeFuture<>();
     lenient().when(task.run()).thenReturn(future);
     taskFutures.add(future);
     tasks.add(task);

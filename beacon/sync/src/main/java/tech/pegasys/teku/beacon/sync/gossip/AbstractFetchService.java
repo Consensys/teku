@@ -161,7 +161,5 @@ public abstract class AbstractFetchService<K, T extends AbstractFetchTask<K, R>,
     return task.getClass().getSimpleName();
   }
 
-  public abstract T createTask(K key);
-
   public abstract void processFetchedResult(T task, R result);
 }

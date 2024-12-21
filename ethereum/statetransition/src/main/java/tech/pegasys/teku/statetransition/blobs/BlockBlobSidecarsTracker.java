@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.base.MoreObjects;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -26,7 +27,6 @@ import java.util.SortedMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -110,13 +110,14 @@ public class BlockBlobSidecarsTracker {
     return Optional.ofNullable(blobSidecars.get(index));
   }
 
-  public Stream<BlobIdentifier> getMissingBlobSidecars() {
+  public List<BlobIdentifier> getMissingBlobSidecars() {
     final Optional<Integer> blockCommitmentsCount = getBlockKzgCommitmentsCount();
     checkState(blockCommitmentsCount.isPresent(), "Block must be known to call this method");
 
     return UInt64.range(UInt64.ZERO, UInt64.valueOf(blockCommitmentsCount.get()))
         .filter(blobIndex -> !blobSidecars.containsKey(blobIndex))
-        .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex));
+        .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex))
+        .toList();
   }
 
   public boolean add(final BlobSidecar blobSidecar) {

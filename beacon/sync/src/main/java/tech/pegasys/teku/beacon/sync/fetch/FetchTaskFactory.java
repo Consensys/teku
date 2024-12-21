@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync.fetch;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -26,10 +27,11 @@ public interface FetchTaskFactory {
 
   FetchBlockTask createFetchBlockTask(Bytes32 blockRoot, Optional<Eth2Peer> preferredPeer);
 
-  default FetchBlobSidecarTask createFetchBlobSidecarTask(final BlobIdentifier blobIdentifier) {
-    return createFetchBlobSidecarTask(blobIdentifier, Optional.empty());
+  default FetchBlobSidecarsTask createFetchBlobSidecarsTask(
+      Bytes32 blockRoot, List<BlobIdentifier> blobIdentifiers) {
+    return createFetchBlobSidecarsTask(blockRoot, blobIdentifiers, Optional.empty());
   }
 
-  FetchBlobSidecarTask createFetchBlobSidecarTask(
-      BlobIdentifier blobIdentifier, Optional<Eth2Peer> preferredPeer);
+  FetchBlobSidecarsTask createFetchBlobSidecarsTask(
+      Bytes32 blockRoot, List<BlobIdentifier> blobIdentifiers, Optional<Eth2Peer> preferredPeer);
 }

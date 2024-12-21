@@ -20,7 +20,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
@@ -45,9 +44,6 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   private final ForkChoiceBlobSidecarsAvailabilityCheckerProvider
       forkChoiceBlobSidecarsAvailabilityCheckerProvider;
   private final UnpooledBlockBlobSidecarsTrackerProvider unpooledBlockBlobSidecarsTrackerProvider;
-
-  private final Subscribers<ReceivedBlobSidecarListener> receivedBlobSidecarSubscribers =
-      Subscribers.create(true);
 
   public BlobSidecarManagerImpl(
       final Spec spec,
@@ -128,13 +124,6 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   @Override
   public void prepareForBlockImport(final BlobSidecar blobSidecar, final RemoteOrigin origin) {
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar, origin);
-    receivedBlobSidecarSubscribers.forEach(s -> s.onBlobSidecarReceived(blobSidecar));
-  }
-
-  @Override
-  public void subscribeToReceivedBlobSidecar(
-      final ReceivedBlobSidecarListener receivedBlobSidecarListener) {
-    receivedBlobSidecarSubscribers.subscribe(receivedBlobSidecarListener);
   }
 
   @Override
