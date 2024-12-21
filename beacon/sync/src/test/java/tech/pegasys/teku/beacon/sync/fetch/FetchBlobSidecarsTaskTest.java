@@ -249,10 +249,11 @@ public class FetchBlobSidecarsTaskTest extends AbstractFetchTaskTest {
         .toList();
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void mockRpcResponse(
       final Eth2Peer peer,
       final List<BlobIdentifier> blobIdentifiers,
-      List<BlobSidecar> blobSidecars) {
+      final List<BlobSidecar> blobSidecars) {
     when(peer.requestBlobSidecarsByRoot(eq(blobIdentifiers), any()))
         .thenAnswer(
             invocationOnMock -> {
