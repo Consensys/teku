@@ -28,7 +28,7 @@ public interface FetchTaskFactory {
   FetchBlockTask createFetchBlockTask(Bytes32 blockRoot, Optional<Eth2Peer> preferredPeer);
 
   default FetchBlobSidecarsTask createFetchBlobSidecarsTask(
-      Bytes32 blockRoot, List<BlobIdentifier> blobIdentifiers) {
+      final Bytes32 blockRoot, final List<BlobIdentifier> blobIdentifiers) {
     return createFetchBlobSidecarsTask(blockRoot, blobIdentifiers, Optional.empty());
   }
 
