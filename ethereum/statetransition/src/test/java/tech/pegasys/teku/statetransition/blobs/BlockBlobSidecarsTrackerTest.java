@@ -229,7 +229,7 @@ public class BlockBlobSidecarsTrackerTest {
 
     blockBlobSidecarsTracker.setBlock(block);
 
-    final BlobSidecar toAdd = blobSidecarsForBlock.get(0);
+    final BlobSidecar toAdd = blobSidecarsForBlock.getFirst();
     final Map<UInt64, BlobSidecar> added = new HashMap<>();
 
     final List<BlobIdentifier> stillMissing =
@@ -278,61 +278,6 @@ public class BlockBlobSidecarsTrackerTest {
 
     assertThat(blockBlobSidecarsTracker.getMissingBlobSidecars())
         .containsExactlyInAnyOrderElementsOf(knownMissing);
-  }
-
-  @Test
-  void getUnusedBlobSidecarsForBlock_shouldReturnShouldFailIfBlockIsUnknown() {
-    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
-
-    assertThatThrownBy(blockBlobSidecarsTracker::getUnusedBlobSidecarsForBlock)
-        .isInstanceOf(IllegalStateException.class);
-  }
-
-  @Test
-  void getUnusedBlobSidecarsForBlock_shouldReturnEmptySetIfBlockIsFull() {
-    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
-
-    blockBlobSidecarsTracker.setBlock(block);
-
-    assertThat(blockBlobSidecarsTracker.getUnusedBlobSidecarsForBlock()).isEmpty();
-  }
-
-  @Test
-  void getUnusedBlobSidecarsForBlock_shouldReturnUnusedBlobSpace() {
-    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock.plus(2));
-
-    blockBlobSidecarsTracker.setBlock(block);
-
-    final Set<BlobIdentifier> expectedUnusedBlobs =
-        UInt64.range(maxBlobsPerBlock, maxBlobsPerBlock.plus(2))
-            .map(index -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), index))
-            .collect(Collectors.toSet());
-
-    assertThat(blockBlobSidecarsTracker.getUnusedBlobSidecarsForBlock())
-        .containsExactlyInAnyOrderElementsOf(expectedUnusedBlobs);
-  }
-
-  @Test
-  void getUnusedBlobSidecarsForBlock_shouldReturnAllMaxBlobsPerBlockIfBlockIsEmpty() {
-
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlockWithEmptyCommitments();
-    final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
-
-    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock.plus(2));
-
-    blockBlobSidecarsTracker.setBlock(block);
-
-    final Set<BlobIdentifier> expectedUnusedBlobs =
-        UInt64.range(UInt64.ZERO, maxBlobsPerBlock.plus(2))
-            .map(index -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), index))
-            .collect(Collectors.toSet());
-
-    assertThat(blockBlobSidecarsTracker.getUnusedBlobSidecarsForBlock())
-        .containsExactlyInAnyOrderElementsOf(expectedUnusedBlobs);
   }
 
   @Test

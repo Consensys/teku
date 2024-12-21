@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.beacon.sync.gossip.blobs;
 
+import java.util.List;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.beacon.sync.fetch.FetchTaskFactory;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -20,10 +22,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.ServiceFacade;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 
-public interface RecentBlobSidecarsFetcher extends ServiceFacade {
+public interface RecentBlobSidecarsFetcher extends ServiceFacade, ReceivedBlockEventsChannel {
 
   RecentBlobSidecarsFetcher NOOP =
       new RecentBlobSidecarsFetcher() {
@@ -31,10 +35,11 @@ public interface RecentBlobSidecarsFetcher extends ServiceFacade {
         public void subscribeBlobSidecarFetched(BlobSidecarSubscriber subscriber) {}
 
         @Override
-        public void requestRecentBlobSidecar(BlobIdentifier blobIdentifier) {}
+        public void requestRecentBlobSidecars(
+            final Bytes32 blockRoot, final List<BlobIdentifier> blobIdentifiers) {}
 
         @Override
-        public void cancelRecentBlobSidecarRequest(BlobIdentifier blobIdentifier) {}
+        public void cancelRecentBlobSidecarsRequest(final Bytes32 blockRoot) {}
 
         @Override
         public SafeFuture<?> start() {
@@ -50,6 +55,13 @@ public interface RecentBlobSidecarsFetcher extends ServiceFacade {
         public boolean isRunning() {
           return false;
         }
+
+        @Override
+        public void onBlockValidated(final SignedBeaconBlock block) {}
+
+        @Override
+        public void onBlockImported(
+            final SignedBeaconBlock block, final boolean executionOptimistic) {}
       };
 
   static RecentBlobSidecarsFetcher create(
@@ -62,11 +74,7 @@ public interface RecentBlobSidecarsFetcher extends ServiceFacade {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       recentBlobSidecarsFetcher =
           RecentBlobSidecarsFetchService.create(
-              asyncRunner,
-              blockBlobSidecarsTrackersPool,
-              forwardSyncService,
-              fetchTaskFactory,
-              spec);
+              asyncRunner, blockBlobSidecarsTrackersPool, forwardSyncService, fetchTaskFactory);
     } else {
       recentBlobSidecarsFetcher = RecentBlobSidecarsFetcher.NOOP;
     }
@@ -76,7 +84,7 @@ public interface RecentBlobSidecarsFetcher extends ServiceFacade {
 
   void subscribeBlobSidecarFetched(BlobSidecarSubscriber subscriber);
 
-  void requestRecentBlobSidecar(BlobIdentifier blobIdentifier);
+  void requestRecentBlobSidecars(Bytes32 blockRoot, List<BlobIdentifier> blobIdentifiers);
 
-  void cancelRecentBlobSidecarRequest(BlobIdentifier blobIdentifier);
+  void cancelRecentBlobSidecarsRequest(Bytes32 blockRoot);
 }
