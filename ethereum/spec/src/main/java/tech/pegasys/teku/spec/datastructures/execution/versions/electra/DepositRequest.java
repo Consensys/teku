@@ -25,7 +25,18 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-// https://eips.ethereum.org/EIPS/eip-6110
+/*
+ * https://eips.ethereum.org/EIPS/eip-6110
+ *
+ * <spec ssz_object="DepositRequest" fork="electra">
+ * class DepositRequest(Container):
+ *     pubkey: BLSPubkey
+ *     withdrawal_credentials: Bytes32
+ *     amount: Gwei
+ *     signature: BLSSignature
+ *     index: uint64
+ * </spec>
+ */
 public class DepositRequest
     extends Container5<
         DepositRequest, SszPublicKey, SszBytes32, SszUInt64, SszSignature, SszUInt64> {

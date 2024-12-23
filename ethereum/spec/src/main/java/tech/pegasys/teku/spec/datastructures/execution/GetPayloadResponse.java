@@ -19,6 +19,15 @@ import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 
+/*
+ * <spec dataclass="GetPayloadResponse" fork="electra">
+ * class GetPayloadResponse(object):
+ *     execution_payload: ExecutionPayload
+ *     block_value: uint256
+ *     blobs_bundle: BlobsBundle
+ *     execution_requests: Sequence[bytes]  # [New in Electra]
+ * </spec>
+ */
 public class GetPayloadResponse {
 
   private final ExecutionPayload executionPayload;

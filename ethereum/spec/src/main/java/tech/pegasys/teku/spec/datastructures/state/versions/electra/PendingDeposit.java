@@ -28,6 +28,16 @@ import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
+/*
+ * <spec ssz_object="PendingDeposit" fork="electra">
+ * class PendingDeposit(Container):
+ *     pubkey: BLSPubkey
+ *     withdrawal_credentials: Bytes32
+ *     amount: Gwei
+ *     signature: BLSSignature
+ *     slot: Slot
+ * </spec>
+ */
 public class PendingDeposit
     extends Container5<
         PendingDeposit, SszPublicKey, SszBytes32, SszUInt64, SszSignature, SszUInt64> {

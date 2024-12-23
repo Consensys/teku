@@ -19,6 +19,13 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
+/*
+ * <spec ssz_object="PendingConsolidation" fork="electra">
+ * class PendingConsolidation(Container):
+ *     source_index: ValidatorIndex
+ *     target_index: ValidatorIndex
+ * </spec>
+ */
 public class PendingConsolidation extends Container2<PendingConsolidation, SszUInt64, SszUInt64> {
   protected PendingConsolidation(
       final ContainerSchema2<PendingConsolidation, SszUInt64, SszUInt64> schema) {

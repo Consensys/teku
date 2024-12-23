@@ -23,7 +23,16 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
-// https://eips.ethereum.org/EIPS/eip-7002
+/*
+ * https://eips.ethereum.org/EIPS/eip-7002
+ *
+ * <spec ssz_object="WithdrawalRequest" fork="electra">
+ * class WithdrawalRequest(Container):
+ *     source_address: ExecutionAddress
+ *     validator_pubkey: BLSPubkey
+ *     amount: Gwei
+ * </spec>
+ */
 public class WithdrawalRequest
     extends Container3<WithdrawalRequest, SszByteVector, SszPublicKey, SszUInt64> {
 

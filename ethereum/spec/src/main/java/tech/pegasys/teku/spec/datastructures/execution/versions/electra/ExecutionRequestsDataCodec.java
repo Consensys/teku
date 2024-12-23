@@ -34,6 +34,55 @@ public class ExecutionRequestsDataCodec {
    *
    * @param executionRequests list of encoded execution requests from the EL
    * @return an ExecutionRequests object with the requests
+   *
+   * @hidden
+   * <spec function="get_execution_requests" fork="electra">
+   * def get_execution_requests(execution_requests_list: Sequence[bytes]) -> ExecutionRequests:
+   *     deposits = []
+   *     withdrawals = []
+   *     consolidations = []
+   *
+   *     request_types = [
+   *         DEPOSIT_REQUEST_TYPE,
+   *         WITHDRAWAL_REQUEST_TYPE,
+   *         CONSOLIDATION_REQUEST_TYPE,
+   *     ]
+   *
+   *     prev_request_type = None
+   *     for request in execution_requests_list:
+   *         request_type, request_data = request[0:1], request[1:]
+   *
+   *         # Check that the request type is valid
+   *         assert request_type in request_types
+   *         # Check that the request data is not empty
+   *         assert len(request_data) != 0
+   *         # Check that requests are in strictly ascending order
+   *         # Each successive type must be greater than the last with no duplicates
+   *         assert prev_request_type is None or prev_request_type < request_type
+   *         prev_request_type = request_type
+   *
+   *         if request_type == DEPOSIT_REQUEST_TYPE:
+   *             deposits = ssz_deserialize(
+   *                 List[DepositRequest, MAX_DEPOSIT_REQUESTS_PER_PAYLOAD],
+   *                 request_data
+   *             )
+   *         elif request_type == WITHDRAWAL_REQUEST_TYPE:
+   *             withdrawals = ssz_deserialize(
+   *                 List[WithdrawalRequest, MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD],
+   *                 request_data
+   *             )
+   *         elif request_type == CONSOLIDATION_REQUEST_TYPE:
+   *             consolidations = ssz_deserialize(
+   *                 List[ConsolidationRequest, MAX_CONSOLIDATION_REQUESTS_PER_PAYLOAD],
+   *                 request_data
+   *             )
+   *
+   *     return ExecutionRequests(
+   *         deposits=deposits,
+   *         withdrawals=withdrawals,
+   *         consolidations=consolidations,
+   *     )
+   * </spec>
    */
   public ExecutionRequests decode(final List<Bytes> executionRequests) {
     final ExecutionRequestsBuilder executionRequestsBuilder =
@@ -89,6 +138,22 @@ public class ExecutionRequestsDataCodec {
    *
    * @param executionRequests the execution requests in the BeaconBlock
    * @return list of encoded execution requests
+   *
+   * @hidden
+   * <spec function="get_execution_requests_list" fork="electra">
+   * def get_execution_requests_list(execution_requests: ExecutionRequests) -> Sequence[bytes]:
+   *     requests = [
+   *         (DEPOSIT_REQUEST_TYPE, execution_requests.deposits),
+   *         (WITHDRAWAL_REQUEST_TYPE, execution_requests.withdrawals),
+   *         (CONSOLIDATION_REQUEST_TYPE, execution_requests.consolidations),
+   *     ]
+   *
+   *     return [
+   *         request_type + ssz_serialize(request_data)
+   *         for request_type, request_data in requests
+   *         if len(request_data) != 0
+   *     ]
+   * </spec>
    */
   public List<Bytes> encode(final ExecutionRequests executionRequests) {
     final List<Bytes> executionRequestsData = new ArrayList<>();

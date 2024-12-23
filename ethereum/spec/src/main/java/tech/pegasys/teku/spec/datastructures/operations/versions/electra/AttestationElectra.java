@@ -25,6 +25,15 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
+/*
+ * <spec ssz_object="Attestation" fork="electra">
+ * class Attestation(Container):
+ *     aggregation_bits: Bitlist[MAX_VALIDATORS_PER_COMMITTEE * MAX_COMMITTEES_PER_SLOT]  # [Modified in Electra:EIP7549]
+ *     data: AttestationData
+ *     signature: BLSSignature
+ *     committee_bits: Bitvector[MAX_COMMITTEES_PER_SLOT]  # [New in Electra:EIP7549]
+ * </spec>
+ */
 public class AttestationElectra
     extends Container4<AttestationElectra, SszBitlist, AttestationData, SszSignature, SszBitvector>
     implements Attestation {
