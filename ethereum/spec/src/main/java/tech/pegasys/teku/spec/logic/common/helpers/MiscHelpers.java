@@ -364,7 +364,22 @@ public class MiscHelpers {
     return new ForkData(currentVersion, genesisValidatorsRoot).hashTreeRoot();
   }
 
-  /** is_valid_deposit_signature */
+  /*
+   * <spec function="is_valid_deposit_signature" fork="electra">
+   * def is_valid_deposit_signature(pubkey: BLSPubkey,
+   *                                withdrawal_credentials: Bytes32,
+   *                                amount: uint64,
+   *                                signature: BLSSignature) -> bool:
+   *     deposit_message = DepositMessage(
+   *         pubkey=pubkey,
+   *         withdrawal_credentials=withdrawal_credentials,
+   *         amount=amount,
+   *     )
+   *     domain = compute_domain(DOMAIN_DEPOSIT)  # Fork-agnostic domain since deposits are valid across forks
+   *     signing_root = compute_signing_root(deposit_message, domain)
+   *     return bls.Verify(pubkey, signing_root, signature)
+   * </spec>
+   */
   public boolean isValidDepositSignature(
       final BLSPublicKey pubkey,
       final Bytes32 withdrawalCredentials,

@@ -67,6 +67,12 @@ public class AttestationElectra
     return getField2().getSignature();
   }
 
+  /*
+   * <spec function="get_committee_indices" fork="electra">
+   * def get_committee_indices(committee_bits: Bitvector) -> Sequence[CommitteeIndex]:
+   *     return [CommitteeIndex(index) for index, bit in enumerate(committee_bits) if bit]
+   * </spec>
+   */
   @Override
   public Optional<List<UInt64>> getCommitteeIndices() {
     return Optional.of(

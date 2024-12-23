@@ -289,6 +289,37 @@ public class ExpectedWithdrawals {
         genericState, schemaDefinitionsCapella, beaconStateMutators, specConfigCapella);
   }
 
+  /*
+   * <spec function="process_withdrawals" fork="electra">
+   * def process_withdrawals(state: BeaconState, payload: ExecutionPayload) -> None:
+   *     # [Modified in Electra:EIP7251]
+   *     expected_withdrawals, processed_partial_withdrawals_count = get_expected_withdrawals(state)
+   *
+   *     assert payload.withdrawals == expected_withdrawals
+   *
+   *     for withdrawal in expected_withdrawals:
+   *         decrease_balance(state, withdrawal.validator_index, withdrawal.amount)
+   *
+   *     # Update pending partial withdrawals [New in Electra:EIP7251]
+   *     state.pending_partial_withdrawals = state.pending_partial_withdrawals[processed_partial_withdrawals_count:]
+   *
+   *     # Update the next withdrawal index if this block contained withdrawals
+   *     if len(expected_withdrawals) != 0:
+   *         latest_withdrawal = expected_withdrawals[-1]
+   *         state.next_withdrawal_index = WithdrawalIndex(latest_withdrawal.index + 1)
+   *
+   *     # Update the next validator index to start the next withdrawal sweep
+   *     if len(expected_withdrawals) == MAX_WITHDRAWALS_PER_PAYLOAD:
+   *         # Next sweep starts after the latest withdrawal's validator index
+   *         next_validator_index = ValidatorIndex((expected_withdrawals[-1].validator_index + 1) % len(state.validators))
+   *         state.next_withdrawal_validator_index = next_validator_index
+   *     else:
+   *         # Advance sweep by the max length of the sweep if there was not a full set of withdrawals
+   *         next_index = state.next_withdrawal_validator_index + MAX_VALIDATORS_PER_WITHDRAWALS_SWEEP
+   *         next_validator_index = ValidatorIndex(next_index % len(state.validators))
+   *         state.next_withdrawal_validator_index = next_validator_index
+   * </spec>
+   */
   void processWithdrawalsUnchecked(
       final MutableBeaconState genericState,
       final SchemaDefinitionsCapella schemaDefinitionsCapella,

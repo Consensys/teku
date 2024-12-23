@@ -46,12 +46,21 @@ public class PredicatesElectra extends Predicates {
     return Optional.of(this);
   }
 
-  /**
-   * is_partially_withdrawable_validator
-   *
-   * @param validator the validator being checked
-   * @param balance the validator's balance
-   * @return
+  /*
+   * <spec function="is_partially_withdrawable_validator" fork="electra">
+   * def is_partially_withdrawable_validator(validator: Validator, balance: Gwei) -> bool:
+   *     """
+   *     Check if ``validator`` is partially withdrawable.
+   *     """
+   *     max_effective_balance = get_max_effective_balance(validator)
+   *     has_max_effective_balance = validator.effective_balance == max_effective_balance  # [Modified in Electra:EIP7251]
+   *     has_excess_balance = balance > max_effective_balance  # [Modified in Electra:EIP7251]
+   *     return (
+   *         has_execution_withdrawal_credential(validator)  # [Modified in Electra:EIP7251]
+   *         and has_max_effective_balance
+   *         and has_excess_balance
+   *     )
+   * </spec>
    */
   @Override
   public boolean isPartiallyWithdrawableValidator(final Validator validator, final UInt64 balance) {
@@ -73,13 +82,18 @@ public class PredicatesElectra extends Predicates {
     return hasMaxEffectiveBalance && hasExcessBalance;
   }
 
-  /**
-   * is_fully_withdrawable_validator
-   *
-   * @param validator the validator being checked
-   * @param balance the validator's balance
-   * @param epoch the current epoch
-   * @return if the validator is exited and withdrawable
+  /*
+   * <spec function="is_fully_withdrawable_validator" fork="electra">
+   * def is_fully_withdrawable_validator(validator: Validator, balance: Gwei, epoch: Epoch) -> bool:
+   *     """
+   *     Check if ``validator`` is fully withdrawable.
+   *     """
+   *     return (
+   *         has_execution_withdrawal_credential(validator)  # [Modified in Electra:EIP7251]
+   *         and validator.withdrawable_epoch <= epoch
+   *         and balance > 0
+   *     )
+   * </spec>
    */
   @Override
   public boolean isFullyWithdrawableValidator(
@@ -88,32 +102,38 @@ public class PredicatesElectra extends Predicates {
         && isFullyWithdrawableValidatorCredentialsChecked(validator, balance, epoch);
   }
 
-  /**
-   * has_execution_withdrawal_credential
-   *
-   * @param validator
-   * @return
+  /*
+   * <spec function="has_execution_withdrawal_credential" fork="electra">
+   * def has_execution_withdrawal_credential(validator: Validator) -> bool:
+   *     """
+   *     Check if ``validator`` has a 0x01 or 0x02 prefixed withdrawal credential.
+   *     """
+   *     return has_compounding_withdrawal_credential(validator) or has_eth1_withdrawal_credential(validator)
+   * </spec>
    */
   @Override
   public boolean hasExecutionWithdrawalCredential(final Validator validator) {
     return hasEth1WithdrawalCredential(validator) || hasCompoundingWithdrawalCredential(validator);
   }
 
-  /**
-   * has_compounding_withdrawal_credential
-   *
-   * @param validator
-   * @return
+  /*
+   * <spec function="has_compounding_withdrawal_credential" fork="electra">
+   * def has_compounding_withdrawal_credential(validator: Validator) -> bool:
+   *     """
+   *     Check if ``validator`` has an 0x02 prefixed "compounding" withdrawal credential.
+   *     """
+   *     return is_compounding_withdrawal_credential(validator.withdrawal_credentials)
+   * </spec>
    */
   public boolean hasCompoundingWithdrawalCredential(final Validator validator) {
     return isCompoundingWithdrawalCredential(validator.getWithdrawalCredentials());
   }
 
-  /**
-   * is_compounding_withdrawal_credential
-   *
-   * @param withdrawalCredentials
-   * @return
+  /*
+   * <spec function="is_compounding_withdrawal_credential" fork="electra">
+   * def is_compounding_withdrawal_credential(withdrawal_credentials: Bytes32) -> bool:
+   *     return withdrawal_credentials[:1] == COMPOUNDING_WITHDRAWAL_PREFIX
+   * </spec>
    */
   public boolean isCompoundingWithdrawalCredential(final Bytes32 withdrawalCredentials) {
     return withdrawalCredentials.get(0) == COMPOUNDING_WITHDRAWAL_BYTE;

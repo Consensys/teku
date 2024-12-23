@@ -56,15 +56,27 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
     super(specConfig, schemaDefinitions, beaconStateAccessors, miscHelpers);
   }
 
-  /**
-   * Return the attesting indices corresponding to ``aggregation_bits`` and ``committee_bits``.
+  /*
+   * <spec function="get_attesting_indices" fork="electra">
+   * def get_attesting_indices(state: BeaconState, attestation: Attestation) -> Set[ValidatorIndex]:
+   *     """
+   *     Return the set of attesting indices corresponding to ``aggregation_bits`` and ``committee_bits``.
+   *     """
+   *     output: Set[ValidatorIndex] = set()
+   *     committee_indices = get_committee_indices(attestation.committee_bits)
+   *     committee_offset = 0
+   *     for committee_index in committee_indices:
+   *         committee = get_beacon_committee(state, attestation.data.slot, committee_index)
+   *         committee_attesters = set(
+   *             attester_index for i, attester_index in enumerate(committee)
+   *             if attestation.aggregation_bits[committee_offset + i]
+   *         )
+   *         output = output.union(committee_attesters)
    *
-   * @param state
-   * @param attestation
-   * @return
-   * @throws IllegalArgumentException
-   * @see
-   *     <a>https://github.com/ethereum/consensus-specs/blob/dev/specs/electra/beacon-chain.md#modified-get_attesting_indices</a>
+   *         committee_offset += len(committee)
+   *
+   *     return output
+   * </spec>
    */
   @Override
   public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
@@ -121,6 +133,21 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
     return super.getIndexedAttestation(state, attestation);
   }
 
+  /*
+   * <spec function="get_indexed_attestation" fork="electra">
+   * def get_indexed_attestation(state: BeaconState, attestation: Attestation) -> IndexedAttestation:
+   *     """
+   *     Return the indexed attestation corresponding to ``attestation``.
+   *     """
+   *     attesting_indices = get_attesting_indices(state, attestation)
+   *
+   *     return IndexedAttestation(
+   *         attesting_indices=sorted(attesting_indices),
+   *         data=attestation.data,
+   *         signature=attestation.signature,
+   *     )
+   * </spec>
+   */
   private IndexedAttestation getIndexedAttestationFromSingleAttestation(
       final SingleAttestation attestation) {
     final IndexedAttestationSchema indexedAttestationSchema =

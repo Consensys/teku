@@ -67,12 +67,30 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
     this.schemaDefinitionsElectra = schemaDefinitionsElectra;
   }
 
-  /**
-   * compute_exit_epoch_and_update_churn
+  /*
+   * <spec function="compute_exit_epoch_and_update_churn" fork="electra">
+   * def compute_exit_epoch_and_update_churn(state: BeaconState, exit_balance: Gwei) -> Epoch:
+   *     earliest_exit_epoch = max(state.earliest_exit_epoch, compute_activation_exit_epoch(get_current_epoch(state)))
+   *     per_epoch_churn = get_activation_exit_churn_limit(state)
+   *     # New epoch for exits.
+   *     if state.earliest_exit_epoch < earliest_exit_epoch:
+   *         exit_balance_to_consume = per_epoch_churn
+   *     else:
+   *         exit_balance_to_consume = state.exit_balance_to_consume
    *
-   * @param state mutable beacon state
-   * @param exitBalance exit balance
-   * @return earliest exit epoch (updated in state)
+   *     # Exit doesn't fit in the current earliest epoch.
+   *     if exit_balance > exit_balance_to_consume:
+   *         balance_to_process = exit_balance - exit_balance_to_consume
+   *         additional_epochs = (balance_to_process - 1) // per_epoch_churn + 1
+   *         earliest_exit_epoch += additional_epochs
+   *         exit_balance_to_consume += additional_epochs * per_epoch_churn
+   *
+   *     # Consume the balance and update state variables.
+   *     state.exit_balance_to_consume = exit_balance_to_consume - exit_balance
+   *     state.earliest_exit_epoch = earliest_exit_epoch
+   *
+   *     return state.earliest_exit_epoch
+   * </spec>
    */
   public UInt64 computeExitEpochAndUpdateChurn(
       final MutableBeaconStateElectra state, final UInt64 exitBalance) {
@@ -103,7 +121,25 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
     return state.getEarliestExitEpoch();
   }
 
-  /** initiate_validator_exit */
+  /*
+   * <spec function="initiate_validator_exit" fork="electra">
+   * def initiate_validator_exit(state: BeaconState, index: ValidatorIndex) -> None:
+   *     """
+   *     Initiate the exit of the validator with index ``index``.
+   *     """
+   *     # Return if validator already initiated exit
+   *     validator = state.validators[index]
+   *     if validator.exit_epoch != FAR_FUTURE_EPOCH:
+   *         return
+   *
+   *     # Compute exit queue epoch [Modified in Electra:EIP7251]
+   *     exit_queue_epoch = compute_exit_epoch_and_update_churn(state, validator.effective_balance)
+   *
+   *     # Set validator exit epoch and withdrawable epoch
+   *     validator.exit_epoch = exit_queue_epoch
+   *     validator.withdrawable_epoch = Epoch(validator.exit_epoch + MIN_VALIDATOR_WITHDRAWABILITY_DELAY)
+   * </spec>
+   */
   @Override
   public void initiateValidatorExit(
       final MutableBeaconState state,
@@ -142,6 +178,32 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
   }
 
   /** compute_consolidation_epoch_and_update_churn */
+  /*
+   * <spec function="compute_consolidation_epoch_and_update_churn" fork="electra">
+   * def compute_consolidation_epoch_and_update_churn(state: BeaconState, consolidation_balance: Gwei) -> Epoch:
+   *     earliest_consolidation_epoch = max(
+   *         state.earliest_consolidation_epoch, compute_activation_exit_epoch(get_current_epoch(state)))
+   *     per_epoch_consolidation_churn = get_consolidation_churn_limit(state)
+   *     # New epoch for consolidations.
+   *     if state.earliest_consolidation_epoch < earliest_consolidation_epoch:
+   *         consolidation_balance_to_consume = per_epoch_consolidation_churn
+   *     else:
+   *         consolidation_balance_to_consume = state.consolidation_balance_to_consume
+   *
+   *     # Consolidation doesn't fit in the current earliest epoch.
+   *     if consolidation_balance > consolidation_balance_to_consume:
+   *         balance_to_process = consolidation_balance - consolidation_balance_to_consume
+   *         additional_epochs = (balance_to_process - 1) // per_epoch_consolidation_churn + 1
+   *         earliest_consolidation_epoch += additional_epochs
+   *         consolidation_balance_to_consume += additional_epochs * per_epoch_consolidation_churn
+   *
+   *     # Consume the balance and update state variables.
+   *     state.consolidation_balance_to_consume = consolidation_balance_to_consume - consolidation_balance
+   *     state.earliest_consolidation_epoch = earliest_consolidation_epoch
+   *
+   *     return state.earliest_consolidation_epoch
+   * </spec>
+   */
   public UInt64 computeConsolidationEpochAndUpdateChurn(
       final MutableBeaconState state, final UInt64 consolidationBalance) {
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
@@ -177,11 +239,13 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
     return stateElectra.getEarliestConsolidationEpoch();
   }
 
-  /**
-   * switch_to_compounding_validator
-   *
-   * @param state beaconState
-   * @param index validatorIndex
+  /*
+   * <spec function="switch_to_compounding_validator" fork="electra">
+   * def switch_to_compounding_validator(state: BeaconState, index: ValidatorIndex) -> None:
+   *     validator = state.validators[index]
+   *     validator.withdrawal_credentials = COMPOUNDING_WITHDRAWAL_PREFIX + validator.withdrawal_credentials[1:]
+   *     queue_excess_active_balance(state, index)
+   * </spec>
    */
   public void switchToCompoundingValidator(final MutableBeaconStateElectra state, final int index) {
     final byte[] withdrawalCredentialsUpdated =
@@ -196,11 +260,24 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
     queueExcessActiveBalance(state, index);
   }
 
-  /**
-   * queue_excess_active_balance
-   *
-   * @param state beaconState
-   * @param validatorIndex validatorIndex
+  /*
+   * <spec function="queue_excess_active_balance" fork="electra">
+   * def queue_excess_active_balance(state: BeaconState, index: ValidatorIndex) -> None:
+   *     balance = state.balances[index]
+   *     if balance > MIN_ACTIVATION_BALANCE:
+   *         excess_balance = balance - MIN_ACTIVATION_BALANCE
+   *         state.balances[index] = MIN_ACTIVATION_BALANCE
+   *         validator = state.validators[index]
+   *         # Use bls.G2_POINT_AT_INFINITY as a signature field placeholder
+   *         # and GENESIS_SLOT to distinguish from a pending deposit request
+   *         state.pending_deposits.append(PendingDeposit(
+   *             pubkey=validator.pubkey,
+   *             withdrawal_credentials=validator.withdrawal_credentials,
+   *             amount=excess_balance,
+   *             signature=bls.G2_POINT_AT_INFINITY,
+   *             slot=GENESIS_SLOT,
+   *         ))
+   * </spec>
    */
   public void queueExcessActiveBalance(
       final MutableBeaconStateElectra state, final int validatorIndex) {
@@ -226,12 +303,7 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
     }
   }
 
-  /**
-   * queue_entire_balance_and_reset_validator
-   *
-   * @param state beaconState
-   * @param validatorIndex validatorIndex
-   */
+  // TODO: Join with queueExcessActiveBalance.
   public void queueEntireBalanceAndResetValidator(
       final MutableBeaconStateElectra state, final int validatorIndex) {
     final UInt64 balance = state.getBalances().getElement(validatorIndex);

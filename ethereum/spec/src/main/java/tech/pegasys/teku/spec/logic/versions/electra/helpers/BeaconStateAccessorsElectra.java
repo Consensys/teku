@@ -52,22 +52,27 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
     this.predicatesElectra = predicatesElectra;
   }
 
-  /**
-   * get_activation_exit_churn_limit
-   *
-   * @param state - the state to use to get the churn limit from
-   * @return Return the churn limit for the current epoch dedicated to activations and exits.
+  /*
+   * <spec function="get_activation_exit_churn_limit" fork="electra">
+   * def get_activation_exit_churn_limit(state: BeaconState) -> Gwei:
+   *     """
+   *     Return the churn limit for the current epoch dedicated to activations and exits.
+   *     """
+   *     return min(MAX_PER_EPOCH_ACTIVATION_EXIT_CHURN_LIMIT, get_balance_churn_limit(state))
+   * </spec>
    */
   public UInt64 getActivationExitChurnLimit(final BeaconStateElectra state) {
     return getBalanceChurnLimit(state).min(configElectra.getMaxPerEpochActivationExitChurnLimit());
   }
 
-  /**
-   * get_pending_balance_to_withdraw
-   *
-   * @param state The state
-   * @param validatorIndex The index of the validator
-   * @return The sum of the withdrawal amounts for the validator in the partial withdrawal queue.
+  /*
+   * <spec function="get_pending_balance_to_withdraw" fork="electra">
+   * def get_pending_balance_to_withdraw(state: BeaconState, validator_index: ValidatorIndex) -> Gwei:
+   *     return sum(
+   *         withdrawal.amount for withdrawal in state.pending_partial_withdrawals
+   *         if withdrawal.validator_index == validator_index
+   *     )
+   * </spec>
    */
   public UInt64 getPendingBalanceToWithdraw(
       final BeaconStateElectra state, final int validatorIndex) {
@@ -79,11 +84,18 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
         .reduce(UInt64.ZERO, UInt64::plus);
   }
 
-  /**
-   * get_balance_churn_limit
-   *
-   * @param state the state to read active balance from
-   * @return Return the churn limit for the current epoch.
+  /*
+   * <spec function="get_balance_churn_limit" fork="electra">
+   * def get_balance_churn_limit(state: BeaconState) -> Gwei:
+   *     """
+   *     Return the churn limit for the current epoch.
+   *     """
+   *     churn = max(
+   *         MIN_PER_EPOCH_CHURN_LIMIT_ELECTRA,
+   *         get_total_active_balance(state) // CHURN_LIMIT_QUOTIENT
+   *     )
+   *     return churn - churn % EFFECTIVE_BALANCE_INCREMENT
+   * </spec>
    */
   public UInt64 getBalanceChurnLimit(final BeaconStateElectra state) {
     final UInt64 churn =
@@ -93,10 +105,11 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
     return churn.minusMinZero(churn.mod(configElectra.getEffectiveBalanceIncrement()));
   }
 
-  /**
-   * get_consolidation_churn_limit
-   *
-   * @param state state to read churn limits from
+  /*
+   * <spec function="get_consolidation_churn_limit" fork="electra">
+   * def get_consolidation_churn_limit(state: BeaconState) -> Gwei:
+   *     return get_balance_churn_limit(state) - get_activation_exit_churn_limit(state)
+   * </spec>
    */
   public UInt64 getConsolidationChurnLimit(final BeaconStateElectra state) {
     return getBalanceChurnLimit(state).minusMinZero(getActivationExitChurnLimit(state));
@@ -117,6 +130,35 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
     return getNextSyncCommitteeIndices(state, configElectra.getMaxEffectiveBalanceElectra());
   }
 
+  /*
+   * <spec function="get_next_sync_committee_indices" fork="electra">
+   * def get_next_sync_committee_indices(state: BeaconState) -> Sequence[ValidatorIndex]:
+   *     """
+   *     Return the sync committee indices, with possible duplicates, for the next sync committee.
+   *     """
+   *     epoch = Epoch(get_current_epoch(state) + 1)
+   *
+   *     MAX_RANDOM_VALUE = 2**16 - 1  # [Modified in Electra]
+   *     active_validator_indices = get_active_validator_indices(state, epoch)
+   *     active_validator_count = uint64(len(active_validator_indices))
+   *     seed = get_seed(state, epoch, DOMAIN_SYNC_COMMITTEE)
+   *     i = uint64(0)
+   *     sync_committee_indices: List[ValidatorIndex] = []
+   *     while len(sync_committee_indices) < SYNC_COMMITTEE_SIZE:
+   *         shuffled_index = compute_shuffled_index(uint64(i % active_validator_count), active_validator_count, seed)
+   *         candidate_index = active_validator_indices[shuffled_index]
+   *         # [Modified in Electra]
+   *         random_bytes = hash(seed + uint_to_bytes(i // 16))
+   *         offset = i % 16 * 2
+   *         random_value = bytes_to_uint64(random_bytes[offset:offset + 2])
+   *         effective_balance = state.validators[candidate_index].effective_balance
+   *         # [Modified in Electra:EIP7251]
+   *         if effective_balance * MAX_RANDOM_VALUE >= MAX_EFFECTIVE_BALANCE_ELECTRA * random_value:
+   *             sync_committee_indices.append(candidate_index)
+   *         i += 1
+   *     return sync_committee_indices
+   * </spec>
+   */
   @Override
   protected IntList getNextSyncCommitteeIndices(
       final BeaconState state, final UInt64 maxEffectiveBalance) {

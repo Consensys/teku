@@ -81,7 +81,28 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
     this.schemaDefinitionsElectra = SchemaDefinitionsElectra.required(schemaDefinitions);
   }
 
-  /** process_registry_updates */
+  /*
+   * <spec function="process_registry_updates" fork="electra">
+   * def process_registry_updates(state: BeaconState) -> None:
+   *     # Process activation eligibility and ejections
+   *     for index, validator in enumerate(state.validators):
+   *         if is_eligible_for_activation_queue(validator):  # [Modified in Electra:EIP7251]
+   *             validator.activation_eligibility_epoch = get_current_epoch(state) + 1
+   *
+   *         if (
+   *             is_active_validator(validator, get_current_epoch(state))
+   *             and validator.effective_balance <= EJECTION_BALANCE
+   *         ):
+   *             initiate_validator_exit(state, ValidatorIndex(index))  # [Modified in Electra:EIP7251]
+   *
+   *     # Activate all eligible validators
+   *     # [Modified in Electra:EIP7251]
+   *     activation_epoch = compute_activation_exit_epoch(get_current_epoch(state))
+   *     for validator in state.validators:
+   *         if is_eligible_for_activation(state, validator):
+   *             validator.activation_epoch = activation_epoch
+   * </spec>
+   */
   @Override
   public void processRegistryUpdates(
       final MutableBeaconState state, final List<ValidatorStatus> statuses)
@@ -131,10 +152,17 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
         && validator.getActivationEligibilityEpoch().isLessThanOrEqualTo(finalizedEpoch);
   }
 
-  /**
-   * is_eligible_for_activation_queue
-   *
-   * @param status - Validator status
+  /*
+   * <spec function="is_eligible_for_activation_queue" fork="electra">
+   * def is_eligible_for_activation_queue(validator: Validator) -> bool:
+   *     """
+   *     Check if ``validator`` is eligible to be placed into the activation queue.
+   *     """
+   *     return (
+   *         validator.activation_eligibility_epoch == FAR_FUTURE_EPOCH
+   *         and validator.effective_balance >= MIN_ACTIVATION_BALANCE  # [Modified in Electra:EIP7251]
+   *     )
+   * </spec>
    */
   @Override
   protected boolean isEligibleForActivationQueue(final ValidatorStatus status) {
@@ -147,7 +175,25 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
     return miscHelpers.getMaxEffectiveBalance(validator);
   }
 
-  // process_effective_balance_updates
+  /*
+   * <spec function="process_effective_balance_updates" fork="electra">
+   * def process_effective_balance_updates(state: BeaconState) -> None:
+   *     # Update effective balances with hysteresis
+   *     for index, validator in enumerate(state.validators):
+   *         balance = state.balances[index]
+   *         HYSTERESIS_INCREMENT = uint64(EFFECTIVE_BALANCE_INCREMENT // HYSTERESIS_QUOTIENT)
+   *         DOWNWARD_THRESHOLD = HYSTERESIS_INCREMENT * HYSTERESIS_DOWNWARD_MULTIPLIER
+   *         UPWARD_THRESHOLD = HYSTERESIS_INCREMENT * HYSTERESIS_UPWARD_MULTIPLIER
+   *         # [Modified in Electra:EIP7251]
+   *         max_effective_balance = get_max_effective_balance(validator)
+   *
+   *         if (
+   *             balance + DOWNWARD_THRESHOLD < validator.effective_balance
+   *             or validator.effective_balance + UPWARD_THRESHOLD < balance
+   *         ):
+   *             validator.effective_balance = min(balance - balance % EFFECTIVE_BALANCE_INCREMENT, max_effective_balance)
+   * </spec>
+   */
   @Override
   public void processEffectiveBalanceUpdates(
       final MutableBeaconState state, final List<ValidatorStatus> statuses) {
@@ -186,7 +232,27 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
     }
   }
 
-  /** apply_pending_deposit */
+  /*
+   * <spec function="apply_pending_deposit" fork="electra">
+   * def apply_pending_deposit(state: BeaconState, deposit: PendingDeposit) -> None:
+   *     """
+   *     Applies ``deposit`` to the ``state``.
+   *     """
+   *     validator_pubkeys = [v.pubkey for v in state.validators]
+   *     if deposit.pubkey not in validator_pubkeys:
+   *         # Verify the deposit signature (proof of possession) which is not checked by the deposit contract
+   *         if is_valid_deposit_signature(
+   *             deposit.pubkey,
+   *             deposit.withdrawal_credentials,
+   *             deposit.amount,
+   *             deposit.signature
+   *         ):
+   *             add_validator_to_registry(state, deposit.pubkey, deposit.withdrawal_credentials, deposit.amount)
+   *     else:
+   *         validator_index = ValidatorIndex(validator_pubkeys.index(deposit.pubkey))
+   *         increase_balance(state, validator_index, deposit.amount)
+   * </spec>
+   */
   @Override
   public void applyPendingDeposits(final MutableBeaconState state, final PendingDeposit deposit) {
     validatorsUtil
@@ -213,7 +279,72 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
         deposit.getSignature());
   }
 
-  /** process_pending_deposits */
+  /*
+   * <spec function="process_pending_deposits" fork="electra">
+   * def process_pending_deposits(state: BeaconState) -> None:
+   *     next_epoch = Epoch(get_current_epoch(state) + 1)
+   *     available_for_processing = state.deposit_balance_to_consume + get_activation_exit_churn_limit(state)
+   *     processed_amount = 0
+   *     next_deposit_index = 0
+   *     deposits_to_postpone = []
+   *     is_churn_limit_reached = False
+   *     finalized_slot = compute_start_slot_at_epoch(state.finalized_checkpoint.epoch)
+   *
+   *     for deposit in state.pending_deposits:
+   *         # Do not process deposit requests if Eth1 bridge deposits are not yet applied.
+   *         if (
+   *             # Is deposit request
+   *             deposit.slot > GENESIS_SLOT and
+   *             # There are pending Eth1 bridge deposits
+   *             state.eth1_deposit_index < state.deposit_requests_start_index
+   *         ):
+   *             break
+   *
+   *         # Check if deposit has been finalized, otherwise, stop processing.
+   *         if deposit.slot > finalized_slot:
+   *             break
+   *
+   *         # Check if number of processed deposits has not reached the limit, otherwise, stop processing.
+   *         if next_deposit_index >= MAX_PENDING_DEPOSITS_PER_EPOCH:
+   *             break
+   *
+   *         # Read validator state
+   *         is_validator_exited = False
+   *         is_validator_withdrawn = False
+   *         validator_pubkeys = [v.pubkey for v in state.validators]
+   *         if deposit.pubkey in validator_pubkeys:
+   *             validator = state.validators[ValidatorIndex(validator_pubkeys.index(deposit.pubkey))]
+   *             is_validator_exited = validator.exit_epoch < FAR_FUTURE_EPOCH
+   *             is_validator_withdrawn = validator.withdrawable_epoch < next_epoch
+   *
+   *         if is_validator_withdrawn:
+   *             # Deposited balance will never become active. Increase balance but do not consume churn
+   *             apply_pending_deposit(state, deposit)
+   *         elif is_validator_exited:
+   *             # Validator is exiting, postpone the deposit until after withdrawable epoch
+   *             deposits_to_postpone.append(deposit)
+   *         else:
+   *             # Check if deposit fits in the churn, otherwise, do no more deposit processing in this epoch.
+   *             is_churn_limit_reached = processed_amount + deposit.amount > available_for_processing
+   *             if is_churn_limit_reached:
+   *                 break
+   *
+   *             # Consume churn and apply deposit.
+   *             processed_amount += deposit.amount
+   *             apply_pending_deposit(state, deposit)
+   *
+   *         # Regardless of how the deposit was handled, we move on in the queue.
+   *         next_deposit_index += 1
+   *
+   *     state.pending_deposits = state.pending_deposits[next_deposit_index:] + deposits_to_postpone
+   *
+   *     # Accumulate churn only if the churn limit has been hit.
+   *     if is_churn_limit_reached:
+   *         state.deposit_balance_to_consume = available_for_processing - processed_amount
+   *     else:
+   *         state.deposit_balance_to_consume = Gwei(0)
+   * </spec>
+   */
   @Override
   public void processPendingDeposits(final MutableBeaconState state) {
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
@@ -302,7 +433,31 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
     }
   }
 
-  /** process_pending_consolidations */
+  /*
+   * <spec function="process_pending_consolidations" fork="electra">
+   * def process_pending_consolidations(state: BeaconState) -> None:
+   *     next_epoch = Epoch(get_current_epoch(state) + 1)
+   *     next_pending_consolidation = 0
+   *     for pending_consolidation in state.pending_consolidations:
+   *         source_validator = state.validators[pending_consolidation.source_index]
+   *         if source_validator.slashed:
+   *             next_pending_consolidation += 1
+   *             continue
+   *         if source_validator.withdrawable_epoch > next_epoch:
+   *             break
+   *
+   *         # Calculate the consolidated balance
+   *         source_effective_balance = min(
+   *             state.balances[pending_consolidation.source_index], source_validator.effective_balance)
+   *
+   *         # Move active balance to target. Excess balance is withdrawable.
+   *         decrease_balance(state, pending_consolidation.source_index, source_effective_balance)
+   *         increase_balance(state, pending_consolidation.target_index, source_effective_balance)
+   *         next_pending_consolidation += 1
+   *
+   *     state.pending_consolidations = state.pending_consolidations[next_pending_consolidation:]
+   * </spec>
+   */
   @Override
   public void processPendingConsolidations(final MutableBeaconState state) {
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
@@ -350,7 +505,25 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
     }
   }
 
-  /** Processes slashings */
+  /*
+   * <spec function="process_slashings" fork="electra">
+   * def process_slashings(state: BeaconState) -> None:
+   *     epoch = get_current_epoch(state)
+   *     total_balance = get_total_active_balance(state)
+   *     adjusted_total_slashing_balance = min(
+   *         sum(state.slashings) * PROPORTIONAL_SLASHING_MULTIPLIER_BELLATRIX,
+   *         total_balance
+   *     )
+   *     increment = EFFECTIVE_BALANCE_INCREMENT  # Factored out from total balance to avoid uint64 overflow
+   *     penalty_per_effective_balance_increment = adjusted_total_slashing_balance // (total_balance // increment)
+   *     for index, validator in enumerate(state.validators):
+   *         if validator.slashed and epoch + EPOCHS_PER_SLASHINGS_VECTOR // 2 == validator.withdrawable_epoch:
+   *             effective_balance_increments = validator.effective_balance // increment
+   *             # [Modified in Electra:EIP7251]
+   *             penalty = penalty_per_effective_balance_increment * effective_balance_increments
+   *             decrease_balance(state, ValidatorIndex(index), penalty)
+   * </spec>
+   */
   @Override
   public void processSlashings(
       final MutableBeaconState state, final ValidatorStatuses validatorStatuses) {

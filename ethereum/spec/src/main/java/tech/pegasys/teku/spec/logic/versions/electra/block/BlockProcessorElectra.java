@@ -149,6 +149,32 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         executionRequestsDataCodec.encode(executionRequests));
   }
 
+  /*
+   * <spec function="process_operations" fork="electra">
+   * def process_operations(state: BeaconState, body: BeaconBlockBody) -> None:
+   *     # [Modified in Electra:EIP6110]
+   *     # Disable former deposit mechanism once all prior deposits are processed
+   *     eth1_deposit_index_limit = min(state.eth1_data.deposit_count, state.deposit_requests_start_index)
+   *     if state.eth1_deposit_index < eth1_deposit_index_limit:
+   *         assert len(body.deposits) == min(MAX_DEPOSITS, eth1_deposit_index_limit - state.eth1_deposit_index)
+   *     else:
+   *         assert len(body.deposits) == 0
+   *
+   *     def for_ops(operations: Sequence[Any], fn: Callable[[BeaconState, Any], None]) -> None:
+   *         for operation in operations:
+   *             fn(state, operation)
+   *
+   *     for_ops(body.proposer_slashings, process_proposer_slashing)
+   *     for_ops(body.attester_slashings, process_attester_slashing)
+   *     for_ops(body.attestations, process_attestation)  # [Modified in Electra:EIP7549]
+   *     for_ops(body.deposits, process_deposit)
+   *     for_ops(body.voluntary_exits, process_voluntary_exit)  # [Modified in Electra:EIP7251]
+   *     for_ops(body.bls_to_execution_changes, process_bls_to_execution_change)
+   *     for_ops(body.execution_requests.deposits, process_deposit_request)  # [New in Electra:EIP6110]
+   *     for_ops(body.execution_requests.withdrawals, process_withdrawal_request)  # [New in Electra:EIP7002:EIP7251]
+   *     for_ops(body.execution_requests.consolidations, process_consolidation_request)  # [New in Electra:EIP7251]
+   * </spec>
+   */
   @Override
   protected void processOperationsNoValidation(
       final MutableBeaconState state,
@@ -196,7 +222,6 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     }
   }
 
-  // process_withdrawals
   @Override
   public void processWithdrawals(
       final MutableBeaconState genericState, final ExecutionPayloadSummary payloadSummary)
@@ -211,8 +236,22 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   }
 
   /*
-   Implements process_deposit_request from consensus-specs (EIP-6110)
-  */
+   * <spec function="process_deposit_request" fork="electra">
+   * def process_deposit_request(state: BeaconState, deposit_request: DepositRequest) -> None:
+   *     # Set deposit request start index
+   *     if state.deposit_requests_start_index == UNSET_DEPOSIT_REQUESTS_START_INDEX:
+   *         state.deposit_requests_start_index = deposit_request.index
+   *
+   *     # Create pending deposit
+   *     state.pending_deposits.append(PendingDeposit(
+   *         pubkey=deposit_request.pubkey,
+   *         withdrawal_credentials=deposit_request.withdrawal_credentials,
+   *         amount=deposit_request.amount,
+   *         signature=deposit_request.signature,
+   *         slot=state.slot,
+   *     ))
+   * </spec>
+   */
   @Override
   public void processDepositRequests(
       final MutableBeaconState state, final List<DepositRequest> depositRequests) {
@@ -240,7 +279,70 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     }
   }
 
-  /** Implements process_withdrawal_request from consensus-specs (EIP-7002 & EIP-7251). */
+  /*
+   * <spec function="process_withdrawal_request" fork="electra">
+   * def process_withdrawal_request(
+   *     state: BeaconState,
+   *     withdrawal_request: WithdrawalRequest
+   * ) -> None:
+   *     amount = withdrawal_request.amount
+   *     is_full_exit_request = amount == FULL_EXIT_REQUEST_AMOUNT
+   *
+   *     # If partial withdrawal queue is full, only full exits are processed
+   *     if len(state.pending_partial_withdrawals) == PENDING_PARTIAL_WITHDRAWALS_LIMIT and not is_full_exit_request:
+   *         return
+   *
+   *     validator_pubkeys = [v.pubkey for v in state.validators]
+   *     # Verify pubkey exists
+   *     request_pubkey = withdrawal_request.validator_pubkey
+   *     if request_pubkey not in validator_pubkeys:
+   *         return
+   *     index = ValidatorIndex(validator_pubkeys.index(request_pubkey))
+   *     validator = state.validators[index]
+   *
+   *     # Verify withdrawal credentials
+   *     has_correct_credential = has_execution_withdrawal_credential(validator)
+   *     is_correct_source_address = (
+   *         validator.withdrawal_credentials[12:] == withdrawal_request.source_address
+   *     )
+   *     if not (has_correct_credential and is_correct_source_address):
+   *         return
+   *     # Verify the validator is active
+   *     if not is_active_validator(validator, get_current_epoch(state)):
+   *         return
+   *     # Verify exit has not been initiated
+   *     if validator.exit_epoch != FAR_FUTURE_EPOCH:
+   *         return
+   *     # Verify the validator has been active long enough
+   *     if get_current_epoch(state) < validator.activation_epoch + SHARD_COMMITTEE_PERIOD:
+   *         return
+   *
+   *     pending_balance_to_withdraw = get_pending_balance_to_withdraw(state, index)
+   *
+   *     if is_full_exit_request:
+   *         # Only exit validator if it has no pending withdrawals in the queue
+   *         if pending_balance_to_withdraw == 0:
+   *             initiate_validator_exit(state, index)
+   *         return
+   *
+   *     has_sufficient_effective_balance = validator.effective_balance >= MIN_ACTIVATION_BALANCE
+   *     has_excess_balance = state.balances[index] > MIN_ACTIVATION_BALANCE + pending_balance_to_withdraw
+   *
+   *     # Only allow partial withdrawals with compounding withdrawal credentials
+   *     if has_compounding_withdrawal_credential(validator) and has_sufficient_effective_balance and has_excess_balance:
+   *         to_withdraw = min(
+   *             state.balances[index] - MIN_ACTIVATION_BALANCE - pending_balance_to_withdraw,
+   *             amount
+   *         )
+   *         exit_queue_epoch = compute_exit_epoch_and_update_churn(state, to_withdraw)
+   *         withdrawable_epoch = Epoch(exit_queue_epoch + MIN_VALIDATOR_WITHDRAWABILITY_DELAY)
+   *         state.pending_partial_withdrawals.append(PendingPartialWithdrawal(
+   *             validator_index=index,
+   *             amount=to_withdraw,
+   *             withdrawable_epoch=withdrawable_epoch,
+   *         ))
+   * </spec>
+   */
   @Override
   public void processWithdrawalRequests(
       final MutableBeaconState state,
@@ -390,11 +492,84 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         });
   }
 
-  /**
-   * Implements process_consolidation_request from consensus-spec (EIP-7251)
+  /*
+   * <spec function="process_consolidation_request" fork="electra">
+   * def process_consolidation_request(
+   *     state: BeaconState,
+   *     consolidation_request: ConsolidationRequest
+   * ) -> None:
+   *     if is_valid_switch_to_compounding_request(state, consolidation_request):
+   *         validator_pubkeys = [v.pubkey for v in state.validators]
+   *         request_source_pubkey = consolidation_request.source_pubkey
+   *         source_index = ValidatorIndex(validator_pubkeys.index(request_source_pubkey))
+   *         switch_to_compounding_validator(state, source_index)
+   *         return
    *
-   * @see <a href="https://github.com/ethereum/consensus-specs/blob/dev/specs/electra/beacon-chain
-   *     .md#new-process_consolidation_request"/>
+   *     # Verify that source != target, so a consolidation cannot be used as an exit.
+   *     if consolidation_request.source_pubkey == consolidation_request.target_pubkey:
+   *         return
+   *     # If the pending consolidations queue is full, consolidation requests are ignored
+   *     if len(state.pending_consolidations) == PENDING_CONSOLIDATIONS_LIMIT:
+   *         return
+   *     # If there is too little available consolidation churn limit, consolidation requests are ignored
+   *     if get_consolidation_churn_limit(state) <= MIN_ACTIVATION_BALANCE:
+   *         return
+   *
+   *     validator_pubkeys = [v.pubkey for v in state.validators]
+   *     # Verify pubkeys exists
+   *     request_source_pubkey = consolidation_request.source_pubkey
+   *     request_target_pubkey = consolidation_request.target_pubkey
+   *     if request_source_pubkey not in validator_pubkeys:
+   *         return
+   *     if request_target_pubkey not in validator_pubkeys:
+   *         return
+   *     source_index = ValidatorIndex(validator_pubkeys.index(request_source_pubkey))
+   *     target_index = ValidatorIndex(validator_pubkeys.index(request_target_pubkey))
+   *     source_validator = state.validators[source_index]
+   *     target_validator = state.validators[target_index]
+   *
+   *     # Verify source withdrawal credentials
+   *     has_correct_credential = has_execution_withdrawal_credential(source_validator)
+   *     is_correct_source_address = (
+   *         source_validator.withdrawal_credentials[12:] == consolidation_request.source_address
+   *     )
+   *     if not (has_correct_credential and is_correct_source_address):
+   *         return
+   *
+   *     # Verify that target has compounding withdrawal credentials
+   *     if not has_compounding_withdrawal_credential(target_validator):
+   *         return
+   *
+   *     # Verify the source and the target are active
+   *     current_epoch = get_current_epoch(state)
+   *     if not is_active_validator(source_validator, current_epoch):
+   *         return
+   *     if not is_active_validator(target_validator, current_epoch):
+   *         return
+   *     # Verify exits for source and target have not been initiated
+   *     if source_validator.exit_epoch != FAR_FUTURE_EPOCH:
+   *         return
+   *     if target_validator.exit_epoch != FAR_FUTURE_EPOCH:
+   *         return
+   *     # Verify the source has been active long enough
+   *     if current_epoch < source_validator.activation_epoch + SHARD_COMMITTEE_PERIOD:
+   *         return
+   *     # Verify the source has no pending withdrawals in the queue
+   *     if get_pending_balance_to_withdraw(state, source_index) > 0:
+   *         return
+   *
+   *     # Initiate source validator exit and append pending consolidation
+   *     source_validator.exit_epoch = compute_consolidation_epoch_and_update_churn(
+   *         state, source_validator.effective_balance
+   *     )
+   *     source_validator.withdrawable_epoch = Epoch(
+   *         source_validator.exit_epoch + MIN_VALIDATOR_WITHDRAWABILITY_DELAY
+   *     )
+   *     state.pending_consolidations.append(PendingConsolidation(
+   *         source_index=source_index,
+   *         target_index=target_index
+   *     ))
+   * </spec>
    */
   @Override
   public void processConsolidationRequests(
@@ -563,11 +738,43 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     LOG.debug("process_consolidation_request: created {}", pendingConsolidation);
   }
 
-  /**
-   * Implements function is_valid_switch_to_compounding_request
+  /*
+   * <spec function="is_valid_switch_to_compounding_request" fork="electra">
+   * def is_valid_switch_to_compounding_request(
+   *     state: BeaconState,
+   *     consolidation_request: ConsolidationRequest
+   * ) -> bool:
+   *     # Switch to compounding requires source and target be equal
+   *     if consolidation_request.source_pubkey != consolidation_request.target_pubkey:
+   *         return False
    *
-   * @see <a
-   *     href="https://github.com/ethereum/consensus-specs/blob/dev/specs/electra/beacon-chain.md#new-is_valid_switch_to_compounding_request"/>
+   *     # Verify pubkey exists
+   *     source_pubkey = consolidation_request.source_pubkey
+   *     validator_pubkeys = [v.pubkey for v in state.validators]
+   *     if source_pubkey not in validator_pubkeys:
+   *         return False
+   *
+   *     source_validator = state.validators[ValidatorIndex(validator_pubkeys.index(source_pubkey))]
+   *
+   *     # Verify request has been authorized
+   *     if source_validator.withdrawal_credentials[12:] != consolidation_request.source_address:
+   *         return False
+   *
+   *     # Verify source withdrawal credentials
+   *     if not has_eth1_withdrawal_credential(source_validator):
+   *         return False
+   *
+   *     # Verify the source is active
+   *     current_epoch = get_current_epoch(state)
+   *     if not is_active_validator(source_validator, current_epoch):
+   *         return False
+   *
+   *     # Verify exit for source has not been initiated
+   *     if source_validator.exit_epoch != FAR_FUTURE_EPOCH:
+   *         return False
+   *
+   *     return True
+   * </spec>
    */
   @Override
   public boolean isValidSwitchToCompoundingRequest(
@@ -611,6 +818,32 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     return sourceValidator.getExitEpoch().equals(FAR_FUTURE_EPOCH);
   }
 
+  /*
+   * <spec function="apply_deposit" fork="electra">
+   * def apply_deposit(state: BeaconState,
+   *                   pubkey: BLSPubkey,
+   *                   withdrawal_credentials: Bytes32,
+   *                   amount: uint64,
+   *                   signature: BLSSignature) -> None:
+   *     validator_pubkeys = [v.pubkey for v in state.validators]
+   *     if pubkey not in validator_pubkeys:
+   *         # Verify the deposit signature (proof of possession) which is not checked by the deposit contract
+   *         if is_valid_deposit_signature(pubkey, withdrawal_credentials, amount, signature):
+   *             add_validator_to_registry(state, pubkey, withdrawal_credentials, Gwei(0))  # [Modified in Electra:EIP7251]
+   *         else:
+   *             return
+   *
+   *     # Increase balance by deposit amount
+   *     # [Modified in Electra:EIP7251]
+   *     state.pending_deposits.append(PendingDeposit(
+   *         pubkey=pubkey,
+   *         withdrawal_credentials=withdrawal_credentials,
+   *         amount=amount,
+   *         signature=signature,
+   *         slot=GENESIS_SLOT  # Use GENESIS_SLOT to distinguish from a pending deposit request
+   *     ))
+   * </spec>
+   */
   @Override
   public void applyDeposit(
       final MutableBeaconState state,

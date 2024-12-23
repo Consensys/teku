@@ -75,6 +75,29 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
         SpecConfigElectra.required(specConfig).getMaxEffectiveBalanceElectra());
   }
 
+  /*
+   * <spec function="compute_proposer_index" fork="electra">
+   * def compute_proposer_index(state: BeaconState, indices: Sequence[ValidatorIndex], seed: Bytes32) -> ValidatorIndex:
+   *     """
+   *     Return from ``indices`` a random index sampled by effective balance.
+   *     """
+   *     assert len(indices) > 0
+   *     MAX_RANDOM_VALUE = 2**16 - 1  # [Modified in Electra]
+   *     i = uint64(0)
+   *     total = uint64(len(indices))
+   *     while True:
+   *         candidate_index = indices[compute_shuffled_index(i % total, total, seed)]
+   *         # [Modified in Electra]
+   *         random_bytes = hash(seed + uint_to_bytes(i // 16))
+   *         offset = i % 16 * 2
+   *         random_value = bytes_to_uint64(random_bytes[offset:offset + 2])
+   *         effective_balance = state.validators[candidate_index].effective_balance
+   *         # [Modified in Electra:EIP7251]
+   *         if effective_balance * MAX_RANDOM_VALUE >= MAX_EFFECTIVE_BALANCE_ELECTRA * random_value:
+   *             return candidate_index
+   *         i += 1
+   * </spec>
+   */
   @Override
   protected int computeProposerIndex(
       final BeaconState state,
@@ -106,6 +129,18 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
     }
   }
 
+  /*
+   * <spec function="get_max_effective_balance" fork="electra">
+   * def get_max_effective_balance(validator: Validator) -> Gwei:
+   *     """
+   *     Get max effective balance for ``validator``.
+   *     """
+   *     if has_compounding_withdrawal_credential(validator):
+   *         return MAX_EFFECTIVE_BALANCE_ELECTRA
+   *     else:
+   *         return MIN_ACTIVATION_BALANCE
+   * </spec>
+   */
   @Override
   public UInt64 getMaxEffectiveBalance(final Validator validator) {
     return predicatesElectra.hasCompoundingWithdrawalCredential(validator)
@@ -113,6 +148,27 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
         : specConfigElectra.getMinActivationBalance();
   }
 
+  /*
+   * <spec function="get_validator_from_deposit" fork="electra">
+   * def get_validator_from_deposit(pubkey: BLSPubkey, withdrawal_credentials: Bytes32, amount: uint64) -> Validator:
+   *     validator = Validator(
+   *         pubkey=pubkey,
+   *         withdrawal_credentials=withdrawal_credentials,
+   *         effective_balance=Gwei(0),
+   *         slashed=False,
+   *         activation_eligibility_epoch=FAR_FUTURE_EPOCH,
+   *         activation_epoch=FAR_FUTURE_EPOCH,
+   *         exit_epoch=FAR_FUTURE_EPOCH,
+   *         withdrawable_epoch=FAR_FUTURE_EPOCH,
+   *     )
+   *
+   *     # [Modified in Electra:EIP7251]
+   *     max_effective_balance = get_max_effective_balance(validator)
+   *     validator.effective_balance = min(amount - amount % EFFECTIVE_BALANCE_INCREMENT, max_effective_balance)
+   *
+   *     return validator
+   * </spec>
+   */
   @Override
   public Validator getValidatorFromDeposit(
       final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials, final UInt64 amount) {
