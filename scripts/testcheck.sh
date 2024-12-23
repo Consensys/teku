@@ -59,7 +59,7 @@ for (( i=0; i<${#TEST_TYPE[@]}; i++ )); do
           # directories. This helps identify obviously incorrect paths;
           # the test file is probably in the wrong directory.
           #
-          if [ "$file_dircount" == "$testfile_dircount" ]; then
+          if [ "$file_dircount" -eq "$testfile_dircount" ]; then
             printf "\nTest may exist in the wrong directory:\n"
             printf "  Main: %s\n" $(realpath --relative-to=$TEKU_DIR $file)
             printf "  Test: %s\n" $(realpath --relative-to=$TEKU_DIR $testfile)
