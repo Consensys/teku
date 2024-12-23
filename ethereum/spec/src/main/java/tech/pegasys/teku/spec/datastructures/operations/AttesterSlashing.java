@@ -18,13 +18,13 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
- /*
-  * <spec ssz_object="AttesterSlashing" fork="phase0">
-  * class AttesterSlashing(Container):
-  *     attestation_1: IndexedAttestation
-  *     attestation_2: IndexedAttestation
-  * </spec>
-  */
+/*
+ * <spec ssz_object="AttesterSlashing" fork="phase0">
+ * class AttesterSlashing(Container):
+ *     attestation_1: IndexedAttestation
+ *     attestation_2: IndexedAttestation
+ * </spec>
+ */
 public class AttesterSlashing
     extends Container2<AttesterSlashing, IndexedAttestation, IndexedAttestation> {
   private final IntersectingIndicesCalculator intersectingIndicesCalculator;

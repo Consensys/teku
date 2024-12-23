@@ -29,13 +29,7 @@ public class ExecutionRequestsDataCodec {
     this.executionRequestsSchema = executionRequestsSchema;
   }
 
-  /**
-   * Decodes the execution requests received from the EL.
-   *
-   * @param executionRequests list of encoded execution requests from the EL
-   * @return an ExecutionRequests object with the requests
-   *
-   * @hidden
+  /*
    * <spec function="get_execution_requests" fork="electra">
    * def get_execution_requests(execution_requests_list: Sequence[bytes]) -> ExecutionRequests:
    *     deposits = []
@@ -83,6 +77,12 @@ public class ExecutionRequestsDataCodec {
    *         consolidations=consolidations,
    *     )
    * </spec>
+   */
+  /**
+   * Decodes the execution requests received from the EL.
+   *
+   * @param executionRequests list of encoded execution requests from the EL
+   * @return an ExecutionRequests object with the requests
    */
   public ExecutionRequests decode(final List<Bytes> executionRequests) {
     final ExecutionRequestsBuilder executionRequestsBuilder =
@@ -133,13 +133,7 @@ public class ExecutionRequestsDataCodec {
     return executionRequestsBuilder.build();
   }
 
-  /**
-   * Encodes the provided ExecutionRequests object to send the requests to the EL for validation.
-   *
-   * @param executionRequests the execution requests in the BeaconBlock
-   * @return list of encoded execution requests
-   *
-   * @hidden
+  /*
    * <spec function="get_execution_requests_list" fork="electra">
    * def get_execution_requests_list(execution_requests: ExecutionRequests) -> Sequence[bytes]:
    *     requests = [
@@ -154,6 +148,12 @@ public class ExecutionRequestsDataCodec {
    *         if len(request_data) != 0
    *     ]
    * </spec>
+   */
+  /**
+   * Encodes the provided ExecutionRequests object to send the requests to the EL for validation.
+   *
+   * @param executionRequests the execution requests in the BeaconBlock
+   * @return list of encoded execution requests
    */
   public List<Bytes> encode(final ExecutionRequests executionRequests) {
     final List<Bytes> executionRequestsData = new ArrayList<>();
