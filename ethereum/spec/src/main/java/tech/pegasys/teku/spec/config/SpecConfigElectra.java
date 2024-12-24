@@ -19,7 +19,18 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SpecConfigElectra extends SpecConfigDeneb, NetworkingSpecConfigDeneb {
 
+  /*
+   * <spec constant_var="UNSET_DEPOSIT_REQUESTS_START_INDEX" fork="electra">
+   * UNSET_DEPOSIT_REQUESTS_START_INDEX: uint64 = 2**64 - 1
+   * </spec>
+   */
   UInt64 UNSET_DEPOSIT_REQUESTS_START_INDEX = UInt64.MAX_VALUE;
+
+  /*
+   * <spec constant_var="FULL_EXIT_REQUEST_AMOUNT" fork="electra">
+   * FULL_EXIT_REQUEST_AMOUNT: uint64 = 0
+   * </spec>
+   */
   UInt64 FULL_EXIT_REQUEST_AMOUNT = UInt64.ZERO;
 
   static SpecConfigElectra required(final SpecConfig specConfig) {

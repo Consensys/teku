@@ -36,6 +36,11 @@ import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 public class WithdrawalRequest
     extends Container3<WithdrawalRequest, SszByteVector, SszPublicKey, SszUInt64> {
 
+  /*
+   * <spec constant_var="WITHDRAWAL_REQUEST_TYPE" fork="electra">
+   * WITHDRAWAL_REQUEST_TYPE: Bytes1 = '0x01'
+   * </spec>
+   */
   public static final byte REQUEST_TYPE = 0x1;
   public static final Bytes REQUEST_TYPE_PREFIX = Bytes.of(REQUEST_TYPE);
 

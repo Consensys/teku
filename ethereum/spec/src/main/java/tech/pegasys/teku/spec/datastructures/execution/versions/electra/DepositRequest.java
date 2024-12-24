@@ -41,6 +41,11 @@ public class DepositRequest
     extends Container5<
         DepositRequest, SszPublicKey, SszBytes32, SszUInt64, SszSignature, SszUInt64> {
 
+  /*
+   * <spec constant_var="DEPOSIT_REQUEST_TYPE" fork="electra">
+   * DEPOSIT_REQUEST_TYPE: Bytes1 = '0x00'
+   * </spec>
+   */
   public static final byte REQUEST_TYPE = 0x0;
   public static final Bytes REQUEST_TYPE_PREFIX = Bytes.of(REQUEST_TYPE);
 
