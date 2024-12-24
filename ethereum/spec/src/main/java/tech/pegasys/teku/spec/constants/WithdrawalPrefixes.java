@@ -37,5 +37,4 @@ public class WithdrawalPrefixes {
    * </spec>
    */
   public static final byte COMPOUNDING_WITHDRAWAL_BYTE = 0x02;
-
 }
