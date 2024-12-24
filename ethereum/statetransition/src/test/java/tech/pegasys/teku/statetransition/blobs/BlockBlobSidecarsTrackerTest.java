@@ -177,7 +177,7 @@ public class BlockBlobSidecarsTrackerTest {
     SafeFutureAssert.assertThatSafeFuture(completionFuture).isNotCompleted();
     assertThatThrownBy(blockBlobSidecarsTracker::getMissingBlobSidecars)
         .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Block must me known to call this method");
+        .hasMessage("Block must be known to call this method");
     assertThat(blockBlobSidecarsTracker.getBlobSidecars())
         .containsExactlyInAnyOrderEntriesOf(added);
 
@@ -266,7 +266,7 @@ public class BlockBlobSidecarsTrackerTest {
 
     assertThatThrownBy(blockBlobSidecarsTracker::getMissingBlobSidecars)
         .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Block must me known to call this method");
+        .hasMessage("Block must be known to call this method");
   }
 
   @Test
