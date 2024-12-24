@@ -29,6 +29,7 @@ public class WithdrawalPrefixes {
    * </spec>
    */
   public static final byte ETH1_ADDRESS_WITHDRAWAL_BYTE = 0x01;
+  public static final Bytes ETH1_ADDRESS_WITHDRAWAL_PREFIX = Bytes.of(ETH1_ADDRESS_WITHDRAWAL_BYTE);
 
   /*
    * <spec constant_var="COMPOUNDING_WITHDRAWAL_PREFIX" fork="electra">
@@ -37,10 +38,4 @@ public class WithdrawalPrefixes {
    */
   public static final byte COMPOUNDING_WITHDRAWAL_BYTE = 0x02;
 
-  /*
-   * <spec constant_var="ETH1_ADDRESS_WITHDRAWAL_PREFIX" fork="electra">
-   * ETH1_ADDRESS_WITHDRAWAL_PREFIX: Bytes1 = '0x01'
-   * </spec>
-   */
-  public static final Bytes ETH1_ADDRESS_WITHDRAWAL_PREFIX = Bytes.of(ETH1_ADDRESS_WITHDRAWAL_BYTE);
 }
