@@ -324,7 +324,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
     long addedBlobs =
         blobSidecars.stream()
-            .map(
+            .filter(
                 blobSidecar -> {
                   final boolean isNew = blobSidecarsTracker.add(blobSidecar);
                   if (isNew) {
@@ -333,7 +333,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                   }
                   return isNew;
                 })
-            .filter(Boolean::booleanValue)
             .count();
     totalBlobSidecars += (int) addedBlobs;
     sizeGauge.set(totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
@@ -698,14 +697,15 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
               for (int index = 0; index < blobAndProofs.size(); index++) {
                 final Optional<BlobAndProof> blobAndProof = blobAndProofs.get(index);
+                final BlobIdentifier blobIdentifier = missingBlobsIdentifiers.get(index);
                 if (blobAndProof.isEmpty()) {
-                  LOG.trace("Blob not found on local EL: {}", missingBlobsIdentifiers.get(index));
+                  LOG.trace("Blob not found on local EL: {}", blobIdentifier);
                   continue;
                 }
 
                 final BlobSidecar blobSidecar =
                     miscHelpersDeneb.constructBlobSidecarFromBlobAndProof(
-                        missingBlobsIdentifiers.get(index),
+                        blobIdentifier,
                         blobAndProof.get(),
                         beaconBlockBodyDeneb,
                         signedBeaconBlockHeader);
