@@ -133,21 +133,6 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
     return super.getIndexedAttestation(state, attestation);
   }
 
-  /*
-   * <spec function="get_indexed_attestation" fork="electra">
-   * def get_indexed_attestation(state: BeaconState, attestation: Attestation) -> IndexedAttestation:
-   *     """
-   *     Return the indexed attestation corresponding to ``attestation``.
-   *     """
-   *     attesting_indices = get_attesting_indices(state, attestation)
-   *
-   *     return IndexedAttestation(
-   *         attesting_indices=sorted(attesting_indices),
-   *         data=attestation.data,
-   *         signature=attestation.signature,
-   *     )
-   * </spec>
-   */
   private IndexedAttestation getIndexedAttestationFromSingleAttestation(
       final SingleAttestation attestation) {
     final IndexedAttestationSchema indexedAttestationSchema =
