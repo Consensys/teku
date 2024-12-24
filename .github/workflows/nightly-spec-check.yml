@@ -1,0 +1,36 @@
+name: Nightly Spec Check
+
+on:
+  schedule:
+    - cron: "0 1 * * *" # Runs nightly at 1:00 AM UTC
+  workflow_dispatch: # Allow manual runs
+
+jobs:
+  update-pyspec:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Current Repository
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          path: teku
+
+      - name: Clone eth-spec-tags
+        run: |
+          git clone https://github.com/jtraglia/eth-spec-tags.git
+
+      - name: Update spec tags
+        run: |
+          python3 eth-spec-tags/update_spec_tags.py --path=teku
+
+      - name: Check for differences
+        working-directory: teku
+        run: |
+          if git diff --exit-code; then
+            echo "There have been no spec changes."
+          else
+            echo "There have been spec changes:"
+            git diff
+            exit 1
+          fi
