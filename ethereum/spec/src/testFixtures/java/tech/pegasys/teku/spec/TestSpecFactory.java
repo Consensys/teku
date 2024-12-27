@@ -122,8 +122,9 @@ public class TestSpecFactory {
 
   public static Spec createMinimalEip7732() {
     final SpecConfigAndParent<? extends SpecConfig> specConfig =
-        getElectraSpecConfig(Eth2Network.MINIMAL, configAdapter);
+        getEip7732SpecConfig(Eth2Network.MINIMAL);
     return create(specConfig, SpecMilestone.EIP7732);
+  }
 
   /**
    * Create a spec that forks to altair at the provided slot
@@ -193,7 +194,7 @@ public class TestSpecFactory {
    * @return A spec with EIP7732 enabled, forking to EIP7732 at the given epoch
    */
   public static Spec createMinimalWithEip7732ForkEpoch(final UInt64 eip7732ForkEpoch) {
-    final SpecConfigElectra config =
+    final SpecConfigAndParent<? extends SpecConfig> config =
         getEip7732SpecConfig(
             Eth2Network.MINIMAL, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, eip7732ForkEpoch);
     return create(config, SpecMilestone.EIP7732);
@@ -242,12 +243,12 @@ public class TestSpecFactory {
   }
 
   public static Spec createMainnetEip7732() {
-      final SpecConfigAndParent<? extends SpecConfig> specConfig =
-          getElectraSpecConfig(Eth2Network.MAINNET);
-      return create(specConfig, SpecMilestone.EIP7732);
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
+        getEip7732SpecConfig(Eth2Network.MAINNET);
+    return create(specConfig, SpecMilestone.EIP7732);
   }
 
-  public static Spec createPhase0(final SpecConfig config) {
+  public static Spec createPhase0(final SpecConfigAndParent<? extends SpecConfig> config) {
     return create(config, SpecMilestone.PHASE0);
   }
 
@@ -458,11 +459,12 @@ public class TestSpecFactory {
             }));
   }
 
-  private static SpecConfigEip7732 getEip7732SpecConfig(final Eth2Network network) {
+  private static SpecConfigAndParent<? extends SpecConfig> getEip7732SpecConfig(
+      final Eth2Network network) {
     return getEip7732SpecConfig(network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO);
   }
 
-  private static SpecConfigEip7732 getEip7732SpecConfig(
+  private static SpecConfigAndParent<? extends SpecConfig> getEip7732SpecConfig(
       final Eth2Network network,
       final UInt64 capellaForkEpoch,
       final UInt64 denebForkEpoch,
@@ -480,9 +482,9 @@ public class TestSpecFactory {
                 .eip7732Builder(eip7732 -> eip7732.eip7732ForkEpoch(eip7732ForkEpoch)));
   }
 
-  private static SpecConfigEip7732 getEip7732SpecConfig(
+  private static SpecConfigAndParent<? extends SpecConfig> getEip7732SpecConfig(
       final Eth2Network network, final Consumer<SpecConfigBuilder> configAdapter) {
-    return SpecConfigEip7732.required(
+    return requireEip7732(
         SpecConfigLoader.loadConfig(
             network.configName(),
             builder -> {
@@ -537,6 +539,12 @@ public class TestSpecFactory {
   private static SpecConfigAndParent<? extends SpecConfig> requireElectra(
       final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
     checkArgument(specConfigAndParent.specConfig().toVersionElectra().isPresent());
+    return specConfigAndParent;
+  }
+
+  private static SpecConfigAndParent<? extends SpecConfig> requireEip7732(
+      final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
+    checkArgument(specConfigAndParent.specConfig().toVersionEip7732().isPresent());
     return specConfigAndParent;
   }
 }

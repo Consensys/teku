@@ -79,12 +79,6 @@ public interface ReadOnlyStore extends TimeProvider {
 
   Optional<Bytes32> getProposerBoostRoot();
 
-  Optional<Bytes32> getPayloadWithholdBoostRoot();
-
-  Optional<Bytes32> getPayloadRevealBoostRoot();
-
-  boolean getPayloadWithholdBoostFull();
-
   ReadOnlyForkChoiceStrategy getForkChoiceStrategy();
 
   boolean containsBlock(Bytes32 blockRoot);

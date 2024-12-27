@@ -37,10 +37,6 @@ public abstract class CacheableStore implements UpdatableStore {
 
   abstract void cacheProposerBoostRoot(Optional<Bytes32> proposerBoostRoot);
 
-  abstract void cachePayloadWithholdBoostRoot(Optional<Bytes32> payloadWithholdBoostRoot);
-
-  abstract void cachePayloadRevealBoostRoot(Optional<Bytes32> payloadRevealBoostRoot);
-
   abstract void cacheBlocks(Collection<BlockAndCheckpoints> blockAndCheckpoints);
 
   abstract void cacheStates(Map<Bytes32, StateAndBlockSummary> stateAndBlockSummaries);

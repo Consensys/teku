@@ -99,7 +99,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       blobSidecarsByRootRequestMessageSchema;
   private final Supplier<ExecutionPayloadEnvelopesByRootRequestMessageSchema>
       executionPayloadEnvelopesByRootRequestMessageSchema;
-  private final Supplier<Integer> maxBlobsPerBlock;
 
   DefaultEth2Peer(
       final Spec spec,
@@ -144,7 +143,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                 SchemaDefinitionsEip7732.required(
                         spec.forMilestone(SpecMilestone.EIP7732).getSchemaDefinitions())
                     .getExecutionPayloadEnvelopesByRootRequestMessageSchema());
-    this.maxBlobsPerBlock = Suppliers.memoize(() -> getSpecConfigDeneb().getMaxBlobsPerBlock());
   }
 
   @Override

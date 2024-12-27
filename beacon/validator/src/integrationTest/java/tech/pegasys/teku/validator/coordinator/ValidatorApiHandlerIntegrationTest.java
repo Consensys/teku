@@ -47,7 +47,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
-import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -68,10 +67,8 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.attestation.PayloadAttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
-import tech.pegasys.teku.statetransition.execution.ExecutionPayloadHeaderPool;
-import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
-import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadHeaderPool;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -83,6 +80,7 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
+import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
 
 @TestSpecContext(milestone = {SpecMilestone.PHASE0, SpecMilestone.DENEB})
@@ -115,8 +113,6 @@ public class ValidatorApiHandlerIntegrationTest {
       mock(BlockBlobSidecarsTrackersPool.class);
   private final BlobSidecarGossipChannel blobSidecarGossipChannel =
       mock(BlobSidecarGossipChannel.class);
-  private final ExecutionPayloadGossipChannel executionPayloadGossipChannel =
-      mock(ExecutionPayloadGossipChannel.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   private final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
   private final NetworkDataProvider networkDataProvider = mock(NetworkDataProvider.class);
@@ -132,8 +128,8 @@ public class ValidatorApiHandlerIntegrationTest {
       mock(SyncCommitteeSubscriptionManager.class);
   private final ExecutionPayloadHeaderPool executionPayloadHeaderPool =
       mock(ExecutionPayloadHeaderPool.class);
-  private final ExecutionPayloadManager executionPayloadManager =
-      mock(ExecutionPayloadManager.class);
+  private final ExecutionPayloadPublisher executionPayloadPublisher =
+      mock(ExecutionPayloadPublisher.class);
   private final ExecutionPayloadAndBlobSidecarsRevealer executionPayloadAndBlobSidecarsRevealer =
       mock(ExecutionPayloadAndBlobSidecarsRevealer.class);
 
@@ -193,8 +189,10 @@ public class ValidatorApiHandlerIntegrationTest {
             combinedChainDataClient,
             syncStateProvider,
             blockFactory,
+            executionPayloadHeaderFactory,
             attestationPool,
             attestationManager,
+            payloadAttestationManager,
             attestationTopicSubscriber,
             activeValidatorTracker,
             dutyMetrics,
@@ -205,6 +203,9 @@ public class ValidatorApiHandlerIntegrationTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
+            executionPayloadHeaderPool,
+            executionPayloadAndBlobSidecarsRevealer,
+            executionPayloadPublisher,
             new BlockProductionAndPublishingPerformanceFactory(
                 new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0),
             new MilestoneBasedBlockPublisher(

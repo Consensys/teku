@@ -44,15 +44,17 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
+import tech.pegasys.teku.networking.eth2.peers.RequestApproval.RequestApprovalBuilder;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailableException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -68,7 +70,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 public class BlobSidecarsByRangeMessageHandlerTest {
 
   private static final RequestApproval ZERO_OBJECTS_REQUEST_APPROVAL =
-      new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build();
+      new RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build();
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(
           TestSpecFactory.createDefault().getNetworkingConfig().getMaxPayloadSize());
@@ -87,8 +89,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   private final String protocolId =
       BeaconChainMethodIds.getBlobSidecarsByRangeMethodId(1, RPC_ENCODING);
   private final Optional<RequestApproval> allowedObjectsRequest =
-      Optional.of(
-          new RequestApproval.RequestApprovalBuilder().objectsCount(100).timeSeconds(ZERO).build());
+      Optional.of(new RequestApprovalBuilder().objectsCount(100).timeSeconds(ZERO).build());
 
   private SpecMilestone specMilestone;
   private Spec spec;
@@ -99,7 +100,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   private UInt64 startSlot;
 
   @BeforeEach
-  public void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
+  public void setUp(final SpecContext specContext) {
     specMilestone = specContext.getSpecMilestone();
     spec =
         switch (specContext.getSpecMilestone()) {
@@ -110,6 +111,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
           case CAPELLA -> throw new IllegalArgumentException("Capella is an unsupported milestone");
           case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(currentForkEpoch);
           case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(currentForkEpoch);
+          case EIP7732 -> TestSpecFactory.createMinimalWithEip7732ForkEpoch(currentForkEpoch);
         };
 
     dataStructureUtil = new DataStructureUtil(spec);
@@ -294,8 +296,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     // available from epoch 5010
     verify(listener)
         .completeWithErrorResponse(
-            new RpcException.ResourceUnavailableException(
-                "Requested blob sidecars are not available."));
+            new ResourceUnavailableException("Requested blob sidecars are not available."));
   }
 
   @TestTemplate
