@@ -77,11 +77,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Optional<UInt64> maybeEarliestBlobSidecarTransactionSlot = Optional.empty();
   Optional<Bytes32> maybeLatestCanonicalBlockRoot = Optional.empty();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
+
   // ePBS
-  Optional<Bytes32> payloadWithholdBoostRoot = Optional.empty();
-  boolean payloadWithholdBoostRootSet = false;
-  Optional<Bytes32> payloadRevealBoostRoot = Optional.empty();
-  boolean payloadRevealBoostRootSet = false;
 
   StoreTransaction(
       final Spec spec,
@@ -192,33 +189,9 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public void setPayloadWithholdBoostRoot(final Bytes32 payloadWithholdBoostRoot) {
-    this.payloadWithholdBoostRoot = Optional.of(payloadWithholdBoostRoot);
-    payloadWithholdBoostRootSet = true;
-  }
-
-  @Override
-  public void setPayloadRevealBoostRoot(final Bytes32 payloadRevealBoostRoot) {
-    this.payloadRevealBoostRoot = Optional.of(payloadRevealBoostRoot);
-    payloadRevealBoostRootSet = true;
-  }
-
-  @Override
   public void removeProposerBoostRoot() {
     proposerBoostRoot = Optional.empty();
     proposerBoostRootSet = true;
-  }
-
-  @Override
-  public void removePayloadWithholdBoostRoot() {
-    payloadWithholdBoostRoot = Optional.empty();
-    payloadWithholdBoostRootSet = true;
-  }
-
-  @Override
-  public void removePayloadRevealBoostRoot() {
-    payloadRevealBoostRoot = Optional.empty();
-    payloadRevealBoostRootSet = true;
   }
 
   @Override
@@ -354,23 +327,6 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public Optional<Bytes32> getProposerBoostRoot() {
     return proposerBoostRootSet ? proposerBoostRoot : store.getProposerBoostRoot();
-  }
-
-  @Override
-  public Optional<Bytes32> getPayloadWithholdBoostRoot() {
-    return payloadWithholdBoostRootSet
-        ? payloadWithholdBoostRoot
-        : store.getPayloadWithholdBoostRoot();
-  }
-
-  @Override
-  public Optional<Bytes32> getPayloadRevealBoostRoot() {
-    return payloadRevealBoostRootSet ? payloadRevealBoostRoot : store.getPayloadRevealBoostRoot();
-  }
-
-  @Override
-  public boolean getPayloadWithholdBoostFull() {
-    return store.getPayloadWithholdBoostFull();
   }
 
   @Override

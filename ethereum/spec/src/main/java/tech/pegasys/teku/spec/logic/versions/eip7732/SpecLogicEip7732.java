@@ -188,7 +188,8 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
 
     // State upgrade
     final Eip7732StateUpgrade stateUpgrade =
-        new Eip7732StateUpgrade(config, schemaDefinitions, beaconStateAccessors);
+        new Eip7732StateUpgrade(
+            config, schemaDefinitions, beaconStateAccessors, beaconStateMutators);
 
     // Execution payload processing
     // EIP7732 TODO: dirty way to leverage Electra operations

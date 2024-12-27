@@ -89,15 +89,7 @@ public interface MutableStore extends ReadOnlyStore {
 
   void setLatestCanonicalBlockRoot(Bytes32 latestCanonicalBlockRoot);
 
-  void setPayloadWithholdBoostRoot(Bytes32 payloadWithholdBoostRoot);
-
-  void setPayloadRevealBoostRoot(Bytes32 payloadRevealBoostRoot);
-
   void removeProposerBoostRoot();
-
-  void removePayloadWithholdBoostRoot();
-
-  void removePayloadRevealBoostRoot();
 
   void removeFinalizedOptimisticTransitionPayload();
 }

@@ -77,13 +77,8 @@ public class MiscHelpersEip7732 extends MiscHelpersElectra {
   }
 
   @Override
-  public boolean verifyBlobSidecarMerkleProof(final BlobSidecar blobSidecar) {
-    return predicates.isValidMerkleBranch(
-        blobSidecar.getSszKZGCommitment().hashTreeRoot(),
-        blobSidecar.getKzgCommitmentInclusionProof(),
-        SpecConfigEip7732.required(specConfig).getKzgCommitmentInclusionProofDepthEip7732(),
-        getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecar.getIndex()),
-        blobSidecar.getBlockBodyRoot());
+  public int getKzgCommitmentInclusionProofDepth() {
+    return SpecConfigEip7732.required(specConfig).getKzgCommitmentInclusionProofDepthEip7732();
   }
 
   public BlobSidecar constructBlobSidecar(

@@ -27,10 +27,10 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class ExecutionPayloadHeaderManager
+public class ExecutionPayloadHeaderGossipManager
     extends AbstractGossipManager<SignedExecutionPayloadHeader> {
 
-  public ExecutionPayloadHeaderManager(
+  public ExecutionPayloadHeaderGossipManager(
       final RecentChainData recentChainData,
       final Spec spec,
       final AsyncRunner asyncRunner,
@@ -50,16 +50,19 @@ public class ExecutionPayloadHeaderManager
         SchemaDefinitionsEip7732.required(
                 spec.atEpoch(forkInfo.getFork().getEpoch()).getSchemaDefinitions())
             .getSignedExecutionPayloadHeaderSchema(),
+        executionPayloadHeader ->
+            executionPayloadHeader
+                .getMessage()
+                .toVersionEip7732()
+                .map(ExecutionPayloadHeaderEip7732::getSlot),
         executionPayloadHeader -> {
           final UInt64 slot =
-              executionPayloadHeader
-                  .getMessage()
-                  .toVersionEip7732()
-                  .map(ExecutionPayloadHeaderEip7732::getSlot)
-                  .orElse(UInt64.ZERO);
+              ExecutionPayloadHeaderEip7732.required(executionPayloadHeader.getMessage()).getSlot();
           return spec.computeEpochAtSlot(slot);
         },
         spec.getNetworkingConfig(),
+        GossipFailureLogger.createNonSuppressing(
+            GossipTopicName.EXECUTION_PAYLOAD_HEADER.toString()),
         debugDataDumper);
   }
 

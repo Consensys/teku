@@ -163,8 +163,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
         blockBlobSidecarsTrackersPool.getOrCreateBlockBlobSidecarsTracker(
             block, executionPayloadEnvelope);
 
-    return new ForkChoiceBlobSidecarsAvailabilityChecker(
-        spec, asyncRunner, recentChainData, blockBlobSidecarsTracker, kzg);
+    return forkChoiceBlobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker);
   }
 
   @Override

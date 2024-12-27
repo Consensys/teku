@@ -13,7 +13,13 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA;
+
 import it.unimi.dsi.fastutil.longs.LongList;
+import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -37,12 +43,9 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
-import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
@@ -98,10 +101,6 @@ public class BlindedBeaconBlockBodySchemaEip7732Impl
 
   public static BlindedBeaconBlockBodySchemaEip7732Impl create(
       final SpecConfigEip7732 specConfig,
-      final SignedBlsToExecutionChangeSchema blsToExecutionChangeSchema,
-      final long maxValidatorsPerAttestation,
-      final ExecutionPayloadHeaderSchema<?> executionPayloadHeaderSchema,
-      final PayloadAttestationSchema payloadAttestationSchema,
       final String containerName,
       final SchemaRegistry schemaRegistry) {
     return new BlindedBeaconBlockBodySchemaEip7732Impl(
@@ -121,10 +120,7 @@ public class BlindedBeaconBlockBodySchemaEip7732Impl
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
-                new AttestationElectraSchema(
-                        maxValidatorsPerAttestation, specConfig.getMaxCommitteesPerSlot())
-                    .castTypeToAttestationSchema(),
-                specConfig.getMaxAttestationsElectra())),
+                schemaRegistry.get(ATTESTATION_SCHEMA), specConfig.getMaxAttestationsElectra())),
         namedSchema(
             BlockBodyFields.DEPOSITS,
             SszListSchema.create(Deposit.SSZ_SCHEMA, specConfig.getMaxDeposits())),
@@ -138,14 +134,16 @@ public class BlindedBeaconBlockBodySchemaEip7732Impl
         namedSchema(
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(
-                blsToExecutionChangeSchema, specConfig.getMaxBlsToExecutionChanges())),
+                schemaRegistry.get(SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA),
+                specConfig.getMaxBlsToExecutionChanges())),
         namedSchema(
             BlockBodyFields.SIGNED_EXECUTION_PAYLOAD_HEADER,
-            new SignedExecutionPayloadHeaderSchema(executionPayloadHeaderSchema)),
+            schemaRegistry.get(SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA)),
         namedSchema(
             BlockBodyFields.PAYLOAD_ATTESTATIONS,
             SszListSchema.create(
-                payloadAttestationSchema, specConfig.getMaxPayloadAttestations())));
+                schemaRegistry.get(PAYLOAD_ATTESTATION_SCHEMA),
+                specConfig.getMaxPayloadAttestations())));
   }
 
   @Override
@@ -217,13 +215,20 @@ public class BlindedBeaconBlockBodySchemaEip7732Impl
   }
 
   @Override
+  public Optional<BlindedBeaconBlockBodySchemaEip7732<?>> toBlindedVersionEip7732() {
+    return Optional.of(this);
+  }
+
+  @Override
   public LongList getBlindedNodeGeneralizedIndices() {
     return LongList.of();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public SszListSchema<SignedBlsToExecutionChange, ?> getBlsToExecutionChanges() {
-    return null;
+    return (SszListSchema<SignedBlsToExecutionChange, ?>)
+        getChildSchema(getFieldIndex(BlockBodyFields.BLS_TO_EXECUTION_CHANGES));
   }
 
   @Override

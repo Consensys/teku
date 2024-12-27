@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsResponseInvalidResponseException.InvalidResponseType;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -68,6 +69,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
           case CAPELLA -> throw new IllegalArgumentException("Capella is an unsupported milestone");
           case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(currentForkEpoch);
           case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(currentForkEpoch);
+          case EIP7732 -> TestSpecFactory.createMinimalWithEip7732ForkEpoch(currentForkEpoch);
         };
     currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
     dataStructureUtil = new DataStructureUtil(spec);
@@ -95,10 +97,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     assertThatThrownBy(result::get)
         .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
-        .hasMessageContaining(
-            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
-                .BLOB_SIDECAR_KZG_VERIFICATION_FAILED
-                .describe());
+        .hasMessageContaining(InvalidResponseType.BLOB_SIDECAR_KZG_VERIFICATION_FAILED.describe());
   }
 
   @TestTemplate
@@ -120,9 +119,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
         .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
         .hasMessageContaining(
-            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
-                .BLOB_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED
-                .describe());
+            InvalidResponseType.BLOB_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED.describe());
   }
 
   @TestTemplate
@@ -142,10 +139,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     assertThatThrownBy(result::get)
         .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
-        .hasMessageContaining(
-            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
-                .BLOB_SIDECAR_SLOT_NOT_IN_RANGE
-                .describe());
+        .hasMessageContaining(InvalidResponseType.BLOB_SIDECAR_SLOT_NOT_IN_RANGE.describe());
   }
 
   @TestTemplate
@@ -222,10 +216,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     assertThatThrownBy(result::get)
         .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
-        .hasMessageContaining(
-            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
-                .BLOB_SIDECAR_SLOT_NOT_IN_RANGE
-                .describe());
+        .hasMessageContaining(InvalidResponseType.BLOB_SIDECAR_SLOT_NOT_IN_RANGE.describe());
   }
 
   @TestTemplate
@@ -250,10 +241,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     assertThatThrownBy(result::get)
         .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
-        .hasMessageContaining(
-            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
-                .BLOB_SIDECAR_UNKNOWN_PARENT
-                .describe());
+        .hasMessageContaining(InvalidResponseType.BLOB_SIDECAR_UNKNOWN_PARENT.describe());
   }
 
   @TestTemplate
@@ -285,10 +273,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     assertThatThrownBy(result::get)
         .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
-        .hasMessageContaining(
-            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
-                .BLOB_SIDECAR_UNEXPECTED_INDEX
-                .describe());
+        .hasMessageContaining(InvalidResponseType.BLOB_SIDECAR_UNEXPECTED_INDEX.describe());
   }
 
   @TestTemplate
@@ -314,10 +299,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     assertThatThrownBy(result::get)
         .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
-        .hasMessageContaining(
-            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
-                .BLOB_SIDECAR_UNEXPECTED_INDEX
-                .describe());
+        .hasMessageContaining(InvalidResponseType.BLOB_SIDECAR_UNEXPECTED_INDEX.describe());
   }
 
   @TestTemplate
@@ -361,10 +343,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     assertThatThrownBy(result::get)
         .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
-        .hasMessageContaining(
-            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
-                .BLOB_SIDECAR_UNEXPECTED_INDEX
-                .describe());
+        .hasMessageContaining(InvalidResponseType.BLOB_SIDECAR_UNEXPECTED_INDEX.describe());
   }
 
   @TestTemplate
@@ -391,10 +370,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     assertThatThrownBy(result::get)
         .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
-        .hasMessageContaining(
-            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
-                .BLOB_SIDECAR_UNEXPECTED_INDEX
-                .describe());
+        .hasMessageContaining(InvalidResponseType.BLOB_SIDECAR_UNEXPECTED_INDEX.describe());
   }
 
   @TestTemplate
@@ -418,9 +394,6 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     assertThatThrownBy(result::get)
         .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
-        .hasMessageContaining(
-            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
-                .BLOB_SIDECAR_UNEXPECTED_SLOT
-                .describe());
+        .hasMessageContaining(InvalidResponseType.BLOB_SIDECAR_UNEXPECTED_SLOT.describe());
   }
 }

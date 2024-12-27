@@ -58,8 +58,6 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected Optional<UInt64> earliestBlobSidecarSlot;
   protected Optional<Bytes32> latestCanonicalBlockRoot;
   protected Optional<Bytes32> proposerBoostRoot = Optional.empty();
-  protected Optional<Bytes32> payloadWithholdBoostRoot = Optional.empty();
-  protected Optional<Bytes32> payloadRevealBoostRoot = Optional.empty();
   protected final TestReadOnlyForkChoiceStrategy forkChoiceStrategy =
       new TestReadOnlyForkChoiceStrategy();
 
@@ -147,16 +145,6 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   @Override
   public Optional<Bytes32> getProposerBoostRoot() {
     return proposerBoostRoot;
-  }
-
-  @Override
-  public Optional<Bytes32> getPayloadWithholdBoostRoot() {
-    return payloadWithholdBoostRoot;
-  }
-
-  @Override
-  public Optional<Bytes32> getPayloadRevealBoostRoot() {
-    return payloadRevealBoostRoot;
   }
 
   @Override
@@ -379,31 +367,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public void setPayloadWithholdBoostRoot(final Bytes32 payloadWithholdBoostRoot) {
-    this.payloadWithholdBoostRoot = Optional.of(payloadWithholdBoostRoot);
-  }
-
-  @Override
-  public void setPayloadRevealBoostRoot(final Bytes32 payloadRevealBoostRoot) {
-    this.payloadRevealBoostRoot = Optional.of(payloadRevealBoostRoot);
-  }
-
-  @Override
   public void removeFinalizedOptimisticTransitionPayload() {}
 
   @Override
   public void removeProposerBoostRoot() {
     proposerBoostRoot = Optional.empty();
-  }
-
-  @Override
-  public void removePayloadWithholdBoostRoot() {
-    payloadWithholdBoostRoot = Optional.empty();
-  }
-
-  @Override
-  public void removePayloadRevealBoostRoot() {
-    payloadRevealBoostRoot = Optional.empty();
   }
 
   @Override

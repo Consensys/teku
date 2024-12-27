@@ -124,11 +124,8 @@ class Store extends CacheableStore {
   private UInt64 parentThreshold = UInt64.ZERO;
 
   // ePBS
-  private Optional<Bytes32> payloadWithholdBoostRoot = Optional.empty();
-  private boolean payloadWithholdBoostFull = false;
-  private Optional<Bytes32> payloadRevealBoostRoot = Optional.empty();
   private final CachingTaskQueue<Bytes32, StateAndExecutionPayloadSummary> executionPayloadStates;
-  private Map<Bytes32, List<Byte>> ptcVote;
+  private final Map<Bytes32, List<Byte>> ptcVote;
 
   private Store(
       final MetricsSystem metricsSystem,
@@ -204,11 +201,10 @@ class Store extends CacheableStore {
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
 
     // ePBS
-    this.payloadWithholdBoostFull = true;
     this.executionPayloadStates = executionPayloadStates;
     this.ptcVote = new HashMap<>(ptcVote);
     states.cache(finalizedAnchor.getRoot(), finalizedAnchor);
-    ptcVote.put(finalizedAnchor.getRoot(), new ArrayList<>());
+    this.ptcVote.put(finalizedAnchor.getRoot(), new ArrayList<>());
   }
 
   private BlockProvider createBlockProviderFromMapWhileLocked(
@@ -569,36 +565,6 @@ class Store extends CacheableStore {
   }
 
   @Override
-  public Optional<Bytes32> getPayloadWithholdBoostRoot() {
-    readLock.lock();
-    try {
-      return payloadWithholdBoostRoot;
-    } finally {
-      readLock.unlock();
-    }
-  }
-
-  @Override
-  public Optional<Bytes32> getPayloadRevealBoostRoot() {
-    readLock.lock();
-    try {
-      return payloadRevealBoostRoot;
-    } finally {
-      readLock.unlock();
-    }
-  }
-
-  @Override
-  public boolean getPayloadWithholdBoostFull() {
-    readLock.lock();
-    try {
-      return payloadWithholdBoostFull;
-    } finally {
-      readLock.unlock();
-    }
-  }
-
-  @Override
   public boolean containsBlock(final Bytes32 blockRoot) {
     readLock.lock();
     try {
@@ -710,8 +676,7 @@ class Store extends CacheableStore {
   // EIP7732 TODO: Turn 256 into constant PAYLOAD_TIMELY_THRESHOLD
   @Override
   public boolean isPayloadPresent(final Bytes32 root) {
-    final List<Byte> ptcVote = this.ptcVote.getOrDefault(root, Collections.emptyList());
-    return ptcVote.stream()
+    return ptcVote.getOrDefault(root, Collections.emptyList()).stream()
             .filter(vote -> vote.equals(PayloadStatus.PAYLOAD_PRESENT.getCode()))
             .count()
         > 256;
@@ -851,18 +816,6 @@ class Store extends CacheableStore {
   @Override
   void cacheProposerBoostRoot(final Optional<Bytes32> proposerBoostRoot) {
     this.proposerBoostRoot = proposerBoostRoot;
-  }
-
-  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
-  @Override
-  void cachePayloadWithholdBoostRoot(final Optional<Bytes32> payloadWithholdBoostRoot) {
-    this.payloadWithholdBoostRoot = payloadWithholdBoostRoot;
-  }
-
-  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
-  @Override
-  void cachePayloadRevealBoostRoot(final Optional<Bytes32> payloadRevealBoostRoot) {
-    this.payloadRevealBoostRoot = payloadRevealBoostRoot;
   }
 
   /** Non-synchronized, no lock, unsafe if Store is not locked externally */

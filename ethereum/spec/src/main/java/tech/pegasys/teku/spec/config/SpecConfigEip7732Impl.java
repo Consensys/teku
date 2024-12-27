@@ -17,6 +17,7 @@ import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SpecConfigEip7732Impl extends DelegatingSpecConfigElectra
     implements SpecConfigEip7732 {
@@ -79,6 +80,11 @@ public class SpecConfigEip7732Impl extends DelegatingSpecConfigElectra
   @Override
   public Optional<SpecConfigEip7732> toVersionEip7732() {
     return Optional.of(this);
+  }
+
+  @Override
+  public SpecMilestone getMilestone() {
+    return SpecMilestone.EIP7732;
   }
 
   @Override

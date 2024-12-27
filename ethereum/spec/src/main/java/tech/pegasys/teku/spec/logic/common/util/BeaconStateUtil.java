@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ChildNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -215,7 +216,7 @@ public class BeaconStateUtil {
       final Bytes32 chainHead,
       final UInt64 epoch) {
     final UInt64 slot = getDutyDependentRootSlot(epoch);
-    return forkChoiceStrategy.getAncestor(chainHead, slot);
+    return forkChoiceStrategy.getAncestor(chainHead, slot).map(ChildNode::root);
   }
 
   private Bytes32 getDutyDependentRoot(final BeaconState state, final UInt64 epoch) {

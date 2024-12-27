@@ -54,6 +54,12 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 
 public class ExecutionPayloadSchemaDeneb
     extends ContainerSchema17<
@@ -125,6 +131,39 @@ public class ExecutionPayloadSchemaDeneb
   @Override
   public WithdrawalSchema getWithdrawalSchemaRequired() {
     return getWithdrawalSchema();
+  }
+
+  @Override
+  public SszListSchema<DepositRequest, ? extends SszList<DepositRequest>>
+      getDepositRequestsSchemaRequired() {
+    throw new IllegalStateException("Attempted to get a deposit requests schema from deneb");
+  }
+
+  @Override
+  public DepositRequestSchema getDepositRequestSchemaRequired() {
+    throw new IllegalStateException("Attempted to get a deposit request schema from deneb");
+  }
+
+  @Override
+  public SszListSchema<WithdrawalRequest, ? extends SszList<WithdrawalRequest>>
+      getWithdrawalRequestsSchemaRequired() {
+    throw new IllegalStateException("Attempted to get withdrawal requests schema from deneb");
+  }
+
+  @Override
+  public WithdrawalRequestSchema getWithdrawalRequestSchemaRequired() {
+    throw new IllegalStateException("Attempted to get a withdrawal request schema from deneb");
+  }
+
+  @Override
+  public ConsolidationRequestSchema getConsolidationRequestSchemaRequired() {
+    throw new IllegalStateException("Attempted to get a consolidation request schema from deneb");
+  }
+
+  @Override
+  public SszListSchema<ConsolidationRequest, ? extends SszList<ConsolidationRequest>>
+      getConsolidationRequestsSchemaRequired() {
+    throw new IllegalStateException("Attempted to get consolidation requests schema from deneb");
   }
 
   public WithdrawalSchema getWithdrawalSchema() {

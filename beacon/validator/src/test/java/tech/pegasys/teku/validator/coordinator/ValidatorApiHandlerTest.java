@@ -78,11 +78,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
-import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
-import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
@@ -112,11 +107,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.attestation.PayloadAttestationManager;
-import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
-import tech.pegasys.teku.statetransition.block.BlockImportChannel;
-import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadHeaderPool;
-import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -130,6 +121,7 @@ import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
+import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
 
 class ValidatorApiHandlerTest {
 
@@ -165,8 +157,8 @@ class ValidatorApiHandlerTest {
       mock(SyncCommitteeSubscriptionManager.class);
   private final ExecutionPayloadHeaderPool executionPayloadHeaderPool =
       mock(ExecutionPayloadHeaderPool.class);
-  private final ExecutionPayloadManager executionPayloadManager =
-      mock(ExecutionPayloadManager.class);
+  private final ExecutionPayloadPublisher executionPayloadPublisher =
+      mock(ExecutionPayloadPublisher.class);
   private final ExecutionPayloadAndBlobSidecarsRevealer executionPayloadAndBlobSidecarsRevealer =
       mock(ExecutionPayloadAndBlobSidecarsRevealer.class);
 
@@ -212,8 +204,8 @@ class ValidatorApiHandlerTest {
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
             executionPayloadHeaderPool,
-            executionPayloadManager,
             executionPayloadAndBlobSidecarsRevealer,
+            executionPayloadPublisher,
             blockProductionPerformanceFactory,
             blockPublisher);
 
@@ -469,8 +461,8 @@ class ValidatorApiHandlerTest {
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
             executionPayloadHeaderPool,
-            executionPayloadManager,
             executionPayloadAndBlobSidecarsRevealer,
+            executionPayloadPublisher,
             blockProductionPerformanceFactory,
             blockPublisher);
     // Best state is still in Phase0
@@ -861,8 +853,10 @@ class ValidatorApiHandlerTest {
             chainDataClient,
             syncStateProvider,
             blockFactory,
+            executionPayloadHeaderFactory,
             attestationPool,
             attestationManager,
+            payloadAttestationManager,
             attestationTopicSubscriptions,
             activeValidatorTracker,
             dutyMetrics,
@@ -873,6 +867,9 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
+            executionPayloadHeaderPool,
+            executionPayloadAndBlobSidecarsRevealer,
+            executionPayloadPublisher,
             blockProductionPerformanceFactory,
             blockPublisher);
 

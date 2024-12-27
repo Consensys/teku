@@ -88,9 +88,10 @@ class SpecVersionTest {
       case EIP7732 -> {
         expectedVersion =
             SpecVersion.createEip7732(
-                SpecConfigEip7732.required(minimalConfig), schemaRegistryBuilder);
+                SpecConfigEip7732.required(minimalConfig), SchemaRegistryBuilder.create());
         actualVersion =
-            SpecVersion.create(SpecMilestone.EIP7732, minimalConfig, schemaRegistryBuilder);
+            SpecVersion.create(
+                SpecMilestone.EIP7732, minimalConfig, SchemaRegistryBuilder.create());
       }
     }
 

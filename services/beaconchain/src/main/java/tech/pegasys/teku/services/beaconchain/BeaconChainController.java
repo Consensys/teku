@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EX
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
+import static tech.pegasys.teku.infrastructure.time.SystemTimeProvider.SYSTEM_TIME_PROVIDER;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -220,6 +221,7 @@ import tech.pegasys.teku.validator.coordinator.performance.NoOpPerformanceTracke
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.SyncCommitteePerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.ValidatorPerformanceMetrics;
+import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
@@ -1034,6 +1036,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dutyMetrics,
             beaconConfig.p2pConfig().isGossipBlobsAfterBlockEnabled());
 
+    final ExecutionPayloadPublisher executionPayloadPublisher =
+        new ExecutionPayloadPublisher(
+            executionPayloadManager,
+            blockBlobSidecarsTrackersPool,
+            executionPayloadGossipChannel,
+            executionPayloadAndBlobSidecarsRevealer,
+            blobSidecarGossipChannel,
+            SYSTEM_TIME_PROVIDER);
+
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculator),
@@ -1043,11 +1054,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncService,
             blockFactory,
             executionPayloadHeaderFactory,
-            blockImportChannel,
-            blockGossipChannel,
-            blockBlobSidecarsTrackersPool,
-            blobSidecarGossipChannel,
-            executionPayloadGossipChannel,
             attestationPool,
             attestationManager,
             payloadAttestationManager,
@@ -1062,8 +1068,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
             executionPayloadHeaderPool,
-            executionPayloadManager,
             executionPayloadAndBlobSidecarsRevealer,
+            executionPayloadPublisher,
             blockProductionPerformanceFactory,
             blockPublisher);
     eventChannels

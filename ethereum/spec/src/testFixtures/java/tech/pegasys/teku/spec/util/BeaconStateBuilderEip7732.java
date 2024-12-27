@@ -74,7 +74,9 @@ public class BeaconStateBuilderEip7732
 
   @Override
   protected BeaconStateEip7732 getEmptyState() {
-    return BeaconStateSchemaEip7732.create(spec.getConfig()).createEmpty();
+    return BeaconStateSchemaEip7732.create(
+            spec.getConfig(), spec.getSchemaDefinitions().getSchemaRegistry())
+        .createEmpty();
   }
 
   @Override

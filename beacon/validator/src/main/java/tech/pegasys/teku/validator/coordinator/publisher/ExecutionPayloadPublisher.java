@@ -62,6 +62,7 @@ public class ExecutionPayloadPublisher {
         executionPayload, Optional.of(timeProvider.getTimeInMillis()));
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void publishExecutionPayloadAndBlobSidecars(
       final SignedExecutionPayloadEnvelope executionPayload, final List<BlobSidecar> blobSidecars) {
     executionPayloadGossipChannel.publishExecutionPayload(executionPayload);

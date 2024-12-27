@@ -85,7 +85,6 @@ import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.constants.PayloadStatus;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
@@ -2735,8 +2734,9 @@ public final class DataStructureUtil {
   }
 
   public SszList<PayloadAttestation> emptyPayloadAttestations() {
-    return SchemaDefinitionsEip7732.required(
-            spec.forMilestone(SpecMilestone.EIP7732).getSchemaDefinitions())
+    return spec.forMilestone(SpecMilestone.EIP7732)
+        .getSchemaDefinitions()
+        .getBeaconBlockBodySchema()
         .getPayloadAttestationsSchema()
         .of();
   }

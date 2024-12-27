@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.SpecMilestone.EIP7732;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.schemas.registry.BaseSchemaProvider.providerBuilder;
@@ -43,12 +44,17 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_BID_SC
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CONSOLIDATION_REQUEST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DEPOSIT_REQUEST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_HEADER_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_BATCH_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARIES_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_ATTESTATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_PAYLOAD_ATTESTATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_MESSAGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_CONSOLIDATIONS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_DEPOSITS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_PARTIAL_WITHDRAWALS_SCHEMA;
@@ -58,6 +64,8 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLINDED
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLOCK_CONTENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BUILDER_BID_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SINGLE_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SYNCNETS_ENR_FIELD_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.WITHDRAWAL_REQUEST_SCHEMA;
@@ -73,6 +81,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
@@ -88,6 +97,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.B
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDenebImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodySchemaDenebImpl;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodySchemaEip7732Impl;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BlindedBeaconBlockBodySchemaEip7732Impl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectraImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodySchemaElectraImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
@@ -99,6 +110,9 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.builder.versions.electra.BuilderBidSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelopeSchema;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelopeSchema;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
@@ -106,16 +120,21 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderSchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage.ExecutionPayloadEnvelopesByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedPayloadAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessageSchema;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
@@ -126,6 +145,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.B
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateSchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary.HistoricalSummarySchema;
@@ -191,7 +211,85 @@ public class SchemaRegistryBuilder {
         .addProvider(createWithdrawalRequestSchemaProvider())
         .addProvider(createConsolidationRequestSchemaProvider())
         .addProvider(createExecutionRequestsSchemaProvider())
-        .addProvider(createSingleAttestationSchemaProvider());
+        .addProvider(createSingleAttestationSchemaProvider())
+
+        // EIP7732
+        .addProvider(createPayloadAttestationSchemaProvider())
+        .addProvider(createIndexedPayloadAttestationSchemaProvider())
+        .addProvider(createSignedExecutionPayloadHeaderSchemaProvider())
+        .addProvider(createExecutionPayloadEnvelopeSchemaProvider())
+        .addProvider(createSignedExecutionPayloadEnvelopeSchemaProvider())
+        .addProvider(createExecutionPayloadEnvelopesByRootRequestMessageSchemaProvider())
+        .addProvider(createPayloadAttestationMessageSchemaProvider());
+  }
+
+  private static SchemaProvider<?> createPayloadAttestationSchemaProvider() {
+    return providerBuilder(PAYLOAD_ATTESTATION_SCHEMA)
+        .withCreator(
+            EIP7732,
+            (registry, specConfig, schemaName) ->
+                new PayloadAttestationSchema(SpecConfigEip7732.required(specConfig).getPtcSize()))
+        .build();
+  }
+
+  private static SchemaProvider<?> createIndexedPayloadAttestationSchemaProvider() {
+    return providerBuilder(INDEXED_PAYLOAD_ATTESTATION_SCHEMA)
+        .withCreator(
+            EIP7732,
+            (registry, specConfig, schemaName) ->
+                new IndexedPayloadAttestationSchema(
+                    SpecConfigEip7732.required(specConfig).getPtcSize()))
+        .build();
+  }
+
+  private static SchemaProvider<?> createSignedExecutionPayloadHeaderSchemaProvider() {
+    return providerBuilder(SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA)
+        .withCreator(
+            EIP7732,
+            (registry, specConfig, schemaName) ->
+                new SignedExecutionPayloadHeaderSchema(
+                    registry.get(EXECUTION_PAYLOAD_HEADER_SCHEMA)))
+        .build();
+  }
+
+  private static SchemaProvider<?> createExecutionPayloadEnvelopeSchemaProvider() {
+    return providerBuilder(EXECUTION_PAYLOAD_ENVELOPE_SCHEMA)
+        .withCreator(
+            EIP7732,
+            (registry, specConfig, schemaName) ->
+                new ExecutionPayloadEnvelopeSchema(
+                    registry.get(EXECUTION_PAYLOAD_SCHEMA),
+                    registry.get(EXECUTION_REQUESTS_SCHEMA),
+                    registry.get(BLOB_KZG_COMMITMENTS_SCHEMA)))
+        .build();
+  }
+
+  private static SchemaProvider<?> createSignedExecutionPayloadEnvelopeSchemaProvider() {
+    return providerBuilder(SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA)
+        .withCreator(
+            EIP7732,
+            (registry, specConfig, schemaName) ->
+                new SignedExecutionPayloadEnvelopeSchema(
+                    registry.get(EXECUTION_PAYLOAD_ENVELOPE_SCHEMA)))
+        .build();
+  }
+
+  private static SchemaProvider<?>
+      createExecutionPayloadEnvelopesByRootRequestMessageSchemaProvider() {
+    return providerBuilder(EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA)
+        .withCreator(
+            EIP7732,
+            (registry, specConfig, schemaName) ->
+                new ExecutionPayloadEnvelopesByRootRequestMessageSchema(
+                    SpecConfigEip7732.required(specConfig)))
+        .build();
+  }
+
+  private static SchemaProvider<?> createPayloadAttestationMessageSchemaProvider() {
+    return providerBuilder(PAYLOAD_ATTESTATION_MESSAGE_SCHEMA)
+        .withCreator(
+            EIP7732, (registry, specConfig, schemaName) -> new PayloadAttestationMessageSchema())
+        .build();
   }
 
   private static SchemaProvider<?> createSingleAttestationSchemaProvider() {
@@ -259,6 +357,7 @@ public class SchemaRegistryBuilder {
         .withCreator(
             ELECTRA,
             (registry, specConfig, schemaName) -> new BuilderBidSchemaElectra(schemaName, registry))
+        // TODO: EIP7732
         .build();
   }
 
@@ -323,11 +422,15 @@ public class SchemaRegistryBuilder {
         .withCreator(
             DENEB,
             (registry, specConfig, schemaName) ->
-                BeaconStateSchemaDeneb.create(SpecConfigDeneb.required(specConfig), registry))
+                BeaconStateSchemaDeneb.create(specConfig, registry))
         .withCreator(
             ELECTRA,
             (registry, specConfig, schemaName) ->
-                BeaconStateSchemaElectra.create(SpecConfigElectra.required(specConfig), registry))
+                BeaconStateSchemaElectra.create(specConfig, registry))
+        .withCreator(
+            EIP7732,
+            (registry, specConfig, schemaName) ->
+                BeaconStateSchemaEip7732.create(specConfig, registry))
         .build();
   }
 
@@ -399,6 +502,11 @@ public class SchemaRegistryBuilder {
             (registry, specConfig, schemaName) ->
                 BlindedBeaconBlockBodySchemaElectraImpl.create(
                     SpecConfigElectra.required(specConfig), schemaName, registry))
+        .withCreator(
+            EIP7732,
+            (registry, specConfig, schemaName) ->
+                BlindedBeaconBlockBodySchemaEip7732Impl.create(
+                    SpecConfigEip7732.required(specConfig), schemaName, registry))
         .build();
   }
 
@@ -432,6 +540,11 @@ public class SchemaRegistryBuilder {
             (registry, specConfig, schemaName) ->
                 BeaconBlockBodySchemaElectraImpl.create(
                     SpecConfigElectra.required(specConfig), schemaName, registry))
+        .withCreator(
+            EIP7732,
+            (registry, specConfig, schemaName) ->
+                BeaconBlockBodySchemaEip7732Impl.create(
+                    SpecConfigEip7732.required(specConfig), schemaName, registry))
         .build();
   }
 
@@ -450,6 +563,10 @@ public class SchemaRegistryBuilder {
             (registry, specConfig, schemaName) ->
                 new ExecutionPayloadHeaderSchemaDeneb(SpecConfigDeneb.required(specConfig)))
         // ELECTRA is same as DENEB
+        .withCreator(
+            EIP7732,
+            (registry, specConfig, schemaName) ->
+                new ExecutionPayloadHeaderSchemaEip7732(SpecConfigEip7732.required(specConfig)))
         .build();
   }
 
@@ -468,6 +585,7 @@ public class SchemaRegistryBuilder {
             (registry, specConfig, schemaName) ->
                 new ExecutionPayloadSchemaDeneb(SpecConfigDeneb.required(specConfig)))
         // ELECTRA is same as DENEB
+        // EIP7732 is same as DENEB
         .build();
   }
 
@@ -518,6 +636,14 @@ public class SchemaRegistryBuilder {
                     SignedBeaconBlockHeader.SSZ_SCHEMA,
                     registry.get(BLOB_SCHEMA),
                     SpecConfigDeneb.required(specConfig).getKzgCommitmentInclusionProofDepth()))
+        .withCreator(
+            EIP7732,
+            (registry, specConfig, schemaName) ->
+                BlobSidecarSchema.create(
+                    SignedBeaconBlockHeader.SSZ_SCHEMA,
+                    registry.get(BLOB_SCHEMA),
+                    SpecConfigEip7732.required(specConfig)
+                        .getKzgCommitmentInclusionProofDepthEip7732()))
         .build();
   }
 

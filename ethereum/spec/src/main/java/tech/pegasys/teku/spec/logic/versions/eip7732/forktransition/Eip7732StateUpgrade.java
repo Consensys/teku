@@ -15,7 +15,10 @@ package tech.pegasys.teku.spec.logic.versions.eip7732.forktransition;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
+import java.util.Comparator;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
@@ -27,7 +30,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateEip7732;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
+import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.BeaconStateAccessorsEip7732;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
@@ -36,15 +40,18 @@ public class Eip7732StateUpgrade implements StateUpgrade<BeaconStateElectra> {
 
   private final SpecConfigEip7732 specConfig;
   private final SchemaDefinitionsEip7732 schemaDefinitions;
-  private final BeaconStateAccessorsElectra beaconStateAccessors;
+  private final BeaconStateAccessorsEip7732 beaconStateAccessors;
+  private final BeaconStateMutatorsElectra beaconStateMutators;
 
   public Eip7732StateUpgrade(
       final SpecConfigEip7732 specConfig,
       final SchemaDefinitionsEip7732 schemaDefinitions,
-      final BeaconStateAccessorsElectra beaconStateAccessors) {
+      final BeaconStateAccessorsEip7732 beaconStateAccessors,
+      final BeaconStateMutatorsElectra beaconStateMutators) {
     this.specConfig = specConfig;
     this.schemaDefinitions = schemaDefinitions;
     this.beaconStateAccessors = beaconStateAccessors;
+    this.beaconStateMutators = beaconStateMutators;
   }
 
   @Override
@@ -54,9 +61,8 @@ public class Eip7732StateUpgrade implements StateUpgrade<BeaconStateElectra> {
     final PredicatesElectra predicatesElectra = new PredicatesElectra(specConfig);
     final MiscHelpersElectra miscHelpersElectra =
         new MiscHelpersElectra(specConfig, predicatesElectra, schemaDefinitions);
-    return schemaDefinitions
-        .getBeaconStateSchema()
-        .createEmpty()
+    final UInt64 activationExitEpoch = miscHelpersElectra.computeActivationExitEpoch(epoch);
+    return BeaconStateEip7732.required(schemaDefinitions.getBeaconStateSchema().createEmpty())
         .updatedEip7732(
             state -> {
               BeaconStateFields.copyCommonFieldsFromSource(state, preState);
@@ -99,14 +105,37 @@ public class Eip7732StateUpgrade implements StateUpgrade<BeaconStateElectra> {
               state.setDepositBalanceToConsume(UInt64.ZERO);
               state.setExitBalanceToConsume(
                   beaconStateAccessors.getActivationExitChurnLimit(state));
-              state.setEarliestExitEpoch(findEarliestExitEpoch(state, epoch));
+              state.setEarliestExitEpoch(findEarliestExitEpoch(state, activationExitEpoch));
               state.setConsolidationBalanceToConsume(
                   beaconStateAccessors.getConsolidationChurnLimit(state));
-              state.setEarliestConsolidationEpoch(
-                  miscHelpersElectra.computeActivationExitEpoch(epoch));
-              state.setPendingDeposits(preStateElectra.getPendingDeposits());
-              state.setPendingPartialWithdrawals(preStateElectra.getPendingPartialWithdrawals());
-              state.setPendingConsolidations(preStateElectra.getPendingConsolidations());
+              state.setEarliestConsolidationEpoch(activationExitEpoch);
+
+              final SszMutableList<Validator> validators = state.getValidators();
+
+              // Add validators that are not yet active to pending balance deposits
+              IntStream.range(0, validators.size())
+                  .filter(
+                      index -> validators.get(index).getActivationEpoch().equals(FAR_FUTURE_EPOCH))
+                  .boxed()
+                  .sorted(
+                      Comparator.comparing(
+                              (Integer index) ->
+                                  validators.get(index).getActivationEligibilityEpoch())
+                          .thenComparing(index -> index))
+                  .forEach(
+                      index ->
+                          beaconStateMutators.queueEntireBalanceAndResetValidator(state, index));
+
+              // Ensure early adopters of compounding credentials go through the activation churn
+              IntStream.range(0, validators.size())
+                  .forEach(
+                      index -> {
+                        if (predicatesElectra.hasCompoundingWithdrawalCredential(
+                            validators.get(index))) {
+                          beaconStateMutators.queueExcessActiveBalance(state, index);
+                        }
+                      });
+
               // ePBS
               state.setLatestBlockHash(
                   preStateElectra.getLatestExecutionPayloadHeader().getBlockHash());
