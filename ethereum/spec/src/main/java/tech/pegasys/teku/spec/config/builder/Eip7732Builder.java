@@ -22,6 +22,7 @@ import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732Impl;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
@@ -39,15 +40,18 @@ public class Eip7732Builder implements ForkConfigBuilder<SpecConfigElectra, Spec
   Eip7732Builder() {}
 
   @Override
-  public SpecConfigEip7732 build(final SpecConfigElectra specConfig) {
-    return new SpecConfigEip7732Impl(
-        specConfig,
-        eip7732ForkVersion,
-        eip7732ForkEpoch,
-        ptcSize,
-        maxPayloadAttestations,
-        kzgCommitmentInclusionProofDepthEip7732,
-        maxRequestPayloads);
+  public SpecConfigAndParent<SpecConfigEip7732> build(
+      final SpecConfigAndParent<SpecConfigElectra> specConfigAndParent) {
+    return SpecConfigAndParent.of(
+        new SpecConfigEip7732Impl(
+            specConfigAndParent.specConfig(),
+            eip7732ForkVersion,
+            eip7732ForkEpoch,
+            ptcSize,
+            maxPayloadAttestations,
+            kzgCommitmentInclusionProofDepthEip7732,
+            maxRequestPayloads),
+        specConfigAndParent);
   }
 
   public Eip7732Builder eip7732ForkEpoch(final UInt64 eip7732ForkEpoch) {

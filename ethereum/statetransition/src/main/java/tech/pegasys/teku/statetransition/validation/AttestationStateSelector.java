@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ChildNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -162,7 +163,7 @@ public class AttestationStateSelector {
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
           recentChainData.getForkChoiceStrategy().orElseThrow();
       final Optional<Bytes32> maybeAncestorRoot =
-          forkChoiceStrategy.getAncestor(targetBlockRoot, earliestSlot);
+          forkChoiceStrategy.getAncestor(targetBlockRoot, earliestSlot).map(ChildNode::root);
       if (maybeAncestorRoot.isEmpty()) {
         // The target block has become unknown or doesn't extend from finalized anymore
         // so we can now ignore it.
@@ -196,6 +197,7 @@ public class AttestationStateSelector {
         .getForkChoiceStrategy()
         .orElseThrow()
         .getAncestor(headRoot, blockSlot)
+        .map(ChildNode::root)
         .map(canonicalRoot -> canonicalRoot.equals(blockRoot))
         .orElse(false);
   }

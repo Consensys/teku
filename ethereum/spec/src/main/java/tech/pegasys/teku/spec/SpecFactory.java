@@ -80,6 +80,7 @@ public class SpecFactory {
             .orElse(FAR_FUTURE_EPOCH);
     final UInt64 eip7732ForkEpoch =
         config
+            .specConfig()
             .toVersionEip7732()
             .map(SpecConfigEip7732::getEip7732ForkEpoch)
             .orElse(FAR_FUTURE_EPOCH);

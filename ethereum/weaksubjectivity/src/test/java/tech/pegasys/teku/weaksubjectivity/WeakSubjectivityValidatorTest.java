@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ChildNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -569,7 +570,7 @@ public class WeakSubjectivityValidatorTest {
       when(forkChoiceStrategy.blockParentRoot(block.getRoot()))
           .thenReturn(Optional.of(block.getParentRoot()));
       when(forkChoiceStrategy.getAncestor(any(), eq(block.getSlot())))
-          .thenReturn(Optional.of(block.getRoot()));
+          .thenReturn(Optional.of(new ChildNode(block.getRoot(), block.getSlot(), false)));
     }
   }
 

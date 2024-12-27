@@ -386,8 +386,7 @@ public class BeaconChainMethods {
             true,
             forkDigestContextCodec,
             executionPayloadEnvelopesByRootMessageHandler,
-            peerLookup,
-            spec.getNetworkingConfig()));
+            peerLookup));
   }
 
   private static Eth2RpcMethod<EmptyMessage, MetadataMessage> createMetadata(

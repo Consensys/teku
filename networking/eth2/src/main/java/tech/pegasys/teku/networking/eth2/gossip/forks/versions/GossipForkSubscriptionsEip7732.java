@@ -15,7 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadHeaderManager;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadHeaderGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadManager;
 import tech.pegasys.teku.networking.eth2.gossip.PayloadAttestationManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -47,7 +47,7 @@ public class GossipForkSubscriptionsEip7732 extends GossipForkSubscriptionsElect
 
   private ExecutionPayloadManager executionPayloadManager;
   private PayloadAttestationManager payloadAttestationManager;
-  private ExecutionPayloadHeaderManager executionPayloadHeaderManager;
+  private ExecutionPayloadHeaderGossipManager executionPayloadHeaderGossipManager;
 
   public GossipForkSubscriptionsEip7732(
       final Fork fork,
@@ -135,8 +135,8 @@ public class GossipForkSubscriptionsEip7732 extends GossipForkSubscriptionsElect
   }
 
   void addExecutionPayloadHeaderManager(final ForkInfo forkInfo) {
-    executionPayloadHeaderManager =
-        new ExecutionPayloadHeaderManager(
+    executionPayloadHeaderGossipManager =
+        new ExecutionPayloadHeaderGossipManager(
             recentChainData,
             spec,
             asyncRunner,
@@ -145,7 +145,7 @@ public class GossipForkSubscriptionsEip7732 extends GossipForkSubscriptionsElect
             forkInfo,
             executionPayloadHeaderProcessor,
             debugDataDumper);
-    addGossipManager(executionPayloadHeaderManager);
+    addGossipManager(executionPayloadHeaderGossipManager);
   }
 
   @Override
@@ -160,6 +160,6 @@ public class GossipForkSubscriptionsEip7732 extends GossipForkSubscriptionsElect
 
   @Override
   public void publishExecutionPayloadHeaderMessage(final SignedExecutionPayloadHeader message) {
-    executionPayloadHeaderManager.publishExecutionPayloadHeader(message);
+    executionPayloadHeaderGossipManager.publishExecutionPayloadHeader(message);
   }
 }

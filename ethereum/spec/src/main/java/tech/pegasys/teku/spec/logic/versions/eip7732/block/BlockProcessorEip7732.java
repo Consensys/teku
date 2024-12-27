@@ -133,22 +133,10 @@ public class BlockProcessorEip7732 extends BlockProcessorElectra {
   }
 
   @Override
-  protected void processDepositRequests(
-      final MutableBeaconState state, final BeaconBlockBody body) {
-    // Removed in EIP-7732
-  }
-
-  @Override
-  protected void processWithdrawalRequests(
+  protected void processExecutionRequests(
       final MutableBeaconState state,
       final BeaconBlockBody body,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
-    // Removed in EIP-7732
-  }
-
-  @Override
-  protected void processConsolidationRequests(
-      final MutableBeaconState state, final BeaconBlockBody body) {
     // Removed in EIP-7732
   }
 
