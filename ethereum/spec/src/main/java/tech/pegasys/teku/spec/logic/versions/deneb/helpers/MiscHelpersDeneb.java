@@ -274,7 +274,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
         predicates.isValidMerkleBranch(
             blobSidecar.getSszKZGCommitment().hashTreeRoot(),
             blobSidecar.getKzgCommitmentInclusionProof(),
-            SpecConfigDeneb.required(specConfig).getKzgCommitmentInclusionProofDepth(),
+            getKzgCommitmentInclusionProofDepth(),
             getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecar.getIndex()),
             blobSidecar.getBlockBodyRoot());
 
@@ -283,5 +283,9 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
     }
 
     return result;
+  }
+
+  public int getKzgCommitmentInclusionProofDepth() {
+    return SpecConfigDeneb.required(specConfig).getKzgCommitmentInclusionProofDepth();
   }
 }

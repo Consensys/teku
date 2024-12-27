@@ -58,7 +58,7 @@ public class BeaconStateSchemaElectra
     super("BeaconStateElectra", getUniqueFields(specConfig, schemaRegistry), specConfig);
   }
 
-  private static List<SszField> getUniqueFields(
+  public static List<SszField> getUniqueFields(
       final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
     final List<SszField> newFields =
         List.of(

@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ChildNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -184,7 +185,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final SignedBlockAndState block = storageSystem.chainUpdater().addNewBestBlock();
     final ForkChoiceStrategy protoArrayStrategy = getProtoArray(storageSystem);
     assertThat(protoArrayStrategy.getAncestor(block.getRoot(), block.getSlot()))
-        .contains(block.getRoot());
+        .contains(new ChildNode(block.getRoot(), block.getSlot(), false));
   }
 
   @Test
@@ -220,7 +221,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final SignedBlockAndState head = storageSystem.chainUpdater().advanceChain(5);
     final ForkChoiceStrategy protoArrayStrategy = getProtoArray(storageSystem);
     assertThat(protoArrayStrategy.getAncestor(head.getRoot(), ancestor.getSlot()))
-        .contains(ancestor.getRoot());
+        .contains(new ChildNode(ancestor.getRoot(), ancestor.getSlot(), false));
   }
 
   @Test
@@ -255,7 +256,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final StorageSystem storageSystem = initStorageSystem();
     final SignedBlockAndState head = storageSystem.chainUpdater().advanceChain(5);
     final ForkChoiceStrategy protoArrayStrategy = getProtoArray(storageSystem);
-    assertThat(protoArrayStrategy.getAncestor(head.getRoot(), ONE)).contains(head.getParentRoot());
+    assertThat(protoArrayStrategy.getAncestor(head.getRoot(), ONE))
+        .contains(new ChildNode(head.getParentRoot(), ZERO, false));
   }
 
   @Test

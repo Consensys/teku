@@ -76,7 +76,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   private static final Logger LOG = LogManager.getLogger();
 
   static final String COUNTER_BLOCK_TYPE = "block";
-  static final String COUNTER_EXECUTION_PAYLOAD_ENVELOPE_TYPE = "execution_payload_envelope";
   static final String COUNTER_SIDECAR_TYPE = "blob_sidecar";
 
   static final String COUNTER_GOSSIP_SUBTYPE = "gossip";
@@ -533,6 +532,59 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     return tracker;
   }
 
+  private BlockBlobSidecarsTracker internalOnNewBlockAndExecutionPayloadEnvelope(
+      final SignedBeaconBlock block,
+      final ExecutionPayloadEnvelope executionPayloadEnvelope,
+      final Optional<RemoteOrigin> remoteOrigin) {
+    final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
+
+    final BlockBlobSidecarsTracker tracker =
+        getOrCreateBlobSidecarsTracker(
+            slotAndBlockRoot,
+            newTracker -> {
+              newTracker.setBlockAndExecutionPayloadEnvelope(block, executionPayloadEnvelope);
+              countBlock(remoteOrigin);
+              onFirstSeen(slotAndBlockRoot, remoteOrigin);
+            },
+            existingTracker -> {
+              if (!existingTracker.setBlockAndExecutionPayloadEnvelope(
+                  block, executionPayloadEnvelope)) {
+                // block and execution envelope were already set
+                countDuplicateBlock(remoteOrigin);
+                return;
+              }
+
+              countBlock(remoteOrigin);
+
+              if (existingTracker.isRpcFetchTriggered()) {
+                // block has been set for the first time and we previously triggered fetching of
+                // missing blobSidecars. So we may have requested to fetch more sidecars
+                // than the block actually requires. Let's drop them.
+                existingTracker
+                    .getUnusedBlobSidecarsForBlock()
+                    .forEach(
+                        blobIdentifier ->
+                            requiredBlobSidecarDroppedSubscribers.deliver(
+                                RequiredBlobSidecarDroppedSubscriber::onRequiredBlobSidecarDropped,
+                                blobIdentifier));
+
+                // if we attempted to fetch via RPC, we missed the opportunity to complete the
+                // tracker via local EL (local El fetch requires the block to be known)
+                // Let's try now
+                if (!existingTracker.isLocalElFetchTriggered() && !existingTracker.isComplete()) {
+                  fetchMissingContentFromLocalEL(slotAndBlockRoot)
+                      .finish(this::logLocalElBlobsLookupFailure);
+                }
+              }
+            });
+
+    if (orderedBlobSidecarsTrackers.add(slotAndBlockRoot)) {
+      sizeGauge.set(orderedBlobSidecarsTrackers.size(), GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
+    }
+
+    return tracker;
+  }
+
   private void countBlock(final Optional<RemoteOrigin> maybeRemoteOrigin) {
     maybeRemoteOrigin.ifPresent(
         remoteOrigin -> {
@@ -676,7 +728,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
         specVersion.miscHelpers().toVersionDeneb().orElseThrow();
     final SignedBeaconBlockHeader signedBeaconBlockHeader =
         blockBlobSidecarsTracker.getBlock().get().asHeader();
-    final BeaconBlockBodyDeneb beaconBlockBodyDeneb =
+    final BeaconBlockBodyDeneb beaconBlockBody =
         blockBlobSidecarsTracker
             .getBlock()
             .get()
@@ -735,7 +787,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                         miscHelpersDeneb,
                         missingBlobsIdentifiers.get(index),
                         blobAndProof.get(),
-                        beaconBlockBodyDeneb,
+                        beaconBlockBody,
                         signedBeaconBlockHeader);
                 onNewBlobSidecar(blobSidecar, LOCAL_EL);
               }
