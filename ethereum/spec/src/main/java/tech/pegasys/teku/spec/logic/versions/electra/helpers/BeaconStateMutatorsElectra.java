@@ -122,22 +122,22 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
   }
 
   /*
-   * <spec function="initiate_validator_exit" fork="electra">
-   * def initiate_validator_exit(state: BeaconState, index: ValidatorIndex) -> None:
-   *     """
-   *     Initiate the exit of the validator with index ``index``.
-   *     """
-   *     # Return if validator already initiated exit
-   *     validator = state.validators[index]
-   *     if validator.exit_epoch != FAR_FUTURE_EPOCH:
-   *         return
+   * <spec function="initiate_validator_exit" fork="electra" style="diff">
+   * --- phase0
+   * +++ electra
+   * @@ -6,11 +6,7 @@
+   *      if validator.exit_epoch != FAR_FUTURE_EPOCH:
+   *          return
    *
-   *     # Compute exit queue epoch [Modified in Electra:EIP7251]
-   *     exit_queue_epoch = compute_exit_epoch_and_update_churn(state, validator.effective_balance)
+   * -    exit_epochs = [v.exit_epoch for v in state.validators if v.exit_epoch != FAR_FUTURE_EPOCH]
+   * -    exit_queue_epoch = max(exit_epochs + [compute_activation_exit_epoch(get_current_epoch(state))])
+   * -    exit_queue_churn = len([v for v in state.validators if v.exit_epoch == exit_queue_epoch])
+   * -    if exit_queue_churn >= get_validator_churn_limit(state):
+   * -        exit_queue_epoch += Epoch(1)
+   * +    exit_queue_epoch = compute_exit_epoch_and_update_churn(state, validator.effective_balance)
    *
-   *     # Set validator exit epoch and withdrawable epoch
-   *     validator.exit_epoch = exit_queue_epoch
-   *     validator.withdrawable_epoch = Epoch(validator.exit_epoch + MIN_VALIDATOR_WITHDRAWABILITY_DELAY)
+   *      validator.exit_epoch = exit_queue_epoch
+   *      validator.withdrawable_epoch = Epoch(validator.exit_epoch + MIN_VALIDATOR_WITHDRAWABILITY_DELAY)
    * </spec>
    */
   @Override
@@ -177,7 +177,6 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
                     exitQueueEpoch.plus(specConfig.getMinValidatorWithdrawabilityDelay())));
   }
 
-  /** compute_consolidation_epoch_and_update_churn */
   /*
    * <spec function="compute_consolidation_epoch_and_update_churn" fork="electra">
    * def compute_consolidation_epoch_and_update_churn(state: BeaconState, consolidation_balance: Gwei) -> Epoch:

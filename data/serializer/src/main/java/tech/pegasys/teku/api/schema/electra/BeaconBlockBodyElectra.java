@@ -40,23 +40,24 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 /*
- * <spec ssz_object="BeaconBlockBody" fork="electra">
- * class BeaconBlockBody(Container):
- *     randao_reveal: BLSSignature
- *     eth1_data: Eth1Data  # Eth1 data vote
- *     graffiti: Bytes32  # Arbitrary data
- *     # Operations
- *     proposer_slashings: List[ProposerSlashing, MAX_PROPOSER_SLASHINGS]
- *     attester_slashings: List[AttesterSlashing, MAX_ATTESTER_SLASHINGS_ELECTRA]  # [Modified in Electra:EIP7549]
- *     attestations: List[Attestation, MAX_ATTESTATIONS_ELECTRA]  # [Modified in Electra:EIP7549]
- *     deposits: List[Deposit, MAX_DEPOSITS]
- *     voluntary_exits: List[SignedVoluntaryExit, MAX_VOLUNTARY_EXITS]
- *     sync_aggregate: SyncAggregate
- *     # Execution
- *     execution_payload: ExecutionPayload
- *     bls_to_execution_changes: List[SignedBLSToExecutionChange, MAX_BLS_TO_EXECUTION_CHANGES]
- *     blob_kzg_commitments: List[KZGCommitment, MAX_BLOB_COMMITMENTS_PER_BLOCK]
- *     execution_requests: ExecutionRequests  # [New in Electra]
+ * <spec ssz_object="BeaconBlockBody" fork="electra" style="diff">
+ * --- deneb
+ * +++ electra
+ * @@ -3,11 +3,12 @@
+ *      eth1_data: Eth1Data
+ *      graffiti: Bytes32
+ *      proposer_slashings: List[ProposerSlashing, MAX_PROPOSER_SLASHINGS]
+ * -    attester_slashings: List[AttesterSlashing, MAX_ATTESTER_SLASHINGS]
+ * -    attestations: List[Attestation, MAX_ATTESTATIONS]
+ * +    attester_slashings: List[AttesterSlashing, MAX_ATTESTER_SLASHINGS_ELECTRA]
+ * +    attestations: List[Attestation, MAX_ATTESTATIONS_ELECTRA]
+ *      deposits: List[Deposit, MAX_DEPOSITS]
+ *      voluntary_exits: List[SignedVoluntaryExit, MAX_VOLUNTARY_EXITS]
+ *      sync_aggregate: SyncAggregate
+ *      execution_payload: ExecutionPayload
+ *      bls_to_execution_changes: List[SignedBLSToExecutionChange, MAX_BLS_TO_EXECUTION_CHANGES]
+ *      blob_kzg_commitments: List[KZGCommitment, MAX_BLOB_COMMITMENTS_PER_BLOCK]
+ * +    execution_requests: ExecutionRequests
  * </spec>
  */
 public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {

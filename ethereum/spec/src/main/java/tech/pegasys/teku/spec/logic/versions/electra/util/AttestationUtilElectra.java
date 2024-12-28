@@ -57,25 +57,31 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
   }
 
   /*
-   * <spec function="get_attesting_indices" fork="electra">
-   * def get_attesting_indices(state: BeaconState, attestation: Attestation) -> Set[ValidatorIndex]:
-   *     """
-   *     Return the set of attesting indices corresponding to ``aggregation_bits`` and ``committee_bits``.
-   *     """
-   *     output: Set[ValidatorIndex] = set()
-   *     committee_indices = get_committee_indices(attestation.committee_bits)
-   *     committee_offset = 0
-   *     for committee_index in committee_indices:
-   *         committee = get_beacon_committee(state, attestation.data.slot, committee_index)
-   *         committee_attesters = set(
-   *             attester_index for i, attester_index in enumerate(committee)
-   *             if attestation.aggregation_bits[committee_offset + i]
-   *         )
-   *         output = output.union(committee_attesters)
-   *
-   *         committee_offset += len(committee)
-   *
-   *     return output
+   * <spec function="get_attesting_indices" fork="electra" style="diff">
+   * --- phase0
+   * +++ electra
+   * @@ -1,6 +1,18 @@
+   *  def get_attesting_indices(state: BeaconState, attestation: Attestation) -> Set[ValidatorIndex]:
+   *      """
+   * -    Return the set of attesting indices corresponding to ``data`` and ``bits``.
+   * +    Return the set of attesting indices corresponding to ``aggregation_bits`` and ``committee_bits``.
+   *      """
+   * -    committee = get_beacon_committee(state, attestation.data.slot, attestation.data.index)
+   * -    return set(index for i, index in enumerate(committee) if attestation.aggregation_bits[i])
+   * +    output: Set[ValidatorIndex] = set()
+   * +    committee_indices = get_committee_indices(attestation.committee_bits)
+   * +    committee_offset = 0
+   * +    for committee_index in committee_indices:
+   * +        committee = get_beacon_committee(state, attestation.data.slot, committee_index)
+   * +        committee_attesters = set(
+   * +            attester_index for i, attester_index in enumerate(committee)
+   * +            if attestation.aggregation_bits[committee_offset + i]
+   * +        )
+   * +        output = output.union(committee_attesters)
+   * +
+   * +        committee_offset += len(committee)
+   * +
+   * +    return output
    * </spec>
    */
   @Override

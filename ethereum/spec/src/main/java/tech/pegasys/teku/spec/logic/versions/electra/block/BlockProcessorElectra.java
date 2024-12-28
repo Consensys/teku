@@ -150,29 +150,27 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   }
 
   /*
-   * <spec function="process_operations" fork="electra">
-   * def process_operations(state: BeaconState, body: BeaconBlockBody) -> None:
-   *     # [Modified in Electra:EIP6110]
-   *     # Disable former deposit mechanism once all prior deposits are processed
-   *     eth1_deposit_index_limit = min(state.eth1_data.deposit_count, state.deposit_requests_start_index)
-   *     if state.eth1_deposit_index < eth1_deposit_index_limit:
-   *         assert len(body.deposits) == min(MAX_DEPOSITS, eth1_deposit_index_limit - state.eth1_deposit_index)
-   *     else:
-   *         assert len(body.deposits) == 0
+   * <spec function="process_operations" fork="electra" style="diff">
+   * --- capella
+   * +++ electra
+   * @@ -1,5 +1,9 @@
+   *  def process_operations(state: BeaconState, body: BeaconBlockBody) -> None:
+   * -    assert len(body.deposits) == min(MAX_DEPOSITS, state.eth1_data.deposit_count - state.eth1_deposit_index)
+   * +    eth1_deposit_index_limit = min(state.eth1_data.deposit_count, state.deposit_requests_start_index)
+   * +    if state.eth1_deposit_index < eth1_deposit_index_limit:
+   * +        assert len(body.deposits) == min(MAX_DEPOSITS, eth1_deposit_index_limit - state.eth1_deposit_index)
+   * +    else:
+   * +        assert len(body.deposits) == 0
    *
-   *     def for_ops(operations: Sequence[Any], fn: Callable[[BeaconState, Any], None]) -> None:
-   *         for operation in operations:
-   *             fn(state, operation)
-   *
-   *     for_ops(body.proposer_slashings, process_proposer_slashing)
-   *     for_ops(body.attester_slashings, process_attester_slashing)
-   *     for_ops(body.attestations, process_attestation)  # [Modified in Electra:EIP7549]
-   *     for_ops(body.deposits, process_deposit)
-   *     for_ops(body.voluntary_exits, process_voluntary_exit)  # [Modified in Electra:EIP7251]
-   *     for_ops(body.bls_to_execution_changes, process_bls_to_execution_change)
-   *     for_ops(body.execution_requests.deposits, process_deposit_request)  # [New in Electra:EIP6110]
-   *     for_ops(body.execution_requests.withdrawals, process_withdrawal_request)  # [New in Electra:EIP7002:EIP7251]
-   *     for_ops(body.execution_requests.consolidations, process_consolidation_request)  # [New in Electra:EIP7251]
+   *      def for_ops(operations: Sequence[Any], fn: Callable[[BeaconState, Any], None]) -> None:
+   *          for operation in operations:
+   * @@ -11,3 +15,6 @@
+   *      for_ops(body.deposits, process_deposit)
+   *      for_ops(body.voluntary_exits, process_voluntary_exit)
+   *      for_ops(body.bls_to_execution_changes, process_bls_to_execution_change)
+   * +    for_ops(body.execution_requests.deposits, process_deposit_request)
+   * +    for_ops(body.execution_requests.withdrawals, process_withdrawal_request)
+   * +    for_ops(body.execution_requests.consolidations, process_consolidation_request)
    * </spec>
    */
   @Override

@@ -82,25 +82,24 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
   }
 
   /*
-   * <spec function="process_registry_updates" fork="electra">
-   * def process_registry_updates(state: BeaconState) -> None:
-   *     # Process activation eligibility and ejections
-   *     for index, validator in enumerate(state.validators):
-   *         if is_eligible_for_activation_queue(validator):  # [Modified in Electra:EIP7251]
-   *             validator.activation_eligibility_epoch = get_current_epoch(state) + 1
+   * <spec function="process_registry_updates" fork="electra" style="diff">
+   * --- deneb
+   * +++ electra
+   * @@ -9,10 +9,7 @@
+   *          ):
+   *              initiate_validator_exit(state, ValidatorIndex(index))
    *
-   *         if (
-   *             is_active_validator(validator, get_current_epoch(state))
-   *             and validator.effective_balance <= EJECTION_BALANCE
-   *         ):
-   *             initiate_validator_exit(state, ValidatorIndex(index))  # [Modified in Electra:EIP7251]
-   *
-   *     # Activate all eligible validators
-   *     # [Modified in Electra:EIP7251]
-   *     activation_epoch = compute_activation_exit_epoch(get_current_epoch(state))
-   *     for validator in state.validators:
-   *         if is_eligible_for_activation(state, validator):
-   *             validator.activation_epoch = activation_epoch
+   * -    activation_queue = sorted([
+   * -        index for index, validator in enumerate(state.validators)
+   * -        if is_eligible_for_activation(state, validator)
+   * -    ], key=lambda index: (state.validators[index].activation_eligibility_epoch, index))
+   * -    for index in activation_queue[:get_validator_activation_churn_limit(state)]:
+   * -        validator = state.validators[index]
+   * -        validator.activation_epoch = compute_activation_exit_epoch(get_current_epoch(state))
+   * +    activation_epoch = compute_activation_exit_epoch(get_current_epoch(state))
+   * +    for validator in state.validators:
+   * +        if is_eligible_for_activation(state, validator):
+   * +            validator.activation_epoch = activation_epoch
    * </spec>
    */
   @Override
@@ -153,15 +152,16 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
   }
 
   /*
-   * <spec function="is_eligible_for_activation_queue" fork="electra">
-   * def is_eligible_for_activation_queue(validator: Validator) -> bool:
-   *     """
-   *     Check if ``validator`` is eligible to be placed into the activation queue.
-   *     """
-   *     return (
-   *         validator.activation_eligibility_epoch == FAR_FUTURE_EPOCH
-   *         and validator.effective_balance >= MIN_ACTIVATION_BALANCE  # [Modified in Electra:EIP7251]
-   *     )
+   * <spec function="is_eligible_for_activation_queue" fork="electra" style="diff">
+   * --- phase0
+   * +++ electra
+   * @@ -4,5 +4,5 @@
+   *      """
+   *      return (
+   *          validator.activation_eligibility_epoch == FAR_FUTURE_EPOCH
+   * -        and validator.effective_balance == MAX_EFFECTIVE_BALANCE
+   * +        and validator.effective_balance >= MIN_ACTIVATION_BALANCE
+   *      )
    * </spec>
    */
   @Override
@@ -176,22 +176,21 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
   }
 
   /*
-   * <spec function="process_effective_balance_updates" fork="electra">
-   * def process_effective_balance_updates(state: BeaconState) -> None:
-   *     # Update effective balances with hysteresis
-   *     for index, validator in enumerate(state.validators):
-   *         balance = state.balances[index]
-   *         HYSTERESIS_INCREMENT = uint64(EFFECTIVE_BALANCE_INCREMENT // HYSTERESIS_QUOTIENT)
-   *         DOWNWARD_THRESHOLD = HYSTERESIS_INCREMENT * HYSTERESIS_DOWNWARD_MULTIPLIER
-   *         UPWARD_THRESHOLD = HYSTERESIS_INCREMENT * HYSTERESIS_UPWARD_MULTIPLIER
-   *         # [Modified in Electra:EIP7251]
-   *         max_effective_balance = get_max_effective_balance(validator)
-   *
-   *         if (
-   *             balance + DOWNWARD_THRESHOLD < validator.effective_balance
-   *             or validator.effective_balance + UPWARD_THRESHOLD < balance
-   *         ):
-   *             validator.effective_balance = min(balance - balance % EFFECTIVE_BALANCE_INCREMENT, max_effective_balance)
+   * <spec function="process_effective_balance_updates" fork="electra" style="diff">
+   * --- phase0
+   * +++ electra
+   * @@ -4,8 +4,10 @@
+   *          HYSTERESIS_INCREMENT = uint64(EFFECTIVE_BALANCE_INCREMENT // HYSTERESIS_QUOTIENT)
+   *          DOWNWARD_THRESHOLD = HYSTERESIS_INCREMENT * HYSTERESIS_DOWNWARD_MULTIPLIER
+   *          UPWARD_THRESHOLD = HYSTERESIS_INCREMENT * HYSTERESIS_UPWARD_MULTIPLIER
+   * +        max_effective_balance = get_max_effective_balance(validator)
+   * +
+   *          if (
+   *              balance + DOWNWARD_THRESHOLD < validator.effective_balance
+   *              or validator.effective_balance + UPWARD_THRESHOLD < balance
+   *          ):
+   * -            validator.effective_balance = min(balance - balance % EFFECTIVE_BALANCE_INCREMENT, MAX_EFFECTIVE_BALANCE)
+   * +            validator.effective_balance = min(balance - balance % EFFECTIVE_BALANCE_INCREMENT, max_effective_balance)
    * </spec>
    */
   @Override
