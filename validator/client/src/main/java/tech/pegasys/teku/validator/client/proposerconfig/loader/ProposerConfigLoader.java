@@ -33,12 +33,12 @@ public class ProposerConfigLoader {
   private final ObjectMapper objectMapper;
 
   public ProposerConfigLoader() {
-    this.objectMapper = new ObjectMapper();
+    objectMapper = new ObjectMapper();
     addTekuMappers();
   }
 
   private void addTekuMappers() {
-    SimpleModule module =
+    final SimpleModule module =
         new SimpleModule("ProposerConfigLoader", new Version(1, 0, 0, null, null, null));
     module.addDeserializer(BLSPublicKey.class, new BLSPublicKeyDeserializer());
     module.addSerializer(BLSPublicKey.class, new BLSPublicKeySerializer());
@@ -48,7 +48,7 @@ public class ProposerConfigLoader {
   }
 
   public ObjectMapper getObjectMapper() {
-    return this.objectMapper;
+    return objectMapper;
   }
 
   public ProposerConfig getProposerConfig(final URL source) {
