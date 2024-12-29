@@ -202,35 +202,6 @@ class Eth2PeerTest {
 
   @Test
   @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
-  public void shouldSendRequest_BlobSidecarByRoot() {
-
-    final Eth2RpcMethod<BlobSidecarsByRootRequestMessage, BlobSidecar> blobSidecarsByRootMethod =
-        mock(Eth2RpcMethod.class);
-
-    final RpcStreamController<RpcRequestHandler> rpcStreamController =
-        mock(RpcStreamController.class);
-
-    when(rpcMethods.blobSidecarsByRoot()).thenReturn(Optional.of(blobSidecarsByRootMethod));
-
-    when(peer.sendRequest(any(), any(), any()))
-        .thenReturn(SafeFuture.completedFuture(rpcStreamController));
-
-    final BlobIdentifier blobIdentifier = dataStructureUtil.randomBlobIdentifier();
-
-    peer.requestBlobSidecarByRoot(blobIdentifier);
-
-    final ArgumentCaptor<BlobSidecarsByRootRequestMessage> requestCaptor =
-        ArgumentCaptor.forClass(BlobSidecarsByRootRequestMessage.class);
-
-    verify(delegate, times(1)).sendRequest(any(), requestCaptor.capture(), any());
-
-    final BlobSidecarsByRootRequestMessage request = requestCaptor.getValue();
-
-    assertThat(request.getMaximumResponseChunks()).isEqualTo(1);
-  }
-
-  @Test
-  @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
   public void shouldNotUpdateRequestWhenWithinDeneb_BlobSidecarsByRange() {
 
     final Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar> blobSidecarsByRangeMethod =

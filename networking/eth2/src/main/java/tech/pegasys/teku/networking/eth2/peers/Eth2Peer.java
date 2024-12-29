@@ -100,8 +100,6 @@ public interface Eth2Peer extends Peer, SyncSource {
 
   SafeFuture<Optional<SignedBeaconBlock>> requestBlockByRoot(Bytes32 blockRoot);
 
-  SafeFuture<Optional<BlobSidecar>> requestBlobSidecarByRoot(BlobIdentifier blobIdentifier);
-
   SafeFuture<MetadataMessage> requestMetadata();
 
   <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
