@@ -18,7 +18,6 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Suppliers;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -37,7 +36,6 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeListenerValidatingProxy;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRootListenerValidatingProxy;
-import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRootValidator;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeListenerWrapper;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -278,32 +276,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         new BeaconBlocksByRootRequestMessage(
             spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(),
             List.of(blockRoot)));
-  }
-
-  @Override
-  public SafeFuture<Optional<BlobSidecar>> requestBlobSidecarByRoot(
-      final BlobIdentifier blobIdentifier) {
-    return rpcMethods
-        .blobSidecarsByRoot()
-        .map(
-            method -> {
-              final List<BlobIdentifier> blobIdentifiers =
-                  Collections.singletonList(blobIdentifier);
-              return requestOptionalItem(
-                      method,
-                      new BlobSidecarsByRootRequestMessage(
-                          blobSidecarsByRootRequestMessageSchema.get(), blobIdentifiers))
-                  .thenPeek(
-                      maybeBlobSidecar ->
-                          maybeBlobSidecar.ifPresent(
-                              blobSidecar -> {
-                                final BlobSidecarsByRootValidator validator =
-                                    new BlobSidecarsByRootValidator(
-                                        this, spec, kzg, blobIdentifiers);
-                                validator.validate(blobSidecar);
-                              }));
-            })
-        .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
   }
 
   @Override

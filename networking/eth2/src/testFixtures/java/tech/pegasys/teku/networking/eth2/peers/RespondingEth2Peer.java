@@ -275,16 +275,6 @@ public class RespondingEth2Peer implements Eth2Peer {
     return createPendingBlockRequest(handler);
   }
 
-  @Override
-  public SafeFuture<Optional<BlobSidecar>> requestBlobSidecarByRoot(
-      final BlobIdentifier blobIdentifier) {
-    final PendingRequestHandler<Optional<BlobSidecar>, BlobSidecar> handler =
-        PendingRequestHandler.createForSingleBlobSidecarRequest(
-            () -> findBlobSidecarByBlobIdentifier(blobIdentifier));
-
-    return createPendingBlobSidecarRequest(handler);
-  }
-
   private <T> SafeFuture<T> createPendingBlockRequest(
       final PendingRequestHandler<T, SignedBeaconBlock> handler) {
     final PendingRequestHandler<T, SignedBeaconBlock> filteredHandler =

@@ -60,21 +60,12 @@ public class BlobSidecarsByRootIntegrationTest extends AbstractRpcMethodIntegrat
   }
 
   @TestTemplate
-  public void requestBlobSidecar_shouldFailBeforeDenebMilestone() {
-    assumeThat(specMilestone).isLessThan(SpecMilestone.DENEB);
-    assertThatThrownBy(
-            () -> requestBlobSidecarByRoot(peer, new BlobIdentifier(Bytes32.ZERO, UInt64.ZERO)))
-        .hasRootCauseInstanceOf(UnsupportedOperationException.class)
-        .hasMessageContaining("BlobSidecarsByRoot method is not supported");
-  }
-
-  @TestTemplate
   public void requestBlobSidecars_shouldReturnEmptyBlobSidecarsAfterDenebMilestone()
       throws ExecutionException, InterruptedException, TimeoutException {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
-    final Optional<BlobSidecar> blobSidecar =
-        requestBlobSidecarByRoot(peer, new BlobIdentifier(Bytes32.ZERO, UInt64.ZERO));
-    assertThat(blobSidecar).isEmpty();
+    final List<BlobSidecar> blobSidecars =
+        requestBlobSidecarsByRoot(peer, List.of(new BlobIdentifier(Bytes32.ZERO, UInt64.ZERO)));
+    assertThat(blobSidecars).isEmpty();
   }
 
   @TestTemplate
@@ -116,14 +107,5 @@ public class BlobSidecarsByRootIntegrationTest extends AbstractRpcMethodIntegrat
             blobIdentifiers, RpcResponseListener.from(blobSidecars::add)));
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     return blobSidecars;
-  }
-
-  private Optional<BlobSidecar> requestBlobSidecarByRoot(
-      final Eth2Peer peer, final BlobIdentifier blobIdentifier)
-      throws ExecutionException, InterruptedException, TimeoutException {
-    final Optional<BlobSidecar> blobSidecar =
-        waitFor(peer.requestBlobSidecarByRoot(blobIdentifier));
-    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
-    return blobSidecar;
   }
 }
