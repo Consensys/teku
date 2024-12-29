@@ -27,7 +27,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
-import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.Bytes48KeyDeserializer;
 import tech.pegasys.teku.validator.client.ProposerConfig;
 
 public class ProposerConfigLoader {

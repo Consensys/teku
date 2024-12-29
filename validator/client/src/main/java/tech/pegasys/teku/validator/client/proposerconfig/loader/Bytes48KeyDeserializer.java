@@ -11,19 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.jackson.deserializers.bytes;
+package tech.pegasys.teku.validator.client.proposerconfig.loader;
 
-import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import java.io.IOException;
-import org.apache.tuweni.bytes.Bytes32;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.KeyDeserializer;
+import org.apache.tuweni.bytes.Bytes48;
 
-public class Bytes32Deserializer extends JsonDeserializer<Bytes32> {
+public class Bytes48KeyDeserializer extends KeyDeserializer {
 
   @Override
-  public Bytes32 deserialize(final JsonParser p, final DeserializationContext ctxt)
-      throws IOException {
-    return Bytes32.fromHexString(p.getValueAsString());
+  public Object deserializeKey(final String key, final DeserializationContext ctxt)
+      throws JacksonException {
+    try {
+      return Bytes48.fromHexStringStrict(key);
+    } catch (RuntimeException ex) {
+      throw new JsonMappingException(ctxt.getParser(), "Invalid Public Key", ex);
+    }
   }
 }

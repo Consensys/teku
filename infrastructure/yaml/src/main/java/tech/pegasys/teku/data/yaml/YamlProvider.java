@@ -33,11 +33,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
+import java.util.Locale;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.Bytes32Deserializer;
-import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.BytesSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class YamlProvider {
@@ -111,6 +110,24 @@ public class YamlProvider {
         final UInt64 value, final JsonGenerator gen, final SerializerProvider serializers)
         throws IOException {
       gen.writeNumber(value.bigIntegerValue());
+    }
+  }
+
+  public static class Bytes32Deserializer extends JsonDeserializer<Bytes32> {
+
+    @Override
+    public Bytes32 deserialize(final JsonParser p, final DeserializationContext ctxt)
+        throws IOException {
+      return Bytes32.fromHexString(p.getValueAsString());
+    }
+  }
+
+  public static class BytesSerializer extends JsonSerializer<Bytes> {
+    @Override
+    public void serialize(
+        final Bytes value, final JsonGenerator gen, final SerializerProvider provider)
+        throws IOException {
+      gen.writeString(value.toHexString().toLowerCase(Locale.ROOT));
     }
   }
 }

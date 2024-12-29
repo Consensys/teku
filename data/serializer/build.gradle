@@ -6,7 +6,6 @@ dependencies {
   implementation project(':ethereum:spec')
   implementation project(':infrastructure:bls')
   implementation project(':infrastructure:bytes')
-  implementation project(':infrastructure:jackson')
   implementation project(':infrastructure:async')
 
   implementation 'io.tmio:tuweni-units'
