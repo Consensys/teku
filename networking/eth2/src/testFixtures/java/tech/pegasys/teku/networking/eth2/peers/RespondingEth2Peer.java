@@ -523,12 +523,6 @@ public class RespondingEth2Peer implements Eth2Peer {
       return createForSingleRequest(blockSupplier);
     }
 
-    static PendingRequestHandler<Optional<BlobSidecar>, BlobSidecar>
-        createForSingleBlobSidecarRequest(
-            final Supplier<Optional<BlobSidecar>> blobSidecarSupplier) {
-      return createForSingleRequest(blobSidecarSupplier);
-    }
-
     static <T> PendingRequestHandler<Void, T> createForBatchRequest(
         final RpcResponseListener<T> listener, final Supplier<List<T>> objectsSupplier) {
       return new PendingRequestHandler<>() {
