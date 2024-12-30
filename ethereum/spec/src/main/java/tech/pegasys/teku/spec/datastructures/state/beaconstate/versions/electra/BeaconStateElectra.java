@@ -35,6 +35,25 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConso
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
+/*
+ * <spec ssz_object="BeaconState" fork="electra" style="diff">
+ * --- capella
+ * +++ electra
+ * @@ -27,3 +27,12 @@
+ *      next_withdrawal_index: WithdrawalIndex
+ *      next_withdrawal_validator_index: ValidatorIndex
+ *      historical_summaries: List[HistoricalSummary, HISTORICAL_ROOTS_LIMIT]
+ * +    deposit_requests_start_index: uint64
+ * +    deposit_balance_to_consume: Gwei
+ * +    exit_balance_to_consume: Gwei
+ * +    earliest_exit_epoch: Epoch
+ * +    consolidation_balance_to_consume: Gwei
+ * +    earliest_consolidation_epoch: Epoch
+ * +    pending_deposits: List[PendingDeposit, PENDING_DEPOSITS_LIMIT]
+ * +    pending_partial_withdrawals: List[PendingPartialWithdrawal, PENDING_PARTIAL_WITHDRAWALS_LIMIT]
+ * +    pending_consolidations: List[PendingConsolidation, PENDING_CONSOLIDATIONS_LIMIT]
+ * </spec>
+ */
 public interface BeaconStateElectra extends BeaconStateDeneb {
   static BeaconStateElectra required(final BeaconState state) {
     return state

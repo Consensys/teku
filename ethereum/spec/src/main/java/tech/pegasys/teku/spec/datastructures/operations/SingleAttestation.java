@@ -21,6 +21,15 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
+/*
+ * <spec ssz_object="SingleAttestation" fork="electra">
+ * class SingleAttestation(Container):
+ *     committee_index: CommitteeIndex
+ *     attester_index: ValidatorIndex
+ *     data: AttestationData
+ *     signature: BLSSignature
+ * </spec>
+ */
 public class SingleAttestation
     extends Container4<SingleAttestation, SszUInt64, SszUInt64, AttestationData, SszSignature>
     implements Attestation {

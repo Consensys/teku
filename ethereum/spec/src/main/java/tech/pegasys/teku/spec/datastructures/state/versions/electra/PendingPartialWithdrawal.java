@@ -20,6 +20,14 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+/*
+ * <spec ssz_object="PendingPartialWithdrawal" fork="electra">
+ * class PendingPartialWithdrawal(Container):
+ *     validator_index: ValidatorIndex
+ *     amount: Gwei
+ *     withdrawable_epoch: Epoch
+ * </spec>
+ */
 public class PendingPartialWithdrawal
     extends Container3<PendingPartialWithdrawal, SszUInt64, SszUInt64, SszUInt64> {
   protected PendingPartialWithdrawal(

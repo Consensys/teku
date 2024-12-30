@@ -19,6 +19,14 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
+/*
+ * <spec ssz_object="IndexedAttestation" fork="phase0">
+ * class IndexedAttestation(Container):
+ *     attesting_indices: List[ValidatorIndex, MAX_VALIDATORS_PER_COMMITTEE]
+ *     data: AttestationData
+ *     signature: BLSSignature
+ * </spec>
+ */
 public class IndexedAttestation
     extends Container3<IndexedAttestation, SszUInt64List, AttestationData, SszSignature> {
 

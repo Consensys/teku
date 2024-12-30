@@ -21,10 +21,24 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
-// https://eips.ethereum.org/EIPS/eip-7251
+/*
+ * https://eips.ethereum.org/EIPS/eip-7251
+ *
+ * <spec ssz_object="ConsolidationRequest" fork="electra">
+ * class ConsolidationRequest(Container):
+ *     source_address: ExecutionAddress
+ *     source_pubkey: BLSPubkey
+ *     target_pubkey: BLSPubkey
+ * </spec>
+ */
 public class ConsolidationRequest
     extends Container3<ConsolidationRequest, SszByteVector, SszPublicKey, SszPublicKey> {
 
+  /*
+   * <spec constant_var="CONSOLIDATION_REQUEST_TYPE" fork="electra">
+   * CONSOLIDATION_REQUEST_TYPE: Bytes1 = '0x02'
+   * </spec>
+   */
   public static final byte REQUEST_TYPE = 0x2;
   public static final Bytes REQUEST_TYPE_PREFIX = Bytes.of(REQUEST_TYPE);
 

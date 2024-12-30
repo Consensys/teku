@@ -18,6 +18,14 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
+/*
+ * <spec ssz_object="ExecutionRequests" fork="electra">
+ * class ExecutionRequests(Container):
+ *     deposits: List[DepositRequest, MAX_DEPOSIT_REQUESTS_PER_PAYLOAD]  # [New in Electra:EIP6110]
+ *     withdrawals: List[WithdrawalRequest, MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD]  # [New in Electra:EIP7002:EIP7251]
+ *     consolidations: List[ConsolidationRequest, MAX_CONSOLIDATION_REQUESTS_PER_PAYLOAD]  # [New in Electra:EIP7251]
+ * </spec>
+ */
 public class ExecutionRequests
     extends Container3<
         ExecutionRequests,

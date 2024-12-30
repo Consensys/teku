@@ -25,6 +25,19 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
+/*
+ * <spec ssz_object="Attestation" fork="electra" style="diff">
+ * --- phase0
+ * +++ electra
+ * @@ -1,4 +1,5 @@
+ *  class Attestation(Container):
+ * -    aggregation_bits: Bitlist[MAX_VALIDATORS_PER_COMMITTEE]
+ * +    aggregation_bits: Bitlist[MAX_VALIDATORS_PER_COMMITTEE * MAX_COMMITTEES_PER_SLOT]
+ *      data: AttestationData
+ *      signature: BLSSignature
+ * +    committee_bits: Bitvector[MAX_COMMITTEES_PER_SLOT]
+ * </spec>
+ */
 public class AttestationElectra
     extends Container4<AttestationElectra, SszBitlist, AttestationData, SszSignature, SszBitvector>
     implements Attestation {
@@ -67,6 +80,12 @@ public class AttestationElectra
     return getField2().getSignature();
   }
 
+  /*
+   * <spec function="get_committee_indices" fork="electra">
+   * def get_committee_indices(committee_bits: Bitvector) -> Sequence[CommitteeIndex]:
+   *     return [CommitteeIndex(index) for index, bit in enumerate(committee_bits) if bit]
+   * </spec>
+   */
   @Override
   public Optional<List<UInt64>> getCommitteeIndices() {
     return Optional.of(

@@ -236,7 +236,16 @@ public class DepositProvider
             .toVersionElectra()
             .map(
                 stateElectra -> {
-                  // EIP-6110
+                  /*
+                   * <spec function="get_eth1_pending_deposit_count" fork="electra">
+                   * def get_eth1_pending_deposit_count(state: BeaconState) -> uint64:
+                   *     eth1_deposit_index_limit = min(state.eth1_data.deposit_count, state.deposit_requests_start_index)
+                   *     if state.eth1_deposit_index < eth1_deposit_index_limit:
+                   *         return min(MAX_DEPOSITS, eth1_deposit_index_limit - state.eth1_deposit_index)
+                   *     else:
+                   *         return uint64(0)
+                   * </spec>
+                   */
                   final UInt64 eth1DepositIndexLimit =
                       eth1DepositCount.min(stateElectra.getDepositRequestsStartIndex());
                   return eth1DepositIndexLimit.minusMinZero(eth1DepositIndex).min(maxDeposits);
