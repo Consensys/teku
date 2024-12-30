@@ -167,9 +167,10 @@ public class BlobSidecarsByRangeMessageHandlerTest {
                     maxRequestBlobSidecars)));
 
     final long rateLimitedCount =
-        metricsSystem
-            .getCounter(TekuMetricCategory.NETWORK, "rpc_blob_sidecars_by_range_requests_total")
-            .getValue("count_too_big");
+        metricsSystem.getCounterValue(
+            TekuMetricCategory.NETWORK,
+            "rpc_blob_sidecars_by_range_requests_total",
+            "count_too_big");
 
     assertThat(rateLimitedCount).isOne();
   }
@@ -192,9 +193,10 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
     final long rateLimitedCount =
-        metricsSystem
-            .getCounter(TekuMetricCategory.NETWORK, "rpc_blob_sidecars_by_range_requests_total")
-            .getValue("rate_limited");
+        metricsSystem.getCounterValue(
+            TekuMetricCategory.NETWORK,
+            "rpc_blob_sidecars_by_range_requests_total",
+            "rate_limited");
 
     assertThat(rateLimitedCount).isOne();
 

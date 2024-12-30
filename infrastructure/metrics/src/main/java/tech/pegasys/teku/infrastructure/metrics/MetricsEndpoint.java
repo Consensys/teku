@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.metrics;
 
-import io.vertx.core.Vertx;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.hyperledger.besu.metrics.MetricsService;
@@ -27,11 +26,11 @@ public class MetricsEndpoint {
   private final PrometheusMetricsSystem metricsSystem;
   private final MetricsConfig config;
 
-  public MetricsEndpoint(final MetricsConfig config, final Vertx vertx) {
+  public MetricsEndpoint(final MetricsConfig config) {
     final MetricsConfiguration metricsConfig = createMetricsConfiguration(config);
     metricsSystem = new PrometheusMetricsSystem(config.getMetricsCategories(), true);
     metricsSystem.init();
-    metricsService = MetricsService.create(vertx, metricsConfig, metricsSystem);
+    metricsService = MetricsService.create(metricsConfig, metricsSystem);
     this.config = config;
   }
 
