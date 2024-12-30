@@ -21,9 +21,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -45,7 +43,6 @@ import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@ExtendWith(BouncyCastleExtension.class)
 public abstract class BlockProcessorTest {
   protected final Spec spec = createSpec();
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
