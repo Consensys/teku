@@ -20,6 +20,7 @@ import java.io.IOException;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
 class BLSPublicKeyDeserializer extends JsonDeserializer<BLSPublicKey> {
+
   @Override
   public BLSPublicKey deserialize(final JsonParser p, final DeserializationContext ctxt)
       throws IOException {
