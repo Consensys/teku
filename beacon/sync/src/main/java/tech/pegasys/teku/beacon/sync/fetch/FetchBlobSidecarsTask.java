@@ -60,7 +60,7 @@ public class FetchBlobSidecarsTask extends AbstractFetchTask<Bytes32, List<BlobS
 
   @Override
   SafeFuture<FetchResult<List<BlobSidecar>>> fetch(final Eth2Peer peer) {
-    final List<BlobSidecar> blobSidecars = new ArrayList<>();
+    final List<BlobSidecar> blobSidecars = new ArrayList<>(blobIdentifiers.size());
     return peer.requestBlobSidecarsByRoot(
             blobIdentifiers, RpcResponseListener.from(blobSidecars::add))
         .thenApply(__ -> FetchResult.createSuccessful(peer, blobSidecars))
