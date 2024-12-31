@@ -162,13 +162,11 @@ public class EventLogger {
     info("Execution Client is responding to requests again after a previous failure", Color.GREEN);
   }
 
-  // TODO remove the isOptional param when all ELs implement the engine_getBlob
-  public void missingEngineApiCapabilities(
-      final List<String> missingCapabilities, final boolean isOptional) {
+  public void missingEngineApiCapabilities(final List<String> missingCapabilities) {
     warn(
         String.format(
-            "Execution Client does not support %s Engine API methods: %s. Make sure it is upgraded to a compatible version.",
-            isOptional ? "optional" : "required", missingCapabilities),
+            "Execution Client does not support required Engine API methods: %s. Make sure it is upgraded to a compatible version.",
+            missingCapabilities),
         Color.YELLOW);
   }
 
