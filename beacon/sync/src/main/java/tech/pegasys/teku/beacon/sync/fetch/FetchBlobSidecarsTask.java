@@ -23,7 +23,7 @@ import tech.pegasys.teku.beacon.sync.fetch.FetchResult.Status;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
-import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
@@ -60,33 +60,15 @@ public class FetchBlobSidecarsTask extends AbstractFetchTask<Bytes32, List<BlobS
 
   @Override
   SafeFuture<FetchResult<List<BlobSidecar>>> fetch(final Eth2Peer peer) {
-    final SafeFuture<FetchResult<List<BlobSidecar>>> fetchResult = new SafeFuture<>();
     final List<BlobSidecar> blobSidecars = new ArrayList<>();
-    peer.requestBlobSidecarsByRoot(
-            blobIdentifiers,
-            new RpcResponseHandler<>() {
-              @Override
-              public void onCompleted(final Optional<? extends Throwable> error) {
-                error.ifPresentOrElse(
-                    err -> {
-                      logFetchError(peer, err);
-                      fetchResult.complete(FetchResult.createFailed(peer, Status.FETCH_FAILED));
-                    },
-                    () -> fetchResult.complete(FetchResult.createSuccessful(peer, blobSidecars)));
-              }
-
-              @Override
-              public SafeFuture<?> onResponse(final BlobSidecar response) {
-                blobSidecars.add(response);
-                return SafeFuture.COMPLETE;
-              }
-            })
-        .finish(
+    return peer.requestBlobSidecarsByRoot(
+            blobIdentifiers, RpcResponseListener.from(blobSidecars::add))
+        .thenApply(__ -> FetchResult.createSuccessful(peer, blobSidecars))
+        .exceptionally(
             err -> {
               logFetchError(peer, err);
-              fetchResult.complete(FetchResult.createFailed(peer, Status.FETCH_FAILED));
+              return FetchResult.createFailed(peer, Status.FETCH_FAILED);
             });
-    return fetchResult;
   }
 
   private void logFetchError(final Eth2Peer peer, final Throwable err) {
