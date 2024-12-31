@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_FORK_CHOICE_UPDATED;
-import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_GET_BLOBS;
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_GET_PAYLOAD;
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_NEW_PAYLOAD;
 
@@ -34,7 +33,6 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV3;
-import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetBlobsV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV3;
@@ -163,8 +161,7 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
     return Stream.of(
         arguments(ENGINE_NEW_PAYLOAD, EngineNewPayloadV3.class),
         arguments(ENGINE_GET_PAYLOAD, EngineGetPayloadV3.class),
-        arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV3.class),
-        arguments(ENGINE_GET_BLOBS, EngineGetBlobsV1.class));
+        arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV3.class));
   }
 
   @Test
@@ -200,8 +197,7 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
     return Stream.of(
         arguments(ENGINE_NEW_PAYLOAD, EngineNewPayloadV4.class),
         arguments(ENGINE_GET_PAYLOAD, EngineGetPayloadV4.class),
-        arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV3.class),
-        arguments(ENGINE_GET_BLOBS, EngineGetBlobsV1.class));
+        arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV3.class));
   }
 
   @Test
@@ -228,19 +224,5 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
             "engine_forkchoiceUpdatedV3",
             "engine_newPayloadV4",
             "engine_getPayloadV4");
-  }
-
-  @Test
-  void getsOptionalCapabilities() {
-    final Spec spec =
-        TestSpecFactory.createMinimalWithCapellaDenebAndElectraForkEpoch(
-            UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3));
-
-    final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
-        new MilestoneBasedEngineJsonRpcMethodsResolver(spec, executionEngineClient);
-
-    final Set<String> capabilities = engineMethodsResolver.getOptionalCapabilities();
-
-    assertThat(capabilities).containsExactlyInAnyOrder("engine_getBlobsV1");
   }
 }
