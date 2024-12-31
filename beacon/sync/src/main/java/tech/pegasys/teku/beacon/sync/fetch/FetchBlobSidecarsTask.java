@@ -66,7 +66,7 @@ public class FetchBlobSidecarsTask extends AbstractFetchTask<Bytes32, List<BlobS
         .thenApply(__ -> FetchResult.createSuccessful(peer, blobSidecars))
         .exceptionally(
             err -> {
-              LOG.error(
+              LOG.debug(
                   String.format(
                       "Failed to fetch %d blob sidecars for block root %s from peer %s",
                       blobIdentifiers.size(), blockRoot, peer.getId()),
