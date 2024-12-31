@@ -66,16 +66,12 @@ public class FetchBlobSidecarsTask extends AbstractFetchTask<Bytes32, List<BlobS
         .thenApply(__ -> FetchResult.createSuccessful(peer, blobSidecars))
         .exceptionally(
             err -> {
-              logFetchError(peer, err);
+              LOG.error(
+                  String.format(
+                      "Failed to fetch %d blob sidecars for block root %s from peer %s",
+                      blobIdentifiers.size(), blockRoot, peer.getId()),
+                  err);
               return FetchResult.createFailed(peer, Status.FETCH_FAILED);
             });
-  }
-
-  private void logFetchError(final Eth2Peer peer, final Throwable err) {
-    LOG.error(
-        String.format(
-            "Failed to fetch %d blob sidecars for block root %s from peer %s",
-            blobIdentifiers.size(), blockRoot, peer.getId()),
-        err);
   }
 }
