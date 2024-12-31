@@ -255,9 +255,8 @@ public class Eth2OutgoingRequestHandler<
       final int previousResponseCount,
       final AtomicInteger currentResponseCount) {
     timeoutRunner
-        .getDelayedFuture(RESPONSE_CHUNK_ARRIVAL_TIMEOUT)
-        .thenAccept(
-            (__) -> {
+        .runAfterDelay(
+            () -> {
               if (previousResponseCount == currentResponseCount.get()) {
                 abortRequest(
                     stream,
@@ -265,22 +264,23 @@ public class Eth2OutgoingRequestHandler<
                         "Timed out waiting for response chunk " + previousResponseCount,
                         RESPONSE_CHUNK_ARRIVAL_TIMEOUT));
               }
-            })
+            },
+            RESPONSE_CHUNK_ARRIVAL_TIMEOUT)
         .ifExceptionGetsHereRaiseABug();
   }
 
   private void ensureReadCompleteArrivesInTime(final RpcStream stream) {
     timeoutRunner
-        .getDelayedFuture(READ_COMPLETE_TIMEOUT)
-        .thenAccept(
-            (__) -> {
+        .runAfterDelay(
+            () -> {
               if (!(state.get() == READ_COMPLETE || state.get() == CLOSED)) {
                 abortRequest(
                     stream,
                     new RpcTimeoutException(
                         "Timed out waiting for read channel close", READ_COMPLETE_TIMEOUT));
               }
-            })
+            },
+            READ_COMPLETE_TIMEOUT)
         .ifExceptionGetsHereRaiseABug();
   }
 

@@ -121,9 +121,8 @@ public class Eth2IncomingRequestHandler<
 
   private void ensureRequestReceivedWithinTimeLimit(final RpcStream stream) {
     asyncRunner
-        .getDelayedFuture(RECEIVE_INCOMING_REQUEST_TIMEOUT)
-        .thenAccept(
-            (__) -> {
+        .runAfterDelay(
+            () -> {
               if (!requestHandled.get()) {
                 LOG.debug(
                     "Failed to receive incoming request data within {} sec for protocol {}. Close stream.",
@@ -131,7 +130,8 @@ public class Eth2IncomingRequestHandler<
                     protocolId);
                 stream.closeAbruptly().ifExceptionGetsHereRaiseABug();
               }
-            })
+            },
+            RECEIVE_INCOMING_REQUEST_TIMEOUT)
         .ifExceptionGetsHereRaiseABug();
   }
 
