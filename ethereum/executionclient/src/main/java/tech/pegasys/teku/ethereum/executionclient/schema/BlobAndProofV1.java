@@ -52,11 +52,6 @@ public class BlobAndProofV1 {
     return new BlobAndProof(new Blob(blobSchema, blob), new KZGProof(proof));
   }
 
-  public static BlobAndProofV1 fromInternalBlobsBundle(final BlobAndProof blobAndProof) {
-    return new BlobAndProofV1(
-        blobAndProof.blob().getBytes(), blobAndProof.proof().getBytesCompressed());
-  }
-
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
