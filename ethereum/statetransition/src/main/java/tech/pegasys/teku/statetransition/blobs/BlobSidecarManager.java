@@ -38,10 +38,6 @@ public interface BlobSidecarManager {
             final BlobSidecar blobSidecar, final RemoteOrigin remoteOrigin) {}
 
         @Override
-        public void subscribeToReceivedBlobSidecar(
-            final ReceivedBlobSidecarListener receivedBlobSidecarListener) {}
-
-        @Override
         public boolean isAvailabilityRequiredAtSlot(final UInt64 slot) {
           return false;
         }
@@ -64,18 +60,12 @@ public interface BlobSidecarManager {
 
   void prepareForBlockImport(BlobSidecar blobSidecar, RemoteOrigin origin);
 
-  void subscribeToReceivedBlobSidecar(ReceivedBlobSidecarListener receivedBlobSidecarListener);
-
   boolean isAvailabilityRequiredAtSlot(UInt64 slot);
 
   BlobSidecarsAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block);
 
   BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
       SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
-
-  interface ReceivedBlobSidecarListener {
-    void onBlobSidecarReceived(BlobSidecar blobSidecar);
-  }
 
   enum RemoteOrigin {
     RPC,

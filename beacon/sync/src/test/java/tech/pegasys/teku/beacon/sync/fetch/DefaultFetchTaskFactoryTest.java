@@ -16,6 +16,7 @@ package tech.pegasys.teku.beacon.sync.fetch;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -37,9 +38,10 @@ public class DefaultFetchTaskFactoryTest {
   }
 
   @Test
-  public void createsFetchBlobSidecarTask() {
-    final FetchBlobSidecarTask task =
-        fetchTaskFactory.createFetchBlobSidecarTask(new BlobIdentifier(Bytes32.ZERO, UInt64.ZERO));
+  public void createsFetchBlobSidecarsTask() {
+    final FetchBlobSidecarsTask task =
+        fetchTaskFactory.createFetchBlobSidecarsTask(
+            Bytes32.ZERO, List.of(new BlobIdentifier(Bytes32.ZERO, UInt64.ZERO)));
     assertThat(task).isNotNull();
   }
 }
