@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.fetch.FetchResult.Status;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
@@ -257,9 +257,8 @@ public class FetchBlobSidecarsTaskTest extends AbstractFetchTaskTest {
     when(peer.requestBlobSidecarsByRoot(eq(blobIdentifiers), any()))
         .thenAnswer(
             invocationOnMock -> {
-              final RpcResponseHandler<BlobSidecar> handler = invocationOnMock.getArgument(1);
+              final RpcResponseListener<BlobSidecar> handler = invocationOnMock.getArgument(1);
               blobSidecars.forEach(handler::onResponse);
-              handler.onCompleted();
               return SafeFuture.COMPLETE;
             });
   }
