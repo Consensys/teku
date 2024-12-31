@@ -123,7 +123,7 @@ public class RecentBlobSidecarsFetchService
       final FetchBlobSidecarsTask task, final List<BlobSidecar> result) {
     result.forEach(
         blobSidecar -> {
-          LOG.trace("Successfully fetched blob sidecar: {}", result);
+          LOG.trace("Successfully fetched blob sidecar: {}", blobSidecar);
           blobSidecarSubscribers.forEach(s -> s.onBlobSidecar(blobSidecar));
         });
     // After retrieved blob sidecars have been processed, stop tracking it
