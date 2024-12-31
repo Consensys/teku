@@ -33,7 +33,9 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 public class Eth2IncomingRequestHandler<
         TRequest extends RpcRequest & SszData, TResponse extends SszData>
     implements RpcRequestHandler {
+
   private static final Logger LOG = LogManager.getLogger();
+
   private static final Duration RECEIVE_INCOMING_REQUEST_TIMEOUT = Duration.ofSeconds(10);
 
   private final PeerLookup peerLookup;
@@ -119,9 +121,8 @@ public class Eth2IncomingRequestHandler<
 
   private void ensureRequestReceivedWithinTimeLimit(final RpcStream stream) {
     asyncRunner
-        .getDelayedFuture(RECEIVE_INCOMING_REQUEST_TIMEOUT)
-        .thenAccept(
-            (__) -> {
+        .runAfterDelay(
+            () -> {
               if (!requestHandled.get()) {
                 LOG.debug(
                     "Failed to receive incoming request data within {} sec for protocol {}. Close stream.",
@@ -129,7 +130,8 @@ public class Eth2IncomingRequestHandler<
                     protocolId);
                 stream.closeAbruptly().ifExceptionGetsHereRaiseABug();
               }
-            })
+            },
+            RECEIVE_INCOMING_REQUEST_TIMEOUT)
         .ifExceptionGetsHereRaiseABug();
   }
 
