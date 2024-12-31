@@ -116,7 +116,7 @@ public class Eth2OutgoingRequestHandler<
         throw new RpcException.ExtraDataAppendedException(" extra data: " + bufToString(data));
       }
 
-      List<TResponse> maybeResponses = responseDecoder.decodeNextResponses(data);
+      final List<TResponse> maybeResponses = responseDecoder.decodeNextResponses(data);
       final int chunksReceived = currentChunkCount.addAndGet(maybeResponses.size());
 
       if (chunksReceived > maximumResponseChunks) {
@@ -161,8 +161,8 @@ public class Eth2OutgoingRequestHandler<
     final int contentSize = Integer.min(buf.readableBytes(), 1024);
     String bufContent = "";
     if (contentSize > 0) {
-      ByteBuf bufSlice = buf.slice(0, contentSize);
-      byte[] bytes = new byte[bufSlice.readableBytes()];
+      final ByteBuf bufSlice = buf.slice(0, contentSize);
+      final byte[] bytes = new byte[bufSlice.readableBytes()];
       bufSlice.getBytes(0, bytes);
       bufContent += Bytes.wrap(bytes);
       if (contentSize < buf.readableBytes()) {
