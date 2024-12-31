@@ -55,7 +55,7 @@ public class Eth2OutgoingRequestHandler<
   private static final Logger LOG = LogManager.getLogger();
 
   @VisibleForTesting static final Duration READ_COMPLETE_TIMEOUT = Duration.ofSeconds(10);
-  @VisibleForTesting static final Duration RESPONSE_CHUNK_ARRIVAL_TIMEOUT = Duration.ofSeconds(30);
+  @VisibleForTesting static final Duration RESPONSE_CHUNK_ARRIVAL_TIMEOUT = Duration.ofSeconds(10);
 
   private final AsyncRunner asyncRunner;
   private final int maximumResponseChunks;

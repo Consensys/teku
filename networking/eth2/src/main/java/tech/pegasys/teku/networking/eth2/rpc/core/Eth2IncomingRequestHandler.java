@@ -33,7 +33,9 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 public class Eth2IncomingRequestHandler<
         TRequest extends RpcRequest & SszData, TResponse extends SszData>
     implements RpcRequestHandler {
+
   private static final Logger LOG = LogManager.getLogger();
+
   private static final Duration RECEIVE_INCOMING_REQUEST_TIMEOUT = Duration.ofSeconds(10);
 
   private final PeerLookup peerLookup;
