@@ -21,6 +21,7 @@ import java.util.Locale;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
 class BLSPublicKeySerializer extends JsonSerializer<BLSPublicKey> {
+
   @Override
   public void serialize(
       final BLSPublicKey value, final JsonGenerator gen, final SerializerProvider serializers)
