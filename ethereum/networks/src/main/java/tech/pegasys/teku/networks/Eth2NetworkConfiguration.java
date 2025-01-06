@@ -907,7 +907,7 @@ public class Eth2NetworkConfiguration {
               "enr:-KG4QF7z4LUdMfgwvh-fS-MDv_1hPSUCqGfyOWGLNJuoBHKFAMSHz8geQn8v3qDDbuSQKud3WIAjKqR4gqJoLBUEJ08ZhGV0aDKQDc1ElgAAAG___________4JpZIJ2NIJpcIQjzq5ciXNlY3AyNTZrMaECt7YO363pV54d3QdgnluL5kxzhCR_k0yM9C-G6bqMGoKDdGNwgiMog3VkcIIjKA",
               // GnosisDAO Bootnode: 35.210.126.23
               "enr:-LK4QCUTEmZrT1AgCKdyVgwnHL5J0VSoxsyjruAtwo-owBTBVEOyAnQRVNXlcW5aL-ycntk5oHDrKCR-DXZAlUAKpjEBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCdM7Z1BAAAb___________gmlkgnY0gmlwhCPSfheJc2VjcDI1NmsxoQNpdf8U9pzsU9m6Hzgd1rmTI-On-QImJnkZBGqDp4org4N0Y3CCIyiDdWRwgiMo")
-          .terminalBlockHashEpochOverride(UInt64.valueOf(27264))
+          .terminalBlockHashEpochOverride(UInt64.valueOf(27263))
           .terminalBlockHashOverride(
               Bytes32.fromHexString(
                   "0x39f44fc16dc964e8d2d1637b99e12992be4a4f766a66658da730e20e511ced64"));
