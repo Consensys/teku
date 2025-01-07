@@ -28,13 +28,13 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 
 public class Eth2IncomingRequestHandler<
         TRequest extends RpcRequest & SszData, TResponse extends SszData>
     implements RpcRequestHandler {
   private static final Logger LOG = LogManager.getLogger();
-  private static final Duration RECEIVE_INCOMING_REQUEST_TIMEOUT = Duration.ofSeconds(10);
 
   private final PeerLookup peerLookup;
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
@@ -45,6 +45,7 @@ public class Eth2IncomingRequestHandler<
   private final String protocolId;
   private final AsyncRunner asyncRunner;
   private final AtomicBoolean requestHandled = new AtomicBoolean(false);
+  private final Duration respTimeout;
 
   public Eth2IncomingRequestHandler(
       final String protocolId,
@@ -52,13 +53,15 @@ public class Eth2IncomingRequestHandler<
       final RpcRequestDecoder<TRequest> requestDecoder,
       final AsyncRunner asyncRunner,
       final PeerLookup peerLookup,
-      final LocalMessageHandler<TRequest, TResponse> localMessageHandler) {
+      final LocalMessageHandler<TRequest, TResponse> localMessageHandler,
+      final NetworkingSpecConfig networkingConfig) {
     this.protocolId = protocolId;
     this.asyncRunner = asyncRunner;
     this.peerLookup = peerLookup;
     this.localMessageHandler = localMessageHandler;
     this.responseEncoder = responseEncoder;
     this.requestDecoder = requestDecoder;
+    this.respTimeout = Duration.ofSeconds(networkingConfig.getRespTimeout());
   }
 
   @Override
@@ -118,14 +121,15 @@ public class Eth2IncomingRequestHandler<
   }
 
   private void ensureRequestReceivedWithinTimeLimit(final RpcStream stream) {
+    final Duration timeout = respTimeout;
     asyncRunner
-        .getDelayedFuture(RECEIVE_INCOMING_REQUEST_TIMEOUT)
+        .getDelayedFuture(timeout)
         .thenAccept(
             (__) -> {
               if (!requestHandled.get()) {
                 LOG.debug(
                     "Failed to receive incoming request data within {} sec for protocol {}. Close stream.",
-                    RECEIVE_INCOMING_REQUEST_TIMEOUT.toSeconds(),
+                    timeout.toSeconds(),
                     protocolId);
                 stream.closeAbruptly().ifExceptionGetsHereRaiseABug();
               }
