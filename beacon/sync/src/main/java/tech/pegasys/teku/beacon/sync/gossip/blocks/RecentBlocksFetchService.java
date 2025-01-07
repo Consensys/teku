@@ -106,7 +106,7 @@ public class RecentBlocksFetchService
       // We already have this block, waiting for blobs
       return;
     }
-    final FetchBlockTask task = fetchTaskFactory.createFetchBlockTask(blockRoot);
+    final FetchBlockTask task = createTask(blockRoot);
     if (allTasks.putIfAbsent(blockRoot, task) != null) {
       // We're already tracking this task
       task.cancel();
@@ -119,6 +119,11 @@ public class RecentBlocksFetchService
   @Override
   public void cancelRecentBlockRequest(final Bytes32 blockRoot) {
     cancelRequest(blockRoot);
+  }
+
+  @Override
+  public FetchBlockTask createTask(final Bytes32 key) {
+    return fetchTaskFactory.createFetchBlockTask(key);
   }
 
   @Override

@@ -17,6 +17,7 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.beacon.sync.fetch.BlockRootAndBlobIdentifiers;
 import tech.pegasys.teku.beacon.sync.fetch.FetchBlobSidecarsTask;
 import tech.pegasys.teku.beacon.sync.fetch.FetchTaskFactory;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
@@ -30,7 +31,8 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifie
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 
 public class RecentBlobSidecarsFetchService
-    extends AbstractFetchService<Bytes32, FetchBlobSidecarsTask, List<BlobSidecar>>
+    extends AbstractFetchService<
+        BlockRootAndBlobIdentifiers, FetchBlobSidecarsTask, List<BlobSidecar>>
     implements RecentBlobSidecarsFetcher {
 
   private static final Logger LOG = LogManager.getLogger();
@@ -102,9 +104,10 @@ public class RecentBlobSidecarsFetchService
       // We already have all required blob sidecars
       return;
     }
-    final FetchBlobSidecarsTask task =
-        fetchTaskFactory.createFetchBlobSidecarsTask(blockRoot, requiredBlobIdentifiers);
-    if (allTasks.putIfAbsent(blockRoot, task) != null) {
+    final BlockRootAndBlobIdentifiers key =
+        new BlockRootAndBlobIdentifiers(blockRoot, requiredBlobIdentifiers);
+    final FetchBlobSidecarsTask task = createTask(key);
+    if (allTasks.putIfAbsent(key, task) != null) {
       // We're already tracking this task
       task.cancel();
       return;
@@ -114,8 +117,18 @@ public class RecentBlobSidecarsFetchService
   }
 
   @Override
-  public void cancelRecentBlobSidecarsRequest(final Bytes32 blockRoot) {
-    cancelRequest(blockRoot);
+  public void cancelRecentBlobSidecarsRequests(final Bytes32 blockRoot) {
+    allTasks.forEach(
+        (key, __) -> {
+          if (key.blockRoot().equals(blockRoot)) {
+            cancelRequest(key);
+          }
+        });
+  }
+
+  @Override
+  public FetchBlobSidecarsTask createTask(final BlockRootAndBlobIdentifiers key) {
+    return fetchTaskFactory.createFetchBlobSidecarsTask(key);
   }
 
   @Override
@@ -135,13 +148,13 @@ public class RecentBlobSidecarsFetchService
 
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
-    cancelRecentBlobSidecarsRequest(block.getRoot());
+    cancelRecentBlobSidecarsRequests(block.getRoot());
   }
 
   private void setupSubscribers() {
     blockBlobSidecarsTrackersPool.subscribeRequiredBlobSidecars(this::requestRecentBlobSidecars);
     blockBlobSidecarsTrackersPool.subscribeRequiredBlobSidecarsDropped(
-        this::cancelRecentBlobSidecarsRequest);
+        this::cancelRecentBlobSidecarsRequests);
     forwardSync.subscribeToSyncChanges(this::onSyncStatusChanged);
   }
 

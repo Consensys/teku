@@ -39,7 +39,7 @@ public interface RecentBlobSidecarsFetcher extends ServiceFacade, ReceivedBlockE
             final Bytes32 blockRoot, final List<BlobIdentifier> blobIdentifiers) {}
 
         @Override
-        public void cancelRecentBlobSidecarsRequest(final Bytes32 blockRoot) {}
+        public void cancelRecentBlobSidecarsRequests(final Bytes32 blockRoot) {}
 
         @Override
         public SafeFuture<?> start() {
@@ -86,5 +86,5 @@ public interface RecentBlobSidecarsFetcher extends ServiceFacade, ReceivedBlockE
 
   void requestRecentBlobSidecars(Bytes32 blockRoot, List<BlobIdentifier> blobIdentifiers);
 
-  void cancelRecentBlobSidecarsRequest(Bytes32 blockRoot);
+  void cancelRecentBlobSidecarsRequests(Bytes32 blockRoot);
 }

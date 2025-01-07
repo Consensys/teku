@@ -113,7 +113,7 @@ public class NoopSyncService
   }
 
   @Override
-  public void cancelRecentBlobSidecarsRequest(final Bytes32 blockRoot) {
+  public void cancelRecentBlobSidecarsRequests(final Bytes32 blockRoot) {
     // No-op
   }
 

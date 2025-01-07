@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.beacon.sync.fetch.FetchResult.Status;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -27,39 +26,36 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
-public class FetchBlobSidecarsTask extends AbstractFetchTask<Bytes32, List<BlobSidecar>> {
+public class FetchBlobSidecarsTask
+    extends AbstractFetchTask<BlockRootAndBlobIdentifiers, List<BlobSidecar>> {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Bytes32 blockRoot;
-  private final List<BlobIdentifier> blobIdentifiers;
+  private final BlockRootAndBlobIdentifiers blockRootAndBlobIdentifiers;
 
   FetchBlobSidecarsTask(
       final P2PNetwork<Eth2Peer> eth2Network,
-      final Bytes32 blockRoot,
-      final List<BlobIdentifier> blobIdentifiers) {
+      final BlockRootAndBlobIdentifiers blockRootAndBlobIdentifiers) {
     super(eth2Network, Optional.empty());
-    this.blockRoot = blockRoot;
-    this.blobIdentifiers = blobIdentifiers;
+    this.blockRootAndBlobIdentifiers = blockRootAndBlobIdentifiers;
   }
 
   public FetchBlobSidecarsTask(
       final P2PNetwork<Eth2Peer> eth2Network,
       final Optional<Eth2Peer> preferredPeer,
-      final Bytes32 blockRoot,
-      final List<BlobIdentifier> blobIdentifiers) {
+      final BlockRootAndBlobIdentifiers blockRootAndBlobIdentifiers) {
     super(eth2Network, preferredPeer);
-    this.blockRoot = blockRoot;
-    this.blobIdentifiers = blobIdentifiers;
+    this.blockRootAndBlobIdentifiers = blockRootAndBlobIdentifiers;
   }
 
   @Override
-  public Bytes32 getKey() {
-    return blockRoot;
+  public BlockRootAndBlobIdentifiers getKey() {
+    return blockRootAndBlobIdentifiers;
   }
 
   @Override
   SafeFuture<FetchResult<List<BlobSidecar>>> fetch(final Eth2Peer peer) {
+    final List<BlobIdentifier> blobIdentifiers = blockRootAndBlobIdentifiers.blobIdentifiers();
     final List<BlobSidecar> blobSidecars = new ArrayList<>(blobIdentifiers.size());
     return peer.requestBlobSidecarsByRoot(
             blobIdentifiers, RpcResponseListener.from(blobSidecars::add))
@@ -69,7 +65,9 @@ public class FetchBlobSidecarsTask extends AbstractFetchTask<Bytes32, List<BlobS
               LOG.debug(
                   String.format(
                       "Failed to fetch %d blob sidecars for block root %s from peer %s",
-                      blobIdentifiers.size(), blockRoot, peer.getId()),
+                      blobIdentifiers.size(),
+                      blockRootAndBlobIdentifiers.blockRoot(),
+                      peer.getId()),
                   err);
               return FetchResult.createFailed(peer, Status.FETCH_FAILED);
             });

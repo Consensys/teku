@@ -37,9 +37,11 @@ public class FetchBlobSidecarsTaskTest extends AbstractFetchTaskTest {
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
     final List<BlobIdentifier> blobIdentifiers = getBlobIdentifiers(blobSidecars);
 
+    final BlockRootAndBlobIdentifiers blockRootAndBlobIdentifiers =
+        new BlockRootAndBlobIdentifiers(block.getRoot(), blobIdentifiers);
     final FetchBlobSidecarsTask task =
-        new FetchBlobSidecarsTask(eth2P2PNetwork, block.getRoot(), blobIdentifiers);
-    assertThat(task.getKey()).isEqualTo(block.getRoot());
+        new FetchBlobSidecarsTask(eth2P2PNetwork, blockRootAndBlobIdentifiers);
+    assertThat(task.getKey()).isEqualTo(blockRootAndBlobIdentifiers);
 
     final Eth2Peer peer = registerNewPeer(1);
     mockRpcResponse(peer, blobIdentifiers, blobSidecars);
@@ -58,8 +60,10 @@ public class FetchBlobSidecarsTaskTest extends AbstractFetchTaskTest {
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
     final List<BlobIdentifier> blobIdentifiers = getBlobIdentifiers(blobSidecars);
 
+    final BlockRootAndBlobIdentifiers blockRootAndBlobIdentifiers =
+        new BlockRootAndBlobIdentifiers(block.getRoot(), blobIdentifiers);
     final FetchBlobSidecarsTask task =
-        new FetchBlobSidecarsTask(eth2P2PNetwork, block.getRoot(), blobIdentifiers);
+        new FetchBlobSidecarsTask(eth2P2PNetwork, blockRootAndBlobIdentifiers);
 
     final SafeFuture<FetchResult<List<BlobSidecar>>> result = task.run();
     assertThat(result).isDone();
@@ -75,8 +79,10 @@ public class FetchBlobSidecarsTaskTest extends AbstractFetchTaskTest {
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
     final List<BlobIdentifier> blobIdentifiers = getBlobIdentifiers(blobSidecars);
 
+    final BlockRootAndBlobIdentifiers blockRootAndBlobIdentifiers =
+        new BlockRootAndBlobIdentifiers(block.getRoot(), blobIdentifiers);
     final FetchBlobSidecarsTask task =
-        new FetchBlobSidecarsTask(eth2P2PNetwork, block.getRoot(), blobIdentifiers);
+        new FetchBlobSidecarsTask(eth2P2PNetwork, blockRootAndBlobIdentifiers);
 
     final Eth2Peer peer = registerNewPeer(1);
     when(peer.requestBlobSidecarsByRoot(eq(blobIdentifiers), any()))
@@ -106,8 +112,10 @@ public class FetchBlobSidecarsTaskTest extends AbstractFetchTaskTest {
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
     final List<BlobIdentifier> blobIdentifiers = getBlobIdentifiers(blobSidecars);
 
+    final BlockRootAndBlobIdentifiers blockRootAndBlobIdentifiers =
+        new BlockRootAndBlobIdentifiers(block.getRoot(), blobIdentifiers);
     final FetchBlobSidecarsTask task =
-        new FetchBlobSidecarsTask(eth2P2PNetwork, block.getRoot(), blobIdentifiers);
+        new FetchBlobSidecarsTask(eth2P2PNetwork, blockRootAndBlobIdentifiers);
 
     final Eth2Peer peer = registerNewPeer(1);
     when(peer.requestBlobSidecarsByRoot(eq(blobIdentifiers), any()))
@@ -141,8 +149,10 @@ public class FetchBlobSidecarsTaskTest extends AbstractFetchTaskTest {
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
     final List<BlobIdentifier> blobIdentifiers = getBlobIdentifiers(blobSidecars);
 
+    final BlockRootAndBlobIdentifiers blockRootAndBlobIdentifiers =
+        new BlockRootAndBlobIdentifiers(block.getRoot(), blobIdentifiers);
     final FetchBlobSidecarsTask task =
-        new FetchBlobSidecarsTask(eth2P2PNetwork, block.getRoot(), blobIdentifiers);
+        new FetchBlobSidecarsTask(eth2P2PNetwork, blockRootAndBlobIdentifiers);
 
     final Eth2Peer peer = registerNewPeer(1);
     when(peer.requestBlobSidecarsByRoot(eq(blobIdentifiers), any()))
@@ -170,9 +180,11 @@ public class FetchBlobSidecarsTaskTest extends AbstractFetchTaskTest {
     final List<BlobIdentifier> blobIdentifiers = getBlobIdentifiers(blobSidecars);
     mockRpcResponse(preferredPeer, blobIdentifiers, blobSidecars);
 
+    final BlockRootAndBlobIdentifiers blockRootAndBlobIdentifiers =
+        new BlockRootAndBlobIdentifiers(block.getRoot(), blobIdentifiers);
     final FetchBlobSidecarsTask task =
         new FetchBlobSidecarsTask(
-            eth2P2PNetwork, Optional.of(preferredPeer), block.getRoot(), blobIdentifiers);
+            eth2P2PNetwork, Optional.of(preferredPeer), blockRootAndBlobIdentifiers);
 
     // Add a peer
     registerNewPeer(2);
@@ -195,9 +207,11 @@ public class FetchBlobSidecarsTaskTest extends AbstractFetchTaskTest {
     when(preferredPeer.requestBlobSidecarsByRoot(eq(blobIdentifiers), any()))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("whoops")));
 
+    final BlockRootAndBlobIdentifiers blockRootAndBlobIdentifiers =
+        new BlockRootAndBlobIdentifiers(block.getRoot(), blobIdentifiers);
     final FetchBlobSidecarsTask task =
         new FetchBlobSidecarsTask(
-            eth2P2PNetwork, Optional.of(preferredPeer), block.getRoot(), blobIdentifiers);
+            eth2P2PNetwork, Optional.of(preferredPeer), blockRootAndBlobIdentifiers);
 
     final SafeFuture<FetchResult<List<BlobSidecar>>> result = task.run();
     assertThat(result).isDone();
@@ -227,9 +241,11 @@ public class FetchBlobSidecarsTaskTest extends AbstractFetchTaskTest {
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
     final List<BlobIdentifier> blobIdentifiers = getBlobIdentifiers(blobSidecars);
 
+    final BlockRootAndBlobIdentifiers blockRootAndBlobIdentifiers =
+        new BlockRootAndBlobIdentifiers(block.getRoot(), blobIdentifiers);
     final FetchBlobSidecarsTask task =
-        new FetchBlobSidecarsTask(eth2P2PNetwork, block.getRoot(), blobIdentifiers);
-    assertThat(task.getKey()).isEqualTo(block.getRoot());
+        new FetchBlobSidecarsTask(eth2P2PNetwork, blockRootAndBlobIdentifiers);
+    assertThat(task.getKey()).isEqualTo(blockRootAndBlobIdentifiers);
 
     final Eth2Peer peer = registerNewPeer(1);
     mockRpcResponse(peer, blobIdentifiers, blobSidecars);

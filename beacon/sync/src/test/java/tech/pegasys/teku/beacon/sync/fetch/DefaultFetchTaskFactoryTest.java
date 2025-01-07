@@ -41,7 +41,8 @@ public class DefaultFetchTaskFactoryTest {
   public void createsFetchBlobSidecarsTask() {
     final FetchBlobSidecarsTask task =
         fetchTaskFactory.createFetchBlobSidecarsTask(
-            Bytes32.ZERO, List.of(new BlobIdentifier(Bytes32.ZERO, UInt64.ZERO)));
+            new BlockRootAndBlobIdentifiers(
+                Bytes32.ZERO, List.of(new BlobIdentifier(Bytes32.ZERO, UInt64.ZERO))));
     assertThat(task).isNotNull();
   }
 }

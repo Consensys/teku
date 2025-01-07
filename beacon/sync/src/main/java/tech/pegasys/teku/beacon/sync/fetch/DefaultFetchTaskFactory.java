@@ -13,12 +13,10 @@
 
 package tech.pegasys.teku.beacon.sync.fetch;
 
-import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
 public class DefaultFetchTaskFactory implements FetchTaskFactory {
 
@@ -36,9 +34,8 @@ public class DefaultFetchTaskFactory implements FetchTaskFactory {
 
   @Override
   public FetchBlobSidecarsTask createFetchBlobSidecarsTask(
-      final Bytes32 blockRoot,
-      final List<BlobIdentifier> blobIdentifiers,
+      final BlockRootAndBlobIdentifiers blockRootAndBlobIdentifiers,
       final Optional<Eth2Peer> preferredPeer) {
-    return new FetchBlobSidecarsTask(eth2Network, preferredPeer, blockRoot, blobIdentifiers);
+    return new FetchBlobSidecarsTask(eth2Network, preferredPeer, blockRootAndBlobIdentifiers);
   }
 }
