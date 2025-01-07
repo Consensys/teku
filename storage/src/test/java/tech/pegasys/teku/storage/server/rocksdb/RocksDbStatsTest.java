@@ -53,7 +53,7 @@ class RocksDbStatsTest {
 
       when(database.getLongProperty(any())).thenThrow(new RocksDBException("Database shutdown"));
       final List<Observation> metrics =
-              metricsSystem.streamObservations().collect(Collectors.toList());
+          metricsSystem.streamObservations().collect(Collectors.toList());
       assertThat(metrics).isNotEmpty();
     }
   }
