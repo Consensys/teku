@@ -174,7 +174,7 @@ public abstract class Node {
     waitFor(
         () -> {
           final List<MetricValue> metrics = metricFetcher.getAllMetrics();
-          LOG.debug("Metrics: {}", metrics);
+          LOG.info("Metrics: {}", metrics);
           assertThat(
                   MetricMatcher.anyMatching(
                       metrics, nameCondition, labelsCondition, valueCondition))
