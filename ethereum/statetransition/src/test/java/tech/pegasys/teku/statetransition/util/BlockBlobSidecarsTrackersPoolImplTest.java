@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -125,6 +126,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     blockBlobSidecarsTrackersPool.subscribeRequiredBlobSidecarDropped(
         requiredBlobSidecarDroppedEvents::add);
     blockBlobSidecarsTrackersPool.subscribeNewBlobSidecar(newBlobSidecarEvents::add);
+    when(executionLayer.engineGetBlobs(any(), eq(currentSlot)))
+        .thenReturn(SafeFuture.completedFuture(List.of()));
     when(blobSidecarPublisher.apply(any())).thenReturn(SafeFuture.COMPLETE);
     setSlot(currentSlot);
   }
@@ -470,7 +473,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     assertThat(blockBlobSidecarsTracker.getBlobSidecars().values())
         .containsExactlyInAnyOrderElementsOf(blobSidecars);
     assertThat(blockBlobSidecarsTracker.getBlock()).isPresent();
-    assertThat(blockBlobSidecarsTracker.isRpcFetchTriggered()).isFalse();
+    assertThat(blockBlobSidecarsTracker.isRpcBlockFetchTriggered()).isFalse();
     assertThatSafeFuture(blockBlobSidecarsTracker.getCompletionFuture()).isCompleted();
 
     assertBlobSidecarsCount(blobSidecars.size());
@@ -500,7 +503,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     assertThat(blockBlobSidecarsTracker.getBlobSidecars().values())
         .containsExactlyInAnyOrderElementsOf(blobSidecars);
     assertThat(blockBlobSidecarsTracker.getBlock()).isPresent();
-    assertThat(blockBlobSidecarsTracker.isRpcFetchTriggered()).isFalse();
+    assertThat(blockBlobSidecarsTracker.isRpcBlockFetchTriggered()).isFalse();
     assertThatSafeFuture(blockBlobSidecarsTracker.getCompletionFuture()).isNotCompleted();
 
     assertBlobSidecarsCount(0);
@@ -518,7 +521,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
         blockBlobSidecarsTrackersPool.getOrCreateBlockBlobSidecarsTracker(block);
 
     assertThat(blockBlobSidecarsTracker.getBlock()).isPresent();
-    assertThat(blockBlobSidecarsTracker.isRpcFetchTriggered()).isFalse();
+    assertThat(blockBlobSidecarsTracker.isRpcBlockFetchTriggered()).isFalse();
     assertThatSafeFuture(blockBlobSidecarsTracker.getCompletionFuture()).isNotCompleted();
 
     assertBlobSidecarsCount(0);
@@ -678,7 +681,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             (slotAndRoot) -> {
               when(tracker.add(any())).thenReturn(true);
               when(tracker.getMissingBlobSidecars())
-                  .thenAnswer(__ -> missingBlobIdentifiers.stream());
+                  .thenAnswer(__ -> missingBlobIdentifiers.stream())
+                  .thenAnswer(__ -> Stream.empty());
               when(tracker.getBlock()).thenReturn(Optional.of(block));
               return tracker;
             });
@@ -701,7 +705,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
 
     // local el fetch triggered
-    verify(tracker).setLocalElFetchTriggered();
+    verify(tracker).setLocalElBlobsFetchTriggered();
 
     // prepare partial response of 3 blobAndProofs
     final List<Optional<BlobAndProof>> blobAndProofsFromEL =
@@ -801,7 +805,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   }
 
   @Test
-  void shouldFetchMissingBlockAndBlobSidecars() {
+  void shouldFetchMissingBlock() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
     final BlobSidecar blobSidecar =
         dataStructureUtil
@@ -810,14 +814,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             .index(UInt64.valueOf(2))
             .build();
 
-    final Set<BlobIdentifier> missingBlobs =
-        Set.of(
-            new BlobIdentifier(block.getRoot(), UInt64.ONE),
-            new BlobIdentifier(block.getRoot(), UInt64.ZERO));
-
     final BlockBlobSidecarsTracker mockedTracker = mock(BlockBlobSidecarsTracker.class);
     when(mockedTracker.getBlock()).thenReturn(Optional.empty());
-    when(mockedTracker.getMissingBlobSidecars()).thenReturn(missingBlobs.stream());
     when(mockedTracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
 
     mockedTrackersFactory = Optional.of((__) -> mockedTracker);
@@ -828,91 +826,14 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     asyncRunner.executeQueuedActions();
 
-    verify(mockedTracker).setRpcFetchTriggered();
-    verify(mockedTracker, never()).setLocalElFetchTriggered();
+    verify(mockedTracker).setRpcBlockFetchTriggered();
+    verify(mockedTracker, never()).setLocalElBlobsFetchTriggered();
 
     assertThat(requiredBlockRootEvents).containsExactly(block.getRoot());
-    assertThat(requiredBlobSidecarEvents).containsExactlyElementsOf(missingBlobs);
 
     assertStats("block", "rpc_fetch", 1);
-    assertStats("blob_sidecar", "rpc_fetch", missingBlobs.size());
 
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
-    assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
-  }
-
-  @Test
-  void shouldDropBlobSidecarsThatHasBeenFetchedButNotPresentInBlock() {
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
-
-    final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(currentSlot, block.getRoot());
-    final BlobSidecar blobSidecar =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .signedBeaconBlockHeader(block.asHeader())
-            .index(UInt64.valueOf(2))
-            .build();
-
-    final Set<BlobIdentifier> blobsNotPresentInBlock =
-        Set.of(
-            new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), UInt64.valueOf(2)),
-            new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), UInt64.valueOf(3)));
-
-    mockedTrackersFactory =
-        Optional.of(
-            (slotAndRoot) -> {
-              BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
-              when(tracker.getBlock()).thenReturn(Optional.empty());
-              when(tracker.getSlotAndBlockRoot()).thenReturn(slotAndBlockRoot);
-              when(tracker.setBlock(block)).thenReturn(true);
-              when(tracker.isRpcFetchTriggered()).thenReturn(true);
-              when(tracker.getUnusedBlobSidecarsForBlock())
-                  .thenReturn(blobsNotPresentInBlock.stream());
-              return tracker;
-            });
-
-    blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP);
-
-    blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
-
-    assertThat(requiredBlobSidecarDroppedEvents).containsExactlyElementsOf(blobsNotPresentInBlock);
-  }
-
-  @Test
-  void shouldNotDropUnusedBlobSidecarsIfFetchingHasNotOccurred() {
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
-
-    final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(currentSlot, block.getRoot());
-    final BlobSidecar blobSidecar =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .signedBeaconBlockHeader(block.asHeader())
-            .index(UInt64.valueOf(2))
-            .build();
-
-    final Set<BlobIdentifier> blobsNotUserInBlock =
-        Set.of(
-            new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), UInt64.valueOf(2)),
-            new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), UInt64.valueOf(3)));
-
-    mockedTrackersFactory =
-        Optional.of(
-            (slotAndRoot) -> {
-              BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
-              when(tracker.getBlock()).thenReturn(Optional.empty());
-              when(tracker.getSlotAndBlockRoot()).thenReturn(slotAndBlockRoot);
-              when(tracker.setBlock(block)).thenReturn(true);
-              when(tracker.isRpcFetchTriggered()).thenReturn(false);
-              when(tracker.getUnusedBlobSidecarsForBlock())
-                  .thenReturn(blobsNotUserInBlock.stream());
-              return tracker;
-            });
-
-    blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP);
-
-    blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
-
-    assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
   }
 
   @Test
@@ -952,10 +873,10 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
         Optional.of(
             (slotAndRoot) -> {
               BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
-              when(tracker.getMissingBlobSidecars()).thenReturn(missingBlobs.stream());
+              when(tracker.getMissingBlobSidecars()).thenAnswer(__ -> missingBlobs.stream());
               when(tracker.getBlock()).thenReturn(Optional.of(block));
               when(tracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
-              when(tracker.isRpcFetchTriggered()).thenReturn(true);
+              when(tracker.isRpcBlobsFetchTriggered()).thenReturn(true);
               return tracker;
             });
 
@@ -974,7 +895,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   }
 
   @Test
-  void shouldTryToFetchFromLocalELWhenBlockArrivesAfterRPCFetch() {
+  void shouldTryToFetchBlobSidecarsWhenBlockArrivesAfterRPCFetch() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
 
     final Set<BlobIdentifier> missingBlobs =
@@ -998,8 +919,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
               when(tracker.getBlock()).thenReturn(Optional.empty());
               when(tracker.setBlock(any())).thenReturn(true);
               when(tracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
-              when(tracker.isRpcFetchTriggered()).thenReturn(true);
-              when(tracker.isLocalElFetchTriggered()).thenReturn(false);
+              when(tracker.isRpcBlockFetchTriggered()).thenReturn(true);
+              when(tracker.isLocalElBlobsFetchTriggered()).thenReturn(true);
               return tracker;
             });
 
@@ -1008,7 +929,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
 
-    verify(tracker, never()).setLocalElFetchTriggered();
+    verify(tracker, never()).setLocalElBlobsFetchTriggered();
 
     when(tracker.getBlock()).thenReturn(Optional.of(block));
 
@@ -1018,7 +939,10 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
 
-    verify(tracker).setLocalElFetchTriggered();
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    asyncRunner.executeQueuedActions();
+
+    verify(tracker).setLocalElBlobsFetchTriggered();
     verify(executionLayer).engineGetBlobs(any(), any());
   }
 
@@ -1039,7 +963,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
               when(tracker.getBlock()).thenReturn(Optional.empty());
               when(tracker.getSlotAndBlockRoot())
                   .thenReturn(signedBeaconBlock.getSlotAndBlockRoot());
-              when(tracker.isRpcFetchTriggered()).thenReturn(true);
+              when(tracker.isRpcBlockFetchTriggered()).thenReturn(true);
               return tracker;
             });
 
@@ -1074,7 +998,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
               when(tracker.getBlock()).thenReturn(Optional.empty());
               when(tracker.getSlotAndBlockRoot())
                   .thenReturn(signedBeaconBlock.getSlotAndBlockRoot());
-              when(tracker.isRpcFetchTriggered()).thenReturn(false);
+              when(tracker.isRpcBlockFetchTriggered()).thenReturn(false);
               return tracker;
             });
 
@@ -1100,14 +1024,15 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     // blocks arrives at slot start
     timeProvider.advanceTimeBySeconds(startSlotInSeconds.longValue());
 
-    final Duration fetchDelay = blockBlobSidecarsTrackersPool.calculateFetchDelay(slotAndBlockRoot);
+    final Duration fetchDelay =
+        blockBlobSidecarsTrackersPool.calculateRpcFetchDelay(slotAndBlockRoot);
 
     // we can wait the full target
     assertThat(fetchDelay).isEqualTo(Duration.ofMillis(TARGET_WAIT_MILLIS.longValue()));
   }
 
   @Test
-  void calculateFetchDelay_shouldRespectMinimumWhenBlockIsLate() {
+  void calculateBlockFetchDelay_shouldRespectMinimumWhenRpcIsLate() {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
 
@@ -1119,14 +1044,15 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     // blocks arrives 200ms before attestation due
     timeProvider.advanceTimeByMillis(startSlotInMillis.plus(3_800).longValue());
 
-    final Duration fetchDelay = blockBlobSidecarsTrackersPool.calculateFetchDelay(slotAndBlockRoot);
+    final Duration fetchDelay =
+        blockBlobSidecarsTrackersPool.calculateRpcFetchDelay(slotAndBlockRoot);
 
     // we can wait the full target
     assertThat(fetchDelay).isEqualTo(Duration.ofMillis(MIN_WAIT_MILLIS.longValue()));
   }
 
   @Test
-  void calculateFetchDelay_shouldRespectTargetWhenBlockIsVeryLate() {
+  void calculateBlockFetchDelay_shouldRespectTargetWhenRpcIsVeryLate() {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
 
@@ -1137,14 +1063,15 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     // blocks arrives 1s after attestation due
     timeProvider.advanceTimeBySeconds(startSlotInSeconds.plus(5).longValue());
 
-    final Duration fetchDelay = blockBlobSidecarsTrackersPool.calculateFetchDelay(slotAndBlockRoot);
+    final Duration fetchDelay =
+        blockBlobSidecarsTrackersPool.calculateRpcFetchDelay(slotAndBlockRoot);
 
     // we can wait the full target
     assertThat(fetchDelay).isEqualTo(Duration.ofMillis(TARGET_WAIT_MILLIS.longValue()));
   }
 
   @Test
-  void calculateFetchDelay_shouldRespectAttestationDueLimit() {
+  void calculateRpcFetchDelay_shouldRespectAttestationDueLimit() {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
 
@@ -1164,7 +1091,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     timeProvider.advanceTimeByMillis(blockArrivalTimeMillis.longValue());
 
-    final Duration fetchDelay = blockBlobSidecarsTrackersPool.calculateFetchDelay(slotAndBlockRoot);
+    final Duration fetchDelay =
+        blockBlobSidecarsTrackersPool.calculateRpcFetchDelay(slotAndBlockRoot);
 
     // we can only wait 200ms less than target
     assertThat(fetchDelay)
@@ -1173,11 +1101,12 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   }
 
   @Test
-  void calculateFetchDelay_shouldReturnZeroIfSlotIsOld() {
+  void calculateRpcFetchDelay_shouldReturnZeroIfSlotIsOld() {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(currentSlot.minus(1), dataStructureUtil.randomBytes32());
 
-    final Duration fetchDelay = blockBlobSidecarsTrackersPool.calculateFetchDelay(slotAndBlockRoot);
+    final Duration fetchDelay =
+        blockBlobSidecarsTrackersPool.calculateRpcFetchDelay(slotAndBlockRoot);
 
     assertThat(fetchDelay).isEqualTo(Duration.ZERO);
   }
@@ -1407,8 +1336,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     if (mockedTrackersFactory.isPresent()) {
       return mockedTrackersFactory.get().apply(slotAndBlockRoot);
     }
-    return new BlockBlobSidecarsTracker(
-        slotAndBlockRoot,
-        UInt64.valueOf(spec.getMaxBlobsPerBlockForHighestMilestone().orElseThrow()));
+    return new BlockBlobSidecarsTracker(slotAndBlockRoot);
   }
 }

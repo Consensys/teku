@@ -821,11 +821,28 @@ public final class DataStructureUtil {
   }
 
   public SingleAttestation randomSingleAttestation() {
+    return randomSingleAttestation(randomUInt64());
+  }
+
+  public SingleAttestation randomSingleAttestation(final UInt64 slot) {
     return spec.getGenesisSchemaDefinitions()
         .toVersionElectra()
         .orElseThrow()
         .getSingleAttestationSchema()
-        .create(randomUInt64(), randomUInt64(), randomAttestationData(), randomSignature());
+        .create(
+            randomUInt64(Integer.MAX_VALUE),
+            randomUInt64(Integer.MAX_VALUE),
+            randomAttestationData(slot),
+            randomSignature());
+  }
+
+  public SingleAttestation randomSingleAttestation(
+      final UInt64 validatorIndex, final UInt64 committeeIndex) {
+    return spec.getGenesisSchemaDefinitions()
+        .toVersionElectra()
+        .orElseThrow()
+        .getSingleAttestationSchema()
+        .create(committeeIndex, validatorIndex, randomAttestationData(), randomSignature());
   }
 
   public Attestation randomAttestation(final long slot) {
@@ -1810,9 +1827,7 @@ public final class DataStructureUtil {
             ? Optional.of(randomSignedValidatorRegistration())
             : Optional.empty(),
         randomWithdrawalList(),
-        randomBytes32(),
-        Optional.of(randomUInt64()),
-        Optional.of(randomUInt64()));
+        randomBytes32());
   }
 
   public ClientVersion randomClientVersion() {

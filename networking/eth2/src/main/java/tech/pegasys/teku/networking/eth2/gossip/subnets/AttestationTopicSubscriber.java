@@ -21,6 +21,7 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -39,6 +40,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
   private final Eth2P2PNetwork eth2P2PNetwork;
   private final Spec spec;
   private final SettableLabelledGauge subnetSubscriptionsGauge;
+  private final AtomicReference<UInt64> currentSlot = new AtomicReference<>(null);
 
   public AttestationTopicSubscriber(
       final Spec spec,
@@ -56,6 +58,15 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
             aggregationSlot, UInt64.valueOf(committeeIndex), committeesAtSlot);
     final UInt64 currentUnsubscriptionSlot = subnetIdToUnsubscribeSlot.getOrDefault(subnetId, ZERO);
     final UInt64 unsubscribeSlot = currentUnsubscriptionSlot.max(aggregationSlot);
+    final UInt64 maybeCurrentSlot = currentSlot.get();
+    if (maybeCurrentSlot != null && unsubscribeSlot.isLessThan(maybeCurrentSlot)) {
+      LOG.trace(
+          "Skipping outdated aggregation subnet {} with unsubscribe due at slot {}",
+          subnetId,
+          unsubscribeSlot);
+      return;
+    }
+
     if (currentUnsubscriptionSlot.equals(ZERO)) {
       eth2P2PNetwork.subscribeToAttestationSubnetId(subnetId);
       toggleAggregateSubscriptionMetric(subnetId, false);
@@ -96,15 +107,25 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
     boolean shouldUpdateENR = false;
 
     for (SubnetSubscription subnetSubscription : newSubscriptions) {
-      int subnetId = subnetSubscription.subnetId();
+      final int subnetId = subnetSubscription.subnetId();
+      final UInt64 maybeCurrentSlot = currentSlot.get();
+      if (maybeCurrentSlot != null
+          && subnetSubscription.unsubscriptionSlot().isLessThan(maybeCurrentSlot)) {
+        LOG.trace(
+            "Skipping outdated persistent subnet {} with unsubscribe due at slot {}",
+            subnetId,
+            subnetSubscription.unsubscriptionSlot());
+        continue;
+      }
+
       shouldUpdateENR = persistentSubnetIdSet.add(subnetId) || shouldUpdateENR;
       LOG.trace(
           "Subscribing to persistent subnet {} with unsubscribe due at slot {}",
           subnetId,
           subnetSubscription.unsubscriptionSlot());
       if (subnetIdToUnsubscribeSlot.containsKey(subnetId)) {
-        UInt64 existingUnsubscriptionSlot = subnetIdToUnsubscribeSlot.get(subnetId);
-        UInt64 unsubscriptionSlot =
+        final UInt64 existingUnsubscriptionSlot = subnetIdToUnsubscribeSlot.get(subnetId);
+        final UInt64 unsubscriptionSlot =
             existingUnsubscriptionSlot.max(subnetSubscription.unsubscriptionSlot());
         LOG.trace(
             "Already subscribed to subnet {}, updating unsubscription slot to {}",
@@ -127,6 +148,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
 
   @Override
   public synchronized void onSlot(final UInt64 slot) {
+    currentSlot.set(slot);
     boolean shouldUpdateENR = false;
 
     final Iterator<Int2ObjectMap.Entry<UInt64>> iterator =
@@ -134,7 +156,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
     while (iterator.hasNext()) {
       final Int2ObjectMap.Entry<UInt64> entry = iterator.next();
       if (entry.getValue().compareTo(slot) < 0) {
-        int subnetId = entry.getIntKey();
+        final int subnetId = entry.getIntKey();
         LOG.trace("Unsubscribing from subnet {}", subnetId);
         eth2P2PNetwork.unsubscribeFromAttestationSubnetId(subnetId);
         if (persistentSubnetIdSet.contains(subnetId)) {

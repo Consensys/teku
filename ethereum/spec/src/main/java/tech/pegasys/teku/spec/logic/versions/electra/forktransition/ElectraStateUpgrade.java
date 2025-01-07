@@ -58,6 +58,7 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
     final PredicatesElectra predicatesElectra = new PredicatesElectra(specConfig);
     final MiscHelpersElectra miscHelpersElectra =
         new MiscHelpersElectra(specConfig, predicatesElectra, schemaDefinitions);
+    final UInt64 activationExitEpoch = miscHelpersElectra.computeActivationExitEpoch(epoch);
     return BeaconStateElectra.required(schemaDefinitions.getBeaconStateSchema().createEmpty())
         .updatedElectra(
             state -> {
@@ -86,11 +87,10 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
               state.setDepositBalanceToConsume(UInt64.ZERO);
               state.setExitBalanceToConsume(
                   beaconStateAccessors.getActivationExitChurnLimit(state));
-              state.setEarliestExitEpoch(findEarliestExitEpoch(state, epoch));
+              state.setEarliestExitEpoch(findEarliestExitEpoch(state, activationExitEpoch));
               state.setConsolidationBalanceToConsume(
                   beaconStateAccessors.getConsolidationChurnLimit(state));
-              state.setEarliestConsolidationEpoch(
-                  miscHelpersElectra.computeActivationExitEpoch(epoch));
+              state.setEarliestConsolidationEpoch(activationExitEpoch);
 
               final SszMutableList<Validator> validators = state.getValidators();
 
@@ -120,12 +120,13 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
             });
   }
 
-  private UInt64 findEarliestExitEpoch(final BeaconState state, final UInt64 currentEpoch) {
-    return state.getValidators().stream()
-        .map(Validator::getExitEpoch)
-        .filter(exitEpoch -> !exitEpoch.equals(FAR_FUTURE_EPOCH))
-        .max(UInt64::compareTo)
-        .orElse(currentEpoch)
-        .increment();
+  private UInt64 findEarliestExitEpoch(final BeaconState state, final UInt64 activationExitEpoch) {
+    final UInt64 maxExitEpochFromValidatorSet =
+        state.getValidators().stream()
+            .map(Validator::getExitEpoch)
+            .filter(exitEpoch -> !exitEpoch.equals(FAR_FUTURE_EPOCH))
+            .max(UInt64::compareTo)
+            .orElse(UInt64.ZERO);
+    return maxExitEpochFromValidatorSet.max(activationExitEpoch).increment();
   }
 }

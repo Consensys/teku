@@ -160,7 +160,7 @@ public class DefaultOperationProcessor implements OperationProcessor {
   }
 
   @Override
-  public void processConsolidationRequest(
+  public void processConsolidationRequests(
       final MutableBeaconState state, final List<ConsolidationRequest> consolidationRequests)
       throws BlockProcessingException {
     spec.getBlockProcessor(state.getSlot())

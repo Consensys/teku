@@ -402,6 +402,7 @@ public class HistoricalBatchFetcher {
     final List<BlobSidecar> blobSidecars =
         blobSidecarsBySlotToImport.getOrDefault(
             block.getSlotAndBlockRoot(), Collections.emptyList());
+
     LOG.trace("Validating {} blob sidecars for block {}", blobSidecars.size(), block.getRoot());
     final BlobSidecarsAndValidationResult validationResult =
         blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, blobSidecars);

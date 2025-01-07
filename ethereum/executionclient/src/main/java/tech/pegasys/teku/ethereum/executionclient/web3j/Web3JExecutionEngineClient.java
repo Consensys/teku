@@ -41,7 +41,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
-import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -233,19 +232,6 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     final Request<?, ForkChoiceUpdatedResultWeb3jResponse> web3jRequest =
         new Request<>(
             "engine_forkchoiceUpdatedV3",
-            list(forkChoiceState, payloadAttributes.orElse(null)),
-            web3JClient.getWeb3jService(),
-            ForkChoiceUpdatedResultWeb3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);
-  }
-
-  @Override
-  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV4(
-      final ForkChoiceStateV1 forkChoiceState,
-      final Optional<PayloadAttributesV4> payloadAttributes) {
-    final Request<?, ForkChoiceUpdatedResultWeb3jResponse> web3jRequest =
-        new Request<>(
-            "engine_forkchoiceUpdatedV4",
             list(forkChoiceState, payloadAttributes.orElse(null)),
             web3JClient.getWeb3jService(),
             ForkChoiceUpdatedResultWeb3jResponse.class);

@@ -164,7 +164,7 @@ public class ExpectedWithdrawals {
     final List<Withdrawal> partialWithdrawals = new ArrayList<>();
     final SszList<PendingPartialWithdrawal> pendingPartialWithdrawals =
         preState.getPendingPartialWithdrawals();
-    int partialWithdrawalsCount = 0;
+    int processedPartialWithdrawalsCount = 0;
     UInt64 withdrawalIndex = preState.getNextWithdrawalIndex();
 
     for (int i = 0; i < pendingPartialWithdrawals.size() && i < maxPendingPartialWithdrawals; i++) {
@@ -172,13 +172,14 @@ public class ExpectedWithdrawals {
       if (pendingPartialWithdrawal.getWithdrawableEpoch().isGreaterThan(epoch)) {
         break;
       }
-      final Validator validator = preState.getValidators().get(pendingPartialWithdrawal.getIndex());
+      final Validator validator =
+          preState.getValidators().get(pendingPartialWithdrawal.getValidatorIndex());
       final boolean hasSufficientBalance =
           validator
               .getEffectiveBalance()
               .isGreaterThanOrEqualTo(specConfig.getMinActivationBalance());
       final UInt64 validatorBalance =
-          preState.getBalances().get(pendingPartialWithdrawal.getIndex()).get();
+          preState.getBalances().get(pendingPartialWithdrawal.getValidatorIndex()).get();
       final boolean hasExcessBalance =
           validatorBalance.isGreaterThan(specConfig.getMinActivationBalance());
       if (validator.getExitEpoch().equals(FAR_FUTURE_EPOCH)
@@ -193,14 +194,14 @@ public class ExpectedWithdrawals {
                 .getWithdrawalSchema()
                 .create(
                     withdrawalIndex,
-                    UInt64.valueOf(pendingPartialWithdrawal.getIndex()),
+                    UInt64.valueOf(pendingPartialWithdrawal.getValidatorIndex()),
                     new Bytes20(validator.getWithdrawalCredentials().slice(12)),
                     withdrawableBalance));
         withdrawalIndex = withdrawalIndex.increment();
       }
-      partialWithdrawalsCount++;
+      processedPartialWithdrawalsCount++;
     }
-    return new WithdrawalSummary(partialWithdrawals, partialWithdrawalsCount);
+    return new WithdrawalSummary(partialWithdrawals, processedPartialWithdrawalsCount);
   }
 
   // get_expected_withdrawals
@@ -231,7 +232,16 @@ public class ExpectedWithdrawals {
     for (int i = 0; i < bound; i++) {
       final Validator validator = validators.get(validatorIndex);
       if (predicates.hasExecutionWithdrawalCredential(validator)) {
-        final UInt64 balance = balances.get(validatorIndex).get();
+        final UInt64 finalValidatorIndex = UInt64.valueOf(validatorIndex);
+        final UInt64 partiallyWithdrawalBalance =
+            partialWithdrawals.stream()
+                .filter(
+                    partialWithdrawal ->
+                        partialWithdrawal.getValidatorIndex().equals(finalValidatorIndex))
+                .map(Withdrawal::getAmount)
+                .reduce(UInt64.ZERO, UInt64::plus);
+        final UInt64 balance =
+            balances.get(validatorIndex).get().minusMinZero(partiallyWithdrawalBalance);
 
         if (predicates.isFullyWithdrawableValidatorCredentialsChecked(validator, balance, epoch)) {
           expectedWithdrawals.add(

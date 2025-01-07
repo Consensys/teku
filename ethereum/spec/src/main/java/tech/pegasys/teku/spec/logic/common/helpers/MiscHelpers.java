@@ -364,56 +364,6 @@ public class MiscHelpers {
     return new ForkData(currentVersion, genesisValidatorsRoot).hashTreeRoot();
   }
 
-  public boolean isMergeTransitionComplete(final BeaconState state) {
-    return false;
-  }
-
-  public boolean isExecutionEnabled(final BeaconState genericState, final BeaconBlock block) {
-    return false;
-  }
-
-  public boolean verifyBlobKzgProof(final KZG kzg, final BlobSidecar blobSidecar) {
-    return false;
-  }
-
-  public boolean verifyBlobKzgProofBatch(final KZG kzg, final List<BlobSidecar> blobSidecars) {
-    return false;
-  }
-
-  public void validateBlobSidecarsBatchAgainstBlock(
-      final List<BlobSidecar> blobSidecars,
-      final BeaconBlock block,
-      final List<KZGCommitment> kzgCommitmentsFromBlock) {
-    throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
-  }
-
-  public void verifyBlobSidecarCompleteness(
-      final List<BlobSidecar> verifiedBlobSidecars,
-      final List<KZGCommitment> kzgCommitmentsFromBlock)
-      throws IllegalArgumentException {
-    throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
-  }
-
-  public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
-    throw new UnsupportedOperationException("No KZGCommitments before Deneb");
-  }
-
-  public UInt64 getMaxRequestBlocks() {
-    return UInt64.valueOf(specConfig.getNetworkingConfig().getMaxRequestBlocks());
-  }
-
-  public int getBlobKzgCommitmentsCount(final SignedBeaconBlock signedBeaconBlock) {
-    throw new UnsupportedOperationException("No Blob KZG Commitments before Deneb");
-  }
-
-  public UInt64 getMaxEffectiveBalance(final Validator validator) {
-    return specConfig.getMaxEffectiveBalance();
-  }
-
-  public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
-    return false;
-  }
-
   /** is_valid_deposit_signature */
   public boolean isValidDepositSignature(
       final BLSPublicKey pubkey,
@@ -444,6 +394,62 @@ public class MiscHelpers {
         FAR_FUTURE_EPOCH,
         FAR_FUTURE_EPOCH,
         FAR_FUTURE_EPOCH);
+  }
+
+  public boolean isMergeTransitionComplete(final BeaconState state) {
+    return false;
+  }
+
+  public boolean isExecutionEnabled(final BeaconState genericState, final BeaconBlock block) {
+    return false;
+  }
+
+  public boolean verifyBlobKzgProof(final KZG kzg, final BlobSidecar blobSidecar) {
+    return false;
+  }
+
+  public boolean verifyBlobKzgProofBatch(final KZG kzg, final List<BlobSidecar> blobSidecars) {
+    return false;
+  }
+
+  public boolean verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
+      final List<BlobSidecar> blobSidecars, final SignedBeaconBlock signedBeaconBlock) {
+    return blobSidecars.stream()
+        .allMatch(
+            blobSidecar ->
+                verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
+                    blobSidecar, signedBeaconBlock));
+  }
+
+  public boolean verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
+      final BlobSidecar blobSidecar, final SignedBeaconBlock signedBeaconBlock) {
+    throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
+  }
+
+  public void verifyBlobSidecarCompleteness(
+      final List<BlobSidecar> verifiedBlobSidecars, final SignedBeaconBlock signedBeaconBlock)
+      throws IllegalArgumentException {
+    throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
+  }
+
+  public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
+    throw new UnsupportedOperationException("No KZGCommitments before Deneb");
+  }
+
+  public UInt64 getMaxRequestBlocks() {
+    return UInt64.valueOf(specConfig.getNetworkingConfig().getMaxRequestBlocks());
+  }
+
+  public int getBlobKzgCommitmentsCount(final SignedBeaconBlock signedBeaconBlock) {
+    throw new UnsupportedOperationException("No Blob KZG Commitments before Deneb");
+  }
+
+  public UInt64 getMaxEffectiveBalance(final Validator validator) {
+    return specConfig.getMaxEffectiveBalance();
+  }
+
+  public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
+    return false;
   }
 
   public Optional<MiscHelpersDeneb> toVersionDeneb() {

@@ -34,7 +34,6 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV3;
-import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV4;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetBlobsV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV2;
@@ -201,7 +200,7 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
     return Stream.of(
         arguments(ENGINE_NEW_PAYLOAD, EngineNewPayloadV4.class),
         arguments(ENGINE_GET_PAYLOAD, EngineGetPayloadV4.class),
-        arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV4.class),
+        arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV3.class),
         arguments(ENGINE_GET_BLOBS, EngineGetBlobsV1.class));
   }
 
@@ -228,8 +227,7 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
             "engine_getPayloadV3",
             "engine_forkchoiceUpdatedV3",
             "engine_newPayloadV4",
-            "engine_getPayloadV4",
-            "engine_forkchoiceUpdatedV4");
+            "engine_getPayloadV4");
   }
 
   @Test

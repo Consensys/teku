@@ -14,19 +14,42 @@
 package tech.pegasys.teku.networking.p2p.libp2p.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 import io.libp2p.pubsub.gossip.GossipParams;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 
 public class LibP2PParamsFactoryTest {
 
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+
   @Test
   void createGossipParams_checkZeroDsSucceed() {
-    GossipConfig gossipConfig = GossipConfig.builder().d(0).dLow(0).dHigh(0).build();
+    final GossipConfig gossipConfig = GossipConfig.builder().d(0).dLow(0).dHigh(0).build();
 
-    GossipParams gossipParams = LibP2PParamsFactory.createGossipParams(gossipConfig);
+    final GossipParams gossipParams =
+        LibP2PParamsFactory.createGossipParams(gossipConfig, spec.getNetworkingConfig());
 
     assertThat(gossipParams.getDOut()).isEqualTo(0);
+  }
+
+  @Test
+  public void createGossipParams_setGossipMaxSizeFromNetworkSpecConfig() {
+    final GossipConfig gossipConfig = GossipConfig.builder().build();
+    final NetworkingSpecConfig networkingSpecConfig = spy(spec.getNetworkingConfig());
+    final int expectedGossipMaxSize = 12233418;
+    reset(networkingSpecConfig);
+
+    final GossipParams gossipParams =
+        LibP2PParamsFactory.createGossipParams(gossipConfig, networkingSpecConfig);
+
+    assertThat(gossipParams.getMaxGossipMessageSize()).isEqualTo(expectedGossipMaxSize);
+    verify(networkingSpecConfig).getGossipMaxSize();
   }
 }

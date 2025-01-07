@@ -48,9 +48,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -58,7 +56,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bea
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
@@ -92,8 +89,9 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   static final String GAUGE_BLOB_SIDECARS_LABEL = "blob_sidecars";
   static final String GAUGE_BLOB_SIDECARS_TRACKERS_LABEL = "blob_sidecars_trackers";
 
+  // RPC fetching delay timings
   static final UInt64 MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS = UInt64.valueOf(1500);
-  static final UInt64 MIN_WAIT_MILLIS = UInt64.ZERO;
+  static final UInt64 MIN_WAIT_MILLIS = UInt64.valueOf(500);
   static final UInt64 TARGET_WAIT_MILLIS = UInt64.valueOf(1000);
 
   private final SettableLabelledGauge sizeGauge;
@@ -154,7 +152,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     this.maxTrackers = maxTrackers;
     this.sizeGauge = sizeGauge;
     this.poolStatsCounters = poolStatsCounters;
-    this.trackerFactory = (slotAndBlockRoot) -> createTracker(spec, slotAndBlockRoot);
+    this.trackerFactory = BlockBlobSidecarsTracker::new;
 
     initMetrics(sizeGauge, poolStatsCounters);
   }
@@ -209,15 +207,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             });
   }
 
-  private static BlockBlobSidecarsTracker createTracker(
-      final Spec spec, final SlotAndBlockRoot slotAndBlockRoot) {
-    return new BlockBlobSidecarsTracker(
-        slotAndBlockRoot,
-        UInt64.valueOf(
-            SpecConfigDeneb.required(spec.atSlot(slotAndBlockRoot.getSlot()).getConfig())
-                .getMaxBlobsPerBlock()));
-  }
-
   @Override
   public synchronized void onNewBlobSidecar(
       final BlobSidecar blobSidecar, final RemoteOrigin remoteOrigin) {
@@ -230,12 +219,25 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
     final SlotAndBlockRoot slotAndBlockRoot = blobSidecar.getSlotAndBlockRoot();
 
-    final BlockBlobSidecarsTracker blobSidecarsTracker =
-        getOrCreateBlobSidecarsTracker(
-            slotAndBlockRoot,
-            newTracker -> onFirstSeen(slotAndBlockRoot, Optional.of(remoteOrigin)),
-            existingTracker -> {});
+    getOrCreateBlobSidecarsTracker(
+        slotAndBlockRoot,
+        newTracker -> {
+          addBlobSidecarToTracker(newTracker, slotAndBlockRoot, blobSidecar, remoteOrigin);
+          onFirstSeen(slotAndBlockRoot, Optional.of(remoteOrigin));
+        },
+        existingTracker ->
+            addBlobSidecarToTracker(existingTracker, slotAndBlockRoot, blobSidecar, remoteOrigin));
 
+    if (orderedBlobSidecarsTrackers.add(slotAndBlockRoot)) {
+      sizeGauge.set(orderedBlobSidecarsTrackers.size(), GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
+    }
+  }
+
+  private void addBlobSidecarToTracker(
+      final BlockBlobSidecarsTracker blobSidecarsTracker,
+      final SlotAndBlockRoot slotAndBlockRoot,
+      final BlobSidecar blobSidecar,
+      final RemoteOrigin remoteOrigin) {
     if (blobSidecarsTracker.add(blobSidecar)) {
       sizeGauge.set(++totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
       countBlobSidecar(remoteOrigin);
@@ -245,10 +247,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       }
     } else {
       countDuplicateBlobSidecar(remoteOrigin);
-    }
-
-    if (orderedBlobSidecarsTrackers.add(slotAndBlockRoot)) {
-      sizeGauge.set(orderedBlobSidecarsTrackers.size(), GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
     }
   }
 
@@ -326,7 +324,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
     long addedBlobs =
         blobSidecars.stream()
-            .map(
+            .filter(
                 blobSidecar -> {
                   final boolean isNew = blobSidecarsTracker.add(blobSidecar);
                   if (isNew) {
@@ -335,12 +333,11 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                   }
                   return isNew;
                 })
-            .filter(Boolean::booleanValue)
             .count();
     totalBlobSidecars += (int) addedBlobs;
     sizeGauge.set(totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
 
-    if (!blobSidecarsTracker.isCompleted()) {
+    if (!blobSidecarsTracker.isComplete()) {
       LOG.error(
           "Tracker for block {} is supposed to be completed but it is not. Missing blob sidecars: {}",
           block.toLogString(),
@@ -407,7 +404,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   }
 
   @Override
-  public Optional<BlobSidecar> getBlobSidecar(final Bytes32 blockRoot, final UInt64 index) {
+  public synchronized Optional<BlobSidecar> getBlobSidecar(
+      final Bytes32 blockRoot, final UInt64 index) {
     return Optional.ofNullable(blockBlobSidecarsTrackers.get(blockRoot))
         .flatMap(tracker -> tracker.getBlobSidecar(index));
   }
@@ -426,7 +424,13 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   @Override
   public synchronized Set<BlobIdentifier> getAllRequiredBlobSidecars() {
     return blockBlobSidecarsTrackers.values().stream()
-        .flatMap(BlockBlobSidecarsTracker::getMissingBlobSidecars)
+        .flatMap(
+            tracker -> {
+              if (tracker.getBlock().isEmpty()) {
+                return Stream.empty();
+              }
+              return tracker.getMissingBlobSidecars();
+            })
         .collect(Collectors.toSet());
   }
 
@@ -473,6 +477,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     return blockBlobSidecarsTrackers.size();
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private BlockBlobSidecarsTracker internalOnNewBlock(
       final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
     final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
@@ -494,25 +499,22 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
               countBlock(remoteOrigin);
 
-              if (existingTracker.isRpcFetchTriggered()) {
-                // block has been set for the first time and we previously triggered fetching of
-                // missing blobSidecars. So we may have requested to fetch more sidecars
-                // than the block actually requires. Let's drop them.
-                existingTracker
-                    .getUnusedBlobSidecarsForBlock()
-                    .forEach(
-                        blobIdentifier ->
-                            requiredBlobSidecarDroppedSubscribers.deliver(
-                                RequiredBlobSidecarDroppedSubscriber::onRequiredBlobSidecarDropped,
-                                blobIdentifier));
-
-                // if we attempted to fetch via RPC, we missed the opportunity to complete the
-                // tracker via local EL (local El fetch requires the block to be known)
-                // Let's try now
-                if (!existingTracker.isLocalElFetchTriggered() && !existingTracker.isCompleted()) {
-                  fetchMissingContentFromLocalEL(slotAndBlockRoot)
-                      .finish(this::logLocalElBlobsLookupFailure);
-                }
+              if (!existingTracker.isComplete()) {
+                // we missed the opportunity to complete the blob sidecars via local EL and RPC
+                // (since the block is required to be known) Let's try now
+                asyncRunner.runAsync(
+                    () ->
+                        fetchMissingBlobsFromLocalEL(slotAndBlockRoot)
+                            .handleException(this::logLocalElBlobsLookupFailure)
+                            .thenRun(
+                                () -> {
+                                  // only run if RPC block fetch has happened ( no blobs RPC fetch
+                                  // has occurred)
+                                  if (existingTracker.isRpcBlockFetchTriggered()) {
+                                    fetchMissingBlockOrBlobsFromRPC(slotAndBlockRoot);
+                                  }
+                                })
+                            .finish(this::logBlockOrBlobsRPCFailure));
               }
             });
 
@@ -574,7 +576,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   }
 
   private void makeRoomForNewTracker() {
-    while (blockBlobSidecarsTrackers.size() > (maxTrackers - 1)) {
+    while (blockBlobSidecarsTrackers.size() > maxTrackers - 1) {
       final SlotAndBlockRoot toRemove = orderedBlobSidecarsTrackers.pollFirst();
       if (toRemove == null) {
         break;
@@ -583,6 +585,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     }
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void onFirstSeen(
       final SlotAndBlockRoot slotAndBlockRoot, final Optional<RemoteOrigin> remoteOrigin) {
     final boolean isLocalBlockProduction =
@@ -590,27 +593,22 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     if (isLocalBlockProduction) {
       return;
     }
+    // delay RPC fetching
+    final SafeFuture<Void> rpcFetchDelay =
+        asyncRunner.getDelayedFuture(calculateRpcFetchDelay(slotAndBlockRoot));
 
-    final Duration fetchDelay = calculateFetchDelay(slotAndBlockRoot);
-
-    asyncRunner
-        .runAfterDelay(
-            () ->
-                this.fetchMissingContentFromLocalEL(slotAndBlockRoot)
-                    .handleException(this::logLocalElBlobsLookupFailure)
-                    .thenRun(() -> this.fetchMissingContentFromRemotePeers(slotAndBlockRoot)),
-            fetchDelay)
-        .finish(
-            error ->
-                LOG.error("An error occurred while attempting to fetch missing blobs.", error));
-  }
-
-  private void logLocalElBlobsLookupFailure(final Throwable error) {
-    LOG.warn("Local EL blobs lookup failed: {}", getRootCauseMessage(error));
+    asyncRunner.runAsync(
+        () ->
+            // fetch blobs from EL with no delay
+            fetchMissingBlobsFromLocalEL(slotAndBlockRoot)
+                .handleException(this::logLocalElBlobsLookupFailure)
+                .thenCompose(__ -> rpcFetchDelay)
+                .thenRun(() -> fetchMissingBlockOrBlobsFromRPC(slotAndBlockRoot))
+                .finish(this::logBlockOrBlobsRPCFailure));
   }
 
   @VisibleForTesting
-  Duration calculateFetchDelay(final SlotAndBlockRoot slotAndBlockRoot) {
+  Duration calculateRpcFetchDelay(final SlotAndBlockRoot slotAndBlockRoot) {
     final UInt64 slot = slotAndBlockRoot.getSlot();
 
     if (slot.isLessThan(getCurrentSlot())) {
@@ -640,28 +638,21 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     return Duration.ofMillis(finalTime.minus(nowMillis).intValue());
   }
 
-  private synchronized SafeFuture<Void> fetchMissingContentFromLocalEL(
+  private synchronized SafeFuture<Void> fetchMissingBlobsFromLocalEL(
       final SlotAndBlockRoot slotAndBlockRoot) {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         blockBlobSidecarsTrackers.get(slotAndBlockRoot.getBlockRoot());
 
-    if (blockBlobSidecarsTracker == null) {
+    if (blockBlobSidecarsTracker == null
+        || blockBlobSidecarsTracker.isComplete()
+        || blockBlobSidecarsTracker.getBlock().isEmpty()) {
       return SafeFuture.COMPLETE;
     }
 
-    if (blockBlobSidecarsTracker.isCompleted()) {
-      return SafeFuture.COMPLETE;
-    }
-
-    if (blockBlobSidecarsTracker.getBlock().isEmpty()) {
-      return SafeFuture.COMPLETE;
-    }
-
-    blockBlobSidecarsTracker.setLocalElFetchTriggered();
+    final List<BlobIdentifier> missingBlobsIdentifiers =
+        blockBlobSidecarsTracker.getMissingBlobSidecars().toList();
 
     final SpecVersion specVersion = spec.atSlot(slotAndBlockRoot.getSlot());
-    final BlobSidecarSchema blobSidecarSchema =
-        specVersion.getSchemaDefinitions().toVersionDeneb().orElseThrow().getBlobSidecarSchema();
     final MiscHelpersDeneb miscHelpersDeneb =
         specVersion.miscHelpers().toVersionDeneb().orElseThrow();
     final SignedBeaconBlockHeader signedBeaconBlockHeader =
@@ -678,9 +669,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     final SszList<SszKZGCommitment> sszKZGCommitments =
         beaconBlockBodyDeneb.getBlobKzgCommitments();
 
-    final List<BlobIdentifier> missingBlobsIdentifiers =
-        blockBlobSidecarsTracker.getMissingBlobSidecars().toList();
-
     final List<VersionedHash> versionedHashes =
         missingBlobsIdentifiers.stream()
             .map(
@@ -690,6 +678,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                             .get(blobIdentifier.getIndex().intValue())
                             .getKZGCommitment()))
             .toList();
+
+    blockBlobSidecarsTracker.setLocalElBlobsFetchTriggered();
 
     poolStatsCounters
         .labels(COUNTER_SIDECAR_TYPE, COUNTER_LOCAL_EL_FETCH_SUBTYPE)
@@ -707,67 +697,48 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
               for (int index = 0; index < blobAndProofs.size(); index++) {
                 final Optional<BlobAndProof> blobAndProof = blobAndProofs.get(index);
+                final BlobIdentifier blobIdentifier = missingBlobsIdentifiers.get(index);
                 if (blobAndProof.isEmpty()) {
-                  LOG.trace("Blob not found on local EL: {}", missingBlobsIdentifiers.get(index));
+                  LOG.trace("Blob not found on local EL: {}", blobIdentifier);
                   continue;
                 }
 
                 final BlobSidecar blobSidecar =
-                    createBlobSidecarFromBlobAndProof(
-                        blobSidecarSchema,
-                        miscHelpersDeneb,
-                        missingBlobsIdentifiers.get(index),
+                    miscHelpersDeneb.constructBlobSidecarFromBlobAndProof(
+                        blobIdentifier,
                         blobAndProof.get(),
                         beaconBlockBodyDeneb,
                         signedBeaconBlockHeader);
-
                 onNewBlobSidecar(blobSidecar, LOCAL_EL);
               }
             });
   }
 
-  private BlobSidecar createBlobSidecarFromBlobAndProof(
-      final BlobSidecarSchema blobSidecarSchema,
-      final MiscHelpersDeneb miscHelpersDeneb,
-      final BlobIdentifier blobIdentifier,
-      final BlobAndProof blobAndProof,
-      final BeaconBlockBodyDeneb beaconBlockBodyDeneb,
-      final SignedBeaconBlockHeader signedBeaconBlockHeader) {
-
-    final SszKZGCommitment sszKZGCommitment =
-        beaconBlockBodyDeneb.getBlobKzgCommitments().get(blobIdentifier.getIndex().intValue());
-
-    return blobSidecarSchema.create(
-        blobIdentifier.getIndex(),
-        blobAndProof.blob(),
-        sszKZGCommitment,
-        new SszKZGProof(blobAndProof.proof()),
-        signedBeaconBlockHeader,
-        miscHelpersDeneb.computeKzgCommitmentInclusionProof(
-            blobIdentifier.getIndex(), beaconBlockBodyDeneb));
+  private void logLocalElBlobsLookupFailure(final Throwable error) {
+    LOG.warn("Local EL blobs lookup failed: {}", getRootCauseMessage(error));
   }
 
-  private synchronized void fetchMissingContentFromRemotePeers(
+  private synchronized void fetchMissingBlockOrBlobsFromRPC(
       final SlotAndBlockRoot slotAndBlockRoot) {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         blockBlobSidecarsTrackers.get(slotAndBlockRoot.getBlockRoot());
 
-    if (blockBlobSidecarsTracker == null) {
+    if (blockBlobSidecarsTracker == null || blockBlobSidecarsTracker.isComplete()) {
       return;
     }
-
-    if (blockBlobSidecarsTracker.isCompleted()) {
-      return;
-    }
-
-    blockBlobSidecarsTracker.setRpcFetchTriggered();
 
     if (blockBlobSidecarsTracker.getBlock().isEmpty()) {
+
+      blockBlobSidecarsTracker.setRpcBlockFetchTriggered();
+
       poolStatsCounters.labels(COUNTER_BLOCK_TYPE, COUNTER_RPC_FETCH_SUBTYPE).inc();
       requiredBlockRootSubscribers.deliver(
           RequiredBlockRootSubscriber::onRequiredBlockRoot,
           blockBlobSidecarsTracker.getSlotAndBlockRoot().getBlockRoot());
+      return;
     }
+
+    blockBlobSidecarsTracker.setRpcBlobsFetchTriggered();
 
     blockBlobSidecarsTracker
         .getMissingBlobSidecars()
@@ -779,24 +750,27 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             });
   }
 
+  private void logBlockOrBlobsRPCFailure(final Throwable error) {
+    LOG.error("An error occurred while attempting to fetch block or blobs via RPC.", error);
+  }
+
   private void dropMissingContent(final BlockBlobSidecarsTracker blockBlobSidecarsTracker) {
 
-    if (!blockBlobSidecarsTracker.isRpcFetchTriggered()) {
-      return;
-    }
-
-    if (blockBlobSidecarsTracker.getBlock().isEmpty()) {
+    if (blockBlobSidecarsTracker.isRpcBlockFetchTriggered()
+        && blockBlobSidecarsTracker.getBlock().isEmpty()) {
       requiredBlockRootDroppedSubscribers.deliver(
           RequiredBlockRootDroppedSubscriber::onRequiredBlockRootDropped,
           blockBlobSidecarsTracker.getSlotAndBlockRoot().getBlockRoot());
     }
 
-    blockBlobSidecarsTracker
-        .getMissingBlobSidecars()
-        .forEach(
-            blobIdentifier ->
-                requiredBlobSidecarDroppedSubscribers.deliver(
-                    RequiredBlobSidecarDroppedSubscriber::onRequiredBlobSidecarDropped,
-                    blobIdentifier));
+    if (blockBlobSidecarsTracker.isRpcBlobsFetchTriggered()) {
+      blockBlobSidecarsTracker
+          .getMissingBlobSidecars()
+          .forEach(
+              blobIdentifier ->
+                  requiredBlobSidecarDroppedSubscribers.deliver(
+                      RequiredBlobSidecarDroppedSubscriber::onRequiredBlobSidecarDropped,
+                      blobIdentifier));
+    }
   }
 }

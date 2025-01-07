@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,6 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.remote.typedef;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
-public class BlockProductionV3FailedException extends RuntimeException {}
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
+
+public class SingleAttestationEvent extends Event<SingleAttestation> {
+  SingleAttestationEvent(final SingleAttestation attestation) {
+    super(
+        attestation.toSingleAttestationRequired().getSchema().getJsonTypeDefinition(), attestation);
+  }
+}
