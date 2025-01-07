@@ -34,8 +34,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class TerminalPowBlockMonitor {
   private static final Logger LOG = LogManager.getLogger();
-  private static final String TTD_DEPRECATED_MESSAGE =
-      "Bellatrix transition by terminal total difficulty is no more supported";
 
   private final EventLogger eventLogger;
   private final ExecutionLayerChannel executionLayer;
@@ -80,6 +78,15 @@ public class TerminalPowBlockMonitor {
       return;
     }
     specConfigBellatrix = maybeSpecConfigBellatrix.get();
+
+    final boolean isMergeTransitionComplete =
+        isMergeTransitionComplete(recentChainData.getChainHead());
+    if (!isMergeTransitionComplete
+        && spec.isMilestoneSupported(SpecMilestone.BELLATRIX)
+        && specConfigBellatrix.getTerminalBlockHash().isZero()) {
+      throw new InvalidConfigurationException(
+          "Bellatrix transition by terminal total difficulty is no more supported");
+    }
 
     pollingPeriod = Duration.ofSeconds(spec.getGenesisSpec().getConfig().getSecondsPerEth1Block());
     timer =
@@ -129,11 +136,7 @@ public class TerminalPowBlockMonitor {
       return;
     }
 
-    blockHashTracking.ifPresentOrElse(
-        this::checkTerminalBlockByBlockHash,
-        () -> {
-          throw new InvalidConfigurationException(TTD_DEPRECATED_MESSAGE);
-        });
+    checkTerminalBlockByBlockHash(blockHashTracking.orElseThrow());
   }
 
   private Boolean isMergeTransitionComplete(final Optional<ChainHead> chainHead) {
@@ -163,15 +166,11 @@ public class TerminalPowBlockMonitor {
       return;
     }
 
-    if (specConfigBellatrix.getTerminalBlockHash().isZero()) {
-      throw new InvalidConfigurationException(TTD_DEPRECATED_MESSAGE);
-    } else {
-      blockHashTracking = Optional.of(specConfigBellatrix.getTerminalBlockHash());
-      LOG.debug(
-          "Enabling tracking by Block Hash {} and Activation Epoch {}",
-          specConfigBellatrix.getTerminalBlockHash(),
-          specConfigBellatrix.getTerminalBlockHashActivationEpoch());
-    }
+    blockHashTracking = Optional.of(specConfigBellatrix.getTerminalBlockHash());
+    LOG.debug(
+        "Enabling tracking by Block Hash {} and Activation Epoch {}",
+        specConfigBellatrix.getTerminalBlockHash(),
+        specConfigBellatrix.getTerminalBlockHashActivationEpoch());
 
     isBellatrixActive = true;
   }
