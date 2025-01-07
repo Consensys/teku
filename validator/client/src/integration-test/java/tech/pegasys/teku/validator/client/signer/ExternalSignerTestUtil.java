@@ -22,7 +22,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.JsonBody;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.metrics.StubCounter;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -53,10 +52,18 @@ class ExternalSignerTestUtil {
       final long successCount,
       final long failCount,
       final long timeoutCount) {
-    final StubCounter labelledCounter =
-        metricsSystem.getCounter(TekuMetricCategory.VALIDATOR, "external_signer_requests_total");
-    assertThat(labelledCounter.getValue("success")).isEqualTo(successCount);
-    assertThat(labelledCounter.getValue("failed")).isEqualTo(failCount);
-    assertThat(labelledCounter.getValue("timeout")).isEqualTo(timeoutCount);
+
+    assertThat(
+            metricsSystem.getCounterValue(
+                TekuMetricCategory.VALIDATOR, "external_signer_requests_total", "success"))
+        .isEqualTo(successCount);
+    assertThat(
+            metricsSystem.getCounterValue(
+                TekuMetricCategory.VALIDATOR, "external_signer_requests_total", "failed"))
+        .isEqualTo(failCount);
+    assertThat(
+            metricsSystem.getCounterValue(
+                TekuMetricCategory.VALIDATOR, "external_signer_requests_total", "timeout"))
+        .isEqualTo(timeoutCount);
   }
 }
