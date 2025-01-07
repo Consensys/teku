@@ -174,11 +174,12 @@ public abstract class Node {
     waitFor(
         () -> {
           final List<MetricValue> metrics = metricFetcher.getAllMetrics();
-          LOG.info("Metrics: {}", metrics);
           assertThat(
                   MetricMatcher.anyMatching(
                       metrics, nameCondition, labelsCondition, valueCondition))
-              .withFailMessage("No matching metric")
+              .withFailMessage(
+                  "No matching metric with following conditions: %s %s %s. Metrics list: %s",
+                  nameCondition, labelsCondition, valueCondition, metrics)
               .isPresent();
         },
         timeoutAmount,
