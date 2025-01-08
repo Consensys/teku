@@ -84,7 +84,7 @@ class MergeTransitionBlockValidatorTest {
 
   @Test
   void shouldReturnValidImmediatelyWhenThereIsTransitionBlockFullyVerified() {
-    final SignedBlockAndState chainHead = generateNonfinalizedTransition(true);
+    final SignedBlockAndState chainHead = generateNonFinalizedTransition(true);
     storageSystem.chainUpdater().saveBlock(chainHead);
     final SignedBlockAndState blockToVerify = storageSystem.chainBuilder().generateNextBlock();
 
@@ -114,7 +114,7 @@ class MergeTransitionBlockValidatorTest {
 
   @Test
   void shouldVerifyNonFinalizedAncestorTransitionBlock() {
-    final SignedBlockAndState transitionBlock = generateNonfinalizedTransition(true);
+    final SignedBlockAndState transitionBlock = generateNonFinalizedTransition(true);
     final SignedBlockAndState chainHead = storageSystem.chainBuilder().getLatestBlockAndState();
     final SignedBlockAndState blockToVerify = storageSystem.chainBuilder().generateNextBlock();
 
@@ -144,7 +144,7 @@ class MergeTransitionBlockValidatorTest {
 
   @Test
   void shouldReportRootForInvalidNonFinalizedAncestorTransitionBlock() {
-    final SignedBlockAndState transitionBlock = generateNonfinalizedTransition(false);
+    final SignedBlockAndState transitionBlock = generateNonFinalizedTransition(false);
     final SignedBlockAndState chainHead = storageSystem.chainBuilder().getLatestBlockAndState();
     final SignedBlockAndState blockToVerify = storageSystem.chainBuilder().generateNextBlock();
 
@@ -229,7 +229,7 @@ class MergeTransitionBlockValidatorTest {
     assertThatSafeFuture(result).isCompletedExceptionallyWith(FatalServiceFailureException.class);
   }
 
-  private SignedBlockAndState generateNonfinalizedTransition(final boolean isValid) {
+  private SignedBlockAndState generateNonFinalizedTransition(final boolean isValid) {
     storageSystem
         .chainBuilder()
         .generateBlocksUpToSlot(5)
@@ -254,7 +254,7 @@ class MergeTransitionBlockValidatorTest {
   }
 
   private void generateFinalizedTransition(final boolean isValid) {
-    generateNonfinalizedTransition(isValid);
+    generateNonFinalizedTransition(isValid);
 
     // Finalize between transition block and chain head
     storageSystem.chainUpdater().finalizeEpoch(1);
