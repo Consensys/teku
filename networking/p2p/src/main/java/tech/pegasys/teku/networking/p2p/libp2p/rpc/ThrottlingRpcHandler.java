@@ -21,22 +21,22 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 
-public class PeerRpcHandler<
+public class ThrottlingRpcHandler<
     TOutgoingHandler extends RpcRequestHandler,
     TRequest,
     TRespHandler extends RpcResponseHandler<?>> {
 
   private final RpcHandler<TOutgoingHandler, TRequest, TRespHandler> delegate;
-  private final ThrottlingTaskQueue outgoingQueue =
+  private final ThrottlingTaskQueue requestsQueue =
       ThrottlingTaskQueue.create(NetworkConstants.MAX_CONCURRENT_REQUESTS);
 
-  public PeerRpcHandler(final RpcHandler<TOutgoingHandler, TRequest, TRespHandler> delegate) {
+  public ThrottlingRpcHandler(final RpcHandler<TOutgoingHandler, TRequest, TRespHandler> delegate) {
     this.delegate = delegate;
   }
 
   public SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
       final Connection connection, final TRequest request, final TRespHandler responseHandler) {
-    return outgoingQueue.queueTask(
+    return requestsQueue.queueTask(
         () -> delegate.sendRequest(connection, request, responseHandler));
   }
 }

@@ -29,7 +29,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 
-public class PeerRpcHandlerTest {
+public class ThrottlingRpcHandlerTest {
 
   private final Connection connection = mock(Connection.class);
 
@@ -41,15 +41,16 @@ public class PeerRpcHandlerTest {
   private final RpcMethod<RpcRequestHandler, Object, RpcResponseHandler<Void>> rpcMethod =
       mock(RpcMethod.class);
 
-  private PeerRpcHandler<RpcRequestHandler, Object, RpcResponseHandler<Void>> peerRpcHandler;
+  private ThrottlingRpcHandler<RpcRequestHandler, Object, RpcResponseHandler<Void>>
+      throttlingRpcHandler;
 
   @BeforeEach
   public void init() {
     when(delegate.getRpcMethod()).thenReturn(rpcMethod);
-    peerRpcHandler = new PeerRpcHandler<>(delegate);
+    throttlingRpcHandler = new ThrottlingRpcHandler<>(delegate);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
   @Test
   public void sendRequest_throttlesRequests() {
 
@@ -61,16 +62,16 @@ public class PeerRpcHandlerTest {
                   final SafeFuture<RpcStreamController<RpcRequestHandler>> future =
                       new SafeFuture<>();
                   when(delegate.sendRequest(connection, null, null)).thenReturn(future);
-                  peerRpcHandler.sendRequest(connection, null, null);
+                  throttlingRpcHandler.sendRequest(connection, null, null);
                   return future;
                 })
             .toList();
 
-    when(peerRpcHandler.sendRequest(connection, null, null))
+    when(throttlingRpcHandler.sendRequest(connection, null, null))
         .thenReturn(SafeFuture.completedFuture(mock(RpcStreamController.class)));
 
     final SafeFuture<RpcStreamController<RpcRequestHandler>> throttledRequest =
-        peerRpcHandler.sendRequest(connection, null, null);
+        throttlingRpcHandler.sendRequest(connection, null, null);
 
     // completed request should be throttled
     assertThat(throttledRequest).isNotDone();

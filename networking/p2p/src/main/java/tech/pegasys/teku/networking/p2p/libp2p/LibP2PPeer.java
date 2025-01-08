@@ -29,8 +29,8 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.networking.p2p.libp2p.rpc.PeerRpcHandler;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
+import tech.pegasys.teku.networking.p2p.libp2p.rpc.ThrottlingRpcHandler;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler;
@@ -47,7 +47,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 public class LibP2PPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Map<RpcMethod<?, ?, ?>, PeerRpcHandler<?, ?, ?>> rpcHandlers;
+  private final Map<RpcMethod<?, ?, ?>, ThrottlingRpcHandler<?, ?, ?>> rpcHandlers;
   private final ReputationManager reputationManager;
   private final Function<PeerId, Double> peerScoreFunction;
   private final Connection connection;
@@ -74,7 +74,7 @@ public class LibP2PPeer implements Peer {
     this.connection = connection;
     this.rpcHandlers =
         rpcHandlers.stream()
-            .collect(Collectors.toMap(RpcHandler::getRpcMethod, PeerRpcHandler::new));
+            .collect(Collectors.toMap(RpcHandler::getRpcMethod, ThrottlingRpcHandler::new));
     this.reputationManager = reputationManager;
     this.peerScoreFunction = peerScoreFunction;
     this.peerId = connection.secureSession().getRemoteId();
@@ -207,8 +207,8 @@ public class LibP2PPeer implements Peer {
           final TRequest request,
           final RespHandler responseHandler) {
     @SuppressWarnings("unchecked")
-    final PeerRpcHandler<TOutgoingHandler, TRequest, RespHandler> rpcHandler =
-        (PeerRpcHandler<TOutgoingHandler, TRequest, RespHandler>) rpcHandlers.get(rpcMethod);
+    final ThrottlingRpcHandler<TOutgoingHandler, TRequest, RespHandler> rpcHandler =
+        (ThrottlingRpcHandler<TOutgoingHandler, TRequest, RespHandler>) rpcHandlers.get(rpcMethod);
     if (rpcHandler == null) {
       throw new IllegalArgumentException(
           "Unknown rpc method invoked: " + String.join(",", rpcMethod.getIds()));
