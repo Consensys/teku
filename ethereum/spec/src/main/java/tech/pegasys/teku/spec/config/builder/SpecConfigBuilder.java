@@ -30,7 +30,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.config.SpecConfigPhase0;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
@@ -155,7 +155,7 @@ public class SpecConfigBuilder {
   private UInt64 eip7805ForkEpoch = FAR_FUTURE_EPOCH;
 
   private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
-  private final BuilderChain<SpecConfig, SpecConfigFulu> builderChain =
+  private final BuilderChain<SpecConfig, SpecConfigEip7805> builderChain =
       BuilderChain.create(altairBuilder)
           .appendBuilder(bellatrixBuilder)
           .appendBuilder(capellaBuilder)
@@ -164,7 +164,7 @@ public class SpecConfigBuilder {
           .appendBuilder(fuluBuilder)
           .appendBuilder(eip7805Builder);
 
-  public SpecConfigAndParent<SpecConfigFulu> build() {
+  public SpecConfigAndParent<SpecConfigEip7805> build() {
     builderChain.addOverridableItemsToRawConfig(
         (key, value) -> {
           if (value != null) {
@@ -617,9 +617,9 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder eip7805Epoch(final UInt64 eip7805ForkVersion) {
-    checkNotNull(eip7805ForkVersion);
-    this.eip7805ForkVersion = eip7805ForkVersion;
+  public SpecConfigBuilder eip7805ForkEpoch(final UInt64 eip7805ForkEpoch) {
+    checkNotNull(eip7805ForkEpoch);
+    this.eip7805ForkEpoch = eip7805ForkEpoch;
     return this;
   }
 

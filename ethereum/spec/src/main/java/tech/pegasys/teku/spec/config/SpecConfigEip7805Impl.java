@@ -24,19 +24,19 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigFulu implements S
   private final Bytes4 eip7805ForkVersion;
   private final UInt64 eip7805ForkEpoch;
   private final int ilCommitteeSize;
-  private final int maxTransactionPerInclusionList;
+  private final int maxTransactionsPerInclusionList;
 
   public SpecConfigEip7805Impl(
       final SpecConfigFulu specConfig,
       final Bytes4 eip7805ForkVersion,
       final UInt64 eip7805ForkEpoch,
       final int ilCommitteeSize,
-      final int maxTransactionPerInclusionList) {
+      final int maxTransactionsPerInclusionList) {
     super(specConfig);
     this.eip7805ForkVersion = eip7805ForkVersion;
     this.eip7805ForkEpoch = eip7805ForkEpoch;
     this.ilCommitteeSize = ilCommitteeSize;
-    this.maxTransactionPerInclusionList = maxTransactionPerInclusionList;
+    this.maxTransactionsPerInclusionList = maxTransactionsPerInclusionList;
   }
 
   @Override
@@ -55,8 +55,8 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigFulu implements S
   }
 
   @Override
-  public int getMaxTransactionPerInclusionList() {
-    return maxTransactionPerInclusionList;
+  public int getMaxTransactionsPerInclusionList() {
+    return maxTransactionsPerInclusionList;
   }
 
   @Override
@@ -82,7 +82,7 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigFulu implements S
         && Objects.equals(eip7805ForkVersion, that.eip7805ForkVersion)
         && Objects.equals(eip7805ForkEpoch, that.eip7805ForkEpoch)
         && ilCommitteeSize == that.ilCommitteeSize
-        && maxTransactionPerInclusionList == that.maxTransactionPerInclusionList;
+        && maxTransactionsPerInclusionList == that.maxTransactionsPerInclusionList;
   }
 
   @Override
@@ -92,6 +92,6 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigFulu implements S
         eip7805ForkVersion,
         eip7805ForkEpoch,
         ilCommitteeSize,
-        maxTransactionPerInclusionList);
+        maxTransactionsPerInclusionList);
   }
 }

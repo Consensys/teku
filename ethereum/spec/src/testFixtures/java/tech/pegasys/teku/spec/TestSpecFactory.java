@@ -323,7 +323,7 @@ public class TestSpecFactory {
       defaultModifier = defaultModifier.andThen(builder -> builder.fuluForkEpoch(UInt64.ZERO));
     }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.EIP7805)) {
-      defaultModifier = defaultModifier.andThen(builder -> builder.eip7805Epoch(UInt64.ZERO));
+      defaultModifier = defaultModifier.andThen(builder -> builder.eip7805ForkEpoch(UInt64.ZERO));
     }
 
     return create(
@@ -439,7 +439,7 @@ public class TestSpecFactory {
   private static SpecConfigAndParent<? extends SpecConfig> getEip7805SpecConfig(
       final Eth2Network network) {
     return getEip7805SpecConfig(
-        network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, ZERO);
+        network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO);
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getElectraSpecConfig(
@@ -475,7 +475,7 @@ public class TestSpecFactory {
                 .denebForkEpoch(denebForkEpoch)
                 .electraForkEpoch(electraForkEpoch)
                 .fuluForkEpoch(fuluForkEpoch)
-                .eip7805Epoch(eip7805ForkEpoch));
+                .eip7805ForkEpoch(eip7805ForkEpoch));
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getElectraSpecConfig(
