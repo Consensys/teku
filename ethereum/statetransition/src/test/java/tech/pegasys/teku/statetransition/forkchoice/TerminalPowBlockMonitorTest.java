@@ -14,9 +14,9 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -140,43 +140,11 @@ public class TerminalPowBlockMonitorTest {
   public void shouldThrowIfTTDOnlyConfigured() {
     setUpTTDConfig();
 
-    terminalPowBlockMonitor.start();
-
-    // NOT YET BELLATRIX FORK - should not notify
-    goToSlot(UInt64.ONE);
-
-    assertThat(terminalPowBlockMonitor.isRunning()).isTrue();
-    assertThat(asyncRunner.hasDelayedActions()).isTrue();
-
-    asyncRunner.executeQueuedActions();
-
-    verify(executionLayer, times(0)).eth1GetPowChainHead();
-    verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
-
-    // AT BELLATRIX FORK, TTD not reached - should not send
-    final Bytes32 headBlockHash = dataStructureUtil.randomBytes32();
-
-    goToSlot(BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
-
-    when(executionLayer.eth1GetPowChainHead())
-        .thenReturn(
-            completedFuture(
-                new PowBlock(headBlockHash, dataStructureUtil.randomBytes32(), TIME_IN_PAST)));
-
-    try (LogCaptor logCaptor = LogCaptor.forClass(TerminalPowBlockMonitor.class)) {
-      asyncRunner.executeQueuedActions();
-      assertThat(logCaptor.getErrorLogs())
-          .contains("An error occurred while executing the monitor task");
-      assertThat(logCaptor.getThrowable(0))
-          .containsInstanceOf(InvalidConfigurationException.class)
-          .hasValueSatisfying(
-              t ->
-                  assertThat(t.getMessage())
-                      .contains(
-                          "Bellatrix transition by terminal total difficulty is no more supported"));
-    }
-
-    verify(executionLayer, never()).eth1GetPowChainHead();
+    assertThatThrownBy(() -> terminalPowBlockMonitor.start())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining(
+            "Bellatrix transition by terminal total difficulty is no more supported");
+    verifyNoMoreInteractions(executionLayer);
   }
 
   @Test
@@ -268,7 +236,7 @@ public class TerminalPowBlockMonitorTest {
 
   @Test
   void shouldNotPerformCheckIfSyncing() {
-    setUpTTDConfig();
+    setUpTerminalBlockHashConfig();
 
     terminalPowBlockMonitor.start();
 
