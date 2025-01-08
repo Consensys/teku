@@ -22,7 +22,6 @@ import io.libp2p.protocol.IdentifyController;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -49,7 +48,10 @@ import tech.pegasys.teku.spec.constants.NetworkConstants;
 public class LibP2PPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Map<RpcMethod<?, ?, ?>, RpcHandler<?, ?, ?>> rpcHandlers;
+  private record RpcHandlerAndQutgoingQueue(
+      RpcHandler<?, ?, ?> rpcHandler, ThrottlingTaskQueue outgoingQueue) {}
+
+  private final Map<RpcMethod<?, ?, ?>, RpcHandlerAndQutgoingQueue> rpcHandlersAndOutgoingQueues;
   private final ReputationManager reputationManager;
   private final Function<PeerId, Double> peerScoreFunction;
   private final Connection connection;
@@ -59,10 +61,6 @@ public class LibP2PPeer implements Peer {
   private final PubKey pubKey;
   private volatile PeerClientType peerClientType = PeerClientType.UNKNOWN;
   private volatile Optional<String> maybeAgentString = Optional.empty();
-
-  // used for throttling outgoing requests by protocol id
-  private final Map<List<String>, ThrottlingTaskQueue> outgoingRequestsQueuesByRpcMethod =
-      new ConcurrentHashMap<>();
 
   private volatile Optional<DisconnectReason> disconnectReason = Optional.empty();
   private volatile boolean disconnectLocallyInitiated = false;
@@ -78,8 +76,16 @@ public class LibP2PPeer implements Peer {
       final ReputationManager reputationManager,
       final Function<PeerId, Double> peerScoreFunction) {
     this.connection = connection;
-    this.rpcHandlers =
-        rpcHandlers.stream().collect(Collectors.toMap(RpcHandler::getRpcMethod, h -> h));
+    this.rpcHandlersAndOutgoingQueues =
+        rpcHandlers.stream()
+            .collect(
+                Collectors.toMap(
+                    RpcHandler::getRpcMethod,
+                    handler ->
+                        new RpcHandlerAndQutgoingQueue(
+                            handler,
+                            // https://github.com/ethereum/consensus-specs/pull/3767
+                            ThrottlingTaskQueue.create(NetworkConstants.MAX_CONCURRENT_REQUESTS))));
     this.reputationManager = reputationManager;
     this.peerScoreFunction = peerScoreFunction;
     this.peerId = connection.secureSession().getRemoteId();
@@ -211,19 +217,18 @@ public class LibP2PPeer implements Peer {
           final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
           final TRequest request,
           final RespHandler responseHandler) {
+    final RpcHandlerAndQutgoingQueue rpcHandlerAndOutgoingQueue =
+        rpcHandlersAndOutgoingQueues.get(rpcMethod);
     @SuppressWarnings("unchecked")
     final RpcHandler<TOutgoingHandler, TRequest, RespHandler> rpcHandler =
-        (RpcHandler<TOutgoingHandler, TRequest, RespHandler>) rpcHandlers.get(rpcMethod);
+        (RpcHandler<TOutgoingHandler, TRequest, RespHandler>) rpcHandlerAndOutgoingQueue.rpcHandler;
     if (rpcHandler == null) {
       throw new IllegalArgumentException(
           "Unknown rpc method invoked: " + String.join(",", rpcMethod.getIds()));
     }
 
-    return outgoingRequestsQueuesByRpcMethod
-        .computeIfAbsent(
-            rpcMethod.getIds(),
-            __ -> ThrottlingTaskQueue.create(NetworkConstants.MAX_CONCURRENT_REQUESTS))
-        .queueTask(() -> rpcHandler.sendRequest(connection, request, responseHandler));
+    return rpcHandlerAndOutgoingQueue.outgoingQueue.queueTask(
+        () -> rpcHandler.sendRequest(connection, request, responseHandler));
   }
 
   @Override
