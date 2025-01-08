@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,20 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.jackson.deserializers.bytes;
+package tech.pegasys.teku.data.yaml;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
-import java.util.Locale;
-import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class BytesSerializer extends JsonSerializer<Bytes> {
+public class UInt64Deserializer extends JsonDeserializer<UInt64> {
+
   @Override
-  public void serialize(
-      final Bytes value, final JsonGenerator gen, final SerializerProvider provider)
+  public UInt64 deserialize(final JsonParser p, final DeserializationContext ctxt)
       throws IOException {
-    gen.writeString(value.toHexString().toLowerCase(Locale.ROOT));
+    return UInt64.valueOf(p.getValueAsString());
   }
 }

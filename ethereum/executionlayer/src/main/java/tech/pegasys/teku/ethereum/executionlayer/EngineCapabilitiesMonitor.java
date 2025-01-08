@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -41,7 +40,6 @@ public class EngineCapabilitiesMonitor implements SlotEventsChannel {
   private final Spec spec;
   private final EventLogger eventLogger;
   private final Supplier<List<String>> capabilitiesSupplier;
-  private final Supplier<List<String>> optionalCapabilitiesSupplier;
   private final ExecutionEngineClient executionEngineClient;
 
   public EngineCapabilitiesMonitor(
@@ -53,8 +51,6 @@ public class EngineCapabilitiesMonitor implements SlotEventsChannel {
     this.eventLogger = eventLogger;
     this.capabilitiesSupplier =
         Suppliers.memoize(() -> new ArrayList<>(engineMethodsResolver.getCapabilities()));
-    this.optionalCapabilitiesSupplier =
-        Suppliers.memoize(() -> new ArrayList<>(engineMethodsResolver.getOptionalCapabilities()));
     this.executionEngineClient = executionEngineClient;
   }
 
@@ -83,35 +79,20 @@ public class EngineCapabilitiesMonitor implements SlotEventsChannel {
 
   private SafeFuture<Void> monitor() {
     final List<String> capabilities = capabilitiesSupplier.get();
-    final List<String> optionalCapabilities = optionalCapabilitiesSupplier.get();
     return executionEngineClient
-        .exchangeCapabilities(
-            Stream.concat(capabilities.stream(), optionalCapabilities.stream()).toList())
+        .exchangeCapabilities(capabilities)
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
         .thenAccept(
             engineCapabilities -> {
-              LOG.debug("Engine API capabilities response: " + engineCapabilities);
+              LOG.debug("Engine API capabilities response: {}", engineCapabilities);
 
               final List<String> missingEngineCapabilities =
                   capabilities.stream()
-                      .filter(
-                          capability ->
-                              !engineCapabilities.contains(capability)
-                                  && !optionalCapabilities.contains(capability))
-                      .toList();
-
-              final List<String> missingOptionalCapabilities =
-                  optionalCapabilities.stream()
-                      .filter(
-                          optionalCapability -> !engineCapabilities.contains(optionalCapability))
+                      .filter(capability -> !engineCapabilities.contains(capability))
                       .toList();
 
               if (!missingEngineCapabilities.isEmpty()) {
-                eventLogger.missingEngineApiCapabilities(missingEngineCapabilities, false);
-              }
-
-              if (!missingOptionalCapabilities.isEmpty()) {
-                eventLogger.missingEngineApiCapabilities(missingOptionalCapabilities, true);
+                eventLogger.missingEngineApiCapabilities(missingEngineCapabilities);
               }
             });
   }
