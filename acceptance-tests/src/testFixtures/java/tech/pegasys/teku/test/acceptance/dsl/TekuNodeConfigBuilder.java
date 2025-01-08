@@ -184,8 +184,12 @@ public class TekuNodeConfigBuilder {
 
   public TekuNodeConfigBuilder withExecutionEngine(final BesuNode node) {
     mustBe(NodeType.BEACON_NODE);
-    LOG.debug("ee-endpoint={}", node.getInternalEngineJsonRpcUrl());
-    configMap.put("ee-endpoint", node.getInternalEngineJsonRpcUrl());
+    return withExecutionEngineEndpoint(node.getInternalEngineJsonRpcUrl());
+  }
+
+  public TekuNodeConfigBuilder withExecutionEngineEndpoint(final String engineEndpointUrl) {
+    LOG.debug("ee-endpoint={}", engineEndpointUrl);
+    configMap.put("ee-endpoint", engineEndpointUrl);
     return this;
   }
 

@@ -49,7 +49,7 @@ public class BlockProposalAcceptanceTest extends AcceptanceTestBase {
             .withAltairEpoch(UInt64.ZERO)
             .withBellatrixEpoch(UInt64.ZERO)
             .withCapellaEpoch(UInt64.ZERO)
-            .validatorKeys(validatorKeystores, validatorKeystores)
+            .validatorKeys(validatorKeystores)
             .generate();
 
     final String defaultFeeRecipient = "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73";

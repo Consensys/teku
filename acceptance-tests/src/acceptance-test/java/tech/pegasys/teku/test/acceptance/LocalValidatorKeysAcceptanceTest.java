@@ -58,6 +58,7 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
                 .withInitialState(genesis)
                 .withAltairEpoch(UInt64.ZERO)
                 .withBellatrixEpoch(UInt64.ZERO)
+                .withTerminalBlockHash(DEFAULT_EL_GENESIS_HASH, 0)
                 .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
                 .build());
     final TekuValidatorNode validatorClient =
