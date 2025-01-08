@@ -35,7 +35,7 @@ public interface SpecConfigEip7805 extends SpecConfigElectra {
 
   int getIlCommitteeSize();
 
-  int getMaxTransactionPerInclusionList();
+  int getMaxTransactionsPerInclusionList();
 
   @Override
   Optional<SpecConfigEip7805> toVersionEip7805();

@@ -29,7 +29,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.config.SpecConfigPhase0;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
@@ -131,14 +131,15 @@ public class SpecConfigBuilder {
   private Integer reorgParentWeightThreshold = 160;
 
   private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
-  private final BuilderChain<SpecConfig, SpecConfigElectra> builderChain =
+  private final BuilderChain<SpecConfig, SpecConfigEip7805> builderChain =
       BuilderChain.create(new AltairBuilder())
           .appendBuilder(new BellatrixBuilder())
           .appendBuilder(new CapellaBuilder())
           .appendBuilder(new DenebBuilder())
-          .appendBuilder(new ElectraBuilder());
+          .appendBuilder(new ElectraBuilder())
+          .appendBuilder(new Eip7805Builder());
 
-  public SpecConfigAndParent<SpecConfigElectra> build() {
+  public SpecConfigAndParent<SpecConfigEip7805> build() {
     builderChain.addOverridableItemsToRawConfig(
         (key, value) -> {
           if (value != null) {
