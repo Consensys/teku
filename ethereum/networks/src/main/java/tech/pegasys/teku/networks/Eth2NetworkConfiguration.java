@@ -437,6 +437,9 @@ public class Eth2NetworkConfiguration {
                   builder.electraBuilder(
                       electraBuilder ->
                           electraForkEpoch.ifPresent(electraBuilder::electraForkEpoch));
+                  builder.eip7805Builder(
+                      eip7805Builder ->
+                          electraForkEpoch.ifPresent(eip7805Builder::eip7805ForkEpoch));
                 });
       }
       if (spec.getForkSchedule().getSupportedMilestones().contains(SpecMilestone.DENEB)
