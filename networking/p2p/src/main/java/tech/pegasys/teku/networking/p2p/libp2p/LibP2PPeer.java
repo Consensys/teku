@@ -18,9 +18,11 @@ import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.PubKey;
 import io.libp2p.protocol.Identify;
+import io.libp2p.protocol.IdentifyController;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -28,6 +30,7 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
@@ -41,6 +44,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
+import tech.pegasys.teku.spec.constants.NetworkConstants;
 
 public class LibP2PPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -55,6 +59,10 @@ public class LibP2PPeer implements Peer {
   private final PubKey pubKey;
   private volatile PeerClientType peerClientType = PeerClientType.UNKNOWN;
   private volatile Optional<String> maybeAgentString = Optional.empty();
+
+  // used for throttling outgoing requests by protocol id
+  private final Map<List<String>, ThrottlingTaskQueue> outgoingRequestsQueuesByRpcMethod =
+      new ConcurrentHashMap<>();
 
   private volatile Optional<DisconnectReason> disconnectReason = Optional.empty();
   private volatile boolean disconnectLocallyInitiated = false;
@@ -109,10 +117,6 @@ public class LibP2PPeer implements Peer {
     return EnumUtils.getEnumIgnoreCase(PeerClientType.class, agent, PeerClientType.UNKNOWN);
   }
 
-  public Optional<String> getMaybeAgentString() {
-    return maybeAgentString;
-  }
-
   public PubKey getPubKey() {
     return pubKey;
   }
@@ -161,7 +165,7 @@ public class LibP2PPeer implements Peer {
                 .muxerSession()
                 .createStream(new Identify())
                 .getController()
-                .thenCompose(controller -> controller.id()))
+                .thenCompose(IdentifyController::id))
         .exceptionallyCompose(
             error -> {
               LOG.debug("Failed to get peer identity", error);
@@ -208,14 +212,18 @@ public class LibP2PPeer implements Peer {
           final TRequest request,
           final RespHandler responseHandler) {
     @SuppressWarnings("unchecked")
-    RpcHandler<TOutgoingHandler, TRequest, RespHandler> rpcHandler =
+    final RpcHandler<TOutgoingHandler, TRequest, RespHandler> rpcHandler =
         (RpcHandler<TOutgoingHandler, TRequest, RespHandler>) rpcHandlers.get(rpcMethod);
     if (rpcHandler == null) {
       throw new IllegalArgumentException(
           "Unknown rpc method invoked: " + String.join(",", rpcMethod.getIds()));
     }
 
-    return rpcHandler.sendRequest(connection, request, responseHandler);
+    return outgoingRequestsQueuesByRpcMethod
+        .computeIfAbsent(
+            rpcMethod.getIds(),
+            __ -> ThrottlingTaskQueue.create(NetworkConstants.MAX_CONCURRENT_REQUESTS))
+        .queueTask(() -> rpcHandler.sendRequest(connection, request, responseHandler));
   }
 
   @Override
