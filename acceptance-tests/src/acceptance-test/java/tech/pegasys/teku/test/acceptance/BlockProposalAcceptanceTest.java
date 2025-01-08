@@ -48,6 +48,7 @@ public class BlockProposalAcceptanceTest extends AcceptanceTestBase {
             .network(networkName)
             .withAltairEpoch(UInt64.ZERO)
             .withBellatrixEpoch(UInt64.ZERO)
+            .withCapellaEpoch(UInt64.ZERO)
             .validatorKeys(validatorKeystores, validatorKeystores)
             .generate();
 
@@ -62,6 +63,7 @@ public class BlockProposalAcceptanceTest extends AcceptanceTestBase {
                 .withInitialState(genesis)
                 .withAltairEpoch(UInt64.ZERO)
                 .withBellatrixEpoch(UInt64.ZERO)
+                .withCapellaEpoch(UInt64.ZERO)
                 .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
                 .build());
     final TekuValidatorNode validatorClient =

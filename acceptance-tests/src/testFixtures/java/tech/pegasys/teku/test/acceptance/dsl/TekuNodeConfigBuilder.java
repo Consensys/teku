@@ -197,19 +197,24 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
-  public TekuNodeConfigBuilder withTerminalBlockHash(final String terminalBlockHash) {
+  public TekuNodeConfigBuilder withTerminalBlockHash(
+      final String terminalBlockHash, final long terminalBlockHashEpoch) {
     mustBe(NodeType.BEACON_NODE);
 
     LOG.debug("Xnetwork-terminal-block-hash-override={}", terminalBlockHash);
+    LOG.debug("Xnetwork-terminal-block-hash-epoch-override={}", terminalBlockHashEpoch);
     configMap.put("Xnetwork-terminal-block-hash-override", terminalBlockHash);
+    configMap.put("Xnetwork-terminal-block-hash-epoch-override", terminalBlockHashEpoch);
 
     specConfigModifier =
         specConfigModifier.andThen(
             specConfigBuilder ->
                 specConfigBuilder.bellatrixBuilder(
                     bellatrixBuilder ->
-                        bellatrixBuilder.terminalBlockHash(
-                            Bytes32.fromHexString(terminalBlockHash))));
+                        bellatrixBuilder
+                            .terminalBlockHash(Bytes32.fromHexString(terminalBlockHash))
+                            .terminalBlockHashActivationEpoch(
+                                UInt64.valueOf(terminalBlockHashEpoch))));
     return this;
   }
 
