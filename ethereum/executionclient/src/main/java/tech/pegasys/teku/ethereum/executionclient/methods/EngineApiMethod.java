@@ -16,8 +16,7 @@ package tech.pegasys.teku.ethereum.executionclient.methods;
 public enum EngineApiMethod {
   ENGINE_NEW_PAYLOAD("engine_newPayload"),
   ENGINE_GET_PAYLOAD("engine_getPayload"),
-  ENGINE_FORK_CHOICE_UPDATED("engine_forkchoiceUpdated"),
-  ENGINE_GET_BLOBS("engine_getBlobs");
+  ENGINE_FORK_CHOICE_UPDATED("engine_forkchoiceUpdated");
 
   private final String name;
 
