@@ -29,7 +29,7 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
+import tech.pegasys.teku.networking.p2p.libp2p.rpc.PeerRpcHandler;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
@@ -43,15 +43,11 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
-import tech.pegasys.teku.spec.constants.NetworkConstants;
 
 public class LibP2PPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
 
-  private record RpcHandlerAndOutgoingQueue(
-      RpcHandler<?, ?, ?> rpcHandler, ThrottlingTaskQueue outgoingQueue) {}
-
-  private final Map<RpcMethod<?, ?, ?>, RpcHandlerAndOutgoingQueue> rpcHandlersAndOutgoingQueues;
+  private final Map<RpcMethod<?, ?, ?>, PeerRpcHandler<?, ?, ?>> rpcHandlers;
   private final ReputationManager reputationManager;
   private final Function<PeerId, Double> peerScoreFunction;
   private final Connection connection;
@@ -76,16 +72,9 @@ public class LibP2PPeer implements Peer {
       final ReputationManager reputationManager,
       final Function<PeerId, Double> peerScoreFunction) {
     this.connection = connection;
-    this.rpcHandlersAndOutgoingQueues =
+    this.rpcHandlers =
         rpcHandlers.stream()
-            .collect(
-                Collectors.toMap(
-                    RpcHandler::getRpcMethod,
-                    handler ->
-                        new RpcHandlerAndOutgoingQueue(
-                            handler,
-                            // https://github.com/ethereum/consensus-specs/pull/3767
-                            ThrottlingTaskQueue.create(NetworkConstants.MAX_CONCURRENT_REQUESTS))));
+            .collect(Collectors.toMap(RpcHandler::getRpcMethod, PeerRpcHandler::new));
     this.reputationManager = reputationManager;
     this.peerScoreFunction = peerScoreFunction;
     this.peerId = connection.secureSession().getRemoteId();
@@ -217,19 +206,15 @@ public class LibP2PPeer implements Peer {
           final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
           final TRequest request,
           final RespHandler responseHandler) {
-    final RpcHandlerAndOutgoingQueue rpcHandlerAndOutgoingQueue =
-        rpcHandlersAndOutgoingQueues.get(rpcMethod);
-    if (rpcHandlerAndOutgoingQueue == null) {
+    @SuppressWarnings("unchecked")
+    final PeerRpcHandler<TOutgoingHandler, TRequest, RespHandler> rpcHandler =
+        (PeerRpcHandler<TOutgoingHandler, TRequest, RespHandler>) rpcHandlers.get(rpcMethod);
+    if (rpcHandler == null) {
       throw new IllegalArgumentException(
           "Unknown rpc method invoked: " + String.join(",", rpcMethod.getIds()));
     }
 
-    @SuppressWarnings("unchecked")
-    final RpcHandler<TOutgoingHandler, TRequest, RespHandler> rpcHandler =
-        (RpcHandler<TOutgoingHandler, TRequest, RespHandler>) rpcHandlerAndOutgoingQueue.rpcHandler;
-
-    return rpcHandlerAndOutgoingQueue.outgoingQueue.queueTask(
-        () -> rpcHandler.sendRequest(connection, request, responseHandler));
+    return rpcHandler.sendRequest(connection, request, responseHandler);
   }
 
   @Override

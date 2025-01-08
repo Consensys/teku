@@ -11,49 +11,42 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.p2p.libp2p;
+package tech.pegasys.teku.networking.p2p.libp2p.rpc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.libp2p.core.Connection;
-import io.libp2p.core.security.SecureChannel.Session;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
-import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 
-public class LibP2PPeerTest {
+public class PeerRpcHandlerTest {
 
   private final Connection connection = mock(Connection.class);
 
   @SuppressWarnings("unchecked")
-  private final RpcHandler<RpcRequestHandler, Object, RpcResponseHandler<Void>> rpcHandler =
+  private final RpcHandler<RpcRequestHandler, Object, RpcResponseHandler<Void>> delegate =
       mock(RpcHandler.class);
 
   @SuppressWarnings("unchecked")
   private final RpcMethod<RpcRequestHandler, Object, RpcResponseHandler<Void>> rpcMethod =
       mock(RpcMethod.class);
 
-  private LibP2PPeer libP2PPeer;
+  private PeerRpcHandler<RpcRequestHandler, Object, RpcResponseHandler<Void>> peerRpcHandler;
 
   @BeforeEach
   public void init() {
-    when(rpcHandler.getRpcMethod()).thenReturn(rpcMethod);
-    final Session secureSession = mock(Session.class);
-    when(connection.secureSession()).thenReturn(secureSession);
-    when(connection.closeFuture()).thenReturn(new SafeFuture<>());
-    libP2PPeer =
-        new LibP2PPeer(connection, List.of(rpcHandler), ReputationManager.NOOP, peer -> 0.0);
+    when(delegate.getRpcMethod()).thenReturn(rpcMethod);
+    peerRpcHandler = new PeerRpcHandler<>(delegate);
   }
 
   @SuppressWarnings("unchecked")
@@ -67,17 +60,17 @@ public class LibP2PPeerTest {
                 __ -> {
                   final SafeFuture<RpcStreamController<RpcRequestHandler>> future =
                       new SafeFuture<>();
-                  when(rpcHandler.sendRequest(connection, null, null)).thenReturn(future);
-                  libP2PPeer.sendRequest(rpcMethod, null, null);
+                  when(delegate.sendRequest(connection, null, null)).thenReturn(future);
+                  peerRpcHandler.sendRequest(connection, null, null);
                   return future;
                 })
             .toList();
 
-    when(rpcHandler.sendRequest(connection, null, null))
+    when(peerRpcHandler.sendRequest(connection, null, null))
         .thenReturn(SafeFuture.completedFuture(mock(RpcStreamController.class)));
 
     final SafeFuture<RpcStreamController<RpcRequestHandler>> throttledRequest =
-        libP2PPeer.sendRequest(rpcMethod, null, null);
+        peerRpcHandler.sendRequest(connection, null, null);
 
     // completed request should be throttled
     assertThat(throttledRequest).isNotDone();
