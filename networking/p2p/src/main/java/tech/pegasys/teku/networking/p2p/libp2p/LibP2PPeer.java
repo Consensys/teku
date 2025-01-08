@@ -48,10 +48,10 @@ import tech.pegasys.teku.spec.constants.NetworkConstants;
 public class LibP2PPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
 
-  private record RpcHandlerAndQutgoingQueue(
+  private record RpcHandlerAndOutgoingQueue(
       RpcHandler<?, ?, ?> rpcHandler, ThrottlingTaskQueue outgoingQueue) {}
 
-  private final Map<RpcMethod<?, ?, ?>, RpcHandlerAndQutgoingQueue> rpcHandlersAndOutgoingQueues;
+  private final Map<RpcMethod<?, ?, ?>, RpcHandlerAndOutgoingQueue> rpcHandlersAndOutgoingQueues;
   private final ReputationManager reputationManager;
   private final Function<PeerId, Double> peerScoreFunction;
   private final Connection connection;
@@ -82,7 +82,7 @@ public class LibP2PPeer implements Peer {
                 Collectors.toMap(
                     RpcHandler::getRpcMethod,
                     handler ->
-                        new RpcHandlerAndQutgoingQueue(
+                        new RpcHandlerAndOutgoingQueue(
                             handler,
                             // https://github.com/ethereum/consensus-specs/pull/3767
                             ThrottlingTaskQueue.create(NetworkConstants.MAX_CONCURRENT_REQUESTS))));
@@ -217,15 +217,16 @@ public class LibP2PPeer implements Peer {
           final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
           final TRequest request,
           final RespHandler responseHandler) {
-    final RpcHandlerAndQutgoingQueue rpcHandlerAndOutgoingQueue =
+    final RpcHandlerAndOutgoingQueue rpcHandlerAndOutgoingQueue =
         rpcHandlersAndOutgoingQueues.get(rpcMethod);
-    @SuppressWarnings("unchecked")
-    final RpcHandler<TOutgoingHandler, TRequest, RespHandler> rpcHandler =
-        (RpcHandler<TOutgoingHandler, TRequest, RespHandler>) rpcHandlerAndOutgoingQueue.rpcHandler;
-    if (rpcHandler == null) {
+    if (rpcHandlerAndOutgoingQueue == null) {
       throw new IllegalArgumentException(
           "Unknown rpc method invoked: " + String.join(",", rpcMethod.getIds()));
     }
+
+    @SuppressWarnings("unchecked")
+    final RpcHandler<TOutgoingHandler, TRequest, RespHandler> rpcHandler =
+        (RpcHandler<TOutgoingHandler, TRequest, RespHandler>) rpcHandlerAndOutgoingQueue.rpcHandler;
 
     return rpcHandlerAndOutgoingQueue.outgoingQueue.queueTask(
         () -> rpcHandler.sendRequest(connection, request, responseHandler));
