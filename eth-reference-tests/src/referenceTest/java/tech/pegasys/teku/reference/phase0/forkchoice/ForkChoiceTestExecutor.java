@@ -84,7 +84,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("fork_choice/ex_ante", new ForkChoiceTestExecutor())
           .put("fork_choice/reorg", new ForkChoiceTestExecutor())
           .put("fork_choice/on_block", new ForkChoiceTestExecutor())
-          .put("fork_choice/on_merge_block", new ForkChoiceTestExecutor())
+          .put("fork_choice/on_merge_block", IGNORE_TESTS) // TTD Logic is deprecated
           .put("fork_choice/withholding", new ForkChoiceTestExecutor())
           .put("sync/optimistic", new ForkChoiceTestExecutor())
           .put("fork_choice/should_override_forkchoice_update", new ForkChoiceTestExecutor())
