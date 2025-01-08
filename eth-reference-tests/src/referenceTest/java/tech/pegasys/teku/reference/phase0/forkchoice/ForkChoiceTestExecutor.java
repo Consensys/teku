@@ -20,7 +20,6 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMilli
 
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +31,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
-import org.apache.tuweni.units.bigints.UInt256;
 import org.assertj.core.api.Condition;
 import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -243,11 +241,6 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         reader -> {
           final Bytes32 blockHash = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           final Bytes32 parentHash = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
-          final UInt256 totalDifficulty =
-              UInt256.valueOf(
-                  reader
-                      .readFixedBytes(Bytes32.SIZE)
-                      .toUnsignedBigInteger(ByteOrder.LITTLE_ENDIAN));
           // We don't get a timestamp but as long as it's in the past that's fine
           final UInt64 timestamp = UInt64.ZERO;
           return new PowBlock(blockHash, parentHash, timestamp);
