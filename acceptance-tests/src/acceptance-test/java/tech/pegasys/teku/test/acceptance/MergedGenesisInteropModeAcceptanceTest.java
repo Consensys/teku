@@ -94,7 +94,7 @@ public class MergedGenesisInteropModeAcceptanceTest extends AcceptanceTestBase {
         tekuNodeConfigBuilder.withCapellaEpoch(UInt64.ZERO);
         tekuNodeConfigBuilder.withDenebEpoch(UInt64.ZERO);
         tekuNodeConfigBuilder.withElectraEpoch(UInt64.ZERO);
-        tekuNodeConfigBuilder.withEip(UInt64.ZERO);
+        tekuNodeConfigBuilder.withEip7805Epoch(UInt64.ZERO);
         break;
       default:
         // Test will reach this whenever a new milestone is added and isn't mapped on the switch.
