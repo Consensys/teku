@@ -177,9 +177,7 @@ public abstract class Node {
           assertThat(
                   MetricMatcher.anyMatching(
                       metrics, nameCondition, labelsCondition, valueCondition))
-              .withFailMessage(
-                  "No matching metric with following conditions: %s %s %s. Metrics list: %s",
-                  nameCondition, labelsCondition, valueCondition, metrics)
+              .withFailMessage("No matching metric")
               .isPresent();
         },
         timeoutAmount,
