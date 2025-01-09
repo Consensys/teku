@@ -437,7 +437,7 @@ public class Eth2P2PNetworkFactory {
                 syncCommitteeMessageProcessor,
                 signedBlsToExecutionChangeProcessor,
                 debugDataDumper);
-        // TODO update for EIP7805
+        // TODO EIP7805
         case ELECTRA, EIP7805 ->
             new GossipForkSubscriptionsElectra(
                 forkAndSpecMilestone.getFork(),
