@@ -98,7 +98,7 @@ public class SchemaObjectProvider {
               block.getParentRoot(),
               block.getStateRoot(),
               getBlindedBlockBodyDeneb(block.getBody()));
-      // TODO update for EIP7805
+      // TODO EIP7805
       case ELECTRA, EIP7805 ->
           new BlindedBlockElectra(
               block.getSlot(),
@@ -148,7 +148,7 @@ public class SchemaObjectProvider {
               block.getParentRoot(),
               block.getStateRoot(),
               getBeaconBlockBodyDeneb(block.getBody()));
-      // TODO update for EIP7805
+      // TODO EIP7805
       case ELECTRA, EIP7805 ->
           new BeaconBlockElectra(
               block.getSlot(),
