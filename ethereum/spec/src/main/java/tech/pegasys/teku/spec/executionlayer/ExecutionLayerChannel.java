@@ -120,8 +120,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       ForkChoiceState forkChoiceState,
       Optional<PayloadBuildingAttributes> payloadBuildingAttributes);
 
-  SafeFuture<PayloadStatus> engineNewPayload(
-      NewPayloadRequest newPayloadRequest, final UInt64 slot);
+  SafeFuture<PayloadStatus> engineNewPayload(NewPayloadRequest newPayloadRequest, UInt64 slot);
 
   SafeFuture<List<ClientVersion>> engineGetClientVersion(ClientVersion clientVersion);
 
