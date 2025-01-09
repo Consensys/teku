@@ -90,10 +90,8 @@ public abstract class AbstractRpcMethodIntegrationTest {
         checkState(nextSpecMilestone.equals(SpecMilestone.FULU), "next spec should be fulu");
         nextSpec = Optional.of(TestSpecFactory.createMinimalWithFuluForkEpoch(nextSpecEpoch));
       }
-      case FULU -> throw new RuntimeException("Base spec is already latest supported milestone");
-      case EIP7805 ->
-          throw new UnsupportedOperationException(
-              "Base spec is already latest supported milestone");
+      case FULU, EIP7805 ->
+          throw new RuntimeException("Base spec is already latest supported milestone");
     }
     nextSpecSlot = nextSpec.orElseThrow().computeStartSlotAtEpoch(nextSpecEpoch);
   }
@@ -221,11 +219,18 @@ public abstract class AbstractRpcMethodIntegrationTest {
         .flatMap(
             milestone -> {
               final SpecMilestone prevMilestone = milestone.getPreviousMilestone();
-              return Stream.of(
-                  Arguments.of(prevMilestone, milestone, true, true),
-                  Arguments.of(prevMilestone, milestone, false, true),
-                  Arguments.of(prevMilestone, milestone, true, false),
-                  Arguments.of(prevMilestone, milestone, false, false));
+              // TODO EIP7805: EIP7805 doesn't introduce a new beacon block schema
+              if (milestone.equals(SpecMilestone.EIP7805)) {
+                return Stream.of(
+                    Arguments.of(prevMilestone, milestone, true, true),
+                    Arguments.of(prevMilestone, milestone, false, true));
+              } else {
+                return Stream.of(
+                    Arguments.of(prevMilestone, milestone, true, true),
+                    Arguments.of(prevMilestone, milestone, false, true),
+                    Arguments.of(prevMilestone, milestone, true, false),
+                    Arguments.of(prevMilestone, milestone, false, false));
+              }
             });
   }
 

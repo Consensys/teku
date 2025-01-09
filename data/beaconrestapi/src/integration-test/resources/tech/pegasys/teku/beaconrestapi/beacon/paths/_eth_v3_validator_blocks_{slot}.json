@@ -69,7 +69,8 @@
                 "capella",
                 "deneb",
                 "electra",
-                "fulu"
+                "fulu",
+                "eip7805"
               ],
               "example": "phase0"
             }
