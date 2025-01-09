@@ -44,7 +44,8 @@
                       "bellatrix",
                       "capella",
                       "deneb",
-                      "electra"
+                      "electra",
+                      "eip7805"
                     ]
                   },
                   "data": {

@@ -1978,7 +1978,7 @@ public final class DataStructureUtil {
 
   public BeaconStateBuilderElectra stateBuilderEip7805(
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
-    // TODO update for EIP7805
+    // TODO EIP7805
     return BeaconStateBuilderElectra.create(
         this, spec, defaultValidatorCount, defaultItemsInSSZLists);
   }

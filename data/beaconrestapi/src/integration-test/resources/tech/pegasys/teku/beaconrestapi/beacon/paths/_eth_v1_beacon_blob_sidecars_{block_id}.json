@@ -42,7 +42,8 @@
                 "bellatrix",
                 "capella",
                 "deneb",
-                "electra"
+                "electra",
+                "eip7805"
               ],
               "example": "phase0"
             }
