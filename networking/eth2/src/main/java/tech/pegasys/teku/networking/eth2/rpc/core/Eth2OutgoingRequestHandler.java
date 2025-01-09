@@ -55,7 +55,7 @@ public class Eth2OutgoingRequestHandler<
   private static final Logger LOG = LogManager.getLogger();
 
   @VisibleForTesting static final Duration READ_COMPLETE_TIMEOUT = Duration.ofSeconds(10);
-  @VisibleForTesting static final Duration RESPONSE_CHUNK_ARRIVAL_TIMEOUT = Duration.ofSeconds(30);
+  @VisibleForTesting static final Duration RESPONSE_CHUNK_ARRIVAL_TIMEOUT = Duration.ofSeconds(10);
 
   private final AsyncRunner asyncRunner;
   private final int maximumResponseChunks;
@@ -116,7 +116,7 @@ public class Eth2OutgoingRequestHandler<
         throw new RpcException.ExtraDataAppendedException(" extra data: " + bufToString(data));
       }
 
-      List<TResponse> maybeResponses = responseDecoder.decodeNextResponses(data);
+      final List<TResponse> maybeResponses = responseDecoder.decodeNextResponses(data);
       final int chunksReceived = currentChunkCount.addAndGet(maybeResponses.size());
 
       if (chunksReceived > maximumResponseChunks) {
@@ -161,8 +161,8 @@ public class Eth2OutgoingRequestHandler<
     final int contentSize = Integer.min(buf.readableBytes(), 1024);
     String bufContent = "";
     if (contentSize > 0) {
-      ByteBuf bufSlice = buf.slice(0, contentSize);
-      byte[] bytes = new byte[bufSlice.readableBytes()];
+      final ByteBuf bufSlice = buf.slice(0, contentSize);
+      final byte[] bytes = new byte[bufSlice.readableBytes()];
       bufSlice.getBytes(0, bytes);
       bufContent += Bytes.wrap(bytes);
       if (contentSize < buf.readableBytes()) {
@@ -255,9 +255,8 @@ public class Eth2OutgoingRequestHandler<
       final int previousResponseCount,
       final AtomicInteger currentResponseCount) {
     timeoutRunner
-        .getDelayedFuture(RESPONSE_CHUNK_ARRIVAL_TIMEOUT)
-        .thenAccept(
-            (__) -> {
+        .runAfterDelay(
+            () -> {
               if (previousResponseCount == currentResponseCount.get()) {
                 abortRequest(
                     stream,
@@ -265,22 +264,23 @@ public class Eth2OutgoingRequestHandler<
                         "Timed out waiting for response chunk " + previousResponseCount,
                         RESPONSE_CHUNK_ARRIVAL_TIMEOUT));
               }
-            })
+            },
+            RESPONSE_CHUNK_ARRIVAL_TIMEOUT)
         .ifExceptionGetsHereRaiseABug();
   }
 
   private void ensureReadCompleteArrivesInTime(final RpcStream stream) {
     timeoutRunner
-        .getDelayedFuture(READ_COMPLETE_TIMEOUT)
-        .thenAccept(
-            (__) -> {
+        .runAfterDelay(
+            () -> {
               if (!(state.get() == READ_COMPLETE || state.get() == CLOSED)) {
                 abortRequest(
                     stream,
                     new RpcTimeoutException(
                         "Timed out waiting for read channel close", READ_COMPLETE_TIMEOUT));
               }
-            })
+            },
+            READ_COMPLETE_TIMEOUT)
         .ifExceptionGetsHereRaiseABug();
   }
 

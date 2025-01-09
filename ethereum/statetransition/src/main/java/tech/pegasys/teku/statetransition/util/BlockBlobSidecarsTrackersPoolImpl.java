@@ -477,7 +477,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     return blockBlobSidecarsTrackers.size();
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
   private BlockBlobSidecarsTracker internalOnNewBlock(
       final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
     final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
@@ -502,19 +501,21 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
               if (!existingTracker.isComplete()) {
                 // we missed the opportunity to complete the blob sidecars via local EL and RPC
                 // (since the block is required to be known) Let's try now
-                asyncRunner.runAsync(
-                    () ->
-                        fetchMissingBlobsFromLocalEL(slotAndBlockRoot)
-                            .handleException(this::logLocalElBlobsLookupFailure)
-                            .thenRun(
-                                () -> {
-                                  // only run if RPC block fetch has happened ( no blobs RPC fetch
-                                  // has occurred)
-                                  if (existingTracker.isRpcBlockFetchTriggered()) {
-                                    fetchMissingBlockOrBlobsFromRPC(slotAndBlockRoot);
-                                  }
-                                })
-                            .finish(this::logBlockOrBlobsRPCFailure));
+                asyncRunner
+                    .runAsync(
+                        () ->
+                            fetchMissingBlobsFromLocalEL(slotAndBlockRoot)
+                                .handleException(this::logLocalElBlobsLookupFailure)
+                                .thenRun(
+                                    () -> {
+                                      // only run if RPC block fetch has happened
+                                      // (no blobs RPC fetch has occurred)
+                                      if (existingTracker.isRpcBlockFetchTriggered()) {
+                                        fetchMissingBlockOrBlobsFromRPC(slotAndBlockRoot);
+                                      }
+                                    })
+                                .handleException(this::logBlockOrBlobsRPCFailure))
+                    .ifExceptionGetsHereRaiseABug();
               }
             });
 
@@ -585,7 +586,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     }
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
   private void onFirstSeen(
       final SlotAndBlockRoot slotAndBlockRoot, final Optional<RemoteOrigin> remoteOrigin) {
     final boolean isLocalBlockProduction =
@@ -597,14 +597,16 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     final SafeFuture<Void> rpcFetchDelay =
         asyncRunner.getDelayedFuture(calculateRpcFetchDelay(slotAndBlockRoot));
 
-    asyncRunner.runAsync(
-        () ->
-            // fetch blobs from EL with no delay
-            fetchMissingBlobsFromLocalEL(slotAndBlockRoot)
-                .handleException(this::logLocalElBlobsLookupFailure)
-                .thenCompose(__ -> rpcFetchDelay)
-                .thenRun(() -> fetchMissingBlockOrBlobsFromRPC(slotAndBlockRoot))
-                .finish(this::logBlockOrBlobsRPCFailure));
+    asyncRunner
+        .runAsync(
+            () ->
+                // fetch blobs from EL with no delay
+                fetchMissingBlobsFromLocalEL(slotAndBlockRoot)
+                    .handleException(this::logLocalElBlobsLookupFailure)
+                    .thenCompose(__ -> rpcFetchDelay)
+                    .thenRun(() -> fetchMissingBlockOrBlobsFromRPC(slotAndBlockRoot))
+                    .handleException(this::logBlockOrBlobsRPCFailure))
+        .ifExceptionGetsHereRaiseABug();
   }
 
   @VisibleForTesting
