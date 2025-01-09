@@ -251,11 +251,12 @@ public class LibP2PPeer implements Peer {
     private final ThrottlingTaskQueue requestsQueue =
         ThrottlingTaskQueue.create(NetworkConstants.MAX_CONCURRENT_REQUESTS);
 
-    ThrottlingRpcHandler(final RpcHandler<TOutgoingHandler, TRequest, TRespHandler> delegate) {
+    private ThrottlingRpcHandler(
+        final RpcHandler<TOutgoingHandler, TRequest, TRespHandler> delegate) {
       this.delegate = delegate;
     }
 
-    SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
+    private SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
         final Connection connection, final TRequest request, final TRespHandler responseHandler) {
       return requestsQueue.queueTask(
           () -> delegate.sendRequest(connection, request, responseHandler));
