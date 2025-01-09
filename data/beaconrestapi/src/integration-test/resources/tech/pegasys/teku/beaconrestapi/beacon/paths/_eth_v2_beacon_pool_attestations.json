@@ -38,7 +38,8 @@
                 "bellatrix",
                 "capella",
                 "deneb",
-                "electra"
+                "electra",
+                "eip7805"
               ],
               "example": "phase0"
             }
@@ -85,7 +86,7 @@
       "in" : "header",
       "schema" : {
         "type" : "string",
-        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ],
+        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "eip7805" ],
         "description" : "Version of the attestations being submitted."
       }
     } ],
