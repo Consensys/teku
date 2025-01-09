@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.ExternalSummary;
@@ -67,13 +68,14 @@ public class StubMetricsSystem implements MetricsSystem {
         .computeIfAbsent(name, __ -> new StubLabelledCounter());
   }
 
+  /* Not implemented nor used in tests but required by the new interface definition */
   @Override
   public LabelledSuppliedMetric createLabelledSuppliedCounter(
       final MetricCategory metricCategory,
       final String s,
       final String s1,
       final String... strings) {
-    return null;
+    return NoOpMetricsSystem.getLabelledSuppliedMetric(strings.length);
   }
 
   @Override
@@ -126,7 +128,7 @@ public class StubMetricsSystem implements MetricsSystem {
       final String help,
       final double[] buckets,
       final String... labelNames) {
-    return new LabelCountingNoOpMetric<>(labelNames.length, NO_OP_HISTOGRAM);
+    return NoOpMetricsSystem.getHistogramLabelledMetric(labelNames.length);
   }
 
   @Override
@@ -135,7 +137,7 @@ public class StubMetricsSystem implements MetricsSystem {
       final String name,
       final String help,
       final String... labelNames) {
-    return new LabelledSuppliedNoOpMetric(labelNames.length);
+    return NoOpMetricsSystem.getLabelledSuppliedSummary(labelNames.length);
   }
 
   @Override

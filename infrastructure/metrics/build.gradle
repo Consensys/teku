@@ -14,4 +14,5 @@ dependencies {
 
     testFixturesApi 'com.google.guava:guava'
     testFixturesApi 'org.hyperledger.besu:plugin-api'
+    testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
 }
