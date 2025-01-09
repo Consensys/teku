@@ -586,7 +586,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     }
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
   private void onFirstSeen(
       final SlotAndBlockRoot slotAndBlockRoot, final Optional<RemoteOrigin> remoteOrigin) {
     final boolean isLocalBlockProduction =
@@ -598,14 +597,16 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     final SafeFuture<Void> rpcFetchDelay =
         asyncRunner.getDelayedFuture(calculateRpcFetchDelay(slotAndBlockRoot));
 
-    asyncRunner.runAsync(
-        () ->
-            // fetch blobs from EL with no delay
-            fetchMissingBlobsFromLocalEL(slotAndBlockRoot)
-                .handleException(this::logLocalElBlobsLookupFailure)
-                .thenCompose(__ -> rpcFetchDelay)
-                .thenRun(() -> fetchMissingBlockOrBlobsFromRPC(slotAndBlockRoot))
-                .finish(this::logBlockOrBlobsRPCFailure));
+    asyncRunner
+        .runAsync(
+            () ->
+                // fetch blobs from EL with no delay
+                fetchMissingBlobsFromLocalEL(slotAndBlockRoot)
+                    .handleException(this::logLocalElBlobsLookupFailure)
+                    .thenCompose(__ -> rpcFetchDelay)
+                    .thenRun(() -> fetchMissingBlockOrBlobsFromRPC(slotAndBlockRoot))
+                    .handleException(this::logBlockOrBlobsRPCFailure))
+        .ifExceptionGetsHereRaiseABug();
   }
 
   @VisibleForTesting
