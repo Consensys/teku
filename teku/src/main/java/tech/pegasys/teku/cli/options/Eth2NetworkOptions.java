@@ -215,6 +215,14 @@ public class Eth2NetworkOptions {
   private UInt64 fuluForkEpoch;
 
   @Option(
+      names = {"--Xnetwork-eip7805-fork-epoch"},
+      hidden = true,
+      paramLabel = "<epoch>",
+      description = "Override the eip7805 fork activation epoch.",
+      arity = "1")
+  private UInt64 eip7805ForkEpoch;
+
+  @Option(
       names = {"--Xnetwork-total-terminal-difficulty-override"},
       hidden = true,
       paramLabel = "<uint256>",
@@ -458,6 +466,9 @@ public class Eth2NetworkOptions {
     }
     if (fuluForkEpoch != null) {
       builder.fuluForkEpoch(fuluForkEpoch);
+    }
+    if (eip7805ForkEpoch != null) {
+      builder.eip7805ForkEpoch(eip7805ForkEpoch);
     }
     if (totalTerminalDifficultyOverride != null) {
       builder.totalTerminalDifficultyOverride(totalTerminalDifficultyOverride);

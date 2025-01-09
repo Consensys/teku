@@ -122,6 +122,7 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt64> denebForkEpoch;
   private final Optional<UInt64> electraForkEpoch;
   private final Optional<UInt64> fuluForkEpoch;
+  private final Optional<UInt64> eip7805ForkEpoch;
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final Optional<String> trustedSetup;
@@ -162,6 +163,7 @@ public class Eth2NetworkConfiguration {
       final Optional<UInt64> denebForkEpoch,
       final Optional<UInt64> electraForkEpoch,
       final Optional<UInt64> fuluForkEpoch,
+      final Optional<UInt64> eip7805ForkEpoch,
       final Optional<Bytes32> terminalBlockHashOverride,
       final Optional<UInt256> totalTerminalDifficultyOverride,
       final Optional<UInt64> terminalBlockHashEpochOverride,
@@ -193,6 +195,7 @@ public class Eth2NetworkConfiguration {
     this.capellaForkEpoch = capellaForkEpoch;
     this.denebForkEpoch = denebForkEpoch;
     this.electraForkEpoch = electraForkEpoch;
+    this.eip7805ForkEpoch = eip7805ForkEpoch;
     this.fuluForkEpoch = fuluForkEpoch;
     this.eth1DepositContractAddress =
         eth1DepositContractAddress == null
@@ -299,6 +302,7 @@ public class Eth2NetworkConfiguration {
       case DENEB -> denebForkEpoch;
       case ELECTRA -> electraForkEpoch;
       case FULU -> fuluForkEpoch;
+      case EIP7805 -> eip7805ForkEpoch;
       default -> Optional.empty();
     };
   }
@@ -420,6 +424,7 @@ public class Eth2NetworkConfiguration {
         && Objects.equals(denebForkEpoch, that.denebForkEpoch)
         && Objects.equals(electraForkEpoch, that.electraForkEpoch)
         && Objects.equals(fuluForkEpoch, that.fuluForkEpoch)
+        && Objects.equals(eip7805ForkEpoch, that.eip7805ForkEpoch)
         && Objects.equals(eth1DepositContractAddress, that.eth1DepositContractAddress)
         && Objects.equals(eth1DepositContractDeployBlock, that.eth1DepositContractDeployBlock)
         && Objects.equals(trustedSetup, that.trustedSetup)
@@ -445,6 +450,7 @@ public class Eth2NetworkConfiguration {
         denebForkEpoch,
         electraForkEpoch,
         fuluForkEpoch,
+        eip7805ForkEpoch,
         eth1DepositContractAddress,
         eth1DepositContractDeployBlock,
         trustedSetup,
@@ -487,6 +493,7 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt64> denebForkEpoch = Optional.empty();
     private Optional<UInt64> electraForkEpoch = Optional.empty();
     private Optional<UInt64> fuluForkEpoch = Optional.empty();
+    private Optional<UInt64> eip7805ForkEpoch = Optional.empty();
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
     private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
@@ -591,6 +598,7 @@ public class Eth2NetworkConfiguration {
           denebForkEpoch,
           electraForkEpoch,
           fuluForkEpoch,
+          eip7805ForkEpoch,
           terminalBlockHashOverride,
           totalTerminalDifficultyOverride,
           terminalBlockHashEpochOverride,
@@ -816,6 +824,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder fuluForkEpoch(final UInt64 fuluForkEpoch) {
       this.fuluForkEpoch = Optional.of(fuluForkEpoch);
+      return this;
+    }
+
+    public Builder eip7805ForkEpoch(final UInt64 eip7805ForkEpoch) {
+      this.eip7805ForkEpoch = Optional.of(eip7805ForkEpoch);
       return this;
     }
 
