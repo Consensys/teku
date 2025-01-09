@@ -385,20 +385,21 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start)))
         .finish(
             error -> {
-              final Throwable rootCause = Throwables.getRootCause(error);
-              final String errorDescription;
+              Throwable rootCause = Throwables.getRootCause(error);
               if (rootCause instanceof BindException) {
-                errorDescription =
+                final String errorWhilePerformingDescription =
                     "starting P2P services on port(s) "
                         + p2pNetwork.getListenPorts().stream()
                             .map(Object::toString)
                             .collect(Collectors.joining(","))
                         + ".";
+                STATUS_LOG.fatalError(errorWhilePerformingDescription, rootCause);
+                System.exit(FATAL_EXIT_CODE);
               } else {
-                errorDescription = ExceptionUtil.getMessageOrSimpleName(rootCause);
+                Thread.currentThread()
+                    .getUncaughtExceptionHandler()
+                    .uncaughtException(Thread.currentThread(), error);
               }
-              STATUS_LOG.fatalError(errorDescription, rootCause);
-              System.exit(FATAL_EXIT_CODE);
             });
   }
 

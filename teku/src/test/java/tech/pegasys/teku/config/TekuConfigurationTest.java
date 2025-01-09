@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.BeaconNodeFacade;
 import tech.pegasys.teku.TekuFacade;
@@ -34,7 +33,6 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.services.beaconchain.BeaconChainController;
 import tech.pegasys.teku.services.beaconchain.BeaconChainControllerFactory;
 
-@Disabled("TODO")
 public class TekuConfigurationTest {
 
   Path tempDir = TempDirUtils.createTempDir();
