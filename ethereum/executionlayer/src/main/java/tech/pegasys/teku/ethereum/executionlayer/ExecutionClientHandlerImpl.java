@@ -24,6 +24,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -36,6 +37,8 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
 
@@ -130,16 +133,25 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
                 clientVersions.stream().map(ClientVersionV1::asInternalClientVersion).toList());
   }
 
+  /** Unlikely the {@link BlobSchema} to change with upcoming forks */
   @Override
   public SafeFuture<List<BlobAndProof>> engineGetBlobs(
       final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
-    final JsonRpcRequestParams params =
-        new JsonRpcRequestParams.Builder().add(blobVersionedHashes).add(slot).build();
-    return engineMethodsResolver
-        .getListMethod(
-            EngineApiMethod.ENGINE_GET_BLOBS,
-            () -> spec.atSlot(slot).getMilestone(),
-            BlobAndProof.class)
-        .execute(params);
+    return executionEngineClient
+        .getBlobsV1(blobVersionedHashes)
+        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
+        .thenApply(
+            response -> {
+              final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
+              final BlobSchema blobSchema =
+                  SchemaDefinitionsDeneb.required(schemaDefinitions).getBlobSchema();
+              return response.stream()
+                  .map(
+                      blobAndProofV1 ->
+                          blobAndProofV1 == null
+                              ? null
+                              : blobAndProofV1.asInternalBlobsAndProofs(blobSchema))
+                  .toList();
+            });
   }
 }
