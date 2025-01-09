@@ -247,6 +247,7 @@ public class LibP2PPeer implements Peer {
       TRespHandler extends RpcResponseHandler<?>> {
 
     private final RpcHandler<TOutgoingHandler, TRequest, TRespHandler> delegate;
+
     private final ThrottlingTaskQueue requestsQueue =
         ThrottlingTaskQueue.create(NetworkConstants.MAX_CONCURRENT_REQUESTS);
 
