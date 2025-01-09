@@ -29,8 +29,8 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
-import tech.pegasys.teku.networking.p2p.libp2p.rpc.ThrottlingRpcHandler;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler;
@@ -43,6 +43,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
+import tech.pegasys.teku.spec.constants.NetworkConstants;
 
 public class LibP2PPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -237,6 +238,27 @@ public class LibP2PPeer implements Peer {
     final boolean shouldDisconnect = reputationManager.adjustReputation(getAddress(), adjustment);
     if (shouldDisconnect) {
       disconnectCleanly(DisconnectReason.REMOTE_FAULT).ifExceptionGetsHereRaiseABug();
+    }
+  }
+
+  private static class ThrottlingRpcHandler<
+      TOutgoingHandler extends RpcRequestHandler,
+      TRequest,
+      TRespHandler extends RpcResponseHandler<?>> {
+
+    private final RpcHandler<TOutgoingHandler, TRequest, TRespHandler> delegate;
+    private final ThrottlingTaskQueue requestsQueue =
+        ThrottlingTaskQueue.create(NetworkConstants.MAX_CONCURRENT_REQUESTS);
+
+    public ThrottlingRpcHandler(
+        final RpcHandler<TOutgoingHandler, TRequest, TRespHandler> delegate) {
+      this.delegate = delegate;
+    }
+
+    public SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
+        final Connection connection, final TRequest request, final TRespHandler responseHandler) {
+      return requestsQueue.queueTask(
+          () -> delegate.sendRequest(connection, request, responseHandler));
     }
   }
 }
