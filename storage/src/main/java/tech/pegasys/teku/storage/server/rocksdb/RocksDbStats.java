@@ -190,7 +190,10 @@ public class RocksDbStats implements AutoCloseable {
       for (final HistogramType histogram : HISTOGRAMS) {
         metricsSystem.createSummary(
             category,
-            histogram.name().toLowerCase(Locale.ROOT),
+            category.getApplicationPrefix().orElse("")
+                + category.getName()
+                + "_"
+                + histogram.name().toLowerCase(Locale.ROOT),
             "RocksDB histogram for " + histogram.name(),
             () -> provideExternalSummary(stats, histogram));
       }
