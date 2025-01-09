@@ -218,11 +218,18 @@ public abstract class AbstractRpcMethodIntegrationTest {
         .flatMap(
             milestone -> {
               final SpecMilestone prevMilestone = milestone.getPreviousMilestone();
-              return Stream.of(
-                  Arguments.of(prevMilestone, milestone, true, true),
-                  Arguments.of(prevMilestone, milestone, false, true),
-                  Arguments.of(prevMilestone, milestone, true, false),
-                  Arguments.of(prevMilestone, milestone, false, false));
+              // TODO EIP7805: EIP7805 doesn't introduce a new beacon block schema
+              if (milestone.equals(SpecMilestone.EIP7805)) {
+                return Stream.of(
+                    Arguments.of(prevMilestone, milestone, true, true),
+                    Arguments.of(prevMilestone, milestone, false, true));
+              } else {
+                return Stream.of(
+                    Arguments.of(prevMilestone, milestone, true, true),
+                    Arguments.of(prevMilestone, milestone, false, true),
+                    Arguments.of(prevMilestone, milestone, true, false),
+                    Arguments.of(prevMilestone, milestone, false, false));
+              }
             });
   }
 
@@ -267,7 +274,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
       case BELLATRIX -> BeaconBlockBodyBellatrix.class;
       case CAPELLA -> BeaconBlockBodyCapella.class;
       case DENEB -> BeaconBlockBodyDeneb.class;
-      // TODO update for EIP7805
+      // TODO EIP7805
       case ELECTRA, EIP7805 -> BeaconBlockBodyElectra.class;
     };
   }
