@@ -245,7 +245,7 @@ public class TestSpecFactory {
   public static Spec createMainnetEip7805() {
     final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getEip7805SpecConfig(Eth2Network.MAINNET);
-    return create(specConfig, SpecMilestone.ELECTRA);
+    return create(specConfig, SpecMilestone.EIP7805);
   }
 
   public static Spec createPhase0(final SpecConfigAndParent<? extends SpecConfig> config) {
