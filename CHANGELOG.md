@@ -7,7 +7,7 @@
 ## Unreleased Changes
 
 ### Breaking Changes
-`--Xvalidators-builder-registration-default-gas-limit` has been removed in favour of `--Xvalidators-builder-registration-default-gas-limit`
+`--Xvalidators-builder-registration-default-gas-limit` has been removed in favour of `--validators-builder-registration-default-gas-limit`
 
 ### Additions and Improvements
 - Optimized blobs validation pipeline
