@@ -67,8 +67,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(syncConfig.getHistoricalSyncBatchSize()).isEqualTo(102);
     assertThat(syncConfig.getForwardSyncBatchSize()).isEqualTo(103);
     assertThat(syncConfig.getForwardSyncMaxPendingBatches()).isEqualTo(8);
-    assertThat(syncConfig.getForwardSyncMaxBlocksPerMinute()).isEqualTo(80);
-    assertThat(syncConfig.getForwardSyncMaxBlobSidecarsPerMinute()).isEqualTo(120);
+    assertThat(syncConfig.getForwardSyncMaxBlocksPerMinute()).isEqualTo(100);
+    assertThat(syncConfig.getForwardSyncMaxBlobSidecarsPerMinute()).isEqualTo(400);
   }
 
   @Test
