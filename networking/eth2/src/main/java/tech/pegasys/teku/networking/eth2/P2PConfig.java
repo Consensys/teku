@@ -32,7 +32,8 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 public class P2PConfig {
 
   public static final int DEFAULT_PEER_BLOCKS_RATE_LIMIT = 500;
-  public static final int DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT = 1500;
+  // 250 MB per peer per minute (~ 4.16 MB/s)
+  public static final int DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT = 2000;
 
   public static final int DEFAULT_PEER_REQUEST_LIMIT = 100;
 
