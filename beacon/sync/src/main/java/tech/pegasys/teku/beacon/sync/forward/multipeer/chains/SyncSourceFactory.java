@@ -53,13 +53,15 @@ public class SyncSourceFactory {
         spec.getMaxBlobsPerBlockForHighestMilestone()
             .map(
                 maxBlobsPerBlock -> {
-                  final int maximumAcceptedBlobsPerMinute =
-                      this.maxBlocksPerMinute * maxBlobsPerBlock;
+                  final int maxBlobSidecarsPerMinuteUpperBound =
+                      (this.maxBlocksPerMinute * maxBlobsPerBlock)
+                          - (batchSize * maxBlobsPerBlock)
+                          - 1;
                   // The default configured value for requesting is less than what we'd accept to
-                  // avoid requesting a very large number of blobs in a short amount of time
+                  // avoid requesting a very large number of blobs in a short amount of time, so
+                  // choose the minimum of the two
                   return Math.min(
-                      this.maxBlobSidecarsPerMinute,
-                      maximumAcceptedBlobsPerMinute - (batchSize * maxBlobsPerBlock) - 1);
+                      this.maxBlobSidecarsPerMinute, maxBlobSidecarsPerMinuteUpperBound);
                 });
     return syncSourcesByPeer.computeIfAbsent(
         peer,
