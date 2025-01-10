@@ -294,14 +294,22 @@ public class P2POptions {
   private boolean gossipScoringEnabled = P2PConfig.DEFAULT_GOSSIP_SCORING_ENABLED;
 
   @Option(
-      names = {"--Xpeer-rate-limit"},
+      names = {"--Xpeer-blocks-rate-limit"},
       paramLabel = "<NUMBER>",
       description =
-          "The number of requested blocks/blobs per peer to allow per minute before disconnecting the peer.\n"
-              + "NOTE: the actual size for the allowed blobs per peer per minute will be `maxBlobsPerBlock` times the value of this parameter.",
+          "The number of requested blocks per peer to allow per minute before disconnecting the peer.",
       arity = "1",
       hidden = true)
-  private Integer peerRateLimit = P2PConfig.DEFAULT_PEER_RATE_LIMIT;
+  private Integer peerBlocksRateLimit = P2PConfig.DEFAULT_PEER_BLOCKS_RATE_LIMIT;
+
+  @Option(
+      names = {"--Xpeer-blob-sidecars-rate-limit"},
+      paramLabel = "<NUMBER>",
+      description =
+          "The number of requested blobs per peer to allow per minute before disconnecting the peer.",
+      arity = "1",
+      hidden = true)
+  private Integer peerBlobSidecarsRateLimit = P2PConfig.DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT;
 
   @Option(
       names = {"--Xp2p-gossip-blobs-after-block-enabled"},
@@ -430,7 +438,8 @@ public class P2POptions {
                   .batchVerifyStrictThreadLimitEnabled(batchVerifyStrictThreadLimitEnabled)
                   .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
                   .isGossipScoringEnabled(gossipScoringEnabled)
-                  .peerRateLimit(peerRateLimit)
+                  .peerBlocksRateLimit(peerBlocksRateLimit)
+                  .peerBlobSidecarsRateLimit(peerBlobSidecarsRateLimit)
                   .allTopicsFilterEnabled(allTopicsFilterEnabled)
                   .peerRequestLimit(peerRequestLimit)
                   .floodPublishMaxMessageSizeThreshold(floodPublishMaxMessageSizeThreshold)

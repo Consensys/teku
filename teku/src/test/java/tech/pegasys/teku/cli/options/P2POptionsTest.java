@@ -43,7 +43,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
     final P2PConfig p2pConfig = tekuConfig.p2p();
     assertThat(p2pConfig.getTargetSubnetSubscriberCount()).isEqualTo(5);
-    assertThat(p2pConfig.getPeerRateLimit()).isEqualTo(100);
+    assertThat(p2pConfig.getPeerBlocksRateLimit()).isEqualTo(100);
+    assertThat(p2pConfig.getPeerBlobSidecarsRateLimit()).isEqualTo(300);
     assertThat(p2pConfig.getPeerRequestLimit()).isEqualTo(101);
 
     final DiscoveryConfig discoConfig = tekuConfig.discovery();

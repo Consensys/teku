@@ -225,8 +225,9 @@ public class Eth2P2PNetworkFactory {
                 eth2RpcOutstandingPingThreshold,
                 eth2StatusUpdateInterval,
                 timeProvider,
-                500,
-                50,
+                P2PConfig.DEFAULT_PEER_BLOCKS_RATE_LIMIT,
+                P2PConfig.DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT,
+                P2PConfig.DEFAULT_PEER_REQUEST_LIMIT,
                 spec,
                 KZG.NOOP,
                 (__) -> Optional.empty());

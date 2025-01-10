@@ -31,7 +31,9 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 
 public class P2PConfig {
 
-  public static final int DEFAULT_PEER_RATE_LIMIT = 500;
+  public static final int DEFAULT_PEER_BLOCKS_RATE_LIMIT = 500;
+  public static final int DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT = 1500;
+
   public static final int DEFAULT_PEER_REQUEST_LIMIT = 100;
 
   public static final boolean DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED = true;
@@ -54,7 +56,8 @@ public class P2PConfig {
   private final GossipEncoding gossipEncoding;
   private final int targetSubnetSubscriberCount;
   private final boolean subscribeAllSubnetsEnabled;
-  private final int peerRateLimit;
+  private final int peerBlocksRateLimit;
+  private final int peerBlobSidecarsRateLimit;
   private final int peerRequestLimit;
   private final int batchVerifyMaxThreads;
   private final int batchVerifyQueueCapacity;
@@ -71,7 +74,8 @@ public class P2PConfig {
       final GossipEncoding gossipEncoding,
       final int targetSubnetSubscriberCount,
       final boolean subscribeAllSubnetsEnabled,
-      final int peerRateLimit,
+      final int peerBlocksRateLimit,
+      final int peerBlobSidecarsRateLimit,
       final int peerRequestLimit,
       final int batchVerifyMaxThreads,
       final int batchVerifyQueueCapacity,
@@ -86,7 +90,8 @@ public class P2PConfig {
     this.gossipEncoding = gossipEncoding;
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
-    this.peerRateLimit = peerRateLimit;
+    this.peerBlocksRateLimit = peerBlocksRateLimit;
+    this.peerBlobSidecarsRateLimit = peerBlobSidecarsRateLimit;
     this.peerRequestLimit = peerRequestLimit;
     this.batchVerifyMaxThreads = batchVerifyMaxThreads;
     this.batchVerifyQueueCapacity = batchVerifyQueueCapacity;
@@ -129,8 +134,12 @@ public class P2PConfig {
     return subscribeAllSubnetsEnabled;
   }
 
-  public int getPeerRateLimit() {
-    return peerRateLimit;
+  public int getPeerBlocksRateLimit() {
+    return peerBlocksRateLimit;
+  }
+
+  public int getPeerBlobSidecarsRateLimit() {
+    return peerBlobSidecarsRateLimit;
   }
 
   public int getPeerRequestLimit() {
@@ -174,7 +183,8 @@ public class P2PConfig {
     private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     private Integer targetSubnetSubscriberCount = DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
     private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
-    private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
+    private Integer peerBlocksRateLimit = DEFAULT_PEER_BLOCKS_RATE_LIMIT;
+    private Integer peerBlobSidecarsRateLimit = DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
     private int batchVerifyMaxThreads = DEFAULT_BATCH_VERIFY_MAX_THREADS;
     private OptionalInt batchVerifyQueueCapacity = OptionalInt.empty();
@@ -225,7 +235,8 @@ public class P2PConfig {
           gossipEncoding,
           targetSubnetSubscriberCount,
           subscribeAllSubnetsEnabled,
-          peerRateLimit,
+          peerBlocksRateLimit,
+          peerBlobSidecarsRateLimit,
           peerRequestLimit,
           batchVerifyMaxThreads,
           batchVerifyQueueCapacity.orElse(DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY),
@@ -277,13 +288,23 @@ public class P2PConfig {
       return this;
     }
 
-    public Builder peerRateLimit(final Integer peerRateLimit) {
-      checkNotNull(peerRateLimit);
-      if (peerRateLimit < 0) {
+    public Builder peerBlocksRateLimit(final Integer peerBlocksRateLimit) {
+      checkNotNull(peerBlocksRateLimit);
+      if (peerBlocksRateLimit < 0) {
         throw new InvalidConfigurationException(
-            String.format("Invalid peerRateLimit: %d", peerRateLimit));
+            String.format("Invalid peerBlocksRateLimit: %d", peerBlocksRateLimit));
       }
-      this.peerRateLimit = peerRateLimit;
+      this.peerBlocksRateLimit = peerBlocksRateLimit;
+      return this;
+    }
+
+    public Builder peerBlobSidecarsRateLimit(final Integer peerBlobSidecarsRateLimit) {
+      checkNotNull(peerBlobSidecarsRateLimit);
+      if (peerBlobSidecarsRateLimit < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid peerBlobSidecarsRateLimit: %d", peerBlobSidecarsRateLimit));
+      }
+      this.peerBlobSidecarsRateLimit = peerBlobSidecarsRateLimit;
       return this;
     }
 
