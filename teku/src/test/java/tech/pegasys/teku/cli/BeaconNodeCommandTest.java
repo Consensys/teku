@@ -559,7 +559,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       "--Xpeer-blocks-rate-limit",
       "500",
       "--Xpeer-blob-sidecars-rate-limit",
-      "1500",
+      "2000",
       "--Xpeer-request-limit",
       "100"
     };
@@ -584,7 +584,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .dataStorageMode(MINIMAL))
         .metrics(b -> b.metricsCategories(DEFAULT_METRICS_CATEGORIES))
         .restApi(b -> b.eth1DepositContractAddress(networkConfig.getEth1DepositContractAddress()))
-        .p2p(p -> p.peerBlocksRateLimit(500).peerBlobSidecarsRateLimit(1500).peerRequestLimit(100))
+        .p2p(p -> p.peerBlocksRateLimit(500).peerBlobSidecarsRateLimit(2000).peerRequestLimit(100))
         .discovery(
             d ->
                 d.isDiscoveryEnabled(true)
@@ -629,7 +629,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             b ->
                 b.targetSubnetSubscriberCount(2)
                     .peerBlocksRateLimit(500)
-                    .peerBlobSidecarsRateLimit(1500)
+                    .peerBlobSidecarsRateLimit(2000)
                     .peerRequestLimit(100))
         .discovery(
             d ->
