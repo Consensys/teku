@@ -30,6 +30,7 @@ import tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
+import tech.pegasys.teku.infrastructure.exceptions.FatalServiceStartupException;
 import tech.pegasys.teku.infrastructure.io.JemallocDetector;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 
@@ -90,13 +91,17 @@ public final class Teku {
     node.start()
         .handleException(
             error -> {
-              final Throwable rootCause =
-                  ExceptionUtil.getCause(error, FatalServiceFailureException.class)
-                      .map(e -> (Throwable) e)
-                      .orElseGet(() -> Throwables.getRootCause(error));
-              final String errorDescription = ExceptionUtil.getMessageOrSimpleName(rootCause);
-              STATUS_LOG.fatalError(errorDescription, rootCause);
-              System.exit(FATAL_EXIT_CODE);
+              Optional<FatalServiceStartupException> maybeFatalStartupError =
+                  ExceptionUtil.getCause(error, FatalServiceStartupException.class);
+              maybeFatalStartupError.ifPresentOrElse(
+                  fatalStartupError -> {
+                    STATUS_LOG.fatalError(fatalStartupError.getMessage(), fatalStartupError.getCause());
+                    System.exit(FATAL_EXIT_CODE);
+                  }, ()-> {
+                    final Throwable rootCause = Throwables.getRootCause(error);
+                    final String errorDescription = ExceptionUtil.getMessageOrSimpleName(rootCause);
+                    STATUS_LOG.fatalError(errorDescription, rootCause);
+                  });
             })
         .join();
 

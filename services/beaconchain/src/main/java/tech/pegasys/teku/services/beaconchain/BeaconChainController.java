@@ -67,6 +67,7 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
+import tech.pegasys.teku.infrastructure.exceptions.FatalServiceStartupException;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
@@ -399,10 +400,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
                             .map(Object::toString)
                             .collect(Collectors.joining(","))
                         + ".";
-                throw new FatalServiceFailureException(
-                    this.getClass(), errorDescription, rootCause);
+                throw new FatalServiceStartupException(errorWhilePerformingDescription, rootCause);
               } else {
-                throw rootCause;
+                throw error;
               }
             });
   }
