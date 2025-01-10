@@ -13,29 +13,25 @@
 
 package tech.pegasys.teku;
 
+import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EXIT_CODE;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+
+import com.google.common.base.Throwables;
+import io.vertx.core.cli.CLIException;
 import java.io.PrintWriter;
-import java.net.BindException;
 import java.nio.charset.Charset;
 import java.security.Security;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-
-import com.google.common.base.Throwables;
-import io.vertx.core.cli.CLIException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
-import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceStartupException;
 import tech.pegasys.teku.infrastructure.io.JemallocDetector;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
-
-import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EXIT_CODE;
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 public final class Teku {
 
@@ -95,9 +91,11 @@ public final class Teku {
                   ExceptionUtil.getCause(error, FatalServiceStartupException.class);
               maybeFatalStartupError.ifPresentOrElse(
                   fatalStartupError -> {
-                    STATUS_LOG.fatalError(fatalStartupError.getMessage(), fatalStartupError.getCause());
+                    STATUS_LOG.fatalError(
+                        fatalStartupError.getMessage(), fatalStartupError.getCause());
                     System.exit(FATAL_EXIT_CODE);
-                  }, ()-> {
+                  },
+                  () -> {
                     final Throwable rootCause = Throwables.getRootCause(error);
                     final String errorDescription = ExceptionUtil.getMessageOrSimpleName(rootCause);
                     STATUS_LOG.fatalError(errorDescription, rootCause);
