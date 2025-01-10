@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer.chains;
 
+import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -21,12 +22,12 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SyncSourceFactory {
 
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
+  private final int batchSize;
   private final int maxBlocksPerMinute;
   private final int maxBlobSidecarsPerMinute;
 
@@ -35,15 +36,42 @@ public class SyncSourceFactory {
   public SyncSourceFactory(
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
+      final int batchSize,
       final int maxBlocksPerMinute,
       final int maxBlobSidecarsPerMinute) {
     this.asyncRunner = asyncRunner;
     this.timeProvider = timeProvider;
+    this.batchSize = batchSize;
     this.maxBlocksPerMinute = maxBlocksPerMinute;
     this.maxBlobSidecarsPerMinute = maxBlobSidecarsPerMinute;
   }
 
   public SyncSource getOrCreateSyncSource(final Eth2Peer peer, final Spec spec) {
+    // Limit request rates for blocks/blobs to just a little under what we'd accept (see
+    // Eth2PeerFactory)
+    final int maxBlocksPerMinute = this.maxBlocksPerMinute - batchSize - 1;
+    Preconditions.checkState(
+        maxBlocksPerMinute > 0,
+        "maxBlocksPerMinute should be a positive number but was %s",
+        maxBlocksPerMinute);
+    final Optional<Integer> maybeMaxBlobSidecarsPerMinute =
+        spec.getMaxBlobsPerBlockForHighestMilestone()
+            .map(
+                maxBlobsPerBlock -> {
+                  final int maximumAcceptedBlobsPerMinute =
+                      this.maxBlocksPerMinute * maxBlobsPerBlock;
+                  // The default configured value for requesting is less than what we'd accept to
+                  // avoid requesting a very large number of blobs in a short amount of time
+                  final int maxBlobSidecarsPerMinute =
+                      Math.min(
+                          this.maxBlobSidecarsPerMinute,
+                          maximumAcceptedBlobsPerMinute - (batchSize * maxBlobsPerBlock) - 1);
+                  Preconditions.checkState(
+                      maxBlobSidecarsPerMinute > 0,
+                      "maxBlobSidecarsPerMinute should be a positive number but was %s",
+                      maxBlobSidecarsPerMinute);
+                  return maxBlobSidecarsPerMinute;
+                });
     return syncSourcesByPeer.computeIfAbsent(
         peer,
         source ->
@@ -52,9 +80,7 @@ public class SyncSourceFactory {
                 timeProvider,
                 source,
                 maxBlocksPerMinute,
-                spec.isMilestoneSupported(SpecMilestone.DENEB)
-                    ? Optional.of(maxBlobSidecarsPerMinute)
-                    : Optional.empty()));
+                maybeMaxBlobSidecarsPerMinute));
   }
 
   public void onPeerDisconnected(final Eth2Peer peer) {

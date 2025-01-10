@@ -119,7 +119,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
             eventThread,
             p2pNetwork,
             new SyncSourceFactory(
-                asyncRunner, timeProvider, maxBlocksPerMinute, maxBlobSidecarsPerMinute),
+                asyncRunner, timeProvider, batchSize, maxBlocksPerMinute, maxBlobSidecarsPerMinute),
             finalizedTargetChains,
             nonfinalizedTargetChains);
     peerChainTracker.subscribeToTargetChainUpdates(syncController::onTargetChainsUpdated);

@@ -24,7 +24,7 @@ public class SyncConfig {
   public static final int DEFAULT_HISTORICAL_SYNC_BATCH_SIZE = 50;
   public static final int DEFAULT_FORWARD_SYNC_MAX_PENDING_BATCHES = 5;
   public static final int DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE = 500;
-  public static final int DEFAULT_FORWARD_SYNC_MAX_BLOB_SIDECARS_PER_MINUTE = 1250;
+  public static final int DEFAULT_FORWARD_SYNC_MAX_BLOB_SIDECARS_PER_MINUTE = 1500;
 
   private final boolean isEnabled;
   private final boolean isMultiPeerSyncEnabled;
