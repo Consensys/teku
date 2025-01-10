@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku;
 
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+
 public interface Node extends NodeFacade {
 
-  void start();
+  SafeFuture<Void> start();
 
   @Override
   void stop();

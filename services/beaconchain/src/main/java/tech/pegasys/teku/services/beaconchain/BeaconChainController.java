@@ -65,6 +65,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
@@ -347,12 +349,17 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("Starting {}", this.getClass().getSimpleName());
     forkChoiceExecutor.start();
     return initialize()
+        .thenCompose(__ -> timerService.start())
+        .thenCompose(__ -> recentChainData.getStoreInitializedFuture())
+        .thenRun(this::onStoreInitialized)
+        .thenCompose(__ -> recentChainData.getBestBlockInitializedFuture())
+        .thenCompose(__ -> startServices())
         .thenCompose(
             (__) ->
                 beaconRestAPI.map(BeaconRestApi::start).orElse(SafeFuture.completedFuture(null)));
   }
 
-  protected void startServices() {
+  protected SafeFuture<Void> startServices() {
     final RecentBlocksFetcher recentBlocksFetcher = syncService.getRecentBlocksFetcher();
     recentBlocksFetcher.subscribeBlockFetched(
         (block) ->
@@ -375,14 +382,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
       LOG.debug("BeaconChainController: subscribing to slot events");
       eventChannels.subscribe(SlotEventsChannel.class, ephemerySlotValidationService);
     }
-    SafeFuture.allOfFailFast(
+    return SafeFuture.allOfFailFast(
             attestationManager.start(),
             p2pNetwork.start(),
             blockManager.start(),
             syncService.start(),
             SafeFuture.fromRunnable(
                 () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start)))
-        .finish(
+        .catchAndRethrow(
             error -> {
               Throwable rootCause = Throwables.getRootCause(error);
               if (rootCause instanceof BindException) {
@@ -392,12 +399,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
                             .map(Object::toString)
                             .collect(Collectors.joining(","))
                         + ".";
-                STATUS_LOG.fatalError(errorWhilePerformingDescription, rootCause);
-                System.exit(FATAL_EXIT_CODE);
+                throw new FatalServiceFailureException(
+                    this.getClass(), errorDescription, rootCause);
               } else {
-                Thread.currentThread()
-                    .getUncaughtExceptionHandler()
-                    .uncaughtException(Thread.currentThread(), error);
+                throw rootCause;
               }
             });
   }
@@ -473,13 +478,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               return SafeFuture.completedFuture(client);
             })
         // Init other services
-        .thenRun(this::initAll)
-        .thenRun(
-            () -> {
-              recentChainData.subscribeStoreInitialized(this::onStoreInitialized);
-              recentChainData.subscribeBestBlockInitialized(this::startServices);
-            })
-        .thenCompose(__ -> timerService.start());
+        .thenRun(this::initAll);
   }
 
   private boolean isUsingCustomInitialState() {

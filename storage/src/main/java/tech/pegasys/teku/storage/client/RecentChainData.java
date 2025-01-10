@@ -152,8 +152,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     storeInitializedFuture.always(runnable);
   }
 
-  public void subscribeBestBlockInitialized(final Runnable runnable) {
-    bestBlockInitialized.always(runnable);
+  public SafeFuture<Void> getStoreInitializedFuture() {
+    return storeInitializedFuture;
+  }
+
+  public SafeFuture<Void> getBestBlockInitializedFuture() {
+    return bestBlockInitialized;
   }
 
   public void initializeFromGenesis(final BeaconState genesisState, final UInt64 currentTime) {

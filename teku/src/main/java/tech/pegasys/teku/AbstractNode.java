@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.OccurrenceCounter;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.logging.StartupLogConfig;
 import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
@@ -209,18 +210,21 @@ public abstract class AbstractNode implements Node {
   public abstract ServiceController getServiceController();
 
   @Override
-  public void start() {
-    metricsEndpoint.start().join();
-    metricsPublisher.start().join();
-    getServiceController().start().join();
-    counterMaintainer =
-        Optional.of(
-            serviceConfig
-                .createAsyncRunner("RejectedExecutionCounter", 1)
-                .runWithFixedDelay(
-                    this::pollRejectedExecutions,
-                    Duration.ofSeconds(5),
-                    (err) -> LOG.debug("rejected execution poll failed", err)));
+  public SafeFuture<Void> start() {
+    return SafeFuture.of(metricsEndpoint.start())
+        .thenCompose(__ -> metricsPublisher.start())
+        .thenCompose(__ -> getServiceController().start())
+        .thenRun(
+            () -> {
+              counterMaintainer =
+                  Optional.of(
+                      serviceConfig
+                          .createAsyncRunner("RejectedExecutionCounter", 1)
+                          .runWithFixedDelay(
+                              this::pollRejectedExecutions,
+                              Duration.ofSeconds(5),
+                              (err) -> LOG.debug("rejected execution poll failed", err)));
+            });
   }
 
   private void pollRejectedExecutions() {

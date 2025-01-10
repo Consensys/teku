@@ -14,17 +14,27 @@
 package tech.pegasys.teku;
 
 import java.io.PrintWriter;
+import java.net.BindException;
 import java.nio.charset.Charset;
 import java.security.Security;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
+import com.google.common.base.Throwables;
+import io.vertx.core.cli.CLIException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.io.JemallocDetector;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
+
+import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EXIT_CODE;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 public final class Teku {
 
@@ -77,7 +87,18 @@ public final class Teku {
     }
     JemallocDetector.logJemallocPresence();
 
-    node.start();
+    node.start()
+        .handleException(
+            error -> {
+              final Throwable rootCause =
+                  ExceptionUtil.getCause(error, FatalServiceFailureException.class)
+                      .map(e -> (Throwable) e)
+                      .orElseGet(() -> Throwables.getRootCause(error));
+              final String errorDescription = ExceptionUtil.getMessageOrSimpleName(rootCause);
+              STATUS_LOG.fatalError(errorDescription, rootCause);
+              System.exit(FATAL_EXIT_CODE);
+            })
+        .join();
 
     return node;
   }

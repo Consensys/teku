@@ -27,6 +27,11 @@ public class FatalServiceFailureException extends RuntimeException {
     this.service = service.getSimpleName();
   }
 
+  public FatalServiceFailureException(final Class<?> service, final String message, final Throwable cause) {
+    super(message, cause);
+    this.service = service.getSimpleName();
+  }
+
   public String getService() {
     return service;
   }
