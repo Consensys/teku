@@ -66,8 +66,8 @@ public class RateTrackerImpl implements RateTracker {
   public synchronized void adjustObjectsRequest(
       final RequestApproval requestApproval, final long returnedObjectsCount) {
     pruneRequests();
-    if (requests.containsKey(requestApproval.getRequestKey())) {
-      final long initialObjectsCount = requests.get(requestApproval.getRequestKey());
+    final Long initialObjectsCount = requests.get(requestApproval.getRequestKey());
+    if (initialObjectsCount != null) {
       requests.put(requestApproval.getRequestKey(), returnedObjectsCount);
       objectsWithinWindow = objectsWithinWindow - initialObjectsCount + returnedObjectsCount;
     }
