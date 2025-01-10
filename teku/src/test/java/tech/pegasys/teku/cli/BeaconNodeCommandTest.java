@@ -561,7 +561,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       "--Xpeer-blob-sidecars-rate-limit",
       "1500",
       "--Xpeer-request-limit",
-      "50"
+      "100"
     };
   }
 
