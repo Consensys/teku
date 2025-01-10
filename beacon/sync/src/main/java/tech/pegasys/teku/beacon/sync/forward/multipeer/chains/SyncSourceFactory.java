@@ -54,9 +54,7 @@ public class SyncSourceFactory {
             .map(
                 maxBlobsPerBlock -> {
                   final int maxBlobSidecarsPerMinuteUpperBound =
-                      (this.maxBlocksPerMinute * maxBlobsPerBlock)
-                          - (batchSize * maxBlobsPerBlock)
-                          - 1;
+                      ((this.maxBlocksPerMinute - batchSize) * maxBlobsPerBlock) - 1;
                   // The default configured value for requesting is less than what we'd accept to
                   // avoid requesting a very large number of blobs in a short amount of time, so
                   // choose the minimum of the two
