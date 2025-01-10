@@ -255,13 +255,25 @@ public class P2POptions {
       SyncConfig.DEFAULT_FORWARD_SYNC_MAX_PENDING_BATCHES;
 
   @Option(
-      names = {"--Xp2p-sync-rate-limit"},
+      names = {"--Xp2p-sync-blocks-rate-limit"},
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
-      description = "Number of objects being requested per minute to a single peer, while syncing.",
+      description = "Number of blocks being requested per minute to a single peer, while syncing.",
       hidden = true,
       arity = "1")
-  private Integer forwardSyncRateLimit = SyncConfig.DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE;
+  private Integer forwardSyncBlocksRateLimit =
+      SyncConfig.DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE;
+
+  @Option(
+      names = {"--Xp2p-sync-blob-sidecars-rate-limit"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Number of blob sidecars being requested per minute to a single peer, while syncing.",
+      hidden = true,
+      arity = "1")
+  private Integer forwardSyncBlobSidecarsRateLimit =
+      SyncConfig.DEFAULT_FORWARD_SYNC_MAX_BLOB_SIDECARS_PER_MINUTE;
 
   @Option(
       names = {"--p2p-subscribe-all-subnets-enabled"},
@@ -286,7 +298,8 @@ public class P2POptions {
       names = {"--Xpeer-rate-limit"},
       paramLabel = "<NUMBER>",
       description =
-          "The number of requested objects per peer to allow per minute before disconnecting the peer.",
+          "The number of requested blocks/blobs per peer to allow per minute before disconnecting the peer.\n"
+              + "NOTE: the actual size for the allowed blobs per peer per minute will be `maxBlobsPerBlock` times the value of this parameter.",
       arity = "1",
       hidden = true)
   private Integer peerRateLimit = P2PConfig.DEFAULT_PEER_RATE_LIMIT;
@@ -490,7 +503,8 @@ public class P2POptions {
             s ->
                 s.isMultiPeerSyncEnabled(multiPeerSyncEnabled)
                     .historicalSyncBatchSize(historicalSyncBatchSize)
-                    .forwardSyncMaxBlocksPerMinute(forwardSyncRateLimit)
+                    .forwardSyncMaxBlocksPerMinute(forwardSyncBlocksRateLimit)
+                    .forwardSyncMaxBlobSidecarsPerMinute(forwardSyncBlobSidecarsRateLimit)
                     .forwardSyncBatchSize(forwardSyncBatchSize)
                     .forwardSyncMaxPendingBatches(forwardSyncMaxPendingBatches));
 

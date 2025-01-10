@@ -67,6 +67,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(syncConfig.getForwardSyncBatchSize()).isEqualTo(103);
     assertThat(syncConfig.getForwardSyncMaxPendingBatches()).isEqualTo(8);
     assertThat(syncConfig.getForwardSyncMaxBlocksPerMinute()).isEqualTo(80);
+    assertThat(syncConfig.getForwardSyncMaxBlobSidecarsPerMinute()).isEqualTo(120);
   }
 
   @Test
@@ -246,10 +247,17 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void forwardSyncRateLimit_shouldBeSettable() {
+  public void forwardSyncBlocksRateLimit_shouldBeSettable() {
     TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--Xp2p-sync-rate-limit", "10");
+        getTekuConfigurationFromArguments("--Xp2p-sync-blocks-rate-limit", "10");
     assertThat(tekuConfiguration.sync().getForwardSyncMaxBlocksPerMinute()).isEqualTo(10);
+  }
+
+  @Test
+  public void forwardSyncBlobSidecarsRateLimit_shouldBeSettable() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xp2p-sync-blob-sidecars-rate-limit", "10");
+    assertThat(tekuConfiguration.sync().getForwardSyncMaxBlobSidecarsPerMinute()).isEqualTo(10);
   }
 
   @Test

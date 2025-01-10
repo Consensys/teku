@@ -21,33 +21,29 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SyncSourceFactory {
 
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
-  private final Map<Eth2Peer, SyncSource> syncSourcesByPeer = new HashMap<>();
   private final int maxBlocksPerMinute;
-  private final int batchSize;
+  private final int maxBlobSidecarsPerMinute;
+
+  private final Map<Eth2Peer, SyncSource> syncSourcesByPeer = new HashMap<>();
 
   public SyncSourceFactory(
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
       final int maxBlocksPerMinute,
-      final int batchSize) {
+      final int maxBlobSidecarsPerMinute) {
     this.asyncRunner = asyncRunner;
     this.timeProvider = timeProvider;
     this.maxBlocksPerMinute = maxBlocksPerMinute;
-    this.batchSize = batchSize;
+    this.maxBlobSidecarsPerMinute = maxBlobSidecarsPerMinute;
   }
 
   public SyncSource getOrCreateSyncSource(final Eth2Peer peer, final Spec spec) {
-    // Limit request rate to just a little under what we'd accept
-    final int maxBlocksPerMinute = this.maxBlocksPerMinute - batchSize - 1;
-    final Optional<Integer> maybeMaxBlobsPerBlock = spec.getMaxBlobsPerBlockForHighestMilestone();
-    final Optional<Integer> maxBlobSidecarsPerMinute =
-        maybeMaxBlobsPerBlock.map(maxBlobsPerBlock -> maxBlocksPerMinute * maxBlobsPerBlock);
-
     return syncSourcesByPeer.computeIfAbsent(
         peer,
         source ->
@@ -56,8 +52,9 @@ public class SyncSourceFactory {
                 timeProvider,
                 source,
                 maxBlocksPerMinute,
-                maybeMaxBlobsPerBlock,
-                maxBlobSidecarsPerMinute));
+                spec.isMilestoneSupported(SpecMilestone.DENEB)
+                    ? Optional.of(maxBlobSidecarsPerMinute)
+                    : Optional.empty()));
   }
 
   public void onPeerDisconnected(final Eth2Peer peer) {
