@@ -20,9 +20,11 @@ public class SyncConfig {
   public static final boolean DEFAULT_MULTI_PEER_SYNC_ENABLED = true;
   public static final boolean DEFAULT_RECONSTRUCT_HISTORIC_STATES_ENABLED = false;
   public static final boolean DEFAULT_FETCH_ALL_HISTORIC_BLOCKS = true;
-  public static final int DEFAULT_FORWARD_SYNC_BATCH_SIZE = 25;
+
   public static final int DEFAULT_HISTORICAL_SYNC_BATCH_SIZE = 50;
+  public static final int DEFAULT_FORWARD_SYNC_BATCH_SIZE = 25;
   public static final int DEFAULT_FORWARD_SYNC_MAX_PENDING_BATCHES = 5;
+
   public static final int DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE = 500;
   public static final int DEFAULT_FORWARD_SYNC_MAX_BLOB_SIDECARS_PER_MINUTE = 1500;
 
