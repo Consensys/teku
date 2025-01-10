@@ -127,14 +127,16 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  void shouldMergeTransitionsOverrideBeEmptyByDefault() {
+  void shouldMergeTransitionsOverrideContainsMainnetTransitionByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     assertThat(config.eth2NetworkConfiguration().getTotalTerminalDifficultyOverride())
         .isEqualTo(Optional.empty());
     assertThat(config.eth2NetworkConfiguration().getTerminalBlockHashOverride())
-        .isEqualTo(Optional.empty());
+        .contains(
+            Bytes32.fromHexString(
+                "0x55b11b918355b1ef9c5db810302ebad0bf2544255b530cdce90674d5887bb286"));
     assertThat(config.eth2NetworkConfiguration().getTerminalBlockHashEpochOverride())
-        .isEqualTo(Optional.empty());
+        .contains(UInt64.valueOf(146875));
   }
 
   @Test
