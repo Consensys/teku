@@ -58,8 +58,7 @@ public class SyncSourceFactory {
                   // The default configured value for requesting is less than what we'd accept to
                   // avoid requesting a very large number of blobs in a short amount of time, so
                   // choose the minimum of the two
-                  return Math.min(
-                      this.maxBlobSidecarsPerMinute, maxBlobSidecarsPerMinuteUpperBound);
+                  return Math.min(maxBlobSidecarsPerMinute, maxBlobSidecarsPerMinuteUpperBound);
                 });
     return syncSourcesByPeer.computeIfAbsent(
         peer,
