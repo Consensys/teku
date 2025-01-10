@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer.chains;
 
-import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -50,10 +49,6 @@ public class SyncSourceFactory {
     // Limit request rates for blocks/blobs to just a little under what we'd accept (see
     // Eth2PeerFactory)
     final int maxBlocksPerMinute = this.maxBlocksPerMinute - batchSize - 1;
-    Preconditions.checkState(
-        maxBlocksPerMinute > 0,
-        "maxBlocksPerMinute should be a positive number but was %s",
-        maxBlocksPerMinute);
     final Optional<Integer> maybeMaxBlobSidecarsPerMinute =
         spec.getMaxBlobsPerBlockForHighestMilestone()
             .map(
@@ -62,15 +57,9 @@ public class SyncSourceFactory {
                       this.maxBlocksPerMinute * maxBlobsPerBlock;
                   // The default configured value for requesting is less than what we'd accept to
                   // avoid requesting a very large number of blobs in a short amount of time
-                  final int maxBlobSidecarsPerMinute =
-                      Math.min(
-                          this.maxBlobSidecarsPerMinute,
-                          maximumAcceptedBlobsPerMinute - (batchSize * maxBlobsPerBlock) - 1);
-                  Preconditions.checkState(
-                      maxBlobSidecarsPerMinute > 0,
-                      "maxBlobSidecarsPerMinute should be a positive number but was %s",
-                      maxBlobSidecarsPerMinute);
-                  return maxBlobSidecarsPerMinute;
+                  return Math.min(
+                      this.maxBlobSidecarsPerMinute,
+                      maximumAcceptedBlobsPerMinute - (batchSize * maxBlobsPerBlock) - 1);
                 });
     return syncSourcesByPeer.computeIfAbsent(
         peer,
