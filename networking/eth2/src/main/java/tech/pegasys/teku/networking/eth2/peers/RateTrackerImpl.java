@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import com.google.common.base.Preconditions;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -32,6 +33,10 @@ public class RateTrackerImpl implements RateTracker {
 
   public RateTrackerImpl(
       final int peerRateLimit, final long timeoutSeconds, final TimeProvider timeProvider) {
+    Preconditions.checkArgument(
+        peerRateLimit > 0,
+        "peerRateLimit should be a positive number but it was %s",
+        peerRateLimit);
     this.peerRateLimit = peerRateLimit;
     this.timeoutSeconds = timeoutSeconds;
     this.timeProvider = timeProvider;
