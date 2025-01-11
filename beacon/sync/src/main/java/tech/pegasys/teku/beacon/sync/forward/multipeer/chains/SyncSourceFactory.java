@@ -44,15 +44,20 @@ public class SyncSourceFactory {
   public SyncSource getOrCreateSyncSource(final Eth2Peer peer, final Spec spec) {
     // Limit request rate to just a little under what we'd accept
     final int maxBlocksPerMinute = this.maxBlocksPerMinute - batchSize - 1;
+    final Optional<Integer> maybeMaxBlobsPerBlock = spec.getMaxBlobsPerBlockForHighestMilestone();
     final Optional<Integer> maxBlobSidecarsPerMinute =
-        spec.getMaxBlobsPerBlockForHighestMilestone()
-            .map(maxBlobsPerBlock -> maxBlocksPerMinute * maxBlobsPerBlock);
+        maybeMaxBlobsPerBlock.map(maxBlobsPerBlock -> maxBlocksPerMinute * maxBlobsPerBlock);
 
     return syncSourcesByPeer.computeIfAbsent(
         peer,
         source ->
             new ThrottlingSyncSource(
-                asyncRunner, timeProvider, source, maxBlocksPerMinute, maxBlobSidecarsPerMinute));
+                asyncRunner,
+                timeProvider,
+                source,
+                maxBlocksPerMinute,
+                maybeMaxBlobsPerBlock,
+                maxBlobSidecarsPerMinute));
   }
 
   public void onPeerDisconnected(final Eth2Peer peer) {
