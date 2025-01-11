@@ -72,7 +72,7 @@ class ThrottlingSyncSourceTest {
               final RpcResponseListenerWithCount<SignedBeaconBlock> listener =
                   invocationOnMock.getArgument(2);
               UInt64.range(UInt64.ZERO, count)
-                  .forEach(__ -> listener.onResponse(mock(SignedBeaconBlock.class)));
+                  .forEach(__ -> ignoreFuture(listener.onResponse(mock(SignedBeaconBlock.class))));
               return SafeFuture.COMPLETE;
             });
     when(delegate.requestBlobSidecarsByRange(any(), any(), any()))
@@ -82,7 +82,7 @@ class ThrottlingSyncSourceTest {
               final RpcResponseListenerWithCount<BlobSidecar> listener =
                   invocationOnMock.getArgument(2);
               UInt64.range(UInt64.ZERO, count.times(MAX_BLOBS_PER_BLOCK))
-                  .forEach(__ -> listener.onResponse(mock(BlobSidecar.class)));
+                  .forEach(__ -> ignoreFuture(listener.onResponse(mock(BlobSidecar.class))));
               return SafeFuture.COMPLETE;
             });
   }
