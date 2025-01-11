@@ -16,6 +16,7 @@ package tech.pegasys.teku.beacon.sync.forward.multipeer.chains;
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -81,7 +82,7 @@ public class ThrottlingSyncSource implements SyncSource {
                       () ->
                           // adjust for slots with empty blocks
                           blocksRateTracker.adjustObjectsRequest(
-                              requestApproval, listenerWithCount.count));
+                              requestApproval, listenerWithCount.count.get()));
             })
         .orElseGet(
             () -> {
@@ -115,7 +116,7 @@ public class ThrottlingSyncSource implements SyncSource {
                           // adjust for slots with empty blocks and slots with blobs <
                           // maxBlobsPerBlock
                           blobSidecarsRateTracker.adjustObjectsRequest(
-                              requestApproval, listenerWithCount.count));
+                              requestApproval, listenerWithCount.count.get()));
             })
         .orElseGet(
             () -> {
@@ -146,7 +147,7 @@ public class ThrottlingSyncSource implements SyncSource {
   @VisibleForTesting
   static class RpcResponseListenerWithCount<T> implements RpcResponseListener<T> {
 
-    private int count = 0;
+    private final AtomicInteger count = new AtomicInteger(0);
 
     private final RpcResponseListener<T> delegate;
 
@@ -156,7 +157,7 @@ public class ThrottlingSyncSource implements SyncSource {
 
     @Override
     public SafeFuture<?> onResponse(final T response) {
-      count++;
+      count.incrementAndGet();
       return delegate.onResponse(response);
     }
   }
