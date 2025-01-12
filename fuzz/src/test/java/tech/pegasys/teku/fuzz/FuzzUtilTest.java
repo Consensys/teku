@@ -22,9 +22,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.xerial.snappy.Snappy;
 import tech.pegasys.teku.fuzz.input.AttestationFuzzInput;
 import tech.pegasys.teku.fuzz.input.AttesterSlashingFuzzInput;
@@ -69,7 +67,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
-@ExtendWith(BouncyCastleExtension.class)
 class FuzzUtilTest {
 
   private final Spec spec = TestSpecFactory.createMinimalElectra();

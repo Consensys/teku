@@ -1,5 +1,4 @@
 dependencies {
-  implementation project(':infrastructure:jackson')
   implementation 'io.tmio:tuweni-bytes'
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'

@@ -18,6 +18,7 @@ import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.PubKey;
 import io.libp2p.protocol.Identify;
+import io.libp2p.protocol.IdentifyController;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,6 +29,7 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
@@ -41,11 +43,12 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
+import tech.pegasys.teku.spec.constants.NetworkConstants;
 
 public class LibP2PPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Map<RpcMethod<?, ?, ?>, RpcHandler<?, ?, ?>> rpcHandlers;
+  private final Map<RpcMethod<?, ?, ?>, ThrottlingRpcHandler<?, ?, ?>> rpcHandlers;
   private final ReputationManager reputationManager;
   private final Function<PeerId, Double> peerScoreFunction;
   private final Connection connection;
@@ -71,7 +74,8 @@ public class LibP2PPeer implements Peer {
       final Function<PeerId, Double> peerScoreFunction) {
     this.connection = connection;
     this.rpcHandlers =
-        rpcHandlers.stream().collect(Collectors.toMap(RpcHandler::getRpcMethod, h -> h));
+        rpcHandlers.stream()
+            .collect(Collectors.toMap(RpcHandler::getRpcMethod, ThrottlingRpcHandler::new));
     this.reputationManager = reputationManager;
     this.peerScoreFunction = peerScoreFunction;
     this.peerId = connection.secureSession().getRemoteId();
@@ -107,10 +111,6 @@ public class LibP2PPeer implements Peer {
       agent = agentVersion.substring(0, agentVersion.indexOf("/"));
     }
     return EnumUtils.getEnumIgnoreCase(PeerClientType.class, agent, PeerClientType.UNKNOWN);
-  }
-
-  public Optional<String> getMaybeAgentString() {
-    return maybeAgentString;
   }
 
   public PubKey getPubKey() {
@@ -161,7 +161,7 @@ public class LibP2PPeer implements Peer {
                 .muxerSession()
                 .createStream(new Identify())
                 .getController()
-                .thenCompose(controller -> controller.id()))
+                .thenCompose(IdentifyController::id))
         .exceptionallyCompose(
             error -> {
               LOG.debug("Failed to get peer identity", error);
@@ -208,8 +208,8 @@ public class LibP2PPeer implements Peer {
           final TRequest request,
           final RespHandler responseHandler) {
     @SuppressWarnings("unchecked")
-    RpcHandler<TOutgoingHandler, TRequest, RespHandler> rpcHandler =
-        (RpcHandler<TOutgoingHandler, TRequest, RespHandler>) rpcHandlers.get(rpcMethod);
+    final ThrottlingRpcHandler<TOutgoingHandler, TRequest, RespHandler> rpcHandler =
+        (ThrottlingRpcHandler<TOutgoingHandler, TRequest, RespHandler>) rpcHandlers.get(rpcMethod);
     if (rpcHandler == null) {
       throw new IllegalArgumentException(
           "Unknown rpc method invoked: " + String.join(",", rpcMethod.getIds()));
@@ -238,6 +238,28 @@ public class LibP2PPeer implements Peer {
     final boolean shouldDisconnect = reputationManager.adjustReputation(getAddress(), adjustment);
     if (shouldDisconnect) {
       disconnectCleanly(DisconnectReason.REMOTE_FAULT).ifExceptionGetsHereRaiseABug();
+    }
+  }
+
+  private static class ThrottlingRpcHandler<
+      TOutgoingHandler extends RpcRequestHandler,
+      TRequest,
+      TRespHandler extends RpcResponseHandler<?>> {
+
+    private final RpcHandler<TOutgoingHandler, TRequest, TRespHandler> delegate;
+
+    private final ThrottlingTaskQueue requestsQueue =
+        ThrottlingTaskQueue.create(NetworkConstants.MAX_CONCURRENT_REQUESTS);
+
+    private ThrottlingRpcHandler(
+        final RpcHandler<TOutgoingHandler, TRequest, TRespHandler> delegate) {
+      this.delegate = delegate;
+    }
+
+    private SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
+        final Connection connection, final TRequest request, final TRespHandler responseHandler) {
+      return requestsQueue.queueTask(
+          () -> delegate.sendRequest(connection, request, responseHandler));
     }
   }
 }

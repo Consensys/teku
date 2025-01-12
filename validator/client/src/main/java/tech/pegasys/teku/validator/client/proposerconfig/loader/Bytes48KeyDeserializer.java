@@ -11,25 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.jackson.deserializers.uints;
+package tech.pegasys.teku.validator.client.proposerconfig.loader;
 
-import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import java.io.IOException;
-import java.math.BigInteger;
-import org.apache.tuweni.units.bigints.UInt256;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.KeyDeserializer;
+import org.apache.tuweni.bytes.Bytes48;
 
-public class UInt256Deserializer extends JsonDeserializer<UInt256> {
+public class Bytes48KeyDeserializer extends KeyDeserializer {
 
   @Override
-  public UInt256 deserialize(final JsonParser p, final DeserializationContext ctxt)
-      throws IOException {
-    String value = p.getValueAsString();
-    if (value.startsWith("0x")) {
-      return UInt256.fromHexString(p.getValueAsString());
+  public Object deserializeKey(final String key, final DeserializationContext ctxt)
+      throws JacksonException {
+    try {
+      return Bytes48.fromHexStringStrict(key);
+    } catch (RuntimeException ex) {
+      throw new JsonMappingException(ctxt.getParser(), "Invalid Public Key", ex);
     }
-
-    return UInt256.valueOf(new BigInteger(value));
   }
 }

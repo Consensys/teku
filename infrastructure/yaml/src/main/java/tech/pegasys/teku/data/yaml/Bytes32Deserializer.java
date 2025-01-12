@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,16 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.propertytest.suppliers.type;
+package tech.pegasys.teku.data.yaml;
 
-import net.jqwik.api.Arbitraries;
-import net.jqwik.api.Arbitrary;
-import net.jqwik.api.ArbitrarySupplier;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes32;
 
-public class Bytes32Supplier implements ArbitrarySupplier<Bytes32> {
+public class Bytes32Deserializer extends JsonDeserializer<Bytes32> {
+
   @Override
-  public Arbitrary<Bytes32> get() {
-    return Arbitraries.bytes().array(byte[].class).ofSize(32).map(Bytes32::wrap);
+  public Bytes32 deserialize(final JsonParser p, final DeserializationContext ctxt)
+      throws IOException {
+    return Bytes32.fromHexString(p.getValueAsString());
   }
 }
