@@ -27,7 +27,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
-import org.hyperledger.besu.plugin.services.metrics.Histogram;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -54,7 +53,7 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
   private final AsyncRunner asyncRunner;
   private final Counter batchCounter;
   private final Counter taskCounter;
-  private final Histogram batchSizeHistogram;
+  private final MetricsHistogram batchSizeHistogram;
 
   @VisibleForTesting
   AggregatingSignatureVerificationService(
@@ -90,11 +89,13 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
             "signature_verifications_task_count_total",
             "Reports the number of individual verification tasks processed");
     batchSizeHistogram =
-        metricsSystem.createHistogram(
+        MetricsHistogram.create(
             TekuMetricCategory.EXECUTOR,
+            metricsSystem,
             "signature_verifications_batch_size",
             "Histogram of signature verification batch sizes",
-            MetricsHistogram.getDefaultBuckets());
+            3,
+            List.of());
   }
 
   public AggregatingSignatureVerificationService(
@@ -187,7 +188,7 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
   void batchVerifySignatures(final List<SignatureTask> tasks) {
     batchCounter.inc();
     taskCounter.inc(tasks.size());
-    batchSizeHistogram.observe(tasks.size());
+    batchSizeHistogram.recordValue(tasks.size());
     final List<List<BLSPublicKey>> allKeys = new ArrayList<>();
     final List<Bytes> allMessages = new ArrayList<>();
     final List<BLSSignature> allSignatures = new ArrayList<>();

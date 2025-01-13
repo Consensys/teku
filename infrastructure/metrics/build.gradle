@@ -5,7 +5,6 @@ dependencies {
     implementation project(':infrastructure:io')
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
-    implementation 'io.prometheus:prometheus-metrics-bom'
     implementation 'io.vertx:vertx-core'
     implementation 'io.vertx:vertx-web'
     implementation 'io.tmio:tuweni-units'
