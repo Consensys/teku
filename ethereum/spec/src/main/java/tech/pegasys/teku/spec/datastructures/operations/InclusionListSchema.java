@@ -29,7 +29,7 @@ public class InclusionListSchema
         InclusionList, SszUInt64, SszUInt64, SszBytes32, SszList<Transaction>> {
 
   public InclusionListSchema(
-      final SpecConfigEip7805 specConfigEip7805, final int maxTransactionsPerInclusionList) {
+      final SpecConfigEip7805 specConfigEip7805) {
     super(
         "InclusionList",
         namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
@@ -38,11 +38,11 @@ public class InclusionListSchema
         namedSchema(
             "transactions",
             SszListSchema.create(
-                new TransactionSchema(specConfigEip7805), maxTransactionsPerInclusionList)));
+                new TransactionSchema(specConfigEip7805), specConfigEip7805.getMaxTransactionsPerInclusionList())));
   }
 
   @Override
-  public InclusionList createFromBackingNode(TreeNode node) {
+  public InclusionList createFromBackingNode(final TreeNode node) {
     return new InclusionList(this, node);
   }
 }
