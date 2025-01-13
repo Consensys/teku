@@ -1,4 +1,6 @@
 dependencies {
+  testImplementation 'io.tmio:tuweni-units'
+
   acceptanceTestImplementation project(":infrastructure:bls")
   acceptanceTestImplementation project(':infrastructure:time')
   acceptanceTestImplementation project(':data:serializer')
