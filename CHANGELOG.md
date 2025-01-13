@@ -7,9 +7,9 @@
 ## Unreleased Changes
 
 ### Breaking Changes
-- The experimental `--Xvalidators-builder-registration-default-gas-limit` CLI option is replaced by `--validators-builder-registration-default-gas-limit`
-- The experimental `-Xp2p-sync-rate-limit` CLI option is removed in favour of `-Xp2p-sync-blocks-rate-limit` and `-Xp2p-sync-blob-sidecars-rate-limit`
-- The experimental `--Xpeer-rate-limit` CLI options is removed in favour of `--Xpeer-blocks-rate-limit` and `--Xpeer-blob-sidecars-rate-limit`
+- `--Xvalidators-builder-registration-default-gas-limit` CLI option is replaced by `--validators-builder-registration-default-gas-limit`
+- `--Xp2p-sync-rate-limit` CLI option is removed in favour of `--Xp2p-sync-blocks-rate-limit` and `--Xp2p-sync-blob-sidecars-rate-limit`
+- `--Xpeer-rate-limit` CLI options is removed in favour of `--Xpeer-blocks-rate-limit` and `--Xpeer-blob-sidecars-rate-limit`
 - With the upgrade of the Prometheus Java Metrics library, there are the following changes:
   - Gauge names are not allowed to end with `total`, therefore metrics as `beacon_proposers_data_total` and `beacon_eth1_current_period_votes_total` are dropping the `_total` suffix
   - The `_created` timestamps are not returned by default.
