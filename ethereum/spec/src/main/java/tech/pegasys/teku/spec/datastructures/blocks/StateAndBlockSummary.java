@@ -128,7 +128,10 @@ public class StateAndBlockSummary implements BeaconBlockSummary {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this).add("blockSummary", blockSummary).toString();
+    return MoreObjects.toStringHelper(this)
+        .add("blockSummary", blockSummary)
+        .add("state", state)
+        .toString();
   }
 
   private Optional<ExecutionPayloadHeader> getLatestExecutionPayloadHeader() {
