@@ -16,12 +16,20 @@ package tech.pegasys.teku.spec.schemas;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.operations.InclusionListSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
 public class SchemaDefinitionsEip7805 extends SchemaDefinitionsElectra {
 
+  private final InclusionListSchema inclusionListSchema;
+  private final SignedInclusionListSchema signedInclusionListSchema;
+
   public SchemaDefinitionsEip7805(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
+    this.inclusionListSchema = schemaRegistry.get(SchemaTypes.INCLUSION_LIST_SCHEMA);
+    this.signedInclusionListSchema = schemaRegistry.get(SchemaTypes.SIGNED_INCLUSION_LIST_SCHEMA);
   }
 
   public static SchemaDefinitionsEip7805 required(final SchemaDefinitions schemaDefinitions) {
@@ -31,6 +39,14 @@ public class SchemaDefinitionsEip7805 extends SchemaDefinitionsElectra {
         SchemaDefinitionsEip7805.class,
         schemaDefinitions.getClass());
     return (SchemaDefinitionsEip7805) schemaDefinitions;
+  }
+
+  public InclusionListSchema getInclusionListSchema() {
+    return inclusionListSchema;
+  }
+
+  public SignedInclusionListSchema getSignedInclusionListSchema() {
+    return signedInclusionListSchema;
   }
 
   @Override
