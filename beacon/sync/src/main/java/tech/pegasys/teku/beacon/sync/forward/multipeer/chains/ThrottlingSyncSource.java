@@ -34,8 +34,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 public class ThrottlingSyncSource implements SyncSource {
   private static final Logger LOG = LogManager.getLogger();
 
-  // 1 minute
-  private static final long TIME_OUT = 60;
+  private static final long TIMEOUT_SECONDS = 60;
   public static final Duration PEER_REQUEST_DELAY = Duration.ofSeconds(3);
 
   private final AsyncRunner asyncRunner;
@@ -54,13 +53,13 @@ public class ThrottlingSyncSource implements SyncSource {
       final Optional<Integer> maybeMaxBlobSidecarsPerMinute) {
     this.asyncRunner = asyncRunner;
     this.delegate = delegate;
-    this.blocksRateTracker = RateTracker.create(maxBlocksPerMinute, TIME_OUT, timeProvider);
+    this.blocksRateTracker = RateTracker.create(maxBlocksPerMinute, TIMEOUT_SECONDS, timeProvider);
     this.maybeMaxBlobsPerBlock = maybeMaxBlobsPerBlock;
     this.blobSidecarsRateTracker =
         maybeMaxBlobSidecarsPerMinute
             .map(
                 maxBlobSidecarsPerMinute ->
-                    RateTracker.create(maxBlobSidecarsPerMinute, TIME_OUT, timeProvider))
+                    RateTracker.create(maxBlobSidecarsPerMinute, TIMEOUT_SECONDS, timeProvider))
             .orElse(RateTracker.NOOP);
   }
 
@@ -98,7 +97,7 @@ public class ThrottlingSyncSource implements SyncSource {
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRange(
       final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecar> listener) {
-    long blobSidecarsCount =
+    final long blobSidecarsCount =
         maybeMaxBlobsPerBlock
             .map(maxBlobsPerBlock -> maxBlobsPerBlock * count.longValue())
             .orElse(0L);
@@ -106,7 +105,7 @@ public class ThrottlingSyncSource implements SyncSource {
         .approveObjectsRequest(blobSidecarsCount)
         .map(
             requestApproval -> {
-              LOG.debug("Sending request for ~ {} blob sidecars", blobSidecarsCount);
+              LOG.debug("Sending request for approximately {} blob sidecars", blobSidecarsCount);
               final RpcResponseListenerWithCount<BlobSidecar> listenerWithCount =
                   new RpcResponseListenerWithCount<>(listener);
               return delegate
@@ -121,7 +120,7 @@ public class ThrottlingSyncSource implements SyncSource {
         .orElseGet(
             () -> {
               LOG.debug(
-                  "Rate limiting request for ~ {} blob sidecars. Retry in {} seconds",
+                  "Rate limiting request for approximately {} blob sidecars. Retry in {} seconds",
                   blobSidecarsCount,
                   PEER_REQUEST_DELAY.toSeconds());
               return asyncRunner.runAfterDelay(

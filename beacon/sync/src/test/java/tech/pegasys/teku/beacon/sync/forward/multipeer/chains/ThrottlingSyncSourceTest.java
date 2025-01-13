@@ -103,7 +103,7 @@ class ThrottlingSyncSourceTest {
   void shouldRequestBlocksImmediatelyIfRateLimitNotExceeded() {
     final UInt64 count = UInt64.valueOf(MAX_BLOCKS_PER_MINUTE - 1);
     ignoreFuture(source.requestBlocksByRange(UInt64.ZERO, count, blocksListener));
-    ignoreFuture(source.requestBlocksByRange(UInt64.valueOf(100), count, blocksListener));
+    ignoreFuture(source.requestBlocksByRange(count, count, blocksListener));
 
     // Both requests happen immediately
     ignoreFuture(
@@ -112,8 +112,7 @@ class ThrottlingSyncSourceTest {
                 eq(UInt64.ZERO), eq(count), any(RpcResponseListenerWithCount.class)));
     ignoreFuture(
         verify(delegate)
-            .requestBlocksByRange(
-                eq(UInt64.valueOf(100)), eq(count), any(RpcResponseListenerWithCount.class)));
+            .requestBlocksByRange(eq(count), eq(count), any(RpcResponseListenerWithCount.class)));
   }
 
   @Test
@@ -121,8 +120,7 @@ class ThrottlingSyncSourceTest {
     // 100 / 6 = 16, 16 * 6 = 92 < 100
     final UInt64 count = UInt64.valueOf(16);
     ignoreFuture(source.requestBlobSidecarsByRange(UInt64.ZERO, count, blobSidecarsListener));
-    ignoreFuture(
-        source.requestBlobSidecarsByRange(UInt64.valueOf(16), count, blobSidecarsListener));
+    ignoreFuture(source.requestBlobSidecarsByRange(count, count, blobSidecarsListener));
 
     // Both requests happen immediately
     ignoreFuture(
@@ -132,14 +130,14 @@ class ThrottlingSyncSourceTest {
     ignoreFuture(
         verify(delegate)
             .requestBlobSidecarsByRange(
-                eq(UInt64.valueOf(16)), eq(count), any(RpcResponseListenerWithCount.class)));
+                eq(count), eq(count), any(RpcResponseListenerWithCount.class)));
   }
 
   @Test
   void shouldDelayRequestIfBlockLimitAlreadyExceeded() {
     final UInt64 count = UInt64.valueOf(MAX_BLOCKS_PER_MINUTE);
     ignoreFuture(source.requestBlocksByRange(UInt64.ZERO, count, blocksListener));
-    ignoreFuture(source.requestBlocksByRange(UInt64.valueOf(100), count, blocksListener));
+    ignoreFuture(source.requestBlocksByRange(count, count, blocksListener));
 
     // Both requests happen immediately
     ignoreFuture(
@@ -153,8 +151,7 @@ class ThrottlingSyncSourceTest {
 
     ignoreFuture(
         verify(delegate)
-            .requestBlocksByRange(
-                eq(UInt64.valueOf(100)), eq(count), any(RpcResponseListenerWithCount.class)));
+            .requestBlocksByRange(eq(count), eq(count), any(RpcResponseListenerWithCount.class)));
   }
 
   @Test
@@ -162,8 +159,7 @@ class ThrottlingSyncSourceTest {
     // 17 * 6 = 102 > 100
     final UInt64 count = UInt64.valueOf(17);
     ignoreFuture(source.requestBlobSidecarsByRange(UInt64.ZERO, count, blobSidecarsListener));
-    ignoreFuture(
-        source.requestBlobSidecarsByRange(UInt64.valueOf(17), count, blobSidecarsListener));
+    ignoreFuture(source.requestBlobSidecarsByRange(count, count, blobSidecarsListener));
 
     ignoreFuture(
         verify(delegate)
@@ -177,14 +173,14 @@ class ThrottlingSyncSourceTest {
     ignoreFuture(
         verify(delegate)
             .requestBlobSidecarsByRange(
-                eq(UInt64.valueOf(17)), eq(count), any(RpcResponseListenerWithCount.class)));
+                eq(count), eq(count), any(RpcResponseListenerWithCount.class)));
   }
 
   @Test
   void shouldContinueDelayingBlocksRequestIfRequestStillExceeded() {
     final UInt64 count = UInt64.valueOf(MAX_BLOCKS_PER_MINUTE);
     ignoreFuture(source.requestBlocksByRange(UInt64.ZERO, count, blocksListener));
-    ignoreFuture(source.requestBlocksByRange(UInt64.valueOf(100), count, blocksListener));
+    ignoreFuture(source.requestBlocksByRange(count, count, blocksListener));
 
     // Both requests happen immediately
     ignoreFuture(
@@ -201,8 +197,7 @@ class ThrottlingSyncSourceTest {
     asyncRunner.executeQueuedActions();
     ignoreFuture(
         verify(delegate)
-            .requestBlocksByRange(
-                eq(UInt64.valueOf(100)), eq(count), any(RpcResponseListenerWithCount.class)));
+            .requestBlocksByRange(eq(count), eq(count), any(RpcResponseListenerWithCount.class)));
   }
 
   @Test
@@ -210,8 +205,7 @@ class ThrottlingSyncSourceTest {
     // 17 * 6 = 102 > 100
     final UInt64 count = UInt64.valueOf(17);
     ignoreFuture(source.requestBlobSidecarsByRange(UInt64.ZERO, count, blobSidecarsListener));
-    ignoreFuture(
-        source.requestBlobSidecarsByRange(UInt64.valueOf(17), count, blobSidecarsListener));
+    ignoreFuture(source.requestBlobSidecarsByRange(count, count, blobSidecarsListener));
 
     // Both requests happen immediately
     ignoreFuture(
@@ -229,6 +223,6 @@ class ThrottlingSyncSourceTest {
     ignoreFuture(
         verify(delegate)
             .requestBlobSidecarsByRange(
-                eq(UInt64.valueOf(17)), eq(count), any(RpcResponseListenerWithCount.class)));
+                eq(count), eq(count), any(RpcResponseListenerWithCount.class)));
   }
 }
