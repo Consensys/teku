@@ -28,8 +28,7 @@ public class InclusionListSchema
     extends ContainerSchema4<
         InclusionList, SszUInt64, SszUInt64, SszBytes32, SszList<Transaction>> {
 
-  public InclusionListSchema(
-      final SpecConfigEip7805 specConfigEip7805) {
+  public InclusionListSchema(final SpecConfigEip7805 specConfigEip7805) {
     super(
         "InclusionList",
         namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
@@ -38,7 +37,8 @@ public class InclusionListSchema
         namedSchema(
             "transactions",
             SszListSchema.create(
-                new TransactionSchema(specConfigEip7805), specConfigEip7805.getMaxTransactionsPerInclusionList())));
+                new TransactionSchema(specConfigEip7805),
+                specConfigEip7805.getMaxTransactionsPerInclusionList())));
   }
 
   @Override

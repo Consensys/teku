@@ -676,16 +676,20 @@ public class SchemaRegistryBuilder {
 
   private static SchemaProvider<?> createInclusionListSchemaProvider() {
     return providerBuilder(INCLUSION_LIST_SCHEMA)
-            .withCreator(
-                    EIP7805, (registry, specConfig, schemaName) -> new InclusionListSchema(SpecConfigEip7805.required(specConfig)))
-            .build();
+        .withCreator(
+            EIP7805,
+            (registry, specConfig, schemaName) ->
+                new InclusionListSchema(SpecConfigEip7805.required(specConfig)))
+        .build();
   }
 
   private static SchemaProvider<?> createSignedInclusionListSchemaProvider() {
     return providerBuilder(SIGNED_INCLUSION_LIST_SCHEMA)
-            .withCreator(
-                    EIP7805, (registry, specConfig, schemaName) -> new SignedInclusionListSchema(schemaName, registry))
-            .build();
+        .withCreator(
+            EIP7805,
+            (registry, specConfig, schemaName) ->
+                new SignedInclusionListSchema(schemaName, registry))
+        .build();
   }
 
   private static long getMaxValidatorsPerAttestationPhase0(final SpecConfig specConfig) {

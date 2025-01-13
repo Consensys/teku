@@ -60,7 +60,6 @@ import tech.pegasys.teku.spec.datastructures.operations.InclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
-import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
@@ -178,9 +177,9 @@ public class SchemaTypes {
 
   // EIP7805
   public static final SchemaId<InclusionListSchema> INCLUSION_LIST_SCHEMA =
-          create("INCLUSION_LIST_SCHEMA");
+      create("INCLUSION_LIST_SCHEMA");
   public static final SchemaId<SignedInclusionListSchema> SIGNED_INCLUSION_LIST_SCHEMA =
-          create("SIGNED_INCLUSION_LIST_SCHEMA");
+      create("SIGNED_INCLUSION_LIST_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation

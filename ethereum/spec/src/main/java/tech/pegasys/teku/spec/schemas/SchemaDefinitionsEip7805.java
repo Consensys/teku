@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.schemas;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
-
 import tech.pegasys.teku.spec.datastructures.operations.InclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
