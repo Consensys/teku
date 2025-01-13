@@ -2507,7 +2507,7 @@ public final class DataStructureUtil {
     for (int i = 0; i < maxTransactionsPerInclusionList; i++) {
       transactions.add(randomExecutionPayloadTransaction());
     }
-    
+
     return spec.getGenesisSchemaDefinitions()
         .toVersionEip7805()
         .orElseThrow()
