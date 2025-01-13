@@ -27,11 +27,16 @@ public class InclusionList
     extends Container4<InclusionList, SszUInt64, SszUInt64, SszBytes32, SszList<Transaction>> {
   protected InclusionList(
       final InclusionListSchema schema,
-      final SszUInt64 slot,
-      final SszUInt64 validatorIndex,
-      final SszBytes32 inclusionListCommitteeRoot,
-      final SszList<Transaction> transactions) {
-    super(schema, slot, validatorIndex, inclusionListCommitteeRoot, transactions);
+      final UInt64 slot,
+      final UInt64 validatorIndex,
+      final Bytes32 inclusionListCommitteeRoot,
+      final List<Transaction> transactions) {
+    super(
+        schema,
+        SszUInt64.of(slot),
+        SszUInt64.of(validatorIndex),
+        SszBytes32.of(inclusionListCommitteeRoot),
+        schema.getTransactionsSchema().createFromElements(transactions));
   }
 
   InclusionList(final InclusionListSchema type, final TreeNode backingNode) {
