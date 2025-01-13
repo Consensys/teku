@@ -154,6 +154,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
+import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -2492,6 +2493,26 @@ public final class DataStructureUtil {
         spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema().getAttestationsSchema(),
         () -> randomAttestation(slot),
         count);
+  }
+
+  public InclusionList randomInclusionList() {
+    final int maxTransactionsPerInclusionList =
+        spec.getGenesisSpec()
+            .getConfig()
+            .toVersionEip7805()
+            .orElseThrow()
+            .getMaxTransactionsPerInclusionList();
+
+    final List<Transaction> transactions = new ArrayList<>();
+    for (int i = 0; i < maxTransactionsPerInclusionList; i++) {
+      transactions.add(randomExecutionPayloadTransaction());
+    }
+    
+    return spec.getGenesisSchemaDefinitions()
+        .toVersionEip7805()
+        .orElseThrow()
+        .getInclusionListSchema()
+        .create(randomSlot(), randomValidatorIndex(), randomBytes32(), transactions);
   }
 
   public class RandomBlobSidecarBuilder {
