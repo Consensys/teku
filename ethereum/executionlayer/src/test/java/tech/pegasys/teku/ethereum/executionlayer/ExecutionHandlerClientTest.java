@@ -81,7 +81,7 @@ public abstract class ExecutionHandlerClientTest {
             ClientVersionV1.fromInternalClientVersion(consensusClientVersion)))
         .thenReturn(
             SafeFuture.completedFuture(
-                new Response<>(
+                Response.fromPayloadReceivedAsJson(
                     List.of(ClientVersionV1.fromInternalClientVersion(executionClientVersion)))));
 
     final SafeFuture<List<ClientVersion>> result =

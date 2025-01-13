@@ -14,10 +14,15 @@
 package tech.pegasys.teku.ethereum.executionclient.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
-import java.net.SocketException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -27,32 +32,37 @@ import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-import org.apache.tuweni.bytes.Bytes32;
+import okio.Buffer;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.ethereum.executionclient.rest.RestClient.ResponseSchemaAndDeserializableTypeDefinition;
+import tech.pegasys.teku.ethereum.executionclient.schema.BuilderApiResponse;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.Waiter;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszImmutableContainer;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 
 class OkHttpRestClientTest {
 
   private static final Map<String, String> TEST_HEADERS = Map.of("foo", "bar");
   private static final String TEST_PATH = "v1/test";
-  private static final Bytes32 TEST_BLOCK_HASH =
-      Bytes32.fromHexString("0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2");
 
   private final MockWebServer mockWebServer = new MockWebServer();
   private final OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
 
-  private DeserializableTypeDefinition<TestObject> responseTypeDefinition;
-  private SerializableTypeDefinition<TestObject2> requestTypeDefinition;
-  private SerializableTypeDefinition<TestObject2> failingRequestTypeDefinition;
-
+  private ResponseSchemaAndDeserializableTypeDefinition<ResponseContainer> responseTypeDefinition;
   private OkHttpRestClient underTest;
 
   @BeforeEach
@@ -60,15 +70,11 @@ class OkHttpRestClientTest {
     mockWebServer.start();
     final String endpoint = "http://localhost:" + mockWebServer.getPort();
     responseTypeDefinition =
-        DeserializableTypeDefinition.object(TestObject.class)
-            .initializer(TestObject::new)
-            .withField("foo", CoreTypes.STRING_TYPE, TestObject::getFoo, TestObject::setFoo)
-            .build();
-    requestTypeDefinition =
-        SerializableTypeDefinition.object(TestObject2.class)
-            .withField("block_hash", CoreTypes.BYTES32_TYPE, TestObject2::getBlockHash)
-            .build();
-    failingRequestTypeDefinition = new FailingSerializableTypeDefinition();
+        new ResponseSchemaAndDeserializableTypeDefinition<>(
+            ResponseContainer.SSZ_SCHEMA,
+            BuilderApiResponse.createTypeDefinition(
+                ResponseContainer.SSZ_SCHEMA.getJsonTypeDefinition()));
+
     underTest = new OkHttpRestClient(okHttpClient, endpoint);
   }
 
@@ -81,20 +87,24 @@ class OkHttpRestClientTest {
   void getsResponseAsync() throws InterruptedException {
     mockWebServer.enqueue(
         new MockResponse()
-            .setBody("{\"foo\" : \"bar\"}")
+            .setBody("{\"version\" : \"electra\", \"data\" : {\"output\" : \"1\"}}")
             .setResponseCode(200)
             .addHeader("Content-Type", "application/json"));
 
-    final SafeFuture<Response<TestObject>> responseFuture =
+    final SafeFuture<Response<BuilderApiResponse<ResponseContainer>>> responseFuture =
         underTest.getAsync(TEST_PATH, TEST_HEADERS, responseTypeDefinition);
 
     assertThat(responseFuture)
         .succeedsWithin(Duration.ofSeconds(1))
         .satisfies(
             response -> {
-              assertThat(response.getErrorMessage()).isNull();
-              assertThat(response.getPayload())
-                  .satisfies(testObject -> assertThat(testObject.getFoo()).isEqualTo("bar"));
+              assertThat(response.errorMessage()).isNull();
+              assertThat(response.payload())
+                  .satisfies(
+                      testObject -> assertThat(testObject.data().getOutput()).isEqualTo(UInt64.ONE))
+                  .satisfies(
+                      testObject ->
+                          assertThat(testObject.version()).isEqualTo(SpecMilestone.ELECTRA));
             });
 
     final RecordedRequest request = mockWebServer.takeRequest();
@@ -114,8 +124,8 @@ class OkHttpRestClientTest {
         .succeedsWithin(Duration.ofSeconds(1))
         .satisfies(
             response -> {
-              assertThat(response.getErrorMessage()).isNull();
-              assertThat(response.getPayload()).isNull();
+              assertThat(response.errorMessage()).isNull();
+              assertThat(response.payload()).isNull();
             });
 
     final RecordedRequest request = mockWebServer.takeRequest();
@@ -129,29 +139,35 @@ class OkHttpRestClientTest {
     final String errorBody = "{\"code\":400,\"message\":\"Invalid block: missing signature\"}";
     mockWebServer.enqueue(new MockResponse().setResponseCode(400).setBody(errorBody));
 
-    final SafeFuture<Response<TestObject>> responseFuture =
+    final SafeFuture<Response<BuilderApiResponse<ResponseContainer>>> responseFuture =
         underTest.getAsync(TEST_PATH, TEST_HEADERS, responseTypeDefinition);
 
     assertThat(responseFuture)
         .succeedsWithin(Duration.ofSeconds(1))
         .satisfies(
             response -> {
-              assertThat(response.getErrorMessage()).isEqualTo(errorBody);
-              assertThat(response.getPayload()).isNull();
+              assertThat(response.errorMessage()).isEqualTo(errorBody);
+              assertThat(response.payload()).isNull();
+              assertThat(response.isFailure()).isTrue();
+              assertThat(response.isSuccess()).isFalse();
+              assertThat(response.isUnsupportedMediaTypeError()).isFalse();
             });
 
     // error without a body
     mockWebServer.enqueue(new MockResponse().setResponseCode(500));
 
-    final SafeFuture<Response<TestObject>> secondResponseFuture =
+    final SafeFuture<Response<BuilderApiResponse<ResponseContainer>>> secondResponseFuture =
         underTest.getAsync(TEST_PATH, TEST_HEADERS, responseTypeDefinition);
 
     assertThat(secondResponseFuture)
         .succeedsWithin(Duration.ofSeconds(1))
         .satisfies(
             response -> {
-              assertThat(response.getErrorMessage()).isEqualTo("500: Server Error");
-              assertThat(response.getPayload()).isNull();
+              assertThat(response.errorMessage()).isEqualTo("500: Server Error");
+              assertThat(response.payload()).isNull();
+              assertThat(response.isFailure()).isTrue();
+              assertThat(response.isSuccess()).isFalse();
+              assertThat(response.isUnsupportedMediaTypeError()).isFalse();
             });
 
     assertThat(mockWebServer.getRequestCount()).isEqualTo(2);
@@ -173,50 +189,96 @@ class OkHttpRestClientTest {
   void postsAsync() throws InterruptedException {
     mockWebServer.enqueue(
         new MockResponse()
-            .setBody("{\"foo\" : \"bar\"}")
+            .setBody("{\"version\" : \"electra\", \"data\" : {\"output\" : \"1\"}}")
             .setResponseCode(200)
             .addHeader("Content-Type", "application/json"));
 
-    final TestObject2 requestBodyObject = new TestObject2(TEST_BLOCK_HASH);
-    final SafeFuture<Response<TestObject>> responseFuture =
-        underTest.postAsync(
-            TEST_PATH, Map.of(), requestBodyObject, requestTypeDefinition, responseTypeDefinition);
+    final RequestContainer requestBodyObject = new RequestContainer(2);
+    final SafeFuture<Response<BuilderApiResponse<ResponseContainer>>> responseFuture =
+        underTest.postAsync(TEST_PATH, Map.of(), requestBodyObject, false, responseTypeDefinition);
 
     assertThat(responseFuture)
         .succeedsWithin(Duration.ofSeconds(1))
         .satisfies(
             response -> {
-              assertThat(response.getErrorMessage()).isNull();
-              assertThat(response.getPayload())
-                  .satisfies(testObject -> assertThat(testObject.getFoo()).isEqualTo("bar"));
+              assertThat(response.errorMessage()).isNull();
+              assertThat(response.payload())
+                  .satisfies(
+                      testObject -> assertThat(testObject.data().getOutput()).isEqualTo(UInt64.ONE))
+                  .satisfies(
+                      testObject ->
+                          assertThat(testObject.version()).isEqualTo(SpecMilestone.ELECTRA));
+              assertThat(response.receivedAsSsz()).isFalse();
             });
 
     final RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getPath()).isEqualTo("/" + TEST_PATH);
-    assertThat(request.getBody().readUtf8())
-        .isEqualTo(
-            "{\"block_hash\":\"0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2\"}");
+    assertThat(request.getBody().readUtf8()).isEqualTo("{\"input\":\"2\"}");
     assertThat(request.getMethod()).isEqualTo("POST");
   }
 
   @Test
-  void postsAsyncDoesNotThrowExceptionsInOtherThreadsWhenRequestCreationFails() {
+  void postsAsSszAsync() throws InterruptedException {
+    final Buffer responseBodyBuffer = new Buffer();
+    final ResponseContainer responseContainer = new ResponseContainer(1);
+    responseBodyBuffer.write(responseContainer.sszSerialize().toArrayUnsafe());
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setBody(responseBodyBuffer)
+            .setResponseCode(200)
+            .addHeader("Content-Type", "application/octet-stream")
+            .addHeader("Eth-Consensus-Version", "electra"));
 
-    final TestObject2 requestBodyObject = new TestObject2(TEST_BLOCK_HASH);
-    final SafeFuture<Response<TestObject>> responseFuture =
-        underTest.postAsync(
-            TEST_PATH,
-            Map.of(),
-            requestBodyObject,
-            failingRequestTypeDefinition,
-            responseTypeDefinition);
+    final RequestContainer requestBodyObject = new RequestContainer(2);
+    final SafeFuture<Response<BuilderApiResponse<ResponseContainer>>> responseFuture =
+        underTest.postAsync(TEST_PATH, Map.of(), requestBodyObject, true, responseTypeDefinition);
+
+    assertThat(responseFuture)
+        .succeedsWithin(Duration.ofSeconds(1))
+        .satisfies(
+            response -> {
+              assertThat(response.errorMessage()).isNull();
+              assertThat(response.payload())
+                  .satisfies(
+                      testObject -> assertThat(testObject.data()).isEqualTo(responseContainer))
+                  .satisfies(
+                      testObject ->
+                          assertThat(testObject.version()).isEqualTo(SpecMilestone.ELECTRA));
+              assertThat(response.receivedAsSsz()).isTrue();
+            });
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getPath()).isEqualTo("/" + TEST_PATH);
+    assertThat(request.getBody())
+        .satisfies(
+            buffer ->
+                assertThat(
+                        RequestContainer.SSZ_SCHEMA.sszDeserialize(
+                            Bytes.wrap(buffer.readByteArray())))
+                    .isEqualTo(requestBodyObject));
+    assertThat(request.getMethod()).isEqualTo("POST");
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void postsAsyncDoesNotThrowExceptionsInOtherThreadsWhenRequestCreationFails() {
+    final RequestContainer requestBodyObject = spy(new RequestContainer(2));
+    final AbstractSszContainerSchema<RequestContainer> failingSchema =
+        mock(AbstractSszContainerSchema.class);
+
+    when(failingSchema.getJsonTypeDefinition()).thenReturn(new FailingSerializableTypeDefinition());
+    doAnswer(invocation -> failingSchema).when(requestBodyObject).getSchema();
+
+    final SafeFuture<Response<BuilderApiResponse<ResponseContainer>>> responseFuture =
+        underTest.postAsync(TEST_PATH, Map.of(), requestBodyObject, false, responseTypeDefinition);
 
     // this will fail if there are uncaught exceptions in other threads
     Waiter.waitFor(() -> assertThat(responseFuture).isDone(), 30, TimeUnit.SECONDS, false);
 
     SafeFutureAssert.assertThatSafeFuture(responseFuture)
-        .isCompletedExceptionallyWithMessage("Broken pipe");
+        .isCompletedExceptionallyWithMessage("error!!");
   }
 
   @Test
@@ -227,65 +289,155 @@ class OkHttpRestClientTest {
             .setResponseCode(200)
             .addHeader("Content-Type", "application/json"));
 
-    final TestObject2 requestBodyObject = new TestObject2(TEST_BLOCK_HASH);
+    final RequestContainer requestBodyObject = new RequestContainer(2);
     final SafeFuture<Response<Void>> responseFuture =
-        underTest.postAsync(TEST_PATH, requestBodyObject, requestTypeDefinition);
+        underTest.postAsync(TEST_PATH, requestBodyObject, false);
 
     assertThat(responseFuture)
         .succeedsWithin(Duration.ofSeconds(1))
         .satisfies(
             response -> {
-              assertThat(response.getErrorMessage()).isNull();
-              assertThat(response.getPayload()).isNull();
+              assertThat(response.errorMessage()).isNull();
+              assertThat(response.payload()).isNull();
             });
 
     final RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getPath()).isEqualTo("/" + TEST_PATH);
-    assertThat(request.getBody().readUtf8())
-        .isEqualTo(
-            "{\"block_hash\":\"0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2\"}");
+    assertThat(request.getBody().readUtf8()).isEqualTo("{\"input\":\"2\"}");
+    assertThat(request.getMethod()).isEqualTo("POST");
+  }
+
+  @Test
+  void postsAsSszAsyncIgnoringResponseBody() throws InterruptedException {
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setBody("{\"foo\" : \"bar\"}")
+            .setResponseCode(200)
+            .addHeader("Content-Type", "application/json"));
+
+    final RequestContainer requestBodyObject = new RequestContainer(2);
+    final SafeFuture<Response<Void>> responseFuture =
+        underTest.postAsync(TEST_PATH, requestBodyObject, true);
+
+    assertThat(responseFuture)
+        .succeedsWithin(Duration.ofSeconds(1))
+        .satisfies(
+            response -> {
+              assertThat(response.errorMessage()).isNull();
+              assertThat(response.isFailure()).isFalse();
+              assertThat(response.isSuccess()).isTrue();
+              assertThat(response.payload()).isNull();
+              assertThat(response.receivedAsSsz()).isFalse();
+            });
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getPath()).isEqualTo("/" + TEST_PATH);
+    assertThat(request.getBody())
+        .satisfies(
+            buffer ->
+                assertThat(
+                        RequestContainer.SSZ_SCHEMA.sszDeserialize(
+                            Bytes.wrap(buffer.readByteArray())))
+                    .isEqualTo(requestBodyObject));
+    assertThat(request.getMethod()).isEqualTo("POST");
+  }
+
+  @Test
+  void postsAsSszAsyncDetectsUnsupportedMediaTypeError() throws InterruptedException {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(415));
+
+    final RequestContainer requestBodyObject = new RequestContainer(2);
+    final SafeFuture<Response<Void>> responseFuture =
+        underTest.postAsync(TEST_PATH, requestBodyObject, true);
+
+    assertThat(responseFuture)
+        .succeedsWithin(Duration.ofSeconds(1))
+        .satisfies(
+            response -> {
+              assertThat(response.errorMessage()).isEqualTo("Unsupported Media Type");
+              assertThat(response.isFailure()).isTrue();
+              assertThat(response.isSuccess()).isFalse();
+              assertThat(response.payload()).isNull();
+              assertThat(response.receivedAsSsz()).isFalse();
+              assertThat(response.isUnsupportedMediaTypeError()).isTrue();
+            });
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getPath()).isEqualTo("/" + TEST_PATH);
+    assertThat(request.getBody())
+        .satisfies(
+            buffer ->
+                assertThat(
+                        RequestContainer.SSZ_SCHEMA.sszDeserialize(
+                            Bytes.wrap(buffer.readByteArray())))
+                    .isEqualTo(requestBodyObject));
     assertThat(request.getMethod()).isEqualTo("POST");
   }
 
   private static class FailingSerializableTypeDefinition
-      implements SerializableTypeDefinition<TestObject2> {
+      implements DeserializableTypeDefinition<RequestContainer> {
 
     @Override
     public void serializeOpenApiType(final JsonGenerator gen) {}
 
     @Override
-    public void serialize(final TestObject2 value, final JsonGenerator gen) throws IOException {
-      throw new SocketException("Broken pipe");
+    public void serialize(final RequestContainer value, final JsonGenerator gen)
+        throws IOException {
+      throw new JsonGenerationException("error!!", null, null);
     }
 
     @Override
-    public SerializableTypeDefinition<TestObject2> withDescription(final String description) {
+    public RequestContainer deserialize(final JsonParser parser) {
+      // this should never be called
+      return null;
+    }
+
+    @Override
+    public DeserializableTypeDefinition<RequestContainer> withDescription(
+        final String description) {
       return this;
     }
   }
 
-  private static class TestObject {
-    private String foo;
+  private static class RequestContainer extends AbstractSszImmutableContainer {
 
-    public String getFoo() {
-      return foo;
+    public static final SszContainerSchema<RequestContainer> SSZ_SCHEMA =
+        SszContainerSchema.create(
+            "RequestContainer",
+            List.of(NamedSchema.of("input", SszPrimitiveSchemas.UINT64_SCHEMA)),
+            RequestContainer::new);
+
+    private RequestContainer(
+        final SszContainerSchema<RequestContainer> type, final TreeNode backingNode) {
+      super(type, backingNode);
     }
 
-    public void setFoo(final String foo) {
-      this.foo = foo;
+    public RequestContainer(final long input) {
+      super(SSZ_SCHEMA, SszUInt64.of(UInt64.fromLongBits(input)));
     }
   }
 
-  private static class TestObject2 {
-    private final Bytes32 blockHash;
+  private static class ResponseContainer extends AbstractSszImmutableContainer {
+    public static final SszContainerSchema<ResponseContainer> SSZ_SCHEMA =
+        SszContainerSchema.create(
+            "ResponseContainer",
+            List.of(NamedSchema.of("output", SszPrimitiveSchemas.UINT64_SCHEMA)),
+            ResponseContainer::new);
 
-    public TestObject2(final Bytes32 blockHash) {
-      this.blockHash = blockHash;
+    public UInt64 getOutput() {
+      return ((SszUInt64) getAny(0)).get();
     }
 
-    public Bytes32 getBlockHash() {
-      return blockHash;
+    private ResponseContainer(
+        final SszContainerSchema<ResponseContainer> type, final TreeNode backingNode) {
+      super(type, backingNode);
+    }
+
+    public ResponseContainer(final long output) {
+      super(SSZ_SCHEMA, SszUInt64.of(UInt64.fromLongBits(output)));
     }
   }
 }

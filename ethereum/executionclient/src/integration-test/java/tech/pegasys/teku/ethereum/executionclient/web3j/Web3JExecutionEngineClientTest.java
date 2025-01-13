@@ -185,7 +185,7 @@ public class Web3JExecutionEngineClientTest {
         .matches(
             forkChoiceUpdatedResultResponse ->
                 forkChoiceUpdatedResultResponse
-                    .getPayload()
+                    .payload()
                     .asInternalExecutionPayload()
                     .getPayloadStatus()
                     .equals(payloadStatusResponse));
@@ -203,7 +203,7 @@ public class Web3JExecutionEngineClientTest {
         eeClient.exchangeCapabilities(consensusCapabilities);
     assertThat(response)
         .succeedsWithin(1, TimeUnit.SECONDS)
-        .isEqualTo(new Response<>(executionCapabilities));
+        .isEqualTo(Response.fromPayloadReceivedAsJson(executionCapabilities));
 
     final Map<String, Object> requestData = takeRequest();
     verifyJsonRpcMethodCall(requestData, "engine_exchangeCapabilities");
@@ -224,7 +224,7 @@ public class Web3JExecutionEngineClientTest {
         eeClient.getClientVersionV1(consensusClientVersion);
     assertThat(response)
         .succeedsWithin(1, TimeUnit.SECONDS)
-        .isEqualTo(new Response<>(List.of(executionClientVersion)));
+        .isEqualTo(Response.fromPayloadReceivedAsJson(List.of(executionClientVersion)));
 
     final Map<String, Object> requestData = takeRequest();
     verifyJsonRpcMethodCall(requestData, "engine_getClientVersionV1");
@@ -270,7 +270,7 @@ public class Web3JExecutionEngineClientTest {
         .succeedsWithin(1, TimeUnit.SECONDS)
         .matches(
             response ->
-                response.getPayload().asInternalExecutionPayload().equals(payloadStatusResponse));
+                response.payload().asInternalExecutionPayload().equals(payloadStatusResponse));
 
     final Map<String, Object> requestData = takeRequest();
     verifyJsonRpcMethodCall(requestData, "engine_newPayloadV3");
@@ -333,7 +333,7 @@ public class Web3JExecutionEngineClientTest {
         .succeedsWithin(1, TimeUnit.SECONDS)
         .matches(
             response ->
-                response.getPayload().asInternalExecutionPayload().equals(payloadStatusResponse));
+                response.payload().asInternalExecutionPayload().equals(payloadStatusResponse));
 
     final Map<String, Object> requestData = takeRequest();
     verifyJsonRpcMethodCall(requestData, "engine_newPayloadV4");
@@ -397,7 +397,7 @@ public class Web3JExecutionEngineClientTest {
 
     assertThat(futureResponse)
         .succeedsWithin(1, TimeUnit.SECONDS)
-        .matches(response -> response.getPayload().equals(blobsAndProofsV1));
+        .matches(response -> response.payload().equals(blobsAndProofsV1));
 
     final Map<String, Object> requestData = takeRequest();
     verifyJsonRpcMethodCall(requestData, "engine_getBlobsV1");

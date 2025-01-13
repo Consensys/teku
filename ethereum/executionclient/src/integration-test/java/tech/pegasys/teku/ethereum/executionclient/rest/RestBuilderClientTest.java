@@ -142,7 +142,7 @@ class RestBuilderClientTest {
         .satisfies(
             response -> {
               assertThat(response.isSuccess()).isTrue();
-              assertThat(response.getPayload()).isNull();
+              assertThat(response.payload()).isNull();
             });
 
     verifyGetRequest("/eth/v1/builder/status");
@@ -158,7 +158,7 @@ class RestBuilderClientTest {
         .satisfies(
             response -> {
               assertThat(response.isFailure()).isTrue();
-              assertThat(response.getErrorMessage()).isEqualTo(INTERNAL_SERVER_ERROR_MESSAGE);
+              assertThat(response.errorMessage()).isEqualTo(INTERNAL_SERVER_ERROR_MESSAGE);
             });
 
     verifyGetRequest("/eth/v1/builder/status");
@@ -177,7 +177,7 @@ class RestBuilderClientTest {
         .satisfies(
             response -> {
               assertThat(response.isSuccess()).isTrue();
-              assertThat(response.getPayload()).isNull();
+              assertThat(response.payload()).isNull();
             });
 
     verifyPostRequest("/eth/v1/builder/validators", signedValidatorRegistrationsRequest);
@@ -194,7 +194,7 @@ class RestBuilderClientTest {
         .satisfies(
             response -> {
               assertThat(response.isSuccess()).isTrue();
-              assertThat(response.getPayload()).isNull();
+              assertThat(response.payload()).isNull();
             });
 
     assertThat(mockWebServer.getRequestCount()).isEqualTo(0);
@@ -215,7 +215,7 @@ class RestBuilderClientTest {
         .satisfies(
             response -> {
               assertThat(response.isFailure()).isTrue();
-              assertThat(response.getErrorMessage()).isEqualTo(unknownValidatorError);
+              assertThat(response.errorMessage()).isEqualTo(unknownValidatorError);
             });
 
     verifyPostRequest("/eth/v1/builder/validators", signedValidatorRegistrationsRequest);
@@ -228,7 +228,7 @@ class RestBuilderClientTest {
         .satisfies(
             response -> {
               assertThat(response.isFailure()).isTrue();
-              assertThat(response.getErrorMessage()).isEqualTo(INTERNAL_SERVER_ERROR_MESSAGE);
+              assertThat(response.errorMessage()).isEqualTo(INTERNAL_SERVER_ERROR_MESSAGE);
             });
 
     verifyPostRequest("/eth/v1/builder/validators", signedValidatorRegistrationsRequest);
@@ -247,7 +247,7 @@ class RestBuilderClientTest {
         .satisfies(
             response -> {
               assertThat(response.isSuccess()).isTrue();
-              assertThat(response.getPayload())
+              assertThat(response.payload())
                   .isPresent()
                   .hasValueSatisfying(this::verifySignedBuilderBidResponse);
             });
@@ -270,7 +270,7 @@ class RestBuilderClientTest {
         .satisfies(
             response -> {
               assertThat(response.isSuccess()).isTrue();
-              assertThat(response.getPayload())
+              assertThat(response.payload())
                   .isPresent()
                   .hasValueSatisfying(this::verifySignedBuilderBidResponse);
             });
@@ -289,7 +289,7 @@ class RestBuilderClientTest {
         .satisfies(
             response -> {
               assertThat(response.isSuccess()).isTrue();
-              assertThat(response.getPayload()).isEmpty();
+              assertThat(response.payload()).isEmpty();
             });
 
     verifyGetRequest(
@@ -308,7 +308,7 @@ class RestBuilderClientTest {
         .satisfies(
             response -> {
               assertThat(response.isFailure()).isTrue();
-              assertThat(response.getErrorMessage()).isEqualTo(missingParentHashError);
+              assertThat(response.errorMessage()).isEqualTo(missingParentHashError);
             });
 
     verifyGetRequest(
@@ -322,7 +322,7 @@ class RestBuilderClientTest {
         .satisfies(
             response -> {
               assertThat(response.isFailure()).isTrue();
-              assertThat(response.getErrorMessage()).isEqualTo(INTERNAL_SERVER_ERROR_MESSAGE);
+              assertThat(response.errorMessage()).isEqualTo(INTERNAL_SERVER_ERROR_MESSAGE);
             });
 
     verifyGetRequest(
@@ -386,7 +386,7 @@ class RestBuilderClientTest {
         .satisfies(
             response -> {
               assertThat(response.isSuccess()).isTrue();
-              final BuilderPayload builderPayload = response.getPayload();
+              final BuilderPayload builderPayload = response.payload();
               verifyBuilderPayloadResponse(builderPayload);
             });
     final Consumer<RecordedRequest> containsConsensusVersionHeader =
@@ -414,7 +414,7 @@ class RestBuilderClientTest {
         .satisfies(
             response -> {
               assertThat(response.isFailure()).isTrue();
-              assertThat(response.getErrorMessage()).isEqualTo(missingSignatureError);
+              assertThat(response.errorMessage()).isEqualTo(missingSignatureError);
             });
 
     verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBeaconBlockRequest);
@@ -427,7 +427,7 @@ class RestBuilderClientTest {
         .satisfies(
             response -> {
               assertThat(response.isFailure()).isTrue();
-              assertThat(response.getErrorMessage()).isEqualTo(INTERNAL_SERVER_ERROR_MESSAGE);
+              assertThat(response.errorMessage()).isEqualTo(INTERNAL_SERVER_ERROR_MESSAGE);
             });
 
     verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBeaconBlockRequest);
@@ -450,7 +450,7 @@ class RestBuilderClientTest {
         .satisfies(
             response -> {
               assertThat(response.isSuccess()).isTrue();
-              final BuilderPayload builderPayload = response.getPayload();
+              final BuilderPayload builderPayload = response.payload();
               verifyBuilderPayloadResponse(builderPayload);
             });
 
@@ -515,7 +515,7 @@ class RestBuilderClientTest {
                 schemaDefinitions.getSignedBuilderBidSchema().getJsonTypeDefinition());
     try {
       final SignedBuilderBid expected =
-          JsonUtil.parse(signedBuilderBidResponse, responseTypeDefinition).getData();
+          JsonUtil.parse(signedBuilderBidResponse, responseTypeDefinition).data();
       assertThat(actual).isEqualTo(expected);
     } catch (final JsonProcessingException ex) {
       Assertions.fail(ex);
@@ -539,7 +539,7 @@ class RestBuilderClientTest {
                 schemaDefinitions.getBuilderPayloadSchema().getJsonTypeDefinition());
     try {
       final BuilderPayload expected =
-          JsonUtil.parse(unblindedBuilderPayloadResponse, responseTypeDefinition).getData();
+          JsonUtil.parse(unblindedBuilderPayloadResponse, responseTypeDefinition).data();
       assertThat(actual).isEqualTo(expected);
     } catch (final JsonProcessingException ex) {
       Assertions.fail(ex);

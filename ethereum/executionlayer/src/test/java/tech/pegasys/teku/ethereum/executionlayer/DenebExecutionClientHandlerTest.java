@@ -72,7 +72,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
             BlobsBundleV1.fromInternalBlobsBundle(dataStructureUtil.randomBlobsBundle()),
             true);
     final SafeFuture<Response<GetPayloadV3Response>> dummyResponse =
-        SafeFuture.completedFuture(new Response<>(responseData));
+        SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(responseData));
     when(executionEngineClient.getPayloadV3(context.getPayloadId())).thenReturn(dummyResponse);
 
     final UInt64 slot = dataStructureUtil.randomUInt64(1_000_000);
@@ -101,7 +101,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
         new PayloadStatusV1(
             ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
-        SafeFuture.completedFuture(new Response<>(responseData));
+        SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(responseData));
     when(executionEngineClient.newPayloadV3(payloadV3, versionedHashes, parentBeaconBlockRoot))
         .thenReturn(dummyResponse);
     final SafeFuture<PayloadStatus> future =
@@ -134,7 +134,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
                 ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), ""),
             dataStructureUtil.randomBytes8());
     final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
-        SafeFuture.completedFuture(new Response<>(responseData));
+        SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(responseData));
     when(executionEngineClient.forkChoiceUpdatedV3(forkChoiceStateV1, payloadAttributes))
         .thenReturn(dummyResponse);
     final SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> future =
@@ -161,7 +161,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
                         blobSidecar.getKZGProof().getBytesCompressed()))
             .toList();
     final SafeFuture<Response<List<BlobAndProofV1>>> dummyResponse =
-        SafeFuture.completedFuture(new Response<>(responseData));
+        SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(responseData));
     when(executionEngineClient.getBlobsV1(versionedHashes)).thenReturn(dummyResponse);
     final SafeFuture<List<BlobAndProof>> future = handler.engineGetBlobs(versionedHashes, slot);
     verify(executionEngineClient).getBlobsV1(versionedHashes);

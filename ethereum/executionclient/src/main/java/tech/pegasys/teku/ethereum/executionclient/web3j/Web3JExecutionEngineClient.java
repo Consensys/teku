@@ -67,7 +67,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         .doRequest(
             web3JClient.getEth1Web3j().ethGetBlockByHash(blockHash.toHexString(), false),
             EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT)
-        .thenApply(Response::getPayload)
+        .thenApply(Response::payload)
         .thenApply(Web3JExecutionEngineClient::eth1BlockToPowBlock);
   }
 
@@ -77,7 +77,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         .doRequest(
             web3JClient.getEth1Web3j().ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false),
             EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT)
-        .thenApply(Response::getPayload)
+        .thenApply(Response::payload)
         .thenApply(Web3JExecutionEngineClient::eth1BlockToPowBlock);
   }
 
