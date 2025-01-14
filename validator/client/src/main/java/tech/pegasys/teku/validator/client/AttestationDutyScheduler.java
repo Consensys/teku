@@ -15,7 +15,9 @@ package tech.pegasys.teku.validator.client;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,6 +29,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 
 public class AttestationDutyScheduler extends AbstractDutyScheduler {
   private static final Logger LOG = LogManager.getLogger();
@@ -35,12 +38,17 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
   public AttestationDutyScheduler(
       final MetricsSystem metricsSystem, final DutyLoader<?> dutyLoader, final Spec spec) {
     super(metricsSystem, "attestation", dutyLoader, LOOKAHEAD_EPOCHS, spec);
-
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
         "scheduled_attestation_duties_current",
         "Current number of pending attestation duties that have been scheduled",
         () -> dutiesByEpoch.values().stream().mapToInt(PendingDuties::countDuties).sum());
+
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.VALIDATOR,
+        "next_attestation_slot",
+        "Next slot that a validator has an attestation production duty scheduled",
+        () -> getNextAttestationSlotScheduled().orElse(-1));
   }
 
   @Override
@@ -82,5 +90,23 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
           "headBlockRoot returned - dutyEpoch {}, headEpoch {}", () -> dutyEpoch, () -> headEpoch);
       return headBlockRoot;
     }
+  }
+
+  @VisibleForTesting
+  @SuppressWarnings({"RawUseOfParameterized", "unchecked"})
+  Optional<Integer> getNextAttestationSlotScheduled() {
+    // Find all attestation production duties scheduled slots, then returning the earliest
+    return dutiesByEpoch.values().stream()
+        .map(PendingDuties::getScheduledDuties)
+        .flatMap(Optional::stream)
+        .filter(sd -> sd instanceof SlotBasedScheduledDuties)
+        .map(
+            sd -> {
+              final Optional<UInt64> nextAttestationProductionDutySlot =
+                  ((SlotBasedScheduledDuties) sd).getNextAttestationProductionDutyScheduledSlot();
+              return nextAttestationProductionDutySlot.map(UInt64::intValue);
+            })
+        .flatMap(Optional::stream)
+        .min(Integer::compareTo);
   }
 }
