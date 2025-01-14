@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -35,6 +36,8 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
   private static final Logger LOG = LogManager.getLogger();
   static final int LOOKAHEAD_EPOCHS = 1;
 
+  private final AtomicInteger nextAttestationSlot = new AtomicInteger();
+
   public AttestationDutyScheduler(
       final MetricsSystem metricsSystem, final DutyLoader<?> dutyLoader, final Spec spec) {
     super(metricsSystem, "attestation", dutyLoader, LOOKAHEAD_EPOCHS, spec);
@@ -48,7 +51,16 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
         TekuMetricCategory.VALIDATOR,
         "next_attestation_slot",
         "Next slot that a validator has an attestation production duty scheduled",
-        () -> getNextAttestationSlotScheduled().orElse(-1));
+        nextAttestationSlot::get);
+  }
+
+  @Override
+  public void onSlot(final UInt64 slot) {
+    super.onSlot(slot);
+
+    if (slot.intValue() >= nextAttestationSlot.get()) {
+      getNextAttestationSlotScheduled().ifPresent(nextAttestationSlot::set);
+    }
   }
 
   @Override

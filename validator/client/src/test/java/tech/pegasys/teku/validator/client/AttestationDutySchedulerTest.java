@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -397,12 +398,12 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
 
     // Execute
     dutyScheduler.onAttestationCreationDue(attestationProductionSlot);
-    verify(attestationDuty).performDuty();
 
     // Somehow we triggered the same slot again.
     dutyScheduler.onAttestationCreationDue(attestationProductionSlot);
+
     // But shouldn't produce another block and get ourselves slashed.
-    verifyNoMoreInteractions(attestationDuty);
+    verify(attestationDuty, times(1)).performDuty();
   }
 
   @Test
@@ -609,10 +610,12 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
 
     // Execute
     dutyScheduler.onAttestationCreationDue(attestationSlot);
-    verify(attestationDuty).performDuty();
 
+    // Run again for same slot
     dutyScheduler.onAttestationCreationDue(attestationSlot);
-    verifyNoMoreInteractions(attestationDuty);
+
+    // Verify we did not run it twice
+    verify(attestationDuty, times(1)).performDuty();
   }
 
   @Test
@@ -904,6 +907,29 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   private AttesterDuty createAttestationDutyForEpoch(
       final BLSPublicKey validatorKey, final int validatorIndex, final UInt64 epoch) {
     return new AttesterDuty(validatorKey, validatorIndex, 10, 3, 15, 6, epoch);
+  }
+
+  @Test
+  public void shouldOnlyUpdateNextAttestationSlotFromCurrentScheduledSlotOnwards() {
+    createDutySchedulerWithRealDuties();
+    AttestationDutyScheduler spyDutyScheduler = spy(dutyScheduler);
+    when(spyDutyScheduler.getNextAttestationSlotScheduled()).thenReturn(Optional.of(2));
+
+    // currentSlot = nextAttestationSlot; recalculate nextAttestationSlot
+    spyDutyScheduler.onSlot(ZERO);
+    verify(spyDutyScheduler, times(1)).getNextAttestationSlotScheduled();
+
+    // currentSlot < nextAttestationSlot; DO NOT recalculate nextAttestationSlot
+    spyDutyScheduler.onSlot(UInt64.valueOf(1));
+    verify(spyDutyScheduler, times(1)).getNextAttestationSlotScheduled();
+
+    // currentSlot = nextAttestationSlot; recalculate nextAttestationSlot
+    spyDutyScheduler.onSlot(UInt64.valueOf(2));
+    verify(spyDutyScheduler, times(2)).getNextAttestationSlotScheduled();
+
+    // currentSlot > nextAttestationSlot; recalculate nextAttestationSlot
+    spyDutyScheduler.onSlot(UInt64.valueOf(3));
+    verify(spyDutyScheduler, times(3)).getNextAttestationSlotScheduled();
   }
 
   private void createDutySchedulerWithRealDuties() {

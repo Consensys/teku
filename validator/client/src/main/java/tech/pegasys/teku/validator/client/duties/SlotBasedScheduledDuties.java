@@ -50,7 +50,6 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
     return productionDuties.entrySet().stream()
         .filter(e -> e.getValue().getType() == DutyType.ATTESTATION_PRODUCTION)
         .map(Entry::getKey)
-        .sorted()
         .findFirst();
   }
 
