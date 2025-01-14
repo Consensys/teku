@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellat
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
+import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.BeaconStateAccessorsEip7805;
 import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.forktransition.ElectraStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
@@ -101,8 +102,8 @@ public class SpecLogicEip7805 extends AbstractSpecLogic {
     final PredicatesElectra predicates = new PredicatesElectra(config);
     final MiscHelpersElectra miscHelpers =
         new MiscHelpersElectra(config, predicates, schemaDefinitions);
-    final BeaconStateAccessorsElectra beaconStateAccessors =
-        new BeaconStateAccessorsElectra(config, predicates, miscHelpers);
+    final BeaconStateAccessorsEip7805 beaconStateAccessors =
+        new BeaconStateAccessorsEip7805(config, predicates, miscHelpers);
     final BeaconStateMutatorsElectra beaconStateMutators =
         new BeaconStateMutatorsElectra(
             config, miscHelpers, beaconStateAccessors, schemaDefinitions);
