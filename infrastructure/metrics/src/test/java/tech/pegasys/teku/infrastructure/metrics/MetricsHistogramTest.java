@@ -46,11 +46,11 @@ class MetricsHistogramTest {
             .filter(ob -> ob.category() == CATEGORY)
             .collect(Collectors.toMap(Observation::labels, Observation::value));
     assertThat(values)
-            .contains(
-                    entry(key(List.of("0.5")), 50d),
-                    entry(key(List.of("0.95")), 95d),
-                    entry(key(List.of("0.99")), 99d),
-                    entry(key(List.of("1.0")), 100d));
+        .contains(
+            entry(key(List.of("0.5")), 50d),
+            entry(key(List.of("0.95")), 95d),
+            entry(key(List.of("0.99")), 99d),
+            entry(key(List.of("1.0")), 100d));
   }
 
   @Test
@@ -68,11 +68,10 @@ class MetricsHistogramTest {
             .collect(Collectors.toMap(Observation::labels, Observation::value));
     assertThat(values)
         .contains(
-                entry(key(List.of("0.5")), 50d),
-                entry(key(List.of("0.95")), 80d),
-                entry(key(List.of("0.99")), 80d),
-                entry(key(List.of("1.0")), 80d));
-
+            entry(key(List.of("0.5")), 50d),
+            entry(key(List.of("0.95")), 80d),
+            entry(key(List.of("0.99")), 80d),
+            entry(key(List.of("1.0")), 80d));
   }
 
   private static List<String> key(final List<String> labelValues) {

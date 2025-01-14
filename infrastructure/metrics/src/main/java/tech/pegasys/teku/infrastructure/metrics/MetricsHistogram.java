@@ -130,7 +130,8 @@ public class MetricsHistogram {
         new MetricsHistogram(
             numberOfSignificantValueDigits, highestTrackableValue, customLabelsNames);
     if (metricsSystem instanceof PrometheusMetricsSystem) {
-      final String summaryMetricName = category.toString().toLowerCase(Locale.ROOT) + "_" + name + "_summary";
+      final String summaryMetricName =
+          category.toString().toLowerCase(Locale.ROOT) + "_" + name + "_summary";
       metricsSystem.createSummary(
           category, summaryMetricName, help, () -> histogram.histogramToCollector(category, name));
     }
