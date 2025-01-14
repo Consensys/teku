@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip7805.helpers;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import org.apache.tuweni.bytes.Bytes32;
@@ -22,6 +24,7 @@ import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
@@ -36,6 +39,16 @@ public class BeaconStateAccessorsEip7805 extends BeaconStateAccessorsElectra {
       final MiscHelpersElectra miscHelpers) {
     super(SpecConfigElectra.required(specConfig), predicatesElectra, miscHelpers);
     this.specConfigEip7805 = config.toVersionEip7805().orElseThrow();
+  }
+
+  public static BeaconStateAccessorsEip7805 required(
+      final BeaconStateAccessors beaconStateAccessors) {
+    checkArgument(
+        beaconStateAccessors instanceof BeaconStateAccessorsEip7805,
+        "Expected %s but it was %s",
+        BeaconStateAccessorsEip7805.class,
+        beaconStateAccessors.getClass());
+    return (BeaconStateAccessorsEip7805) beaconStateAccessors;
   }
 
   public IntList getInclusionListCommittee(final BeaconState state, final UInt64 slot) {
