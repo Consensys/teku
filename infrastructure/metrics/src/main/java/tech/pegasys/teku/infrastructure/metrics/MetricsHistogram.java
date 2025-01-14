@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -129,8 +130,9 @@ public class MetricsHistogram {
         new MetricsHistogram(
             numberOfSignificantValueDigits, highestTrackableValue, customLabelsNames);
     if (metricsSystem instanceof PrometheusMetricsSystem) {
+      final String summaryMetricName = category.toString().toLowerCase(Locale.ROOT) + "_" + name + "_summary";
       metricsSystem.createSummary(
-          category, name + "_summary", help, () -> histogram.histogramToCollector(category, name));
+          category, summaryMetricName, help, () -> histogram.histogramToCollector(category, name));
     }
     return histogram;
   }
