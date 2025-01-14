@@ -902,7 +902,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   }
 
   private AttesterDuty createAttestationDutyForEpoch(
-      final BLSPublicKey validatorKey, int validatorIndex, final UInt64 epoch) {
+      final BLSPublicKey validatorKey, final int validatorIndex, final UInt64 epoch) {
     return new AttesterDuty(validatorKey, validatorIndex, 10, 3, 15, 6, epoch);
   }
 
