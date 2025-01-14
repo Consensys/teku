@@ -24,13 +24,24 @@ import java.util.stream.Collectors;
 import org.hyperledger.besu.metrics.ObservableMetricsSystem;
 import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class MetricsHistogramTest {
 
   private static final TekuMetricCategory CATEGORY = TekuMetricCategory.BEACON;
-  private final ObservableMetricsSystem metricsSystem =
-      new PrometheusMetricsSystem(Set.of(CATEGORY), true);
+  private ObservableMetricsSystem metricsSystem;
+
+  @BeforeEach
+  void setup() {
+    metricsSystem = new PrometheusMetricsSystem(Set.of(CATEGORY), true);
+  }
+
+  @AfterEach
+  void shutdown() {
+    metricsSystem.shutdown();
+  }
 
   @Test
   void shouldReportValuesWithNoSpecifiedUpperLimit() {
