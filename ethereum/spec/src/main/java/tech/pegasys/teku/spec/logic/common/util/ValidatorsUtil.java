@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.BeaconStateAccessorsEip7805;
 
 public class ValidatorsUtil {
   private final SpecConfig specConfig;
@@ -131,6 +132,35 @@ public class ValidatorsUtil {
         if (committee.contains(validatorIndex)) {
           return Optional.of(new CommitteeAssignment(committee, index, slot));
         }
+      }
+    }
+    return Optional.empty();
+  }
+
+  /**
+   * Returns the slot during the requested epoch in which the validator with index
+   * ``validator_index`` is a member of the ILC. Returns None if no assignment is found.
+   *
+   * @param state the BeaconState.
+   * @param epoch either on or between previous or current epoch.
+   * @param validatorIndex the validator that is calling this function.
+   * @return Optional containing the slot if any, empty otherwise
+   */
+  public Optional<UInt64> getInclusionCommitteeAssignment(
+      final BeaconState state, final UInt64 epoch, final int validatorIndex) {
+    final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(UInt64.ONE);
+    checkArgument(
+        epoch.compareTo(nextEpoch) <= 0,
+        "get_inclusion_committee_assignment: Epoch number too high");
+    final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
+    for (UInt64 slot = startSlot;
+        slot.isLessThan(startSlot.plus(specConfig.getSlotsPerEpoch()));
+        slot = slot.plus(UInt64.ONE)) {
+      final IntList inclusionListCommittee =
+          BeaconStateAccessorsEip7805.required(beaconStateAccessors)
+              .getInclusionListCommittee(state, slot);
+      if (inclusionListCommittee.contains(validatorIndex)) {
+        return Optional.of(slot);
       }
     }
     return Optional.empty();

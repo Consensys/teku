@@ -941,6 +941,13 @@ public class Spec {
     return atEpoch(epoch).getValidatorsUtil().getCommitteeAssignment(state, epoch, validatorIndex);
   }
 
+  public Optional<UInt64> getInclusionCommitteeAssignment(
+      final BeaconState state, final UInt64 epoch, final int validatorIndex) {
+    return atEpoch(epoch)
+        .getValidatorsUtil()
+        .getInclusionCommitteeAssignment(state, epoch, validatorIndex);
+  }
+
   public Int2ObjectMap<CommitteeAssignment> getValidatorIndexToCommitteeAssignmentMap(
       final BeaconState state, final UInt64 epoch) {
     return atEpoch(epoch)
