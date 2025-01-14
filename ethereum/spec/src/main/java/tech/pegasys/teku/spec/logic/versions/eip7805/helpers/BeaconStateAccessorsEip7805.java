@@ -1,0 +1,57 @@
+/*
+ * Copyright Consensys Software Inc., 2025
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.spec.logic.versions.eip7805.helpers;
+
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigEip7805;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
+
+public class BeaconStateAccessorsEip7805 extends BeaconStateAccessorsElectra {
+
+  private final SpecConfigEip7805 specConfigEip7805;
+
+  public BeaconStateAccessorsEip7805(
+      final SpecConfig specConfig,
+      final PredicatesElectra predicatesElectra,
+      final MiscHelpersElectra miscHelpers) {
+    super(SpecConfigElectra.required(specConfig), predicatesElectra, miscHelpers);
+    this.specConfigEip7805 = config.toVersionEip7805().orElseThrow();
+  }
+
+  public IntList getInclusionListCommittee(final BeaconState state, final UInt64 slot) {
+    final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
+    final Bytes32 seed = getSeed(state, epoch, Domain.DOMAIN_IL_COMMITTEE);
+    final IntList indices = getActiveValidatorIndices(state, epoch);
+    final int activeValidatorCount = indices.size();
+    final UInt64 start =
+        slot.mod(specConfigEip7805.getSlotsPerEpoch())
+            .times(specConfigEip7805.getIlCommitteeSize());
+    final UInt64 end = start.plus(specConfigEip7805.getIlCommitteeSize());
+    final IntList inclusionListCommitteeIndices = new IntArrayList();
+    for (int index = start.intValue(); index < end.intValue(); index++) {
+      final int shuffledIndex = miscHelpers.computeShuffledIndex(index, activeValidatorCount, seed);
+      inclusionListCommitteeIndices.add(indices.getInt(shuffledIndex));
+    }
+    return inclusionListCommitteeIndices;
+  }
+}
