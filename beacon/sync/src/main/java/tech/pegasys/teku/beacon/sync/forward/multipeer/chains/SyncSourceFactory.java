@@ -49,11 +49,10 @@ public class SyncSourceFactory {
     // Limit request rates for blocks/blobs to just a little under what we'd accept (see
     // Eth2PeerFactory)
     final int maxBlocksPerMinute = this.maxBlocksPerMinute - batchSize - 1;
+    final Optional<Integer> maybeMaxBlobsPerBlock = spec.getMaxBlobsPerBlockForHighestMilestone();
     final Optional<Integer> maybeMaxBlobSidecarsPerMinute =
-        spec.getMaxBlobsPerBlockForHighestMilestone()
-            .map(
-                maxBlobsPerBlock ->
-                    this.maxBlobSidecarsPerMinute - (batchSize * maxBlobsPerBlock) - 1);
+        maybeMaxBlobsPerBlock.map(
+            maxBlobsPerBlock -> this.maxBlobSidecarsPerMinute - (batchSize * maxBlobsPerBlock) - 1);
     return syncSourcesByPeer.computeIfAbsent(
         peer,
         source ->
@@ -62,6 +61,7 @@ public class SyncSourceFactory {
                 timeProvider,
                 source,
                 maxBlocksPerMinute,
+                maybeMaxBlobsPerBlock,
                 maybeMaxBlobSidecarsPerMinute));
   }
 
