@@ -35,7 +35,8 @@ public class Eth2PeerFactory {
   private final CombinedChainDataClient chainDataClient;
   private final TimeProvider timeProvider;
   private final Optional<Checkpoint> requiredCheckpoint;
-  private final int peerRateLimit;
+  private final int peerBlocksRateLimit;
+  private final int peerBlobSidecarsRateLimit;
   private final int peerRequestLimit;
   private final KZG kzg;
   private final DiscoveryNodeIdExtractor discoveryNodeIdExtractor;
@@ -48,7 +49,8 @@ public class Eth2PeerFactory {
       final MetadataMessagesFactory metadataMessagesFactory,
       final TimeProvider timeProvider,
       final Optional<Checkpoint> requiredCheckpoint,
-      final int peerRateLimit,
+      final int peerBlocksRateLimit,
+      final int peerBlobSidecarsRateLimit,
       final int peerRequestLimit,
       final KZG kzg,
       final DiscoveryNodeIdExtractor discoveryNodeIdExtractor) {
@@ -59,7 +61,8 @@ public class Eth2PeerFactory {
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
     this.requiredCheckpoint = requiredCheckpoint;
-    this.peerRateLimit = peerRateLimit;
+    this.peerBlocksRateLimit = peerBlocksRateLimit;
+    this.peerBlobSidecarsRateLimit = peerBlobSidecarsRateLimit;
     this.peerRequestLimit = peerRequestLimit;
     this.kzg = kzg;
     this.discoveryNodeIdExtractor = discoveryNodeIdExtractor;
@@ -74,11 +77,8 @@ public class Eth2PeerFactory {
         statusMessageFactory,
         metadataMessagesFactory,
         PeerChainValidator.create(spec, metricsSystem, chainDataClient, requiredCheckpoint),
-        RateTracker.create(peerRateLimit, TIME_OUT, timeProvider),
-        RateTracker.create(
-            peerRateLimit * spec.getMaxBlobsPerBlockForHighestMilestone().orElse(1),
-            TIME_OUT,
-            timeProvider),
+        RateTracker.create(peerBlocksRateLimit, TIME_OUT, timeProvider),
+        RateTracker.create(peerBlobSidecarsRateLimit, TIME_OUT, timeProvider),
         RateTracker.create(peerRequestLimit, TIME_OUT, timeProvider),
         kzg);
   }

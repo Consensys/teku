@@ -13,27 +13,32 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import com.google.common.base.Preconditions;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class RateTrackerImpl implements RateTracker {
-  private final NavigableMap<RequestsKey, Long> requests;
+
+  private final NavigableMap<RequestsKey, Long> requests = new TreeMap<>();
+
   private final int peerRateLimit;
-  private final UInt64 timeoutSeconds;
-  private long objectsWithinWindow = 0L;
+  private final long timeoutSeconds;
   private final TimeProvider timeProvider;
 
-  private final AtomicInteger newRequestId = new AtomicInteger(0);
+  private long objectsWithinWindow = 0L;
+  private int newRequestId = 0;
 
   public RateTrackerImpl(
       final int peerRateLimit, final long timeoutSeconds, final TimeProvider timeProvider) {
-    this.timeoutSeconds = UInt64.valueOf(timeoutSeconds);
-    requests = new TreeMap<>();
+    Preconditions.checkArgument(
+        peerRateLimit > 0,
+        "peerRateLimit should be a positive number but it was %s",
+        peerRateLimit);
     this.peerRateLimit = peerRateLimit;
+    this.timeoutSeconds = timeoutSeconds;
     this.timeProvider = timeProvider;
   }
 
@@ -43,13 +48,13 @@ public class RateTrackerImpl implements RateTracker {
   public synchronized Optional<RequestApproval> approveObjectsRequest(final long objectsCount) {
     pruneRequests();
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
-    if ((peerRateLimit - objectsWithinWindow) <= 0) {
+    if (peerRateLimit - objectsWithinWindow <= 0) {
       return Optional.empty();
     }
     objectsWithinWindow += objectsCount;
     final RequestApproval requestApproval =
         new RequestApproval.RequestApprovalBuilder()
-            .requestId(newRequestId.getAndIncrement())
+            .requestId(newRequestId++)
             .timeSeconds(currentTime)
             .objectsCount(objectsCount)
             .build();
@@ -61,8 +66,8 @@ public class RateTrackerImpl implements RateTracker {
   public synchronized void adjustObjectsRequest(
       final RequestApproval requestApproval, final long returnedObjectsCount) {
     pruneRequests();
-    if (requests.containsKey(requestApproval.getRequestKey())) {
-      final long initialObjectsCount = requests.get(requestApproval.getRequestKey());
+    final Long initialObjectsCount = requests.get(requestApproval.getRequestKey());
+    if (initialObjectsCount != null) {
       requests.put(requestApproval.getRequestKey(), returnedObjectsCount);
       objectsWithinWindow = objectsWithinWindow - initialObjectsCount + returnedObjectsCount;
     }
