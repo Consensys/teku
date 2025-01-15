@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.xerial.snappy.SnappyFramedInputStream;
@@ -34,6 +35,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BLSPublicKey;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.Domain;
 
 public class EraFile {
   private final Spec spec;
@@ -214,7 +217,20 @@ public class EraFile {
             block.getParentRoot().equals(previousArchiveLastBlock.getRoot()),
             "First block in archive does not match last block of previous archive.");
       }
-      // TODO should verify signature
+      
+      // Verify block signature
+      final int proposerIndex = spec.getBeaconProposerIndex(verifiedState, block.getSlot());
+      final Optional<BLSPublicKey> proposerPublicKey = spec.getValidatorPubKey(verifiedState, UInt64.valueOf(proposerIndex));
+      if (proposerPublicKey.isEmpty()) {
+        throw new IllegalArgumentException("Public key not found for validator " + proposerIndex);
+      }
+      final Bytes signingRoot = spec.computeSigningRoot(
+          block.getMessage(), 
+          spec.getDomain(verifiedState.getForkInfo(), Domain.BEACON_PROPOSER, spec.getCurrentEpoch(verifiedState)));
+      if (!block.getSignature().verify(proposerPublicKey.get(), signingRoot)) {
+        throw new IllegalArgumentException("Invalid block signature for block at slot " + currentSlot);
+      }
+
       ++populatedSlots;
     }
     System.out.println(
