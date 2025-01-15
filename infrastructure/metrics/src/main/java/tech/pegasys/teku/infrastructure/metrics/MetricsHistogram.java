@@ -169,7 +169,7 @@ public class MetricsHistogram {
                 entry ->
                     Stream.of(
                         new ExternalSummary.Quantile(
-                                LABEL_50, entry.getValue().getValueAtPercentile(50)),
+                            LABEL_50, entry.getValue().getValueAtPercentile(50)),
                         new ExternalSummary.Quantile(
                             LABEL_95, entry.getValue().getValueAtPercentile(95)),
                         new ExternalSummary.Quantile(
