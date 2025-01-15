@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.storage.server.rocksdb;
 
-import io.prometheus.client.Collector;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Supplier;
@@ -23,6 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.ExternalSummary;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import org.rocksdb.HistogramData;
 import org.rocksdb.HistogramType;
@@ -37,11 +35,6 @@ import org.rocksdb.TickerType;
  */
 public class RocksDbStats implements AutoCloseable {
   private static final Logger LOG = LogManager.getLogger();
-
-  static final List<String> LABELS = Collections.singletonList("quantile");
-  static final List<String> LABEL_50 = Collections.singletonList("0.5");
-  static final List<String> LABEL_95 = Collections.singletonList("0.95");
-  static final List<String> LABEL_99 = Collections.singletonList("0.99");
 
   // Tickers - RocksDB equivalent of counters
   static final TickerType[] TICKERS = {
@@ -195,10 +188,32 @@ public class RocksDbStats implements AutoCloseable {
 
     if (metricsSystem instanceof PrometheusMetricsSystem) {
       for (final HistogramType histogram : HISTOGRAMS) {
-        ((PrometheusMetricsSystem) metricsSystem)
-            .addCollector(category, () -> histogramToCollector(category, stats, histogram));
+        metricsSystem.createSummary(
+            category,
+            category.getApplicationPrefix().orElse("")
+                + category.getName()
+                + "_"
+                + histogram.name().toLowerCase(Locale.ROOT),
+            "RocksDB histogram for " + histogram.name(),
+            () -> provideExternalSummary(stats, histogram));
       }
     }
+  }
+
+  private static ExternalSummary provideExternalSummary(
+      final Statistics stats, final HistogramType histogramType) {
+
+    final HistogramData data = stats.getHistogramData(histogramType);
+
+    return new ExternalSummary(
+        data.getCount(),
+        data.getSum(),
+        List.of(
+            new ExternalSummary.Quantile(0.0, data.getMin()),
+            new ExternalSummary.Quantile(0.5, data.getMedian()),
+            new ExternalSummary.Quantile(0.95, data.getPercentile95()),
+            new ExternalSummary.Quantile(0.99, data.getPercentile99()),
+            new ExternalSummary.Quantile(1.0, data.getMax())));
   }
 
   private long getLongProperty(final RocksDB database, final String name) {
@@ -212,38 +227,6 @@ public class RocksDbStats implements AutoCloseable {
           }
         },
         0L);
-  }
-
-  private Collector histogramToCollector(
-      final MetricCategory metricCategory, final Statistics stats, final HistogramType histogram) {
-    return new Collector() {
-      final String metricName =
-          metricCategory.getApplicationPrefix().orElse("")
-              + metricCategory.getName()
-              + "_"
-              + histogram.name().toLowerCase(Locale.ROOT);
-
-      @Override
-      public List<MetricFamilySamples> collect() {
-        return ifOpen(
-            () -> {
-              final HistogramData data = stats.getHistogramData(histogram);
-              return Collections.singletonList(
-                  new MetricFamilySamples(
-                      metricName,
-                      Type.SUMMARY,
-                      "RocksDB histogram for " + metricName,
-                      Arrays.asList(
-                          new MetricFamilySamples.Sample(
-                              metricName, LABELS, LABEL_50, data.getMedian()),
-                          new MetricFamilySamples.Sample(
-                              metricName, LABELS, LABEL_95, data.getPercentile95()),
-                          new MetricFamilySamples.Sample(
-                              metricName, LABELS, LABEL_99, data.getPercentile99()))));
-            },
-            Collections.emptyList());
-      }
-    };
   }
 
   @Override
