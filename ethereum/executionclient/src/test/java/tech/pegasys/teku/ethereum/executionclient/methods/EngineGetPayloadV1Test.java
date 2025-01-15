@@ -122,12 +122,12 @@ class EngineGetPayloadV1Test {
 
   private SafeFuture<Response<ExecutionPayloadV1>> dummySuccessfulResponse() {
     return SafeFuture.completedFuture(
-        new Response<>(
+        Response.fromPayloadReceivedAsJson(
             ExecutionPayloadV1.fromInternalExecutionPayload(
                 dataStructureUtil.randomExecutionPayload())));
   }
 
   private SafeFuture<Response<ExecutionPayloadV1>> dummyFailedResponse(final String errorMsg) {
-    return SafeFuture.completedFuture(Response.withErrorMessage(errorMsg));
+    return SafeFuture.completedFuture(Response.fromErrorMessage(errorMsg));
   }
 }

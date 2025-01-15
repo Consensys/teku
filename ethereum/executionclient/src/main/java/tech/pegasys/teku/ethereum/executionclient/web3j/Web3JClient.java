@@ -90,7 +90,7 @@ public abstract class Web3JClient {
                 return handleJsonRpcError(response.getError(), isCriticalRequest);
               } else {
                 handleSuccess(isCriticalRequest);
-                return new Response<>(response.getResult());
+                return Response.fromPayloadReceivedAsJson(response.getResult());
               }
             });
   }
@@ -99,7 +99,7 @@ public abstract class Web3JClient {
       final Throwable exception, final boolean isCriticalRequest) {
     final boolean couldBeAuthError = isAuthenticationException(exception);
     handleError(isCriticalRequest, exception, couldBeAuthError);
-    return Response.withErrorMessage(getMessageOrSimpleName(exception));
+    return Response.fromErrorMessage(getMessageOrSimpleName(exception));
   }
 
   private <T> Response<T> handleJsonRpcError(
@@ -113,7 +113,7 @@ public abstract class Web3JClient {
       logError(formattedError);
     }
 
-    return Response.withErrorMessage(formattedError);
+    return Response.fromErrorMessage(formattedError);
   }
 
   private void logError(final String errorMessage) {

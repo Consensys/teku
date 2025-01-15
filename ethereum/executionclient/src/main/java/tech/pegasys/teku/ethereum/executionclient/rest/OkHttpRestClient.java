@@ -26,21 +26,18 @@ import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
-import okhttp3.ResponseBody;
 import okio.BufferedSink;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.ethereum.executionclient.schema.BuilderApiResponse;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 
 public class OkHttpRestClient implements RestClient {
 
-  private static final Logger LOG = LogManager.getLogger();
-
-  private static final MediaType JSON_MEDIA_TYPE = MediaType.parse("application/json");
+  static final MediaType JSON_MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
+  static final MediaType OCTET_STREAM_MEDIA_TYPE = MediaType.parse("application/octet-stream");
 
   private final OkHttpClient httpClient;
   private final HttpUrl baseEndpoint;
@@ -52,58 +49,44 @@ public class OkHttpRestClient implements RestClient {
 
   @Override
   public SafeFuture<Response<Void>> getAsync(final String apiPath) {
-    return getAsyncInternal(apiPath, NO_HEADERS, Optional.empty());
+    final Request request = createGetRequest(apiPath, NO_HEADERS);
+    return makeAsyncVoidRequest(request);
   }
 
   @Override
-  public <T> SafeFuture<Response<T>> getAsync(
+  public <TResp extends SszData> SafeFuture<Response<BuilderApiResponse<TResp>>> getAsync(
       final String apiPath,
       final Map<String, String> headers,
-      final DeserializableTypeDefinition<T> responseTypeDefinition) {
-    return getAsyncInternal(apiPath, headers, Optional.of(responseTypeDefinition));
-  }
-
-  @Override
-  public <S> SafeFuture<Response<Void>> postAsync(
-      final String apiPath,
-      final S requestBodyObject,
-      final SerializableTypeDefinition<S> requestTypeDefinition) {
-    return postAsyncInternal(
-        apiPath, NO_HEADERS, requestBodyObject, requestTypeDefinition, Optional.empty());
-  }
-
-  @Override
-  public <T, S> SafeFuture<Response<T>> postAsync(
-      final String apiPath,
-      final Map<String, String> headers,
-      final S requestBodyObject,
-      final SerializableTypeDefinition<S> requestTypeDefinition,
-      final DeserializableTypeDefinition<T> responseTypeDefinition) {
-    return postAsyncInternal(
-        apiPath,
-        headers,
-        requestBodyObject,
-        requestTypeDefinition,
-        Optional.of(responseTypeDefinition));
-  }
-
-  private <T> SafeFuture<Response<T>> getAsyncInternal(
-      final String apiPath,
-      final Map<String, String> headers,
-      final Optional<DeserializableTypeDefinition<T>> responseTypeDefinitionMaybe) {
+      final ResponseSchemaAndDeserializableTypeDefinition<TResp> responseSchema) {
     final Request request = createGetRequest(apiPath, headers);
-    return makeAsyncRequest(request, responseTypeDefinitionMaybe);
+    return makeAsyncRequest(request, Optional.of(responseSchema));
   }
 
-  private <T, S> SafeFuture<Response<T>> postAsyncInternal(
-      final String apiPath,
-      final Map<String, String> headers,
-      final S requestBodyObject,
-      final SerializableTypeDefinition<S> requestTypeDefinition,
-      final Optional<DeserializableTypeDefinition<T>> responseTypeDefinitionMaybe) {
-    final RequestBody requestBody = createRequestBody(requestBodyObject, requestTypeDefinition);
+  @Override
+  public <TReq extends SszData> SafeFuture<Response<Void>> postAsync(
+      final String apiPath, final TReq requestBodyObject, final boolean postAsSsz) {
+    final RequestBody requestBody =
+        postAsSsz
+            ? createOctetStreamRequestBody(requestBodyObject)
+            : createJsonRequestBody(requestBodyObject);
+    final Request request = createPostRequest(apiPath, requestBody, NO_HEADERS);
+    return makeAsyncVoidRequest(request);
+  }
+
+  @Override
+  public <TResp extends SszData, TReq extends SszData>
+      SafeFuture<Response<BuilderApiResponse<TResp>>> postAsync(
+          final String apiPath,
+          final Map<String, String> headers,
+          final TReq requestBodyObject,
+          final boolean postAsSsz,
+          final ResponseSchemaAndDeserializableTypeDefinition<TResp> responseSchema) {
+    final RequestBody requestBody =
+        postAsSsz
+            ? createOctetStreamRequestBody(requestBodyObject)
+            : createJsonRequestBody(requestBodyObject);
     final Request request = createPostRequest(apiPath, requestBody, headers);
-    return makeAsyncRequest(request, responseTypeDefinitionMaybe);
+    return makeAsyncRequest(request, Optional.of(responseSchema));
   }
 
   private Request createGetRequest(final String apiPath, final Map<String, String> headers) {
@@ -113,19 +96,37 @@ public class OkHttpRestClient implements RestClient {
     return requestBuilder.build();
   }
 
-  private <S> RequestBody createRequestBody(
-      final S requestBodyObject, final SerializableTypeDefinition<S> requestTypeDefinition) {
+  private <TReq extends SszData> RequestBody createJsonRequestBody(final TReq requestBodyObject) {
     return new RequestBody() {
 
       @Override
+      @SuppressWarnings("unchecked")
       public void writeTo(final BufferedSink bufferedSink) throws IOException {
         JsonUtil.serializeToBytesChecked(
-            requestBodyObject, requestTypeDefinition, bufferedSink.outputStream());
+            requestBodyObject,
+            (SerializableTypeDefinition<TReq>)
+                requestBodyObject.getSchema().getJsonTypeDefinition(),
+            bufferedSink.outputStream());
       }
 
       @Override
       public MediaType contentType() {
         return JSON_MEDIA_TYPE;
+      }
+    };
+  }
+
+  private <S extends SszData> RequestBody createOctetStreamRequestBody(final S requestBodyObject) {
+    return new RequestBody() {
+
+      @Override
+      public void writeTo(final BufferedSink bufferedSink) {
+        requestBodyObject.sszSerialize(bufferedSink.outputStream());
+      }
+
+      @Override
+      public MediaType contentType() {
+        return OCTET_STREAM_MEDIA_TYPE;
       }
     };
   }
@@ -143,63 +144,36 @@ public class OkHttpRestClient implements RestClient {
     return requireNonNull(urlBuilder).build().url();
   }
 
-  private <T> SafeFuture<Response<T>> makeAsyncRequest(
+  private <TResp extends SszData> SafeFuture<Response<BuilderApiResponse<TResp>>> makeAsyncRequest(
       final Request request,
-      final Optional<DeserializableTypeDefinition<T>> responseTypeDefinitionMaybe) {
+      final Optional<ResponseSchemaAndDeserializableTypeDefinition<TResp>> responseSchemaMaybe) {
     final Call call = httpClient.newCall(request);
-    final SafeFuture<Response<T>> futureResponse = new SafeFuture<>();
-    final Callback responseCallback =
-        new Callback() {
-          @Override
-          public void onFailure(final Call call, final IOException ex) {
-            futureResponse.completeExceptionally(ex);
-          }
-
-          @Override
-          public void onResponse(final Call call, final okhttp3.Response response) {
-            LOG.trace("{} {} {}", request.method(), request.url(), response.code());
-            if (!response.isSuccessful()) {
-              handleFailure(response, futureResponse);
-              return;
-            }
-            try (final ResponseBody responseBody = response.body()) {
-              if (bodyIsEmpty(responseBody) || responseTypeDefinitionMaybe.isEmpty()) {
-                futureResponse.complete(Response.withNullPayload());
-                return;
-              }
-              final T payload =
-                  JsonUtil.parse(responseBody.byteStream(), responseTypeDefinitionMaybe.get());
-              futureResponse.complete(new Response<>(payload));
-            } catch (final Throwable ex) {
-              futureResponse.completeExceptionally(ex);
-            }
-          }
-        };
+    final ResponseHandler<TResp> responseHandler = new ResponseHandler<>(responseSchemaMaybe);
+    final Callback responseCallback = createResponseCallback(request, responseHandler);
     call.enqueue(responseCallback);
-    return futureResponse;
+    return responseHandler.getFutureResponse();
   }
 
-  private <T> void handleFailure(
-      final okhttp3.Response response, final SafeFuture<Response<T>> futureResponse) {
-    try {
-      final String errorMessage = getErrorMessageForFailedResponse(response);
-      futureResponse.complete(Response.withErrorMessage(errorMessage));
-    } catch (final Throwable ex) {
-      futureResponse.completeExceptionally(ex);
-    }
+  private SafeFuture<Response<Void>> makeAsyncVoidRequest(final Request request) {
+    final Call call = httpClient.newCall(request);
+    final ResponseHandlerVoid responseHandler = new ResponseHandlerVoid();
+    final Callback responseCallback = createResponseCallback(request, responseHandler);
+    call.enqueue(responseCallback);
+    return responseHandler.getFutureResponse();
   }
 
-  private String getErrorMessageForFailedResponse(final okhttp3.Response response)
-      throws IOException {
-    try (final ResponseBody responseBody = response.body()) {
-      if (bodyIsEmpty(responseBody)) {
-        return response.code() + ": " + response.message();
+  private Callback createResponseCallback(
+      final Request request, final AbstractResponseHandler responseHandler) {
+    return new Callback() {
+      @Override
+      public void onFailure(final Call call, final IOException ex) {
+        responseHandler.handleFailure(ex);
       }
-      return responseBody.string();
-    }
-  }
 
-  private boolean bodyIsEmpty(final ResponseBody responseBody) {
-    return responseBody == null || responseBody.contentLength() == 0;
+      @Override
+      public void onResponse(final Call call, final okhttp3.Response response) {
+        responseHandler.handleResponse(request, response);
+      }
+    };
   }
 }
