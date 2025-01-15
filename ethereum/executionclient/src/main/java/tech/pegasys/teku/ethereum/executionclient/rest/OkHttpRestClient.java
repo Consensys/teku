@@ -149,7 +149,7 @@ public class OkHttpRestClient implements RestClient {
       final Optional<ResponseSchemaAndDeserializableTypeDefinition<TResp>> responseSchemaMaybe) {
     final Call call = httpClient.newCall(request);
     final ResponseHandler<TResp> responseHandler = new ResponseHandler<>(responseSchemaMaybe);
-    final Callback responseCallback = createResponeCallback(request, responseHandler);
+    final Callback responseCallback = createResponseCallback(request, responseHandler);
     call.enqueue(responseCallback);
     return responseHandler.getFutureResponse();
   }
@@ -157,12 +157,12 @@ public class OkHttpRestClient implements RestClient {
   private SafeFuture<Response<Void>> makeAsyncVoidRequest(final Request request) {
     final Call call = httpClient.newCall(request);
     final ResponseHandlerVoid responseHandler = new ResponseHandlerVoid();
-    final Callback responseCallback = createResponeCallback(request, responseHandler);
+    final Callback responseCallback = createResponseCallback(request, responseHandler);
     call.enqueue(responseCallback);
     return responseHandler.getFutureResponse();
   }
 
-  private Callback createResponeCallback(
+  private Callback createResponseCallback(
       final Request request, final AbstractResponseHandler responseHandler) {
     return new Callback() {
       @Override
