@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.eip7805;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -37,18 +37,19 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellat
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
+import tech.pegasys.teku.spec.logic.versions.eip7805.block.BlockProcessorEip7805;
 import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.BeaconStateAccessorsEip7805;
+import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.MiscHelpersEip7805;
 import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.forktransition.ElectraStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.AttestationDataValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.VoluntaryExitValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch.EpochProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7805;
 
 public class SpecLogicEip7805 extends AbstractSpecLogic {
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
@@ -95,13 +96,13 @@ public class SpecLogicEip7805 extends AbstractSpecLogic {
   }
 
   public static SpecLogicEip7805 create(
-      final SpecConfigElectra config,
-      final SchemaDefinitionsElectra schemaDefinitions,
+      final SpecConfigEip7805 config,
+      final SchemaDefinitionsEip7805 schemaDefinitions,
       final TimeProvider timeProvider) {
     // Helpers
     final PredicatesElectra predicates = new PredicatesElectra(config);
-    final MiscHelpersElectra miscHelpers =
-        new MiscHelpersElectra(config, predicates, schemaDefinitions);
+    final MiscHelpersEip7805 miscHelpers =
+        new MiscHelpersEip7805(config, predicates, schemaDefinitions);
     final BeaconStateAccessorsEip7805 beaconStateAccessors =
         new BeaconStateAccessorsEip7805(config, predicates, miscHelpers);
     final BeaconStateMutatorsElectra beaconStateMutators =
@@ -157,8 +158,8 @@ public class SpecLogicEip7805 extends AbstractSpecLogic {
         new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
     final ExecutionRequestsDataCodec executionRequestsDataCodec =
         new ExecutionRequestsDataCodec(schemaDefinitions.getExecutionRequestsSchema());
-    final BlockProcessorElectra blockProcessor =
-        new BlockProcessorElectra(
+    final BlockProcessorEip7805 blockProcessor =
+        new BlockProcessorEip7805(
             config,
             predicates,
             miscHelpers,

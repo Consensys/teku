@@ -53,7 +53,7 @@ public class BeaconStateAccessorsEip7805 extends BeaconStateAccessorsElectra {
 
   public IntList getInclusionListCommittee(final BeaconState state, final UInt64 slot) {
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
-    final Bytes32 seed = getSeed(state, epoch, Domain.DOMAIN_IL_COMMITTEE);
+    final Bytes32 seed = getSeed(state, epoch, Domain.DOMAIN_INCLUSION_LIST_COMMITTEE);
     final IntList indices = getActiveValidatorIndices(state, epoch);
     final int activeValidatorCount = indices.size();
     final UInt64 start =
