@@ -39,6 +39,10 @@ import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
  */
 public class MetricsHistogram {
   static final String QUANTILE_LABEL = "quantile";
+  static final double LABEL_50 = 0.5;
+  static final double LABEL_95 = 0.95;
+  static final double LABEL_99 = 0.99;
+  static final double LABEL_1 = 1;
 
   private final Map<List<String>, SynchronizedHistogram> histogramMap = new ConcurrentHashMap<>();
   private final List<String> labels;
@@ -165,16 +169,16 @@ public class MetricsHistogram {
                 entry ->
                     Stream.of(
                         new ExternalSummary.Quantile(
-                            0.5, entry.getValue().getValueAtPercentile(50)),
+                                LABEL_50, entry.getValue().getValueAtPercentile(50)),
                         new ExternalSummary.Quantile(
-                            0.95, entry.getValue().getValueAtPercentile(95)),
+                            LABEL_95, entry.getValue().getValueAtPercentile(95)),
                         new ExternalSummary.Quantile(
-                            0.99, entry.getValue().getValueAtPercentile(99)),
+                            LABEL_99, entry.getValue().getValueAtPercentile(99)),
                         new ExternalSummary.Quantile(
-                            1, entry.getValue().getValueAtPercentile(100))))
+                            LABEL_1, entry.getValue().getValueAtPercentile(100))))
             .toList();
 
-    // return sum 0 as it is not supported by HdrHistogram
+    // return sum 0 as we currently don't use it
     return new ExternalSummary(histogramMap.size(), 0, quantiles);
   }
 }
