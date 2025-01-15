@@ -28,6 +28,7 @@ import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.rocksdb.RocksDB;
+import org.rocksdb.RocksDBException;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 
@@ -49,10 +50,11 @@ class RocksDbStatsTest {
 
     try (RocksDbStats stats = new RocksDbStats(metricsSystem, TekuMetricCategory.STORAGE_HOT_DB)) {
       stats.registerMetrics(database);
+
+      when(database.getLongProperty(any())).thenThrow(new RocksDBException("Database shutdown"));
+      final List<Observation> metrics =
+          metricsSystem.streamObservations().collect(Collectors.toList());
+      assertThat(metrics).isNotEmpty();
     }
-    when(database.getLongProperty(any())).thenThrow(new IllegalStateException("Database shutdown"));
-    final List<Observation> metrics =
-        metricsSystem.streamObservations().collect(Collectors.toList());
-    assertThat(metrics).isNotEmpty();
   }
 }

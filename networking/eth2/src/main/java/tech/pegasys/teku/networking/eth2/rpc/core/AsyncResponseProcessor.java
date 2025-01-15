@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.AdditionalDataReceivedException;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 
 class AsyncResponseProcessor<TResponse> {
   private static final Logger LOG = LogManager.getLogger();
@@ -35,15 +36,15 @@ class AsyncResponseProcessor<TResponse> {
   private final SafeFuture<Void> finishedProcessing = new SafeFuture<>();
 
   private final AsyncRunner asyncRunner;
-  private final ResponseStream<TResponse> responseStream;
+  private final RpcResponseHandler<TResponse> responseHandler;
   private final AsyncProcessingErrorHandler onError;
 
   public AsyncResponseProcessor(
       final AsyncRunner asyncRunner,
-      final ResponseStream<TResponse> responseStream,
+      final RpcResponseHandler<TResponse> responseHandler,
       final AsyncProcessingErrorHandler onError) {
     this.asyncRunner = asyncRunner;
-    this.responseStream = responseStream;
+    this.responseHandler = responseHandler;
     this.onError = onError;
   }
 
@@ -101,8 +102,8 @@ class AsyncResponseProcessor<TResponse> {
     asyncRunner
         .runAsync(
             () -> {
-              LOG.trace("Send response to response stream: {}", response);
-              return responseStream.respond(response);
+              LOG.trace("Send response to response handler: {}", response);
+              return responseHandler.onResponse(response);
             })
         .exceptionally(
             (err) -> {

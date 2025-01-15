@@ -570,9 +570,11 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
   private void verifySourceCounter(final Source source, final FallbackReason reason) {
     final long actualCount =
-        stubMetricsSystem
-            .getCounter(TekuMetricCategory.BEACON, "execution_payload_source_total")
-            .getValue(source.toString(), reason.toString());
+        stubMetricsSystem.getCounterValue(
+            TekuMetricCategory.BEACON,
+            "execution_payload_source_total",
+            source.toString(),
+            reason.toString());
     assertThat(actualCount).isOne();
   }
 }

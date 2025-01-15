@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
+import org.hyperledger.besu.plugin.services.metrics.LabelledSuppliedMetric;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -70,8 +70,8 @@ public class PeerManager implements ConnectionHandler {
     this.peerScoreFunction = peerScoreFunction;
     metricsSystem.createGauge(
         TekuMetricCategory.LIBP2P, "peers", "Tracks number of libp2p peers", this::getPeerCount);
-    final LabelledGauge peerClientLabelledGauge =
-        metricsSystem.createLabelledGauge(
+    final LabelledSuppliedMetric peerClientLabelledGauge =
+        metricsSystem.createLabelledSuppliedGauge(
             TekuMetricCategory.LIBP2P,
             "connected_peers_current",
             "The number of clients connected by client type",
@@ -81,8 +81,8 @@ public class PeerManager implements ConnectionHandler {
       peerClientLabelledGauge.labels(() -> countConnectedPeersOfType(type), type.getDisplayName());
     }
 
-    final LabelledGauge peerDirectionLabelledGauge =
-        metricsSystem.createLabelledGauge(
+    final LabelledSuppliedMetric peerDirectionLabelledGauge =
+        metricsSystem.createLabelledSuppliedGauge(
             TekuMetricCategory.LIBP2P,
             "peers_direction_current",
             "The number of peers by direction including inbound and outbound",
