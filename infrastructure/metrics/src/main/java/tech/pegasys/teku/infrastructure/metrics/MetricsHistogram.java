@@ -130,8 +130,7 @@ public class MetricsHistogram {
         new MetricsHistogram(
             numberOfSignificantValueDigits, highestTrackableValue, customLabelsNames);
     if (metricsSystem instanceof PrometheusMetricsSystem) {
-      final String summaryMetricName =
-          category.toString().toLowerCase(Locale.ROOT) + "_" + name ;
+      final String summaryMetricName = category.toString().toLowerCase(Locale.ROOT) + "_" + name;
       metricsSystem.createSummary(
           category, summaryMetricName, help, histogram::histogramToCollector);
     }
@@ -175,7 +174,7 @@ public class MetricsHistogram {
                             1, entry.getValue().getValueAtPercentile(100))))
             .toList();
 
-    //return sum 0 as it is not supported by HdrHistogram
+    // return sum 0 as it is not supported by HdrHistogram
     return new ExternalSummary(histogramMap.size(), 0, quantiles);
   }
 }
