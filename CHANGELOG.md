@@ -7,6 +7,7 @@
 ## Unreleased Changes
 
 ### Breaking Changes
+- `--Xvalidators-builder-registration-default-gas-limit` is removed in favour of `--validators-builder-registration-default-gas-limit`
 - With the upgrade of the Prometheus Java Metrics library, there are the following changes:
   - Gauge names are not allowed to end with `total`, therefore metrics as `beacon_proposers_data_total` and `beacon_eth1_current_period_votes_total` are dropping the `_total` suffix
   - The `_created` timestamps are not returned by default.
@@ -23,9 +24,12 @@
     | jvm_memory_pool_bytes_max       | jvm_memory_pool_max_bytes       |
     | jvm_memory_pool_bytes_used      | jvm_memory_pool_used_bytes      |
 
+
 ### Additions and Improvements
+- Default the gas limit to 36 million for externally produced blocks
 - Optimized blobs validation pipeline
 - Remove delay when fetching blobs from the local EL on block arrival
+- New validator metric `validator_next_attestation_slot` to highlight the next slot that a validator is expected to publish an attestation [#8795](https://github.com/Consensys/teku/issues/8795)
 
 ### Bug Fixes
 - Fix `--version` command output [#8960](https://github.com/Consensys/teku/issues/8960)

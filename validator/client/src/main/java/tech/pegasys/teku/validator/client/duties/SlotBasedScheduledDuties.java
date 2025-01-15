@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
+import java.util.Map.Entry;
 import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -21,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.Validator.DutyType;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.Validator;
 
@@ -41,6 +44,13 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
     this.dutyFactory = dutyFactory;
     this.dependentRoot = dependentRoot;
     this.dutyFunction = dutyFunction;
+  }
+
+  public Optional<UInt64> getNextAttestationProductionDutyScheduledSlot() {
+    return productionDuties.entrySet().stream()
+        .filter(e -> e.getValue().getType() == DutyType.ATTESTATION_PRODUCTION)
+        .map(Entry::getKey)
+        .findFirst();
   }
 
   public Bytes32 getDependentRoot() {

@@ -15,10 +15,8 @@ package tech.pegasys.teku;
 
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
-import java.security.Security;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
@@ -31,7 +29,6 @@ public final class Teku {
   static {
     // Disable libsodium in tuweni Hash because the check for it's presence can be very slow.
     System.setProperty("org.apache.tuweni.crypto.useSodium", "false");
-    Security.addProvider(new BouncyCastleProvider());
   }
 
   public static void main(final String[] args) {
