@@ -51,6 +51,7 @@ import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequiredFieldExce
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -346,7 +347,7 @@ class RestBuilderClientTest {
   }
 
   @TestTemplate
-  void getHeader_wrongFork(final SpecContext specContext) {
+  void getHeader_json_wrongFork(final SpecContext specContext) {
     specContext.assumeCapellaActive();
 
     final String milestoneFolder =
@@ -362,6 +363,44 @@ class RestBuilderClientTest {
         .withThrowableOfType(ExecutionException.class)
         .withRootCauseInstanceOf(MissingRequiredFieldException.class)
         .withMessageMatching(".+required fields: (.+) were not set");
+
+    verifyGetRequest(
+        "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTION);
+  }
+
+  @TestTemplate
+  void getHeader_ssz_wrongFork(final SpecContext specContext) throws JsonProcessingException {
+    specContext.assumeCapellaActive();
+
+    final String milestoneFolder =
+        "builder/" + milestone.getPreviousMilestone().toString().toLowerCase(Locale.ROOT);
+
+    signedBuilderBidResponseJson = readResource(milestoneFolder + "/signedBuilderBid.json");
+    signedBuilderBidResponseSsz =
+        JsonUtil.getAttribute(
+                signedBuilderBidResponseJson,
+                spec.forMilestone(milestone.getPreviousMilestone())
+                    .getSchemaDefinitions()
+                    .toVersionBellatrix()
+                    .orElseThrow()
+                    .getSignedBuilderBidSchema()
+                    .getJsonTypeDefinition(),
+                "data")
+            .orElseThrow();
+
+    final Buffer responseBodyBuffer = new Buffer();
+    responseBodyBuffer.write(signedBuilderBidResponseSsz.sszSerialize().toArrayUnsafe());
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(200)
+            .setBody(responseBodyBuffer)
+            .addHeader("Content-Type", "application/octet-stream")
+            .addHeader("Eth-Consensus-Version", milestone.name().toLowerCase(Locale.ROOT)));
+
+    assertThat(restBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
+        .failsWithin(WAIT_FOR_CALL_COMPLETION)
+        .withThrowableOfType(ExecutionException.class)
+        .withRootCauseInstanceOf(SszDeserializeException.class);
 
     verifyGetRequest(
         "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTION);
@@ -581,10 +620,6 @@ class RestBuilderClientTest {
 
   private void verifyPostRequestJson(final String apiPath, final String requestBody) {
     verifyRequest("POST", apiPath, Optional.of(requestBody), Optional.empty());
-  }
-
-  private void verifyPostRequestSsz(final String apiPath, final SszData requestBody) {
-    verifyRequest("POST", apiPath, Optional.empty(), Optional.of(requestBody));
   }
 
   private void verifyRequest(
