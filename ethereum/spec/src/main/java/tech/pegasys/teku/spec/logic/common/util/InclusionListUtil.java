@@ -16,8 +16,6 @@ package tech.pegasys.teku.spec.logic.common.util;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 
 import it.unimi.dsi.fastutil.ints.IntList;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
