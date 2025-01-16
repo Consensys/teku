@@ -40,6 +40,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsBellatrix;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsCapella;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsDeneb;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsEip7805;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsElectra;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsFulu;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsFuluBpo;
@@ -85,6 +86,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
@@ -126,6 +128,7 @@ public class Eth2P2PNetworkBuilder {
   protected OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
   protected OperationProcessor<SignedBlsToExecutionChange>
       gossipedSignedBlsToExecutionChangeProcessor;
+  protected OperationProcessor<SignedInclusionList> gossipedSignedInclusionListProcessor;
   protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   protected MetricsSystem metricsSystem;
   protected final List<RpcMethod<?, ?, ?>> rpcMethods = new ArrayList<>();
@@ -357,8 +360,7 @@ public class Eth2P2PNetworkBuilder {
               gossipedSyncCommitteeMessageProcessor,
               gossipedSignedBlsToExecutionChangeProcessor,
               debugDataDumper);
-      // TODO EIP7805
-      case ELECTRA, EIP7805 ->
+      case ELECTRA ->
           new GossipForkSubscriptionsElectra(
               forkAndSpecMilestone.getFork(),
               spec,
@@ -400,6 +402,27 @@ public class Eth2P2PNetworkBuilder {
               dataColumnSidecarOperationProcessor,
               debugDataDumper,
               dasGossipLogger);
+      case EIP7805 ->
+          new GossipForkSubscriptionsEip7805(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              combinedChainDataClient.getRecentChainData(),
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedBlobSidecarProcessor,
+              gossipedAttestationConsumer,
+              gossipedAggregateProcessor,
+              gossipedAttesterSlashingConsumer,
+              gossipedProposerSlashingConsumer,
+              gossipedVoluntaryExitConsumer,
+              gossipedSignedContributionAndProofProcessor,
+              gossipedSyncCommitteeMessageProcessor,
+              gossipedSignedBlsToExecutionChangeProcessor,
+              gossipedSignedInclusionListProcessor,
+              debugDataDumper);
     };
   }
 
@@ -559,6 +582,8 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull("gossipedSyncCommitteeMessageProcessor", gossipedSyncCommitteeMessageProcessor);
     assertNotNull(
         "gossipedSignedBlsToExecutionChangeProcessor", gossipedSignedBlsToExecutionChangeProcessor);
+    assertNotNull(
+        "gossipedSignedInclusionListOperationProcessor", gossipedSignedInclusionListProcessor);
   }
 
   private void assertNotNull(final String fieldName, final Object fieldValue) {
@@ -688,6 +713,13 @@ public class Eth2P2PNetworkBuilder {
           gossipedSignedBlsToExecutionChangeProcessor) {
     checkNotNull(gossipedSignedBlsToExecutionChangeProcessor);
     this.gossipedSignedBlsToExecutionChangeProcessor = gossipedSignedBlsToExecutionChangeProcessor;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder gossipedSignedInclusionListProcessor(
+      final OperationProcessor<SignedInclusionList> gossipedSignedInclusionListProcessor) {
+    checkNotNull(gossipedSignedInclusionListProcessor);
+    this.gossipedSignedInclusionListProcessor = gossipedSignedInclusionListProcessor;
     return this;
   }
 

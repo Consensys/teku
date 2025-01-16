@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
@@ -83,5 +84,9 @@ public interface GossipForkSubscriptions {
 
   default void unsubscribeFromDataColumnSidecarSubnet(final int subnetId) {
     // since Fulu
+  }
+
+  default void publishSignedInclusionList(final SignedInclusionList message) {
+    // since EIP-7805
   }
 }

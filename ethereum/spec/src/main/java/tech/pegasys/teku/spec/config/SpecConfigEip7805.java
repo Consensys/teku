@@ -37,6 +37,10 @@ public interface SpecConfigEip7805 extends SpecConfigFulu {
 
   int getMaxTransactionsPerInclusionList();
 
+  int getMaxRequestInclusionList();
+
+  int getMaxBytesPerInclusionList();
+
   @Override
   Optional<SpecConfigEip7805> toVersionEip7805();
 }
