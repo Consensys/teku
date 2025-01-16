@@ -140,7 +140,9 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
             .toList();
     final Bytes32 parentBeaconBlockRoot = state.getLatestBlockHeader().getParentRoot();
     final ExecutionRequests executionRequests =
-        beaconBlockBody.getOptionalExecutionRequests().orElseThrow();
+        beaconBlockBody
+            .getOptionalExecutionRequests()
+            .orElseThrow(() -> new BlockProcessingException("Execution requests expected"));
     return new NewPayloadRequest(
         executionPayload,
         versionedHashes,
@@ -161,7 +163,8 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     safelyProcess(
         () -> {
           final ExecutionRequests executionRequests =
-              body.getOptionalExecutionRequests().orElseThrow();
+              body.getOptionalExecutionRequests()
+                  .orElseThrow(() -> new BlockProcessingException("Execution requests expected"));
 
           processDepositRequests(state, executionRequests.getDeposits());
           processWithdrawalRequests(
