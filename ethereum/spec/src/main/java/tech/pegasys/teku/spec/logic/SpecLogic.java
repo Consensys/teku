@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.spec.logic.common.util.InclusionListUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
@@ -54,6 +55,8 @@ public interface SpecLogic {
   BlockProposalUtil getBlockProposalUtil();
 
   Optional<BlindBlockUtil> getBlindBlockUtil();
+
+  Optional<InclusionListUtil> getInclusionListUtil();
 
   Optional<SyncCommitteeUtil> getSyncCommitteeUtil();
 
