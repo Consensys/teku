@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
+import org.hyperledger.besu.plugin.services.metrics.LabelledSuppliedMetric;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -81,13 +81,13 @@ public class PeerManagerTest {
   @Test
   public void shouldCreatePeerTypeMetrics() {
     final MetricsSystem metricsSystem = mock(MetricsSystem.class);
-    final LabelledGauge peerClientLabelledGauge = mock(LabelledGauge.class);
-    final LabelledGauge peerDirectionLabelledGauge = mock(LabelledGauge.class);
+    final LabelledSuppliedMetric peerClientLabelledGauge = mock(LabelledSuppliedMetric.class);
+    final LabelledSuppliedMetric peerDirectionLabelledGauge = mock(LabelledSuppliedMetric.class);
 
-    when(metricsSystem.createLabelledGauge(
+    when(metricsSystem.createLabelledSuppliedGauge(
             eq(TekuMetricCategory.LIBP2P), eq("connected_peers_current"), any(), eq("client")))
         .thenReturn(peerClientLabelledGauge);
-    when(metricsSystem.createLabelledGauge(
+    when(metricsSystem.createLabelledSuppliedGauge(
             eq(TekuMetricCategory.LIBP2P), eq("peers_direction_current"), any(), eq("direction")))
         .thenReturn(peerDirectionLabelledGauge);
     new PeerManager(

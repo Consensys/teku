@@ -135,7 +135,7 @@ class EngineForkChoiceUpdatedV2Test {
 
   private SafeFuture<Response<ForkChoiceUpdatedResult>> dummySuccessfulResponse() {
     return SafeFuture.completedFuture(
-        new Response<>(
+        Response.fromPayloadReceivedAsJson(
             new ForkChoiceUpdatedResult(
                 new PayloadStatusV1(
                     ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), ""),
@@ -144,6 +144,6 @@ class EngineForkChoiceUpdatedV2Test {
 
   private SafeFuture<Response<ForkChoiceUpdatedResult>> dummyFailedResponse(
       final String errorMessage) {
-    return SafeFuture.completedFuture(Response.withErrorMessage(errorMessage));
+    return SafeFuture.completedFuture(Response.fromErrorMessage(errorMessage));
   }
 }

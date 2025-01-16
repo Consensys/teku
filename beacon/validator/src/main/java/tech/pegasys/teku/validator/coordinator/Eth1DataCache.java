@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 public class Eth1DataCache {
   static final String CACHE_SIZE_METRIC_NAME = "eth1_block_cache_size";
   static final String VOTES_MAX_METRIC_NAME = "eth1_current_period_votes_max";
-  static final String VOTES_TOTAL_METRIC_NAME = "eth1_current_period_votes_total";
+  static final String VOTES_TOTAL_METRIC_NAME = "eth1_current_period_votes";
   static final String VOTES_UNKNOWN_METRIC_NAME = "eth1_current_period_votes_unknown";
   static final String VOTES_CURRENT_METRIC_NAME = "eth1_current_period_votes_current";
   static final String VOTES_BEST_METRIC_NAME = "eth1_current_period_votes_best";

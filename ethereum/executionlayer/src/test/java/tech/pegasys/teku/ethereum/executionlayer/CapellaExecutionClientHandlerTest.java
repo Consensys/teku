@@ -68,7 +68,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
                 dataStructureUtil.randomExecutionPayload()),
             UInt256.MAX_VALUE);
     final SafeFuture<Response<GetPayloadV2Response>> dummyResponse =
-        SafeFuture.completedFuture(new Response<>(responseData));
+        SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(responseData));
     when(executionEngineClient.getPayloadV2(context.getPayloadId())).thenReturn(dummyResponse);
 
     final SafeFuture<GetPayloadResponse> future = handler.engineGetPayload(context, slot);
@@ -91,7 +91,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
         new PayloadStatusV1(
             ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
-        SafeFuture.completedFuture(new Response<>(responseData));
+        SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(responseData));
     when(executionEngineClient.newPayloadV2(payloadV2)).thenReturn(dummyResponse);
     final SafeFuture<PayloadStatus> future =
         handler.engineNewPayload(newPayloadRequest, UInt64.ZERO);
@@ -111,7 +111,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
                 ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), ""),
             dataStructureUtil.randomBytes8());
     final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
-        SafeFuture.completedFuture(new Response<>(responseData));
+        SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(responseData));
     when(executionEngineClient.forkChoiceUpdatedV2(forkChoiceStateV1, Optional.empty()))
         .thenReturn(dummyResponse);
     final SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> future =
@@ -151,7 +151,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
                 ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), ""),
             dataStructureUtil.randomBytes8());
     final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
-        SafeFuture.completedFuture(new Response<>(responseData));
+        SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(responseData));
     when(executionEngineClient.forkChoiceUpdatedV2(forkChoiceStateV1, payloadAttributes))
         .thenReturn(dummyResponse);
     final SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> future =

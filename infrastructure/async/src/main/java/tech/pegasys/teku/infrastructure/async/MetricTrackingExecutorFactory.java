@@ -21,14 +21,14 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
-import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import org.hyperledger.besu.plugin.services.metrics.LabelledSuppliedMetric;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class MetricTrackingExecutorFactory {
 
   private final MetricsSystem metricsSystem;
-  private final LabelledGauge labelledGaugeQueueSize;
+  private final LabelledSuppliedMetric labelledGaugeQueueSize;
   private final LabelledMetric<Counter> labelledGaugeRejectedExecutions;
 
   private final OccurrenceCounter rejectedExecutionCounter;
@@ -41,7 +41,7 @@ public class MetricTrackingExecutorFactory {
       final MetricsSystem metricsSystem, final OccurrenceCounter rejectedExecutionCounter) {
     this.metricsSystem = metricsSystem;
     this.labelledGaugeQueueSize =
-        metricsSystem.createLabelledGauge(
+        metricsSystem.createLabelledSuppliedGauge(
             TekuMetricCategory.EXECUTOR,
             "queue_size",
             "Current size of the executor task queue",

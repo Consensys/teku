@@ -433,6 +433,14 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                                 .getBlobKzgCommitmentsSchema()
                                 .createFromBlobsBundle(blobsBundle);
                           });
+              final Optional<ExecutionRequests> executionRequests =
+                  schemaDefinitions
+                      .toVersionElectra()
+                      .map(SchemaDefinitionsElectra::getExecutionRequestsSchema)
+                      .map(
+                          executionRequestsSchema ->
+                              new ExecutionRequestsBuilderElectra(executionRequestsSchema).build());
+
               final BuilderBid builderBid =
                   schemaDefinitions
                       .getBuilderBidSchema()
@@ -443,6 +451,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                             builder.value(getPayloadResponse.getExecutionPayloadValue());
                             // using an empty public key for the stub
                             builder.publicKey(BLSPublicKey.empty());
+                            executionRequests.ifPresent(builder::executionRequests);
                           });
               return BuilderBidOrFallbackData.create(builderBid);
             })

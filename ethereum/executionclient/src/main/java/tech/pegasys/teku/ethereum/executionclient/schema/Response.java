@@ -13,51 +13,45 @@
 
 package tech.pegasys.teku.ethereum.executionclient.schema;
 
-import com.google.common.base.MoreObjects;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.spec.SpecMilestone;
 
-public class Response<T> {
+public record Response<T>(
+    T payload, String errorMessage, boolean receivedAsSsz, boolean isUnsupportedMediaTypeError) {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final T payload;
-  private final String errorMessage;
-
-  public Response(final T payload, final String errorMessage) {
-    this.payload = payload;
-    this.errorMessage = errorMessage;
+  public static <T> Response<T> fromNullPayload() {
+    return new Response<>(null, null, false, false);
   }
 
-  public Response(final T payload) {
-    this.payload = payload;
-    this.errorMessage = null;
+  public static <T> Response<T> fromPayloadReceivedAsSsz(final T payload) {
+    return new Response<>(payload, null, true, false);
   }
 
-  public static <T> Response<T> withNullPayload() {
-    return new Response<>(null);
+  public static <T> Response<T> fromPayloadReceivedAsJson(final T payload) {
+    return new Response<>(payload, null, false, false);
   }
 
-  public static <T> Response<T> withErrorMessage(final String errorMessage) {
-    return new Response<>(null, errorMessage);
+  public static <T> Response<T> fromErrorMessage(final String errorMessage) {
+    final String strippedErrorMessage = errorMessage != null ? errorMessage.strip() : null;
+    return new Response<>(null, strippedErrorMessage, false, false);
   }
 
-  public static <T, R> Response<R> unwrapVersioned(
-      final Response<T> response,
+  public static <T> Response<T> fromUnsupportedMediaTypeError() {
+    return new Response<>(null, "Unsupported Media Type", false, true);
+  }
+
+  public <R> Response<R> unwrapVersioned(
       final Function<T, R> unwrapFunction,
       final SpecMilestone expectedMilestone,
       final Function<T, SpecMilestone> unwrapVersionFunction,
       final boolean strictVersionCheck) {
 
-    if (response.isFailure()) {
-      return Response.withErrorMessage(response.getErrorMessage());
-    }
-    final T payload = response.getPayload();
-    if (payload == null) {
-      return Response.withNullPayload();
+    if (isFailure() || payload == null) {
+      return new Response<>(null, errorMessage, receivedAsSsz, isUnsupportedMediaTypeError);
     }
 
     final SpecMilestone receivedMilestone = unwrapVersionFunction.apply(payload);
@@ -79,28 +73,17 @@ public class Response<T> {
       }
     }
 
-    return new Response<>(unwrapFunction.apply(payload));
+    return new Response<>(unwrapFunction.apply(payload), null, receivedAsSsz, false);
   }
 
-  public static <T> Response<Optional<T>> convertToOptional(final Response<T> response) {
-    if (response.isFailure()) {
-      return Response.withErrorMessage(response.getErrorMessage());
+  public Response<Optional<T>> convertToOptional() {
+    if (isFailure()) {
+      return new Response<>(null, errorMessage, receivedAsSsz, isUnsupportedMediaTypeError);
     }
-    final T payload = response.getPayload();
+
     return payload == null
-        ? new Response<>(Optional.empty())
-        : new Response<>(Optional.of(payload));
-  }
-
-  public T getPayload() {
-    return payload;
-  }
-
-  public String getErrorMessage() {
-    if (errorMessage != null) {
-      return errorMessage.strip();
-    }
-    return null;
+        ? new Response<>(Optional.empty(), null, receivedAsSsz, false)
+        : new Response<>(Optional.of(payload), null, receivedAsSsz, false);
   }
 
   public boolean isSuccess() {
@@ -109,31 +92,5 @@ public class Response<T> {
 
   public boolean isFailure() {
     return errorMessage != null;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    Response<?> response = (Response<?>) o;
-    return Objects.equals(payload, response.payload)
-        && Objects.equals(errorMessage, response.errorMessage);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(payload, errorMessage);
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("payload", payload)
-        .add("errorMessage", errorMessage)
-        .toString();
   }
 }

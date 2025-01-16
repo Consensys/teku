@@ -137,7 +137,7 @@ public class Web3JClientTest {
     Waiter.waitFor(result);
     SafeFutureAssert.assertThatSafeFuture(result).isCompleted();
     final Response<Void> response = SafeFutureAssert.safeJoin(result);
-    assertThat(response.getErrorMessage()).isEqualTo(TimeoutException.class.getSimpleName());
+    assertThat(response.errorMessage()).isEqualTo(TimeoutException.class.getSimpleName());
     verify(eventLog).executionClientRequestTimedOut();
   }
 
@@ -296,7 +296,7 @@ public class Web3JClientTest {
     SafeFutureAssert.assertThatSafeFuture(result).isCompleted();
     final Response<Void> response = SafeFutureAssert.safeJoin(result);
 
-    assertThat(response.getErrorMessage())
+    assertThat(response.errorMessage())
         .isEqualTo(
             String.format(
                 "JSON-RPC error: %s (%d): %s",
