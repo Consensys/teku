@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.spec.logic.common.util.InclusionListUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
@@ -89,6 +90,11 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public Optional<BlindBlockUtil> getBlindBlockUtil() {
     return specLogic.getBlindBlockUtil();
+  }
+
+  @Override
+  public Optional<InclusionListUtil> getInclusionListUtil() {
+    return specLogic.getInclusionListUtil();
   }
 
   @Override
