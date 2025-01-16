@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.spec.logic.common.util.InclusionListUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
@@ -71,6 +72,7 @@ public class SpecLogicEip7805 extends AbstractSpecLogic {
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
       final BlindBlockUtil blindBlockUtil,
+      final InclusionListUtil inclusionListUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
       final LightClientUtil lightClientUtil,
       final ElectraStateUpgrade stateUpgrade) {
@@ -90,6 +92,7 @@ public class SpecLogicEip7805 extends AbstractSpecLogic {
         forkChoiceUtil,
         blockProposalUtil,
         Optional.of(blindBlockUtil),
+        Optional.of(inclusionListUtil),
         Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
     this.lightClientUtil = Optional.of(lightClientUtil);
@@ -181,6 +184,9 @@ public class SpecLogicEip7805 extends AbstractSpecLogic {
 
     final BlindBlockUtilBellatrix blindBlockUtil = new BlindBlockUtilBellatrix(schemaDefinitions);
 
+    final InclusionListUtil inclusionListUtil =
+        new InclusionListUtil(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
+
     // State upgrade
     final ElectraStateUpgrade stateUpgrade =
         new ElectraStateUpgrade(
@@ -202,6 +208,7 @@ public class SpecLogicEip7805 extends AbstractSpecLogic {
         forkChoiceUtil,
         blockProposalUtil,
         blindBlockUtil,
+        inclusionListUtil,
         syncCommitteeUtil,
         lightClientUtil,
         stateUpgrade);

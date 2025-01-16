@@ -34,6 +34,8 @@ public class Eip7805Builder implements ForkConfigBuilder<SpecConfigElectra, Spec
 
   private Integer ilCommitteeSize;
   private Integer maxTransactionsPerInclusionList;
+  private Integer maxRequestInclusionList;
+  private Integer maxBytesPerInclusionList;
 
   Eip7805Builder() {}
 
@@ -46,7 +48,9 @@ public class Eip7805Builder implements ForkConfigBuilder<SpecConfigElectra, Spec
             eip7805ForkVersion,
             eip7805ForkEpoch,
             ilCommitteeSize,
-            maxTransactionsPerInclusionList),
+            maxTransactionsPerInclusionList,
+            maxRequestInclusionList,
+            maxBytesPerInclusionList),
         specConfigAndParent);
   }
 
@@ -75,6 +79,18 @@ public class Eip7805Builder implements ForkConfigBuilder<SpecConfigElectra, Spec
     return this;
   }
 
+  public Eip7805Builder maxRequestInclusionList(final Integer maxRequestInclusionList) {
+    checkNotNull(maxRequestInclusionList);
+    this.maxRequestInclusionList = maxRequestInclusionList;
+    return this;
+  }
+
+  public Eip7805Builder maxBytesPerInclusionList(final Integer maxBytesPerInclusionList) {
+    checkNotNull(maxBytesPerInclusionList);
+    this.maxBytesPerInclusionList = maxBytesPerInclusionList;
+    return this;
+  }
+
   @Override
   public void validate() {
     if (eip7805ForkEpoch == null) {
@@ -98,7 +114,8 @@ public class Eip7805Builder implements ForkConfigBuilder<SpecConfigElectra, Spec
     constants.put("eip7805ForkVersion", eip7805ForkVersion);
     constants.put("ilCommitteeSize", ilCommitteeSize);
     constants.put("maxTransactionsPerInclusionList", maxTransactionsPerInclusionList);
-    ;
+    constants.put("maxRequestInclusionList", maxRequestInclusionList);
+    constants.put("maxBytesPerInclusionList", maxBytesPerInclusionList);
 
     return constants;
   }
