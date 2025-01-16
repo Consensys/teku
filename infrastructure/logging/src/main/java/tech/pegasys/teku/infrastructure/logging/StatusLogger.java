@@ -325,10 +325,16 @@ public class StatusLogger {
     }
   }
 
-  public void warningUnexpectedInitialState(final UInt64 epoch, final UInt64 stateSlot, final UInt64 blockSlot) {
+  public void warningUnexpectedInitialState(
+      final UInt64 epoch, final UInt64 stateSlot, final UInt64 blockSlot) {
     log.warn(
-            "Starting from state at slot {}, with block slot {}, which is not an anchor state. " +
-                    "Ensure that slots from {} - {} are empty. At epoch {}.", stateSlot, blockSlot, stateSlot, blockSlot, epoch);
+        "Starting from state at slot {}, with block slot {}, which is not an anchor state. "
+            + "Ensure that slots from {} - {} are empty. At epoch {}.",
+        stateSlot,
+        blockSlot,
+        stateSlot,
+        blockSlot,
+        epoch);
   }
 
   public void warnInitialStateIgnored() {
