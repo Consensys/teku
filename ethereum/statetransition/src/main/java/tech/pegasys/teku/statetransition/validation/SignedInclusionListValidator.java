@@ -1,0 +1,133 @@
+/*
+ * Copyright Consensys Software Inc., 2025
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.statetransition.validation;
+
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfigEip7805;
+import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.util.InclusionListUtil;
+import tech.pegasys.teku.storage.client.RecentChainData;
+
+public class SignedInclusionListValidator {
+
+  private final Spec spec;
+  private final RecentChainData recentChainData;
+
+  public SignedInclusionListValidator(final Spec spec, final RecentChainData recentChainData) {
+    this.spec = spec;
+    this.recentChainData = recentChainData;
+  }
+
+  public SafeFuture<InternalValidationResult> validate(
+      final SignedInclusionList signedInclusionList) {
+
+    final InclusionList inclusionList = signedInclusionList.getMessage();
+    final UInt64 slot = inclusionList.getSlot();
+    final SpecConfigEip7805 specConfigEip7805 =
+        spec.atSlot(slot).getConfig().toVersionEip7805().orElseThrow();
+    final int maxBytesPerInclusionList = specConfigEip7805.getMaxBytesPerInclusionList();
+    final int inclusionListBytesSize = inclusionList.sszSerialize().size();
+
+    /*
+     * [REJECT] The size of message is within upperbound MAX_BYTES_PER_INCLUSION_LIST
+     */
+    if (inclusionListBytesSize > maxBytesPerInclusionList) {
+      return SafeFuture.completedFuture(
+          InternalValidationResult.reject(
+              "Inclusion List size %d (bytes) exceeds max allowed size %d (bytes)",
+              inclusionListBytesSize, maxBytesPerInclusionList));
+    }
+
+    final UInt64 genesisTime = recentChainData.getGenesisTime();
+    final UInt64 currentTimeMillis = recentChainData.getStore().getTimeInMillis();
+    final InclusionListUtil inclusionListUtil =
+        spec.atSlot(slot).getInclusionListUtil().orElseThrow();
+
+    /*
+     * [REJECT] The slot message.slot is equal to the previous or current slot.
+     */
+    if (!inclusionListUtil.isInclusionListForCurrentOrPreviousSlot(
+        slot, genesisTime, currentTimeMillis)) {
+      return SafeFuture.completedFuture(
+          InternalValidationResult.reject("Inclusion List should be for current or previous slot"));
+    }
+
+    /*
+     * [IGNORE] The slot message.slot is equal to the current slot, or it is equal to the previous slot and the current time is less than ATTESTATION_DEADLINE seconds into the slot.
+     */
+    if (!inclusionListUtil.isInclusionListWithinDeadline(slot, genesisTime, currentTimeMillis)) {
+      return SafeFuture.completedFuture(
+          InternalValidationResult.ignore("Inclusion List is beyond attestation deadline"));
+    }
+
+    final int transactionsCount = inclusionList.getTransactions().size();
+    final int maxTransactionsPerInclusionList =
+        specConfigEip7805.getMaxTransactionsPerInclusionList();
+    /*
+     * [REJECT] The transactions message.transactions length is within upperbound MAX_TRANSACTIONS_PER_INCLUSION_LIST.
+     */
+    if (transactionsCount > maxTransactionsPerInclusionList) {
+      return SafeFuture.completedFuture(
+          InternalValidationResult.reject(
+              "Inclusion List contains too many transactions %d. Expected maximum %d transactions",
+              transactionsCount, maxTransactionsPerInclusionList));
+    }
+
+    /*
+     * [IGNORE] The message is either the first or second valid message received from the validator with index message.validator_index.
+     */
+    // TODO EIP7805 add an inclusion list cache to track how many we've received from each validator
+    // and enforce this rule
+
+    return recentChainData
+        .retrieveStateInEffectAtSlot(slot)
+        .thenApply(
+            maybeState -> {
+              if (maybeState.isEmpty()) {
+                // We know the block is imported but now don't have a state to validate against
+                // Must have got pruned between checks
+                return InternalValidationResult.IGNORE;
+              }
+              final BeaconState state = maybeState.get();
+              /*
+               * [IGNORE] The inclusion_list_committee for slot message.slot on the current branch corresponds to message.inclusion_list_committee_root, as determined by hash_tree_root(inclusion_list_committee) == message.inclusion_list_committee_root.
+               */
+              if (!inclusionListUtil.hasCorrectCommitteeRoot(
+                  state, slot, inclusionList.getInclusionListCommitteeRoot())) {
+                return InternalValidationResult.ignore("Inclusion List committee mismatch.");
+              }
+              /*
+               * [REJECT] The validator index message.validator_index is within the inclusion_list_committee corresponding to message.inclusion_list_committee_root.
+               */
+              if (!inclusionListUtil.validatorIndexWithinCommittee(
+                  state, slot, inclusionList.getValidatorIndex())) {
+                return InternalValidationResult.reject(
+                    "Validator index is not within the inclusion list committee.");
+              }
+
+              /*
+               * [REJECT] The validator index message.validator_index is within the inclusion_list_committee corresponding to message.inclusion_list_committee_root.
+               */
+              if (!inclusionListUtil.isValidInclusionListSignature(state, signedInclusionList)) {
+                return InternalValidationResult.reject("Invalid inclusion list signature.");
+              }
+
+              return InternalValidationResult.ACCEPT;
+            });
+  }
+}
