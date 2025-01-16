@@ -32,6 +32,7 @@
 - Optimized blobs validation pipeline
 - Remove delay when fetching blobs from the local EL on block arrival
 - New validator metric `validator_next_attestation_slot` to highlight the next slot that a validator is expected to publish an attestation [#8795](https://github.com/Consensys/teku/issues/8795)
+- Support for SSZ format in builder API (mev-boost)
 
 ### Bug Fixes
 - Fix `--version` command output [#8960](https://github.com/Consensys/teku/issues/8960)

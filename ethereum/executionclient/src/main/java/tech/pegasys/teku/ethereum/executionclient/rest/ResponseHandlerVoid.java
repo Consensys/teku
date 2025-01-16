@@ -38,7 +38,7 @@ public class ResponseHandlerVoid extends AbstractResponseHandler {
     }
     try (final ResponseBody responseBody = response.body()) {
       if (!bodyIsEmpty(responseBody)) {
-        LOG.warn("Response body was not empty for request: {}", request.url());
+        LOG.warn("Response body was not empty [{}]", request.url());
       }
       futureResponse.complete(Response.fromNullPayload());
     } catch (final Throwable ex) {
