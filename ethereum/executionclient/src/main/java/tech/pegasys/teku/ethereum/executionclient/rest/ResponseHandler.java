@@ -66,9 +66,9 @@ public class ResponseHandler<TResp extends SszData> extends AbstractResponseHand
               .orElseGet(
                   () -> {
                     LOG.warn(
-                        "Response did not include a Content-Type header: {}, defaulting to {}",
-                        request.url(),
-                        MediaType.JSON_UTF_8);
+                        "Response did not include a Content-Type header, defaulting to {} [{}]",
+                        MediaType.JSON_UTF_8,
+                        request.url());
                     return MediaType.JSON_UTF_8;
                   });
 
@@ -87,8 +87,9 @@ public class ResponseHandler<TResp extends SszData> extends AbstractResponseHand
 
       if (!responseMediaType.is(MediaType.JSON_UTF_8)) {
         LOG.warn(
-            "Response contains an incorrect Content-Type header: {}, attempting to parse as JSON: {}",
+            "Response contains an incorrect Content-Type header: {}, attempting to parse as {} [{}]",
             responseMediaType,
+            MediaType.JSON_UTF_8,
             request.url());
       }
       final BuilderApiResponse<TResp> payload =
