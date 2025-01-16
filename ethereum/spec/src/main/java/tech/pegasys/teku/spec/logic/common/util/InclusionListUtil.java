@@ -38,7 +38,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class InclusionListUtil {
 
-  private static final Logger LOG = LogManager.getLogger();
   private static final UInt64 ATTESTATION_DEADLINE = UInt64.valueOf(4);
 
   protected final SchemaDefinitions schemaDefinitions;
