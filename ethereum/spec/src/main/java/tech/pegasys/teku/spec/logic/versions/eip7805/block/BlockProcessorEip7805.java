@@ -13,16 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip7805.block;
 
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.BLS;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
-import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
-import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
@@ -66,21 +58,5 @@ public class BlockProcessorEip7805 extends BlockProcessorElectra {
         operationValidator,
         schemaDefinitions,
         executionRequestsDataCodec);
-  }
-
-  /** Check if ``signed_inclusion_list`` has a valid signature. */
-  public boolean isValidInclusionListSignature(
-      final BeaconState state, final SignedInclusionList signedInclusionList) {
-    final InclusionList message = signedInclusionList.getMessage();
-    final UInt64 index = message.getValidatorIndex();
-    final BLSPublicKey pubkey = state.getValidators().get(index.intValue()).getPublicKey();
-    final Bytes signingRoot =
-        miscHelpers.computeSigningRoot(
-            message,
-            beaconStateAccessors.getDomain(
-                state.getForkInfo(),
-                Domain.DOMAIN_INCLUSION_LIST_COMMITTEE,
-                miscHelpers.computeEpochAtSlot(state.getSlot())));
-    return BLS.verify(pubkey, signingRoot, signedInclusionList.getSignature());
   }
 }
