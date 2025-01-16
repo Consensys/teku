@@ -33,6 +33,11 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 /**
  * Represents an "anchor" - a trusted, finalized (block, state, checkpoint) tuple from which we can
  * sync.
+ *
+ * <p>NOTE: Anchor point is a teku concept. <br>
+ * - state needs to be the anchor_state as used in fork choice<br>
+ * - checkpoint is an actual checkpoint as defined in fork choice, is the first slot of epoch<br>
+ * - blockSummary is the block from the finalized anchor state
  */
 public class AnchorPoint extends StateAndBlockSummary {
   private final Spec spec;

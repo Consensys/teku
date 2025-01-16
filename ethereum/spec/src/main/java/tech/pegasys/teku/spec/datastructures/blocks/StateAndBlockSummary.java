@@ -33,9 +33,15 @@ public class StateAndBlockSummary implements BeaconBlockSummary {
   protected StateAndBlockSummary(final BeaconBlockSummary blockSummary, final BeaconState state) {
     checkNotNull(blockSummary);
     checkNotNull(state);
-    checkArgument(
-        blockSummary.getStateRoot().equals(state.hashTreeRoot()),
-        "Block state root must match the supplied state");
+    final Bytes32 latestBlockHeaderBodyRoot = state.getLatestBlockHeader().getBodyRoot();
+    // if the state slot is 0, we're either at genesis or testing
+    if (!state.getSlot().isZero()) {
+      // This check would allow a state to have an empty slot, and still be a valid block and state.
+      checkArgument(
+          latestBlockHeaderBodyRoot.equals(blockSummary.getBodyRoot()),
+          "Block root for the state must match the supplied state at slot "
+              + blockSummary.getSlot());
+    }
     this.blockSummary = blockSummary;
     this.state = state;
   }

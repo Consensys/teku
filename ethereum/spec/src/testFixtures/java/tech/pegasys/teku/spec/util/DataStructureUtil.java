@@ -966,7 +966,10 @@ public final class DataStructureUtil {
       final Bytes32 stateRoot = state.hashTreeRoot();
       final SignedBeaconBlock block =
           signedBlock(randomBeaconBlock(nextSlot, parentRoot, stateRoot, full));
-      blocks.add(new SignedBlockAndState(block, state));
+      final BeaconState updatedState =
+          state.updated(
+              w -> w.setLatestBlockHeader(BeaconBlockHeader.fromBlock(block.getMessage())));
+      blocks.add(new SignedBlockAndState(block, updatedState));
       parentBlock = block;
     }
     return blocks;
@@ -2027,8 +2030,10 @@ public final class DataStructureUtil {
     final Bytes32 anchorRoot = anchorBlock.hashTreeRoot();
     final UInt64 anchorEpoch = spec.getCurrentEpoch(anchorState);
     final Checkpoint anchorCheckpoint = new Checkpoint(anchorEpoch, anchorRoot);
+    final BeaconState updatedAnchorState =
+        anchorState.updated(w -> w.setLatestBlockHeader(BeaconBlockHeader.fromBlock(anchorBlock)));
 
-    return AnchorPoint.create(spec, anchorCheckpoint, signedAnchorBlock, anchorState);
+    return AnchorPoint.create(spec, anchorCheckpoint, signedAnchorBlock, updatedAnchorState);
   }
 
   public SignedContributionAndProof randomSignedContributionAndProof() {
