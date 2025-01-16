@@ -41,7 +41,6 @@ import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
@@ -141,7 +140,9 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
             .toList();
     final Bytes32 parentBeaconBlockRoot = state.getLatestBlockHeader().getParentRoot();
     final ExecutionRequests executionRequests =
-        BeaconBlockBodyElectra.required(beaconBlockBody).getExecutionRequests();
+        beaconBlockBody
+            .getOptionalExecutionRequests()
+            .orElseThrow(() -> new BlockProcessingException("Execution requests expected"));
     return new NewPayloadRequest(
         executionPayload,
         versionedHashes,
@@ -162,7 +163,8 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     safelyProcess(
         () -> {
           final ExecutionRequests executionRequests =
-              BeaconBlockBodyElectra.required(body).getExecutionRequests();
+              body.getOptionalExecutionRequests()
+                  .orElseThrow(() -> new BlockProcessingException("Execution requests expected"));
 
           processDepositRequests(state, executionRequests.getDeposits());
           processWithdrawalRequests(
