@@ -241,11 +241,20 @@ public class EventLogger {
     info(reorgEventLog, Color.YELLOW);
   }
 
-  public void networkUpgradeActivated(final UInt64 nodeEpoch, final String upgradeName) {
-    info(
-        String.format(
-            "Milestone   *** Epoch: %s, Activating network upgrade: %s", nodeEpoch, upgradeName),
-        Color.GREEN);
+  public void networkUpgradeActivated(
+      final UInt64 nodeEpoch, final String upgradeName, final String banner) {
+    if (banner.isEmpty()) {
+      info(
+          String.format(
+              "Milestone   *** Epoch: %s, Activating network upgrade: %s", nodeEpoch, upgradeName),
+          Color.GREEN);
+    } else {
+      info(
+          String.format(
+              "Milestone   *** Epoch: %s, Activating network upgrade: %s\n%s",
+              nodeEpoch, upgradeName, banner),
+          Color.GREEN);
+    }
   }
 
   public void terminalPowBlockDetected(final Bytes32 terminalBlockHash) {
