@@ -308,14 +308,14 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .ifExceptionGetsHereRaiseABug();
   }
 
-  // EIP7732 TODO: implement
+  // EIP-7732 TODO: implement
   @SuppressWarnings("unused")
   public SafeFuture<AttestationProcessingResult> onPayloadAttestationMessage(
       final PayloadAttestationMessage payloadAttestationMessage) {
     return SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL);
   }
 
-  // EIP7732 TODO: implement
+  // EIP-7732 TODO: implement
   @SuppressWarnings("unused")
   public void applyPayloadAttestationMessages(
       final List<PayloadAttestationMessage> payloadAttestationMessages) {}
@@ -544,8 +544,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             });
   }
 
-  // EIP7732 TODO: implement proper fork choice
-  @SuppressWarnings({"UnusedDeclaration", "unused"})
   private SafeFuture<Void> onExecutionPayload(
       final BeaconState blockSlotState,
       final SignedBeaconBlock block,
@@ -555,6 +553,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         ForkChoicePayloadExecutorEip7732.create(executionLayer, block.getSlot());
     final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
         blobSidecarManager.createAvailabilityChecker(block, signedEnvelope.getMessage());
+
+    final SpecVersion specVersion = spec.atSlot(block.getSlot());
+    final ForkChoiceUtil forkChoiceUtil = specVersion.getForkChoiceUtil();
 
     blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
 
@@ -578,6 +579,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               blockSlotState,
               block,
               postState,
+              forkChoiceUtil,
               payloadResult,
               blobSidecarsAndValidationResult);
           return null;
@@ -714,15 +716,98 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return result;
   }
 
-  // EIP7732 TODO: implement proper fork choice
-  @SuppressWarnings("unused")
   private void importExecutionPayloadAndState(
       final SignedExecutionPayloadEnvelope executionPayloadEnvelope,
       final BeaconState blockSlotState,
       final SignedBeaconBlock block,
       final BeaconState postState,
+      final ForkChoiceUtil forkChoiceUtil,
       final PayloadValidationResult payloadValidationResult,
-      final BlobSidecarsAndValidationResult blobSidecarsAndValidationResult) {}
+      final BlobSidecarsAndValidationResult blobSidecarsAndValidationResult) {
+    final PayloadStatus payloadResult = payloadValidationResult.getStatus();
+    if (payloadResult.hasInvalidStatus()) {
+      final BlockImportResult result =
+          BlockImportResult.failedStateTransition(
+              new IllegalStateException(
+                  "Invalid ExecutionPayload: "
+                      + payloadResult.getValidationError().orElse("No reason provided")));
+      reportInvalidBlock(block, result);
+      payloadValidationResult
+          .getInvalidTransitionBlockRoot()
+          .ifPresentOrElse(
+              invalidTransitionBlockRoot ->
+                  getForkChoiceStrategy()
+                      .onExecutionPayloadResult(invalidTransitionBlockRoot, payloadResult, true),
+              () ->
+                  getForkChoiceStrategy()
+                      .onExecutionPayloadResult(block.getParentRoot(), payloadResult, false));
+    }
+
+    if (payloadResult.hasNotValidatedStatus() || payloadResult.hasFailedExecution()) {
+      return;
+    }
+
+    LOG.debug("blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
+
+    switch (blobSidecarsAndValidationResult.getValidationResult()) {
+      case NOT_AVAILABLE -> {
+        return;
+      }
+      case INVALID -> {
+        debugDataDumper.saveInvalidBlobSidecars(
+            blobSidecarsAndValidationResult.getBlobSidecars(), block);
+        return;
+      }
+      default -> {}
+    }
+
+    final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+
+    // Now that we're on the fork choice thread, make sure the block still descends from finalized
+    // (which may have changed while we were processing the block)
+    if (!forkChoiceUtil.blockDescendsFromLatestFinalizedBlock(
+        block.getSlot(), block.getParentRoot(), recentChainData.getStore(), forkChoiceStrategy)) {
+      return;
+    }
+
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    addParentStateRoots(spec, blockSlotState, transaction);
+
+    final Optional<List<BlobSidecar>> blobSidecars;
+    if (blobSidecarsAndValidationResult.isNotRequired()) {
+      // Outside availability window or pre-Deneb
+      blobSidecars = Optional.empty();
+    } else if (blobSidecarsAndValidationResult.isValid()) {
+      blobSidecars = Optional.of(blobSidecarsAndValidationResult.getBlobSidecars());
+    } else {
+      throw new IllegalStateException(
+          String.format(
+              "Unexpected attempt to store invalid blob sidecars (%s) for block: %s",
+              blobSidecarsAndValidationResult.getBlobSidecars().size(), block.toLogString()));
+    }
+    final Optional<UInt64> earliestBlobSidecarsSlot =
+        computeEarliestBlobSidecarsSlot(
+            recentChainData.getStore(), blobSidecarsAndValidationResult, block.getMessage());
+
+    forkChoiceUtil.applyExecutionPayloadToStore(
+        transaction,
+        block.getSlot(),
+        executionPayloadEnvelope,
+        postState,
+        payloadResult.hasNotValidatedStatus(),
+        blobSidecars,
+        earliestBlobSidecarsSlot);
+
+    if (shouldApplyProposerBoost(block, transaction)) {
+      transaction.setProposerBoostRoot(block.getRoot());
+    }
+
+    // Note: not using thenRun here because we want to ensure each step is on the event thread
+    transaction.commit().join();
+    forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult, true);
+
+    notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
+  }
 
   // from consensus-specs/fork-choice:
   private boolean shouldApplyProposerBoost(

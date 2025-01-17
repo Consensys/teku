@@ -83,6 +83,8 @@ public interface ReadOnlyStore extends TimeProvider {
 
   boolean containsBlock(Bytes32 blockRoot);
 
+  boolean containsExecutionPayloadEnvelope(Bytes32 blockRoot);
+
   /**
    * @return A collection of block roots ordered to guarantee that parent roots will be sorted
    *     earlier than child roots

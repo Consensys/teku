@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedExecutionPayloadEnvelopeAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -68,8 +69,35 @@ public interface MutableStore extends ReadOnlyStore {
         Optional.empty());
   }
 
+  default void putExecutionPayloadEnvelopeAndState(
+      final SignedExecutionPayloadEnvelopeAndState executionPayloadEnvelopeAndState,
+      final List<BlobSidecar> blobSidecars,
+      final BlockCheckpoints checkpoints) {
+    putExecutionPayloadEnvelopeAndState(
+        executionPayloadEnvelopeAndState.getExecutionPayloadEnvelope(),
+        executionPayloadEnvelopeAndState.getState(),
+        checkpoints,
+        Optional.of(blobSidecars),
+        Optional.empty());
+  }
+
+  default void putExecutionPayloadEnvelopeAndState(
+      final SignedExecutionPayloadEnvelopeAndState executionPayloadEnvelopeAndState,
+      final BlockCheckpoints checkpoints) {
+    putExecutionPayloadEnvelopeAndState(
+        executionPayloadEnvelopeAndState.getExecutionPayloadEnvelope(),
+        executionPayloadEnvelopeAndState.getState(),
+        checkpoints,
+        Optional.empty(),
+        Optional.empty());
+  }
+
   void putExecutionPayloadEnvelopeAndState(
-      final SignedExecutionPayloadEnvelopeAndState executionPayloadEnvelopeAndState);
+      SignedExecutionPayloadEnvelope executionPayloadEnvelope,
+      BeaconState state,
+      BlockCheckpoints blockCheckpoints,
+      Optional<List<BlobSidecar>> blobSidecars,
+      Optional<UInt64> earliestBlobSidecarSlot);
 
   void putStateRoot(Bytes32 stateRoot, SlotAndBlockRoot slotAndBlockRoot);
 

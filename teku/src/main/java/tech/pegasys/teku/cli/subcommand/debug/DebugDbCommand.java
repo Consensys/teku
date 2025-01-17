@@ -38,6 +38,7 @@ import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadEnvelopeProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -264,6 +265,7 @@ public class DebugDbCommand implements Runnable {
                           .metricsSystem(new NoOpMetricsSystem())
                           .specProvider(eth2NetworkOptions.getNetworkConfiguration().getSpec())
                           .blockProvider(BlockProvider.NOOP)
+                          .executionPayloadEnvelopeProvider(ExecutionPayloadEnvelopeProvider.NOOP)
                           .stateProvider(StateAndBlockSummaryProvider.NOOP)
                           .build())
               .map(UpdatableStore::getLatestFinalized);
