@@ -147,10 +147,10 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     }
 
     SafeFuture.allOf(reportingTasks.toArray(SafeFuture[]::new))
-        .handleException(LOG::error)
+        .handleException(error -> LOG.error("Failed to report performance metrics", error))
         .alwaysRun(
             () -> {
-              if (reportingTasks.size() > 0) {
+              if (!reportingTasks.isEmpty()) {
                 timingsSettableGauge.set(System.currentTimeMillis() - startTime);
               }
             })
@@ -307,10 +307,10 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     // data hash to inclusion slot to aggregation bitlist
     final Map<Bytes32, NavigableMap<UInt64, AttestationBitsAggregator>>
         slotAndBitlistsByAttestationDataHash = new HashMap<>();
-    for (Map.Entry<UInt64, List<Attestation>> entry : attestationsIncludedOnChain.entrySet()) {
-      final Optional<Int2IntMap> committeesSize =
-          Optional.of(spec.getBeaconCommitteesSize(state, entry.getKey()));
-      for (Attestation attestation : entry.getValue()) {
+    for (final Map.Entry<UInt64, List<Attestation>> entry :
+        attestationsIncludedOnChain.entrySet()) {
+      for (final Attestation attestation : entry.getValue()) {
+        final Optional<Int2IntMap> committeesSize = getCommitteesSize(attestation, state);
         final Bytes32 attestationDataHash = attestation.getData().hashTreeRoot();
         final NavigableMap<UInt64, AttestationBitsAggregator> slotToBitlists =
             slotAndBitlistsByAttestationDataHash.computeIfAbsent(
@@ -325,7 +325,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       }
     }
 
-    for (Attestation sentAttestation : producedAttestations) {
+    for (final Attestation sentAttestation : producedAttestations) {
       final Bytes32 sentAttestationDataHash = sentAttestation.getData().hashTreeRoot();
       final UInt64 sentAttestationSlot = sentAttestation.getData().getSlot();
       if (!slotAndBitlistsByAttestationDataHash.containsKey(sentAttestationDataHash)) {
@@ -359,7 +359,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     // IntSummaryStatistics returns Integer.MIN and MAX when the summarized integer list
     // is empty.
     final int numberOfProducedAttestations = producedAttestations.size();
-    return producedAttestations.size() > 0
+    return numberOfProducedAttestations > 0
         ? new AttestationPerformance(
             analyzedEpoch,
             validatorTracker.getNumberOfValidatorsForEpoch(analyzedEpoch),
@@ -372,6 +372,14 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
             correctHeadBlockCount)
         : AttestationPerformance.empty(
             analyzedEpoch, validatorTracker.getNumberOfValidatorsForEpoch(analyzedEpoch));
+  }
+
+  private Optional<Int2IntMap> getCommitteesSize(
+      final Attestation attestation, final BeaconState state) {
+    if (!attestation.requiresCommitteeBits()) {
+      return Optional.empty();
+    }
+    return Optional.of(spec.getBeaconCommitteesSize(state, attestation.getData().getSlot()));
   }
 
   private SafeFuture<Set<BeaconBlock>> getBlocksInEpochs(
