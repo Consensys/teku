@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
@@ -46,6 +47,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubsc
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.RegisteredValidatorInfo;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
@@ -55,6 +57,7 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 public class NodeDataProvider {
   private static final Logger LOG = LogManager.getLogger();
   private final AggregatingAttestationPool attestationPool;
+  private final InclusionListPool inclusionListPool;
   private final OperationPool<AttesterSlashing> attesterSlashingPool;
   private final OperationPool<ProposerSlashing> proposerSlashingPool;
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool;
@@ -71,6 +74,7 @@ public class NodeDataProvider {
 
   public NodeDataProvider(
       final AggregatingAttestationPool attestationPool,
+      final InclusionListPool inclusionListPool,
       final OperationPool<AttesterSlashing> attesterSlashingsPool,
       final OperationPool<ProposerSlashing> proposerSlashingPool,
       final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
@@ -85,6 +89,7 @@ public class NodeDataProvider {
       final RecentChainData recentChainData,
       final Spec spec) {
     this.attestationPool = attestationPool;
+    this.inclusionListPool = inclusionListPool;
     this.attesterSlashingPool = attesterSlashingsPool;
     this.proposerSlashingPool = proposerSlashingPool;
     this.voluntaryExitPool = voluntaryExitPool;
@@ -103,6 +108,10 @@ public class NodeDataProvider {
   public List<Attestation> getAttestations(
       final Optional<UInt64> maybeSlot, final Optional<UInt64> maybeCommitteeIndex) {
     return attestationPool.getAttestations(maybeSlot, maybeCommitteeIndex);
+  }
+
+  public List<SignedInclusionList> getInclusionLists(final UInt64 slot) {
+    return inclusionListPool.getInclusionLists(slot);
   }
 
   public ObjectAndMetaData<List<Attestation>> getAttestationsAndMetaData(

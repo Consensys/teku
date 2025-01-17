@@ -107,7 +107,6 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifie
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
-import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -147,6 +146,7 @@ import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListPool;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
@@ -255,6 +255,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile Eth2P2PNetwork p2pNetwork;
   protected volatile Optional<BeaconRestApi> beaconRestAPI = Optional.empty();
   protected volatile AggregatingAttestationPool attestationPool;
+  protected volatile InclusionListPool inclusionListPool;
   protected volatile DepositProvider depositProvider;
   protected volatile SyncService syncService;
   protected volatile AttestationManager attestationManager;
@@ -266,7 +267,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile OperationPool<ProposerSlashing> proposerSlashingPool;
   protected volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   protected volatile MappedOperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
-  protected volatile OperationPool<SignedInclusionList> inclusionListPool;
   protected volatile SyncCommitteeContributionPool syncCommitteeContributionPool;
   protected volatile SyncCommitteeMessagePool syncCommitteeMessagePool;
   protected volatile WeakSubjectivityValidator weakSubjectivityValidator;
@@ -524,6 +524,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initCombinedChainDataClient();
     initSignatureVerificationService();
     initAttestationPool();
+    initInclusionListPool();
     initAttesterSlashingPool();
     initProposerSlashingPool();
     initVoluntaryExitPool();
@@ -760,11 +761,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
         blsToExecutionChangePool::removeAll);
   }
 
-  protected void initInclusionListPool() {
-    LOG.debug("BeaconChainController.initInclusionListPool()");
-    // TODO EIP7805
-  }
-
   protected void initDataProvider() {
     dataProvider =
         DataProvider.builder()
@@ -777,6 +773,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .validatorApiChannel(
                 eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner))
             .attestationPool(attestationPool)
+            .inclusionListPool(inclusionListPool)
             .blockBlobSidecarsTrackersPool(blockBlobSidecarsTrackersPool)
             .attestationManager(attestationManager)
             .isLivenessTrackingEnabled(getLivenessTrackingEnabled(beaconConfig))
@@ -1213,6 +1210,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
     blockImporter.subscribeToVerifiedBlockAttestations(
         attestationPool::onAttestationsIncludedInBlock);
+  }
+
+  protected void initInclusionListPool() {
+    LOG.debug("BeaconChainController.initInclusionListPool()");
+    inclusionListPool = new InclusionListPool();
+    eventChannels.subscribe(SlotEventsChannel.class, inclusionListPool);
   }
 
   public void initRestAPI() {
