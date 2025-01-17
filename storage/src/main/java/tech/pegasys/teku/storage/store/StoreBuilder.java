@@ -25,6 +25,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadEnvelopeProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -42,6 +43,7 @@ public class StoreBuilder {
   private MetricsSystem metricsSystem;
   private Spec spec;
   private BlockProvider blockProvider;
+  private ExecutionPayloadEnvelopeProvider executionPayloadEnvelopeProvider;
   private StateAndBlockSummaryProvider stateAndBlockProvider;
   private EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
   private StoreConfig storeConfig = StoreConfig.createDefault();
@@ -105,7 +107,7 @@ public class StoreBuilder {
         .bestJustifiedCheckpoint(data.getBestJustifiedCheckpoint())
         .blockInformation(data.getBlockInformation())
         .votes(data.getVotes())
-        // EIP7732 TODO: figure out this
+        // EIP-7732 TODO: figure out this
         .ptcVote(new HashMap<>());
   }
 
@@ -118,6 +120,7 @@ public class StoreBuilder {
           metricsSystem,
           spec,
           blockProvider,
+          executionPayloadEnvelopeProvider,
           stateAndBlockProvider,
           earliestBlobSidecarSlotProvider,
           anchor,
@@ -137,6 +140,7 @@ public class StoreBuilder {
         metricsSystem,
         spec,
         blockProvider,
+        executionPayloadEnvelopeProvider,
         stateAndBlockProvider,
         earliestBlobSidecarSlotProvider,
         anchor,
@@ -157,6 +161,9 @@ public class StoreBuilder {
     checkState(metricsSystem != null, "Metrics system must be defined");
     checkState(spec != null, "SpecProvider must be defined");
     checkState(blockProvider != null, "Block provider must be defined");
+    checkState(
+        executionPayloadEnvelopeProvider != null,
+        "Execution payload envelope provider must be defined");
     checkState(stateAndBlockProvider != null, "StateAndBlockProvider must be defined");
     checkState(time != null, "Time must be defined");
     checkState(genesisTime != null, "Genesis time must be defined");
@@ -194,6 +201,13 @@ public class StoreBuilder {
   public StoreBuilder blockProvider(final BlockProvider blockProvider) {
     checkNotNull(blockProvider);
     this.blockProvider = blockProvider;
+    return this;
+  }
+
+  public StoreBuilder executionPayloadEnvelopeProvider(
+      final ExecutionPayloadEnvelopeProvider executionPayloadEnvelopeProvider) {
+    checkNotNull(executionPayloadEnvelopeProvider);
+    this.executionPayloadEnvelopeProvider = executionPayloadEnvelopeProvider;
     return this;
   }
 
