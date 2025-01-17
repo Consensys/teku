@@ -38,7 +38,7 @@ public abstract class AbstractResponseHandler {
     if (response.isSuccessful()) {
       return false;
     }
-    try {
+    try (response) {
       if (response.code() == SC_UNSUPPORTED_MEDIA_TYPE) {
         futureResponse.complete(Response.fromUnsupportedMediaTypeError());
       } else {
