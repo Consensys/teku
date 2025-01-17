@@ -124,7 +124,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   public AnchorPoint getLatestFinalized() {
     final SignedBeaconBlock block = getSignedBlock(finalizedCheckpoint.getRoot());
     final BeaconState state = getBlockState(finalizedCheckpoint.getRoot());
-    return AnchorPoint.create(spec, finalizedCheckpoint, block, state);
+    return AnchorPoint.create(spec, finalizedCheckpoint, state, Optional.of(block));
   }
 
   @Override

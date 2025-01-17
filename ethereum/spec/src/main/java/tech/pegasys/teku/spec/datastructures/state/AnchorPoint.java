@@ -72,14 +72,6 @@ public class AnchorPoint extends StateAndBlockSummary {
   }
 
   public static AnchorPoint create(
-      final Spec spec,
-      final Checkpoint checkpoint,
-      final SignedBeaconBlock block,
-      final BeaconState state) {
-    return new AnchorPoint(spec, checkpoint, state, block);
-  }
-
-  public static AnchorPoint create(
       final Spec spec, final Checkpoint checkpoint, final SignedBlockAndState blockAndState) {
     return new AnchorPoint(spec, checkpoint, blockAndState.getState(), blockAndState.getBlock());
   }
@@ -112,16 +104,16 @@ public class AnchorPoint extends StateAndBlockSummary {
     }
   }
 
-  private static boolean isGenesisState(final BeaconState state) {
-    return state.getSlot().equals(SpecConfig.GENESIS_SLOT);
-  }
-
   public static AnchorPoint fromInitialBlockAndState(
       final Spec spec, final SignedBlockAndState blockAndState) {
     return fromInitialBlockAndState(spec, blockAndState.getBlock(), blockAndState.getState());
   }
 
-  public static AnchorPoint fromInitialBlockAndState(
+  private static boolean isGenesisState(final BeaconState state) {
+    return state.getSlot().equals(SpecConfig.GENESIS_SLOT);
+  }
+
+  private static AnchorPoint fromInitialBlockAndState(
       final Spec spec, final SignedBeaconBlock block, final BeaconState state) {
     checkArgument(
         Objects.equals(block.getStateRoot(), state.hashTreeRoot()),

@@ -2033,7 +2033,8 @@ public final class DataStructureUtil {
     final BeaconState updatedAnchorState =
         anchorState.updated(w -> w.setLatestBlockHeader(BeaconBlockHeader.fromBlock(anchorBlock)));
 
-    return AnchorPoint.create(spec, anchorCheckpoint, signedAnchorBlock, updatedAnchorState);
+    return AnchorPoint.create(
+        spec, anchorCheckpoint, updatedAnchorState, Optional.of(signedAnchorBlock));
   }
 
   public SignedContributionAndProof randomSignedContributionAndProof() {
