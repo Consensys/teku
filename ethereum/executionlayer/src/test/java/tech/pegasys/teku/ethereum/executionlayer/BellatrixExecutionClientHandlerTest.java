@@ -60,7 +60,7 @@ class BellatrixExecutionClientHandlerTest extends ExecutionHandlerClientTest {
     final ExecutionPayloadV1 responseData =
         ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload);
     final SafeFuture<Response<ExecutionPayloadV1>> dummyResponse =
-        SafeFuture.completedFuture(new Response<>(responseData));
+        SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(responseData));
     when(executionEngineClient.getPayloadV1(context.getPayloadId())).thenReturn(dummyResponse);
 
     final SafeFuture<GetPayloadResponse> future = handler.engineGetPayload(context, slot);
@@ -78,7 +78,7 @@ class BellatrixExecutionClientHandlerTest extends ExecutionHandlerClientTest {
         new PayloadStatusV1(
             ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
-        SafeFuture.completedFuture(new Response<>(responseData));
+        SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(responseData));
     when(executionEngineClient.newPayloadV1(payloadV1)).thenReturn(dummyResponse);
     final SafeFuture<PayloadStatus> future =
         handler.engineNewPayload(newPayloadRequest, UInt64.ZERO);
@@ -110,7 +110,7 @@ class BellatrixExecutionClientHandlerTest extends ExecutionHandlerClientTest {
                 ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), ""),
             dataStructureUtil.randomBytes8());
     final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
-        SafeFuture.completedFuture(new Response<>(responseData));
+        SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(responseData));
     when(executionEngineClient.forkChoiceUpdatedV1(forkChoiceStateV1, payloadAttributes))
         .thenReturn(dummyResponse);
     final SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> future =

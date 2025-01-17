@@ -96,7 +96,7 @@ public abstract class AbstractNode implements Node {
             .build());
 
     reportOverrides(tekuConfig);
-    this.metricsEndpoint = new MetricsEndpoint(tekuConfig.metricsConfig(), vertx);
+    this.metricsEndpoint = new MetricsEndpoint(tekuConfig.metricsConfig());
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
     final TekuDefaultExceptionHandler subscriberExceptionHandler =
         new TekuDefaultExceptionHandler();

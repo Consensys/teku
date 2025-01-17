@@ -15,15 +15,23 @@ package tech.pegasys.teku.beacon.sync;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import tech.pegasys.teku.networking.eth2.P2PConfig;
+
 public class SyncConfig {
 
   public static final boolean DEFAULT_MULTI_PEER_SYNC_ENABLED = true;
   public static final boolean DEFAULT_RECONSTRUCT_HISTORIC_STATES_ENABLED = false;
   public static final boolean DEFAULT_FETCH_ALL_HISTORIC_BLOCKS = true;
-  public static final int DEFAULT_FORWARD_SYNC_BATCH_SIZE = 50;
+
   public static final int DEFAULT_HISTORICAL_SYNC_BATCH_SIZE = 50;
+  public static final int DEFAULT_FORWARD_SYNC_BATCH_SIZE = 25;
   public static final int DEFAULT_FORWARD_SYNC_MAX_PENDING_BATCHES = 5;
+
+  /** Aligned with {@link P2PConfig#DEFAULT_PEER_BLOCKS_RATE_LIMIT} */
   public static final int DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE = 500;
+
+  /** Aligned with {@link P2PConfig#DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT} */
+  public static final int DEFAULT_FORWARD_SYNC_MAX_BLOB_SIDECARS_PER_MINUTE = 2000;
 
   private final boolean isEnabled;
   private final boolean isMultiPeerSyncEnabled;
@@ -33,6 +41,7 @@ public class SyncConfig {
   private final int forwardSyncBatchSize;
   private final int forwardSyncMaxPendingBatches;
   private final int forwardSyncMaxBlocksPerMinute;
+  private final int forwardSyncMaxBlobSidecarsPerMinute;
 
   private SyncConfig(
       final boolean isEnabled,
@@ -42,7 +51,8 @@ public class SyncConfig {
       final int historicalSyncBatchSize,
       final int forwardSyncBatchSize,
       final int forwardSyncMaxPendingBatches,
-      final int forwardSyncMaxBlocksPerMinute) {
+      final int forwardSyncMaxBlocksPerMinute,
+      final int forwardSyncMaxBlobSidecarsPerMinute) {
     this.isEnabled = isEnabled;
     this.isMultiPeerSyncEnabled = isMultiPeerSyncEnabled;
     this.reconstructHistoricStatesEnabled = reconstructHistoricStatesEnabled;
@@ -51,6 +61,7 @@ public class SyncConfig {
     this.forwardSyncBatchSize = forwardSyncBatchSize;
     this.forwardSyncMaxPendingBatches = forwardSyncMaxPendingBatches;
     this.forwardSyncMaxBlocksPerMinute = forwardSyncMaxBlocksPerMinute;
+    this.forwardSyncMaxBlobSidecarsPerMinute = forwardSyncMaxBlobSidecarsPerMinute;
   }
 
   public static Builder builder() {
@@ -89,6 +100,10 @@ public class SyncConfig {
     return forwardSyncMaxBlocksPerMinute;
   }
 
+  public int getForwardSyncMaxBlobSidecarsPerMinute() {
+    return forwardSyncMaxBlobSidecarsPerMinute;
+  }
+
   public static class Builder {
     private Boolean isEnabled;
     private Boolean isMultiPeerSyncEnabled = DEFAULT_MULTI_PEER_SYNC_ENABLED;
@@ -98,6 +113,8 @@ public class SyncConfig {
     private Integer forwardSyncBatchSize = DEFAULT_FORWARD_SYNC_BATCH_SIZE;
     private Integer forwardSyncMaxPendingBatches = DEFAULT_FORWARD_SYNC_MAX_PENDING_BATCHES;
     private Integer forwardSyncMaxBlocksPerMinute = DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE;
+    private Integer forwardSyncMaxBlobSidecarsPerMinute =
+        DEFAULT_FORWARD_SYNC_MAX_BLOB_SIDECARS_PER_MINUTE;
 
     private Builder() {}
 
@@ -111,7 +128,8 @@ public class SyncConfig {
           historicalSyncBatchSize,
           forwardSyncBatchSize,
           forwardSyncMaxPendingBatches,
-          forwardSyncMaxBlocksPerMinute);
+          forwardSyncMaxBlocksPerMinute,
+          forwardSyncMaxBlobSidecarsPerMinute);
     }
 
     private void initMissingDefaults() {
@@ -160,6 +178,13 @@ public class SyncConfig {
     public Builder forwardSyncMaxBlocksPerMinute(final Integer forwardSyncMaxBlocksPerMinute) {
       checkNotNull(forwardSyncMaxBlocksPerMinute);
       this.forwardSyncMaxBlocksPerMinute = forwardSyncMaxBlocksPerMinute;
+      return this;
+    }
+
+    public Builder forwardSyncMaxBlobSidecarsPerMinute(
+        final Integer forwardSyncMaxBlobSidecarsPerMinute) {
+      checkNotNull(forwardSyncMaxBlobSidecarsPerMinute);
+      this.forwardSyncMaxBlobSidecarsPerMinute = forwardSyncMaxBlobSidecarsPerMinute;
       return this;
     }
 

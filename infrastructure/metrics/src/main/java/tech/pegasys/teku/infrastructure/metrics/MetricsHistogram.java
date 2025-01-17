@@ -15,11 +15,9 @@ package tech.pegasys.teku.infrastructure.metrics;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import io.prometheus.client.Collector;
-import io.prometheus.client.Collector.MetricFamilySamples;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,6 +25,7 @@ import java.util.stream.Stream;
 import org.HdrHistogram.SynchronizedHistogram;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.ExternalSummary;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
 /**
@@ -40,10 +39,10 @@ import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
  */
 public class MetricsHistogram {
   static final String QUANTILE_LABEL = "quantile";
-  static final String LABEL_50 = "0.5";
-  static final String LABEL_95 = "0.95";
-  static final String LABEL_99 = "0.99";
-  static final String LABEL_1 = "1";
+  static final double LABEL_50 = 0.5;
+  static final double LABEL_95 = 0.95;
+  static final double LABEL_99 = 0.99;
+  static final double LABEL_1 = 1;
 
   private final Map<List<String>, SynchronizedHistogram> histogramMap = new ConcurrentHashMap<>();
   private final List<String> labels;
@@ -135,8 +134,9 @@ public class MetricsHistogram {
         new MetricsHistogram(
             numberOfSignificantValueDigits, highestTrackableValue, customLabelsNames);
     if (metricsSystem instanceof PrometheusMetricsSystem) {
-      ((PrometheusMetricsSystem) metricsSystem)
-          .addCollector(category, () -> histogram.histogramToCollector(category, name, help));
+      final String summaryMetricName = category.toString().toLowerCase(Locale.ROOT) + "_" + name;
+      metricsSystem.createSummary(
+          category, summaryMetricName, help, histogram::histogramToCollector);
     }
     return histogram;
   }
@@ -161,63 +161,24 @@ public class MetricsHistogram {
     }
   }
 
-  protected Collector histogramToCollector(
-      final MetricCategory metricCategory, final String name, final String help) {
-    return new Collector() {
-      final String metricName =
-          metricCategory.getApplicationPrefix().orElse("") + metricCategory.getName() + "_" + name;
+  protected ExternalSummary histogramToCollector() {
 
-      @Override
-      public List<MetricFamilySamples> collect() {
+    final List<ExternalSummary.Quantile> quantiles =
+        histogramMap.entrySet().stream()
+            .flatMap(
+                entry ->
+                    Stream.of(
+                        new ExternalSummary.Quantile(
+                            LABEL_50, entry.getValue().getValueAtPercentile(50)),
+                        new ExternalSummary.Quantile(
+                            LABEL_95, entry.getValue().getValueAtPercentile(95)),
+                        new ExternalSummary.Quantile(
+                            LABEL_99, entry.getValue().getValueAtPercentile(99)),
+                        new ExternalSummary.Quantile(
+                            LABEL_1, entry.getValue().getValueAtPercentile(100))))
+            .toList();
 
-        final List<MetricFamilySamples.Sample> samples =
-            histogramMap.entrySet().stream()
-                .map(
-                    labelsValuesToHistogram ->
-                        List.of(
-                            createSample(
-                                metricName,
-                                LABEL_50,
-                                labelsValuesToHistogram.getKey(),
-                                50d,
-                                labelsValuesToHistogram.getValue()),
-                            createSample(
-                                metricName,
-                                LABEL_95,
-                                labelsValuesToHistogram.getKey(),
-                                95d,
-                                labelsValuesToHistogram.getValue()),
-                            createSample(
-                                metricName,
-                                LABEL_99,
-                                labelsValuesToHistogram.getKey(),
-                                99d,
-                                labelsValuesToHistogram.getValue()),
-                            createSample(
-                                metricName,
-                                LABEL_1,
-                                labelsValuesToHistogram.getKey(),
-                                labelsValuesToHistogram.getValue().getMaxValueAsDouble(),
-                                labelsValuesToHistogram.getValue())))
-                .flatMap(List::stream)
-                .toList();
-
-        return Collections.singletonList(
-            new MetricFamilySamples(metricName, Type.SUMMARY, help, samples));
-      }
-    };
-  }
-
-  private MetricFamilySamples.Sample createSample(
-      final String metricName,
-      final String quantileLabelValue,
-      final List<String> labelValues,
-      final double percentile,
-      final SynchronizedHistogram histogram) {
-    return new MetricFamilySamples.Sample(
-        metricName,
-        labels,
-        Stream.concat(labelValues.stream(), Stream.of(quantileLabelValue)).toList(),
-        histogram.getValueAtPercentile(percentile));
+    // return sum 0 as we currently don't use it
+    return new ExternalSummary(histogramMap.size(), 0, quantiles);
   }
 }

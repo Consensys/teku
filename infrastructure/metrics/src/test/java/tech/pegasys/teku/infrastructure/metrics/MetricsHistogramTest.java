@@ -24,13 +24,24 @@ import java.util.stream.Collectors;
 import org.hyperledger.besu.metrics.ObservableMetricsSystem;
 import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class MetricsHistogramTest {
 
   private static final TekuMetricCategory CATEGORY = TekuMetricCategory.BEACON;
-  private final ObservableMetricsSystem metricsSystem =
-      new PrometheusMetricsSystem(Set.of(CATEGORY), true);
+  private ObservableMetricsSystem metricsSystem;
+
+  @BeforeEach
+  void setup() {
+    metricsSystem = new PrometheusMetricsSystem(Set.of(CATEGORY), true);
+  }
+
+  @AfterEach
+  void shutdown() {
+    metricsSystem.shutdown();
+  }
 
   @Test
   void shouldReportValuesWithNoSpecifiedUpperLimit() {
@@ -43,14 +54,14 @@ class MetricsHistogramTest {
     final Map<List<String>, Object> values =
         metricsSystem
             .streamObservations()
-            .filter(ob -> ob.getCategory() == CATEGORY)
-            .collect(Collectors.toMap(Observation::getLabels, Observation::getValue));
+            .filter(ob -> ob.category() == CATEGORY)
+            .collect(Collectors.toMap(Observation::labels, Observation::value));
     assertThat(values)
-        .containsOnly(
-            entry(key(List.of(MetricsHistogram.LABEL_50)), 50d),
-            entry(key(List.of(MetricsHistogram.LABEL_95)), 95d),
-            entry(key(List.of(MetricsHistogram.LABEL_99)), 99d),
-            entry(key(List.of(MetricsHistogram.LABEL_1)), 100d));
+        .contains(
+            entry(key(List.of("0.5")), 50d),
+            entry(key(List.of("0.95")), 95d),
+            entry(key(List.of("0.99")), 99d),
+            entry(key(List.of("1.0")), 100d));
   }
 
   @Test
@@ -64,14 +75,14 @@ class MetricsHistogramTest {
     final Map<List<String>, Object> values =
         metricsSystem
             .streamObservations()
-            .filter(ob -> ob.getCategory() == CATEGORY)
-            .collect(Collectors.toMap(Observation::getLabels, Observation::getValue));
+            .filter(ob -> ob.category() == CATEGORY)
+            .collect(Collectors.toMap(Observation::labels, Observation::value));
     assertThat(values)
-        .containsOnly(
-            entry(key(List.of(MetricsHistogram.LABEL_50)), 50d),
-            entry(key(List.of(MetricsHistogram.LABEL_95)), 80d),
-            entry(key(List.of(MetricsHistogram.LABEL_99)), 80d),
-            entry(key(List.of(MetricsHistogram.LABEL_1)), 80d));
+        .contains(
+            entry(key(List.of("0.5")), 50d),
+            entry(key(List.of("0.95")), 80d),
+            entry(key(List.of("0.99")), 80d),
+            entry(key(List.of("1.0")), 80d));
   }
 
   private static List<String> key(final List<String> labelValues) {

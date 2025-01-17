@@ -11,9 +11,11 @@ p2p-peer-lower-bound: 70
 p2p-peer-upper-bound: 85
 Xp2p-target-subnet-subscriber-count: 5
 Xp2p-minimum-randomly-selected-peer-count: 1
-Xpeer-rate-limit: 100
+Xpeer-blocks-rate-limit: 100
+Xpeer-blob-sidecars-rate-limit: 400
 Xpeer-request-limit: 101
 Xp2p-historical-sync-batch-size: 102
 Xp2p-sync-batch-size: 103
 Xp2p-sync-max-pending-batches: 8
-Xp2p-sync-rate-limit: 80
+Xp2p-sync-blocks-rate-limit: 100
+Xp2p-sync-blob-sidecars-rate-limit: 400

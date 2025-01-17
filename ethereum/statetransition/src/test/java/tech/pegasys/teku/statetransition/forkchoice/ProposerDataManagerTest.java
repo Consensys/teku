@@ -155,7 +155,7 @@ public class ProposerDataManagerTest {
   private void assertPreparedProposersCount(final int expectedCount) {
     final OptionalDouble optionalValue =
         metricsSystem
-            .getLabelledGauge(TekuMetricCategory.BEACON, "proposers_data_total")
+            .getLabelledGauge(TekuMetricCategory.BEACON, "proposers_data")
             .getValue("prepared_proposers");
     assertThat(optionalValue).hasValue(expectedCount);
   }
@@ -163,7 +163,7 @@ public class ProposerDataManagerTest {
   private void assertRegisteredValidatorsCount(final int expectedCount) {
     final OptionalDouble optionalValue =
         metricsSystem
-            .getLabelledGauge(TekuMetricCategory.BEACON, "proposers_data_total")
+            .getLabelledGauge(TekuMetricCategory.BEACON, "proposers_data")
             .getValue("registered_validators");
     assertThat(optionalValue).hasValue(expectedCount);
   }

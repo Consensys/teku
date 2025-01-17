@@ -104,7 +104,7 @@ class ExecutionLayerManagerImplTest {
   @Test
   public void builderShouldBeAvailableWhenBuilderIsOperatingNormally() {
     final SafeFuture<Response<Void>> builderClientResponse =
-        SafeFuture.completedFuture(Response.withNullPayload());
+        SafeFuture.completedFuture(Response.fromNullPayload());
 
     updateBuilderStatus(builderClientResponse);
 
@@ -115,7 +115,7 @@ class ExecutionLayerManagerImplTest {
   @Test
   public void builderShouldNotBeAvailableWhenBuilderIsNotOperatingNormally() {
     final SafeFuture<Response<Void>> builderClientResponse =
-        SafeFuture.completedFuture(Response.withErrorMessage("oops"));
+        SafeFuture.completedFuture(Response.fromErrorMessage("oops"));
 
     updateBuilderStatus(builderClientResponse);
 
@@ -140,21 +140,21 @@ class ExecutionLayerManagerImplTest {
     assertThat(executionLayerManager.getExecutionBuilderModule().isBuilderAvailable()).isTrue();
 
     // Given builder status is ok
-    updateBuilderStatus(SafeFuture.completedFuture(Response.withNullPayload()));
+    updateBuilderStatus(SafeFuture.completedFuture(Response.fromNullPayload()));
 
     // Then
     assertThat(executionLayerManager.getExecutionBuilderModule().isBuilderAvailable()).isTrue();
     verifyNoInteractions(eventLogger);
 
     // Given builder status is not ok
-    updateBuilderStatus(SafeFuture.completedFuture(Response.withErrorMessage("oops")));
+    updateBuilderStatus(SafeFuture.completedFuture(Response.fromErrorMessage("oops")));
 
     // Then
     assertThat(executionLayerManager.getExecutionBuilderModule().isBuilderAvailable()).isFalse();
     verify(eventLogger).builderIsNotAvailable("oops");
 
     // Given builder status is back to being ok
-    updateBuilderStatus(SafeFuture.completedFuture(Response.withNullPayload()));
+    updateBuilderStatus(SafeFuture.completedFuture(Response.fromNullPayload()));
 
     // Then
     assertThat(executionLayerManager.getExecutionBuilderModule().isBuilderAvailable()).isTrue();
@@ -692,9 +692,11 @@ class ExecutionLayerManagerImplTest {
     doAnswer(
             __ -> {
               if (prepareEmptyResponse) {
-                return SafeFuture.completedFuture(new Response<>(Optional.empty()));
+                return SafeFuture.completedFuture(
+                    Response.fromPayloadReceivedAsJson(Optional.empty()));
               }
-              return SafeFuture.completedFuture(new Response<>(Optional.of(signedBuilderBid)));
+              return SafeFuture.completedFuture(
+                  Response.fromPayloadReceivedAsJson(Optional.of(signedBuilderBid)));
             })
         .when(builderClient)
         .getHeader(
@@ -753,7 +755,7 @@ class ExecutionLayerManagerImplTest {
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
 
     when(builderClient.getPayload(signedBlindedBeaconBlock))
-        .thenReturn(SafeFuture.completedFuture(new Response<>(payload)));
+        .thenReturn(SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(payload)));
 
     return payload;
   }
@@ -857,13 +859,13 @@ class ExecutionLayerManagerImplTest {
   }
 
   private void setBuilderOffline(final UInt64 slot) {
-    updateBuilderStatus(SafeFuture.completedFuture(Response.withErrorMessage("oops")), slot);
+    updateBuilderStatus(SafeFuture.completedFuture(Response.fromErrorMessage("oops")), slot);
     reset(builderClient);
     assertThat(executionLayerManager.getExecutionBuilderModule().isBuilderAvailable()).isFalse();
   }
 
   private void setBuilderOnline() {
-    updateBuilderStatus(SafeFuture.completedFuture(Response.withNullPayload()), UInt64.ONE);
+    updateBuilderStatus(SafeFuture.completedFuture(Response.fromNullPayload()), UInt64.ONE);
     reset(builderClient);
     assertThat(executionLayerManager.getExecutionBuilderModule().isBuilderAvailable()).isTrue();
   }
@@ -887,9 +889,11 @@ class ExecutionLayerManagerImplTest {
 
   private void verifySourceCounter(final Source source, final FallbackReason reason) {
     final long actualCount =
-        stubMetricsSystem
-            .getCounter(TekuMetricCategory.BEACON, "execution_payload_source_total")
-            .getValue(source.toString(), reason.toString());
+        stubMetricsSystem.getCounterValue(
+            TekuMetricCategory.BEACON,
+            "execution_payload_source_total",
+            source.toString(),
+            reason.toString());
     assertThat(actualCount).isOne();
   }
 }
