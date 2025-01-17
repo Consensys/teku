@@ -558,25 +558,24 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
               countBlock(remoteOrigin);
 
-              if (existingTracker.isRpcFetchTriggered()) {
-                // block has been set for the first time and we previously triggered fetching of
-                // missing blobSidecars. So we may have requested to fetch more sidecars
-                // than the block actually requires. Let's drop them.
-                existingTracker
-                    .getUnusedBlobSidecarsForBlock()
-                    .forEach(
-                        blobIdentifier ->
-                            requiredBlobSidecarDroppedSubscribers.deliver(
-                                RequiredBlobSidecarDroppedSubscriber::onRequiredBlobSidecarDropped,
-                                blobIdentifier));
-
-                // if we attempted to fetch via RPC, we missed the opportunity to complete the
-                // tracker via local EL (local El fetch requires the block to be known)
-                // Let's try now
-                if (!existingTracker.isLocalElFetchTriggered() && !existingTracker.isComplete()) {
-                  fetchMissingContentFromLocalEL(slotAndBlockRoot)
-                      .finish(this::logLocalElBlobsLookupFailure);
-                }
+              if (!existingTracker.isComplete()) {
+                // we missed the opportunity to complete the blob sidecars via local EL and RPC
+                // (since the block is required to be known) Let's try now
+                asyncRunner
+                    .runAsync(
+                        () ->
+                            fetchMissingBlobsFromLocalEL(slotAndBlockRoot)
+                                .handleException(this::logLocalElBlobsLookupFailure)
+                                .thenRun(
+                                    () -> {
+                                      // only run if RPC block fetch has happened
+                                      // (no blobs RPC fetch has occurred)
+                                      if (existingTracker.isRpcBlockFetchTriggered()) {
+                                        fetchMissingBlockOrBlobsFromRPC(slotAndBlockRoot);
+                                      }
+                                    })
+                                .handleException(this::logBlockOrBlobsRPCFailure))
+                    .ifExceptionGetsHereRaiseABug();
               }
             });
 

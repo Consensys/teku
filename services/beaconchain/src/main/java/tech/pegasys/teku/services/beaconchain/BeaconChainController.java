@@ -464,6 +464,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     (blockRoot) -> blockBlobSidecarsTrackersPool.getBlock(blockRoot),
                     (blockRoot, index) ->
                         blockBlobSidecarsTrackersPool.getBlobSidecar(blockRoot, index),
+                    (blockRoot) ->
+                        executionPayloadManager.getValidatedExecutionPayloadEnvelope(blockRoot),
                     storageQueryChannel,
                     storageUpdateChannel,
                     voteUpdateChannel,
@@ -1386,6 +1388,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     executionPayloadManager =
         new ExecutionPayloadManager(
             executionPayloadValidator, forkChoice, recentChainData, executionLayer);
+    eventChannels.subscribe(ReceivedBlockEventsChannel.class, executionPayloadManager);
   }
 
   public void initPayloadAttestationManager() {

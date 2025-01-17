@@ -166,7 +166,8 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   protected void processExecutionRequests(
       final MutableBeaconState state,
       final BeaconBlockBody body,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      throws BlockProcessingException {
     final ExecutionRequests executionRequests =
         body.getOptionalExecutionRequests()
             .orElseThrow(() -> new BlockProcessingException("Execution requests expected"));

@@ -23,8 +23,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadEnvelopeProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleExecutionPayloadEnvelopeProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -44,6 +46,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 public class StorageBackedRecentChainData extends RecentChainData {
   private static final Logger LOG = LogManager.getLogger();
   private final BlockProvider blockProvider;
+  private final ExecutionPayloadEnvelopeProvider executionPayloadEnvelopeProvider;
   private final StateAndBlockSummaryProvider stateProvider;
   private final StorageQueryChannel storageQueryChannel;
   private final StoreConfig storeConfig;
@@ -55,6 +58,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final TimeProvider timeProvider,
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
+      final SingleExecutionPayloadEnvelopeProvider validatedExecutionPayloadEnvelopeProvider,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
@@ -67,8 +71,10 @@ public class StorageBackedRecentChainData extends RecentChainData {
         metricsSystem,
         storeConfig,
         storageQueryChannel::getHotBlocksByRoot,
+        storageQueryChannel::getHotExecutionPayloadEnvelopesByRoot,
         validatedBlockProvider,
         validatedBlobSidecarProvider,
+        validatedExecutionPayloadEnvelopeProvider,
         storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot,
         storageQueryChannel::getEarliestAvailableBlobSidecarSlot,
         storageUpdateChannel,
@@ -80,6 +86,8 @@ public class StorageBackedRecentChainData extends RecentChainData {
     this.storeConfig = storeConfig;
     this.storageQueryChannel = storageQueryChannel;
     this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
+    this.executionPayloadEnvelopeProvider =
+        storageQueryChannel::getHotExecutionPayloadEnvelopesByRoot;
     this.stateProvider = storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot;
   }
 
@@ -90,6 +98,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final TimeProvider timeProvider,
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
+      final SingleExecutionPayloadEnvelopeProvider validatedExecutionPayloadEnvelopeProvider,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
@@ -105,6 +114,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             timeProvider,
             validatedBlockProvider,
             validatedBlobSidecarProvider,
+            validatedExecutionPayloadEnvelopeProvider,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -124,6 +134,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final TimeProvider timeProvider,
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
+      final SingleExecutionPayloadEnvelopeProvider validatedExecutionPayloadEnvelopeProvider,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
@@ -139,6 +150,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             timeProvider,
             validatedBlockProvider,
             validatedBlobSidecarProvider,
+            validatedExecutionPayloadEnvelopeProvider,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -179,6 +191,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
                   .onDiskStoreData(data)
                   .asyncRunner(asyncRunner)
                   .blockProvider(blockProvider)
+                  .executionPayloadEnvelopeProvider(executionPayloadEnvelopeProvider)
                   .stateProvider(stateProvider)
                   .storeConfig(storeConfig)
                   .build();

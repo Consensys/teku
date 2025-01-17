@@ -192,7 +192,7 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
             config, schemaDefinitions, beaconStateAccessors, beaconStateMutators);
 
     // Execution payload processing
-    // EIP7732 TODO: dirty way to leverage Electra operations
+    // EIP-7732 TODO: dirty way to leverage Electra operations
     final BlockProcessorElectra blockProcessorElectra =
         new BlockProcessorElectra(
             config,

@@ -69,6 +69,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -280,6 +281,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final UInt64 epoch, final IntCollection validatorIndices) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
+    }
+    // post ePBS
+    if (!spec.atEpoch(epoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+      return SafeFuture.completedFuture(Optional.empty());
     }
     if (epoch.isGreaterThan(
         combinedChainDataClient

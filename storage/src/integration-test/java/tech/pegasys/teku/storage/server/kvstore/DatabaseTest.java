@@ -56,6 +56,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadEnvelopeProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -1630,19 +1631,20 @@ public class DatabaseTest {
         StoreBuilder.create()
             .metricsSystem(new NoOpMetricsSystem())
             .specProvider(spec)
-            .time(data.time())
-            .anchor(data.anchor())
-            .genesisTime(data.genesisTime())
-            .latestFinalized(data.latestFinalized())
-            .finalizedOptimisticTransitionPayload(data.finalizedOptimisticTransitionPayload())
-            .justifiedCheckpoint(data.justifiedCheckpoint())
-            .bestJustifiedCheckpoint(data.bestJustifiedCheckpoint())
-            .blockInformation(data.blockInformation())
-            .votes(data.votes())
-            // EIP7732 TODO: figure out this
+            .time(data.getTime())
+            .anchor(data.getAnchor())
+            .genesisTime(data.getGenesisTime())
+            .latestFinalized(data.getLatestFinalized())
+            .finalizedOptimisticTransitionPayload(data.getFinalizedOptimisticTransitionPayload())
+            .justifiedCheckpoint(data.getJustifiedCheckpoint())
+            .bestJustifiedCheckpoint(data.getBestJustifiedCheckpoint())
+            .blockInformation(data.getBlockInformation())
+            .votes(data.getVotes())
+            // EIP-7732 TODO: figure out this
             .ptcVote(new HashMap<>())
             .asyncRunner(mock(AsyncRunner.class))
             .blockProvider(mock(BlockProvider.class))
+            .executionPayloadEnvelopeProvider(mock(ExecutionPayloadEnvelopeProvider.class))
             .stateProvider(mock(StateAndBlockSummaryProvider.class))
             .latestCanonicalBlockRoot(Optional.empty())
             .build();

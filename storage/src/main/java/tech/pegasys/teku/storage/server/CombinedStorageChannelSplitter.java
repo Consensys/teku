@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -159,6 +160,13 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
       final SlotAndBlockRoot slotAndBlockRoot) {
     return asyncRunner.runAsync(
         () -> queryDelegate.getBlobSidecarsBySlotAndBlockRoot(slotAndBlockRoot));
+  }
+
+  @Override
+  public SafeFuture<Map<Bytes32, SignedExecutionPayloadEnvelope>>
+      getHotExecutionPayloadEnvelopesByRoot(final Set<Bytes32> blockRoots) {
+    return asyncRunner.runAsync(
+        () -> queryDelegate.getHotExecutionPayloadEnvelopesByRoot(blockRoots));
   }
 
   @Override

@@ -120,7 +120,7 @@ public class BlockBlobSidecarsTracker {
   }
 
   public Stream<BlobIdentifier> getMissingBlobSidecars() {
-    final Optional<Integer> blockCommitmentsCount = getBlockKzgCommitmentsCount();
+    final Optional<Integer> blockCommitmentsCount = getBlobKzgCommitmentsCount();
     checkState(blockCommitmentsCount.isPresent(), "Block must be known to call this method");
 
     return UInt64.range(UInt64.ZERO, UInt64.valueOf(blockCommitmentsCount.get()))

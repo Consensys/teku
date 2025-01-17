@@ -79,6 +79,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   private final UpdatableStore.StoreUpdateHandler updateHandler;
 
   // ePBS
+  Map<Bytes32, TransactionExecutionPayloadEnvelopeData> executionPayloadEnvelopeData =
+      new HashMap<>();
 
   StoreTransaction(
       final Spec spec,
@@ -111,8 +113,23 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
 
   @Override
   public void putExecutionPayloadEnvelopeAndState(
-      final SignedExecutionPayloadEnvelopeAndState executionPayloadEnvelopeAndState) {
-    // EIP-7732 TODO: implement
+      final SignedExecutionPayloadEnvelope executionPayloadEnvelope,
+      final BeaconState state,
+      final BlockCheckpoints blockCheckpoints,
+      final Optional<List<BlobSidecar>> blobSidecars,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
+    executionPayloadEnvelopeData.put(
+        executionPayloadEnvelope.getMessage().getBeaconBlockRoot(),
+        new TransactionExecutionPayloadEnvelopeData(
+            executionPayloadEnvelope, state, blockCheckpoints));
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(
+            state.getSlot(), executionPayloadEnvelope.getMessage().getBeaconBlockRoot());
+    blobSidecars.ifPresent(sidecars -> this.blobSidecars.put(slotAndBlockRoot, sidecars));
+    if (needToUpdateEarliestBlobSidecarSlot(maybeEarliestBlobSidecarSlot)) {
+      this.maybeEarliestBlobSidecarTransactionSlot = maybeEarliestBlobSidecarSlot;
+    }
+    putStateRoot(state.hashTreeRoot(), slotAndBlockRoot);
   }
 
   private boolean needToUpdateEarliestBlobSidecarSlot(
@@ -340,6 +357,12 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public boolean containsExecutionPayloadEnvelope(final Bytes32 blockRoot) {
+    return executionPayloadEnvelopeData.containsKey(blockRoot)
+        || store.containsExecutionPayloadEnvelope(blockRoot);
+  }
+
+  @Override
   public Collection<Bytes32> getOrderedBlockRoots() {
     if (this.blockData.isEmpty()) {
       return store.getOrderedBlockRoots();
@@ -378,11 +401,15 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     return store.retrieveSignedBlock(blockRoot);
   }
 
-  // EIP7732 TODO: implement
   @Override
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveExecutionPayloadEnvelope(
       final Bytes32 blockRoot) {
-    return null;
+    if (executionPayloadEnvelopeData.containsKey(blockRoot)) {
+      return SafeFuture.completedFuture(
+          Optional.of(executionPayloadEnvelopeData.get(blockRoot))
+              .map(SignedExecutionPayloadEnvelopeAndState::getExecutionPayloadEnvelope));
+    }
+    return store.retrieveExecutionPayloadEnvelope(blockRoot);
   }
 
   @Override

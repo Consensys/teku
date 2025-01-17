@@ -45,6 +45,7 @@ import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
 import tech.pegasys.teku.dataproviders.generators.StateRegenerationBaseSelector;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadEnvelopeProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -102,6 +103,7 @@ class Store extends CacheableStore {
   private final Spec spec;
   private final StateAndBlockSummaryProvider stateProvider;
   private final BlockProvider blockProvider;
+  private final ExecutionPayloadEnvelopeProvider executionPayloadEnvelopeProvider;
   private final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
   private final ForkChoiceStrategy forkChoiceStrategy;
 
@@ -132,6 +134,7 @@ class Store extends CacheableStore {
       final Spec spec,
       final int hotStatePersistenceFrequencyInEpochs,
       final BlockProvider blockProvider,
+      final ExecutionPayloadEnvelopeProvider executionPayloadEnvelopeProvider,
       final StateAndBlockSummaryProvider stateProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final CachingTaskQueue<Bytes32, StateAndBlockSummary> states,
@@ -197,6 +200,8 @@ class Store extends CacheableStore {
                         .orElseGet(Collections::emptyMap)),
             createBlockProviderFromMapWhileLocked(this.blocks),
             blockProvider);
+    // EIP-7732 TODO: implement as above
+    this.executionPayloadEnvelopeProvider = executionPayloadEnvelopeProvider;
 
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
 
@@ -227,6 +232,7 @@ class Store extends CacheableStore {
       final MetricsSystem metricsSystem,
       final Spec spec,
       final BlockProvider blockProvider,
+      final ExecutionPayloadEnvelopeProvider executionPayloadEnvelopeProvider,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final Optional<Checkpoint> initialCheckpoint,
@@ -271,6 +277,7 @@ class Store extends CacheableStore {
         spec,
         config.getHotStatePersistenceFrequencyInEpochs(),
         blockProvider,
+        executionPayloadEnvelopeProvider,
         stateAndBlockProvider,
         earliestBlobSidecarSlotProvider,
         stateTaskQueue,
@@ -296,6 +303,7 @@ class Store extends CacheableStore {
       final MetricsSystem metricsSystem,
       final Spec spec,
       final BlockProvider blockProvider,
+      final ExecutionPayloadEnvelopeProvider executionPayloadEnvelopeProvider,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final Optional<Checkpoint> initialCheckpoint,
@@ -328,6 +336,7 @@ class Store extends CacheableStore {
         metricsSystem,
         spec,
         blockProvider,
+        executionPayloadEnvelopeProvider,
         stateAndBlockProvider,
         earliestBlobSidecarSlotProvider,
         initialCheckpoint,
@@ -575,6 +584,16 @@ class Store extends CacheableStore {
   }
 
   @Override
+  public boolean containsExecutionPayloadEnvelope(final Bytes32 blockRoot) {
+    readLock.lock();
+    try {
+      return forkChoiceStrategy.executionBlockHash(blockRoot).isPresent();
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
   public Collection<Bytes32> getOrderedBlockRoots() {
     readLock.lock();
     try {
@@ -673,7 +692,7 @@ class Store extends CacheableStore {
         headUnrealizedJustifiedCheckpoint.equals(parentUnrealizedJustifiedCheckpoint));
   }
 
-  // EIP7732 TODO: Turn 256 into constant PAYLOAD_TIMELY_THRESHOLD
+  // EIP-7732 TODO: Turn 256 into constant PAYLOAD_TIMELY_THRESHOLD
   @Override
   public boolean isPayloadPresent(final Bytes32 root) {
     return ptcVote.getOrDefault(root, Collections.emptyList()).stream()
@@ -699,11 +718,13 @@ class Store extends CacheableStore {
     return blockProvider.getBlock(blockRoot);
   }
 
-  // EIP7732 TODO: implement
   @Override
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveExecutionPayloadEnvelope(
       final Bytes32 blockRoot) {
-    return null;
+    if (!containsExecutionPayloadEnvelope(blockRoot)) {
+      return EmptyStoreResults.EMPTY_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
+    }
+    return executionPayloadEnvelopeProvider.getExecutionPayloadEnvelope(blockRoot);
   }
 
   @Override

@@ -88,7 +88,7 @@ public class BlockProductionDuty implements Duty {
     return forkProvider.getForkInfo(slot).thenCompose(this::produceBlock);
   }
 
-  // EIP7732 TODO: "naive" ePBS block production, need to think about a proper builder flow duty
+  // EIP-7732 TODO: "naive" ePBS block production, need to think about a proper builder flow duty
   // abstraction
   private SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {
     final SpecMilestone milestone = spec.atSlot(slot).getMilestone();
@@ -210,7 +210,7 @@ public class BlockProductionDuty implements Duty {
     return validatorApiChannel
         .sendSignedBlock(
             signedBlockContainer,
-            // EIP7732 TODO: need to make sure block is imported for ePBS (at least for the "naive"
+            // EIP-7732 TODO: need to make sure block is imported for ePBS (at least for the "naive"
             // flow)
             milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP7732)
                 ? BroadcastValidationLevel.CONSENSUS

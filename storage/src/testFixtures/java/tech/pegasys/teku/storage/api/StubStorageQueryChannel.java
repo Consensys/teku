@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
@@ -180,5 +181,11 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   public SafeFuture<List<BlobSidecar>> getBlobSidecarsBySlotAndBlockRoot(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return SafeFuture.completedFuture(Collections.emptyList());
+  }
+
+  @Override
+  public SafeFuture<Map<Bytes32, SignedExecutionPayloadEnvelope>>
+      getHotExecutionPayloadEnvelopesByRoot(final Set<Bytes32> blockRoots) {
+    return SafeFuture.completedFuture(Collections.emptyMap());
   }
 }

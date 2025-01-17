@@ -28,6 +28,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadEnvelopeProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -197,6 +198,7 @@ public abstract class AbstractStoreTest {
         .metricsSystem(new StubMetricsSystem())
         .specProvider(spec)
         .blockProvider(blockProviderFromChainBuilder())
+        .executionPayloadEnvelopeProvider(ExecutionPayloadEnvelopeProvider.NOOP)
         .earliestBlobSidecarSlotProvider(earliestBlobSidecarSlotProvider)
         .stateProvider(StateAndBlockSummaryProvider.NOOP)
         .anchor(Optional.empty())

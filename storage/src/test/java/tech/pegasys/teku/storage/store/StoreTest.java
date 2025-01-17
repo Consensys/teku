@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadEnvelopeProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -70,6 +71,7 @@ class StoreTest extends AbstractStoreTest {
                     new StubMetricsSystem(),
                     spec,
                     blockProviderFromChainBuilder(),
+                    ExecutionPayloadEnvelopeProvider.NOOP,
                     StateAndBlockSummaryProvider.NOOP,
                     EarliestBlobSidecarSlotProvider.NOOP,
                     Optional.empty(),

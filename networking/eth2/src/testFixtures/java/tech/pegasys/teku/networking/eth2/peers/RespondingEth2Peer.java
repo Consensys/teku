@@ -263,7 +263,7 @@ public class RespondingEth2Peer implements Eth2Peer {
   public SafeFuture<Void> requestExecutionPayloadEnvelopesByRoot(
       final List<Bytes32> blockRoots,
       final RpcResponseListener<SignedExecutionPayloadEnvelope> listener) {
-    throw new UnsupportedOperationException("EIP7732 TODO");
+    throw new UnsupportedOperationException("EIP-7732 TODO");
   }
 
   @Override
@@ -296,7 +296,7 @@ public class RespondingEth2Peer implements Eth2Peer {
   @Override
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> requestExecutionPayloadEnvelopeByRoot(
       final Bytes32 blockRoot) {
-    throw new UnsupportedOperationException("EIP7732 TODO");
+    throw new UnsupportedOperationException("EIP-7732 TODO");
   }
 
   private <T> SafeFuture<T> createPendingBlockRequest(

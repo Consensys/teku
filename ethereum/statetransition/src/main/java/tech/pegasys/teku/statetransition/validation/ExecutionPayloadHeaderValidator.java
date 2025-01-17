@@ -125,7 +125,7 @@ public class ExecutionPayloadHeaderValidator
                   .getValue()
                   .plus(spec.atSlot(header.getSlot()).getConfig().getEjectionBalance())
                   .isGreaterThan(state.getBalances().get(builderIndex.intValue()).get())) {
-                return InternalValidationResult.IGNORE;
+                return InternalValidationResult.ignore("insufficient builder's balance");
               }
               /*
                * [IGNORE] header.parent_block_hash is the block hash of a known execution payload in fork choice.
@@ -134,7 +134,7 @@ public class ExecutionPayloadHeaderValidator
                   recentChainData.getExecutionBlockHashForBlockRoot(header.getParentBlockRoot());
               if (parentBlockHash.isEmpty()
                   || !header.getParentBlockHash().equals(parentBlockHash.get())) {
-                return InternalValidationResult.IGNORE;
+                return InternalValidationResult.ignore("parent block hash is unknown");
               }
               /*
                * [IGNORE] header.parent_block_root is the hash tree root of a known beacon block in fork choice.
@@ -144,7 +144,7 @@ public class ExecutionPayloadHeaderValidator
                       .getForkChoiceStrategy()
                       .map(forkChoice -> forkChoice.contains(header.getParentBlockRoot()));
               if (parentBlockRootIsKnown.isEmpty() || !parentBlockRootIsKnown.get()) {
-                return InternalValidationResult.IGNORE;
+                return InternalValidationResult.ignore("parent block root is unknown");
               }
               /*
                * [IGNORE] header.slot is the current slot or the next slot.
@@ -153,7 +153,7 @@ public class ExecutionPayloadHeaderValidator
               if (currentSlot.isEmpty()
                   || (!header.getSlot().equals(currentSlot.get())
                       && !header.getSlot().equals(currentSlot.get().increment()))) {
-                return InternalValidationResult.IGNORE;
+                return InternalValidationResult.ignore("header slot is current or next slot");
               }
               /*
                * [REJECT] The builder signature, signed_execution_payload_header_envelope.signature, is valid with respect to the header_envelope.builder_index.

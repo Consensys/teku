@@ -30,7 +30,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedExecutionPayloadEnvelopeAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -170,6 +169,12 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     return blocks.containsKey(blockRoot);
   }
 
+  // EIP-7732 TODO: implement
+  @Override
+  public boolean containsExecutionPayloadEnvelope(final Bytes32 blockRoot) {
+    return false;
+  }
+
   @Override
   public List<Bytes32> getOrderedBlockRoots() {
     return blocks.values().stream()
@@ -207,11 +212,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     return SafeFuture.completedFuture(getBlockIfAvailable(blockRoot));
   }
 
-  // EIP7732 TODO: implement
+  // EIP-7732 TODO: implement
   @Override
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveExecutionPayloadEnvelope(
       final Bytes32 blockRoot) {
-    return null;
+    return SafeFuture.completedFuture(Optional.empty());
   }
 
   @Override
@@ -312,7 +317,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
 
   @Override
   public void putExecutionPayloadEnvelopeAndState(
-      final SignedExecutionPayloadEnvelopeAndState executionPayloadEnvelopeAndState) {
+      final SignedExecutionPayloadEnvelope executionPayloadEnvelope,
+      final BeaconState state,
+      final BlockCheckpoints blockCheckpoints,
+      final Optional<List<BlobSidecar>> blobSidecars,
+      final Optional<UInt64> earliestBlobSidecarSlot) {
     // EIP-7732 TODO: implement
   }
 

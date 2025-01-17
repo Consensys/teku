@@ -27,8 +27,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadEnvelopeProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleExecutionPayloadEnvelopeProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -85,6 +87,7 @@ public class StorageBackedRecentChainDataTest {
             new SystemTimeProvider(),
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
+            SingleExecutionPayloadEnvelopeProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -114,6 +117,7 @@ public class StorageBackedRecentChainDataTest {
             .metricsSystem(new StubMetricsSystem())
             .specProvider(spec)
             .blockProvider(BlockProvider.NOOP)
+            .executionPayloadEnvelopeProvider(ExecutionPayloadEnvelopeProvider.NOOP)
             .stateProvider(StateAndBlockSummaryProvider.NOOP)
             .storeConfig(storeConfig)
             .build();
@@ -136,6 +140,7 @@ public class StorageBackedRecentChainDataTest {
             new SystemTimeProvider(),
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
+            SingleExecutionPayloadEnvelopeProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -165,6 +170,7 @@ public class StorageBackedRecentChainDataTest {
             .metricsSystem(new StubMetricsSystem())
             .specProvider(spec)
             .blockProvider(BlockProvider.NOOP)
+            .executionPayloadEnvelopeProvider(ExecutionPayloadEnvelopeProvider.NOOP)
             .stateProvider(StateAndBlockSummaryProvider.NOOP)
             .storeConfig(storeConfig)
             .build();
@@ -190,6 +196,7 @@ public class StorageBackedRecentChainDataTest {
             new SystemTimeProvider(),
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
+            SingleExecutionPayloadEnvelopeProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -217,6 +224,7 @@ public class StorageBackedRecentChainDataTest {
             .metricsSystem(new StubMetricsSystem())
             .specProvider(spec)
             .blockProvider(BlockProvider.NOOP)
+            .executionPayloadEnvelopeProvider(ExecutionPayloadEnvelopeProvider.NOOP)
             .stateProvider(StateAndBlockSummaryProvider.NOOP);
     storeRequestFuture.complete(Optional.of(storeData));
     assertThat(client).isCompleted();
@@ -240,6 +248,7 @@ public class StorageBackedRecentChainDataTest {
             new SystemTimeProvider(),
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
+            SingleExecutionPayloadEnvelopeProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,

@@ -31,8 +31,10 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.ExecutionPayloadEnvelopeProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleExecutionPayloadEnvelopeProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -83,6 +85,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private static final Logger LOG = LogManager.getLogger();
 
   private final BlockProvider blockProvider;
+  private final ExecutionPayloadEnvelopeProvider executionPayloadEnvelopeProvider;
   private final StateAndBlockSummaryProvider stateProvider;
   private final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
@@ -108,6 +111,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   private final SingleBlockProvider validatedBlockProvider;
   private final SingleBlobSidecarProvider validatedBlobSidecarProvider;
+  private final SingleExecutionPayloadEnvelopeProvider validatedExecutionPayloadEnvelopeProvider;
 
   private final LateBlockReorgLogic lateBlockReorgLogic;
   private final PayloadTimelinessProvider payloadTimelinessProvider;
@@ -119,8 +123,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
       final BlockProvider blockProvider,
+      final ExecutionPayloadEnvelopeProvider executionPayloadEnvelopeProvider,
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
+      final SingleExecutionPayloadEnvelopeProvider validatedExecutionPayloadEnvelopeProvider,
       final StateAndBlockSummaryProvider stateProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final StorageUpdateChannel storageUpdateChannel,
@@ -133,9 +139,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.metricsSystem = metricsSystem;
     this.storeConfig = storeConfig;
     this.blockProvider = blockProvider;
+    this.executionPayloadEnvelopeProvider = executionPayloadEnvelopeProvider;
     this.stateProvider = stateProvider;
     this.validatedBlockProvider = validatedBlockProvider;
     this.validatedBlobSidecarProvider = validatedBlobSidecarProvider;
+    this.validatedExecutionPayloadEnvelopeProvider = validatedExecutionPayloadEnvelopeProvider;
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
     this.voteUpdateChannel = voteUpdateChannel;
     this.chainHeadChannel = chainHeadChannel;
@@ -173,6 +181,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
             .metricsSystem(metricsSystem)
             .specProvider(spec)
             .blockProvider(blockProvider)
+            .executionPayloadEnvelopeProvider(executionPayloadEnvelopeProvider)
             .stateProvider(stateProvider)
             .earliestBlobSidecarSlotProvider(earliestBlobSidecarSlotProvider)
             .storeConfig(storeConfig)
@@ -587,10 +596,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return store.retrieveExecutionPayloadEnvelope(blockRoot);
   }
 
-  // EIP7732 TODO: implement
   public Optional<SignedExecutionPayloadEnvelope>
       getRecentlyValidatedExecutionPayloadEnvelopeByRoot(final Bytes32 blockRoot) {
-    return Optional.empty();
+    return validatedExecutionPayloadEnvelopeProvider.getExecutionPayloadEnvelope(blockRoot);
   }
 
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {

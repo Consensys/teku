@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
@@ -69,6 +70,9 @@ public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<List<BlobSidecar>> getBlobSidecarsBySlotAndBlockRoot(
       SlotAndBlockRoot slotAndBlockRoot);
+
+  SafeFuture<Map<Bytes32, SignedExecutionPayloadEnvelope>> getHotExecutionPayloadEnvelopesByRoot(
+      Set<Bytes32> blockRoots);
 
   SafeFuture<Optional<SlotAndBlockRoot>> getSlotAndBlockRootByStateRoot(Bytes32 stateRoot);
 

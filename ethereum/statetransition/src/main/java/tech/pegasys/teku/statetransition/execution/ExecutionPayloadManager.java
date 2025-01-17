@@ -13,20 +13,28 @@
 
 package tech.pegasys.teku.statetransition.execution;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class ExecutionPayloadManager {
+public class ExecutionPayloadManager implements ReceivedBlockEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
+
+  private final Map<Bytes32, SignedExecutionPayloadEnvelope> validatedExecutionPayloadEnvelopes =
+      new ConcurrentHashMap<>();
 
   private final ExecutionPayloadValidator executionPayloadValidator;
   private final ForkChoice forkChoice;
@@ -59,6 +67,9 @@ public class ExecutionPayloadManager {
                   timestamp ->
                       recentChainData.onExecutionPayload(signedExecutionPayloadEnvelope, timestamp),
                   () -> LOG.error("arrivalTimestamp tracking must be enabled to support Eip7732"));
+              validatedExecutionPayloadEnvelopes.put(
+                  signedExecutionPayloadEnvelope.getMessage().getBeaconBlockRoot(),
+                  signedExecutionPayloadEnvelope);
               forkChoice
                   .onExecutionPayload(signedExecutionPayloadEnvelope, executionLayerChannel)
                   .finish(err -> LOG.error("Failed to process received execution payload.", err));
@@ -67,5 +78,18 @@ public class ExecutionPayloadManager {
           }
         });
     return validationResult;
+  }
+
+  public Optional<SignedExecutionPayloadEnvelope> getValidatedExecutionPayloadEnvelope(
+      final Bytes32 blockRoot) {
+    return Optional.ofNullable(validatedExecutionPayloadEnvelopes.get(blockRoot));
+  }
+
+  @Override
+  public void onBlockValidated(final SignedBeaconBlock block) {}
+
+  @Override
+  public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
+    validatedExecutionPayloadEnvelopes.remove(block.getRoot());
   }
 }

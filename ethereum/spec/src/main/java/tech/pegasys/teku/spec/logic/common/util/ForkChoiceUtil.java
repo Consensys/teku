@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodyEip7732;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ChildNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -431,6 +432,40 @@ public class ForkChoiceUtil {
     // Add new block to store
     store.putBlockAndState(
         signedBlock, postState, blockCheckpoints, blobSidecars, earliestBlobSidecarsSlot);
+  }
+
+  public void applyExecutionPayloadToStore(
+      final MutableStore store,
+      final UInt64 slot,
+      final SignedExecutionPayloadEnvelope executionPayloadEnvelope,
+      final BeaconState postState,
+      final boolean isBlockOptimistic,
+      final Optional<List<BlobSidecar>> blobSidecars,
+      final Optional<UInt64> earliestBlobSidecarsSlot) {
+    BlockCheckpoints blockCheckpoints = epochProcessor.calculateBlockCheckpoints(postState);
+
+    // If executionPayloadEnvelope is from a prior epoch, pull up the post-state to next epoch to
+    // realize new finality
+    // info
+    if (miscHelpers
+        .computeEpochAtSlot(slot)
+        .isLessThan(miscHelpers.computeEpochAtSlot(getCurrentSlot(store)))) {
+      blockCheckpoints = blockCheckpoints.realizeNextEpoch();
+    }
+
+    updateCheckpoints(
+        store,
+        blockCheckpoints.getJustifiedCheckpoint(),
+        blockCheckpoints.getFinalizedCheckpoint(),
+        isBlockOptimistic);
+
+    // Add new execution payload to store
+    store.putExecutionPayloadEnvelopeAndState(
+        executionPayloadEnvelope,
+        postState,
+        blockCheckpoints,
+        blobSidecars,
+        earliestBlobSidecarsSlot);
   }
 
   private UInt64 getFinalizedCheckpointStartSlot(final ReadOnlyStore store) {

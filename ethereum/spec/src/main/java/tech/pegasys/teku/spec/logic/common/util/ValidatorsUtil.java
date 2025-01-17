@@ -26,6 +26,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.constants.ValidatorConstants;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -134,14 +135,13 @@ public class ValidatorsUtil {
 
     final int slotsPerEpoch = specConfig.getSlotsPerEpoch();
     final int committeeCountPerSlot = getPtCommitteesPerSlot(state, epoch).intValue();
-    final BeaconStateAccessorsEip7732 beaconStateAccessorsEip7732 =
-        BeaconStateAccessorsEip7732.required(beaconStateAccessors);
 
     final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
     for (int slotOffset = 0; slotOffset < slotsPerEpoch; slotOffset++) {
       final UInt64 slot = startSlot.plus(slotOffset);
       for (int i = 0; i < committeeCountPerSlot; i++) {
-        final IntList committee = beaconStateAccessorsEip7732.getPtc(state, slot);
+        final IntList committee =
+            BeaconStateAccessorsEip7732.required(beaconStateAccessors).getPtc(state, slot);
         committee.forEach(j -> assignmentMap.put(j, slot));
       }
     }
@@ -152,7 +152,7 @@ public class ValidatorsUtil {
     return MathHelpers.bitFloor(
         BeaconStateAccessorsEip7732.required(beaconStateAccessors)
             .getCommitteeCountPerSlot(state, epoch)
-            .min(specConfig.toVersionEip7732().orElseThrow().getPtcSize()));
+            .min(SpecConfigEip7732.required(specConfig).getPtcSize()));
   }
 
   /**
