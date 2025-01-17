@@ -81,9 +81,7 @@ public class TerminalPowBlockMonitor {
 
     final boolean isMergeTransitionComplete =
         isMergeTransitionComplete(recentChainData.getChainHead());
-    if (!isMergeTransitionComplete
-        && spec.isMilestoneSupported(SpecMilestone.BELLATRIX)
-        && specConfigBellatrix.getTerminalBlockHash().isZero()) {
+    if (!isMergeTransitionComplete && specConfigBellatrix.getTerminalBlockHash().isZero()) {
       throw new InvalidConfigurationException(
           "Bellatrix transition by terminal total difficulty is no more supported");
     }
