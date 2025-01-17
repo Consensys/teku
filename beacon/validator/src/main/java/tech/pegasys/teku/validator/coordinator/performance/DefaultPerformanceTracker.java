@@ -307,7 +307,8 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     // data hash to inclusion slot to aggregation bitlist
     final Map<Bytes32, NavigableMap<UInt64, AttestationBitsAggregator>>
         slotAndBitlistsByAttestationDataHash = new HashMap<>();
-    for (final Map.Entry<UInt64, List<Attestation>> entry : attestationsIncludedOnChain.entrySet()) {
+    for (final Map.Entry<UInt64, List<Attestation>> entry :
+        attestationsIncludedOnChain.entrySet()) {
       for (final Attestation attestation : entry.getValue()) {
         final Optional<Int2IntMap> committeesSize = getCommitteesSize(attestation, state);
         final Bytes32 attestationDataHash = attestation.getData().hashTreeRoot();
@@ -373,11 +374,12 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
             analyzedEpoch, validatorTracker.getNumberOfValidatorsForEpoch(analyzedEpoch));
   }
 
-  private Optional<Int2IntMap> getCommitteesSize(final Attestation attestation, final BeaconState state) {
-    if(!attestation.requiresCommitteeBits()) {
+  private Optional<Int2IntMap> getCommitteesSize(
+      final Attestation attestation, final BeaconState state) {
+    if (!attestation.requiresCommitteeBits()) {
       return Optional.empty();
     }
-      return Optional.of(spec.getBeaconCommitteesSize(state, attestation.getData().getSlot()));
+    return Optional.of(spec.getBeaconCommitteesSize(state, attestation.getData().getSlot()));
   }
 
   private SafeFuture<Set<BeaconBlock>> getBlocksInEpochs(
