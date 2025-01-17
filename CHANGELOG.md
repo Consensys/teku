@@ -33,6 +33,7 @@
 - Remove delay when fetching blobs from the local EL on block arrival
 - New validator metric `validator_next_attestation_slot` to highlight the next slot that a validator is expected to publish an attestation [#8795](https://github.com/Consensys/teku/issues/8795)
 - Support for SSZ format in builder API (mev-boost)
+- Added the expected gas limit to the 'not honouring the validator gas limit preference' warning message.
 - Implemented the ability to have fork based ascii art.
 
 ### Bug Fixes
