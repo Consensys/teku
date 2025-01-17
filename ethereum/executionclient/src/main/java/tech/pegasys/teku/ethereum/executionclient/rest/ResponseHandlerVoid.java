@@ -31,9 +31,7 @@ public class ResponseHandlerVoid extends AbstractResponseHandler {
     if (handleResponseError(request, response, futureResponse)) {
       return;
     }
-    if (response.body() != null) {
-      response.body().close();
-    }
+    response.close();
     futureResponse.complete(Response.fromNullPayload());
   }
 
