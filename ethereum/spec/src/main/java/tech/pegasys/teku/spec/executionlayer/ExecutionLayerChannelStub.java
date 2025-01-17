@@ -567,9 +567,12 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final Bytes32 configTerminalBlockHash = specConfigBellatrix.getTerminalBlockHash();
 
     LOG.info("Preparing transition via TBH: {}", configTerminalBlockHash);
-    terminalBlockParent = new PowBlock(TERMINAL_BLOCK_PARENT_HASH, Bytes32.ZERO, UInt64.ZERO);
-    terminalBlock =
-        new PowBlock(configTerminalBlockHash, TERMINAL_BLOCK_PARENT_HASH, bellatrixActivationTime);
+    this.transitionTime = bellatrixActivationTime;
+    this.terminalBlockHash = configTerminalBlockHash;
+
+    this.terminalBlockParent = new PowBlock(TERMINAL_BLOCK_PARENT_HASH, Bytes32.ZERO, UInt64.ZERO);
+    this.terminalBlock =
+        new PowBlock(terminalBlockHash, TERMINAL_BLOCK_PARENT_HASH, transitionTime);
   }
 
   private HeadAndAttributes getCachedHeadAndAttributes(
