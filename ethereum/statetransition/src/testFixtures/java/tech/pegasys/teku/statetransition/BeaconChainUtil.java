@@ -205,7 +205,7 @@ public class BeaconChainUtil {
                 block,
                 Optional.empty(),
                 BlockBroadcastValidator.NOOP,
-                new ExecutionLayerChannelStub(spec, false, Optional.empty()))
+                new ExecutionLayerChannelStub(spec, false))
             .join();
     if (!importResult.isSuccessful()) {
       throw new IllegalStateException(

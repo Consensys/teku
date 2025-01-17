@@ -191,7 +191,7 @@ public class BlockManagerTest {
             forkChoiceNotifier,
             transitionBlockValidator,
             metricsSystem);
-    this.executionLayer = spy(new ExecutionLayerChannelStub(spec, false, Optional.empty()));
+    this.executionLayer = spy(new ExecutionLayerChannelStub(spec, false));
     this.blockImporter =
         new BlockImporter(
             asyncRunner,

@@ -291,7 +291,7 @@ public class ForkChoiceIntegrationTest {
                 block,
                 Optional.empty(),
                 BlockBroadcastValidator.NOOP,
-                new ExecutionLayerChannelStub(SPEC, false, Optional.empty()))
+                new ExecutionLayerChannelStub(SPEC, false))
             .join();
     return blockImportResult.isSuccessful();
   }

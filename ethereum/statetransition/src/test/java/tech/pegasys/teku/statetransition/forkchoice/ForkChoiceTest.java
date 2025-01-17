@@ -153,7 +153,7 @@ class ForkChoiceTest {
     this.chainBuilder = storageSystem.chainBuilder();
     this.genesis = chainBuilder.generateGenesis();
     this.recentChainData = storageSystem.recentChainData();
-    this.executionLayer = new ExecutionLayerChannelStub(spec, false, Optional.empty());
+    this.executionLayer = new ExecutionLayerChannelStub(spec, false);
     this.forkChoice =
         new ForkChoice(
             spec,

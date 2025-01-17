@@ -100,7 +100,6 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   // transition emulation
   private static final Bytes32 TERMINAL_BLOCK_PARENT_HASH = Bytes32.ZERO;
   private final boolean transitionEmulationEnabled;
-  private final Bytes32 terminalBlockHashInTTDMode;
   private boolean bellatrixActivationDetected = false;
   private Bytes32 terminalBlockHash;
   private PowBlock terminalBlockParent;
@@ -117,16 +116,11 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private boolean online = true;
 
   public ExecutionLayerChannelStub(
-      final Spec spec,
-      final TimeProvider timeProvider,
-      final boolean enableTransitionEmulation,
-      final Optional<Bytes32> terminalBlockHashInTTDMode) {
+      final Spec spec, final TimeProvider timeProvider, final boolean enableTransitionEmulation) {
     this.payloadIdToHeadAndAttrsCache = LRUCache.create(10);
     this.spec = spec;
     this.timeProvider = timeProvider;
     this.transitionEmulationEnabled = enableTransitionEmulation;
-    this.terminalBlockHashInTTDMode =
-        terminalBlockHashInTTDMode.orElse(Bytes32.fromHexStringLenient("0x01"));
     final KZG kzg;
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       // trusted setup loading will be handled by the BeaconChainController
@@ -137,11 +131,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     this.blobsUtil = new BlobsUtil(spec, kzg);
   }
 
-  public ExecutionLayerChannelStub(
-      final Spec spec,
-      final boolean enableTransitionEmulation,
-      final Optional<Bytes32> terminalBlockHashInTTDMode) {
-    this(spec, SYSTEM_TIME_PROVIDER, enableTransitionEmulation, terminalBlockHashInTTDMode);
+  public ExecutionLayerChannelStub(final Spec spec, final boolean enableTransitionEmulation) {
+    this(spec, SYSTEM_TIME_PROVIDER, enableTransitionEmulation);
   }
 
   public void addPowBlock(final PowBlock block) {
@@ -574,28 +565,11 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
     LOG.info("Preparing transition blocks using spec");
     final Bytes32 configTerminalBlockHash = specConfigBellatrix.getTerminalBlockHash();
-    final UInt256 terminalTotalDifficulty = specConfigBellatrix.getTerminalTotalDifficulty();
 
-    if (configTerminalBlockHash.isZero()) {
-      // TTD emulation
-      LOG.info("Transition via TTD: {}", terminalTotalDifficulty);
-
-      transitionTime = bellatrixActivationTime.plus(specConfigBellatrix.getSecondsPerSlot() - 1);
-
-      terminalBlockHash = terminalBlockHashInTTDMode;
-
-    } else {
-      // TBH emulation
-      LOG.info("Preparing transition via TBH: {}", configTerminalBlockHash);
-
-      // transition time is not relevant, just wait for the getPowBlock asking for the transition
-      // block
-      transitionTime = bellatrixActivationTime;
-      terminalBlockHash = configTerminalBlockHash;
-    }
-
+    LOG.info("Preparing transition via TBH: {}", configTerminalBlockHash);
     terminalBlockParent = new PowBlock(TERMINAL_BLOCK_PARENT_HASH, Bytes32.ZERO, UInt64.ZERO);
-    terminalBlock = new PowBlock(terminalBlockHash, TERMINAL_BLOCK_PARENT_HASH, transitionTime);
+    terminalBlock =
+        new PowBlock(configTerminalBlockHash, TERMINAL_BLOCK_PARENT_HASH, bellatrixActivationTime);
   }
 
   private HeadAndAttributes getCachedHeadAndAttributes(

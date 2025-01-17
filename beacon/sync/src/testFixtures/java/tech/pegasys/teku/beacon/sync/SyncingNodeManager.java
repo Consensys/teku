@@ -154,7 +154,7 @@ public class SyncingNodeManager {
             recentChainData,
             forkChoice,
             WeakSubjectivityFactory.lenientValidator(),
-            new ExecutionLayerChannelStub(spec, false, Optional.empty()));
+            new ExecutionLayerChannelStub(spec, false));
 
     final BlockManager blockManager =
         new BlockManager(

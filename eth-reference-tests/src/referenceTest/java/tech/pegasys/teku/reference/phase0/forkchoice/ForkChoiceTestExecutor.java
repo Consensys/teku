@@ -139,8 +139,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             true,
             DebugDataDumper.NOOP,
             storageSystem.getMetricsSystem());
-    final ExecutionLayerChannelStub executionLayer =
-        new ExecutionLayerChannelStub(spec, false, Optional.empty());
+    final ExecutionLayerChannelStub executionLayer = new ExecutionLayerChannelStub(spec, false);
 
     try {
       runSteps(
