@@ -251,7 +251,7 @@ public class EventLogger {
     } else {
       info(
           String.format(
-              "Milestone   *** Epoch: %s, Activating network upgrade: %s\n%s\n",
+              "Milestone   *** Epoch: %s, Activating network upgrade: %s\n%s",
               nodeEpoch, upgradeName, banner),
           Color.GREEN);
     }
