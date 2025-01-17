@@ -269,7 +269,7 @@ class LateBlockReorgLogicTest {
   @MethodSource("isMissingDataTests")
   void isMissingData(
       final Optional<SignedBeaconBlock> maybeBlock,
-      Optional<UInt64> maybeCurrentSlot,
+      final Optional<UInt64> maybeCurrentSlot,
       final boolean expectedResult) {
     assertThat(reorgLogicInstrumented.isMissingData(maybeBlock, maybeCurrentSlot))
         .isEqualTo(expectedResult);
@@ -521,7 +521,9 @@ class LateBlockReorgLogicTest {
 
   static class LateBlockReorgLogicInstrumented extends LateBlockReorgLogic {
     public LateBlockReorgLogicInstrumented(
-        Spec spec, RecentChainData recentChainData, Supplier<TimeProvider> timeProviderSupplier) {
+        final Spec spec,
+        final RecentChainData recentChainData,
+        final Supplier<TimeProvider> timeProviderSupplier) {
       super(spec, recentChainData, timeProviderSupplier);
     }
 

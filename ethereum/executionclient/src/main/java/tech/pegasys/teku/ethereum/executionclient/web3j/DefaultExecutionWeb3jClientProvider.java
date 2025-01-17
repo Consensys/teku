@@ -23,6 +23,11 @@ import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class DefaultExecutionWeb3jClientProvider implements ExecutionWeb3jClientProvider {
+  private static final String[] NON_CRITICAL_METHODS =
+      new String[] {
+        "engine_exchangeCapabilities", "engine_getClientVersionV1", "engine_getBlobsV1"
+      };
+
   private final String eeEndpoint;
   private final Duration timeout;
   private final Optional<JwtConfig> jwtConfig;
@@ -58,7 +63,7 @@ public class DefaultExecutionWeb3jClientProvider implements ExecutionWeb3jClient
             .jwtConfigOpt(jwtConfig)
             .timeProvider(timeProvider)
             .executionClientEventsPublisher(executionClientEventsPublisher)
-            .nonCriticalMethods("engine_exchangeCapabilities", "engine_getClientVersionV1")
+            .nonCriticalMethods(NON_CRITICAL_METHODS)
             .build();
     this.alreadyBuilt = true;
   }

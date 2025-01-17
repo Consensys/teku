@@ -24,7 +24,6 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -46,16 +45,16 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -63,12 +62,12 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Spec spec;
   private final ExecutionClientHandler executionClientHandler;
   private final ExecutionBuilderModule executionBuilderModule;
   private final LabelledMetric<Counter> executionPayloadSourceCounter;
@@ -77,7 +76,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final EventLogger eventLogger,
       final ExecutionClientHandler executionClientHandler,
       final Optional<BuilderClient> builderClient,
-      final Spec spec,
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
@@ -86,7 +84,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     final LabelledMetric<Counter> executionPayloadSourceCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
-            "execution_payload_source",
+            "execution_payload_source_total",
             "Counter recording the source of the execution payload during block production",
             "source",
             "fallback_reason");
@@ -105,7 +103,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     return new ExecutionLayerManagerImpl(
         executionClientHandler,
         builderClient,
-        spec,
         eventLogger,
         builderBidValidator,
         builderCircuitBreaker,
@@ -143,7 +140,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private ExecutionLayerManagerImpl(
       final ExecutionClientHandler executionClientHandler,
       final Optional<BuilderClient> builderClient,
-      final Spec spec,
       final EventLogger eventLogger,
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
@@ -151,11 +147,9 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final UInt64 builderBidCompareFactor,
       final boolean useShouldOverrideBuilderFlag) {
     this.executionClientHandler = executionClientHandler;
-    this.spec = spec;
     this.executionPayloadSourceCounter = executionPayloadSourceCounter;
     this.executionBuilderModule =
         new ExecutionBuilderModule(
-            spec,
             this,
             builderBidValidator,
             builderCircuitBreaker,
@@ -196,35 +190,29 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   @Override
   public SafeFuture<GetPayloadResponse> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
-    return engineGetPayload(executionPayloadContext, state.getSlot(), false)
+    return engineGetPayload(executionPayloadContext, state.getSlot())
         .thenPeek(__ -> recordExecutionPayloadFallbackSource(Source.LOCAL_EL, FallbackReason.NONE));
   }
 
   SafeFuture<GetPayloadResponse> engineGetPayloadForFallback(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
-    return engineGetPayload(executionPayloadContext, slot, true);
+    return engineGetPayload(executionPayloadContext, slot);
   }
 
   private SafeFuture<GetPayloadResponse> engineGetPayload(
-      final ExecutionPayloadContext executionPayloadContext,
-      final UInt64 slot,
-      final boolean isFallbackCall) {
+      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     LOG.trace(
         "calling engineGetPayload(payloadId={}, slot={})",
         executionPayloadContext.getPayloadId(),
         slot);
-    if (!isFallbackCall
-        && executionBuilderModule.isBuilderAvailable()
-        && spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
-      LOG.warn("Builder endpoint is available but a non-blinded block has been requested");
-    }
     return executionClientHandler.engineGetPayload(executionPayloadContext, slot);
   }
 
   @Override
-  public SafeFuture<PayloadStatus> engineNewPayload(final NewPayloadRequest newPayloadRequest) {
+  public SafeFuture<PayloadStatus> engineNewPayload(
+      final NewPayloadRequest newPayloadRequest, final UInt64 slot) {
     LOG.trace("calling engineNewPayload(newPayloadRequest={})", newPayloadRequest);
-    return executionClientHandler.engineNewPayload(newPayloadRequest);
+    return executionClientHandler.engineNewPayload(newPayloadRequest, slot);
   }
 
   @Override
@@ -234,13 +222,22 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   @Override
+  public SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobs(
+      final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
+    LOG.trace("calling engineGetBlobs(blobVersionedHashes={}, slot={})", blobVersionedHashes, slot);
+    return executionClientHandler
+        .engineGetBlobs(blobVersionedHashes, slot)
+        .thenApply(blobsAndProofs -> blobsAndProofs.stream().map(Optional::ofNullable).toList());
+  }
+
+  @Override
   public SafeFuture<Void> builderRegisterValidators(
       final SszList<SignedValidatorRegistration> signedValidatorRegistrations, final UInt64 slot) {
     return executionBuilderModule.builderRegisterValidators(signedValidatorRegistrations, slot);
   }
 
   @Override
-  public SafeFuture<BuilderPayload> builderGetPayload(
+  public SafeFuture<BuilderPayloadOrFallbackData> builderGetPayload(
       final SignedBeaconBlock signedBeaconBlock,
       final Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
     return executionBuilderModule.builderGetPayload(
@@ -248,18 +245,13 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   @Override
-  public SafeFuture<HeaderWithFallbackData> builderGetHeader(
+  public SafeFuture<BuilderBidOrFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final SafeFuture<UInt256> payloadValueResult,
       final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
     return executionBuilderModule.builderGetHeader(
-        executionPayloadContext,
-        state,
-        payloadValueResult,
-        requestedBuilderBoostFactor,
-        blockProductionPerformance);
+        executionPayloadContext, state, requestedBuilderBoostFactor, blockProductionPerformance);
   }
 
   @VisibleForTesting

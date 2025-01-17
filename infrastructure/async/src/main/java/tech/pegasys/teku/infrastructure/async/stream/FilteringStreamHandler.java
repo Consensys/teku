@@ -20,13 +20,14 @@ class FilteringStreamHandler<T> extends AbstractDelegatingStreamHandler<T, T> {
 
   private final Predicate<T> filter;
 
-  protected FilteringStreamHandler(AsyncStreamHandler<T> delegate, Predicate<T> filter) {
+  protected FilteringStreamHandler(
+      final AsyncStreamHandler<T> delegate, final Predicate<T> filter) {
     super(delegate);
     this.filter = filter;
   }
 
   @Override
-  public SafeFuture<Boolean> onNext(T t) {
+  public SafeFuture<Boolean> onNext(final T t) {
     if (filter.test(t)) {
       return delegate.onNext(t);
     } else {

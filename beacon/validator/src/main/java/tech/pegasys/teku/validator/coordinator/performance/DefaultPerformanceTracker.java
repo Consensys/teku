@@ -14,8 +14,10 @@
 package tech.pegasys.teku.validator.coordinator.performance;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.annotations.VisibleForTesting;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
@@ -42,7 +44,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -51,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggregator;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
@@ -169,6 +171,9 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
                   validatorPerformanceMetrics.updateBlockPerformanceMetrics(blockPerformance);
                 }
               }
+            })
+        .alwaysRun(
+            () -> {
               producedBlocksByEpoch.headMap(blockProductionEpoch, true).clear();
               blockProductionAttemptsByEpoch.headMap(blockProductionEpoch, true).clear();
             });
@@ -208,8 +213,8 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
                 validatorPerformanceMetrics.updateAttestationPerformanceMetrics(
                     attestationPerformance);
               }
-              producedAttestationsByEpoch.headMap(analyzedEpoch, true).clear();
-            });
+            })
+        .alwaysRun(() -> producedAttestationsByEpoch.headMap(analyzedEpoch, true).clear());
   }
 
   private SafeFuture<BlockPerformance> getBlockPerformanceForEpoch(final UInt64 currentEpoch) {
@@ -250,6 +255,11 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
   private boolean isInHistoricBlockRoots(
       final BeaconState state, final SlotAndBlockRoot producedBlock) {
+    LOG.debug(
+        "Checking if block {} is in historic block roots {} of the state {}",
+        producedBlock,
+        state.getBlockRoots(),
+        state.hashTreeRoot());
     return producedBlock.getSlot().isLessThan(state.getSlot())
         && spec.getBlockRootAtSlot(state, producedBlock.getSlot())
             .equals(producedBlock.getBlockRoot());
@@ -295,16 +305,23 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
     // Pre-process attestations included on chain to group them by
     // data hash to inclusion slot to aggregation bitlist
-    final Map<Bytes32, NavigableMap<UInt64, SszBitlist>> slotAndBitlistsByAttestationDataHash =
-        new HashMap<>();
+    final Map<Bytes32, NavigableMap<UInt64, AttestationBitsAggregator>>
+        slotAndBitlistsByAttestationDataHash = new HashMap<>();
     for (Map.Entry<UInt64, List<Attestation>> entry : attestationsIncludedOnChain.entrySet()) {
+      final Optional<Int2IntMap> committeesSize =
+          Optional.of(spec.getBeaconCommitteesSize(state, entry.getKey()));
       for (Attestation attestation : entry.getValue()) {
         final Bytes32 attestationDataHash = attestation.getData().hashTreeRoot();
-        final NavigableMap<UInt64, SszBitlist> slotToBitlists =
+        final NavigableMap<UInt64, AttestationBitsAggregator> slotToBitlists =
             slotAndBitlistsByAttestationDataHash.computeIfAbsent(
                 attestationDataHash, __ -> new TreeMap<>());
         slotToBitlists.merge(
-            entry.getKey(), attestation.getAggregationBits(), SszBitlist::nullableOr);
+            entry.getKey(),
+            AttestationBitsAggregator.of(attestation, committeesSize),
+            (firstBitsAggregator, secondBitsAggregator) -> {
+              firstBitsAggregator.or(secondBitsAggregator);
+              return firstBitsAggregator;
+            });
       }
     }
 
@@ -314,10 +331,10 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       if (!slotAndBitlistsByAttestationDataHash.containsKey(sentAttestationDataHash)) {
         continue;
       }
-      final NavigableMap<UInt64, SszBitlist> slotAndBitlists =
+      final NavigableMap<UInt64, AttestationBitsAggregator> slotAndBitlists =
           slotAndBitlistsByAttestationDataHash.get(sentAttestationDataHash);
       for (UInt64 slot : slotAndBitlists.keySet()) {
-        if (slotAndBitlists.get(slot).isSuperSetOf(sentAttestation.getAggregationBits())) {
+        if (slotAndBitlists.get(slot).isSuperSetOf(sentAttestation)) {
           inclusionDistances.add(slot.minus(sentAttestationSlot).intValue());
           break;
         }
@@ -408,6 +425,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
   @Override
   public void saveProducedAttestation(final Attestation attestation) {
+    checkState(!attestation.isSingleAttestation(), "Single attestation is not supported");
     final UInt64 epoch = spec.computeEpochAtSlot(attestation.getData().getSlot());
     final Set<Attestation> attestationsInEpoch =
         producedAttestationsByEpoch.computeIfAbsent(epoch, __ -> concurrentSet());
@@ -415,15 +433,15 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   }
 
   @Override
-  public void saveProducedBlock(final SignedBeaconBlock block) {
-    final UInt64 epoch = spec.computeEpochAtSlot(block.getSlot());
+  public void saveProducedBlock(final SlotAndBlockRoot slotAndBlockRoot) {
+    final UInt64 epoch = spec.computeEpochAtSlot(slotAndBlockRoot.getSlot());
     final Set<SlotAndBlockRoot> blocksInEpoch =
         producedBlocksByEpoch.computeIfAbsent(epoch, __ -> concurrentSet());
-    blocksInEpoch.add(block.getSlotAndBlockRoot());
+    blocksInEpoch.add(slotAndBlockRoot);
   }
 
   @Override
-  public void reportBlockProductionAttempt(UInt64 epoch) {
+  public void reportBlockProductionAttempt(final UInt64 epoch) {
     final AtomicInteger numberOfBlockProductionAttempts =
         blockProductionAttemptsByEpoch.computeIfAbsent(epoch, __ -> new AtomicInteger(0));
     numberOfBlockProductionAttempts.incrementAndGet();

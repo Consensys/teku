@@ -30,12 +30,9 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.GOSSIP;
-import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.FAILED_DATA_AVAILABILITY_CHECK_INVALID;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE;
-import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.UNKNOWN_PARENT;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.ARRIVAL_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.BEGIN_IMPORTING_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.COMPLETED_EVENT_LABEL;
@@ -53,6 +50,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -60,6 +60,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFutureSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
@@ -109,6 +111,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class BlockManagerTest {
+  private final AsyncRunner asyncRunner = mock(AsyncRunner.class);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final EventLogger eventLogger = mock(EventLogger.class);
   private Spec spec;
@@ -157,6 +160,15 @@ public class BlockManagerTest {
 
   @BeforeEach
   public void setup() {
+    // prepare an async runner
+    doAnswer(
+            invocation -> {
+              final ExceptionThrowingFutureSupplier<?> task = invocation.getArgument(0);
+              return SafeFuture.of(task.get());
+            })
+        .when(asyncRunner)
+        .runAsync((ExceptionThrowingFutureSupplier<?>) any());
+
     setupWithSpec(TestSpecFactory.createMinimalDeneb());
   }
 
@@ -184,6 +196,7 @@ public class BlockManagerTest {
     this.executionLayer = spy(new ExecutionLayerChannelStub(spec, false, Optional.empty()));
     this.blockImporter =
         new BlockImporter(
+            asyncRunner,
             spec,
             receivedBlockEventsChannelPublisher,
             localRecentChainData,
@@ -446,9 +459,7 @@ public class BlockManagerTest {
     }
 
     // Gossip all blocks except the first
-    blocks
-        .subList(1, blockCount)
-        .forEach(block -> blockManager.importBlock(block, BroadcastValidationLevel.NOT_REQUIRED));
+    blocks.subList(1, blockCount).forEach(block -> blockManager.importBlock(block));
     assertThat(pendingBlocks.size()).isEqualTo(blockCount - 1);
 
     // Import next block, causing remaining blocks to be imported
@@ -558,9 +569,7 @@ public class BlockManagerTest {
     }
 
     // Gossip all blocks except the first
-    blocks
-        .subList(1, blockCount)
-        .forEach(block -> blockManager.importBlock(block, BroadcastValidationLevel.NOT_REQUIRED));
+    blocks.subList(1, blockCount).forEach(block -> blockManager.importBlock(block));
     assertThat(pendingBlocks.size()).isEqualTo(blockCount - 1);
 
     // Import next block, causing next block to be queued for import
@@ -662,7 +671,7 @@ public class BlockManagerTest {
 
     // let's delay EL so importResult SafeFuture doesn't complete
     final SafeFuture<PayloadStatus> payloadStatusSafeFuture = new SafeFuture<>();
-    doReturn(payloadStatusSafeFuture).when(executionLayer).engineNewPayload(any());
+    doReturn(payloadStatusSafeFuture).when(executionLayer).engineNewPayload(any(), any());
 
     final Optional<ChainHead> preImportHead = localRecentChainData.getChainHead();
 
@@ -958,52 +967,6 @@ public class BlockManagerTest {
   }
 
   @Test
-  void onDeneb_shouldNotStoreBlockWhenBlobSidecarsIsInvalid() {
-    // If we start genesis with Deneb, 0 will be earliestBlobSidecarSlot, so started on epoch 1
-    setupWithSpec(TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.valueOf(1)));
-    final UInt64 slotsPerEpoch = UInt64.valueOf(spec.slotsPerEpoch(UInt64.ZERO));
-    incrementSlotTo(slotsPerEpoch);
-
-    final SignedBlockAndState signedBlockAndState1 =
-        localChain
-            .chainBuilder()
-            .generateBlockAtSlot(currentSlot, BlockOptions.create().setGenerateRandomBlobs(true));
-    final SignedBlockAndState signedBlockAndState2 =
-        localChain
-            .chainBuilder()
-            .generateBlockAtSlot(
-                currentSlot.increment(), BlockOptions.create().setGenerateRandomBlobs(true));
-
-    final List<BlobSidecar> blobSidecars1 =
-        localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
-    assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
-    assertThat(blobSidecars1).isNotEmpty();
-    assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
-        .isCompletedWithValueMatching(Optional::isEmpty);
-
-    final SignedBeaconBlock block1 = signedBlockAndState1.getBlock();
-    final AvailabilityChecker<BlobSidecar> blobSidecarsAvailabilityChecker1 =
-        createAvailabilityCheckerWithInvalidBlobSidecars(block1, blobSidecars1);
-
-    assertThatBlockImport(block1)
-        .isCompletedWithValueMatching(
-            cause -> cause.getFailureReason().equals(FAILED_DATA_AVAILABILITY_CHECK_INVALID));
-    verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
-    assertThat(localRecentChainData.retrieveBlockByRoot(block1.getRoot()))
-        .isCompletedWithValue(Optional.empty());
-    assertThat(localRecentChainData.getBlobSidecars(block1.getSlotAndBlockRoot())).isEmpty();
-    assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
-        .isCompletedWithValueMatching(Optional::isEmpty);
-
-    verify(blockBlobSidecarsTrackersPool).removeAllForBlock(block1.getRoot());
-    assertThat(invalidBlockRoots).doesNotContainKeys(block1.getRoot());
-
-    // if we receive a block building on top of block1, we should trigger unknown parent flow
-    assertThatBlockImport(signedBlockAndState2.getBlock())
-        .isCompletedWithValueMatching(cause -> cause.getFailureReason().equals(UNKNOWN_PARENT));
-  }
-
-  @Test
   void onDeneb_shouldNotStoreBlockWhenBlobSidecarsIsNotAvailable() {
     // If we start genesis with Deneb, 0 will be earliestBlobSidecarSlot, so started on epoch 1
     setupWithSpec(TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.valueOf(1)));
@@ -1105,21 +1068,6 @@ public class BlockManagerTest {
     return blobSidecarsAvailabilityChecker;
   }
 
-  private AvailabilityChecker<BlobSidecar> createAvailabilityCheckerWithInvalidBlobSidecars(
-      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
-    reset(blobSidecarManager);
-    @SuppressWarnings("unchecked")
-    final AvailabilityChecker<BlobSidecar> blobSidecarsAvailabilityChecker =
-        mock(AvailabilityChecker.class);
-    when(blobSidecarManager.createAvailabilityChecker(eq(block)))
-        .thenReturn(blobSidecarsAvailabilityChecker);
-    when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
-        .thenReturn(
-            SafeFuture.completedFuture(
-                DataAndValidationResult.invalidResult(blobSidecars, new RuntimeException("ouch"))));
-    return blobSidecarsAvailabilityChecker;
-  }
-
   private void assertThatStored(
       final BeaconBlock beaconBlock, final List<BlobSidecar> blobSidecars) {
     assertThat(localRecentChainData.retrieveBlockByRoot(beaconBlock.getRoot()))
@@ -1190,7 +1138,7 @@ public class BlockManagerTest {
   private SafeFutureAssert<BlockImportResult> assertThatBlockImport(final SignedBeaconBlock block) {
     return assertThatSafeFuture(
         blockManager
-            .importBlock(block, BroadcastValidationLevel.NOT_REQUIRED)
+            .importBlock(block)
             .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult));
   }
 
@@ -1201,9 +1149,13 @@ public class BlockManagerTest {
   }
 
   private void safeJoinBlockImport(final SignedBeaconBlock block) {
-    safeJoin(
-        blockManager
-            .importBlock(block, BroadcastValidationLevel.NOT_REQUIRED)
-            .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult));
+    try {
+      blockManager
+          .importBlock(block)
+          .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult)
+          .get(5, TimeUnit.SECONDS);
+    } catch (final InterruptedException | ExecutionException | TimeoutException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

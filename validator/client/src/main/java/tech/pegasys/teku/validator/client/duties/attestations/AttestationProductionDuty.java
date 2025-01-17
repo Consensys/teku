@@ -20,6 +20,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,12 +29,15 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.Validator.DutyType;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -92,7 +96,8 @@ public class AttestationProductionDuty implements Duty {
     final ScheduledCommittee committee =
         validatorsByCommitteeIndex.computeIfAbsent(
             attestationCommitteeIndex, key -> new ScheduledCommittee());
-    committee.addValidator(validator, committeePosition, validatorIndex, committeeSize);
+    committee.addValidator(
+        validator, attestationCommitteeIndex, committeePosition, validatorIndex, committeeSize);
     return committee.getAttestationDataFuture();
   }
 
@@ -133,19 +138,51 @@ public class AttestationProductionDuty implements Duty {
             CREATE_TOTAL);
     unsignedAttestationFuture.propagateTo(committee.getAttestationDataFuture());
 
+    final SignedAttestationProducer signedAttestationProducer =
+        selectSignedAttestationProducer(slot);
+
     return committee.getValidators().stream()
         .map(
             validator ->
                 signAttestationForValidatorInCommittee(
-                    slot, forkInfo, committeeIndex, validator, unsignedAttestationFuture))
+                    slot,
+                    forkInfo,
+                    committeeIndex,
+                    validator,
+                    signedAttestationProducer,
+                    unsignedAttestationFuture))
         .toList();
+  }
+
+  private SignedAttestationProducer selectSignedAttestationProducer(final UInt64 slot) {
+    final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
+
+    return schemaDefinitions
+        .toVersionElectra()
+        .<SignedAttestationProducer>map(
+            schemaDefinitionsElectra ->
+                (attestationData, validator, signature) ->
+                    createSignedSingleAttestation(
+                        schemaDefinitionsElectra.getSingleAttestationSchema(),
+                        attestationData,
+                        validator,
+                        signature))
+        .orElseGet(
+            () ->
+                (attestationData, validator, signature) ->
+                    createSignedAttestation(
+                        schemaDefinitions.getAttestationSchema(),
+                        attestationData,
+                        validator,
+                        signature));
   }
 
   private SafeFuture<ProductionResult<Attestation>> signAttestationForValidatorInCommittee(
       final UInt64 slot,
       final ForkInfo forkInfo,
       final int committeeIndex,
-      final ValidatorWithCommitteePositionAndIndex validator,
+      final ValidatorWithAttestationDutyInfo validator,
+      final SignedAttestationProducer signedAttestationProducer,
       final SafeFuture<Optional<AttestationData>> attestationDataFuture) {
     return attestationDataFuture
         .thenCompose(
@@ -156,7 +193,11 @@ public class AttestationProductionDuty implements Duty {
                           validateAttestationData(slot, attestationData);
                           return validatorDutyMetrics.record(
                               () ->
-                                  signAttestationForValidator(forkInfo, attestationData, validator),
+                                  signAttestationForValidator(
+                                      signedAttestationProducer,
+                                      forkInfo,
+                                      attestationData,
+                                      validator),
                               this,
                               ValidatorDutyMetricsSteps.SIGN);
                         })
@@ -164,14 +205,14 @@ public class AttestationProductionDuty implements Duty {
                         () ->
                             SafeFuture.completedFuture(
                                 ProductionResult.failure(
-                                    validator.getPublicKey(),
+                                    validator.publicKey(),
                                     new IllegalStateException(
                                         "Unable to produce attestation for slot "
                                             + slot
                                             + " with committee "
                                             + committeeIndex
                                             + " because chain data was unavailable")))))
-        .exceptionally(error -> ProductionResult.failure(validator.getPublicKey(), error));
+        .exceptionally(error -> ProductionResult.failure(validator.publicKey(), error));
   }
 
   private static void validateAttestationData(
@@ -184,29 +225,60 @@ public class AttestationProductionDuty implements Duty {
   }
 
   private SafeFuture<ProductionResult<Attestation>> signAttestationForValidator(
+      final SignedAttestationProducer signedAttestationProducer,
       final ForkInfo forkInfo,
       final AttestationData attestationData,
-      final ValidatorWithCommitteePositionAndIndex validator) {
+      final ValidatorWithAttestationDutyInfo validator) {
     return validator
-        .getSigner()
+        .signer()
         .signAttestationData(attestationData, forkInfo)
-        .thenApply(signature -> createSignedAttestation(attestationData, validator, signature))
+        .thenApply(
+            signature ->
+                signedAttestationProducer.createSignedAttestation(
+                    attestationData, validator, signature))
         .thenApply(
             attestation ->
                 ProductionResult.success(
-                    validator.getPublicKey(), attestationData.getBeaconBlockRoot(), attestation));
+                    validator.publicKey(), attestationData.getBeaconBlockRoot(), attestation));
   }
 
   private Attestation createSignedAttestation(
+      final AttestationSchema<?> attestationSchema,
       final AttestationData attestationData,
-      final ValidatorWithCommitteePositionAndIndex validator,
+      final ValidatorWithAttestationDutyInfo validator,
       final BLSSignature signature) {
-    final AttestationSchema attestationSchema =
-        spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema();
-    SszBitlist aggregationBits =
+    final SszBitlist aggregationBits =
         attestationSchema
             .getAggregationBitsSchema()
-            .ofBits(validator.getCommitteeSize(), validator.getCommitteePosition());
-    return attestationSchema.create(aggregationBits, attestationData, signature);
+            .ofBits(validator.committeeSize(), validator.committeePosition());
+
+    final Supplier<SszBitvector> committeeBitsSupplier =
+        attestationSchema
+            .getCommitteeBitsSchema()
+            .<Supplier<SszBitvector>>map(
+                committeeBitsSchema -> () -> committeeBitsSchema.ofBits(validator.committeeIndex()))
+            .orElse(() -> null);
+    return attestationSchema.create(
+        aggregationBits, attestationData, signature, committeeBitsSupplier);
+  }
+
+  private Attestation createSignedSingleAttestation(
+      final SingleAttestationSchema attestationSchema,
+      final AttestationData attestationData,
+      final ValidatorWithAttestationDutyInfo validator,
+      final BLSSignature signature) {
+    return attestationSchema.create(
+        UInt64.valueOf(validator.committeeIndex()),
+        UInt64.valueOf(validator.validatorIndex()),
+        attestationData,
+        signature);
+  }
+
+  @FunctionalInterface
+  private interface SignedAttestationProducer {
+    Attestation createSignedAttestation(
+        final AttestationData attestationData,
+        final ValidatorWithAttestationDutyInfo validator,
+        final BLSSignature signature);
   }
 }

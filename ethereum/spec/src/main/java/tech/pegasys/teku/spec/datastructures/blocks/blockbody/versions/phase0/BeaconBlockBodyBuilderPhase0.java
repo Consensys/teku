@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -132,6 +133,12 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
   public BeaconBlockBodyBuilder blobKzgCommitments(
       final SszList<SszKZGCommitment> blobKzgCommitments) {
     // No BlobKzgCommitments in phase 0
+    return this;
+  }
+
+  @Override
+  public BeaconBlockBodyBuilder executionRequests(final ExecutionRequests executionRequests) {
+    // No ExecutionRequests in phase 0
     return this;
   }
 

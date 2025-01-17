@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 
 public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp {
@@ -26,12 +26,12 @@ public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp
 
   private final Map<UInt256, TestPeer> connectedPeers = new HashMap<>();
 
-  public void connectPeer(TestPeer peer) {
+  public void connectPeer(final TestPeer peer) {
     dataColumnPeerManagerStub.addNode(peer.getNodeId());
     connectedPeers.put(peer.getNodeId(), peer);
   }
 
-  public void disconnectPeer(TestPeer peer) {
+  public void disconnectPeer(final TestPeer peer) {
     dataColumnPeerManagerStub.removeNode(peer.getNodeId());
     peer.onDisconnect();
     connectedPeers.remove(peer.getNodeId());
@@ -39,7 +39,7 @@ public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp
 
   @Override
   public SafeFuture<DataColumnSidecar> requestDataColumnSidecar(
-      UInt256 nodeId, DataColumnIdentifier columnIdentifier) {
+      final UInt256 nodeId, final DataColumnIdentifier columnIdentifier) {
     TestPeer peer = connectedPeers.get(nodeId);
     if (peer == null) {
       return SafeFuture.failedFuture(new DasPeerDisconnectedException());
@@ -52,7 +52,7 @@ public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp
   public void flush() {}
 
   @Override
-  public int getCurrentRequestLimit(UInt256 nodeId) {
+  public int getCurrentRequestLimit(final UInt256 nodeId) {
     TestPeer peer = connectedPeers.get(nodeId);
     if (peer == null) {
       return 0;
@@ -62,12 +62,12 @@ public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp
   }
 
   @Override
-  public void addPeerListener(PeerListener listener) {
+  public void addPeerListener(final PeerListener listener) {
     dataColumnPeerManagerStub.addPeerListener(listener);
   }
 
   @Override
-  public void banNode(UInt256 node) {
+  public void banNode(final UInt256 node) {
     dataColumnPeerManagerStub.banNode(node);
   }
 }

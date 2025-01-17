@@ -60,9 +60,7 @@ public class AltairStateUpgrade implements StateUpgrade<BeaconStateAltair> {
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
     final int validatorCount = preState.getValidators().size();
 
-    return schemaDefinitions
-        .getBeaconStateSchema()
-        .createEmpty()
+    return BeaconStateAltair.required(schemaDefinitions.getBeaconStateSchema().createEmpty())
         .updatedAltair(
             state -> {
               BeaconStateFields.copyCommonFieldsFromSource(state, preState);
@@ -102,7 +100,7 @@ public class AltairStateUpgrade implements StateUpgrade<BeaconStateAltair> {
       // Apply flags to all attesting validators
       final SszMutableList<SszByte> epochParticipation = state.getPreviousEpochParticipation();
       attestationUtil
-          .streamAttestingIndices(state, attestation)
+          .streamAttestingIndices(state, attestation.getData(), attestation.getAggregationBits())
           .forEach(
               index -> {
                 final byte previousFlags = epochParticipation.get(index).get();

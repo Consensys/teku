@@ -41,18 +41,29 @@ public class EpochProcessingExecutor {
       case PROCESS_SLASHINGS_RESET -> epochProcessor.processSlashingsReset(state);
       case PROCESS_RANDAO_MIXES_RESET -> epochProcessor.processRandaoMixesReset(state);
       case PROCESS_HISTORICAL_ROOTS_UPDATE -> epochProcessor.processHistoricalRootsUpdate(state);
-      case PROCESS_HISTORICAL_SUMMARIES_UPDATE -> epochProcessor.processHistoricalSummariesUpdate(
-          state);
+      case PROCESS_HISTORICAL_SUMMARIES_UPDATE ->
+          epochProcessor.processHistoricalSummariesUpdate(state);
       case SYNC_COMMITTEE_UPDATES -> epochProcessor.processSyncCommitteeUpdates(state);
       case INACTIVITY_UPDATES -> processInactivityUpdates(state);
-      default -> throw new UnsupportedOperationException(
-          "Attempted to execute unknown operation type: " + operation);
+      case PENDING_DEPOSITS -> processPendingDeposits(state);
+      case PENDING_CONSOLIDATIONS -> processPendingConsolidations(state);
+      default ->
+          throw new UnsupportedOperationException(
+              "Attempted to execute unknown operation type: " + operation);
     }
   }
 
   private void processInactivityUpdates(final MutableBeaconState state) {
     epochProcessor.processInactivityUpdates(
         state, validatorStatusFactory.createValidatorStatuses(state));
+  }
+
+  private void processPendingDeposits(final MutableBeaconState state) {
+    epochProcessor.processPendingDeposits(state);
+  }
+
+  private void processPendingConsolidations(final MutableBeaconState state) {
+    epochProcessor.processPendingConsolidations(state);
   }
 
   public void processSlashings(final MutableBeaconState state) {

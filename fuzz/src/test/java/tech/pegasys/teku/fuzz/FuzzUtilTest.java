@@ -15,15 +15,14 @@ package tech.pegasys.teku.fuzz;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.xerial.snappy.Snappy;
 import tech.pegasys.teku.fuzz.input.AttestationFuzzInput;
 import tech.pegasys.teku.fuzz.input.AttesterSlashingFuzzInput;
@@ -31,10 +30,15 @@ import tech.pegasys.teku.fuzz.input.BeaconBlockBodyFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockHeaderFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlsToExecutionChangeFuzzInput;
+import tech.pegasys.teku.fuzz.input.ConsolidationRequestFuzzInput;
 import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
+import tech.pegasys.teku.fuzz.input.DepositRequestFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.SyncAggregateFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
+import tech.pegasys.teku.fuzz.input.WithdrawalRequestFuzzInput;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.spec.Spec;
@@ -48,7 +52,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -56,19 +63,19 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
-@ExtendWith(BouncyCastleExtension.class)
 class FuzzUtilTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalCapella();
-  private final SpecVersion specVersion = spec.forMilestone(SpecMilestone.CAPELLA);
-  private final SchemaDefinitionsCapella schemaDefinitions =
-      SchemaDefinitionsCapella.required(specVersion.getSchemaDefinitions());
+  private final Spec spec = TestSpecFactory.createMinimalElectra();
+  private final SpecVersion specVersion = spec.forMilestone(SpecMilestone.ELECTRA);
+  private final SchemaDefinitionsElectra schemaDefinitions =
+      SchemaDefinitionsElectra.required(specVersion.getSchemaDefinitions());
   private final BeaconBlockSchema beaconBlockSchema = schemaDefinitions.getBeaconBlockSchema();
-  private final BeaconStateSchemaCapella beaconStateSchema =
-      BeaconStateSchemaCapella.required(schemaDefinitions.getBeaconStateSchema());
+  private final BeaconStateSchemaElectra beaconStateSchema =
+      BeaconStateSchemaElectra.required(schemaDefinitions.getBeaconStateSchema());
   private final SignedBeaconBlockSchema signedBeaconBlockSchema =
       schemaDefinitions.getSignedBeaconBlockSchema();
 
@@ -85,25 +92,32 @@ class FuzzUtilTest {
   // https://github.com/ethereum/consensus-specs/tree/dev/tests/generators
 
   @Test
-  public void fuzzAttestation_minimal() {
+  @SuppressWarnings("unchecked")
+  public void fuzzAttestation_minimal() throws JsonProcessingException {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
 
-    final Path testCaseDir = Path.of("minimal/operations/attestation/pyspec_tests/success");
+    final Path testCaseDir =
+        Path.of("minimal/operations/attestation/pyspec_tests/one_basic_attestation");
     final Attestation data =
         loadSsz(
             testCaseDir.resolve("attestation.ssz_snappy"),
-            spec.forMilestone(SpecMilestone.CAPELLA).getSchemaDefinitions().getAttestationSchema());
+            spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions().getAttestationSchema());
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz_snappy"), beaconStateSchema);
-    final BeaconState postState =
+    final BeaconStateElectra postState =
         loadSsz(testCaseDir.resolve("post.ssz_snappy"), beaconStateSchema);
 
-    AttestationFuzzInput input = new AttestationFuzzInput(spec, preState, data);
-    byte[] rawInput = input.sszSerialize().toArrayUnsafe();
-    Optional<Bytes> result = fuzzUtil.fuzzAttestation(rawInput).map(Bytes::wrap);
+    final AttestationFuzzInput input = new AttestationFuzzInput(spec, preState, data);
+    final byte[] rawInput = input.sszSerialize().toArrayUnsafe();
+    final Optional<Bytes> result = fuzzUtil.fuzzAttestation(rawInput).map(Bytes::wrap);
 
-    Bytes expected = postState.sszSerialize();
     assertThat(result).isNotEmpty();
-    assertThat(result.get()).isEqualTo(expected);
+    final BeaconStateElectra resultState =
+        BeaconStateElectra.required(spec.deserializeBeaconState(result.get()));
+    DeserializableTypeDefinition<BeaconStateElectra> t =
+        (DeserializableTypeDefinition<BeaconStateElectra>)
+            resultState.getSchema().getJsonTypeDefinition();
+    assertThat(JsonUtil.prettySerialize(resultState, t))
+        .isEqualTo(JsonUtil.prettySerialize(postState, t));
   }
 
   @Test
@@ -111,11 +125,11 @@ class FuzzUtilTest {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
 
     final Path testCaseDir =
-        Path.of("minimal/operations/attester_slashing/pyspec_tests/success_surround");
+        Path.of("minimal/operations/attester_slashing/pyspec_tests/basic_surround");
     final AttesterSlashing data =
         loadSsz(
             testCaseDir.resolve("attester_slashing.ssz_snappy"),
-            spec.forMilestone(SpecMilestone.CAPELLA)
+            spec.forMilestone(SpecMilestone.ELECTRA)
                 .getSchemaDefinitions()
                 .getAttesterSlashingSchema());
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz_snappy"), beaconStateSchema);
@@ -163,7 +177,7 @@ class FuzzUtilTest {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
 
     final Path testCaseDir =
-        Path.of("minimal/operations/block_header/pyspec_tests/success_block_header");
+        Path.of("minimal/operations/block_header/pyspec_tests/basic_block_header");
     final BeaconBlock data = loadSsz(testCaseDir.resolve("block.ssz_snappy"), beaconBlockSchema);
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz_snappy"), beaconStateSchema);
     final BeaconState postState =
@@ -183,7 +197,7 @@ class FuzzUtilTest {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
 
     final Path testCaseDir =
-        Path.of("minimal/operations/deposit/pyspec_tests/success_top_up__max_effective_balance");
+        Path.of("minimal/operations/deposit/pyspec_tests/top_up__max_effective_balance");
     final Deposit data = loadSsz(testCaseDir.resolve("deposit.ssz_snappy"), Deposit.SSZ_SCHEMA);
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz_snappy"), beaconStateSchema);
     final BeaconState postState =
@@ -202,7 +216,7 @@ class FuzzUtilTest {
   public void fuzzProposerSlashing_minimal() {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
 
-    final Path testCaseDir = Path.of("minimal/operations/proposer_slashing/pyspec_tests/success");
+    final Path testCaseDir = Path.of("minimal/operations/proposer_slashing/pyspec_tests/basic");
     final ProposerSlashing data =
         loadSsz(testCaseDir.resolve("proposer_slashing.ssz_snappy"), ProposerSlashing.SSZ_SCHEMA);
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz_snappy"), beaconStateSchema);
@@ -222,7 +236,7 @@ class FuzzUtilTest {
   public void fuzzVoluntaryExit_minimal() {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
 
-    final Path testCaseDir = Path.of("minimal/operations/voluntary_exit/pyspec_tests/success");
+    final Path testCaseDir = Path.of("minimal/operations/voluntary_exit/pyspec_tests/basic");
     final SignedVoluntaryExit data =
         loadSsz(testCaseDir.resolve("voluntary_exit.ssz_snappy"), SignedVoluntaryExit.SSZ_SCHEMA);
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz_snappy"), beaconStateSchema);
@@ -270,8 +284,8 @@ class FuzzUtilTest {
   public void fuzzExecutionPayload_minimal() {
     final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
 
-    BeaconBlockBodySchemaCapella<?> beaconBlockBodySchema =
-        (BeaconBlockBodySchemaCapella<?>)
+    BeaconBlockBodySchemaElectra<?> beaconBlockBodySchema =
+        (BeaconBlockBodySchemaElectra<?>)
             specVersion.getSchemaDefinitions().getBeaconBlockBodySchema();
 
     final Path testCaseDir =
@@ -283,7 +297,7 @@ class FuzzUtilTest {
         loadSsz(testCaseDir.resolve("post.ssz_snappy"), beaconStateSchema);
 
     BeaconBlockBodyFuzzInput input =
-        new BeaconBlockBodyFuzzInput(spec, preState, data.toVersionCapella().orElseThrow());
+        new BeaconBlockBodyFuzzInput(spec, preState, data.toVersionElectra().orElseThrow());
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
     Optional<Bytes> result = fuzzUtil.fuzzExecutionPayload(rawInput).map(Bytes::wrap);
 
@@ -301,7 +315,7 @@ class FuzzUtilTest {
     final SignedBlsToExecutionChange data =
         loadSsz(
             testCaseDir.resolve("address_change.ssz_snappy"),
-            SchemaDefinitionsCapella.required(specVersion.getSchemaDefinitions())
+            SchemaDefinitionsElectra.required(specVersion.getSchemaDefinitions())
                 .getSignedBlsToExecutionChangeSchema());
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz_snappy"), beaconStateSchema);
     final BeaconState postState =
@@ -310,6 +324,86 @@ class FuzzUtilTest {
     BlsToExecutionChangeFuzzInput input = new BlsToExecutionChangeFuzzInput(spec, preState, data);
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
     Optional<Bytes> result = fuzzUtil.fuzzBlsToExecutionChange(rawInput).map(Bytes::wrap);
+
+    Bytes expected = postState.sszSerialize();
+    assertThat(result).isNotEmpty();
+    assertThat(result.get()).isEqualTo(expected);
+  }
+
+  @Test
+  public void fuzzDepositRequest_minimal() {
+    final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
+
+    final Path testCaseDir =
+        Path.of(
+            "minimal/operations/deposit_request/pyspec_tests/process_deposit_request_max_effective_balance_compounding/");
+    final DepositRequest data =
+        loadSsz(
+            testCaseDir.resolve("deposit_request.ssz_snappy"),
+            SchemaDefinitionsElectra.required(specVersion.getSchemaDefinitions())
+                .getExecutionRequestsSchema()
+                .getDepositRequestsSchema()
+                .getElementSchema());
+    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz_snappy"), beaconStateSchema);
+    final BeaconState postState =
+        loadSsz(testCaseDir.resolve("post.ssz_snappy"), beaconStateSchema);
+
+    DepositRequestFuzzInput input = new DepositRequestFuzzInput(spec, preState, data);
+    byte[] rawInput = input.sszSerialize().toArrayUnsafe();
+    Optional<Bytes> result = fuzzUtil.fuzzDepositRequest(rawInput).map(Bytes::wrap);
+
+    Bytes expected = postState.sszSerialize();
+    assertThat(result).isNotEmpty();
+    assertThat(result.get()).isEqualTo(expected);
+  }
+
+  @Test
+  public void fuzzWithdrawalRequest_minimal() {
+    final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
+
+    final Path testCaseDir =
+        Path.of("minimal/operations/withdrawal_request/pyspec_tests/basic_withdrawal_request/");
+    final WithdrawalRequest data =
+        loadSsz(
+            testCaseDir.resolve("withdrawal_request.ssz_snappy"),
+            SchemaDefinitionsElectra.required(specVersion.getSchemaDefinitions())
+                .getExecutionRequestsSchema()
+                .getWithdrawalRequestsSchema()
+                .getElementSchema());
+    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz_snappy"), beaconStateSchema);
+    final BeaconState postState =
+        loadSsz(testCaseDir.resolve("post.ssz_snappy"), beaconStateSchema);
+
+    WithdrawalRequestFuzzInput input = new WithdrawalRequestFuzzInput(spec, preState, data);
+    byte[] rawInput = input.sszSerialize().toArrayUnsafe();
+    Optional<Bytes> result = fuzzUtil.fuzzWithdrawalRequest(rawInput).map(Bytes::wrap);
+
+    Bytes expected = postState.sszSerialize();
+    assertThat(result).isNotEmpty();
+    assertThat(result.get()).isEqualTo(expected);
+  }
+
+  @Test
+  public void fuzzConsolidationRequest_minimal() {
+    final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
+
+    final Path testCaseDir =
+        Path.of(
+            "minimal/operations/consolidation_request/pyspec_tests/basic_consolidation_in_current_consolidation_epoch/");
+    final ConsolidationRequest data =
+        loadSsz(
+            testCaseDir.resolve("consolidation_request.ssz_snappy"),
+            SchemaDefinitionsElectra.required(specVersion.getSchemaDefinitions())
+                .getExecutionRequestsSchema()
+                .getConsolidationRequestsSchema()
+                .getElementSchema());
+    final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz_snappy"), beaconStateSchema);
+    final BeaconState postState =
+        loadSsz(testCaseDir.resolve("post.ssz_snappy"), beaconStateSchema);
+
+    ConsolidationRequestFuzzInput input = new ConsolidationRequestFuzzInput(spec, preState, data);
+    byte[] rawInput = input.sszSerialize().toArrayUnsafe();
+    Optional<Bytes> result = fuzzUtil.fuzzConsolidationRequest(rawInput).map(Bytes::wrap);
 
     Bytes expected = postState.sszSerialize();
     assertThat(result).isNotEmpty();

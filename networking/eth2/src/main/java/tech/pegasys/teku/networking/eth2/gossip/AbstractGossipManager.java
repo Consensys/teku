@@ -16,7 +16,10 @@ package tech.pegasys.teku.networking.eth2.gossip;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import java.util.function.Function;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -29,9 +32,11 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public abstract class AbstractGossipManager<T extends SszData> implements GossipManager {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final GossipNetwork gossipNetwork;
   private final GossipEncoding gossipEncoding;
@@ -39,6 +44,8 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
   private final Eth2TopicHandler<T> topicHandler;
 
   private Optional<TopicChannel> channel = Optional.empty();
+  private final GossipFailureLogger gossipFailureLogger;
+  private final Function<T, Optional<UInt64>> getSlotForMessage;
 
   protected AbstractGossipManager(
       final RecentChainData recentChainData,
@@ -49,8 +56,11 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
       final ForkInfo forkInfo,
       final OperationProcessor<T> processor,
       final SszSchema<T> gossipType,
+      final Function<T, Optional<UInt64>> getSlotForMessage,
       final Function<T, UInt64> getEpochForMessage,
-      final NetworkingSpecConfig networkingConfig) {
+      final NetworkingSpecConfig networkingConfig,
+      final GossipFailureLogger gossipFailureLogger,
+      final DebugDataDumper debugDataDumper) {
     this.gossipNetwork = gossipNetwork;
     this.topicHandler =
         new Eth2TopicHandler<>(
@@ -63,8 +73,11 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
             new OperationMilestoneValidator<>(
                 recentChainData.getSpec(), forkInfo.getFork(), getEpochForMessage),
             gossipType,
-            networkingConfig);
+            networkingConfig,
+            debugDataDumper);
     this.gossipEncoding = gossipEncoding;
+    this.gossipFailureLogger = gossipFailureLogger;
+    this.getSlotForMessage = getSlotForMessage;
   }
 
   @VisibleForTesting
@@ -72,8 +85,30 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
     return topicHandler;
   }
 
-  protected void publishMessage(T message) {
-    channel.ifPresent(c -> c.gossip(gossipEncoding.encode(message)));
+  protected void publishMessage(final T message) {
+    publishMessageWithFeedback(message).ifExceptionGetsHereRaiseABug();
+  }
+
+  /**
+   * This method is designed to return a future that only completes successfully whenever the gossip
+   * was succeeded (sent to at least one peer) or failed.
+   */
+  protected SafeFuture<Void> publishMessageWithFeedback(final T message) {
+    return channel
+        .map(c -> c.gossip(gossipEncoding.encode(message)))
+        .orElse(SafeFuture.failedFuture(new IllegalStateException("Gossip channel not available")))
+        .handle(
+            (__, err) -> {
+              if (err != null) {
+                gossipFailureLogger.log(err, getSlotForMessage.apply(message));
+              } else {
+                LOG.trace(
+                    "Successfully gossiped message with root {} on {}",
+                    message::hashTreeRoot,
+                    topicHandler::getTopic);
+              }
+              return null;
+            });
   }
 
   @Override

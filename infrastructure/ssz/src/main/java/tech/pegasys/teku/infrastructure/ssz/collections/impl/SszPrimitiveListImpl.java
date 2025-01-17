@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.CachingTreeAccessor;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<ElementT>>
     extends SszListImpl<SszElementT> implements SszPrimitiveList<ElementT, SszElementT> {
 
   protected final int elementsPerChunk;
@@ -31,7 +31,8 @@ public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<Ele
   private final CachingTreeAccessor cachingTreeAccessor;
 
   @SuppressWarnings("unchecked")
-  public SszPrimitiveListImpl(SszListSchema<SszElementT, ?> schema, TreeNode backingNode) {
+  public SszPrimitiveListImpl(
+      final SszListSchema<SszElementT, ?> schema, final TreeNode backingNode) {
     super(schema, backingNode);
     this.elementsPerChunk = schema.getElementsPerChunk();
     this.elementType = (SszPrimitiveSchema<ElementT, SszElementT>) schema.getElementSchema();
@@ -41,7 +42,9 @@ public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<Ele
 
   @SuppressWarnings("unchecked")
   public SszPrimitiveListImpl(
-      SszListSchema<SszElementT, ?> schema, TreeNode backingNode, IntCache<SszElementT> cache) {
+      final SszListSchema<SszElementT, ?> schema,
+      final TreeNode backingNode,
+      final IntCache<SszElementT> cache) {
     super(schema, backingNode, cache);
     this.elementsPerChunk = schema.getElementsPerChunk();
     this.elementType = (SszPrimitiveSchema<ElementT, SszElementT>) schema.getElementSchema();
@@ -50,11 +53,11 @@ public class SszPrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<Ele
   }
 
   @Override
-  protected SszElementT getImpl(int index) {
+  protected SszElementT getImpl(final int index) {
     return elementType.createFromPackedNode(getTreeNode(index), index % elementsPerChunk);
   }
 
-  protected TreeNode getTreeNode(int index) {
+  protected TreeNode getTreeNode(final int index) {
     int nodeIndex = index / elementsPerChunk;
     return cachingTreeAccessor.getNodeByVectorIndex(nodeIndex);
   }

@@ -46,20 +46,21 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.MatrixEntry;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntry;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
-import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlobSidecarReconstructionProviderTest {
   private final CombinedChainDataClient client = mock(CombinedChainDataClient.class);
-  private final Spec spec = TestSpecFactory.createMinimalEip7594();
+  private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final KZG kzg = mock(KZG.class);
 
   private final BlobSidecarReconstructionProvider blobSidecarReconstructionProvider =
@@ -204,11 +205,11 @@ public class BlobSidecarReconstructionProviderTest {
             dataStructureUtil.randomBeaconBlock(slotAndBlockRoot.getSlot(), beaconBlockBody));
 
     final BlobsAndMatrix blobsAndMatrix = loadBlobsAndMatrixFixture();
-    final MiscHelpersEip7594 miscHelpersEip7594 =
-        MiscHelpersEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).miscHelpers());
+    final MiscHelpersFulu miscHelpersFulu =
+        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.ELECTRA).miscHelpers());
 
     final List<DataColumnSidecar> dataColumnSidecars =
-        miscHelpersEip7594.constructDataColumnSidecars(
+        miscHelpersFulu.constructDataColumnSidecars(
             block.getMessage(), block.asHeader(), blobsAndMatrix.extendedMatrix);
 
     when(client.getDataColumnIdentifiers(any()))
@@ -255,11 +256,11 @@ public class BlobSidecarReconstructionProviderTest {
             dataStructureUtil.randomBeaconBlock(slotAndBlockRoot.getSlot(), beaconBlockBody));
 
     final BlobsAndMatrix blobsAndMatrix = loadBlobsAndMatrixFixture();
-    final MiscHelpersEip7594 miscHelpersEip7594 =
-        MiscHelpersEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).miscHelpers());
+    final MiscHelpersFulu miscHelpersFulu =
+        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.ELECTRA).miscHelpers());
 
     final List<DataColumnSidecar> dataColumnSidecars =
-        miscHelpersEip7594.constructDataColumnSidecars(
+        miscHelpersFulu.constructDataColumnSidecars(
             block.getMessage(), block.asHeader(), blobsAndMatrix.extendedMatrix);
 
     when(client.getDataColumnIdentifiers(any()))
@@ -287,14 +288,17 @@ public class BlobSidecarReconstructionProviderTest {
 
   private BlobsAndMatrix loadBlobsAndMatrixFixture() {
     final List<CellData> cellData = loadJson();
-    final SchemaDefinitionsEip7594 schemaDefinitionsEip7594 =
-        SchemaDefinitionsEip7594.required(
-            spec.forMilestone(SpecMilestone.EIP7594).getSchemaDefinitions());
+    final SchemaDefinitionsFulu schemaDefinitionsFulu =
+        SchemaDefinitionsFulu.required(
+            spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions());
+    final SchemaDefinitionsElectra schemaDefinitionsElectra =
+        SchemaDefinitionsElectra.required(
+            spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions());
     final List<Blob> blobs =
         cellData.stream()
             .map(
                 blobAndCells ->
-                    schemaDefinitionsEip7594
+                    schemaDefinitionsElectra
                         .getBlobSchema()
                         .create(Bytes.fromHexString(blobAndCells.blob)))
             .toList();
@@ -305,8 +309,8 @@ public class BlobSidecarReconstructionProviderTest {
       for (int cellIndex = 0; cellIndex < blobCellData.cells.size(); ++cellIndex) {
         row.add(
             new MatrixEntry(
-                schemaDefinitionsEip7594.getMatrixEntrySchema(),
-                schemaDefinitionsEip7594
+                schemaDefinitionsFulu.getMatrixEntrySchema(),
+                schemaDefinitionsFulu
                     .getCellSchema()
                     .create(Bytes.fromHexString(blobCellData.cells.get(cellIndex))),
                 KZGProof.fromBytesCompressed(Bytes48.ZERO),

@@ -25,13 +25,13 @@ class LimitedAsyncQueue<T> implements AsyncQueue<T> {
   private final Queue<T> items = new ArrayDeque<>();
   private final Queue<SafeFuture<T>> takers = new ArrayDeque<>();
 
-  public LimitedAsyncQueue(int maxSize) {
+  public LimitedAsyncQueue(final int maxSize) {
     this.maxSize = maxSize;
   }
 
   // Adds an item to the queue
   @Override
-  public void put(T item) {
+  public void put(final T item) {
     final CompletableFuture<T> maybeTaker;
     synchronized (this) {
       if (!takers.isEmpty()) {
@@ -56,11 +56,11 @@ class LimitedAsyncQueue<T> implements AsyncQueue<T> {
   public synchronized SafeFuture<T> take() {
     if (!items.isEmpty()) {
       // If items are available, return a completed future
-      T item = items.poll();
+      final T item = items.poll();
       return SafeFuture.completedFuture(item);
     } else {
       // If no items, create a new CompletableFuture and add it to takers
-      SafeFuture<T> future = new SafeFuture<>();
+      final SafeFuture<T> future = new SafeFuture<>();
       takers.offer(future);
       return future;
     }

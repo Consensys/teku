@@ -64,7 +64,7 @@ public class SlotAndBlockRoot implements Comparable<SlotAndBlockRoot> {
   }
 
   @Override
-  public int compareTo(@NotNull SlotAndBlockRoot o) {
+  public int compareTo(final @NotNull SlotAndBlockRoot o) {
     return Comparator.comparing(SlotAndBlockRoot::getSlot)
         .thenComparing(SlotAndBlockRoot::getBlockRoot)
         .compare(this, o);

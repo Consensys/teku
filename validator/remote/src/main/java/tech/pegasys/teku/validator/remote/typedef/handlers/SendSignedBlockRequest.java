@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
+import static java.util.Collections.emptyMap;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLINDED_BLOCK;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLOCK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BROADCAST_VALIDATION;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLINDED_BLOCK_V2;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLOCK_V2;
 
-import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
@@ -55,33 +57,42 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
     this.preferSszBlockEncoding = new AtomicBoolean(preferSszBlockEncoding);
   }
 
-  public SendSignedBlockResult sendSignedBlock(final SignedBlockContainer signedBlockContainer) {
+  public SendSignedBlockResult submit(
+      final SignedBlockContainer signedBlockContainer,
+      final BroadcastValidationLevel broadcastValidationLevel) {
     final boolean blinded = signedBlockContainer.isBlinded();
 
-    final ValidatorApiMethod apiMethod = blinded ? SEND_SIGNED_BLINDED_BLOCK : SEND_SIGNED_BLOCK;
+    final ValidatorApiMethod apiMethod =
+        blinded ? SEND_SIGNED_BLINDED_BLOCK_V2 : SEND_SIGNED_BLOCK_V2;
 
     final SchemaDefinitions schemaDefinitions =
         spec.atSlot(signedBlockContainer.getSlot()).getSchemaDefinitions();
 
+    final SpecMilestone milestone = spec.atSlot(signedBlockContainer.getSlot()).getMilestone();
+    final Map<String, String> headers =
+        Map.of(HEADER_CONSENSUS_VERSION, milestone.name().toLowerCase(Locale.ROOT));
     final DeserializableTypeDefinition<SignedBlockContainer> typeDefinition =
         blinded
             ? schemaDefinitions.getSignedBlindedBlockContainerSchema().getJsonTypeDefinition()
             : schemaDefinitions.getSignedBlockContainerSchema().getJsonTypeDefinition();
-
     return preferSszBlockEncoding.get()
-        ? sendSignedBlockAsSszOrFallback(apiMethod, signedBlockContainer, typeDefinition)
-        : sendSignedBlockAsJson(apiMethod, signedBlockContainer, typeDefinition);
+        ? sendSignedBlockAsSszOrFallback(
+            apiMethod, signedBlockContainer, broadcastValidationLevel, typeDefinition, headers)
+        : sendSignedBlockAsJson(
+            apiMethod, signedBlockContainer, broadcastValidationLevel, typeDefinition, headers);
   }
 
   private SendSignedBlockResult sendSignedBlockAsSszOrFallback(
       final ValidatorApiMethod apiMethod,
       final SignedBlockContainer signedBlockContainer,
-      final DeserializableTypeDefinition<SignedBlockContainer> typeDefinition) {
-    final SpecMilestone milestone = spec.atSlot(signedBlockContainer.getSlot()).getMilestone();
+      final BroadcastValidationLevel broadcastValidationLevel,
+      final DeserializableTypeDefinition<SignedBlockContainer> typeDefinition,
+      final Map<String, String> headers) {
     final SendSignedBlockResult result =
-        sendSignedBlockAsSsz(apiMethod, signedBlockContainer, milestone);
+        sendSignedBlockAsSsz(apiMethod, signedBlockContainer, broadcastValidationLevel, headers);
     if (!result.isPublished() && !preferSszBlockEncoding.get()) {
-      return sendSignedBlockAsJson(apiMethod, signedBlockContainer, typeDefinition);
+      return sendSignedBlockAsJson(
+          apiMethod, signedBlockContainer, broadcastValidationLevel, typeDefinition, headers);
     }
     return result;
   }
@@ -89,11 +100,15 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
   private SendSignedBlockResult sendSignedBlockAsSsz(
       final ValidatorApiMethod apiMethod,
       final SignedBlockContainer signedBlockContainer,
-      final SpecMilestone milestone) {
+      final BroadcastValidationLevel broadcastValidationLevel,
+      final Map<String, String> headers) {
     return postOctetStream(
             apiMethod,
-            Collections.emptyMap(),
-            Map.of(HEADER_CONSENSUS_VERSION, milestone.name().toLowerCase(Locale.ROOT)),
+            emptyMap(),
+            Map.of(
+                PARAM_BROADCAST_VALIDATION,
+                broadcastValidationLevel.name().toLowerCase(Locale.ROOT)),
+            headers,
             signedBlockContainer.sszSerialize().toArray(),
             sszResponseHandler)
         .map(__ -> SendSignedBlockResult.success(signedBlockContainer.getRoot()))
@@ -103,10 +118,16 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
   private SendSignedBlockResult sendSignedBlockAsJson(
       final ValidatorApiMethod apiMethod,
       final SignedBlockContainer signedBlockContainer,
-      final DeserializableTypeDefinition<SignedBlockContainer> typeDefinition) {
+      final BroadcastValidationLevel broadcastValidationLevel,
+      final DeserializableTypeDefinition<SignedBlockContainer> typeDefinition,
+      final Map<String, String> headers) {
     return postJson(
             apiMethod,
-            Collections.emptyMap(),
+            emptyMap(),
+            Map.of(
+                PARAM_BROADCAST_VALIDATION,
+                broadcastValidationLevel.name().toLowerCase(Locale.ROOT)),
+            headers,
             signedBlockContainer,
             typeDefinition,
             new ResponseHandler<>())

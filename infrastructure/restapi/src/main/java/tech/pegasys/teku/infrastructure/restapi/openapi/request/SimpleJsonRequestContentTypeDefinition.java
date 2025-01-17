@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 public class SimpleJsonRequestContentTypeDefinition<T> extends DelegatingOpenApiTypeDefinition
     implements RequestContentTypeDefinition<T> {
 
-  private DeserializableTypeDefinition<T> typeDefinition;
+  private final DeserializableTypeDefinition<T> typeDefinition;
 
   public SimpleJsonRequestContentTypeDefinition(
       final DeserializableTypeDefinition<T> typeDefinition) {

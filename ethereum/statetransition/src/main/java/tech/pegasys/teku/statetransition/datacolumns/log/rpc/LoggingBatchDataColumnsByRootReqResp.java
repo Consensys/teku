@@ -16,7 +16,7 @@ package tech.pegasys.teku.statetransition.datacolumns.log.rpc;
 import java.util.List;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRootReqResp;
 
@@ -25,15 +25,15 @@ public class LoggingBatchDataColumnsByRootReqResp implements BatchDataColumnsByR
   private final DasReqRespLogger logger;
 
   public LoggingBatchDataColumnsByRootReqResp(
-      BatchDataColumnsByRootReqResp delegate, DasReqRespLogger logger) {
+      final BatchDataColumnsByRootReqResp delegate, final DasReqRespLogger logger) {
     this.delegate = delegate;
     this.logger = logger;
   }
 
   @Override
   public AsyncStream<DataColumnSidecar> requestDataColumnSidecarsByRoot(
-      UInt256 nodeId, List<DataColumnIdentifier> columnIdentifiers) {
-    ReqRespResponseLogger<DataColumnSidecar> responseLogger =
+      final UInt256 nodeId, final List<DataColumnIdentifier> columnIdentifiers) {
+    final ReqRespResponseLogger<DataColumnSidecar> responseLogger =
         logger
             .getDataColumnSidecarsByRootLogger()
             .onOutboundRequest(LoggingPeerId.fromNodeId(nodeId), columnIdentifiers);
@@ -43,7 +43,7 @@ public class LoggingBatchDataColumnsByRootReqResp implements BatchDataColumnsByR
   }
 
   @Override
-  public int getCurrentRequestLimit(UInt256 nodeId) {
+  public int getCurrentRequestLimit(final UInt256 nodeId) {
     return delegate.getCurrentRequestLimit(nodeId);
   }
 }

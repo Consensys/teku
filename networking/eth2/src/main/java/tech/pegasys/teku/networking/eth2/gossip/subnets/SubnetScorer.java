@@ -49,7 +49,7 @@ public class SubnetScorer implements PeerScorer {
   }
 
   @Override
-  public int scoreCandidatePeer(DiscoveryPeer candidate) {
+  public int scoreCandidatePeer(final DiscoveryPeer candidate) {
     return scoreCandidatePeer(
         candidate.getPersistentAttestationSubnets(),
         candidate.getSyncCommitteeSubnets(),

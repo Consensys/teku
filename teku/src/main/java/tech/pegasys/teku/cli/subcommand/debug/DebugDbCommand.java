@@ -143,6 +143,49 @@ public class DebugDbCommand implements Runnable {
   }
 
   @Command(
+      name = "get-earliest-available-block-slot",
+      description = "Get the earliest available block slot in the database",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int getEarliestAvailableBlockSlot(
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions,
+      @Option(
+              names = {"--timed", "-t"},
+              description = "Prints the time taken to retrieve the earliest available block slot",
+              defaultValue = "true",
+              fallbackValue = "true",
+              showDefaultValue = Visibility.ALWAYS)
+          final boolean verbose)
+      throws Exception {
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
+      if (verbose) {
+        final long startTime = System.currentTimeMillis();
+        final Optional<UInt64> earliestAvailableBlockSlot =
+            database.getEarliestAvailableBlockSlot();
+        final long endTime = System.currentTimeMillis();
+        earliestAvailableBlockSlot.ifPresent(System.out::println);
+        System.out.println(
+            "Time taken to retrieve the earliest available block slot: "
+                + (endTime - startTime)
+                + "ms");
+      } else {
+        final Optional<UInt64> earliestAvailableBlockSlot =
+            database.getEarliestAvailableBlockSlot();
+        earliestAvailableBlockSlot.ifPresent(System.out::println);
+      }
+      return 0;
+    }
+  }
+
+  @Command(
       name = "get-finalized-state-indices",
       description = "Display the slots of finalized states that are stored.",
       mixinStandardHelpOptions = true,
@@ -216,6 +259,7 @@ public class DebugDbCommand implements Runnable {
               .map(
                   storeData ->
                       StoreBuilder.create()
+                          .asyncRunner(asyncRunner)
                           .onDiskStoreData(storeData)
                           .metricsSystem(new NoOpMetricsSystem())
                           .specProvider(eth2NetworkOptions.getNetworkConfiguration().getSpec())
@@ -837,7 +881,8 @@ public class DebugDbCommand implements Runnable {
             StorageConfiguration.builder()
                 .eth1DepositContract(networkConfiguration.getEth1DepositContractAddress())
                 .specProvider(spec)
-                .build());
+                .build(),
+            Optional.empty());
     return databaseFactory.createDatabase();
   }
 

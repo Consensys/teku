@@ -14,10 +14,12 @@
 package tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch;
 
 import java.util.function.Function;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -40,7 +42,8 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final ValidatorStatusFactory validatorStatusFactory,
-      final SchemaDefinitions schemaDefinitions) {
+      final SchemaDefinitions schemaDefinitions,
+      final TimeProvider timeProvider) {
     super(
         specConfig,
         miscHelpers,
@@ -49,7 +52,8 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
         validatorsUtil,
         beaconStateUtil,
         validatorStatusFactory,
-        schemaDefinitions);
+        schemaDefinitions,
+        timeProvider);
   }
 
   @Override
@@ -65,7 +69,7 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
   }
 
   @Override
-  public void processParticipationUpdates(MutableBeaconState genericState) {
+  public void processParticipationUpdates(final MutableBeaconState genericState) {
     // Rotate current/previous epoch attestations
     final MutableBeaconStatePhase0 state = MutableBeaconStatePhase0.required(genericState);
     state.getPreviousEpochAttestations().setAll(state.getCurrentEpochAttestations());
@@ -79,6 +83,21 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
 
   @Override
   public void processSyncCommitteeUpdates(final MutableBeaconState state) {
+    // Nothing to do
+  }
+
+  @Override
+  public void applyPendingDeposits(final MutableBeaconState state, final PendingDeposit deposit) {
+    // Nothing to do
+  }
+
+  @Override
+  public void processPendingDeposits(final MutableBeaconState state) {
+    // Nothing to do
+  }
+
+  @Override
+  public void processPendingConsolidations(final MutableBeaconState state) {
     // Nothing to do
   }
 }

@@ -85,22 +85,22 @@ public class StateValidatorDataBuilder {
   private ValidatorStatus status;
   private Validator validator;
 
-  public StateValidatorDataBuilder index(UInt64 index) {
+  public StateValidatorDataBuilder index(final UInt64 index) {
     this.index = index;
     return this;
   }
 
-  public StateValidatorDataBuilder balance(UInt64 balance) {
+  public StateValidatorDataBuilder balance(final UInt64 balance) {
     this.balance = balance;
     return this;
   }
 
-  public StateValidatorDataBuilder status(ValidatorStatus status) {
+  public StateValidatorDataBuilder status(final ValidatorStatus status) {
     this.status = status;
     return this;
   }
 
-  public StateValidatorDataBuilder validator(Validator validator) {
+  public StateValidatorDataBuilder validator(final Validator validator) {
     this.validator = validator;
     return this;
   }

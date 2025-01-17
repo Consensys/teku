@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,93 +15,71 @@ package tech.pegasys.teku.spec.datastructures.operations;
 
 import com.google.common.collect.Sets;
 import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.type.SszSignature;
-import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0;
 
-public class Attestation extends Container3<Attestation, SszBitlist, AttestationData, SszSignature>
-    implements AttestationContainer {
-
-  public static class AttestationSchema
-      extends ContainerSchema3<Attestation, SszBitlist, AttestationData, SszSignature> {
-
-    public AttestationSchema(final SpecConfig specConfig) {
-      super(
-          "Attestation",
-          namedSchema(
-              "aggregation_bits",
-              SszBitlistSchema.create(specConfig.getMaxValidatorsPerCommittee())),
-          namedSchema("data", AttestationData.SSZ_SCHEMA),
-          namedSchema("signature", SszSignatureSchema.INSTANCE));
-    }
-
-    public SszBitlistSchema<?> getAggregationBitsSchema() {
-      return (SszBitlistSchema<?>) getFieldSchema0();
-    }
-
-    @Override
-    public Attestation createFromBackingNode(TreeNode node) {
-      return new Attestation(this, node);
-    }
-
-    public Attestation create(
-        final SszBitlist aggregationBits,
-        final AttestationData data,
-        final BLSSignature signature) {
-      return new Attestation(this, aggregationBits, data, signature);
-    }
-
-    public SszBitlist createEmptyAggregationBits() {
-      final SszBitlistSchema<?> bitsSchema = getAggregationBitsSchema();
-      return bitsSchema.ofBits(Math.toIntExact(bitsSchema.getMaxLength()));
-    }
-  }
-
-  private Attestation(final AttestationSchema type, final TreeNode backingNode) {
-    super(type, backingNode);
-  }
-
-  private Attestation(
-      final AttestationSchema schema,
-      final SszBitlist aggregationBits,
-      final AttestationData data,
-      final BLSSignature signature) {
-    super(schema, aggregationBits, data, new SszSignature(signature));
-  }
+/**
+ * Interface used to represent different types of attestations ({@link AttestationPhase0} and {@link
+ * tech.pegasys.teku.spec.datastructures.state.PendingAttestation})
+ */
+public interface Attestation extends SszContainer {
 
   @Override
-  public AttestationSchema getSchema() {
-    return (AttestationSchema) super.getSchema();
-  }
+  AttestationSchema<? extends Attestation> getSchema();
 
-  public UInt64 getEarliestSlotForForkChoiceProcessing(final Spec spec) {
+  default UInt64 getEarliestSlotForForkChoiceProcessing(final Spec spec) {
     return getData().getEarliestSlotForForkChoice(spec);
   }
 
-  public Collection<Bytes32> getDependentBlockRoots() {
+  default Collection<Bytes32> getDependentBlockRoots() {
     return Sets.newHashSet(getData().getTarget().getRoot(), getData().getBeaconBlockRoot());
   }
 
-  @Override
-  public SszBitlist getAggregationBits() {
-    return getField0();
+  AttestationData getData();
+
+  SszBitlist getAggregationBits();
+
+  UInt64 getFirstCommitteeIndex();
+
+  default Optional<SszBitvector> getCommitteeBits() {
+    return Optional.empty();
   }
 
-  @Override
-  public AttestationData getData() {
-    return getField1();
+  default SszBitvector getCommitteeBitsRequired() {
+    return getCommitteeBits()
+        .orElseThrow(() -> new IllegalArgumentException("Missing committee bits"));
   }
 
-  public BLSSignature getAggregateSignature() {
-    return getField2().getSignature();
+  BLSSignature getAggregateSignature();
+
+  default Optional<List<UInt64>> getCommitteeIndices() {
+    return Optional.empty();
+  }
+
+  default List<UInt64> getCommitteeIndicesRequired() {
+    return getCommitteeIndices()
+        .orElseThrow(() -> new IllegalArgumentException("Missing committee indices"));
+  }
+
+  boolean requiresCommitteeBits();
+
+  default boolean isSingleAttestation() {
+    return false;
+  }
+
+  default SingleAttestation toSingleAttestationRequired() {
+    throw new UnsupportedOperationException("Not a SingleAttestation");
+  }
+
+  default UInt64 getValidatorIndexRequired() {
+    throw new UnsupportedOperationException("Not a SingleAttestation");
   }
 }

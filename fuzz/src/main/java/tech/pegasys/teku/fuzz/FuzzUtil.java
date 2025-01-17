@@ -28,10 +28,13 @@ import tech.pegasys.teku.fuzz.input.BeaconBlockBodyFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockHeaderFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlsToExecutionChangeFuzzInput;
+import tech.pegasys.teku.fuzz.input.ConsolidationRequestFuzzInput;
 import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
+import tech.pegasys.teku.fuzz.input.DepositRequestFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.SyncAggregateFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
+import tech.pegasys.teku.fuzz.input.WithdrawalRequestFuzzInput;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
@@ -40,9 +43,13 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -52,14 +59,20 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class FuzzUtil {
   // NOTE: alternatively could also have these all in separate classes, which implement a
   // "FuzzHarness" interface
 
   private final Spec spec;
-  private final BeaconBlockBodySchemaCapella<?> beaconBlockBodySchema;
+  private final BeaconBlockBodySchemaElectra<?> beaconBlockBodySchema;
   private final SpecVersion specVersion;
+  private final BeaconStateMutatorsElectra stateMutatorsElectra;
 
   // Size of ValidatorIndex returned by shuffle
   private static final int OUTPUT_INDEX_BYTES = Long.BYTES;
@@ -70,14 +83,27 @@ public class FuzzUtil {
   public FuzzUtil(final boolean useMainnetConfig, final boolean disableBls) {
     spec =
         useMainnetConfig
-            ? TestSpecFactory.createMainnetCapella()
-            : TestSpecFactory.createMinimalCapella();
-    specVersion = spec.forMilestone(SpecMilestone.CAPELLA);
+            ? TestSpecFactory.createMainnetElectra()
+            : TestSpecFactory.createMinimalElectra();
+    specVersion = spec.forMilestone(SpecMilestone.ELECTRA);
     beaconBlockBodySchema =
-        (BeaconBlockBodySchemaCapella<?>)
+        (BeaconBlockBodySchemaElectra<?>)
             specVersion.getSchemaDefinitions().getBeaconBlockBodySchema();
     initialize(disableBls);
     this.signatureVerifier = disableBls ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
+
+    final PredicatesElectra predicates = new PredicatesElectra(spec.getGenesisSpecConfig());
+    final SchemaDefinitionsElectra schemaDefinitionsElectra =
+        SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions());
+    final SpecConfigElectra specConfig =
+        spec.getGenesisSpecConfig().toVersionElectra().orElseThrow();
+    final MiscHelpersElectra miscHelpersElectra =
+        new MiscHelpersElectra(specConfig, predicates, schemaDefinitionsElectra);
+    final BeaconStateAccessorsElectra stateAccessorsElectra =
+        new BeaconStateAccessorsElectra(specConfig, predicates, miscHelpersElectra);
+    stateMutatorsElectra =
+        new BeaconStateMutatorsElectra(
+            specConfig, miscHelpersElectra, stateAccessorsElectra, schemaDefinitionsElectra);
   }
 
   public static void initialize(final boolean disableBls) {
@@ -146,7 +172,6 @@ public class FuzzUtil {
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (StateTransitionException e) {
-      e.printStackTrace();
       // "expected error"
       return Optional.empty();
     }
@@ -157,14 +182,14 @@ public class FuzzUtil {
         deserialize(input, BlockHeaderFuzzInput.createType(specVersion));
 
     try {
-      BeaconState postState =
+      final BeaconState postState =
           structuredInput
               .getState()
               .updated(
                   state ->
                       spec.getBlockProcessor(state.getSlot())
                           .processBlockHeader(state, structuredInput.getBlock()));
-      Bytes output = postState.sszSerialize();
+      final Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
       // "expected error"
@@ -293,7 +318,7 @@ public class FuzzUtil {
     BeaconBlockBodyFuzzInput structuredPayloadInput =
         deserialize(input, BeaconBlockBodyFuzzInput.createSchema(specVersion));
 
-    final BeaconBlockBodyCapella beaconBlockBody = structuredPayloadInput.getBeaconBlockBody();
+    final BeaconBlockBodyElectra beaconBlockBody = structuredPayloadInput.getBeaconBlockBody();
     try {
       BeaconState postState =
           structuredPayloadInput
@@ -334,7 +359,86 @@ public class FuzzUtil {
     }
   }
 
-  private <T extends SszData> T deserialize(byte[] data, SszSchema<T> type) {
+  public Optional<byte[]> fuzzDepositRequest(final byte[] input) {
+    DepositRequestFuzzInput structuredInput =
+        deserialize(input, DepositRequestFuzzInput.createSchema(specVersion));
+    SszList<DepositRequest> depositRequests =
+        beaconBlockBodySchema
+            .getExecutionRequestsSchema()
+            .getDepositRequestsSchema()
+            .of(structuredInput.getDepositRequest());
+
+    try {
+      BeaconState postState =
+          structuredInput
+              .getState()
+              .updated(
+                  state ->
+                      spec.getBlockProcessor(state.getSlot())
+                          .processDepositRequests(state, depositRequests.asList()));
+      Bytes output = postState.sszSerialize();
+      return Optional.of(output.toArrayUnsafe());
+    } catch (BlockProcessingException e) {
+      // "expected error"
+      return Optional.empty();
+    }
+  }
+
+  public Optional<byte[]> fuzzWithdrawalRequest(final byte[] input) {
+    WithdrawalRequestFuzzInput structuredInput =
+        deserialize(input, WithdrawalRequestFuzzInput.createSchema(specVersion));
+    SszList<WithdrawalRequest> withdrawalRequests =
+        beaconBlockBodySchema
+            .getExecutionRequestsSchema()
+            .getWithdrawalRequestsSchema()
+            .of(structuredInput.getWithdrawalRequest());
+
+    try {
+      BeaconState postState =
+          structuredInput
+              .getState()
+              .updated(
+                  state ->
+                      spec.getBlockProcessor(state.getSlot())
+                          .processWithdrawalRequests(
+                              state,
+                              withdrawalRequests.asList(),
+                              stateMutatorsElectra.createValidatorExitContextSupplier(
+                                  structuredInput.getState())));
+      Bytes output = postState.sszSerialize();
+      return Optional.of(output.toArrayUnsafe());
+    } catch (BlockProcessingException e) {
+      // "expected error"
+      return Optional.empty();
+    }
+  }
+
+  public Optional<byte[]> fuzzConsolidationRequest(final byte[] input) {
+    ConsolidationRequestFuzzInput structuredInput =
+        deserialize(input, ConsolidationRequestFuzzInput.createSchema(specVersion));
+    SszList<ConsolidationRequest> consolidationRequests =
+        beaconBlockBodySchema
+            .getExecutionRequestsSchema()
+            .getConsolidationRequestsSchema()
+            .of(structuredInput.getConsolidationRequest());
+
+    try {
+      BeaconState postState =
+          structuredInput
+              .getState()
+              .updated(
+                  state ->
+                      spec.getBlockProcessor(state.getSlot())
+                          .processConsolidationRequests(state, consolidationRequests.asList()));
+      Bytes output = postState.sszSerialize();
+      return Optional.of(output.toArrayUnsafe());
+    } catch (BlockProcessingException e) {
+      // "expected error"
+      return Optional.empty();
+    }
+  }
+
+  private <T extends SszData> T deserialize(final byte[] data, final SszSchema<T> type) {
     // allow exception to propagate on failure - indicates a preprocessing or deserializing error
     T structuredInput = type.sszDeserialize(Bytes.wrap(data));
     if (structuredInput == null) {

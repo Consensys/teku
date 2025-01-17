@@ -25,7 +25,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -36,7 +36,7 @@ import tech.pegasys.teku.statetransition.datacolumns.util.StubAsync;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class ColumnIdCachingDasDbTest {
-  final Spec spec = TestSpecFactory.createMinimalEip7594();
+  final Spec spec = TestSpecFactory.createMinimalFulu();
   final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
 
   final Duration dbDelay = ofMillis(5);
@@ -48,11 +48,12 @@ public class ColumnIdCachingDasDbTest {
   final int cacheSize = 2;
   ColumnIdCachingDasDb columnIdCachingDb = new ColumnIdCachingDasDb(asyncDb, __ -> 128, cacheSize);
 
-  private DataColumnSidecar createSidecar(int slot, int index) {
-    UInt64 slotU = UInt64.valueOf(slot);
-    BeaconBlockBody beaconBlockBody = dataStructureUtil.randomBeaconBlockBodyWithCommitments(1);
-    BeaconBlock block = dataStructureUtil.randomBeaconBlock(slotU, beaconBlockBody);
-    SignedBeaconBlock signedBlock = dataStructureUtil.signedBlock(block);
+  private DataColumnSidecar createSidecar(final int slot, final int index) {
+    final UInt64 slotU = UInt64.valueOf(slot);
+    final BeaconBlockBody beaconBlockBody =
+        dataStructureUtil.randomBeaconBlockBodyWithCommitments(1);
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(slotU, beaconBlockBody);
+    final SignedBeaconBlock signedBlock = dataStructureUtil.signedBlock(block);
     return dataStructureUtil.randomDataColumnSidecar(signedBlock.asHeader(), UInt64.valueOf(index));
   }
 

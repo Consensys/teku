@@ -70,7 +70,7 @@ public class Eth1DataProviderTest {
     assertThat(slotsInVotingPeriod).isEqualTo(SLOTS_IN_VOTING_PERIOD_ASSERTION);
 
     final Eth1VotingPeriod eth1VotingPeriod = new Eth1VotingPeriod(spec);
-    final Eth1DataCache eth1DataCache = new Eth1DataCache(metricsSystem, eth1VotingPeriod);
+    final Eth1DataCache eth1DataCache = new Eth1DataCache(spec, metricsSystem, eth1VotingPeriod);
     final DepositProvider depositProvider =
         new DepositProvider(
             new StubMetricsSystem(),
@@ -167,7 +167,7 @@ public class Eth1DataProviderTest {
     assertThat(votedOnce).contains(eth1Data2, eth1Data3);
   }
 
-  private SszList<Eth1Data> createEth1DataVotes(Eth1Data... eth1Data) {
+  private SszList<Eth1Data> createEth1DataVotes(final Eth1Data... eth1Data) {
     final List<Eth1Data> eth1DataList = new ArrayList<>(Arrays.asList(eth1Data));
     return spec.atSlot(state.getSlot())
         .getSchemaDefinitions()

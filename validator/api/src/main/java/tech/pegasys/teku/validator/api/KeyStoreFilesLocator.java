@@ -59,7 +59,7 @@ public class KeyStoreFilesLocator {
   }
 
   private void parseEntry(
-      final String keyFileName, final String passwordFileName, Map<Path, Path> pathMap) {
+      final String keyFileName, final String passwordFileName, final Map<Path, Path> pathMap) {
     final File keyFile = new File(keyFileName);
     final File passwordFile = new File(passwordFileName);
 
@@ -114,7 +114,7 @@ public class KeyStoreFilesLocator {
   }
 
   private void parseDirectory(
-      final File keyDirectory, final File passwordDirectory, Map<Path, Path> pathMap) {
+      final File keyDirectory, final File passwordDirectory, final Map<Path, Path> pathMap) {
     try (Stream<Path> walk = Files.walk(keyDirectory.toPath(), FileVisitOption.FOLLOW_LINKS)) {
       walk.filter(Files::isRegularFile)
           .filter(
@@ -149,7 +149,7 @@ public class KeyStoreFilesLocator {
     }
   }
 
-  private List<Pair<Path, Path>> getFilePairs(Map<Path, Path> pathMap) {
+  private List<Pair<Path, Path>> getFilePairs(final Map<Path, Path> pathMap) {
     return pathMap.entrySet().stream()
         .map(entry -> Pair.of(entry.getKey(), entry.getValue()))
         .toList();

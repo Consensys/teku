@@ -24,8 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class SszMutablePrimitiveListImpl<
-        ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+public class SszMutablePrimitiveListImpl<ElementT, SszElementT extends SszPrimitive<ElementT>>
     extends AbstractSszMutablePrimitiveCollection<ElementT, SszElementT>
     implements SszMutablePrimitiveList<ElementT, SszElementT> {
 
@@ -34,14 +33,14 @@ public class SszMutablePrimitiveListImpl<
 
   @SuppressWarnings("unchecked")
   public SszMutablePrimitiveListImpl(
-      SszPrimitiveListImpl<ElementT, SszElementT> backingImmutableList) {
+      final SszPrimitiveListImpl<ElementT, SszElementT> backingImmutableList) {
     super(backingImmutableList);
     cachedSize = backingImmutableList.size();
     cachedMaxLength = getSchema().getMaxLength();
   }
 
   @Override
-  protected void checkIndex(int index, boolean set) {
+  protected void checkIndex(final int index, final boolean set) {
     if (index < 0
         || (!set && index >= size())
         || (set && (index > size() || index >= cachedMaxLength))) {
@@ -51,7 +50,7 @@ public class SszMutablePrimitiveListImpl<
   }
 
   @Override
-  protected TreeNode doFinalTreeUpdates(TreeNode updatedTree) {
+  protected TreeNode doFinalTreeUpdates(final TreeNode updatedTree) {
     return updateSize(updatedTree);
   }
 
@@ -60,7 +59,7 @@ public class SszMutablePrimitiveListImpl<
     return cachedSize;
   }
 
-  private TreeNode updateSize(TreeNode root) {
+  private TreeNode updateSize(final TreeNode root) {
     return BranchNode.create(root.get(GIndexUtil.LEFT_CHILD_G_INDEX), createSizeNode());
   }
 
@@ -69,7 +68,7 @@ public class SszMutablePrimitiveListImpl<
   }
 
   @Override
-  public void set(int index, SszElementT value) {
+  public void set(final int index, final SszElementT value) {
     super.set(index, value);
     if (index == size()) {
       cachedSize++;
@@ -96,7 +95,7 @@ public class SszMutablePrimitiveListImpl<
 
   @Override
   protected SszPrimitiveListImpl<ElementT, SszElementT> createImmutableSszComposite(
-      TreeNode backingNode, IntCache<SszElementT> childrenCache) {
+      final TreeNode backingNode, final IntCache<SszElementT> childrenCache) {
     return new SszPrimitiveListImpl<>(getSchema(), backingNode, childrenCache);
   }
 

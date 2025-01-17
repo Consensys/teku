@@ -13,51 +13,145 @@
 
 package tech.pegasys.teku.validator.client.signer;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.HashMap;
+import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.enumOf;
+import static tech.pegasys.teku.validator.client.signer.ExternalSigner.FORK_INFO;
+
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.validator.api.signer.AggregationSlotWrapper;
+import tech.pegasys.teku.validator.api.signer.BlockWrapper;
+import tech.pegasys.teku.validator.api.signer.RandaoRevealWrapper;
+import tech.pegasys.teku.validator.api.signer.SignType;
+import tech.pegasys.teku.validator.api.signer.SyncAggregatorSelectionDataWrapper;
+import tech.pegasys.teku.validator.api.signer.SyncCommitteeMessageWrapper;
 
-public class SigningRequestBody {
-  @JsonProperty("signingRoot")
-  private Bytes signingRoot;
+public record SigningRequestBody(Bytes signingRoot, SignType type, Map<String, Object> metadata) {
+  private static final StringValueTypeDefinition<Bytes> BYTES_TYPE =
+      DeserializableTypeDefinition.string(Bytes.class)
+          .formatter(Bytes::toHexString)
+          .parser(Bytes::fromHexString)
+          .format("byte")
+          .build();
 
-  @JsonProperty("type")
-  private SignType type;
-
-  @JsonAnySetter private final Map<String, Object> metadata = new HashMap<>();
-
-  public SigningRequestBody() {
-    // keeps jackson happy
+  public SerializableTypeDefinition<SigningRequestBody> getJsonTypeDefinition(
+      final SchemaDefinitions schemaDefinitions) {
+    return SerializableTypeDefinition.object(SigningRequestBody.class)
+        .withField("signingRoot", BYTES_TYPE, SigningRequestBody::signingRoot)
+        .withField("type", enumOf(SignType.class), SigningRequestBody::type)
+        .withOptionalField(
+            SignType.VOLUNTARY_EXIT.getName(),
+            VoluntaryExit.SSZ_SCHEMA.getJsonTypeDefinition(),
+            SigningRequestBody::getVoluntaryExit)
+        .withOptionalField(
+            SignType.AGGREGATION_SLOT.getName(),
+            AggregationSlotWrapper.getJsonTypeDefinition(),
+            SigningRequestBody::getAggregationSlot)
+        .withOptionalField(
+            FORK_INFO, ForkInfo.getJsonTypeDefinition(), SigningRequestBody::getForkInfo)
+        .withOptionalField(
+            SignType.ATTESTATION.getName(),
+            AttestationData.SSZ_SCHEMA.getJsonTypeDefinition(),
+            SigningRequestBody::getAttestationData)
+        .withOptionalField(
+            SignType.SYNC_COMMITTEE_MESSAGE.getName(),
+            SyncCommitteeMessageWrapper.getJsonTypeDefinition(),
+            SigningRequestBody::getSyncCommitteeMessage)
+        .withOptionalField(
+            SignType.SYNC_AGGREGATOR_SELECTION_DATA.getName(),
+            SyncAggregatorSelectionDataWrapper.getJsonTypefinition(),
+            SigningRequestBody::getSyncAggregateSelectionData)
+        .withOptionalField(
+            SignType.BEACON_BLOCK.getName(),
+            getBlockWrapper().map(BlockWrapper::getJsonTypeDefinition).orElse(null),
+            SigningRequestBody::getBlockWrapper)
+        .withOptionalField(
+            SignType.VALIDATOR_REGISTRATION.getName(),
+            ValidatorRegistration.SSZ_SCHEMA.getJsonTypeDefinition(),
+            SigningRequestBody::getValidatorRegistration)
+        .withOptionalField(
+            SignType.CONTRIBUTION_AND_PROOF.getName(),
+            getContributionAndProof().map(z -> z.getSchema().getJsonTypeDefinition()).orElse(null),
+            SigningRequestBody::getContributionAndProof)
+        .withOptionalField(
+            SignType.AGGREGATE_AND_PROOF.getName(),
+            schemaDefinitions.getAggregateAndProofSchema().getJsonTypeDefinition(),
+            SigningRequestBody::getAggregateAndProof)
+        .withOptionalField(
+            SignType.BLOCK.getName(),
+            schemaDefinitions.getBeaconBlockSchema().getJsonTypeDefinition(),
+            SigningRequestBody::getBlock)
+        .withOptionalField(
+            SignType.RANDAO_REVEAL.getName(),
+            RandaoRevealWrapper.getJsonTypeDefinition(),
+            SigningRequestBody::getRandaoReveal)
+        .build();
   }
 
-  public SigningRequestBody(
-      final Bytes signingRoot, final SignType type, final Map<String, Object> metadata) {
-    this.signingRoot = signingRoot;
-    this.type = type;
-    this.metadata.putAll(metadata);
+  private Optional<ForkInfo> getForkInfo() {
+    return Optional.ofNullable((ForkInfo) metadata.get(FORK_INFO));
   }
 
-  @JsonAnyGetter
-  public Map<String, Object> getMetadata() {
-    return metadata;
+  private Optional<VoluntaryExit> getVoluntaryExit() {
+    return Optional.ofNullable((VoluntaryExit) metadata.get(SignType.VOLUNTARY_EXIT.getName()));
   }
 
-  public void setSigningRoot(final Bytes signingRoot) {
-    this.signingRoot = signingRoot;
+  private Optional<ContributionAndProof> getContributionAndProof() {
+    return Optional.ofNullable(
+        (ContributionAndProof) metadata.get(SignType.CONTRIBUTION_AND_PROOF.getName()));
   }
 
-  public Bytes getSigningRoot() {
-    return signingRoot;
+  private Optional<AttestationData> getAttestationData() {
+    return Optional.ofNullable((AttestationData) metadata.get(SignType.ATTESTATION.getName()));
   }
 
-  public SignType getType() {
-    return type;
+  private Optional<AggregateAndProof> getAggregateAndProof() {
+    return Optional.ofNullable(
+        (AggregateAndProof) metadata.get(SignType.AGGREGATE_AND_PROOF.getName()));
   }
 
-  public void setType(final SignType type) {
-    this.type = type;
+  private Optional<BeaconBlock> getBlock() {
+    return Optional.ofNullable((BeaconBlock) metadata.get(SignType.BLOCK.getName()));
+  }
+
+  private Optional<BlockWrapper> getBlockWrapper() {
+    return Optional.ofNullable((BlockWrapper) metadata.get(SignType.BEACON_BLOCK.getName()));
+  }
+
+  private Optional<SyncCommitteeMessageWrapper> getSyncCommitteeMessage() {
+    return Optional.ofNullable(
+        (SyncCommitteeMessageWrapper) metadata.get(SignType.SYNC_COMMITTEE_MESSAGE.getName()));
+  }
+
+  private Optional<SyncAggregatorSelectionDataWrapper> getSyncAggregateSelectionData() {
+    return Optional.ofNullable(
+        (SyncAggregatorSelectionDataWrapper)
+            metadata.get(SignType.SYNC_AGGREGATOR_SELECTION_DATA.getName()));
+  }
+
+  private Optional<ValidatorRegistration> getValidatorRegistration() {
+    return Optional.ofNullable(
+        (ValidatorRegistration) metadata.get(SignType.VALIDATOR_REGISTRATION.getName()));
+  }
+
+  private Optional<RandaoRevealWrapper> getRandaoReveal() {
+    return Optional.ofNullable(
+        (RandaoRevealWrapper) metadata.get(SignType.RANDAO_REVEAL.getName()));
+  }
+
+  private Optional<AggregationSlotWrapper> getAggregationSlot() {
+    return Optional.ofNullable(
+        (AggregationSlotWrapper) metadata.get(SignType.AGGREGATION_SLOT.getName()));
   }
 }

@@ -218,7 +218,7 @@ class PeerSubnetSubscriptionsTest {
         subnetPeerCountGauge);
   }
 
-  private void withSubscriberCountForAllSubnets(int subscriberCount) {
+  private void withSubscriberCountForAllSubnets(final int subscriberCount) {
     // Set up subscribers
     final List<NodeId> subscribers = new ArrayList<>();
     IntStream.range(0, subscriberCount).mapToObj(MockNodeId::new).forEach(subscribers::add);

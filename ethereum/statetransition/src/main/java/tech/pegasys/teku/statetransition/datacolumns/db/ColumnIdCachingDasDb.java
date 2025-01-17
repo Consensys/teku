@@ -23,7 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 class ColumnIdCachingDasDb implements DataColumnSidecarDB {
@@ -34,15 +34,15 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
   private final Map<UInt64, SlotCache> slotCaches;
 
   public ColumnIdCachingDasDb(
-      DataColumnSidecarDB delegateDb,
-      Function<UInt64, Integer> slotToNumberOfColumns,
-      int maxCacheSize) {
+      final DataColumnSidecarDB delegateDb,
+      final Function<UInt64, Integer> slotToNumberOfColumns,
+      final int maxCacheSize) {
     this.delegateDb = delegateDb;
     this.slotToNumberOfColumns = slotToNumberOfColumns;
     this.slotCaches = LimitedMap.createSynchronizedLRU(maxCacheSize);
   }
 
-  private SlotCache getOrCreateSlotCache(UInt64 slot) {
+  private SlotCache getOrCreateSlotCache(final UInt64 slot) {
     return slotCaches.computeIfAbsent(
         slot,
         __ ->
@@ -50,17 +50,17 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
                 delegateDb.getColumnIdentifiers(slot), slotToNumberOfColumns.apply(slot)));
   }
 
-  private void invalidateSlotCache(UInt64 slot) {
+  private void invalidateSlotCache(final UInt64 slot) {
     slotCaches.remove(slot);
   }
 
   @Override
-  public SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(UInt64 slot) {
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(final UInt64 slot) {
     return getOrCreateSlotCache(slot).generateColumnIdentifiers(slot);
   }
 
   @Override
-  public SafeFuture<Void> addSidecar(DataColumnSidecar sidecar) {
+  public SafeFuture<Void> addSidecar(final DataColumnSidecar sidecar) {
     invalidateSlotCache(sidecar.getSlot());
     return delegateDb.addSidecar(sidecar);
   }
@@ -69,17 +69,19 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
     private final SafeFuture<Map<Bytes32, BitSet>> compactCacheFuture;
 
     public SlotCache(
-        SafeFuture<List<DataColumnSlotAndIdentifier>> dbResponseFuture, int numberOfColumns) {
+        final SafeFuture<List<DataColumnSlotAndIdentifier>> dbResponseFuture,
+        final int numberOfColumns) {
       this.compactCacheFuture =
           dbResponseFuture.thenApply(slotColumns -> toCompactCache(slotColumns, numberOfColumns));
     }
 
-    public SafeFuture<List<DataColumnSlotAndIdentifier>> generateColumnIdentifiers(UInt64 slot) {
+    public SafeFuture<List<DataColumnSlotAndIdentifier>> generateColumnIdentifiers(
+        final UInt64 slot) {
       return compactCacheFuture.thenApply(compactCache -> toColumnIdentifiers(slot, compactCache));
     }
 
     private static Map<Bytes32, BitSet> toCompactCache(
-        List<DataColumnSlotAndIdentifier> slotColumns, int numberOfColumns) {
+        final List<DataColumnSlotAndIdentifier> slotColumns, final int numberOfColumns) {
       final Map<Bytes32, BitSet> compactCache = new HashMap<>();
       slotColumns.forEach(
           colId ->
@@ -90,7 +92,7 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
     }
 
     private static List<DataColumnSlotAndIdentifier> toColumnIdentifiers(
-        UInt64 slot, Map<Bytes32, BitSet> compactCache) {
+        final UInt64 slot, final Map<Bytes32, BitSet> compactCache) {
       return compactCache.entrySet().stream()
           .flatMap(
               entry ->
@@ -115,22 +117,22 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
 
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
-      DataColumnSlotAndIdentifier identifier) {
+      final DataColumnSlotAndIdentifier identifier) {
     return delegateDb.getSidecar(identifier);
   }
 
   @Override
-  public SafeFuture<Void> setFirstCustodyIncompleteSlot(UInt64 slot) {
+  public SafeFuture<Void> setFirstCustodyIncompleteSlot(final UInt64 slot) {
     return delegateDb.setFirstCustodyIncompleteSlot(slot);
   }
 
   @Override
-  public SafeFuture<Void> setFirstSamplerIncompleteSlot(UInt64 slot) {
+  public SafeFuture<Void> setFirstSamplerIncompleteSlot(final UInt64 slot) {
     return delegateDb.setFirstSamplerIncompleteSlot(slot);
   }
 
   @Override
-  public SafeFuture<Void> pruneAllSidecars(UInt64 tillSlot) {
+  public SafeFuture<Void> pruneAllSidecars(final UInt64 tillSlot) {
     return delegateDb.pruneAllSidecars(tillSlot);
   }
 }

@@ -19,8 +19,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 
 public class BeaconBlockBodySchemaPhase0Test {
 
@@ -31,13 +29,13 @@ public class BeaconBlockBodySchemaPhase0Test {
     final BeaconBlockBodySchemaPhase0 specA =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            new AttesterSlashingSchema(new IndexedAttestationSchema(specConfig)),
-            "BeaconBlockBodyPhase0");
+            "BeaconBlockBodyPhase0",
+            spec.getGenesisSchemaDefinitions().getSchemaRegistry());
     final BeaconBlockBodySchemaPhase0 specB =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            new AttesterSlashingSchema(new IndexedAttestationSchema(specConfig)),
-            "BeaconBlockBodyPhase0");
+            "BeaconBlockBodyPhase0",
+            spec.getGenesisSchemaDefinitions().getSchemaRegistry());
 
     assertThat(specA).isEqualTo(specB);
   }
@@ -49,13 +47,13 @@ public class BeaconBlockBodySchemaPhase0Test {
     final BeaconBlockBodySchemaPhase0 specA =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            new AttesterSlashingSchema(new IndexedAttestationSchema(specConfig)),
-            "BeaconBlockBodyPhase0");
+            "BeaconBlockBodyPhase0",
+            spec.getGenesisSchemaDefinitions().getSchemaRegistry());
     final BeaconBlockBodySchemaPhase0 specB =
         BeaconBlockBodySchemaPhase0.create(
             specConfig,
-            new AttesterSlashingSchema(new IndexedAttestationSchema(specConfig)),
-            "BeaconBlockBodyPhase0");
+            "BeaconBlockBodyPhase0",
+            spec.getGenesisSchemaDefinitions().getSchemaRegistry());
 
     assertThat(specA).isEqualTo(specB);
   }

@@ -21,12 +21,12 @@ import tech.pegasys.teku.storage.client.ValidatorIsConnectedProvider;
 public class ValidatorIsConnectedProviderImpl implements ValidatorIsConnectedProvider {
   private final Supplier<ForkChoiceNotifier> forkChoiceNotifier;
 
-  public ValidatorIsConnectedProviderImpl(Supplier<ForkChoiceNotifier> forkChoiceNotifier) {
+  public ValidatorIsConnectedProviderImpl(final Supplier<ForkChoiceNotifier> forkChoiceNotifier) {
     this.forkChoiceNotifier = forkChoiceNotifier;
   }
 
   @Override
-  public boolean isValidatorConnected(int validatorId, UInt64 slot) {
+  public boolean isValidatorConnected(final int validatorId, final UInt64 slot) {
     return forkChoiceNotifier.get().validatorIsConnected(UInt64.valueOf(validatorId), slot);
   }
 }

@@ -22,13 +22,13 @@ public record LoggingResponseCallback<T>(
     ResponseCallback<T> callback, ReqRespResponseLogger<T> logger) implements ResponseCallback<T> {
 
   @Override
-  public SafeFuture<Void> respond(T data) {
+  public SafeFuture<Void> respond(final T data) {
     logger.onNextItem(data);
     return callback.respond(data);
   }
 
   @Override
-  public void respondAndCompleteSuccessfully(T data) {
+  public void respondAndCompleteSuccessfully(final T data) {
     logger.onNextItem(data);
     logger.onComplete();
     callback.respondAndCompleteSuccessfully(data);
@@ -41,13 +41,13 @@ public record LoggingResponseCallback<T>(
   }
 
   @Override
-  public void completeWithErrorResponse(RpcException error) {
+  public void completeWithErrorResponse(final RpcException error) {
     logger.onError(error);
     callback.completeWithErrorResponse(error);
   }
 
   @Override
-  public void completeWithUnexpectedError(Throwable error) {
+  public void completeWithUnexpectedError(final Throwable error) {
     logger.onError(error);
     callback.completeWithUnexpectedError(error);
   }

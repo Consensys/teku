@@ -26,6 +26,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -42,7 +44,7 @@ import tech.pegasys.teku.spec.generator.VoluntaryExitGenerator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class VoluntaryExitGossipIntegrationTest {
-
+  private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(3);
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
@@ -108,6 +110,6 @@ public class VoluntaryExitGossipIntegrationTest {
 
   private NodeManager createNodeManager(final Consumer<Eth2P2PNetworkBuilder> networkBuilder)
       throws Exception {
-    return NodeManager.create(networkFactory, validatorKeys, networkBuilder);
+    return NodeManager.create(asyncRunner, networkFactory, validatorKeys, networkBuilder);
   }
 }

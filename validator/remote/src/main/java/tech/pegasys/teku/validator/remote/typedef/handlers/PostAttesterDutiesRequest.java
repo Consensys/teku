@@ -23,6 +23,7 @@ import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
+import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
@@ -32,11 +33,11 @@ public class PostAttesterDutiesRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
   }
 
-  public Optional<AttesterDuties> postAttesterDuties(
+  public Optional<AttesterDuties> submit(
       final UInt64 epoch, final Collection<Integer> validatorIndices) {
     return postJson(
         GET_ATTESTATION_DUTIES,
-        Map.of("epoch", epoch.toString()),
+        Map.of(RestApiConstants.EPOCH, epoch.toString()),
         validatorIndices.stream().toList(),
         DeserializableTypeDefinition.listOf(INTEGER_TYPE, 1),
         new ResponseHandler<>(ATTESTER_DUTIES_RESPONSE_TYPE));

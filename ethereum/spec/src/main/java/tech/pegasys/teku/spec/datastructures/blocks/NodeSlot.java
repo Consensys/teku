@@ -18,7 +18,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class NodeSlot {
   private volatile UInt64 value;
 
-  public NodeSlot(UInt64 value) {
+  public NodeSlot(final UInt64 value) {
     this.value = value;
   }
 
@@ -31,7 +31,7 @@ public class NodeSlot {
     return value;
   }
 
-  public void setValue(UInt64 value) {
+  public void setValue(final UInt64 value) {
     this.value = value;
   }
 

@@ -68,12 +68,13 @@ public class GetBlockHeaders extends RestApiEndpoint {
             .queryParam(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION))
             .queryParam(PARENT_ROOT_PARAMETER)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final Optional<Bytes32> parentRoot = request.getOptionalQueryParameter(PARENT_ROOT_PARAMETER);
     final Optional<UInt64> slot =
         request.getOptionalQueryParameter(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION));

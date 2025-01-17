@@ -15,62 +15,80 @@ package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
+import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
+import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
-import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 
+@TestSpecContext(milestone = {CAPELLA, DENEB, ELECTRA})
 public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegrationTest {
 
-  @Test
+  private Eth2Peer peer;
+  private SpecMilestone specMilestone;
+
+  @BeforeEach
+  public void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
+    peer = createPeer(specContext.getSpec());
+    specMilestone = specContext.getSpecMilestone();
+  }
+
+  @TestTemplate
   public void requestBlobSidecars_shouldFailBeforeDenebMilestone() {
-    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalCapella());
+    assumeThat(specMilestone).isLessThan(SpecMilestone.DENEB);
     assertThatThrownBy(() -> requestBlobSidecarsByRange(peer, UInt64.ONE, UInt64.valueOf(10)))
         .hasRootCauseInstanceOf(UnsupportedOperationException.class)
         .hasMessageContaining("BlobSidecarsByRange method is not supported");
   }
 
-  @Test
-  public void requestBlobSidecars_shouldReturnEmptyBlobSidecarsOnDenebMilestone()
+  @TestTemplate
+  public void requestBlobSidecars_shouldReturnEmptyBlobSidecarsAfterDenebMilestone()
       throws ExecutionException, InterruptedException, TimeoutException {
-    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
     final List<BlobSidecar> blobSidecars =
         requestBlobSidecarsByRange(peer, UInt64.ONE, UInt64.valueOf(10));
     assertThat(blobSidecars).isEmpty();
   }
 
-  @Test
-  public void requestBlobSidecars_shouldReturnCanonicalBlobSidecarsOnDenebMilestone()
+  @TestTemplate
+  public void requestBlobSidecars_shouldReturnEmptyBlobSidecarsWhenCountIsZero()
       throws ExecutionException, InterruptedException, TimeoutException {
-    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
 
     // finalize chain 2 blobs per block
-    peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobs(true);
-    peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobsCount(Optional.of(2));
+    finalizeChainWithBlobs(2);
 
-    final List<SignedBlockAndState> finalizedBlocksAndStates =
-        peerStorage
-            .chainBuilder()
-            .finalizeCurrentChain(Optional.of(peerStorage.chainUpdater().blockOptions));
-    finalizedBlocksAndStates.forEach(
-        blockAndState -> {
-          final List<BlobSidecar> blobSidecars =
-              peerStorage.chainBuilder().getBlobSidecars(blockAndState.getRoot());
-          peerStorage.chainUpdater().saveBlock(blockAndState, blobSidecars);
-          peerStorage.chainUpdater().updateBestBlock(blockAndState);
-        });
+    final List<BlobSidecar> blobSidecars =
+        requestBlobSidecarsByRange(peer, UInt64.ONE, UInt64.ZERO);
+
+    assertThat(blobSidecars).isEmpty();
+  }
+
+  @TestTemplate
+  public void requestBlobSidecars_shouldReturnCanonicalBlobSidecarsOnDenebMilestone()
+      throws ExecutionException, InterruptedException, TimeoutException {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
+
+    // finalize chain 2 blobs per block
+    finalizeChainWithBlobs(2);
 
     final ChainBuilder fork = peerStorage.chainBuilder().fork();
 
@@ -116,6 +134,23 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
     final List<BlobSidecar> blobSidecars = requestBlobSidecarsByRange(peer, startSlot, slotCount);
     assertThat(blobSidecars).containsExactlyInAnyOrderElementsOf(expectedCanonicalBlobSidecars);
     assertThat(blobSidecars).doesNotContainAnyElementsOf(nonCanonicalBlobSidecars);
+  }
+
+  private void finalizeChainWithBlobs(final int blobsPerBlock) {
+    peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobs(true);
+    peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobsCount(Optional.of(blobsPerBlock));
+
+    final List<SignedBlockAndState> finalizedBlocksAndStates =
+        peerStorage
+            .chainBuilder()
+            .finalizeCurrentChain(Optional.of(peerStorage.chainUpdater().blockOptions));
+    finalizedBlocksAndStates.forEach(
+        blockAndState -> {
+          final List<BlobSidecar> blobSidecars =
+              peerStorage.chainBuilder().getBlobSidecars(blockAndState.getRoot());
+          peerStorage.chainUpdater().saveBlock(blockAndState, blobSidecars);
+          peerStorage.chainUpdater().updateBestBlock(blockAndState);
+        });
   }
 
   private List<BlobSidecar> requestBlobSidecarsByRange(

@@ -18,16 +18,18 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import okhttp3.Response;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.teku.GetEth1DataCacheResponse;
 import tech.pegasys.teku.api.schema.Eth1Data;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1DataCache;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -55,10 +57,18 @@ public class GetEth1DataCacheIntegrationTest extends AbstractDataBackedRestAPIIn
     when(eth1DataProvider.getEth1CachedBlocks()).thenReturn(eth1DataCacheList);
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
-    GetEth1DataCacheResponse getEth1DataResponse =
-        jsonProvider.jsonToObject(response.body().string(), GetEth1DataCacheResponse.class);
-    assertThat(getEth1DataResponse).isNotNull();
-    assertThat(getEth1DataResponse.data.containsAll(eth1DataCacheBlocks)).isTrue();
+    final JsonNode data = getResponseData(response);
+    assertThat(data.size()).isEqualTo(eth1DataCacheBlocks.size());
+    for (int i = 0; i < data.size(); i++) {
+      final JsonNode block = data.get(i);
+      final Eth1Data eth1Data = eth1DataCacheBlocks.get(i);
+      assertThat(Bytes32.fromHexString(block.get("deposit_root").asText()))
+          .isEqualTo(eth1Data.deposit_root);
+      assertThat(UInt64.valueOf(block.get("deposit_count").asText()))
+          .isEqualTo(eth1Data.deposit_count);
+      assertThat(Bytes32.fromHexString(block.get("block_hash").asText()))
+          .isEqualTo(eth1Data.block_hash);
+    }
   }
 
   @Test

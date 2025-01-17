@@ -16,9 +16,9 @@ package tech.pegasys.teku.spec.logic.common.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
@@ -52,7 +53,8 @@ public class ValidatorsUtil {
         && validator.getActivationEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH);
   }
 
-  public Optional<Integer> getValidatorIndex(BeaconState state, BLSPublicKey publicKey) {
+  public Optional<Integer> getValidatorIndex(
+      final BeaconState state, final BLSPublicKey publicKey) {
     return BeaconStateCache.getTransitionCaches(state)
         .getValidatorIndexCache()
         .getValidatorIndex(state, publicKey);
@@ -75,9 +77,9 @@ public class ValidatorsUtil {
         state, epoch, validatorIndex, beaconStateAccessors.getCommitteeCountPerSlot(state, epoch));
   }
 
-  public Map<Integer, CommitteeAssignment> getValidatorIndexToCommitteeAssignmentMap(
+  public Int2ObjectMap<CommitteeAssignment> getValidatorIndexToCommitteeAssignmentMap(
       final BeaconState state, final UInt64 epoch) {
-    final Map<Integer, CommitteeAssignment> assignmentMap = new HashMap<>();
+    final Int2ObjectMap<CommitteeAssignment> assignmentMap = new Int2ObjectOpenHashMap<>();
 
     final int slotsPerEpoch = specConfig.getSlotsPerEpoch();
     final int committeeCountPerSlot =
@@ -159,5 +161,13 @@ public class ValidatorsUtil {
 
   public int getAggregatorModulo(final int committeeSize) {
     return Math.max(1, committeeSize / ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE);
+  }
+
+  public UInt64 getPendingBalanceToWithdraw(final BeaconState state, final int validatorIndex) {
+    return state.toVersionElectra().orElseThrow().getPendingPartialWithdrawals().stream()
+        .filter(withdrawal -> withdrawal.getValidatorIndex() == validatorIndex)
+        .map(PendingPartialWithdrawal::getAmount)
+        .reduce(UInt64::plus)
+        .orElse(UInt64.ZERO);
   }
 }

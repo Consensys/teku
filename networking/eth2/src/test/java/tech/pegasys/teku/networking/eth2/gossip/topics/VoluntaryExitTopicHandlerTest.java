@@ -28,6 +28,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHa
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.VoluntaryExitGenerator;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -47,7 +48,8 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
             gossipEncoding,
             forkInfo,
             processor,
-            spec.getNetworkingConfig())
+            spec.getNetworkingConfig(),
+            DebugDataDumper.NOOP)
         .getTopicHandler();
   }
 

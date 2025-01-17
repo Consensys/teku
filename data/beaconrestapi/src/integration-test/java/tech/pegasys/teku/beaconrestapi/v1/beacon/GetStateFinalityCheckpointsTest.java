@@ -14,14 +14,12 @@
 package tech.pegasys.teku.beaconrestapi.v1.beacon;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import okhttp3.Response;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
-import tech.pegasys.teku.api.schema.Checkpoint;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFinalityCheckpoints;
 
@@ -31,16 +29,16 @@ public class GetStateFinalityCheckpointsTest extends AbstractDataBackedRestAPIIn
   public void shouldGetEmptyCheckpointsAtGenesis() throws IOException {
     startRestAPIAtGenesis();
     final Response response = get("genesis");
+    final JsonNode data = getResponseData(response);
 
-    assertThat(response.code()).isEqualTo(SC_OK);
-    final GetStateFinalityCheckpointsResponse body =
-        jsonProvider.jsonToObject(
-            response.body().string(), GetStateFinalityCheckpointsResponse.class);
-    final FinalityCheckpointsResponse data = body.data;
+    checkIsEmpty(data.get("current_justified"));
+    checkIsEmpty(data.get("previous_justified"));
+    checkIsEmpty(data.get("finalized"));
+  }
 
-    assertThat(data.current_justified).isEqualTo(Checkpoint.EMPTY);
-    assertThat(data.previous_justified).isEqualTo(Checkpoint.EMPTY);
-    assertThat(data.finalized).isEqualTo(Checkpoint.EMPTY);
+  private void checkIsEmpty(final JsonNode node) {
+    assertThat(node.get("root").asText()).isEqualTo(Bytes32.ZERO.toHexString());
+    assertThat(node.get("epoch").asInt()).isZero();
   }
 
   public Response get(final String stateIdString) throws IOException {

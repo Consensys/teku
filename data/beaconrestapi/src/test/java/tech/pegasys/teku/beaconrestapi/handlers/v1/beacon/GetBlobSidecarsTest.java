@@ -15,25 +15,32 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ETH_CONSENSUS_VERSION_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
+import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.metadata.BlobSidecarsAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 class GetBlobSidecarsTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
@@ -61,7 +68,10 @@ class GetBlobSidecarsTest extends AbstractMigratedBeaconHandlerWithChainDataProv
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(blobSidecars);
+    assertThat(((BlobSidecarsAndMetaData) request.getResponseBody()).getData())
+        .isEqualTo(blobSidecars);
+    assertThat(request.getResponseHeaders(ETH_CONSENSUS_VERSION_TYPE.getName()))
+        .isEqualTo(Version.fromMilestone(SpecMilestone.DENEB).name());
   }
 
   @Test
@@ -80,13 +90,27 @@ class GetBlobSidecarsTest extends AbstractMigratedBeaconHandlerWithChainDataProv
   }
 
   @Test
-  void metadata_shouldHandle200() throws IOException {
+  void metadata_shouldHandle200() throws Exception {
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(3);
-
-    final String data = getResponseStringFromMetadata(handler, SC_OK, blobSidecars);
-    final String expected =
-        Resources.toString(
-            Resources.getResource(GetBlobSidecarsTest.class, "getBlobSidecars.json"), UTF_8);
+    final BlobSidecarsAndMetaData blobSidecarsAndMetaData =
+        new BlobSidecarsAndMetaData(blobSidecars, SpecMilestone.DENEB, true, false, false);
+    final JsonNode data =
+        JsonTestUtil.parseAsJsonNode(
+            getResponseStringFromMetadata(handler, SC_OK, blobSidecarsAndMetaData));
+    final JsonNode expected =
+        JsonTestUtil.parseAsJsonNode(
+            Resources.toString(
+                Resources.getResource(GetBlobSidecarsTest.class, "getBlobSidecars.json"), UTF_8));
     assertThat(data).isEqualTo(expected);
+  }
+
+  @Test
+  void metadata_shouldHandle204() {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
+  }
+
+  @Test
+  void metadata_shouldHandle503() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_SERVICE_UNAVAILABLE);
   }
 }

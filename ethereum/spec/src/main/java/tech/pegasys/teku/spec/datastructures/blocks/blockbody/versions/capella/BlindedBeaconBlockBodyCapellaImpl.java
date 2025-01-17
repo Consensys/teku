@@ -50,12 +50,12 @@ class BlindedBeaconBlockBodyCapellaImpl
         SszList<SignedBlsToExecutionChange>>
     implements BlindedBeaconBlockBodyCapella {
 
-  BlindedBeaconBlockBodyCapellaImpl(BlindedBeaconBlockBodySchemaCapellaImpl type) {
+  BlindedBeaconBlockBodyCapellaImpl(final BlindedBeaconBlockBodySchemaCapellaImpl type) {
     super(type);
   }
 
   BlindedBeaconBlockBodyCapellaImpl(
-      BlindedBeaconBlockBodySchemaCapellaImpl type, TreeNode backingNode) {
+      final BlindedBeaconBlockBodySchemaCapellaImpl type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 

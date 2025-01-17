@@ -38,7 +38,8 @@ public class MinimumGenesisTimeBlockFinderTest {
 
   // Setup so genesis time for a block will be blockTime + 2
   private final SpecConfig config =
-      SpecConfigLoader.loadConfig("minimal", builder -> builder.genesisDelay(UInt64.valueOf(2)));
+      SpecConfigLoader.loadConfig("minimal", builder -> builder.genesisDelay(UInt64.valueOf(2)))
+          .specConfig();
   private final Eth1Provider eth1Provider = mock(Eth1Provider.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
@@ -303,7 +304,8 @@ public class MinimumGenesisTimeBlockFinderTest {
       final long minGenesisTime, final Optional<UInt64> eth1DepositContractDeployBlock) {
     final SpecConfig config =
         SpecConfigLoader.loadConfig(
-            "minimal", builder -> builder.minGenesisTime(UInt64.valueOf(minGenesisTime)));
+                "minimal", builder -> builder.minGenesisTime(UInt64.valueOf(minGenesisTime)))
+            .specConfig();
     minimumGenesisTimeBlockFinder =
         new MinimumGenesisTimeBlockFinder(config, eth1Provider, eth1DepositContractDeployBlock);
   }

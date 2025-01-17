@@ -51,7 +51,7 @@ public abstract class AbstractBeaconState<TMutable extends MutableBeaconState>
   }
 
   protected AbstractBeaconState(
-      AbstractSszContainerSchema<? extends SszContainer> type, TreeNode backingNode) {
+      final AbstractSszContainerSchema<? extends SszContainer> type, final TreeNode backingNode) {
     super(type, backingNode);
     this.transitionCaches = TransitionCaches.createNewEmpty();
     this.slotCaches = SlotCaches.createNewEmpty();
@@ -64,7 +64,7 @@ public abstract class AbstractBeaconState<TMutable extends MutableBeaconState>
 
   @Override
   public <E1 extends Exception, E2 extends Exception, E3 extends Exception> BeaconState updated(
-      Mutator<MutableBeaconState, E1, E2, E3> mutator) throws E1, E2, E3 {
+      final Mutator<MutableBeaconState, E1, E2, E3> mutator) throws E1, E2, E3 {
     MutableBeaconState writableCopy = createWritableCopy();
     mutator.mutate(writableCopy);
     return writableCopy.commitChanges();
@@ -76,7 +76,7 @@ public abstract class AbstractBeaconState<TMutable extends MutableBeaconState>
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(final Object obj) {
     return BeaconStateInvariants.equals(this, obj);
   }
 

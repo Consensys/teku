@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.async.stream.AsyncStreamPublisher;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRangeReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRootReqResp;
@@ -36,41 +36,42 @@ public class DataColumnPeerManagerImpl
         BatchDataColumnsByRangeReqResp {
 
   private final Subscribers<PeerListener> listeners = Subscribers.create(true);
-  private Map<UInt256, Eth2Peer> connectedPeers = new ConcurrentHashMap<>();
+  private final Map<UInt256, Eth2Peer> connectedPeers = new ConcurrentHashMap<>();
 
   @Override
-  public void onConnected(Eth2Peer peer) {
+  public void onConnected(final Eth2Peer peer) {
     peerConnected(peer);
   }
 
-  private void peerConnected(Eth2Peer peer) {
-    UInt256 nodeId = peer.getDiscoveryNodeId().orElseThrow();
+  private void peerConnected(final Eth2Peer peer) {
+    final UInt256 nodeId = peer.getDiscoveryNodeId().orElseThrow();
     connectedPeers.put(nodeId, peer);
     listeners.forEach(l -> l.peerConnected(nodeId));
     peer.subscribeDisconnect((__, ___) -> peerDisconnected(peer));
   }
 
-  private void peerDisconnected(Eth2Peer peer) {
-    UInt256 nodeId = peer.getDiscoveryNodeId().orElseThrow();
+  private void peerDisconnected(final Eth2Peer peer) {
+    final UInt256 nodeId = peer.getDiscoveryNodeId().orElseThrow();
     listeners.forEach(l -> l.peerDisconnected(nodeId));
     connectedPeers.remove(nodeId);
   }
 
   @Override
-  public void addPeerListener(PeerListener listener) {
+  public void addPeerListener(final PeerListener listener) {
     listeners.subscribe(listener);
   }
 
   @Override
-  public void banNode(UInt256 node) {
+  public void banNode(final UInt256 node) {
     // TODO
   }
 
   @Override
   public AsyncStream<DataColumnSidecar> requestDataColumnSidecarsByRoot(
-      UInt256 nodeId, List<DataColumnIdentifier> columnIdentifiers) {
-    Eth2Peer eth2Peer = connectedPeers.get(nodeId);
-    AsyncStreamPublisher<DataColumnSidecar> ret = AsyncStream.createPublisher(Integer.MAX_VALUE);
+      final UInt256 nodeId, final List<DataColumnIdentifier> columnIdentifiers) {
+    final Eth2Peer eth2Peer = connectedPeers.get(nodeId);
+    final AsyncStreamPublisher<DataColumnSidecar> ret =
+        AsyncStream.createPublisher(Integer.MAX_VALUE);
     if (eth2Peer == null) {
       ret.onError(new DataColumnReqResp.DasPeerDisconnectedException());
     } else {
@@ -83,9 +84,13 @@ public class DataColumnPeerManagerImpl
 
   @Override
   public AsyncStream<DataColumnSidecar> requestDataColumnSidecarsByRange(
-      UInt256 nodeId, UInt64 startSlot, int slotCount, List<UInt64> columnIndexes) {
-    Eth2Peer eth2Peer = connectedPeers.get(nodeId);
-    AsyncStreamPublisher<DataColumnSidecar> ret = AsyncStream.createPublisher(Integer.MAX_VALUE);
+      final UInt256 nodeId,
+      final UInt64 startSlot,
+      final int slotCount,
+      final List<UInt64> columnIndexes) {
+    final Eth2Peer eth2Peer = connectedPeers.get(nodeId);
+    final AsyncStreamPublisher<DataColumnSidecar> ret =
+        AsyncStream.createPublisher(Integer.MAX_VALUE);
     if (eth2Peer == null) {
       ret.onError(new DataColumnReqResp.DasPeerDisconnectedException());
     } else {
@@ -98,8 +103,8 @@ public class DataColumnPeerManagerImpl
   }
 
   @Override
-  public int getCurrentRequestLimit(UInt256 nodeId) {
-    Eth2Peer eth2Peer = connectedPeers.get(nodeId);
+  public int getCurrentRequestLimit(final UInt256 nodeId) {
+    final Eth2Peer eth2Peer = connectedPeers.get(nodeId);
     if (eth2Peer == null) {
       return 0;
     } else {

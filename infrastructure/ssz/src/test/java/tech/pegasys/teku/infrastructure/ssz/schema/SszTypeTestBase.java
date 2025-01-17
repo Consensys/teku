@@ -34,7 +34,7 @@ public abstract class SszTypeTestBase {
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  void getFixedPartSize_shouldBeNonZeroForFixed(SszType type) {
+  void getFixedPartSize_shouldBeNonZeroForFixed(final SszType type) {
     Assumptions.assumeTrue(type.isFixedSize());
     assertThat(type.getSszFixedPartSize()).isNotZero();
   }

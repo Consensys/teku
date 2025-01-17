@@ -22,21 +22,21 @@ import tech.pegasys.teku.statetransition.datacolumns.util.StringifyUtil;
 
 class DasByRangeResponseLogger extends AbstractDasResponseLogger<DasReqRespLogger.ByRangeRequest> {
   public DasByRangeResponseLogger(
-      TimeProvider timeProvider,
-      Direction direction,
-      LoggingPeerId peerId,
-      DasReqRespLogger.ByRangeRequest request) {
+      final TimeProvider timeProvider,
+      final Direction direction,
+      final LoggingPeerId peerId,
+      final DasReqRespLogger.ByRangeRequest request) {
     super(timeProvider, direction, peerId, request);
   }
 
   @Override
   protected void responseComplete(
-      List<Timestamped<DataColumnSlotAndIdentifier>> responseSummaries,
-      Optional<Throwable> result) {
+      final List<Timestamped<DataColumnSlotAndIdentifier>> responseSummaries,
+      final Optional<Throwable> result) {
 
-    List<DataColumnSlotAndIdentifier> responseSummariesUnboxed =
+    final List<DataColumnSlotAndIdentifier> responseSummariesUnboxed =
         responseSummaries.stream().map(Timestamped::value).toList();
-    long curTime = timeProvider.getTimeInMillis().longValue();
+    final long curTime = timeProvider.getTimeInMillis().longValue();
 
     getLogger()
         .debug(

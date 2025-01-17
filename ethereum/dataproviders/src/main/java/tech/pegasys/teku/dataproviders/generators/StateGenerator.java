@@ -47,7 +47,7 @@ public class StateGenerator {
   }
 
   public static StateGenerator create(
-      Spec spec,
+      final Spec spec,
       final HashTree blockTree,
       final StateAndBlockSummary rootBlockAndState,
       final BlockProvider blockProvider) {

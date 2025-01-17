@@ -28,8 +28,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigEip7594;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -43,7 +43,7 @@ public class DasLongPollCustodyTest {
   final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(0);
   final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner(stubTimeProvider);
 
-  final Spec spec = TestSpecFactory.createMinimalEip7594();
+  final Spec spec = TestSpecFactory.createMinimalFulu();
   final DataColumnSidecarDB db = new DataColumnSidecarDBStub();
   final Duration dbDelay = ofMillis(5);
   final DelayedDasDb delayedDb = new DelayedDasDb(db, stubAsyncRunner, dbDelay);
@@ -52,8 +52,8 @@ public class DasLongPollCustodyTest {
   final CanonicalBlockResolverStub blockResolver = new CanonicalBlockResolverStub(spec);
   final UInt256 myNodeId = UInt256.ONE;
 
-  final SpecConfigEip7594 config =
-      SpecConfigEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).getConfig());
+  final SpecConfigFulu config =
+      SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
   final int subnetCount = config.getDataColumnSidecarSubnetCount();
 
   final DataColumnSidecarCustodyImpl custodyImpl =
@@ -78,15 +78,15 @@ public class DasLongPollCustodyTest {
   private final DataColumnSlotAndIdentifier columnId10_1 =
       DataColumnSlotAndIdentifier.fromDataColumn(sidecar10_1);
 
-  private DataColumnSidecar createSidecar(BeaconBlock block, int column) {
+  private DataColumnSidecar createSidecar(final BeaconBlock block, final int column) {
     return dataStructureUtil.randomDataColumnSidecar(createSigned(block), UInt64.valueOf(column));
   }
 
-  private SignedBeaconBlockHeader createSigned(BeaconBlock block) {
+  private SignedBeaconBlockHeader createSigned(final BeaconBlock block) {
     return dataStructureUtil.signedBlock(block).asHeader();
   }
 
-  private void advanceTimeGradually(Duration delta) {
+  private void advanceTimeGradually(final Duration delta) {
     for (int i = 0; i < delta.toMillis(); i++) {
       stubTimeProvider.advanceTimeBy(ofMillis(1));
       stubAsyncRunner.executeDueActionsRepeatedly();

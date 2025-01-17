@@ -35,70 +35,70 @@ public interface AsyncStream<T> extends AsyncStreamBase<T> {
     return of();
   }
 
-  static <T> AsyncStream<T> exceptional(Throwable error) {
-    AsyncStreamPublisher<T> ret = createPublisher(1);
+  static <T> AsyncStream<T> exceptional(final Throwable error) {
+    final AsyncStreamPublisher<T> ret = createPublisher(1);
     ret.onError(error);
     return ret;
   }
 
   @SafeVarargs
-  static <T> AsyncStream<T> of(T... elements) {
+  static <T> AsyncStream<T> of(final T... elements) {
     return create(List.of(elements).iterator());
   }
 
-  static <T> AsyncStream<T> create(Stream<T> stream) {
+  static <T> AsyncStream<T> create(final Stream<T> stream) {
     return create(stream.iterator());
   }
 
-  static <T> AsyncStream<T> create(Iterator<T> iterator) {
+  static <T> AsyncStream<T> create(final Iterator<T> iterator) {
     return new SyncToAsyncIteratorImpl<>(iterator);
   }
 
-  static <T> AsyncStream<T> create(CompletionStage<T> future) {
+  static <T> AsyncStream<T> create(final CompletionStage<T> future) {
     return new FutureAsyncIteratorImpl<>(future);
   }
 
-  static <T> AsyncStreamPublisher<T> createPublisher(int maxBufferSize) {
+  static <T> AsyncStreamPublisher<T> createPublisher(final int maxBufferSize) {
     return new BufferingStreamPublisher<>(maxBufferSize);
   }
 
   // transformation
 
-  default <R> AsyncStream<R> flatMap(Function<T, AsyncStream<R>> toStreamMapper) {
+  default <R> AsyncStream<R> flatMap(final Function<T, AsyncStream<R>> toStreamMapper) {
     return map(toStreamMapper).transform(FlattenStreamHandler::new);
   }
 
-  default <R> AsyncStream<R> map(Function<T, R> mapper) {
+  default <R> AsyncStream<R> map(final Function<T, R> mapper) {
     return transform(sourceCallback -> new MapStreamHandler<>(sourceCallback, mapper));
   }
 
-  default AsyncStream<T> filter(Predicate<T> filter) {
+  default AsyncStream<T> filter(final Predicate<T> filter) {
     return transform(sourceCallback -> new FilteringStreamHandler<>(sourceCallback, filter));
   }
 
-  default AsyncStream<T> peek(AsyncStreamVisitor<T> visitor) {
+  default AsyncStream<T> peek(final AsyncStreamVisitor<T> visitor) {
     return transform(src -> new VisitorHandler<>(src, visitor));
   }
 
-  default <R> AsyncStream<R> mapAsync(Function<T, SafeFuture<R>> mapper) {
+  default <R> AsyncStream<R> mapAsync(final Function<T, SafeFuture<R>> mapper) {
     return flatMap(e -> AsyncStream.create(mapper.apply(e)));
   }
 
   // slicing
 
-  default AsyncStream<T> slice(AsyncStreamSlicer<T> slicer) {
+  default AsyncStream<T> slice(final AsyncStreamSlicer<T> slicer) {
     return transform(sourceCallback -> new SliceStreamHandler<>(sourceCallback, slicer));
   }
 
-  default AsyncStream<T> limit(long count) {
+  default AsyncStream<T> limit(final long count) {
     return slice(AsyncStreamSlicer.limit(count));
   }
 
-  default AsyncStream<T> takeWhile(Predicate<T> whileCondition) {
+  default AsyncStream<T> takeWhile(final Predicate<T> whileCondition) {
     return slice(AsyncStreamSlicer.takeWhile(whileCondition));
   }
 
-  default AsyncStream<T> takeUntil(Predicate<T> untilCondition, boolean includeLast) {
+  default AsyncStream<T> takeUntil(final Predicate<T> untilCondition, final boolean includeLast) {
     AsyncStreamSlicer<T> whileSlicer = AsyncStreamSlicer.takeWhile(untilCondition.negate());
     AsyncStreamSlicer<T> untilSlicer =
         includeLast ? whileSlicer.then(AsyncStreamSlicer.limit(1)) : whileSlicer;
@@ -107,8 +107,8 @@ public interface AsyncStream<T> extends AsyncStreamBase<T> {
 
   // consuming
 
-  default <A, R> SafeFuture<R> collect(Collector<T, A, R> collector) {
-    AsyncIteratorCollector<T, A, R> asyncIteratorCollector =
+  default <A, R> SafeFuture<R> collect(final Collector<T, A, R> collector) {
+    final AsyncIteratorCollector<T, A, R> asyncIteratorCollector =
         new AsyncIteratorCollector<>(collector);
     consume(asyncIteratorCollector);
     return asyncIteratorCollector.getPromise();
@@ -120,11 +120,11 @@ public interface AsyncStream<T> extends AsyncStreamBase<T> {
         .thenApply(l -> l.isEmpty() ? Optional.empty() : Optional.of(l.getFirst()));
   }
 
-  default SafeFuture<Void> forEach(Consumer<T> consumer) {
+  default SafeFuture<Void> forEach(final Consumer<T> consumer) {
     return collect(Collector.of(() -> null, (a, t) -> consumer.accept(t), noCallBinaryOperator()));
   }
 
-  default <C extends Collection<T>> SafeFuture<C> collect(C targetCollection) {
+  default <C extends Collection<T>> SafeFuture<C> collect(final C targetCollection) {
     return collect(Collectors.toCollection(() -> targetCollection));
   }
 
@@ -137,7 +137,7 @@ public interface AsyncStream<T> extends AsyncStreamBase<T> {
         .thenApply(l -> l.isEmpty() ? Optional.empty() : Optional.of(l.getFirst()));
   }
 
-  default SafeFuture<List<T>> collectLast(int count) {
+  default SafeFuture<List<T>> collectLast(final int count) {
     return collect(CircularBuf.createCollector(count));
   }
 }

@@ -69,12 +69,13 @@ public class GetStateValidatorBalances extends RestApiEndpoint {
             .queryListParam(ID_PARAMETER)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final List<String> validators = request.getQueryParameterList(ID_PARAMETER);
 
     final SafeFuture<Optional<ObjectAndMetaData<List<StateValidatorBalanceData>>>> future =

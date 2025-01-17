@@ -19,6 +19,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 
 public interface SpecConfig extends NetworkingSpecConfig {
@@ -61,6 +62,8 @@ public interface SpecConfig extends NetworkingSpecConfig {
   UInt64 getEjectionBalance();
 
   int getMinPerEpochChurnLimit();
+
+  UInt64 getMaxPerEpochActivationExitChurnLimit();
 
   int getChurnLimitQuotient();
 
@@ -183,7 +186,13 @@ public interface SpecConfig extends NetworkingSpecConfig {
     return Optional.empty();
   }
 
-  default Optional<SpecConfigEip7594> toVersionEip7594() {
+  default Optional<SpecConfigElectra> toVersionElectra() {
     return Optional.empty();
   }
+
+  default Optional<SpecConfigFulu> toVersionFulu() {
+    return Optional.empty();
+  }
+
+  SpecMilestone getMilestone();
 }

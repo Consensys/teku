@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
@@ -54,7 +54,6 @@ public class BlockFactoryPhase0 implements BlockFactory {
       final UInt64 proposalSlot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
-      final Optional<Boolean> requestedBlinded,
       final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
     checkArgument(
@@ -78,7 +77,6 @@ public class BlockFactoryPhase0 implements BlockFactory {
                 blockSlotState,
                 randaoReveal,
                 optionalGraffiti,
-                requestedBlinded,
                 requestedBuilderBoostFactor,
                 blockProductionPerformance),
             blockProductionPerformance)
@@ -108,15 +106,13 @@ public class BlockFactoryPhase0 implements BlockFactory {
   }
 
   @Override
-  public List<BlobSidecar> createBlobSidecars(
-      final SignedBlockContainer blockContainer,
-      final BlockPublishingPerformance blockPublishingPerformance) {
+  public List<BlobSidecar> createBlobSidecars(final SignedBlockContainer blockContainer) {
     return Collections.emptyList();
   }
 
   @Override
   public List<DataColumnSidecar> createDataColumnSidecars(
-      final SignedBlockContainer blockContainer, List<Blob> blobs) {
+      final SignedBlockContainer blockContainer, final List<Blob> blobs) {
     return Collections.emptyList();
   }
 }

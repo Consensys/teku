@@ -30,8 +30,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -50,8 +53,8 @@ import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 
 public interface BlockProcessor {
-  Optional<OperationInvalidReason> validateAttestation(
-      final BeaconState state, final AttestationData data);
+
+  Optional<OperationInvalidReason> validateAttestation(BeaconState state, AttestationData data);
 
   BeaconState processAndValidateBlock(
       SignedBeaconBlock signedBlock,
@@ -117,14 +120,14 @@ public interface BlockProcessor {
       BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 
-  void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
+  void processDeposits(MutableBeaconState state, SszList<Deposit> deposits)
       throws BlockProcessingException;
 
   void processDepositWithoutCheckingMerkleProof(
-      final MutableBeaconState state,
-      final Deposit deposit,
-      final Optional<Object2IntMap<BLSPublicKey>> maybePubkeyToIndexMap,
-      final boolean signatureAlreadyVerified);
+      MutableBeaconState state,
+      Deposit deposit,
+      Optional<Object2IntMap<BLSPublicKey>> maybePubkeyToIndexMap,
+      boolean signatureAlreadyVerified);
 
   void processVoluntaryExits(
       MutableBeaconState state,
@@ -136,7 +139,7 @@ public interface BlockProcessor {
       MutableBeaconState state, SyncAggregate syncAggregate, BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 
-  UInt64 computeParticipantReward(final BeaconStateAltair state);
+  UInt64 computeParticipantReward(BeaconStateAltair state);
 
   void processExecutionPayload(
       MutableBeaconState state,
@@ -166,7 +169,24 @@ public interface BlockProcessor {
   void processWithdrawals(MutableBeaconState state, ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException;
 
-  Optional<List<Withdrawal>> getExpectedWithdrawals(BeaconState preState);
+  void processDepositRequests(MutableBeaconState state, List<DepositRequest> depositRequests)
+      throws BlockProcessingException;
+
+  void processWithdrawalRequests(
+      MutableBeaconState state,
+      List<WithdrawalRequest> exits,
+      Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      throws BlockProcessingException;
+
+  void processConsolidationRequests(
+      MutableBeaconState state, List<ConsolidationRequest> consolidationRequests)
+      throws BlockProcessingException;
+
+  boolean isValidSwitchToCompoundingRequest(
+      BeaconState beaconState, ConsolidationRequest consolidationRequest)
+      throws BlockProcessingException;
+
+  ExpectedWithdrawals getExpectedWithdrawals(BeaconState preState);
 
   default Optional<BlockProcessorAltair> toVersionAltair() {
     return Optional.empty();

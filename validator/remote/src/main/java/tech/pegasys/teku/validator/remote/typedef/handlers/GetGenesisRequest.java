@@ -24,11 +24,11 @@ import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class GetGenesisRequest extends AbstractTypeDefRequest {
 
-  public GetGenesisRequest(final OkHttpClient okHttpClient, final HttpUrl baseEndpoint) {
+  public GetGenesisRequest(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
     super(baseEndpoint, okHttpClient);
   }
 
-  public Optional<GetGenesisApiData> getGenesisData() {
+  public Optional<GetGenesisApiData> submit() {
     return get(GET_GENESIS, new ResponseHandler<>(GET_GENESIS_API_DATA_TYPE));
   }
 }

@@ -18,12 +18,12 @@ abstract class AsyncIterator<T> implements AsyncStream<T> {
   abstract void iterate(AsyncStreamHandler<T> callback);
 
   @Override
-  public <R> AsyncIterator<R> transform(AsyncStreamTransformer<T, R> transformer) {
+  public <R> AsyncIterator<R> transform(final AsyncStreamTransformer<T, R> transformer) {
     return new TransformAsyncIterator<>(this, transformer);
   }
 
   @Override
-  public void consume(AsyncStreamHandler<T> consumer) {
+  public void consume(final AsyncStreamHandler<T> consumer) {
     iterate(consumer);
   }
 }

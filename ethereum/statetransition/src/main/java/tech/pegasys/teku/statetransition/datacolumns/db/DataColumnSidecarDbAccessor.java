@@ -20,7 +20,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 /** Higher level {@link DataColumnSidecarDB} accessor */
 public interface DataColumnSidecarDbAccessor extends DataColumnSidecarCoreDB {
 
-  static DataColumnSidecarDbAccessorBuilder builder(DataColumnSidecarDB db) {
+  static DataColumnSidecarDbAccessorBuilder builder(final DataColumnSidecarDB db) {
     return new DataColumnSidecarDbAccessorBuilder(db);
   }
 

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.p2p.network;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -70,8 +71,8 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   }
 
   @Override
-  public String getNodeAddress() {
-    return network.getNodeAddress();
+  public List<String> getNodeAddresses() {
+    return network.getNodeAddresses();
   }
 
   @Override
@@ -90,13 +91,13 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   }
 
   @Override
-  public Optional<String> getDiscoveryAddress() {
-    return network.getDiscoveryAddress();
+  public Optional<List<String>> getDiscoveryAddresses() {
+    return network.getDiscoveryAddresses();
   }
 
   @Override
-  public int getListenPort() {
-    return network.getListenPort();
+  public List<Integer> getListenPorts() {
+    return network.getListenPorts();
   }
 
   @Override

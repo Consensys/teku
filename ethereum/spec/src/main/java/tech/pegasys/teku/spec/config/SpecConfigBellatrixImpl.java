@@ -19,6 +19,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
     implements SpecConfigBellatrix {
@@ -151,6 +152,11 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
   @Override
   public Optional<SpecConfigBellatrix> toVersionBellatrix() {
     return Optional.of(this);
+  }
+
+  @Override
+  public SpecMilestone getMilestone() {
+    return SpecMilestone.BELLATRIX;
   }
 
   @Override

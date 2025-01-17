@@ -33,7 +33,7 @@ public class DepositsFromBlockSerializerPropertyTest {
   @Property(tries = 100)
   public boolean roundTrip(
       @ForAll final int seed,
-      @ForAll(supplier = SpecSupplier.class) Spec spec,
+      @ForAll(supplier = SpecSupplier.class) final Spec spec,
       @ForAll final long blockNumber,
       @ForAll @Size(32) final byte[] blockHash,
       @ForAll final long blockTimestamp,

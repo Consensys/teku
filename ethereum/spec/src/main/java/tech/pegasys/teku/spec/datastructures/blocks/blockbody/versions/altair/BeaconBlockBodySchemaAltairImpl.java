@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTER_SLASHING_SCHEMA;
+
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -28,14 +31,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconBlockBodySchemaAltairImpl
     extends ContainerSchema9<
@@ -53,15 +55,15 @@ public class BeaconBlockBodySchemaAltairImpl
 
   private BeaconBlockBodySchemaAltairImpl(
       final String containerName,
-      NamedSchema<SszSignature> randaoRevealSchema,
-      NamedSchema<Eth1Data> eth1DataSchema,
-      NamedSchema<SszBytes32> graffitiSchema,
-      NamedSchema<SszList<ProposerSlashing>> proposerSlashingsSchema,
-      NamedSchema<SszList<AttesterSlashing>> attesterSlashingsSchema,
-      NamedSchema<SszList<Attestation>> attestationsSchema,
-      NamedSchema<SszList<Deposit>> depositsSchema,
-      NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema,
-      NamedSchema<SyncAggregate> syncAggregateSchema) {
+      final NamedSchema<SszSignature> randaoRevealSchema,
+      final NamedSchema<Eth1Data> eth1DataSchema,
+      final NamedSchema<SszBytes32> graffitiSchema,
+      final NamedSchema<SszList<ProposerSlashing>> proposerSlashingsSchema,
+      final NamedSchema<SszList<AttesterSlashing>> attesterSlashingsSchema,
+      final NamedSchema<SszList<Attestation>> attestationsSchema,
+      final NamedSchema<SszList<Deposit>> depositsSchema,
+      final NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema,
+      final NamedSchema<SyncAggregate> syncAggregateSchema) {
     super(
         containerName,
         randaoRevealSchema,
@@ -77,8 +79,8 @@ public class BeaconBlockBodySchemaAltairImpl
 
   public static BeaconBlockBodySchemaAltairImpl create(
       final SpecConfig specConfig,
-      final AttesterSlashingSchema attesterSlashingSchema,
-      final String containerName) {
+      final String containerName,
+      final SchemaRegistry schemaRegistry) {
     return new BeaconBlockBodySchemaAltairImpl(
         containerName,
         namedSchema(BlockBodyFields.RANDAO_REVEAL, SszSignatureSchema.INSTANCE),
@@ -90,11 +92,13 @@ public class BeaconBlockBodySchemaAltairImpl
                 ProposerSlashing.SSZ_SCHEMA, specConfig.getMaxProposerSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTER_SLASHINGS,
-            SszListSchema.create(attesterSlashingSchema, specConfig.getMaxAttesterSlashings())),
+            SszListSchema.create(
+                schemaRegistry.get(ATTESTER_SLASHING_SCHEMA),
+                specConfig.getMaxAttesterSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
-                new AttestationSchema(specConfig), specConfig.getMaxAttestations())),
+                schemaRegistry.get(ATTESTATION_SCHEMA), specConfig.getMaxAttestations())),
         namedSchema(
             BlockBodyFields.DEPOSITS,
             SszListSchema.create(Deposit.SSZ_SCHEMA, specConfig.getMaxDeposits())),
@@ -161,7 +165,7 @@ public class BeaconBlockBodySchemaAltairImpl
   }
 
   @Override
-  public BeaconBlockBodyAltairImpl createFromBackingNode(TreeNode node) {
+  public BeaconBlockBodyAltairImpl createFromBackingNode(final TreeNode node) {
     return new BeaconBlockBodyAltairImpl(this, node);
   }
 }

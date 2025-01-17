@@ -18,10 +18,10 @@ import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_NEW_PAYLOAD;
 
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
@@ -32,18 +32,20 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdate
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV3;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV3;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV4;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 
 public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpcMethodsResolver {
 
-  private final Map<SpecMilestone, Map<EngineApiMethod, EngineJsonRpcMethod<?>>>
-      methodsByMilestone = new TreeMap<>();
+  private final EnumMap<SpecMilestone, Map<EngineApiMethod, EngineJsonRpcMethod<?>>>
+      methodsByMilestone = new EnumMap<>(SpecMilestone.class);
 
   private final Spec spec;
   private final ExecutionEngineClient executionEngineClient;
@@ -71,9 +73,8 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
                 case DENEB:
                   methodsByMilestone.put(milestone, denebSupportedMethods());
                   break;
-                case EIP7594:
-                  // not changed
-                  methodsByMilestone.put(milestone, denebSupportedMethods());
+                case ELECTRA, FULU:
+                  methodsByMilestone.put(milestone, electraSupportedMethods());
                   break;
               }
             });
@@ -104,6 +105,16 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
 
     methods.put(ENGINE_NEW_PAYLOAD, new EngineNewPayloadV3(executionEngineClient));
     methods.put(ENGINE_GET_PAYLOAD, new EngineGetPayloadV3(executionEngineClient, spec));
+    methods.put(ENGINE_FORK_CHOICE_UPDATED, new EngineForkChoiceUpdatedV3(executionEngineClient));
+
+    return methods;
+  }
+
+  private Map<EngineApiMethod, EngineJsonRpcMethod<?>> electraSupportedMethods() {
+    final Map<EngineApiMethod, EngineJsonRpcMethod<?>> methods = new HashMap<>();
+
+    methods.put(ENGINE_NEW_PAYLOAD, new EngineNewPayloadV4(executionEngineClient));
+    methods.put(ENGINE_GET_PAYLOAD, new EngineGetPayloadV4(executionEngineClient, spec));
     methods.put(ENGINE_FORK_CHOICE_UPDATED, new EngineForkChoiceUpdatedV3(executionEngineClient));
 
     return methods;

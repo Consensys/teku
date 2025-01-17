@@ -33,7 +33,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -269,12 +269,20 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   public Optional<UInt64> getEarliestFinalizedBlockSlot() {
-    return db.getFirstEntry(schema.getColumnFinalizedBlocksBySlot()).map(ColumnEntry::getKey);
+    return db.get(schema.getVariableEarliestBlockSlot())
+        .or(
+            () ->
+                db.getFirstEntry(schema.getColumnFinalizedBlocksBySlot()).map(ColumnEntry::getKey));
   }
 
   @Override
   public Optional<SignedBeaconBlock> getEarliestFinalizedBlock() {
     return db.getFirstEntry(schema.getColumnFinalizedBlocksBySlot()).map(ColumnEntry::getValue);
+  }
+
+  @Override
+  public Optional<UInt64> getEarliestFinalizedStateSlot() {
+    return stateStorageLogic.getEarliestAvailableFinalizedStateSlot(db, schema);
   }
 
   @Override
@@ -338,16 +346,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   public Optional<Bytes> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
-    return db.get(
-        schema.getColumnBlobSidecarBySlotRootBlobIndex(),
-        new SlotAndBlockRootAndBlobIndex(key.getSlot(), key.getBlockRoot(), key.getBlobIndex()));
+    return db.get(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
   }
 
   @Override
   public Optional<Bytes> getNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
-    return db.get(
-        schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(),
-        new SlotAndBlockRootAndBlobIndex(key.getSlot(), key.getBlockRoot(), key.getBlobIndex()));
+    return db.get(schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(), key);
   }
 
   @MustBeClosed
@@ -535,7 +539,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   @MustBeClosed
   public Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(
-      UInt64 startSlot, UInt64 endSlot) {
+      final UInt64 startSlot, final UInt64 endSlot) {
     return db.streamKeys(
         schema.getColumnSidecarByColumnSlotAndIdentifier(),
         new DataColumnSlotAndIdentifier(startSlot, MIN_BLOCK_ROOT, UInt64.ZERO),
@@ -544,7 +548,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   public List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(
-      SlotAndBlockRoot slotAndBlockRoot) {
+      final SlotAndBlockRoot slotAndBlockRoot) {
     try (final Stream<DataColumnSlotAndIdentifier> columnSlotAndIdentifierStream =
         db.streamKeys(
             schema.getColumnSidecarByColumnSlotAndIdentifier(),
@@ -571,7 +575,9 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     private final FinalizedStateUpdater<S> stateStorageUpdater;
 
     V4CombinedUpdater(
-        final KvStoreAccessor db, final S schema, FinalizedStateUpdater<S> stateStorageUpdater) {
+        final KvStoreAccessor db,
+        final S schema,
+        final FinalizedStateUpdater<S> stateStorageUpdater) {
       this.transaction = db.startTransaction();
       this.db = db;
       this.schema = schema;
@@ -604,7 +610,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void setWeakSubjectivityCheckpoint(Checkpoint checkpoint) {
+    public void setWeakSubjectivityCheckpoint(final Checkpoint checkpoint) {
       transaction.put(schema.getVariableWeakSubjectivityCheckpoint(), checkpoint);
     }
 
@@ -695,6 +701,16 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void setEarliestBlockSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableEarliestBlockSlot(), slot);
+    }
+
+    @Override
+    public void deleteEarliestBlockSlot() {
+      transaction.delete(schema.getVariableEarliestBlockSlot());
+    }
+
+    @Override
     public void commit() {
       // Commit db updates
       transaction.commit();
@@ -762,13 +778,23 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void addReconstructedFinalizedState(Bytes32 blockRoot, BeaconState state) {
+    public void deleteFinalizedState(final UInt64 slot) {
+      stateStorageUpdater.deleteFinalizedState(transaction, schema, slot);
+    }
+
+    @Override
+    public void addReconstructedFinalizedState(final Bytes32 blockRoot, final BeaconState state) {
       stateStorageUpdater.addReconstructedFinalizedState(db, transaction, schema, state);
     }
 
     @Override
     public void addFinalizedStateRoot(final Bytes32 stateRoot, final UInt64 slot) {
       transaction.put(schema.getColumnSlotsByFinalizedStateRoot(), stateRoot, slot);
+    }
+
+    @Override
+    public void deleteFinalizedStateRoot(final Bytes32 stateRoot) {
+      transaction.delete(schema.getColumnSlotsByFinalizedStateRoot(), stateRoot);
     }
 
     @Override

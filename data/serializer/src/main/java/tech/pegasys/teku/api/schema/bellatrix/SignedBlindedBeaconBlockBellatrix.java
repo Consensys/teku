@@ -25,7 +25,7 @@ public class SignedBlindedBeaconBlockBellatrix extends SignedBeaconBlock impleme
   private final BlindedBlockBellatrix message;
 
   public SignedBlindedBeaconBlockBellatrix(
-      tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
+      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
     super(internalBlock);
     checkArgument(
         internalBlock.getMessage().getBody().isBlinded(), "requires a signed blinded beacon block");

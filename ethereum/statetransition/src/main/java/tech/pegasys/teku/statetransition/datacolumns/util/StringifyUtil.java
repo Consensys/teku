@@ -29,14 +29,15 @@ import org.apache.tuweni.bytes.Bytes;
 
 public class StringifyUtil {
 
-  public static String columnIndexesToString(Collection<Integer> indexes, int maxColumns) {
-    String lenStr = "(len: " + indexes.size() + ") ";
+  public static String columnIndexesToString(
+      final Collection<Integer> indexes, final int maxColumns) {
+    final String lenStr = "(len: " + indexes.size() + ") ";
     if (indexes.isEmpty()) {
       return lenStr + "[]";
     } else if (indexes.size() == maxColumns) {
       return lenStr + "[all]";
     } else if (maxColumns - indexes.size() <= 16) {
-      Set<Integer> exceptIndexes =
+      final Set<Integer> exceptIndexes =
           IntStream.range(0, maxColumns).boxed().collect(Collectors.toSet());
       exceptIndexes.removeAll(indexes);
       return lenStr + "[all except " + sortAndJoin(exceptIndexes) + "]";
@@ -55,22 +56,22 @@ public class StringifyUtil {
     }
   }
 
-  public static String toIntRangeStringWithSize(Collection<Integer> ints) {
+  public static String toIntRangeStringWithSize(final Collection<Integer> ints) {
     return "(size: " + ints.size() + ") " + toIntRangeString(ints);
   }
 
-  public static String toIntRangeString(Collection<Integer> ints) {
+  public static String toIntRangeString(final Collection<Integer> ints) {
     List<IntRange> ranges = reduceToIntRanges(ints);
     return "[" + ranges.stream().map(Objects::toString).collect(Collectors.joining(",")) + "]";
   }
 
   private record IntRange(int first, int last) {
 
-    static IntRange of(int i) {
+    static IntRange of(final int i) {
       return new IntRange(i, i);
     }
 
-    static List<IntRange> union(List<IntRange> left, List<IntRange> right) {
+    static List<IntRange> union(final List<IntRange> left, final List<IntRange> right) {
       if (left.isEmpty()) {
         return right;
       } else if (right.isEmpty()) {
@@ -98,7 +99,7 @@ public class StringifyUtil {
       return Integer.max(0, last() - first() + 1);
     }
 
-    List<IntRange> union(IntRange other) {
+    List<IntRange> union(final IntRange other) {
       if (this.isEmpty()) {
         return List.of(other);
       } else if (other.isEmpty()) {
@@ -124,7 +125,7 @@ public class StringifyUtil {
     }
   }
 
-  private static List<IntRange> reduceToIntRanges(Collection<Integer> nums) {
+  private static List<IntRange> reduceToIntRanges(final Collection<Integer> nums) {
     return nums.stream()
         .sorted()
         .map(i -> List.of(IntRange.of(i)))
@@ -132,7 +133,7 @@ public class StringifyUtil {
         .orElse(Collections.emptyList());
   }
 
-  private static String sortAndJoin(Collection<Integer> nums) {
+  private static String sortAndJoin(final Collection<Integer> nums) {
     return nums.stream().sorted().map(Objects::toString).collect(Collectors.joining(","));
   }
 }

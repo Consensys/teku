@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.time;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import org.apache.commons.lang3.tuple.Pair;
@@ -22,7 +23,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class PerformanceTracker {
 
   private final TimeProvider timeProvider;
-  protected final List<Pair<String, UInt64>> events = new ArrayList<>();
+  protected final List<Pair<String, UInt64>> events =
+      Collections.synchronizedList(new ArrayList<>());
 
   public PerformanceTracker(final TimeProvider timeProvider) {
     this.timeProvider = timeProvider;
@@ -63,7 +65,7 @@ public class PerformanceTracker {
     }
 
     final UInt64 totalProcessingDuration =
-        events.get(events.size() - 1).getRight().minusMinZero(events.get(0).getRight());
+        events.getLast().getRight().minusMinZero(events.getFirst().getRight());
     totalDurationReporter.accept(totalProcessingDuration);
 
     if (isLateEvent) {

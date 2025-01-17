@@ -27,11 +27,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -88,8 +88,8 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
     }
     try {
       lastSignatureBlockRoot = chainHeadTracker.getCurrentChainHead(slot);
-    } catch (ChainHeadBeyondSlotException ex) {
-      return chainHeadBeyondSlotFailure(ex);
+    } catch (final ChainHeadBeyondSlotException | ChainHeadTooOldException ex) {
+      return chainHeadSlotCheckFailure(ex);
     }
     lastSignatureSlot = Optional.of(slot);
     return lastSignatureBlockRoot
@@ -97,7 +97,7 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
         .orElse(SafeFuture.completedFuture(DutyResult.NODE_SYNCING));
   }
 
-  private SafeFuture<DutyResult> chainHeadBeyondSlotFailure(final ChainHeadBeyondSlotException ex) {
+  private SafeFuture<DutyResult> chainHeadSlotCheckFailure(final RuntimeException ex) {
     return SafeFuture.completedFuture(DutyResult.forError(getAllValidatorKeys(), ex));
   }
 

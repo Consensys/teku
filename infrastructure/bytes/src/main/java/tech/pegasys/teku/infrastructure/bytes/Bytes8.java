@@ -23,18 +23,18 @@ import org.apache.tuweni.bytes.MutableBytes;
 public class Bytes8 {
   public static final int SIZE = 8;
 
-  private Bytes bytes;
+  private final Bytes bytes;
 
-  public Bytes8(Bytes bytes) {
+  public Bytes8(final Bytes bytes) {
     checkArgument(bytes.size() == 8, "Bytes8 should be 8 bytes, but was %s bytes.", bytes.size());
     this.bytes = bytes;
   }
 
-  public static Bytes8 fromHexString(String value) {
+  public static Bytes8 fromHexString(final String value) {
     return new Bytes8(Bytes.fromHexString(value));
   }
 
-  public static Bytes8 fromHexStringLenient(String value) {
+  public static Bytes8 fromHexStringLenient(final String value) {
     return new Bytes8(Bytes.fromHexStringLenient(value, 8));
   }
 
@@ -49,7 +49,7 @@ public class Bytes8 {
    * @return A {@link Bytes8} that exposes the left-padded bytes of {@code value}.
    * @throws IllegalArgumentException if {@code value.size() > 8}.
    */
-  public static Bytes8 leftPad(Bytes value) {
+  public static Bytes8 leftPad(final Bytes value) {
     checkNotNull(value);
     if (value instanceof Bytes8) {
       return (Bytes8) value;
@@ -67,7 +67,7 @@ public class Bytes8 {
    * @return A {@link Bytes8} that exposes the right-padded bytes of {@code value}.
    * @throws IllegalArgumentException if {@code value.size() > 8}.
    */
-  public static Bytes8 rightPad(Bytes value) {
+  public static Bytes8 rightPad(final Bytes value) {
     checkNotNull(value);
     if (value instanceof Bytes8) {
       return (Bytes8) value;

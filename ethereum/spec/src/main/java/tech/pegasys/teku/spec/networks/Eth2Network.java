@@ -19,12 +19,12 @@ import java.util.Optional;
 public enum Eth2Network {
   // Live networks
   MAINNET("mainnet"),
-  PRATER("prater"),
   SEPOLIA("sepolia"),
   LUKSO("lukso"),
   GNOSIS("gnosis"),
   CHIADO("chiado"),
   HOLESKY("holesky"),
+  EPHEMERY("ephemery"),
   // Test networks
   MINIMAL("minimal"),
   SWIFT("swift"),
@@ -52,9 +52,6 @@ public enum Eth2Network {
       if (value.name().equals(normalizedNetworkName)) {
         return Optional.of(value);
       }
-    }
-    if (normalizedNetworkName.equals("GOERLI")) {
-      return Optional.of(PRATER);
     }
     return Optional.empty();
   }

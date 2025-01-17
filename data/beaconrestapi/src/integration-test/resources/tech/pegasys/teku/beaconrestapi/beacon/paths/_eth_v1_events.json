@@ -9,7 +9,7 @@
       "in" : "query",
       "schema" : {
         "type" : "string",
-        "description" : "Event types to subscribe to. Available values include: [`head`, `finalized_checkpoint`, `chain_reorg`, `block`, `attestation`, `voluntary_exit`, `contribution_and_proof`, `blob_sidecar`]\n\n",
+        "description" : "Event types to subscribe to. Supported event types: [`attestation`, `attester_slashing`, `blob_sidecar`, `block_gossip`, `block`, `bls_to_execution_change`, `chain_reorg`, `contribution_and_proof`, `finalized_checkpoint`, `head`, `payload_attributes`, `proposer_slashing`, `single_attestation`, `sync_state`, `voluntary_exit`]",
         "example" : "head"
       }
     } ],
@@ -23,6 +23,20 @@
             }
           }
         }
+      },
+      "503" : {
+        "description" : "Service unavailable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
       },
       "400" : {
         "description" : "The request could not be processed, check the response for more information.",

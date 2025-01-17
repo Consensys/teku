@@ -25,14 +25,15 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRespo
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
-import java.io.IOException;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
@@ -50,7 +51,8 @@ class GetAggregateAttestationTest extends AbstractMigratedBeaconHandlerTest {
     request.setQueryParameter("attestation_data_root", attestationDataRoot.toHexString());
 
     Attestation attestation = dataStructureUtil.randomAttestation();
-    when(validatorDataProvider.createAggregate(eq(UInt64.valueOf(1)), eq(attestationDataRoot)))
+    when(validatorDataProvider.createAggregate(
+            eq(UInt64.valueOf(1)), eq(attestationDataRoot), eq(Optional.empty())))
         .thenReturn(SafeFuture.completedFuture(Optional.of(attestation)));
 
     handler.handleRequest(request);
@@ -75,15 +77,16 @@ class GetAggregateAttestationTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  void metadata_shouldHandle200() throws IOException {
-    Attestation responseData = dataStructureUtil.randomAttestation();
-
+  void metadata_shouldHandle200() throws Exception {
+    final Attestation responseData = dataStructureUtil.randomAttestation();
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
+    final JsonNode responseDataAsJsonNode = JsonTestUtil.parseAsJsonNode(data);
     final String expected =
         Resources.toString(
             Resources.getResource(
                 GetAggregateAttestationTest.class, "getAggregateAttestation.json"),
             UTF_8);
-    assertThat(data).isEqualTo(expected);
+    final JsonNode expectedAsJsonNode = JsonTestUtil.parseAsJsonNode(expected);
+    assertThat(responseDataAsJsonNode).isEqualTo(expectedAsJsonNode);
   }
 }

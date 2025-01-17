@@ -28,16 +28,16 @@ public class DasPreSampler {
 
   private final DataAvailabilitySampler sampler;
 
-  public DasPreSampler(DataAvailabilitySampler sampler) {
+  public DasPreSampler(final DataAvailabilitySampler sampler) {
     this.sampler = sampler;
   }
 
-  private boolean isSamplingRequired(SignedBeaconBlock block) {
+  private boolean isSamplingRequired(final SignedBeaconBlock block) {
     return sampler.checkSamplingEligibility(block.getMessage()) == REQUIRED;
   }
 
-  public void onNewPreImportBlocks(Collection<SignedBeaconBlock> blocks) {
-    List<SignedBeaconBlock> blocksToSample =
+  public void onNewPreImportBlocks(final Collection<SignedBeaconBlock> blocks) {
+    final List<SignedBeaconBlock> blocksToSample =
         blocks.stream().filter(this::isSamplingRequired).toList();
 
     LOG.info(
@@ -50,7 +50,7 @@ public class DasPreSampler {
     blocksToSample.forEach(this::onNewPreImportBlock);
   }
 
-  private void onNewPreImportBlock(SignedBeaconBlock block) {
+  private void onNewPreImportBlock(final SignedBeaconBlock block) {
     sampler
         .checkDataAvailability(block.getSlot(), block.getRoot(), block.getParentRoot())
         .finish(

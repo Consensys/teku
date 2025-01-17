@@ -17,7 +17,7 @@ abstract class AbstractDelegatingStreamHandler<S, T> implements AsyncStreamHandl
 
   protected final AsyncStreamHandler<S> delegate;
 
-  protected AbstractDelegatingStreamHandler(AsyncStreamHandler<S> delegate) {
+  protected AbstractDelegatingStreamHandler(final AsyncStreamHandler<S> delegate) {
     this.delegate = delegate;
   }
 
@@ -27,7 +27,7 @@ abstract class AbstractDelegatingStreamHandler<S, T> implements AsyncStreamHandl
   }
 
   @Override
-  public void onError(Throwable t) {
+  public void onError(final Throwable t) {
     delegate.onError(t);
   }
 }

@@ -19,7 +19,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 
 public interface CurrentSlotProvider {
 
-  static CurrentSlotProvider create(Spec spec, ReadOnlyStore store) {
+  static CurrentSlotProvider create(final Spec spec, final ReadOnlyStore store) {
     return () -> spec.getCurrentSlot(store);
   }
 

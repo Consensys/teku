@@ -28,17 +28,19 @@ public class MetadataMessagesFactory {
   private Iterable<Integer> syncCommitteeSubnetIds = Collections.emptyList();
   private Optional<UInt64> custodySubnetCount = Optional.empty();
 
-  public synchronized void updateAttestationSubnetIds(Iterable<Integer> attestationSubnetIds) {
+  public synchronized void updateAttestationSubnetIds(
+      final Iterable<Integer> attestationSubnetIds) {
     this.attestationSubnetIds = attestationSubnetIds;
     handleUpdate();
   }
 
-  public synchronized void updateSyncCommitteeSubnetIds(Iterable<Integer> syncCommitteeSubnetIds) {
+  public synchronized void updateSyncCommitteeSubnetIds(
+      final Iterable<Integer> syncCommitteeSubnetIds) {
     this.syncCommitteeSubnetIds = syncCommitteeSubnetIds;
     handleUpdate();
   }
 
-  public synchronized void updateCustodySubnetCount(UInt64 custodySubnetCount) {
+  public synchronized void updateCustodySubnetCount(final UInt64 custodySubnetCount) {
     this.custodySubnetCount = Optional.of(custodySubnetCount);
     handleUpdate();
   }
@@ -47,7 +49,7 @@ public class MetadataMessagesFactory {
     seqNumberGenerator.incrementAndGet();
   }
 
-  public synchronized MetadataMessage createMetadataMessage(MetadataMessageSchema<?> schema) {
+  public synchronized MetadataMessage createMetadataMessage(final MetadataMessageSchema<?> schema) {
     return schema.create(
         getCurrentSeqNumber(), attestationSubnetIds, syncCommitteeSubnetIds, custodySubnetCount);
   }

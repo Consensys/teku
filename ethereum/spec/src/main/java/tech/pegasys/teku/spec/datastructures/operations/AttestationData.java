@@ -43,19 +43,23 @@ public class AttestationData
     }
 
     @Override
-    public AttestationData createFromBackingNode(TreeNode node) {
+    public AttestationData createFromBackingNode(final TreeNode node) {
       return new AttestationData(this, node);
     }
   }
 
   public static final AttestationDataSchema SSZ_SCHEMA = new AttestationDataSchema();
 
-  private AttestationData(AttestationDataSchema type, TreeNode backingNode) {
+  private AttestationData(final AttestationDataSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public AttestationData(
-      UInt64 slot, UInt64 index, Bytes32 beaconBlockRoot, Checkpoint source, Checkpoint target) {
+      final UInt64 slot,
+      final UInt64 index,
+      final Bytes32 beaconBlockRoot,
+      final Checkpoint source,
+      final Checkpoint target) {
     super(
         SSZ_SCHEMA,
         SszUInt64.of(slot),
@@ -65,7 +69,7 @@ public class AttestationData
         target);
   }
 
-  public AttestationData(UInt64 slot, AttestationData data) {
+  public AttestationData(final UInt64 slot, final AttestationData data) {
     this(slot, data.getIndex(), data.getBeaconBlockRoot(), data.getSource(), data.getTarget());
   }
 

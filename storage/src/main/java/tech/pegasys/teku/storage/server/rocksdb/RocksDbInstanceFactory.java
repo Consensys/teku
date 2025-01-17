@@ -14,6 +14,9 @@
 package tech.pegasys.teku.storage.server.rocksdb;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration.NUMBER_OF_LOG_FILES_TO_KEEP;
+import static tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration.ROCKSDB_BLOCK_SIZE;
+import static tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration.TIME_TO_ROLL_LOG_FILE;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
@@ -28,6 +31,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import org.rocksdb.BlockBasedTableConfig;
+import org.rocksdb.BloomFilter;
 import org.rocksdb.Cache;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
@@ -117,7 +121,7 @@ public class RocksDbInstanceFactory {
     }
   }
 
-  private static ColumnFamilyHandle getDefaultHandle(List<ColumnFamilyHandle> columnHandles) {
+  private static ColumnFamilyHandle getDefaultHandle(final List<ColumnFamilyHandle> columnHandles) {
     return columnHandles.stream()
         .filter(
             handle -> {
@@ -137,18 +141,23 @@ public class RocksDbInstanceFactory {
     final DBOptions options =
         new DBOptions()
             .setCreateIfMissing(true)
-            .setBytesPerSync(1048576L)
-            .setWalBytesPerSync(1048576L)
             .setIncreaseParallelism(Runtime.getRuntime().availableProcessors())
             .setMaxBackgroundJobs(configuration.getMaxBackgroundJobs())
             .setDbWriteBufferSize(configuration.getWriteBufferCapacity())
             .setMaxOpenFiles(configuration.getMaxOpenFiles())
+            .setBytesPerSync(1_048_576L) // 1MB
+            .setWalBytesPerSync(1_048_576L)
             .setCreateMissingColumnFamilies(true)
+            .setLogFileTimeToRoll(TIME_TO_ROLL_LOG_FILE)
+            .setKeepLogFileNum(NUMBER_OF_LOG_FILES_TO_KEEP)
             .setEnv(Env.getDefault().setBackgroundThreads(configuration.getBackgroundThreadCount()))
             .setStatistics(stats);
+
+    // Java docs suggests this if db is under 1GB, nearly impossible atm
     if (configuration.optimizeForSmallDb()) {
       options.optimizeForSmallDb();
     }
+
     return options;
   }
 
@@ -157,6 +166,7 @@ public class RocksDbInstanceFactory {
     return new ColumnFamilyOptions()
         .setCompressionType(configuration.getCompressionType())
         .setBottommostCompressionType(configuration.getBottomMostCompressionType())
+        .setTtl(0)
         .setTableFormatConfig(createBlockBasedTableConfig(cache));
   }
 
@@ -175,8 +185,11 @@ public class RocksDbInstanceFactory {
 
   private static BlockBasedTableConfig createBlockBasedTableConfig(final Cache cache) {
     return new BlockBasedTableConfig()
+        .setFormatVersion(5)
         .setBlockCache(cache)
+        .setFilterPolicy(new BloomFilter(10, false))
+        .setPartitionFilters(true)
         .setCacheIndexAndFilterBlocks(true)
-        .setFormatVersion(4); // Use the latest format version (only applies to new tables)
+        .setBlockSize(ROCKSDB_BLOCK_SIZE);
   }
 }

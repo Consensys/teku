@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -65,13 +66,17 @@ public class BlockImporter {
   private final AtomicReference<CheckpointState> latestFinalizedCheckpointState =
       new AtomicReference<>(null);
 
+  private final AsyncRunner asyncRunner;
+
   public BlockImporter(
+      final AsyncRunner asyncRunner,
       final Spec spec,
       final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher,
       final RecentChainData recentChainData,
       final ForkChoice forkChoice,
       final WeakSubjectivityValidator weakSubjectivityValidator,
       final ExecutionLayerChannel executionLayer) {
+    this.asyncRunner = asyncRunner;
     this.spec = spec;
     this.receivedBlockEventsChannelPublisher = receivedBlockEventsChannelPublisher;
     this.recentChainData = recentChainData;
@@ -106,8 +111,13 @@ public class BlockImporter {
     return validateWeakSubjectivityPeriod()
         .thenCompose(
             __ ->
-                forkChoice.onBlock(
-                    block, blockImportPerformance, blockBroadcastValidator, executionLayer))
+                asyncRunner.runAsync(
+                    () ->
+                        forkChoice.onBlock(
+                            block,
+                            blockImportPerformance,
+                            blockBroadcastValidator,
+                            executionLayer)))
         .thenApply(
             result -> {
               if (!result.isSuccessful()) {
@@ -141,7 +151,7 @@ public class BlockImporter {
             });
   }
 
-  private SafeFuture<?> validateWeakSubjectivityPeriod() {
+  private SafeFuture<Void> validateWeakSubjectivityPeriod() {
     return getLatestCheckpointState()
         .thenCombine(
             SafeFuture.of(() -> recentChainData.getCurrentSlot().orElseThrow()),
@@ -186,7 +196,7 @@ public class BlockImporter {
                         Objects.equals(curVal, finalizedCheckpoint) ? updatedCheckpoint : curVal));
   }
 
-  private void notifyBlockOperationSubscribers(SignedBeaconBlock block) {
+  private void notifyBlockOperationSubscribers(final SignedBeaconBlock block) {
     final BeaconBlockBody blockBody = block.getMessage().getBody();
 
     attestationSubscribers.forEach(
@@ -206,27 +216,30 @@ public class BlockImporter {
   }
 
   public void subscribeToVerifiedBlockAttestations(
-      VerifiedBlockAttestationListener verifiedBlockAttestationsListener) {
+      final VerifiedBlockAttestationListener verifiedBlockAttestationsListener) {
     attestationSubscribers.subscribe(verifiedBlockAttestationsListener);
   }
 
   public void subscribeToVerifiedBlockAttesterSlashings(
-      VerifiedBlockOperationsListener<AttesterSlashing> verifiedBlockAttesterSlashingsListener) {
+      final VerifiedBlockOperationsListener<AttesterSlashing>
+          verifiedBlockAttesterSlashingsListener) {
     attesterSlashingSubscribers.subscribe(verifiedBlockAttesterSlashingsListener);
   }
 
   public void subscribeToVerifiedBlockProposerSlashings(
-      VerifiedBlockOperationsListener<ProposerSlashing> verifiedBlockProposerSlashingsListener) {
+      final VerifiedBlockOperationsListener<ProposerSlashing>
+          verifiedBlockProposerSlashingsListener) {
     proposerSlashingSubscribers.subscribe(verifiedBlockProposerSlashingsListener);
   }
 
   public void subscribeToVerifiedBlockVoluntaryExits(
-      VerifiedBlockOperationsListener<SignedVoluntaryExit> verifiedBlockVoluntaryExitsListener) {
+      final VerifiedBlockOperationsListener<SignedVoluntaryExit>
+          verifiedBlockVoluntaryExitsListener) {
     voluntaryExitSubscribers.subscribe(verifiedBlockVoluntaryExitsListener);
   }
 
   public void subscribeToVerifiedBlockBlsToExecutionChanges(
-      VerifiedBlockOperationsListener<SignedBlsToExecutionChange>
+      final VerifiedBlockOperationsListener<SignedBlsToExecutionChange>
           verifiedBlockBlsToExecutionChangeListener) {
     blsToExecutionChangeSubscribers.subscribe(verifiedBlockBlsToExecutionChangeListener);
   }

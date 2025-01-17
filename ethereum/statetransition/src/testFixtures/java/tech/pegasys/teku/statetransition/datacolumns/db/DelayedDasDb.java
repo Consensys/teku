@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 public class DelayedDasDb implements DataColumnSidecarDB {
@@ -28,17 +28,18 @@ public class DelayedDasDb implements DataColumnSidecarDB {
   private final AsyncRunner asyncRunner;
   private Duration delay;
 
-  public DelayedDasDb(DataColumnSidecarDB delegate, AsyncRunner asyncRunner, Duration delay) {
+  public DelayedDasDb(
+      final DataColumnSidecarDB delegate, final AsyncRunner asyncRunner, final Duration delay) {
     this.delegate = delegate;
     this.asyncRunner = asyncRunner;
     this.delay = delay;
   }
 
-  public void setDelay(Duration delay) {
+  public void setDelay(final Duration delay) {
     this.delay = delay;
   }
 
-  private <T> SafeFuture<T> delay(Supplier<SafeFuture<T>> futSupplier) {
+  private <T> SafeFuture<T> delay(final Supplier<SafeFuture<T>> futSupplier) {
     return asyncRunner.getDelayedFuture(delay).thenCompose(__ -> futSupplier.get());
   }
 
@@ -54,32 +55,32 @@ public class DelayedDasDb implements DataColumnSidecarDB {
 
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
-      DataColumnSlotAndIdentifier identifier) {
+      final DataColumnSlotAndIdentifier identifier) {
     return delay(() -> delegate.getSidecar(identifier));
   }
 
   @Override
-  public SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(UInt64 slot) {
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(final UInt64 slot) {
     return delay(() -> delegate.getColumnIdentifiers(slot));
   }
 
   @Override
-  public SafeFuture<Void> setFirstCustodyIncompleteSlot(UInt64 slot) {
+  public SafeFuture<Void> setFirstCustodyIncompleteSlot(final UInt64 slot) {
     return delay(() -> delegate.setFirstCustodyIncompleteSlot(slot));
   }
 
   @Override
-  public SafeFuture<Void> setFirstSamplerIncompleteSlot(UInt64 slot) {
+  public SafeFuture<Void> setFirstSamplerIncompleteSlot(final UInt64 slot) {
     return delay(() -> delegate.setFirstSamplerIncompleteSlot(slot));
   }
 
   @Override
-  public SafeFuture<Void> addSidecar(DataColumnSidecar sidecar) {
+  public SafeFuture<Void> addSidecar(final DataColumnSidecar sidecar) {
     return delay(() -> delegate.addSidecar(sidecar));
   }
 
   @Override
-  public SafeFuture<Void> pruneAllSidecars(UInt64 tillSlot) {
+  public SafeFuture<Void> pruneAllSidecars(final UInt64 tillSlot) {
     return delay(() -> delegate.pruneAllSidecars(tillSlot));
   }
 }

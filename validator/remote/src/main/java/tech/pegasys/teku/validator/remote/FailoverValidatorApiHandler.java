@@ -33,11 +33,13 @@ import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -45,6 +47,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
@@ -54,13 +57,12 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
-import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.metrics.BeaconNodeRequestLabels;
 
@@ -71,7 +73,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   static final String REMOTE_BEACON_NODES_REQUESTS_COUNTER_NAME =
       "remote_beacon_nodes_requests_total";
 
-  private final Map<UInt64, ValidatorApiChannel> blindedBlockCreatorCache =
+  private final Map<SlotAndBlockRoot, ValidatorApiChannel> blindedBlockCreatorCache =
       LimitedMap.createSynchronizedLRU(2);
 
   private final BeaconNodeReadinessManager beaconNodeReadinessManager;
@@ -149,17 +151,21 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Optional<PeerCount>> getPeerCount() {
+    return tryRequestUntilSuccess(
+        ValidatorApiChannel::getPeerCount, BeaconNodeRequestLabels.GET_PEER_COUNT_METHOD);
+  }
+
+  @Override
   public SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<Boolean> requestedBlinded,
       final Optional<UInt64> requestedBuilderBoostFactor) {
     final ValidatorApiChannelRequest<Optional<BlockContainerAndMetaData>> request =
         apiChannel ->
             apiChannel
-                .createUnsignedBlock(
-                    slot, randaoReveal, graffiti, requestedBlinded, requestedBuilderBoostFactor)
+                .createUnsignedBlock(slot, randaoReveal, graffiti, requestedBuilderBoostFactor)
                 .thenPeek(
                     blockContainerAndMetaData -> {
                       if (!failoverDelegates.isEmpty()
@@ -167,7 +173,13 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
                               .map(BlockContainerAndMetaData::blockContainer)
                               .map(BlockContainer::isBlinded)
                               .orElse(false)) {
-                        blindedBlockCreatorCache.put(slot, apiChannel);
+                        final SlotAndBlockRoot slotAndBlockRoot =
+                            blockContainerAndMetaData
+                                .orElseThrow()
+                                .blockContainer()
+                                .getBlock()
+                                .getSlotAndBlockRoot();
+                        blindedBlockCreatorCache.put(slotAndBlockRoot, apiChannel);
                       }
                     });
     return tryRequestUntilSuccess(request, BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD);
@@ -183,9 +195,11 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
+      final UInt64 slot,
+      final Bytes32 attestationHashTreeRoot,
+      final Optional<UInt64> committeeIndex) {
     return tryRequestUntilSuccess(
-        apiChannel -> apiChannel.createAggregate(slot, attestationHashTreeRoot),
+        apiChannel -> apiChannel.createAggregate(slot, attestationHashTreeRoot, committeeIndex),
         BeaconNodeRequestLabels.CREATE_AGGREGATE_METHOD);
   }
 
@@ -199,7 +213,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Void> subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests) {
+  public SafeFuture<Void> subscribeToBeaconCommittee(
+      final List<CommitteeSubscriptionRequest> requests) {
     return relayRequest(
         apiChannel -> apiChannel.subscribeToBeaconCommittee(requests),
         BeaconNodeRequestLabels.BEACON_COMMITTEE_SUBSCRIPTION_METHOD,
@@ -208,7 +223,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Void> subscribeToSyncCommitteeSubnets(
-      Collection<SyncCommitteeSubnetSubscription> subscriptions) {
+      final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
     return relayRequest(
         apiChannel -> apiChannel.subscribeToSyncCommitteeSubnets(subscriptions),
         BeaconNodeRequestLabels.SYNC_COMMITTEE_SUBNET_SUBSCRIPTION_METHOD,
@@ -217,7 +232,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Void> subscribeToPersistentSubnets(
-      Set<SubnetSubscription> subnetSubscriptions) {
+      final Set<SubnetSubscription> subnetSubscriptions) {
     return relayRequest(
         apiChannel -> apiChannel.subscribeToPersistentSubnets(subnetSubscriptions),
         BeaconNodeRequestLabels.PERSISTENT_SUBNETS_SUBSCRIPTION_METHOD,
@@ -225,7 +240,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<List<SubmitDataError>> sendSignedAttestations(List<Attestation> attestations) {
+  public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
+      final List<Attestation> attestations) {
     return relayRequest(
         apiChannel -> apiChannel.sendSignedAttestations(attestations),
         BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD,
@@ -245,12 +261,14 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer blockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
-    final UInt64 slot = blockContainer.getSlot();
-    if (blockContainer.isBlinded() && blindedBlockCreatorCache.containsKey(slot)) {
-      final ValidatorApiChannel blockCreatorApiChannel = blindedBlockCreatorCache.remove(slot);
+    final SlotAndBlockRoot slotAndBlockRoot = blockContainer.getSignedBlock().getSlotAndBlockRoot();
+    if (blockContainer.isBlinded() && blindedBlockCreatorCache.containsKey(slotAndBlockRoot)) {
+      final ValidatorApiChannel blockCreatorApiChannel =
+          blindedBlockCreatorCache.remove(slotAndBlockRoot);
       LOG.info(
-          "Block for slot {} was blinded and will only be sent to the beacon node which created it.",
-          slot);
+          "Block for slot {} and root {} was blinded and will only be sent to the beacon node which created it.",
+          slotAndBlockRoot.getSlot(),
+          slotAndBlockRoot.getBlockRoot().toHexString());
       return blockCreatorApiChannel.sendSignedBlock(blockContainer, broadcastValidationLevel);
     }
     return relayRequest(

@@ -25,7 +25,7 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 
 public class DataColumnSidecarsByRangeListenerValidatingProxy
     extends AbstractDataColumnSidecarValidator implements RpcResponseListener<DataColumnSidecar> {

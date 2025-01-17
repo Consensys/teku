@@ -1,0 +1,151 @@
+{
+  "get" : {
+    "tags" : [ "Beacon" ],
+    "operationId" : "getPoolAttestationsV2",
+    "summary" : "Get Attestations from operations pool",
+    "description" : "Retrieves attestations known by the node but not necessarily incorporated into any block.",
+    "parameters" : [ {
+      "name" : "slot",
+      "in" : "query",
+      "schema" : {
+        "type" : "string",
+        "description" : "`UInt64` Slot to query in the canonical chain.",
+        "example" : "1",
+        "format" : "uint64"
+      }
+    }, {
+      "name" : "committee_index",
+      "in" : "query",
+      "schema" : {
+        "type" : "string",
+        "description" : "`uint64` Committee index to query.",
+        "example" : "1",
+        "format" : "uint64"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "Request successful",
+        "headers" : {
+          "Eth-Consensus-Version": {
+            "description": "Required in response so client can deserialize returned json or ssz data more effectively.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "phase0",
+                "altair",
+                "bellatrix",
+                "capella",
+                "deneb",
+                "electra"
+              ],
+              "example": "phase0"
+            }
+          }
+        },
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetPoolAttestationsV2Response"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "post" : {
+    "tags" : [ "Beacon", "Validator Required Api", "Experimental" ],
+    "operationId" : "submitPoolAttestationsV2",
+    "summary" : "Submit Attestation objects to node",
+    "description" : "Submits Attestation objects to the node. Each attestation in the request body is processed individually.\nIf an attestation is validated successfully, the node MUST publish that attestation on the appropriate subnet.\nIf one or more attestations fail validation, the node MUST return a 400 error with details of which attestations have failed, and why.",
+    "parameters" : [ {
+      "name" : "Eth-Consensus-Version",
+      "required" : true,
+      "in" : "header",
+      "schema" : {
+        "type" : "string",
+        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ],
+        "description" : "Version of the attestations being submitted."
+      }
+    } ],
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "title" : "SignedAttestation",
+              "type" : "object",
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/AttestationPhase0"
+              }, {
+                "$ref" : "#/components/schemas/SingleAttestation"
+              } ]
+            }
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Attestations are stored in pool and broadcast on appropriate subnet",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "Errors with one or more attestations",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorListBadRequest"
+            }
+          }
+        }
+      },
+      "503" : {
+        "description" : "Service unavailable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

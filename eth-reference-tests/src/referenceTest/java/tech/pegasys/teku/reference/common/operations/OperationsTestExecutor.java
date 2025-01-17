@@ -24,6 +24,8 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Optional;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestExecutor;
@@ -34,6 +36,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -50,6 +55,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProce
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
@@ -71,7 +77,10 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     SYNC_AGGREGATE,
     EXECUTION_PAYLOAD,
     BLS_TO_EXECUTION_CHANGE,
-    WITHDRAWAL
+    WITHDRAWAL,
+    DEPOSIT_REQUEST,
+    WITHDRAWAL_REQUEST,
+    CONSOLIDATION_REQUEST
   }
 
   public static final ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
@@ -112,6 +121,17 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           .put(
               "operations/withdrawals",
               new OperationsTestExecutor<>("execution_payload.ssz_snappy", Operation.WITHDRAWAL))
+          .put(
+              "operations/deposit_request",
+              new OperationsTestExecutor<>("deposit_request.ssz_snappy", Operation.DEPOSIT_REQUEST))
+          .put(
+              "operations/withdrawal_request",
+              new OperationsTestExecutor<>(
+                  "withdrawal_request.ssz_snappy", Operation.WITHDRAWAL_REQUEST))
+          .put(
+              "operations/consolidation_request",
+              new OperationsTestExecutor<>(
+                  "consolidation_request.ssz_snappy", Operation.CONSOLIDATION_REQUEST))
           .build();
 
   private final String dataFileName;
@@ -298,8 +318,12 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       }
       case BLS_TO_EXECUTION_CHANGE -> processBlsToExecutionChange(testDefinition, state, processor);
       case WITHDRAWAL -> processWithdrawal(testDefinition, state, processor);
-      default -> throw new UnsupportedOperationException(
-          "Operation " + operation + " not implemented in OperationTestExecutor");
+      case DEPOSIT_REQUEST -> processDepositRequest(testDefinition, state, processor);
+      case WITHDRAWAL_REQUEST -> processWithdrawalRequest(testDefinition, state, processor);
+      case CONSOLIDATION_REQUEST -> processConsolidations(testDefinition, state, processor);
+      default ->
+          throw new UnsupportedOperationException(
+              "Operation " + operation + " not implemented in OperationTestExecutor");
     }
   }
 
@@ -323,6 +347,54 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     final SignedBlsToExecutionChange blsToExecutionChange =
         loadBlsToExecutionChange(testDefinition);
     processor.processBlsToExecutionChange(state, blsToExecutionChange);
+  }
+
+  private void processDepositRequest(
+      final TestDefinition testDefinition,
+      final MutableBeaconState state,
+      final OperationProcessor processor)
+      throws BlockProcessingException {
+    final SszListSchema<DepositRequest, ?> depositRequestsSchema =
+        SchemaDefinitionsElectra.required(
+                testDefinition.getSpec().forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+            .getExecutionRequestsSchema()
+            .getDepositRequestsSchema();
+    final SszList<DepositRequest> depositRequests =
+        loadSsz(testDefinition, dataFileName, depositRequestsSchema);
+
+    processor.processDepositRequest(state, depositRequests.asList());
+  }
+
+  private void processWithdrawalRequest(
+      final TestDefinition testDefinition,
+      final MutableBeaconState state,
+      final OperationProcessor processor)
+      throws BlockProcessingException {
+    final SszListSchema<WithdrawalRequest, ?> withdrawalRequestsSchema =
+        SchemaDefinitionsElectra.required(
+                testDefinition.getSpec().forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+            .getExecutionRequestsSchema()
+            .getWithdrawalRequestsSchema();
+    final SszList<WithdrawalRequest> withdrawalRequests =
+        loadSsz(testDefinition, dataFileName, withdrawalRequestsSchema);
+
+    processor.processWithdrawalRequest(state, withdrawalRequests.asList());
+  }
+
+  private void processConsolidations(
+      final TestDefinition testDefinition,
+      final MutableBeaconState state,
+      final OperationProcessor processor)
+      throws BlockProcessingException {
+    final SszListSchema<ConsolidationRequest, ?> consolidationRequestsSchema =
+        SchemaDefinitionsElectra.required(
+                testDefinition.getSpec().forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+            .getExecutionRequestsSchema()
+            .getConsolidationRequestsSchema();
+    final SszList<ConsolidationRequest> consolidationRequests =
+        loadSsz(testDefinition, dataFileName, consolidationRequestsSchema);
+
+    processor.processConsolidationRequests(state, consolidationRequests.asList());
   }
 
   private SignedVoluntaryExit loadVoluntaryExit(final TestDefinition testDefinition) {
@@ -381,13 +453,16 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
         checkValidationForBlockInclusion(
             blsToExecutionChangeValidator, state, blsToExecutionChange, expectInclusion);
       }
-        // Not yet testing inclusion rules
+      // Not yet testing inclusion rules
       case PROCESS_BLOCK_HEADER,
           DEPOSIT,
           ATTESTATION,
           SYNC_AGGREGATE,
           EXECUTION_PAYLOAD,
-          WITHDRAWAL -> {}
+          WITHDRAWAL,
+          DEPOSIT_REQUEST,
+          WITHDRAWAL_REQUEST,
+          CONSOLIDATION_REQUEST -> {}
     }
   }
 

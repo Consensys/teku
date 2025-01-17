@@ -19,6 +19,10 @@ import com.google.common.base.Suppliers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -27,8 +31,10 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 
 public class BeaconStateMutators {
-  private final SpecConfig specConfig;
-  private final MiscHelpers miscHelpers;
+  private static final Logger LOG = LogManager.getLogger();
+
+  protected final SpecConfig specConfig;
+  protected final MiscHelpers miscHelpers;
   private final BeaconStateAccessors beaconStateAccessors;
 
   public BeaconStateMutators(
@@ -48,7 +54,8 @@ public class BeaconStateMutators {
    * @param proposerIndex
    * @param delta
    */
-  public void increaseProposerBalance(MutableBeaconState state, int proposerIndex, UInt64 delta) {
+  public void increaseProposerBalance(
+      final MutableBeaconState state, final int proposerIndex, final UInt64 delta) {
     increaseBalance(state, proposerIndex, delta);
     BeaconStateCache.getSlotCaches(state).increaseBlockProposerRewards(delta);
   }
@@ -62,7 +69,7 @@ public class BeaconStateMutators {
    * @see
    *     <a>https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#increase_balance</a>
    */
-  public void increaseBalance(MutableBeaconState state, int index, UInt64 delta) {
+  public void increaseBalance(final MutableBeaconState state, final int index, final UInt64 delta) {
     state.getBalances().setElement(index, state.getBalances().getElement(index).plus(delta));
   }
 
@@ -75,7 +82,7 @@ public class BeaconStateMutators {
    * @see
    *     <a>https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#decrease_balance</a>
    */
-  public void decreaseBalance(MutableBeaconState state, int index, UInt64 delta) {
+  public void decreaseBalance(final MutableBeaconState state, final int index, final UInt64 delta) {
     state
         .getBalances()
         .setElement(index, state.getBalances().getElement(index).minusMinZero(delta));
@@ -194,6 +201,42 @@ public class BeaconStateMutators {
     private ValidatorExitContext(final UInt64 churnLimit) {
       this.churnLimit = churnLimit;
     }
+
+    public UInt64 getExitQueueEpoch() {
+      return exitQueueEpoch;
+    }
+
+    public UInt64 getExitQueueChurn() {
+      return exitQueueChurn;
+    }
+
+    public UInt64 getChurnLimit() {
+      return churnLimit;
+    }
+
+    public void setExitQueueEpoch(final UInt64 exitQueueEpoch) {
+      this.exitQueueEpoch = exitQueueEpoch;
+    }
+
+    public void setExitQueueChurn(final UInt64 exitQueueChurn) {
+      this.exitQueueChurn = exitQueueChurn;
+    }
+  }
+
+  /**
+   * <a
+   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#deposits">add_validator_to_registry</a>
+   */
+  public void addValidatorToRegistry(
+      final MutableBeaconState state,
+      final BLSPublicKey pubkey,
+      final Bytes32 withdrawalCredentials,
+      final UInt64 amount) {
+    final Validator validator =
+        miscHelpers.getValidatorFromDeposit(pubkey, withdrawalCredentials, amount);
+    LOG.debug("Adding new validator with index {} to state", state.getValidators().size());
+    state.getValidators().append(validator);
+    state.getBalances().appendElement(amount);
   }
 
   public void slashValidator(
@@ -206,12 +249,12 @@ public class BeaconStateMutators {
   private void slashValidator(
       final MutableBeaconState state,
       final int slashedIndex,
-      int whistleblowerIndex,
+      final int whistleblowerIndex,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
-    UInt64 epoch = beaconStateAccessors.getCurrentEpoch(state);
+    final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(state);
     initiateValidatorExit(state, slashedIndex, validatorExitContextSupplier);
 
-    Validator validator = state.getValidators().get(slashedIndex);
+    final Validator validator = state.getValidators().get(slashedIndex);
 
     state
         .getValidators()
@@ -238,7 +281,7 @@ public class BeaconStateMutators {
     int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
 
     final UInt64 whistleblowerReward =
-        validator.getEffectiveBalance().dividedBy(specConfig.getWhistleblowerRewardQuotient());
+        validator.getEffectiveBalance().dividedBy(getWhistleblowerRewardQuotient());
 
     if (whistleblowerIndex == -1) {
       // proposer takes all rewards
@@ -257,5 +300,9 @@ public class BeaconStateMutators {
 
   protected int getMinSlashingPenaltyQuotient() {
     return specConfig.getMinSlashingPenaltyQuotient();
+  }
+
+  protected int getWhistleblowerRewardQuotient() {
+    return specConfig.getWhistleblowerRewardQuotient();
   }
 }

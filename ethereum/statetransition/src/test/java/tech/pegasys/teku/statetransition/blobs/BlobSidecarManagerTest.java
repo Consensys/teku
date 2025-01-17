@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.blobs;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -31,9 +32,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -43,22 +42,21 @@ import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndV
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.ReceivedBlobSidecarListener;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
-import tech.pegasys.teku.statetransition.forkchoice.BlobSidecarsAvailabilityChecker;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl.ForkChoiceBlobSidecarsAvailabilityCheckerProvider;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl.UnpooledBlockBlobSidecarsTrackerProvider;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class BlobSidecarManagerTest {
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final BlobSidecarGossipValidator blobSidecarValidator =
       mock(BlobSidecarGossipValidator.class);
-  private final KZG kzg = mock(KZG.class);
   private final BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPool =
       mock(BlockBlobSidecarsTrackersPoolImpl.class);
   private final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots = new HashMap<>();
@@ -66,21 +64,29 @@ public class BlobSidecarManagerTest {
   @SuppressWarnings("unchecked")
   private final FutureItems<BlobSidecar> futureBlobSidecars = mock(FutureItems.class);
 
+  private final ForkChoiceBlobSidecarsAvailabilityCheckerProvider
+      forkChoiceBlobSidecarsAvailabilityCheckerProvider =
+          mock(ForkChoiceBlobSidecarsAvailabilityCheckerProvider.class);
+  private final UnpooledBlockBlobSidecarsTrackerProvider unpooledBlockBlobSidecarsTrackerProvider =
+      mock(UnpooledBlockBlobSidecarsTrackerProvider.class);
+
   private final BlobSidecarManagerImpl blobSidecarManager =
       new BlobSidecarManagerImpl(
           spec,
-          asyncRunner,
           recentChainData,
           blockBlobSidecarsTrackersPool,
           blobSidecarValidator,
-          kzg,
           futureBlobSidecars,
-          invalidBlobSidecarRoots);
+          invalidBlobSidecarRoots,
+          forkChoiceBlobSidecarsAvailabilityCheckerProvider,
+          unpooledBlockBlobSidecarsTrackerProvider);
 
   private final ReceivedBlobSidecarListener receivedBlobSidecarListener =
       mock(ReceivedBlobSidecarListener.class);
 
   private final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
+  private final List<BlobSidecar> blobSidecars = List.of(blobSidecar);
+  private final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
 
   @BeforeEach
   void setUp() {
@@ -171,7 +177,6 @@ public class BlobSidecarManagerTest {
 
   @Test
   void prepareForBlockImport_shouldAddToPoolAndNotify() {
-
     blobSidecarManager.prepareForBlockImport(blobSidecar, RemoteOrigin.GOSSIP);
 
     verify(receivedBlobSidecarListener).onBlobSidecarReceived(blobSidecar);
@@ -190,8 +195,8 @@ public class BlobSidecarManagerTest {
     verify(futureBlobSidecars).onSlot(UInt64.ONE);
 
     verify(blockBlobSidecarsTrackersPool)
-        .onNewBlobSidecar(futureBlobSidecarsList.get(0), RemoteOrigin.GOSSIP);
-    verify(receivedBlobSidecarListener).onBlobSidecarReceived(futureBlobSidecarsList.get(0));
+        .onNewBlobSidecar(futureBlobSidecarsList.getFirst(), RemoteOrigin.GOSSIP);
+    verify(receivedBlobSidecarListener).onBlobSidecarReceived(futureBlobSidecarsList.getFirst());
   }
 
   @Test
@@ -217,30 +222,141 @@ public class BlobSidecarManagerTest {
 
   @Test
   void createAvailabilityChecker_shouldReturnAnAvailabilityChecker() {
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
-
+    final ForkChoiceBlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker =
+        mock(ForkChoiceBlobSidecarsAvailabilityChecker.class);
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker = mock(BlockBlobSidecarsTracker.class);
-    when(blockBlobSidecarsTracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
 
+    when(forkChoiceBlobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker))
+        .thenReturn(forkChoiceBlobSidecarsAvailabilityChecker);
     when(blockBlobSidecarsTrackersPool.getOrCreateBlockBlobSidecarsTracker(block))
         .thenReturn(blockBlobSidecarsTracker);
 
     assertThat(blobSidecarManager.createAvailabilityChecker(block))
-        .isInstanceOf(BlobSidecarsAvailabilityChecker.class);
+        .isSameAs(forkChoiceBlobSidecarsAvailabilityChecker);
+  }
+
+  @Test
+  void createAvailabilityCheckerAndValidateImmediately_shouldReturnValidWhenComplete() {
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker = mock(BlockBlobSidecarsTracker.class);
+    final ForkChoiceBlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker =
+        mock(ForkChoiceBlobSidecarsAvailabilityChecker.class);
+
+    when(forkChoiceBlobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker))
+        .thenReturn(forkChoiceBlobSidecarsAvailabilityChecker);
+    when(unpooledBlockBlobSidecarsTrackerProvider.create(block))
+        .thenReturn(blockBlobSidecarsTracker);
+    when(blockBlobSidecarsTracker.add(any())).thenReturn(true);
+    when(blockBlobSidecarsTracker.isComplete()).thenReturn(true);
+    when(forkChoiceBlobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
+        .thenReturn(SafeFuture.completedFuture(DataAndValidationResult.validResult(blobSidecars)));
+
+    assertThat(
+            blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, blobSidecars))
+        .matches(DataAndValidationResult::isValid)
+        .matches(
+            result -> {
+              assertThat(result.data()).containsExactlyElementsOf(blobSidecars);
+              return true;
+            });
+
+    verifyNoInteractions(blockBlobSidecarsTrackersPool);
+  }
+
+  @Test
+  void createAvailabilityCheckerAndValidateImmediately_shouldReturnNotRequiredWhenPreDeneb() {
+    final SignedBeaconBlock preDenebBlock =
+        new DataStructureUtil(TestSpecFactory.createMinimalCapella()).randomSignedBeaconBlock();
+
+    assertThat(
+            blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(
+                preDenebBlock, blobSidecars))
+        .matches(DataAndValidationResult::isNotRequired);
+
+    verifyNoInteractions(blockBlobSidecarsTrackersPool);
   }
 
   @Test
   void
-      createAvailabilityCheckerAndValidateImmediately_shouldReturnABlobSidecarsAndValidationResult() {
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+      createAvailabilityCheckerAndValidateImmediately_shouldReturnInvalidWhenBlobsHaveDuplicatedIndices() {
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker = mock(BlockBlobSidecarsTracker.class);
+    final ForkChoiceBlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker =
+        mock(ForkChoiceBlobSidecarsAvailabilityChecker.class);
 
-    final UpdatableStore store = mock(UpdatableStore.class);
-    when(recentChainData.getStore()).thenReturn(store);
-    when(store.getTimeSeconds()).thenReturn(UInt64.ONE);
-    when(store.getGenesisTime()).thenReturn(UInt64.ZERO);
+    when(forkChoiceBlobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker))
+        .thenReturn(forkChoiceBlobSidecarsAvailabilityChecker);
+    when(unpooledBlockBlobSidecarsTrackerProvider.create(block))
+        .thenReturn(blockBlobSidecarsTracker);
+    when(blockBlobSidecarsTracker.add(any())).thenReturn(false);
+    when(blockBlobSidecarsTracker.isComplete()).thenReturn(true);
 
-    assertThat(blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, List.of()))
-        .isInstanceOf(DataAndValidationResult.class);
+    assertThat(
+            blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, blobSidecars))
+        .matches(DataAndValidationResult::isInvalid)
+        .matches(
+            result -> {
+              assertThat(result.cause()).isPresent();
+              assertThat(result.cause().orElseThrow())
+                  .matches(cause -> cause instanceof IllegalStateException)
+                  .hasMessage(
+                      "Failed to add all blobs to tracker, possible blobs with same index or index out of blocks commitment range");
+              return true;
+            });
+
+    verifyNoInteractions(blockBlobSidecarsTrackersPool);
+  }
+
+  @Test
+  void
+      createAvailabilityCheckerAndValidateImmediately_shouldReturnNotAvailableWhenBlobsAreIncomplete() {
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker = mock(BlockBlobSidecarsTracker.class);
+    final ForkChoiceBlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker =
+        mock(ForkChoiceBlobSidecarsAvailabilityChecker.class);
+
+    when(forkChoiceBlobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker))
+        .thenReturn(forkChoiceBlobSidecarsAvailabilityChecker);
+    when(unpooledBlockBlobSidecarsTrackerProvider.create(block))
+        .thenReturn(blockBlobSidecarsTracker);
+    when(blockBlobSidecarsTracker.add(any())).thenReturn(true);
+    when(blockBlobSidecarsTracker.isComplete()).thenReturn(false);
+
+    assertThat(
+            blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, blobSidecars))
+        .matches(DataAndValidationResult::isNotAvailable);
+
+    verifyNoInteractions(blockBlobSidecarsTrackersPool);
+  }
+
+  @Test
+  void
+      createAvailabilityCheckerAndValidateImmediately_shouldReturnTheAvailabilityCheckValidationResult() {
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker = mock(BlockBlobSidecarsTracker.class);
+    final ForkChoiceBlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker =
+        mock(ForkChoiceBlobSidecarsAvailabilityChecker.class);
+
+    when(forkChoiceBlobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker))
+        .thenReturn(forkChoiceBlobSidecarsAvailabilityChecker);
+    when(unpooledBlockBlobSidecarsTrackerProvider.create(block))
+        .thenReturn(blockBlobSidecarsTracker);
+    when(blockBlobSidecarsTracker.add(any())).thenReturn(true);
+    when(blockBlobSidecarsTracker.isComplete()).thenReturn(true);
+
+    final SafeFuture<DataAndValidationResult<BlobSidecar>> result = new SafeFuture<>();
+
+    when(forkChoiceBlobSidecarsAvailabilityChecker.getAvailabilityCheckResult()).thenReturn(result);
+
+    assertThatThrownBy(
+            () ->
+                blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(
+                    block, blobSidecars))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage(
+            "Availability check expected to be done synchronously when providing immediate blobs");
+
+    result.complete(DataAndValidationResult.validResult(blobSidecars));
+
+    assertThat(
+            blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, blobSidecars))
+        .isSameAs(result.join());
 
     verifyNoInteractions(blockBlobSidecarsTrackersPool);
   }

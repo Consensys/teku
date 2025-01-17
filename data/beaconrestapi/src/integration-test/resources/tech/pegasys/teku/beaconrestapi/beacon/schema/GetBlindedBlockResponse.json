@@ -5,7 +5,7 @@
   "properties" : {
     "version" : {
       "type" : "string",
-      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "eip7594" ]
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ]
     },
     "execution_optimistic" : {
       "type" : "boolean"
@@ -21,13 +21,13 @@
       }, {
         "$ref" : "#/components/schemas/SignedBeaconBlockAltair"
       }, {
-        "$ref" : "#/components/schemas/SignedBlindedBlockBellatrix"
+        "$ref" : "#/components/schemas/SignedBlindedBeaconBlockBellatrix"
       }, {
-        "$ref" : "#/components/schemas/SignedBlindedBlockCapella"
+        "$ref" : "#/components/schemas/SignedBlindedBeaconBlockCapella"
       }, {
-        "$ref" : "#/components/schemas/SignedBlindedBlockDeneb"
+        "$ref" : "#/components/schemas/SignedBlindedBeaconBlockDeneb"
       }, {
-        "$ref" : "#/components/schemas/SignedBlindedBlockEip7594"
+        "$ref" : "#/components/schemas/SignedBlindedBeaconBlockElectra"
       }  ]
     }
   }

@@ -13,28 +13,25 @@
 
 package tech.pegasys.teku.data.slashinginterchange;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
+
 import com.google.common.base.MoreObjects;
-import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class SignedBlock {
-  @JsonProperty("slot")
-  public final UInt64 slot;
+public record SignedBlock(UInt64 slot, Optional<Bytes32> signingRoot) {
 
-  @JsonProperty("signing_root")
-  public final Bytes32 signingRoot;
-
-  @JsonCreator
-  public SignedBlock(
-      @JsonProperty("slot") final UInt64 slot,
-      @JsonProperty("signing_root") final Bytes32 signingRoot) {
-    this.slot = slot;
-    this.signingRoot = signingRoot;
+  public static DeserializableTypeDefinition<SignedBlock> getJsonTypeDefinition() {
+    return DeserializableTypeDefinition.object(SignedBlock.class, SignedBlockBuilder.class)
+        .initializer(SignedBlockBuilder::new)
+        .finisher(SignedBlockBuilder::build)
+        .withField("slot", UINT64_TYPE, SignedBlock::slot, SignedBlockBuilder::slot)
+        .withOptionalField(
+            "signing_root", BYTES32_TYPE, SignedBlock::signingRoot, SignedBlockBuilder::signingRoot)
+        .build();
   }
 
   @Override
@@ -45,24 +42,22 @@ public class SignedBlock {
         .toString();
   }
 
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final SignedBlock that = (SignedBlock) o;
-    return Objects.equals(slot, that.slot) && Objects.equals(signingRoot, that.signingRoot);
-  }
+  static class SignedBlockBuilder {
+    UInt64 slot;
+    Optional<Bytes32> signingRoot = Optional.empty();
 
-  public UInt64 getSlot() {
-    return slot;
-  }
+    SignedBlockBuilder slot(final UInt64 slot) {
+      this.slot = slot;
+      return this;
+    }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(slot, signingRoot);
+    SignedBlockBuilder signingRoot(final Optional<Bytes32> signingRoot) {
+      this.signingRoot = signingRoot;
+      return this;
+    }
+
+    SignedBlock build() {
+      return new SignedBlock(slot, signingRoot);
+    }
   }
 }

@@ -89,7 +89,7 @@ public class MetricFetcher {
     }
   }
 
-  public static MetricValue parse(String line) {
+  public static MetricValue parse(final String line) {
     if (line.contains("{")) {
       final String metricName = line.substring(0, line.indexOf("{"));
 

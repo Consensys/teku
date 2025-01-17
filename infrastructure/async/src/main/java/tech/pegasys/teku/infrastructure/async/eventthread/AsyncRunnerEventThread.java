@@ -43,7 +43,7 @@ public class AsyncRunnerEventThread implements EventThread {
   }
 
   private boolean isEventThread() {
-    return Thread.currentThread().getId() == eventThreadId;
+    return Thread.currentThread().threadId() == eventThreadId;
   }
 
   @Override
@@ -85,7 +85,7 @@ public class AsyncRunnerEventThread implements EventThread {
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
-  public <T> SafeFuture<T> executeFuture(Supplier<SafeFuture<T>> task) {
+  public <T> SafeFuture<T> executeFuture(final Supplier<SafeFuture<T>> task) {
     // Note: started is only set to true after thread has been initialized so if it is true, thread
     // must be initialized.
     if (!started.get()) {
@@ -125,7 +125,7 @@ public class AsyncRunnerEventThread implements EventThread {
    */
   private <T> T recordEventThreadIdAndExecute(final ExceptionThrowingSupplier<T> task)
       throws Throwable {
-    eventThreadId = Thread.currentThread().getId();
+    eventThreadId = Thread.currentThread().threadId();
     try {
       return task.get();
     } finally {

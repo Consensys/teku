@@ -47,9 +47,7 @@ public class CapellaStateUpgrade implements StateUpgrade<BeaconStateCapella> {
   public BeaconStateCapella upgrade(final BeaconState preState) {
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
     BeaconStateBellatrix preStateBellatrix = BeaconStateBellatrix.required(preState);
-    return schemaDefinitions
-        .getBeaconStateSchema()
-        .createEmpty()
+    return BeaconStateCapella.required(schemaDefinitions.getBeaconStateSchema().createEmpty())
         .updatedCapella(
             state -> {
               BeaconStateFields.copyCommonFieldsFromSource(state, preState);

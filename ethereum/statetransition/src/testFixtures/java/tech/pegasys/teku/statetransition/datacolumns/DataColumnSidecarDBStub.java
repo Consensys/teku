@@ -22,7 +22,7 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 
@@ -35,7 +35,7 @@ public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
   private final AtomicLong dbWriteCounter = new AtomicLong();
 
   @Override
-  public SafeFuture<Void> setFirstCustodyIncompleteSlot(UInt64 slot) {
+  public SafeFuture<Void> setFirstCustodyIncompleteSlot(final UInt64 slot) {
     dbWriteCounter.incrementAndGet();
     this.firstCustodyIncompleteSlot = Optional.of(slot);
     return SafeFuture.COMPLETE;
@@ -48,7 +48,7 @@ public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
   }
 
   @Override
-  public SafeFuture<Void> setFirstSamplerIncompleteSlot(UInt64 slot) {
+  public SafeFuture<Void> setFirstSamplerIncompleteSlot(final UInt64 slot) {
     dbWriteCounter.incrementAndGet();
     this.firstSamplerIncompleteSlot = Optional.of(slot);
     return SafeFuture.COMPLETE;
@@ -61,22 +61,23 @@ public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
   }
 
   @Override
-  public SafeFuture<Void> addSidecar(DataColumnSidecar sidecar) {
+  public SafeFuture<Void> addSidecar(final DataColumnSidecar sidecar) {
     dbWriteCounter.incrementAndGet();
-    DataColumnSlotAndIdentifier identifier = DataColumnSlotAndIdentifier.fromDataColumn(sidecar);
+    final DataColumnSlotAndIdentifier identifier =
+        DataColumnSlotAndIdentifier.fromDataColumn(sidecar);
     db.put(identifier, sidecar);
     return SafeFuture.COMPLETE;
   }
 
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
-      DataColumnSlotAndIdentifier identifier) {
+      final DataColumnSlotAndIdentifier identifier) {
     dbReadCounter.incrementAndGet();
     return SafeFuture.completedFuture(Optional.ofNullable(db.get(identifier)));
   }
 
   @Override
-  public SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(UInt64 slot) {
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(final UInt64 slot) {
     dbReadCounter.incrementAndGet();
     return SafeFuture.completedFuture(
         db
@@ -88,7 +89,7 @@ public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
   }
 
   @Override
-  public SafeFuture<Void> pruneAllSidecars(UInt64 tillSlot) {
+  public SafeFuture<Void> pruneAllSidecars(final UInt64 tillSlot) {
     dbWriteCounter.incrementAndGet();
     db.headMap(minimalComparableForSlot(tillSlot)).clear();
     return SafeFuture.COMPLETE;

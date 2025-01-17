@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram.Timer;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -52,7 +52,7 @@ public class DataColumnSidecarManagerImpl implements DataColumnSidecarManager {
 
   @Override
   public SafeFuture<InternalValidationResult> onDataColumnSidecarGossip(
-      DataColumnSidecar dataColumnSidecar, Optional<UInt64> arrivalTimestamp) {
+      final DataColumnSidecar dataColumnSidecar, final Optional<UInt64> arrivalTimestamp) {
     final SafeFuture<InternalValidationResult> validation;
     try (Timer ignored = histogram.startTimer()) {
       validation = validator.validate(dataColumnSidecar);
@@ -73,12 +73,13 @@ public class DataColumnSidecarManagerImpl implements DataColumnSidecarManager {
   }
 
   @Override
-  public void onDataColumnSidecarPublish(DataColumnSidecar sidecar) {
+  public void onDataColumnSidecarPublish(final DataColumnSidecar sidecar) {
     validDataColumnSidecarsSubscribers.forEach(l -> l.onNewValidSidecar(sidecar));
   }
 
   @Override
-  public void subscribeToValidDataColumnSidecars(ValidDataColumnSidecarsListener sidecarsListener) {
+  public void subscribeToValidDataColumnSidecars(
+      final ValidDataColumnSidecarsListener sidecarsListener) {
     validDataColumnSidecarsSubscribers.subscribe(sidecarsListener);
   }
 }

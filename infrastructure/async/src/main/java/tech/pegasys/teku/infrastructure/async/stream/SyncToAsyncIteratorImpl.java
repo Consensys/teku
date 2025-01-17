@@ -21,12 +21,12 @@ class SyncToAsyncIteratorImpl<T> extends AsyncIterator<T> {
   private final Iterator<T> iterator;
   private AsyncStreamHandler<T> callback;
 
-  SyncToAsyncIteratorImpl(Iterator<T> iterator) {
+  SyncToAsyncIteratorImpl(final Iterator<T> iterator) {
     this.iterator = iterator;
   }
 
   @Override
-  public void iterate(AsyncStreamHandler<T> callback) {
+  public void iterate(final AsyncStreamHandler<T> callback) {
     synchronized (this) {
       if (this.callback != null) {
         throw new IllegalStateException("This one-shot iterator has been used already");
@@ -61,7 +61,7 @@ class SyncToAsyncIteratorImpl<T> extends AsyncIterator<T> {
     }
   }
 
-  private void onNextComplete(boolean shouldContinue) {
+  private void onNextComplete(final boolean shouldContinue) {
     if (shouldContinue) {
       next();
     } else {

@@ -37,8 +37,8 @@ public class SyncAggregateFuzzInput
   }
 
   public SyncAggregateFuzzInput(
-      ContainerSchema2<SyncAggregateFuzzInput, BeaconState, SyncAggregate> type,
-      TreeNode backingNode) {
+      final ContainerSchema2<SyncAggregateFuzzInput, BeaconState, SyncAggregate> type,
+      final TreeNode backingNode) {
     super(type, backingNode);
   }
 

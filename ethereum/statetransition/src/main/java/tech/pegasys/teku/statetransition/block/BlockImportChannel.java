@@ -31,8 +31,18 @@ public interface BlockImportChannel extends ChannelInterface {
       Optional<RemoteOrigin> origin);
 
   default SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
-      SignedBeaconBlock block, BroadcastValidationLevel broadcastValidationLevel) {
-    return importBlock(block, broadcastValidationLevel, Optional.empty());
+      final SignedBeaconBlock block) {
+    return importBlock(block, BroadcastValidationLevel.NOT_REQUIRED, Optional.empty());
+  }
+
+  default SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
+      final SignedBeaconBlock block, final RemoteOrigin origin) {
+    return importBlock(block, BroadcastValidationLevel.NOT_REQUIRED, Optional.of(origin));
+  }
+
+  default SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
+      final SignedBeaconBlock block, final BroadcastValidationLevel broadcastValidationLevel) {
+    return importBlock(block, broadcastValidationLevel, Optional.of(RemoteOrigin.LOCAL_PROPOSAL));
   }
 
   record BlockImportAndBroadcastValidationResults(

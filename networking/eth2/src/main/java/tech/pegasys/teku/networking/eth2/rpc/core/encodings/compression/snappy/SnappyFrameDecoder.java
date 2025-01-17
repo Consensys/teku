@@ -72,12 +72,12 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf, Compress
    *     uncompressed data, and if the checksums do not match, a suitable {@link
    *     CompressionException} will be thrown
    */
-  public SnappyFrameDecoder(boolean validateChecksums) {
+  public SnappyFrameDecoder(final boolean validateChecksums) {
     this.validateChecksums = validateChecksums;
   }
 
   @Override
-  protected Optional<ByteBuf> decodeOneImpl(ByteBuf in) throws CompressionException {
+  protected Optional<ByteBuf> decodeOneImpl(final ByteBuf in) throws CompressionException {
     if (corrupted) {
       in.skipBytes(in.readableBytes());
       return Optional.empty();
@@ -216,12 +216,12 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf, Compress
   }
 
   @Override
-  protected void throwUnprocessedDataException(int dataLeft) throws CompressionException {
+  protected void throwUnprocessedDataException(final int dataLeft) throws CompressionException {
     throw new PayloadSmallerThanExpectedException(
         "Snappy stream complete, but unprocessed data left: " + dataLeft);
   }
 
-  private static void checkByte(byte actual, byte expect) throws CompressionException {
+  private static void checkByte(final byte actual, final byte expect) throws CompressionException {
     if (actual != expect) {
       throw new CompressionException(
           "Unexpected stream identifier contents. Mismatched snappy protocol version?");
@@ -234,7 +234,7 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf, Compress
    * @param type The tag byte extracted from the stream
    * @return The appropriate {@link ChunkType}, defaulting to {@link ChunkType#RESERVED_UNSKIPPABLE}
    */
-  private static ChunkType mapChunkType(byte type) {
+  private static ChunkType mapChunkType(final byte type) {
     if (type == 0) {
       return ChunkType.COMPRESSED_DATA;
     } else if (type == 1) {

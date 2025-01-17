@@ -51,30 +51,29 @@ public class SszByteVectorSchemaImpl<SszVectorT extends SszByteVector>
 
   @Override
   @SuppressWarnings("unchecked")
-  public SszVectorT createFromBackingNode(TreeNode node) {
+  public SszVectorT createFromBackingNode(final TreeNode node) {
     return (SszVectorT) new SszByteVectorImpl(this, node);
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public SszVectorT fromBytes(Bytes bytes) {
-    return (SszVectorT) new SszByteVectorImpl(this, bytes);
+  public SszVectorT fromBytes(final Bytes bytes) {
+    return createFromBackingNode(fromBytesToTree(this, bytes));
   }
 
-  public static TreeNode fromBytesToTree(SszByteVectorSchema<?> schema, Bytes bytes) {
+  public static TreeNode fromBytesToTree(final SszByteVectorSchema<?> schema, final Bytes bytes) {
     checkArgument(bytes.size() == schema.getLength(), "Bytes size doesn't match vector length");
     return SchemaUtils.createTreeFromBytes(bytes, schema.treeDepth());
   }
 
-  public static Bytes fromTreeToBytes(SszByteVectorSchema<?> schema, TreeNode tree) {
+  public static Bytes fromTreeToBytes(final SszByteVectorSchema<?> schema, final TreeNode tree) {
     Bytes bytes = TreeUtil.concatenateLeavesData(tree);
     checkArgument(bytes.size() == schema.getLength(), "Tree doesn't match vector schema");
     return bytes;
   }
 
   @Override
-  public SszVectorT createFromElements(List<? extends SszByte> elements) {
+  public TreeNode createTreeFromElements(final List<? extends SszByte> elements) {
     Bytes bytes = Bytes.of(elements.stream().mapToInt(sszByte -> 0xFF & sszByte.get()).toArray());
-    return fromBytes(bytes);
+    return fromBytesToTree(this, bytes);
   }
 }

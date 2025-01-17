@@ -142,8 +142,8 @@ public class StatusLogger {
     log.error("PLEASE FIX OR REPORT | Unexpected exception thrown for {}", description, cause);
   }
 
-  public void listeningForLibP2P(final String address) {
-    log.info("Listening for connections on: {}", address);
+  public void listeningForLibP2P(final List<String> addresses) {
+    log.info("Listening for connections on: {}", String.join(",", addresses));
   }
 
   public void listeningForDiscv5PreGenesis(final String enr) {
@@ -203,7 +203,7 @@ public class StatusLogger {
     }
   }
 
-  public void doppelgangerCheck(long epoch, Set<String> publicKeys) {
+  public void doppelgangerCheck(final long epoch, final Set<String> publicKeys) {
     log.info(
         "Performing doppelganger check. Epoch {}, Public keys {}",
         epoch,
@@ -266,7 +266,7 @@ public class StatusLogger {
     log.fatal("Please check the logs for details.");
   }
 
-  public void fatalErrorInitialisingStorage(Throwable err) {
+  public void fatalErrorInitialisingStorage(final Throwable err) {
     log.debug("Failed to initialize storage", err);
     log.fatal(
         "Failed to initialize storage. "
@@ -367,7 +367,8 @@ public class StatusLogger {
     log.info("No genesis state available. Loading deposits from ETH1 chain");
   }
 
-  public void genesisValidatorsActivated(int activeValidatorCount, int requiredValidatorCount) {
+  public void genesisValidatorsActivated(
+      final int activeValidatorCount, final int requiredValidatorCount) {
     log.info(
         "Activated {} of {} validators required for genesis ({}%)",
         activeValidatorCount,
@@ -432,7 +433,7 @@ public class StatusLogger {
   }
 
   public void eth1DepositChainIdMismatch(
-      long expectedChainId, long eth1ChainId, String endpointId) {
+      final long expectedChainId, final long eth1ChainId, final String endpointId) {
     log.log(
         Level.ERROR,
         "PLEASE CHECK YOUR ETH1 NODE (endpoint {})| Wrong Eth1 chain id (expected={}, actual={})",
@@ -441,7 +442,7 @@ public class StatusLogger {
         eth1ChainId);
   }
 
-  public void externalSignerStatus(final URL externalSignerUrl, boolean isReachable) {
+  public void externalSignerStatus(final URL externalSignerUrl, final boolean isReachable) {
     if (isReachable) {
       log.info("External signer is reachable at {}", externalSignerUrl);
     } else {
@@ -456,23 +457,24 @@ public class StatusLogger {
     log.error("Unable to retrieve validator statuses from BeaconNode.");
   }
 
-  public void validatorStatus(String publicKey, String validatorStatus) {
+  public void validatorStatus(final String publicKey, final String validatorStatus) {
     log.info("Validator {} status is {}.", publicKey, validatorStatus);
   }
 
-  public void unableToRetrieveValidatorStatus(String publicKey) {
+  public void unableToRetrieveValidatorStatus(final String publicKey) {
     log.warn("Unable to retrieve status for validator {}.", publicKey);
   }
 
-  public void unableToRetrieveValidatorStatusSummary(int n) {
+  public void unableToRetrieveValidatorStatusSummary(final int n) {
     log.warn("Unable to retrieve status for {} validators.", n);
   }
 
-  public void validatorStatusSummary(int n, String validatorStatus) {
+  public void validatorStatusSummary(final int n, final String validatorStatus) {
     log.info("{} validators are in {} state.", n, validatorStatus);
   }
 
-  public void validatorStatusChange(String oldStatus, String newStatus, String publicKey) {
+  public void validatorStatusChange(
+      final String oldStatus, final String newStatus, final String publicKey) {
     log.warn("Validator {} has changed status from {} to {}.", publicKey, oldStatus, newStatus);
   }
 
@@ -527,6 +529,15 @@ public class StatusLogger {
         print(
             "Ignoring weak subjectivity period check (--ignore-weak-subjectivity-period-enabled). Syncing "
                 + "from outside of the weak subjectivity period is considered UNSAFE.",
+            Color.YELLOW));
+  }
+
+  public void warnUsageOfImplicitPruneDataStorageMode() {
+    log.warn(
+        print(
+            "Prune mode being used as default without a explicit --data-storage-mode option. This will NOT be "
+                + "supported in future Teku versions. Please add --data-storage-mode=prune to your CLI arguments"
+                + " or config file if you want to keep using PRUNE.",
             Color.YELLOW));
   }
 

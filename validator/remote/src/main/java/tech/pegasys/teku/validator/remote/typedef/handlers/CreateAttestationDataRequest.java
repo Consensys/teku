@@ -14,6 +14,8 @@
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
 import static tech.pegasys.teku.ethereum.json.types.SharedApiTypes.withDataWrapper;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,11 +33,10 @@ public class CreateAttestationDataRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
   }
 
-  public Optional<AttestationData> createAttestationData(
-      final UInt64 slot, final int committeeIndex) {
+  public Optional<AttestationData> submit(final UInt64 slot, final int committeeIndex) {
     final Map<String, String> queryParams = new HashMap<>();
-    queryParams.put("slot", slot.toString());
-    queryParams.put("committee_index", Integer.toString(committeeIndex));
+    queryParams.put(SLOT, slot.toString());
+    queryParams.put(COMMITTEE_INDEX, Integer.toString(committeeIndex));
     return get(
         ValidatorApiMethod.GET_ATTESTATION_DATA,
         queryParams,

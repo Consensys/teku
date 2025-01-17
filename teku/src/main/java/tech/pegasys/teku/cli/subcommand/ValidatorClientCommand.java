@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 @Command(
     name = "validator-client",
@@ -95,6 +96,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
     try {
       startLogging();
       final TekuConfiguration globalConfiguration = tekuConfiguration();
+      checkValidatorKeysConfig(globalConfiguration);
       parentCommand.getStartAction().start(globalConfiguration, true);
       return 0;
     } catch (final Throwable t) {
@@ -119,11 +121,11 @@ public class ValidatorClientCommand implements Callable<Integer> {
     }
   }
 
-  private boolean isAutoDetectNetworkOption(String option) {
+  private boolean isAutoDetectNetworkOption(final String option) {
     return AUTO_NETWORK_OPTION.equalsIgnoreCase(option);
   }
 
-  private void configureEth2Network(TekuConfiguration.Builder builder) {
+  private void configureEth2Network(final TekuConfiguration.Builder builder) {
     if (parentCommand.isOptionSpecified("--network")) {
       throw new InvalidConfigurationException(
           "--network option should not be specified before the validator-client command");
@@ -133,6 +135,25 @@ public class ValidatorClientCommand implements Callable<Integer> {
       builder.eth2NetworkConfig(this::configureWithSpecFromBeaconNode);
     } else {
       builder.eth2NetworkConfig(b -> b.applyNetworkDefaults(networkOption));
+    }
+  }
+
+  private static void checkValidatorKeysConfig(final TekuConfiguration globalConfiguration) {
+    if (!globalConfiguration.validatorClient().getInteropConfig().isInteropEnabled()) {
+      final ValidatorConfig validatorConfig =
+          globalConfiguration.validatorClient().getValidatorConfig();
+      final boolean localValidatorKeysProvided =
+          validatorConfig.getValidatorKeys() != null
+              && !validatorConfig.getValidatorKeys().isEmpty();
+      final boolean validatorRestApiEnabled =
+          globalConfiguration.validatorRestApiConfig().isRestApiEnabled();
+      final boolean externalSignerUrlProvided =
+          validatorConfig.getValidatorExternalSignerUrl() != null;
+      if (!localValidatorKeysProvided && !validatorRestApiEnabled && !externalSignerUrlProvided) {
+        throw new InvalidConfigurationException(
+            "No validator keys source provided, should provide local or remote keys otherwise enable the key-manager"
+                + " api to start the validator client");
+      }
     }
   }
 

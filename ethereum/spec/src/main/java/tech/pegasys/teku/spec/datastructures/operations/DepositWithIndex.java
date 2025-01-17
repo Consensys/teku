@@ -13,52 +13,15 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
-import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class DepositWithIndex extends Deposit implements Comparable<DepositWithIndex> {
-
-  private final UInt64 index;
-
-  public DepositWithIndex(SszBytes32Vector proof, DepositData data, UInt64 index) {
-    super(proof, data);
-    this.index = index;
-  }
-
-  public DepositWithIndex(DepositData data, UInt64 index) {
-    super(data);
-    this.index = index;
-  }
-
-  public UInt64 getIndex() {
-    return index;
-  }
+public record DepositWithIndex(Deposit deposit, UInt64 index)
+    implements Comparable<DepositWithIndex> {
 
   @Override
-  public int compareTo(@NotNull DepositWithIndex o) {
-    return this.getIndex().compareTo(o.getIndex());
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    if (!super.equals(o)) {
-      return false;
-    }
-    final DepositWithIndex that = (DepositWithIndex) o;
-    return index.equals(that.index);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(super.hashCode(), index);
+  public int compareTo(final @NotNull DepositWithIndex o) {
+    return this.index().compareTo(o.index());
   }
 
   @Override

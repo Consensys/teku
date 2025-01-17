@@ -23,19 +23,19 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszPrimitiveListSchemaImpl<
         ElementT,
-        SszElementT extends SszPrimitive<ElementT, SszElementT>,
+        SszElementT extends SszPrimitive<ElementT>,
         SszListT extends SszPrimitiveList<ElementT, SszElementT>>
     extends AbstractSszListSchema<SszElementT, SszListT>
     implements SszPrimitiveListSchema<ElementT, SszElementT, SszListT> {
 
   public SszPrimitiveListSchemaImpl(
-      SszPrimitiveSchema<ElementT, SszElementT> elementSchema, long maxLength) {
+      final SszPrimitiveSchema<ElementT, SszElementT> elementSchema, final long maxLength) {
     super(elementSchema, maxLength);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public SszListT createFromBackingNode(TreeNode node) {
+  public SszListT createFromBackingNode(final TreeNode node) {
     return (SszListT) new SszPrimitiveListImpl<>(this, node);
   }
 }

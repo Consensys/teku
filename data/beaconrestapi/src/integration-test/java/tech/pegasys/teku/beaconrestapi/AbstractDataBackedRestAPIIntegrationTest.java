@@ -23,6 +23,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTEN
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.RewardCalculator;
@@ -53,7 +55,6 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -157,7 +158,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected ChainBuilder chainBuilder;
   protected ChainUpdater chainUpdater;
 
-  protected final JsonProvider jsonProvider = new JsonProvider();
+  protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   protected DataProvider dataProvider;
   protected BeaconRestApi beaconRestApi;
@@ -219,7 +220,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             new SystemTimeProvider());
   }
 
-  private void setupAndStartRestAPI(BeaconRestApiConfig config) {
+  private void setupAndStartRestAPI(final BeaconRestApiConfig config) {
     combinedChainDataClient = storageSystem.combinedChainDataClient();
     dataProvider =
         DataProvider.builder()
@@ -261,7 +262,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     setupAndStartRestAPI(CONFIG);
   }
 
-  protected void startPreGenesisRestAPIWithConfig(BeaconRestApiConfig config) {
+  protected void startPreGenesisRestAPIWithConfig(final BeaconRestApiConfig config) {
     setupStorage(StateStorageMode.ARCHIVE, false, SpecMilestone.PHASE0);
     // Start API
     setupAndStartRestAPI(config);
@@ -296,17 +297,17 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     setupAndStartRestAPI(config);
   }
 
-  public List<SignedBlockAndState> createBlocksAtSlots(long... slots) {
+  public List<SignedBlockAndState> createBlocksAtSlots(final long... slots) {
     final UInt64[] unsignedSlots =
         Arrays.stream(slots).mapToObj(UInt64::valueOf).toArray(UInt64[]::new);
     return createBlocksAtSlots(unsignedSlots);
   }
 
-  public void setCurrentSlot(long slot) {
+  public void setCurrentSlot(final long slot) {
     chainUpdater.setCurrentSlot(UInt64.valueOf(slot));
   }
 
-  public List<SignedBlockAndState> createBlocksAtSlots(UInt64... slots) {
+  public List<SignedBlockAndState> createBlocksAtSlots(final UInt64... slots) {
     final ArrayList<SignedBlockAndState> results = new ArrayList<>();
     for (UInt64 slot : slots) {
       final SignedBlockAndState block = chainUpdater.advanceChain(slot);
@@ -316,7 +317,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     return results;
   }
 
-  public SignedBlockAndState finalizeChainAtEpoch(UInt64 epoch) {
+  public SignedBlockAndState finalizeChainAtEpoch(final UInt64 epoch) {
     return chainUpdater.finalizeEpoch(epoch);
   }
 
@@ -378,7 +379,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   }
 
   protected Response getResponse(
-      final String route, Map<String, String> getParams, final String contentType)
+      final String route, final Map<String, String> getParams, final String contentType)
       throws IOException {
     return getResponse(route + prepareQueryParams(getParams), contentType);
   }
@@ -435,7 +436,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     return client.newCall(requestBuilder.build()).execute();
   }
 
-  protected String mapToJson(Map<String, Object> postParams) throws JsonProcessingException {
+  protected String mapToJson(final Map<String, Object> postParams) throws JsonProcessingException {
     return objectMapper.writer().writeValueAsString(postParams);
   }
 
@@ -452,6 +453,17 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
         + params.entrySet().stream()
             .map(e -> e.getKey() + "=" + e.getValue())
             .collect(Collectors.joining("&"));
+  }
+
+  protected JsonNode getResponseData(final Response response) throws IOException {
+    final JsonNode body = OBJECT_MAPPER.readTree(response.body().string());
+    return body.get("data");
+  }
+
+  protected void checkEmptyBodyToRoute(final String route, final int expectedResponseCode)
+      throws IOException {
+    final Response response = post(route, OBJECT_MAPPER.writeValueAsString(""));
+    Assertions.assertThat(response.code()).isEqualTo(expectedResponseCode);
   }
 
   @AfterEach

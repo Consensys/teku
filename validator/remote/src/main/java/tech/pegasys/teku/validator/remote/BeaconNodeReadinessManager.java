@@ -14,11 +14,13 @@
 package tech.pegasys.teku.validator.remote;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Streams;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import okhttp3.HttpUrl;
@@ -27,6 +29,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -45,8 +48,8 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
 
   private static final Logger LOG = LogManager.getLogger();
   private static final Duration SYNCING_STATUS_CALL_TIMEOUT = Duration.ofSeconds(10);
-
-  private final Map<RemoteValidatorApiChannel, Boolean> readinessStatusCache =
+  private static final UInt64 MIN_REQUIRED_CONNECTED_PEER_COUNT = UInt64.valueOf(50);
+  private final Map<RemoteValidatorApiChannel, ReadinessStatus> readinessStatusCache =
       Maps.newConcurrentMap();
 
   private final AtomicBoolean latestPrimaryNodeReadiness = new AtomicBoolean(true);
@@ -68,13 +71,27 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
   }
 
   public boolean isReady(final RemoteValidatorApiChannel beaconNodeApi) {
-    return readinessStatusCache.getOrDefault(beaconNodeApi, true);
+    final ReadinessStatus readinessStatus =
+        readinessStatusCache.getOrDefault(beaconNodeApi, ReadinessStatus.READY);
+    return readinessStatus.isReady();
+  }
+
+  public ReadinessStatus getReadinessStatus(final RemoteValidatorApiChannel beaconNodeApi) {
+    return readinessStatusCache.getOrDefault(beaconNodeApi, ReadinessStatus.READY);
+  }
+
+  public int getReadinessStatusWeight(final RemoteValidatorApiChannel beaconNodeApi) {
+    return readinessStatusCache.getOrDefault(beaconNodeApi, ReadinessStatus.READY).weight;
   }
 
   public Iterator<? extends RemoteValidatorApiChannel> getFailoversInOrderOfReadiness() {
     return failoverBeaconNodeApis.stream()
-        .sorted(Comparator.comparing(this::isReady).reversed())
+        .sorted(Comparator.comparing(this::getReadinessStatusWeight).reversed())
         .iterator();
+  }
+
+  public SafeFuture<Void> performPrimaryReadinessCheck() {
+    return performReadinessCheck(primaryBeaconNodeApi, true);
   }
 
   @Override
@@ -133,11 +150,8 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
     final SafeFuture<Void> primaryReadinessCheck = performPrimaryReadinessCheck();
     final Stream<SafeFuture<?>> failoverReadinessChecks =
         failoverBeaconNodeApis.stream().map(this::performFailoverReadinessCheck);
-    return SafeFuture.allOf(primaryReadinessCheck, SafeFuture.allOf(failoverReadinessChecks));
-  }
-
-  private SafeFuture<Void> performPrimaryReadinessCheck() {
-    return performReadinessCheck(primaryBeaconNodeApi, true);
+    return SafeFuture.allOf(
+        Streams.concat(Stream.of(primaryReadinessCheck), failoverReadinessChecks));
   }
 
   private SafeFuture<Void> performFailoverReadinessCheck(final RemoteValidatorApiChannel failover) {
@@ -149,16 +163,24 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
     final HttpUrl beaconNodeApiEndpoint = beaconNodeApi.getEndpoint();
     return beaconNodeApi
         .getSyncingStatus()
-        .thenApply(
-            syncingStatus -> {
+        .thenCombine(
+            beaconNodeApi.getPeerCount(),
+            (syncingStatus, peerCount) -> {
               if (syncingStatus.isReady()) {
                 LOG.debug(
                     "{} is ready to accept requests: {}", beaconNodeApiEndpoint, syncingStatus);
-                return true;
+                final boolean optimistic = syncingStatus.getIsOptimistic().orElse(false);
+                if (optimistic) {
+                  return ReadinessStatus.READY_OPTIMISTIC;
+                }
+                if (!hasEnoughConnectedPeers(peerCount)) {
+                  return ReadinessStatus.READY_NOT_ENOUGH_PEERS;
+                }
+                return ReadinessStatus.READY;
               }
               LOG.debug(
                   "{} is NOT ready to accept requests: {}", beaconNodeApiEndpoint, syncingStatus);
-              return false;
+              return ReadinessStatus.NOT_READY;
             })
         .orTimeout(SYNCING_STATUS_CALL_TIMEOUT)
         .exceptionally(
@@ -167,12 +189,12 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
                   String.format(
                       "%s is NOT ready to accept requests because the syncing status request failed: %s",
                       beaconNodeApiEndpoint, throwable));
-              return false;
+              return ReadinessStatus.NOT_READY;
             })
         .thenAccept(
-            isReady -> {
-              readinessStatusCache.put(beaconNodeApi, isReady);
-              if (isReady) {
+            readinessStatus -> {
+              readinessStatusCache.put(beaconNodeApi, readinessStatus);
+              if (readinessStatus.isReady()) {
                 processReadyResult(isPrimaryNode);
               } else {
                 processNotReadyResult(beaconNodeApi, isPrimaryNode);
@@ -180,13 +202,21 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
             });
   }
 
+  private static boolean hasEnoughConnectedPeers(final Optional<PeerCount> peerCount) {
+    return peerCount
+        .map(PeerCount::getConnected)
+        .orElse(UInt64.ZERO)
+        .isGreaterThanOrEqualTo(MIN_REQUIRED_CONNECTED_PEER_COUNT);
+  }
+
   private void processReadyResult(final boolean isPrimaryNode) {
     if (!isPrimaryNode) {
       return;
     }
+    // Filtering of duplicates if needed happens on receiver's side
+    beaconNodeReadinessChannel.onPrimaryNodeReady();
     if (latestPrimaryNodeReadiness.compareAndSet(false, true)) {
       validatorLogger.primaryBeaconNodeIsBackAndReady();
-      beaconNodeReadinessChannel.onPrimaryNodeBackReady();
     }
   }
 
@@ -199,6 +229,23 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
       beaconNodeReadinessChannel.onPrimaryNodeNotReady();
     } else {
       beaconNodeReadinessChannel.onFailoverNodeNotReady(beaconNodeApi);
+    }
+  }
+
+  public enum ReadinessStatus {
+    NOT_READY(0),
+    READY_OPTIMISTIC(1),
+    READY_NOT_ENOUGH_PEERS(2),
+    READY(3);
+
+    private final int weight;
+
+    ReadinessStatus(final int weight) {
+      this.weight = weight;
+    }
+
+    boolean isReady() {
+      return this.weight > 0;
     }
   }
 }

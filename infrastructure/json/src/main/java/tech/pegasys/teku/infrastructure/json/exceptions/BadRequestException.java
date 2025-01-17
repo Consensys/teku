@@ -16,11 +16,11 @@ package tech.pegasys.teku.infrastructure.json.exceptions;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class BadRequestException extends JsonProcessingException {
-  public BadRequestException(String message, Throwable cause) {
+  public BadRequestException(final String message, final Throwable cause) {
     super(message, cause);
   }
 
-  public BadRequestException(String message) {
+  public BadRequestException(final String message) {
     super(message);
   }
 }

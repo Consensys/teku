@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.client;
 
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
@@ -475,7 +474,7 @@ class RecentChainDataTest {
             .streamValidAttestationsForBlockAtSlot(ONE)
             .map(attestation -> BlockOptions.create().addAttestation(attestation))
             .limit(2)
-            .collect(toList());
+            .toList();
     final ChainBuilder forkBuilder = chainBuilder.fork();
     final SignedBlockAndState latestBlockAndState =
         chainBuilder.generateBlockAtSlot(UInt64.valueOf(2), blockOptions.get(0));
@@ -520,7 +519,7 @@ class RecentChainDataTest {
             .streamValidAttestationsForBlockAtSlot(ONE)
             .map(attestation -> BlockOptions.create().addAttestation(attestation))
             .limit(2)
-            .collect(toList());
+            .toList();
     final ChainBuilder forkBuilder = chainBuilder.fork();
     final SignedBlockAndState latestBlockAndState =
         chainBuilder.generateBlockAtSlot(UInt64.valueOf(2), blockOptions.get(0));
@@ -754,6 +753,45 @@ class RecentChainDataTest {
   }
 
   @Test
+  public void isCloseToInSync_preGenesis() {
+    initPreGenesis();
+    assertThat(recentChainData.isCloseToInSync()).isFalse();
+  }
+
+  @Test
+  public void isCloseToSync_belowBoundary() {
+    initPostGenesis();
+    final SpecConfig specConfig = spec.getGenesisSpecConfig();
+    final int seconds =
+        specConfig.getMaxSeedLookahead()
+            * specConfig.getSlotsPerEpoch()
+            * specConfig.getSecondsPerSlot();
+    assertThat(recentChainData.isCloseToInSync(UInt64.valueOf(seconds - 1))).isTrue();
+  }
+
+  @Test
+  public void isCloseToSync_atBoundary() {
+    initPostGenesis();
+    final SpecConfig specConfig = spec.getGenesisSpecConfig();
+    final int seconds =
+        specConfig.getMaxSeedLookahead()
+            * specConfig.getSlotsPerEpoch()
+            * specConfig.getSecondsPerSlot();
+    assertThat(recentChainData.isCloseToInSync(UInt64.valueOf(seconds))).isTrue();
+  }
+
+  @Test
+  public void isCloseToSync_aboveBoundary() {
+    initPostGenesis();
+    final SpecConfig specConfig = spec.getGenesisSpecConfig();
+    final int seconds =
+        specConfig.getMaxSeedLookahead()
+            * specConfig.getSlotsPerEpoch()
+            * specConfig.getSecondsPerSlot();
+    assertThat(recentChainData.isCloseToInSync(UInt64.valueOf(seconds + 8))).isFalse();
+  }
+
+  @Test
   public void getBlockRootBySlotWithHeadRoot_withForkRoot() {
     initPostGenesis();
     // Build small chain
@@ -871,7 +909,7 @@ class RecentChainDataTest {
             .streamValidAttestationsForBlockAtSlot(ONE)
             .map(attestation -> BlockOptions.create().addAttestation(attestation))
             .limit(2)
-            .collect(toList());
+            .toList();
     final ChainBuilder forkBuilder = chainBuilder.fork();
 
     final SignedBlockAndState firstBlockAndState =
@@ -965,9 +1003,7 @@ class RecentChainDataTest {
     // Check that only recent, canonical blocks at or after the latest finalized block are left in
     // the store
     final List<SignedBlockAndState> expectedBlocks =
-        chainBuilder
-            .streamBlocksAndStates(finalizedCheckpoint.getEpochStartSlot(spec))
-            .collect(Collectors.toList());
+        chainBuilder.streamBlocksAndStates(finalizedCheckpoint.getEpochStartSlot(spec)).toList();
     final Set<Bytes32> blockRoots =
         expectedBlocks.stream().map(SignedBlockAndState::getRoot).collect(Collectors.toSet());
     // Collect blocks that should be pruned
@@ -1006,14 +1042,15 @@ class RecentChainDataTest {
     transaction.commit().join();
   }
 
-  private SignedBlockAndState addNewBestBlock(RecentChainData recentChainData) {
+  private SignedBlockAndState addNewBestBlock(final RecentChainData recentChainData) {
     final SignedBlockAndState nextBlock = chainBuilder.generateNextBlock();
     updateHead(recentChainData, nextBlock);
 
     return nextBlock;
   }
 
-  private void updateHead(RecentChainData recentChainData, final SignedBlockAndState bestBlock) {
+  private void updateHead(
+      final RecentChainData recentChainData, final SignedBlockAndState bestBlock) {
     saveBlock(recentChainData, bestBlock);
 
     this.recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
@@ -1026,7 +1063,7 @@ class RecentChainDataTest {
   }
 
   private void finalizeBlock(
-      RecentChainData recentChainData,
+      final RecentChainData recentChainData,
       final UInt64 epoch,
       final SignedBlockAndState finalizedBlock) {
     saveBlock(recentChainData, finalizedBlock);

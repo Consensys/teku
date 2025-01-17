@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import com.google.common.io.Resources;
@@ -23,6 +22,7 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,10 +36,17 @@ import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
+import org.web3j.crypto.Credentials;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.MergedGenesisTestBuilder;
+import tech.pegasys.teku.test.acceptance.dsl.executionrequests.ExecutionRequestsService;
 
 public class BesuNode extends Node {
 
@@ -119,6 +126,20 @@ public class BesuNode extends Node {
     return Eth1Address.fromHexString("0xdddddddddddddddddddddddddddddddddddddddd");
   }
 
+  /*
+   Defined on https://eips.ethereum.org/EIPS/eip-7002 (WITHDRAWAL_REQUEST_PREDEPLOY_ADDRESS)
+  */
+  public Eth1Address getWithdrawalRequestContractAddress() {
+    return Eth1Address.fromHexString("0x0c15F14308530b7CDB8460094BbB9cC28b9AaaAA");
+  }
+
+  /*
+   Defined on https://eips.ethereum.org/EIPS/eip-7251 (CONSOLIDATION_REQUEST_PREDEPLOY_ADDRESS)
+  */
+  public Eth1Address getConsolidationRequestContractAddress() {
+    return Eth1Address.fromHexString("0x00b42dbF2194e931E80326D950320f7d9Dbeac02");
+  }
+
   public String getInternalJsonRpcUrl() {
     return "http://" + nodeAlias + ":" + JSON_RPC_PORT;
   }
@@ -129,10 +150,6 @@ public class BesuNode extends Node {
 
   public String getInternalEngineJsonRpcUrl() {
     return "http://" + nodeAlias + ":" + ENGINE_JSON_RPC_PORT;
-  }
-
-  public String getInternalEngineWebsocketsRpcUrl() {
-    return "ws://" + nodeAlias + ":" + ENGINE_JSON_RPC_PORT;
   }
 
   private String getInternalP2pUrl(final String nodeId) {
@@ -149,15 +166,9 @@ public class BesuNode extends Node {
   private String fetchEnodeUrl() throws Exception {
     final URI baseUri = new URI(getExternalJsonRpcUrl());
     final String response =
-        httpClient.post(baseUri, "", JSON_PROVIDER.objectToJSON(new Request("admin_nodeInfo")));
-    final ObjectMapper objectMapper = JSON_PROVIDER.getObjectMapper();
-    final JavaType nodeInfoResponseType =
-        objectMapper
-            .getTypeFactory()
-            .constructParametricType(Response.class, NodeInfoResponse.class);
-    final Response<NodeInfoResponse> nodeInfoResponse =
-        objectMapper.readValue(response, nodeInfoResponseType);
-    return getInternalP2pUrl(nodeInfoResponse.result.id);
+        httpClient.post(
+            baseUri, "", OBJECT_MAPPER.writeValueAsString(new Request("admin_nodeInfo")));
+    return getInternalP2pUrl(OBJECT_MAPPER.readTree(response).get("result").get("id").asText());
   }
 
   public Boolean addPeer(final BesuNode node) throws Exception {
@@ -165,13 +176,12 @@ public class BesuNode extends Node {
     final URI baseUri = new URI(getExternalJsonRpcUrl());
     final String response =
         httpClient.post(
-            baseUri, "", JSON_PROVIDER.objectToJSON(new Request("admin_addPeer", enode)));
-    final ObjectMapper objectMapper = JSON_PROVIDER.getObjectMapper();
-    final JavaType removePeerResponseType =
-        objectMapper.getTypeFactory().constructParametricType(Response.class, Boolean.class);
-    final Response<Boolean> removePeerResponse =
-        objectMapper.readValue(response, removePeerResponseType);
-    return removePeerResponse.result;
+            baseUri, "", OBJECT_MAPPER.writeValueAsString(new Request("admin_addPeer", enode)));
+    return OBJECT_MAPPER.readTree(response).get("result").asBoolean();
+  }
+
+  public String getRichBenefactorAddress() {
+    return "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73";
   }
 
   public String getRichBenefactorKey() {
@@ -189,6 +199,62 @@ public class BesuNode extends Node {
     }
   }
 
+  /**
+   * Sends a transaction to the withdrawal request contract in the execution layer to create a
+   * withdrawal request.
+   *
+   * @param eth1PrivateKey the private key of the eth1 account that will sign the transaction to the
+   *     withdrawal contract (has to match the validator withdrawal credentials)
+   * @param publicKey validator public key
+   * @param amountInGwei the amount for the withdrawal request (zero for full withdrawal, greater
+   *     than zero for partial withdrawal)
+   */
+  public void createWithdrawalRequest(
+      final String eth1PrivateKey, final BLSPublicKey publicKey, final UInt64 amountInGwei)
+      throws Exception {
+    final Credentials eth1Credentials = Credentials.create(eth1PrivateKey);
+    try (final ExecutionRequestsService executionRequestsService =
+        new ExecutionRequestsService(
+            getExternalJsonRpcUrl(),
+            eth1Credentials,
+            getWithdrawalRequestContractAddress(),
+            getConsolidationRequestContractAddress())) {
+
+      final SafeFuture<TransactionReceipt> future =
+          executionRequestsService.createWithdrawalRequest(publicKey, amountInGwei);
+      Waiter.waitFor(future, Duration.ofMinutes(1));
+    }
+  }
+
+  /**
+   * Sends a transaction to the consolidation request contract in the execution layer to create a
+   * consolidation request.
+   *
+   * @param eth1PrivateKey the private key of the eth1 account that will sign the transaction to the
+   *     consolidation contract (has to match the source validator withdrawal credentials)
+   * @param sourceValidatorPublicKey source validator public key
+   * @param targetValidatorPublicKey target validator public key
+   */
+  public void createConsolidationRequest(
+      final String eth1PrivateKey,
+      final BLSPublicKey sourceValidatorPublicKey,
+      final BLSPublicKey targetValidatorPublicKey)
+      throws Exception {
+    final Credentials eth1Credentials = Credentials.create(eth1PrivateKey);
+    try (final ExecutionRequestsService executionRequestsService =
+        new ExecutionRequestsService(
+            getExternalJsonRpcUrl(),
+            eth1Credentials,
+            getWithdrawalRequestContractAddress(),
+            getConsolidationRequestContractAddress())) {
+
+      final SafeFuture<TransactionReceipt> future =
+          executionRequestsService.createConsolidationRequest(
+              sourceValidatorPublicKey, targetValidatorPublicKey);
+      Waiter.waitFor(future, Duration.ofMinutes(1));
+    }
+  }
+
   @SuppressWarnings("unused")
   private static class Request {
 
@@ -198,21 +264,11 @@ public class BesuNode extends Node {
     private static final AtomicInteger ID_COUNTER = new AtomicInteger(0);
     public final int id;
 
-    public Request(String method, String... params) {
+    public Request(final String method, final String... params) {
       this.method = method;
       this.params = params;
       this.id = ID_COUNTER.incrementAndGet();
     }
-  }
-
-  private static class Response<T> {
-
-    public T result;
-  }
-
-  private static class NodeInfoResponse {
-
-    public String id;
   }
 
   public static class Config {
@@ -252,7 +308,7 @@ public class BesuNode extends Node {
     }
 
     public BesuNode.Config withJwtTokenAuthorization(final URL jwtFile) {
-      configMap.put("engine-jwt-enabled", Boolean.TRUE);
+      configMap.put("engine-jwt-disabled", Boolean.FALSE);
       configMap.put("engine-jwt-secret", JWT_SECRET_FILE_PATH);
       this.maybeJwtFile = Optional.of(jwtFile);
       return this;

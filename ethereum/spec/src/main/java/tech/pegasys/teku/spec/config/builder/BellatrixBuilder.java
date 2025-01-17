@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrixImpl;
 
@@ -54,22 +55,25 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
   BellatrixBuilder() {}
 
   @Override
-  public SpecConfigBellatrix build(final SpecConfigAltair specConfig) {
-    return new SpecConfigBellatrixImpl(
-        specConfig,
-        bellatrixForkVersion,
-        bellatrixForkEpoch,
-        inactivityPenaltyQuotientBellatrix,
-        minSlashingPenaltyQuotientBellatrix,
-        proportionalSlashingMultiplierBellatrix,
-        maxBytesPerTransaction,
-        maxTransactionsPerPayload,
-        bytesPerLogsBloom,
-        maxExtraDataBytes,
-        terminalTotalDifficulty,
-        terminalBlockHash,
-        terminalBlockHashActivationEpoch,
-        safeSlotsToImportOptimistically);
+  public SpecConfigAndParent<SpecConfigBellatrix> build(
+      final SpecConfigAndParent<SpecConfigAltair> specConfigAndParent) {
+    return SpecConfigAndParent.of(
+        new SpecConfigBellatrixImpl(
+            specConfigAndParent.specConfig(),
+            bellatrixForkVersion,
+            bellatrixForkEpoch,
+            inactivityPenaltyQuotientBellatrix,
+            minSlashingPenaltyQuotientBellatrix,
+            proportionalSlashingMultiplierBellatrix,
+            maxBytesPerTransaction,
+            maxTransactionsPerPayload,
+            bytesPerLogsBloom,
+            maxExtraDataBytes,
+            terminalTotalDifficulty,
+            terminalBlockHash,
+            terminalBlockHashActivationEpoch,
+            safeSlotsToImportOptimistically),
+        specConfigAndParent);
   }
 
   @Override

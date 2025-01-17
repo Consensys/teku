@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfigEip7594;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.statetransition.datacolumns.MinCustodyPeriodSlotCalculator;
 
 public class DataColumnSidecarDbAccessorBuilder {
@@ -32,38 +32,38 @@ public class DataColumnSidecarDbAccessorBuilder {
   private final AutoPruneDbBuilder autoPruneDbBuilder = new AutoPruneDbBuilder();
   private int columnIdCacheMaxSlotCount = DEFAULT_COLUMN_ID_CACHE_MAX_SLOT_COUNT;
 
-  DataColumnSidecarDbAccessorBuilder(DataColumnSidecarDB db) {
+  DataColumnSidecarDbAccessorBuilder(final DataColumnSidecarDB db) {
     this.db = db;
   }
 
-  public DataColumnSidecarDbAccessorBuilder spec(Spec spec) {
+  public DataColumnSidecarDbAccessorBuilder spec(final Spec spec) {
     this.spec = spec;
     return this;
   }
 
   public DataColumnSidecarDbAccessorBuilder minCustodyPeriodSlotCalculator(
-      MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator) {
+      final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator) {
     this.minCustodyPeriodSlotCalculator = minCustodyPeriodSlotCalculator;
     return this;
   }
 
   public DataColumnSidecarDbAccessorBuilder columnIdCacheMaxSlotCount(
-      int columnIdCacheMaxSlotCount) {
+      final int columnIdCacheMaxSlotCount) {
     this.columnIdCacheMaxSlotCount = columnIdCacheMaxSlotCount;
     return this;
   }
 
   public DataColumnSidecarDbAccessorBuilder withAutoPrune(
-      Consumer<AutoPruneDbBuilder> builderConsumer) {
+      final Consumer<AutoPruneDbBuilder> builderConsumer) {
     builderConsumer.accept(this.autoPruneDbBuilder);
     return this;
   }
 
-  private int getNumberOfColumnsForSlot(UInt64 slot) {
+  private int getNumberOfColumnsForSlot(final UInt64 slot) {
     return spec.atSlot(slot)
         .getConfig()
-        .toVersionEip7594()
-        .map(SpecConfigEip7594::getNumberOfColumns)
+        .toVersionFulu()
+        .map(SpecConfigFulu::getNumberOfColumns)
         .orElse(0);
   }
 
@@ -86,7 +86,7 @@ public class DataColumnSidecarDbAccessorBuilder {
     private int prunePeriodInSlots = 1;
 
     /** Additional period in slots to retain data column sidecars in DB before pruning */
-    public AutoPruneDbBuilder pruneMarginSlots(int pruneMarginSlots) {
+    public AutoPruneDbBuilder pruneMarginSlots(final int pruneMarginSlots) {
       this.pruneMarginSlots = pruneMarginSlots;
       return this;
     }
@@ -95,11 +95,11 @@ public class DataColumnSidecarDbAccessorBuilder {
      * Specifies how often (in slots) the db prune will be performed 1 means that the prune is to be
      * called every slot
      */
-    public void prunePeriodSlots(int prunePeriodInSlots) {
+    public void prunePeriodSlots(final int prunePeriodInSlots) {
       this.prunePeriodInSlots = prunePeriodInSlots;
     }
 
-    AutoPruningDasDb build(DataColumnSidecarDB db) {
+    AutoPruningDasDb build(final DataColumnSidecarDB db) {
       return new AutoPruningDasDb(
           db, getMinCustodyPeriodSlotCalculator(), pruneMarginSlots, prunePeriodInSlots);
     }

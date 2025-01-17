@@ -53,7 +53,7 @@ public class RocksDbTransaction implements KvStoreTransaction {
   }
 
   @Override
-  public <T> void put(KvStoreVariable<T> variable, T value) {
+  public <T> void put(final KvStoreVariable<T> variable, final T value) {
     final Bytes serialized = Bytes.wrap(variable.getSerializer().serialize(value));
     putRaw(variable, serialized);
   }
@@ -71,7 +71,7 @@ public class RocksDbTransaction implements KvStoreTransaction {
   }
 
   @Override
-  public <K, V> void put(KvStoreColumn<K, V> column, K key, V value) {
+  public <K, V> void put(final KvStoreColumn<K, V> column, final K key, final V value) {
     final Bytes keyBytes = Bytes.wrap(column.getKeySerializer().serialize(key));
     final Bytes valueBytes = Bytes.wrap(column.getValueSerializer().serialize(value));
     putRaw(column, keyBytes, valueBytes);
@@ -92,7 +92,7 @@ public class RocksDbTransaction implements KvStoreTransaction {
   }
 
   @Override
-  public <K, V> void put(KvStoreColumn<K, V> column, Map<K, V> data) {
+  public <K, V> void put(final KvStoreColumn<K, V> column, final Map<K, V> data) {
     applyUpdate(
         () -> {
           final ColumnFamilyHandle handle = columnHandles.get(column);
@@ -109,7 +109,7 @@ public class RocksDbTransaction implements KvStoreTransaction {
   }
 
   @Override
-  public <K, V> void delete(KvStoreColumn<K, V> column, K key) {
+  public <K, V> void delete(final KvStoreColumn<K, V> column, final K key) {
     applyUpdate(
         () -> {
           final ColumnFamilyHandle handle = columnHandles.get(column);
@@ -122,7 +122,7 @@ public class RocksDbTransaction implements KvStoreTransaction {
   }
 
   @Override
-  public <T> void delete(KvStoreVariable<T> variable) {
+  public <T> void delete(final KvStoreVariable<T> variable) {
     applyUpdate(
         () -> {
           try {

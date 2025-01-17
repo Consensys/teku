@@ -32,28 +32,27 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.teku.api.schema.BLSPubKey;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.cli.OSUtils;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.data.slashinginterchange.SignedBlock;
 import tech.pegasys.teku.data.slashinginterchange.SigningHistory;
 import tech.pegasys.teku.data.slashinginterchange.SlashingProtectionInterchangeFormat;
 import tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
 
 public class SlashingProtectionExporterTest {
   private static final Logger LOG = LogManager.getLogger();
   final List<String> log = new ArrayList<>();
-  private final JsonProvider jsonProvider = new JsonProvider();
   private final String pubkey =
       "b845089a1457f811bfc000588fbb4e713669be8ce060ea6be3c6ece09afc3794106c91ca73acda5e5457122d58723bed";
   private final Bytes32 validatorsRoot =
       Bytes32.fromHexString("0x6e2c5d8a89dfe121a92c8812bea69fe9f84ae48f63aafe34ef7e18c7eac9af70");
 
   @Test
-  public void shouldReadSlashingProtectionFile_withEmptyGenesisValidatorsRoot(@TempDir Path tempDir)
-      throws IOException, URISyntaxException {
+  public void shouldReadSlashingProtectionFile_withEmptyGenesisValidatorsRoot(
+      @TempDir final Path tempDir) throws IOException, URISyntaxException {
     final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
     Optional<String> error =
         exporter.readSlashProtectionFile(
@@ -62,15 +61,15 @@ public class SlashingProtectionExporterTest {
     assertThat(error).isEmpty();
 
     final SlashingProtectionInterchangeFormat parsedData =
-        jsonProvider.jsonToObject(
-            exporter.getPrettyJson(), SlashingProtectionInterchangeFormat.class);
+        JsonUtil.parse(
+            exporter.getPrettyJson(), SlashingProtectionInterchangeFormat.getJsonTypeDefinition());
     final SlashingProtectionInterchangeFormat expectedData = getExportData(null, 327, 51, 1741);
     assertThat(parsedData).isEqualTo(expectedData);
   }
 
   @Test
-  public void shouldReadSlashingProtectionFile_withGenesisValidatorsRoot(@TempDir Path tempDir)
-      throws IOException, URISyntaxException {
+  public void shouldReadSlashingProtectionFile_withGenesisValidatorsRoot(
+      @TempDir final Path tempDir) throws IOException, URISyntaxException {
     final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
     Optional<String> error =
         exporter.readSlashProtectionFile(
@@ -79,15 +78,15 @@ public class SlashingProtectionExporterTest {
     assertThat(error).isEmpty();
 
     final SlashingProtectionInterchangeFormat parsedData =
-        jsonProvider.jsonToObject(
-            exporter.getPrettyJson(), SlashingProtectionInterchangeFormat.class);
+        JsonUtil.parse(
+            exporter.getPrettyJson(), SlashingProtectionInterchangeFormat.getJsonTypeDefinition());
     final SlashingProtectionInterchangeFormat expectedData =
         getExportData(validatorsRoot, 327, 51, 1741);
     assertThat(parsedData).isEqualTo(expectedData);
   }
 
   @Test
-  public void shouldReadFilesWithEmptyRootAfterGenesisRootIsDefined(@TempDir Path tempDir)
+  public void shouldReadFilesWithEmptyRootAfterGenesisRootIsDefined(@TempDir final Path tempDir)
       throws URISyntaxException, IOException {
     final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
     Optional<String> error =
@@ -103,7 +102,7 @@ public class SlashingProtectionExporterTest {
   }
 
   @Test
-  public void shouldReadFileWithGenesisRootDefinedSecond(@TempDir Path tempDir)
+  public void shouldReadFileWithGenesisRootDefinedSecond(@TempDir final Path tempDir)
       throws URISyntaxException, IOException {
     final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
     Optional<String> error =
@@ -119,7 +118,7 @@ public class SlashingProtectionExporterTest {
   }
 
   @Test
-  public void shouldNotAcceptDifferentGenesisValidatorsRoot(@TempDir Path tempDir)
+  public void shouldNotAcceptDifferentGenesisValidatorsRoot(@TempDir final Path tempDir)
       throws URISyntaxException, IOException {
     final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
     Optional<String> error =
@@ -133,7 +132,7 @@ public class SlashingProtectionExporterTest {
   }
 
   @Test
-  public void shouldRequirePubkeyInFilename(@TempDir Path tempDir) throws URISyntaxException {
+  public void shouldRequirePubkeyInFilename(@TempDir final Path tempDir) throws URISyntaxException {
     final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
     final Optional<String> error =
         exporter.readSlashProtectionFile(
@@ -144,7 +143,7 @@ public class SlashingProtectionExporterTest {
   }
 
   @Test
-  public void shouldPrintIfFileCannotBeRead(@TempDir Path tempDir)
+  public void shouldPrintIfFileCannotBeRead(@TempDir final Path tempDir)
       throws URISyntaxException, IOException {
     final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
     final File file = usingResourceFile("slashProtection.yml", tempDir);
@@ -156,7 +155,7 @@ public class SlashingProtectionExporterTest {
   }
 
   @Test
-  public void shouldExportSlashProtection(@TempDir Path tempDir)
+  public void shouldExportSlashProtection(@TempDir final Path tempDir)
       throws IOException, URISyntaxException {
     final Path exportedFile = tempDir.resolve("exportedFile.json").toAbsolutePath();
     final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
@@ -171,14 +170,14 @@ public class SlashingProtectionExporterTest {
   }
 
   @Test
-  void shouldHaveNoSignedAttestationsWhenNoAttestationsSigned(@TempDir Path tempDir)
+  void shouldHaveNoSignedAttestationsWhenNoAttestationsSigned(@TempDir final Path tempDir)
       throws Exception {
     final Path exportedFile = tempDir.resolve("exportedFile.json").toAbsolutePath();
     final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
 
     final UInt64 blockSlot = UInt64.ONE;
     final ValidatorSigningRecord signingRecord =
-        new ValidatorSigningRecord(validatorsRoot)
+        ValidatorSigningRecord.emptySigningRecord(validatorsRoot)
             .maySignBlock(validatorsRoot, blockSlot)
             .orElseThrow();
     final Path recordFile = tempDir.resolve(pubkey + ".yml");
@@ -191,12 +190,15 @@ public class SlashingProtectionExporterTest {
     assertThat(exportedFile).exists();
 
     final SlashingProtectionInterchangeFormat exportedRecords =
-        jsonProvider.jsonToObject(
-            Files.readString(exportedFile), SlashingProtectionInterchangeFormat.class);
-    assertThat(exportedRecords.data).hasSize(1);
-    final SigningHistory signingHistory = exportedRecords.data.get(0);
-    assertThat(signingHistory.signedBlocks).containsExactly(new SignedBlock(blockSlot, null));
-    assertThat(signingHistory.signedAttestations).isEmpty();
+        JsonUtil.parse(
+            Files.readString(exportedFile),
+            SlashingProtectionInterchangeFormat.getJsonTypeDefinition());
+
+    assertThat(exportedRecords.data()).hasSize(1);
+    final SigningHistory signingHistory = exportedRecords.data().get(0);
+    assertThat(signingHistory.signedBlocks())
+        .containsExactly(new SignedBlock(blockSlot, Optional.empty()));
+    assertThat(signingHistory.signedAttestations()).isEmpty();
   }
 
   private File usingResourceFile(final String resourceFileName, final Path tempDir)
@@ -215,12 +217,13 @@ public class SlashingProtectionExporterTest {
       final int lastSignedAttestationSourceEpoch,
       final int lastSignedAttestationTargetEpoch) {
     return new SlashingProtectionInterchangeFormat(
-        new Metadata(INTERCHANGE_VERSION, genesisValidatorsRoot),
+        new Metadata(
+            Optional.empty(), INTERCHANGE_VERSION, Optional.ofNullable(genesisValidatorsRoot)),
         List.of(
-            new SigningHistory(
-                BLSPubKey.fromHexString(pubkey),
+            SigningHistory.createSigningHistory(
+                BLSPublicKey.fromHexString(pubkey),
                 new ValidatorSigningRecord(
-                    genesisValidatorsRoot,
+                    Optional.ofNullable(genesisValidatorsRoot),
                     UInt64.valueOf(lastSignedBlockSlot),
                     UInt64.valueOf(lastSignedAttestationSourceEpoch),
                     UInt64.valueOf(lastSignedAttestationTargetEpoch)))));

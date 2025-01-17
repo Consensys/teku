@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes;
 
 record TrustedSetup(List<Bytes> g1Lagrange, List<Bytes> g2Monomial, List<Bytes> g1Monomial) {
 
+  @SuppressWarnings("MethodInputParametersMustBeFinal")
   public TrustedSetup {
     g1Lagrange.forEach(this::validateG1Point);
     g2Monomial.forEach(this::validateG2Point);

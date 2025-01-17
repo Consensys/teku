@@ -13,24 +13,28 @@
 
 package tech.pegasys.teku.ethereum.performance.trackers;
 
+import java.util.Map;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.PerformanceTracker;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BlockPublishingPerformanceImpl implements BlockPublishingPerformance {
+
   private final PerformanceTracker performanceTracker;
   private final UInt64 slot;
   private final UInt64 slotTime;
-  private final int lateThreshold;
+  private final Map<Flow, Integer> lateThresholds;
+
+  private volatile Flow flow = Flow.LOCAL;
 
   BlockPublishingPerformanceImpl(
       final TimeProvider timeProvider,
       final UInt64 slot,
       final UInt64 slotTime,
-      final int lateThreshold) {
+      final Map<Flow, Integer> lateThresholds) {
     this.performanceTracker = new PerformanceTracker(timeProvider);
-    this.lateThreshold = lateThreshold;
+    this.lateThresholds = lateThresholds;
     this.slot = slot;
     this.slotTime = slotTime;
     performanceTracker.addEvent("start");
@@ -39,7 +43,8 @@ public class BlockPublishingPerformanceImpl implements BlockPublishingPerformanc
   @Override
   public void complete() {
     final UInt64 completionTime = performanceTracker.addEvent(COMPLETE_LABEL);
-    final boolean isLateEvent = completionTime.minusMinZero(slotTime).isGreaterThan(lateThreshold);
+    final boolean isLateEvent =
+        completionTime.minusMinZero(slotTime).isGreaterThan(lateThresholds.get(flow));
     performanceTracker.report(
         slotTime,
         isLateEvent,
@@ -52,6 +57,8 @@ public class BlockPublishingPerformanceImpl implements BlockPublishingPerformanc
   @Override
   public void builderGetPayload() {
     performanceTracker.addEvent("builder_get_payload");
+    // set the flow to BUILDER when builderGetPayload has been called
+    flow = Flow.BUILDER;
   }
 
   @Override
@@ -60,13 +67,18 @@ public class BlockPublishingPerformanceImpl implements BlockPublishingPerformanc
   }
 
   @Override
-  public void blockAndBlobSidecarsPublishingInitiated() {
-    performanceTracker.addEvent("block_and_blob_sidecars_publishing_initiated");
+  public void blobSidecarsImportCompleted() {
+    performanceTracker.addEvent("blob_sidecars_imported");
   }
 
   @Override
   public void blockPublishingInitiated() {
     performanceTracker.addEvent("block_publishing_initiated");
+  }
+
+  @Override
+  public void blobSidecarsPublishingInitiated() {
+    performanceTracker.addEvent("blob_sidecars_publishing_initiated");
   }
 
   @Override

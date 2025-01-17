@@ -26,15 +26,17 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -57,7 +59,7 @@ public class GossipForkManager {
   private static final Logger LOG = LogManager.getLogger();
   private static final int EPOCHS_PRIOR_TO_FORK_TO_ACTIVATE = 2;
   private final Spec spec;
-  private final Bytes32 genesisValidatorsRoot;
+  private final RecentChainData recentChainData;
   private final NavigableMap<UInt64, GossipForkSubscriptions> forksByActivationEpoch;
   private final Set<GossipForkSubscriptions> activeSubscriptions = new HashSet<>();
   private final IntSet currentAttestationSubnets = new IntOpenHashSet();
@@ -69,13 +71,12 @@ public class GossipForkManager {
 
   private GossipForkManager(
       final Spec spec,
-      final Bytes32 genesisValidatorsRoot,
-      final boolean isHeadOptimistic,
+      final RecentChainData recentChainData,
       final NavigableMap<UInt64, GossipForkSubscriptions> forksByActivationEpoch) {
     this.spec = spec;
-    this.genesisValidatorsRoot = genesisValidatorsRoot;
-    this.isHeadOptimistic = isHeadOptimistic;
+    this.recentChainData = recentChainData;
     this.forksByActivationEpoch = forksByActivationEpoch;
+    this.isHeadOptimistic = recentChainData.isChainHeadOptimistic();
   }
 
   public static GossipForkManager.Builder builder() {
@@ -151,11 +152,14 @@ public class GossipForkManager {
       activeSubscriptions.forEach(GossipForkSubscriptions::stopGossipForOptimisticSync);
     } else {
       activeSubscriptions.forEach(
-          subscriptions -> subscriptions.startGossip(genesisValidatorsRoot, false));
+          subscriptions ->
+              subscriptions.startGossip(
+                  recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot(),
+                  false));
     }
   }
 
-  public synchronized void publishAttestation(final ValidatableAttestation attestation) {
+  public void publishAttestation(final ValidatableAttestation attestation) {
     publishMessage(
         attestation.getData().getSlot(),
         attestation,
@@ -163,12 +167,13 @@ public class GossipForkManager {
         GossipForkSubscriptions::publishAttestation);
   }
 
-  public synchronized void publishBlock(final SignedBeaconBlock block) {
-    publishMessage(block.getSlot(), block, "block", GossipForkSubscriptions::publishBlock);
+  public SafeFuture<Void> publishBlock(final SignedBeaconBlock block) {
+    return publishMessageWithFeedback(
+        block.getSlot(), block, "block", GossipForkSubscriptions::publishBlock);
   }
 
-  public synchronized void publishBlobSidecar(final BlobSidecar blobSidecar) {
-    publishMessage(
+  public SafeFuture<Void> publishBlobSidecar(final BlobSidecar blobSidecar) {
+    return publishMessageWithFeedback(
         blobSidecar.getSlot(),
         blobSidecar,
         "blob sidecar",
@@ -183,8 +188,7 @@ public class GossipForkManager {
         GossipForkSubscriptions::publishDataColumnSidecar);
   }
 
-  public synchronized void publishSyncCommitteeMessage(
-      final ValidatableSyncCommitteeMessage message) {
+  public void publishSyncCommitteeMessage(final ValidatableSyncCommitteeMessage message) {
     publishMessage(
         message.getSlot(),
         message,
@@ -217,11 +221,17 @@ public class GossipForkManager {
   }
 
   public void publishVoluntaryExit(final SignedVoluntaryExit message) {
+    final SpecMilestone currentMilestone =
+        spec.atEpoch(spec.getCurrentEpoch(recentChainData.getStore())).getMilestone();
+    final UInt64 publishingSlot;
+    if (currentMilestone.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      publishingSlot =
+          spec.computeStartSlotAtEpoch(spec.getCurrentEpoch(recentChainData.getStore()));
+    } else {
+      publishingSlot = spec.computeStartSlotAtEpoch(message.getMessage().getEpoch());
+    }
     publishMessage(
-        spec.computeStartSlotAtEpoch(message.getMessage().getEpoch()),
-        message,
-        "voluntary exit",
-        GossipForkSubscriptions::publishVoluntaryExit);
+        publishingSlot, message, "voluntary exit", GossipForkSubscriptions::publishVoluntaryExit);
   }
 
   public void publishSignedBlsToExecutionChanges(final SignedBlsToExecutionChange message) {
@@ -232,15 +242,7 @@ public class GossipForkManager {
         GossipForkSubscriptions::publishSignedBlsToExecutionChangeMessage);
   }
 
-  public synchronized void publishDataColumnSidecarMessage(final DataColumnSidecar message) {
-    publishMessage(
-        message.getSlot(),
-        message,
-        "data column sidecar message",
-        GossipForkSubscriptions::publishDataColumnSidecar);
-  }
-
-  private <T> void publishMessage(
+  private synchronized <T> void publishMessage(
       final UInt64 slot,
       final T message,
       final String type,
@@ -256,6 +258,23 @@ public class GossipForkManager {
                     slot));
   }
 
+  private synchronized <T> SafeFuture<Void> publishMessageWithFeedback(
+      final UInt64 slot,
+      final T message,
+      final String type,
+      final BiFunction<GossipForkSubscriptions, T, SafeFuture<Void>> publisher) {
+    final Optional<GossipForkSubscriptions> gossipForkSubscriptions =
+        getSubscriptionActiveAtSlot(slot).filter(this::isActive);
+
+    if (gossipForkSubscriptions.isEmpty()) {
+      LOG.warn(
+          "Not publishing {} because no gossip subscriptions are active for slot {}", type, slot);
+      return SafeFuture.COMPLETE;
+    }
+
+    return publisher.apply(gossipForkSubscriptions.get(), message);
+  }
+
   public synchronized void subscribeToAttestationSubnetId(final int subnetId) {
     if (currentAttestationSubnets.add(subnetId)) {
       activeSubscriptions.forEach(
@@ -263,21 +282,21 @@ public class GossipForkManager {
     }
   }
 
-  public void unsubscribeFromAttestationSubnetId(final int subnetId) {
+  public synchronized void unsubscribeFromAttestationSubnetId(final int subnetId) {
     if (currentAttestationSubnets.remove(subnetId)) {
       activeSubscriptions.forEach(
           subscription -> subscription.unsubscribeFromAttestationSubnetId(subnetId));
     }
   }
 
-  public void subscribeToSyncCommitteeSubnetId(final int subnetId) {
+  public synchronized void subscribeToSyncCommitteeSubnetId(final int subnetId) {
     if (currentSyncCommitteeSubnets.add(subnetId)) {
       activeSubscriptions.forEach(
           subscription -> subscription.subscribeToSyncCommitteeSubnet(subnetId));
     }
   }
 
-  public void unsubscribeFromSyncCommitteeSubnetId(final int subnetId) {
+  public synchronized void unsubscribeFromSyncCommitteeSubnetId(final int subnetId) {
     if (currentSyncCommitteeSubnets.remove(subnetId)) {
       activeSubscriptions.forEach(
           subscription -> subscription.unsubscribeFromSyncCommitteeSubnet(subnetId));
@@ -304,7 +323,9 @@ public class GossipForkManager {
 
   private void startSubscriptions(final GossipForkSubscriptions subscription) {
     if (activeSubscriptions.add(subscription)) {
-      subscription.startGossip(genesisValidatorsRoot, isHeadOptimistic);
+      subscription.startGossip(
+          recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot(),
+          isHeadOptimistic);
       currentAttestationSubnets.forEach(subscription::subscribeToAttestationSubnetId);
       currentSyncCommitteeSubnets.forEach(subscription::subscribeToSyncCommitteeSubnet);
       currentDataColumnSidecarSubnets.forEach(subscription::subscribeToDataColumnSidecarSubnet);
@@ -356,11 +377,7 @@ public class GossipForkManager {
       checkNotNull(spec, "Must supply spec");
       checkNotNull(recentChainData, "Must supply recentChainData");
       checkState(!forksByActivationEpoch.isEmpty(), "Must specify at least one fork");
-      return new GossipForkManager(
-          spec,
-          recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot(),
-          recentChainData.isChainHeadOptimistic(),
-          forksByActivationEpoch);
+      return new GossipForkManager(spec, recentChainData, forksByActivationEpoch);
     }
   }
 }

@@ -44,7 +44,7 @@ public class DataColumnSidecarsResponseInvalidResponseException extends InvalidR
 
     private final String description;
 
-    InvalidResponseType(String description) {
+    InvalidResponseType(final String description) {
       this.description = description;
     }
 

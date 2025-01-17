@@ -14,7 +14,7 @@
 package tech.pegasys.teku.validator.client.duties;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.infrastructure.logging.Converter.gweiToEth;
+import static tech.pegasys.teku.infrastructure.logging.Converter.weiToEth;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -50,8 +50,6 @@ public class BlockProductionDuty implements Duty {
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
   private final BlockContainerSigner blockContainerSigner;
-  private final boolean useBlindedBlock;
-  private final boolean blockV3Enabled;
   private final Spec spec;
   private final ValidatorDutyMetrics validatorDutyMetrics;
 
@@ -61,8 +59,6 @@ public class BlockProductionDuty implements Duty {
       final ForkProvider forkProvider,
       final ValidatorApiChannel validatorApiChannel,
       final BlockContainerSigner blockContainerSigner,
-      final boolean useBlindedBlock,
-      final boolean blockV3Enabled,
       final Spec spec,
       final ValidatorDutyMetrics validatorDutyMetrics) {
     this.validator = validator;
@@ -70,8 +66,6 @@ public class BlockProductionDuty implements Duty {
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
     this.blockContainerSigner = blockContainerSigner;
-    this.useBlindedBlock = useBlindedBlock;
-    this.blockV3Enabled = blockV3Enabled;
     this.spec = spec;
     this.validatorDutyMetrics = validatorDutyMetrics;
   }
@@ -113,17 +107,8 @@ public class BlockProductionDuty implements Duty {
 
   private SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       final BLSSignature randaoReveal) {
-    if (blockV3Enabled) {
-      return validatorApiChannel.createUnsignedBlock(
-          slot, randaoReveal, validator.getGraffiti(), Optional.empty(), Optional.empty());
-    } else {
-      return validatorApiChannel.createUnsignedBlock(
-          slot,
-          randaoReveal,
-          validator.getGraffiti(),
-          Optional.of(useBlindedBlock),
-          Optional.empty());
-    }
+    return validatorApiChannel.createUnsignedBlock(
+        slot, randaoReveal, validator.getGraffiti(), Optional.empty());
   }
 
   private SafeFuture<BlockContainer> validateBlock(
@@ -142,8 +127,8 @@ public class BlockProductionDuty implements Duty {
       LOG.info(
           "Received block for slot {}, block rewards {} ETH, execution payload value {} ETH",
           slot,
-          gweiToEth(blockContainerAndMetaData.consensusBlockValue()),
-          gweiToEth(blockContainerAndMetaData.executionPayloadValue()));
+          weiToEth(blockContainerAndMetaData.consensusBlockValue()),
+          weiToEth(blockContainerAndMetaData.executionPayloadValue()));
     }
     return SafeFuture.completedFuture(unsignedBlockContainer);
   }
@@ -155,7 +140,7 @@ public class BlockProductionDuty implements Duty {
 
   private SafeFuture<DutyResult> sendBlock(final SignedBlockContainer signedBlockContainer) {
     return validatorApiChannel
-        .sendSignedBlock(signedBlockContainer, BroadcastValidationLevel.NOT_REQUIRED)
+        .sendSignedBlock(signedBlockContainer, BroadcastValidationLevel.GOSSIP)
         .thenApply(
             result -> {
               if (result.isPublished()) {

@@ -19,7 +19,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,13 +34,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTest {
@@ -53,7 +53,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
   }
 
   @Test
-  void engineGetPayload_shouldCallGetPayloadV2() throws ExecutionException, InterruptedException {
+  void engineGetPayload_shouldCallGetPayloadV2() {
     final ExecutionClientHandler handler = getHandler();
     final UInt64 slot = dataStructureUtil.randomUInt64(1_000_000);
     final ExecutionPayloadContext context =
@@ -62,19 +62,23 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
             dataStructureUtil.randomForkChoiceState(false),
             dataStructureUtil.randomPayloadBuildingAttributes(false));
 
+    final GetPayloadV2Response responseData =
+        new GetPayloadV2Response(
+            ExecutionPayloadV2.fromInternalExecutionPayload(
+                dataStructureUtil.randomExecutionPayload()),
+            UInt256.MAX_VALUE);
     final SafeFuture<Response<GetPayloadV2Response>> dummyResponse =
-        SafeFuture.completedFuture(
-            new Response<>(
-                new GetPayloadV2Response(
-                    ExecutionPayloadV2.fromInternalExecutionPayload(
-                        dataStructureUtil.randomExecutionPayload()),
-                    UInt256.MAX_VALUE)));
+        SafeFuture.completedFuture(new Response<>(responseData));
     when(executionEngineClient.getPayloadV2(context.getPayloadId())).thenReturn(dummyResponse);
 
     final SafeFuture<GetPayloadResponse> future = handler.engineGetPayload(context, slot);
     verify(executionEngineClient).getPayloadV2(context.getPayloadId());
-    assertThat(future).isCompleted();
-    assertThat(future.get().getExecutionPayload()).isInstanceOf(ExecutionPayloadCapella.class);
+    final SchemaDefinitionsCapella schemaDefinitionCapella =
+        spec.atSlot(slot).getSchemaDefinitions().toVersionCapella().orElseThrow();
+    final ExecutionPayloadSchema<?> executionPayloadSchema =
+        schemaDefinitionCapella.getExecutionPayloadSchema();
+    assertThat(future)
+        .isCompletedWithValue(responseData.asInternalGetPayloadResponse(executionPayloadSchema));
   }
 
   @Test
@@ -83,15 +87,16 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
     final NewPayloadRequest newPayloadRequest = new NewPayloadRequest(payload);
     final ExecutionPayloadV2 payloadV2 = ExecutionPayloadV2.fromInternalExecutionPayload(payload);
+    final PayloadStatusV1 responseData =
+        new PayloadStatusV1(
+            ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
-        SafeFuture.completedFuture(
-            new Response<>(
-                new PayloadStatusV1(
-                    ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null)));
+        SafeFuture.completedFuture(new Response<>(responseData));
     when(executionEngineClient.newPayloadV2(payloadV2)).thenReturn(dummyResponse);
-    final SafeFuture<PayloadStatus> future = handler.engineNewPayload(newPayloadRequest);
+    final SafeFuture<PayloadStatus> future =
+        handler.engineNewPayload(newPayloadRequest, UInt64.ZERO);
     verify(executionEngineClient).newPayloadV2(payloadV2);
-    assertThat(future).isCompleted();
+    assertThat(future).isCompletedWithValue(responseData.asInternalExecutionPayload());
   }
 
   @Test
@@ -100,19 +105,19 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final ForkChoiceState forkChoiceState = dataStructureUtil.randomForkChoiceState(false);
     final ForkChoiceStateV1 forkChoiceStateV1 =
         ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState);
+    final ForkChoiceUpdatedResult responseData =
+        new ForkChoiceUpdatedResult(
+            new PayloadStatusV1(
+                ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), ""),
+            dataStructureUtil.randomBytes8());
     final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
-        SafeFuture.completedFuture(
-            new Response<>(
-                new ForkChoiceUpdatedResult(
-                    new PayloadStatusV1(
-                        ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), ""),
-                    dataStructureUtil.randomBytes8())));
+        SafeFuture.completedFuture(new Response<>(responseData));
     when(executionEngineClient.forkChoiceUpdatedV2(forkChoiceStateV1, Optional.empty()))
         .thenReturn(dummyResponse);
     final SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> future =
         handler.engineForkChoiceUpdated(forkChoiceState, Optional.empty());
     verify(executionEngineClient).forkChoiceUpdatedV2(forkChoiceStateV1, Optional.empty());
-    assertThat(future).isCompleted();
+    assertThat(future).isCompletedWithValue(responseData.asInternalExecutionPayload());
   }
 
   @Test
@@ -140,18 +145,18 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
             capellaStartSlot.minusMinZero(1), dataStructureUtil.randomBytes32(), false);
     final ForkChoiceStateV1 forkChoiceStateV1 =
         ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState);
+    final ForkChoiceUpdatedResult responseData =
+        new ForkChoiceUpdatedResult(
+            new PayloadStatusV1(
+                ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), ""),
+            dataStructureUtil.randomBytes8());
     final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
-        SafeFuture.completedFuture(
-            new Response<>(
-                new ForkChoiceUpdatedResult(
-                    new PayloadStatusV1(
-                        ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), ""),
-                    dataStructureUtil.randomBytes8())));
+        SafeFuture.completedFuture(new Response<>(responseData));
     when(executionEngineClient.forkChoiceUpdatedV2(forkChoiceStateV1, payloadAttributes))
         .thenReturn(dummyResponse);
     final SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> future =
         handler.engineForkChoiceUpdated(forkChoiceState, Optional.of(attributes));
     verify(executionEngineClient).forkChoiceUpdatedV2(forkChoiceStateV1, payloadAttributes);
-    assertThat(future).isCompleted();
+    assertThat(future).isCompletedWithValue(responseData.asInternalExecutionPayload());
   }
 }

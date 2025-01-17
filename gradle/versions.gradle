@@ -1,11 +1,11 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.2'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.17.2'
-    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.17.2'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.18.2'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.18.2'
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.18.2'
 
-    dependencySet(group: 'com.google.errorprone', version: '2.28.0') {
+    dependencySet(group: 'com.google.errorprone', version: '2.36.0') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'
@@ -16,7 +16,7 @@ dependencyManagement {
 
     dependency 'com.google.guava:guava:33.1.0-jre'
 
-    dependency 'org.jsoup:jsoup:1.18.1'
+    dependency 'org.jsoup:jsoup:1.18.3'
 
     dependency 'com.launchdarkly:okhttp-eventsource:4.1.1'
 
@@ -27,23 +27,23 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.7.6'
 
-    dependencySet(group: 'io.javalin', version: '6.1.6') {
+    dependencySet(group: 'io.javalin', version: '6.3.0') {
       entry 'javalin'
       entry 'javalin-rendering'
     }
 
-    dependency 'io.libp2p:jvm-libp2p:1.1.1-RELEASE'
+    dependency 'io.libp2p:jvm-libp2p:1.2.2-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.12'
     dependency 'io.consensys.protocols:jc-kzg-4844:2.0.0'
     dependency 'io.github.crate-crypto:java-eth-kzg:0.5.2'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.2.2'
 
-    dependency 'org.jetbrains.kotlin:kotlin-stdlib:2.0.0'
+    dependency 'org.jetbrains.kotlin:kotlin-stdlib:2.1.0'
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.15.0'
 
-    dependencySet(group: 'io.swagger.core.v3', version: '2.2.22') {
+    dependencySet(group: 'io.swagger.core.v3', version: '2.2.26') {
       entry 'swagger-parser'
       entry 'swagger-core'
       entry 'swagger-models'
@@ -51,46 +51,45 @@ dependencyManagement {
     }
 
     // On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder
-    dependency 'org.webjars:swagger-ui:5.17.14'
+    dependency 'org.webjars:swagger-ui:5.18.2'
 
     dependency 'org.thymeleaf:thymeleaf:3.1.2.RELEASE'
-    dependency 'io.github.classgraph:classgraph:4.8.174'
-    dependencySet(group: 'com.github.oshi', version: '6.6.1') {
+    dependency 'io.github.classgraph:classgraph:4.8.179'
+    dependencySet(group: 'com.github.oshi', version: '6.6.5') {
       entry 'oshi-core'
       entry 'oshi-core-java11'
     }
 
-    dependencySet(group: 'io.netty', version: '4.1.111.Final') {
+    dependencySet(group: 'io.netty', version: '4.1.115.Final') {
       entry 'netty-handler'
       entry 'netty-codec-http'
     }
 
-    dependencySet(group: 'io.vertx', version: '4.5.8') {
+    dependencySet(group: 'io.vertx', version: '4.5.11') {
       entry 'vertx-codegen'
       entry 'vertx-core'
       entry 'vertx-unit'
       entry 'vertx-web'
     }
-    dependency 'io.projectreactor:reactor-core:3.6.8'
+    dependency 'io.projectreactor:reactor-core:3.7.0'
 
-    dependency 'it.unimi.dsi:fastutil:8.5.12'
+    dependency 'it.unimi.dsi:fastutil:8.5.15'
 
     dependency 'javax.annotation:javax.annotation-api:1.3.2'
 
-    dependencySet(group: 'org.apache.tuweni', version: '2.3.1') {
+    dependencySet(group: 'io.tmio', version: '2.4.2') {
       entry 'tuweni-bytes'
       entry 'tuweni-crypto'
-      entry 'tuweni-junit'
       entry 'tuweni-ssz'
       entry 'tuweni-units'
     }
 
     dependency 'org.apache.commons:commons-text:1.12.0'
-    dependency 'org.apache.commons:commons-lang3:3.14.0'
-    dependency 'commons-io:commons-io:2.16.1'
+    dependency 'org.apache.commons:commons-lang3:3.17.0'
+    dependency 'commons-io:commons-io:2.18.0'
     dependency 'org.commonjava.mimeparse:mimeparse:0.1.3.3'
 
-    dependencySet(group: 'org.apache.logging.log4j', version: '2.23.1') {
+    dependencySet(group: 'org.apache.logging.log4j', version: '2.24.2') {
       entry 'log4j-api'
       entry 'log4j-core'
       entry 'log4j-slf4j-impl'
@@ -101,20 +100,22 @@ dependencyManagement {
 
     dependency 'org.assertj:assertj-core:3.26.3'
 
-    dependency 'org.awaitility:awaitility:4.2.1'
+    dependency 'org.awaitility:awaitility:4.2.2'
 
-    dependencySet(group: 'org.bouncycastle', version: '1.78.1') {
+    dependencySet(group: 'org.bouncycastle', version: '1.79') {
       entry 'bcprov-jdk18on'
       entry 'bcpkix-jdk18on'
     }
 
-    dependencySet(group: 'org.junit.jupiter', version: '5.10.3') {
+    dependencySet(group: 'org.junit.jupiter', version: '5.11.3') {
       entry 'junit-jupiter-api'
       entry 'junit-jupiter-engine'
       entry 'junit-jupiter-params'
     }
 
-    dependencySet(group: 'org.mockito', version: '5.12.0') {
+    dependency 'net.java.dev.jna:jna:5.15.0'
+
+    dependencySet(group: 'org.mockito', version: '5.14.2') {
       entry 'mockito-core'
       entry 'mockito-junit-jupiter'
     }
@@ -123,8 +124,8 @@ dependencyManagement {
       entry 'jmh-core'
       entry 'jmh-generator-annprocess'
     }
-    dependency 'org.quartz-scheduler:quartz:2.3.2'
-    dependency 'org.rocksdb:rocksdbjni:7.7.3'
+    dependency 'org.quartz-scheduler:quartz:2.5.0'
+    dependency 'org.rocksdb:rocksdbjni:9.7.3'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win64:1.8'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win32:1.8'
     dependency 'tech.pegasys:leveldb-native:0.3.1'
@@ -136,29 +137,29 @@ dependencyManagement {
       entry 'utils'
     }
 
-    dependency 'org.xerial.snappy:snappy-java:1.1.10.5'
+    dependency 'org.xerial.snappy:snappy-java:1.1.10.7'
 
     dependency 'io.prometheus:simpleclient:0.16.0'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '24.9.1') {
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '24.10.0') {
       entry('metrics-core')
       entry('core')
       entry('config')
     }
-    dependencySet(group: 'org.hyperledger.besu', version: '24.9.1') {
+    dependencySet(group: 'org.hyperledger.besu', version: '24.10.0') {
       entry('besu-datatypes')
       entry('evm')
       entry('plugin-api')
     }
 
-    dependencySet(group: 'org.testcontainers', version: '1.19.8') {
+    dependencySet(group: 'org.testcontainers', version: '1.20.4') {
       entry "testcontainers"
       entry "junit-jupiter"
     }
 
     // discovery includes tuweni libraries under a different name so version resolution doesn't work
     // exclude them here and leave them to be included on the classpath by the version we use
-    dependency('tech.pegasys.discovery:discovery:24.9.1') {
+    dependency('tech.pegasys.discovery:discovery:24.12.0') {
       exclude 'org.apache.tuweni:bytes'
       exclude 'org.apache.tuweni:crypto'
       exclude 'org.apache.tuweni:units'
@@ -175,6 +176,6 @@ dependencyManagement {
       entry 'jjwt-jackson'
     }
 
-    dependency 'net.jqwik:jqwik:1.9.0'
+    dependency 'net.jqwik:jqwik:1.9.2'
   }
 }

@@ -15,7 +15,7 @@ package tech.pegasys.teku.kzg;
 
 public record KZGCellWithColumnId(KZGCell cell, KZGCellID columnId) {
 
-  public static KZGCellWithColumnId fromCellAndColumn(KZGCell cell, int columnIndex) {
+  public static KZGCellWithColumnId fromCellAndColumn(final KZGCell cell, final int columnIndex) {
     return new KZGCellWithColumnId(cell, KZGCellID.fromCellColumnIndex(columnIndex));
   }
 }

@@ -152,7 +152,7 @@ public class ExecutionPayloadHeaderSchemaCapella
   }
 
   @Override
-  public ExecutionPayloadHeaderCapellaImpl createFromBackingNode(TreeNode node) {
+  public ExecutionPayloadHeaderCapellaImpl createFromBackingNode(final TreeNode node) {
     return new ExecutionPayloadHeaderCapellaImpl(this, node);
   }
 
@@ -177,5 +177,10 @@ public class ExecutionPayloadHeaderSchemaCapella
         SszBytes32.of(executionPayload.getBlockHash()),
         SszBytes32.of(executionPayload.getTransactions().hashTreeRoot()),
         SszBytes32.of(executionPayload.getWithdrawals().hashTreeRoot()));
+  }
+
+  @Override
+  public ExecutionPayloadHeaderSchemaCapella toVersionCapellaRequired() {
+    return this;
   }
 }

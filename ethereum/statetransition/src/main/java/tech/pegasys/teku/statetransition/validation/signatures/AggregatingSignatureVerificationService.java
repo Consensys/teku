@@ -81,12 +81,12 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
     batchCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.EXECUTOR,
-            "signature_verifications_batch_count",
+            "signature_verifications_batch_count_total",
             "Reports the number of verification batches processed");
     taskCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.EXECUTOR,
-            "signature_verifications_task_count",
+            "signature_verifications_task_count_total",
             "Reports the number of individual verification tasks processed");
     batchSizeHistogram =
         MetricsQuantileHistogram.create(

@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -26,6 +27,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
@@ -35,12 +37,19 @@ public class GenesisGenerator {
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
   private String network;
   private ValidatorKeystores validatorKeys;
-  private Optional<BesuNode> genesisPayloadSource = Optional.empty();
+  private Optional<Function<Spec, ExecutionPayloadHeader>> genesisExecutionPayloadHeaderSource =
+      Optional.empty();
   private int genesisDelaySeconds = 10;
+  private Optional<Integer> genesisTime = Optional.empty();
   private Consumer<SpecConfigBuilder> specConfigModifier = builder -> {};
 
   public GenesisGenerator network(final String network) {
     this.network = network;
+    return this;
+  }
+
+  public GenesisGenerator withGenesisTime(final Integer genesisTime) {
+    this.genesisTime = Optional.of(genesisTime);
     return this;
   }
 
@@ -80,12 +89,12 @@ public class GenesisGenerator {
     return this;
   }
 
-  public GenesisGenerator withEip7594Epoch(final UInt64 eip7594ForkEpoch) {
+  public GenesisGenerator withElectraEpoch(final UInt64 electraForkEpoch) {
     specConfigModifier =
         specConfigModifier.andThen(
             specConfigBuilder ->
-                specConfigBuilder.eip7594Builder(
-                    eip7594Builder -> eip7594Builder.eip7594ForkEpoch(eip7594ForkEpoch)));
+                specConfigBuilder.electraBuilder(
+                    electraBuilder -> electraBuilder.electraForkEpoch(electraForkEpoch)));
     return this;
   }
 
@@ -115,8 +124,9 @@ public class GenesisGenerator {
     return this;
   }
 
-  public GenesisGenerator genesisPayloadSource(final BesuNode genesisPayloadSource) {
-    this.genesisPayloadSource = Optional.of(genesisPayloadSource);
+  public GenesisGenerator genesisExecutionPayloadHeaderSource(
+      final Function<Spec, ExecutionPayloadHeader> genesisExecutionPayloadHeaderSource) {
+    this.genesisExecutionPayloadHeaderSource = Optional.of(genesisExecutionPayloadHeaderSource);
     return this;
   }
 
@@ -125,16 +135,20 @@ public class GenesisGenerator {
     final GenesisStateBuilder genesisBuilder = new GenesisStateBuilder();
     genesisBuilder
         .spec(spec)
-        .genesisTime(timeProvider.getTimeInSeconds().plus(genesisDelaySeconds));
+        .genesisTime(
+            genesisTime
+                .map(UInt64::valueOf)
+                .orElse(timeProvider.getTimeInSeconds().plus(genesisDelaySeconds)));
     validatorKeys
         .getValidatorKeys()
         .forEach(
             validator ->
                 genesisBuilder.addValidator(
                     validator.getValidatorKey(), validator.getWithdrawalCredentials()));
-    genesisPayloadSource.ifPresent(
-        source ->
-            genesisBuilder.executionPayloadHeader(source.createGenesisExecutionPayload(spec)));
+
+    genesisExecutionPayloadHeaderSource.ifPresent(
+        source -> genesisBuilder.executionPayloadHeader(source.apply(spec)));
+
     return new InitialStateData(genesisBuilder.build());
   }
 

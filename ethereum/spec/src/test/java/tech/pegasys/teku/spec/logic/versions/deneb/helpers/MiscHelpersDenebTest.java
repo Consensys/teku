@@ -16,9 +16,9 @@ package tech.pegasys.teku.spec.logic.versions.deneb.helpers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
 
-import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -70,107 +70,12 @@ class MiscHelpersDenebTest {
   }
 
   @Test
-  void validateBlobSidecarsAgainstBlock_shouldNotThrowOnValidBlobSidecar() {
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
-
-    // make sure we are testing something
-    assertThat(blobSidecars).isNotEmpty();
-
-    miscHelpersDeneb.validateBlobSidecarsBatchAgainstBlock(
-        blobSidecars,
-        block.getMessage(),
-        BeaconBlockBodyDeneb.required(block.getMessage().getBody()).getBlobKzgCommitments().stream()
-            .map(SszKZGCommitment::getKZGCommitment)
-            .toList());
-  }
-
-  @Test
-  void validateBlobSidecarsAgainstBlock_shouldThrowOnNotMatchingBlockRoot() {
-
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-
-    final List<KZGCommitment> kzgCommitments =
-        BeaconBlockBodyDeneb.required(block.getMessage().getBody()).getBlobKzgCommitments().stream()
-            .map(SszKZGCommitment::getKZGCommitment)
-            .toList();
-
-    // make sure we are testing something
-    assertThat(kzgCommitments).isNotEmpty();
-
-    final int indexToBeAltered =
-        Math.toIntExact(dataStructureUtil.randomPositiveLong(kzgCommitments.size()));
-
-    // let's create blobs with only one altered with the given alteration
-    final List<BlobSidecar> blobSidecars =
-        dataStructureUtil.randomBlobSidecarsForBlock(
-            block,
-            (index, randomBlobSidecarBuilder) -> {
-              if (!index.equals(indexToBeAltered)) {
-                return randomBlobSidecarBuilder;
-              }
-
-              return randomBlobSidecarBuilder.signedBeaconBlockHeader(
-                  dataStructureUtil.randomSignedBeaconBlockHeader(
-                      block.getSlot(), block.getProposerIndex()));
-            });
-
-    assertThatThrownBy(
-            () ->
-                miscHelpersDeneb.validateBlobSidecarsBatchAgainstBlock(
-                    blobSidecars, block.getMessage(), kzgCommitments))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageStartingWith("Block and blob sidecar root mismatch for")
-        .hasMessageEndingWith("blob index %s", indexToBeAltered);
-  }
-
-  @Test
-  void validateBlobSidecarsAgainstBlock_shouldThrowOnNotMatchingKzgCommitments() {
-
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-
-    final List<KZGCommitment> kzgCommitments =
-        BeaconBlockBodyDeneb.required(block.getMessage().getBody()).getBlobKzgCommitments().stream()
-            .map(SszKZGCommitment::getKZGCommitment)
-            .toList();
-
-    // make sure we are testing something
-    assertThat(kzgCommitments).isNotEmpty();
-
-    final int indexToBeAltered =
-        Math.toIntExact(dataStructureUtil.randomPositiveLong(kzgCommitments.size()));
-    final List<KZGCommitment> alteredKzgCommitments = new ArrayList<>(kzgCommitments);
-    alteredKzgCommitments.remove(indexToBeAltered);
-    alteredKzgCommitments.add(indexToBeAltered, dataStructureUtil.randomKZGCommitment());
-
-    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
-
-    assertThatThrownBy(
-            () ->
-                miscHelpersDeneb.validateBlobSidecarsBatchAgainstBlock(
-                    blobSidecars, block.getMessage(), List.of()))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageStartingWith("Blob sidecar index out of bound with respect to block")
-        .hasMessageEndingWith("blob index %s", 0);
-
-    assertThatThrownBy(
-            () ->
-                miscHelpersDeneb.validateBlobSidecarsBatchAgainstBlock(
-                    blobSidecars, block.getMessage(), alteredKzgCommitments))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageStartingWith("Block and blob sidecar kzg commitments mismatch for")
-        .hasMessageEndingWith("blob index %s", indexToBeAltered);
-  }
-
-  @Test
   void verifyBlobSidecarCompleteness_shouldThrowWhenSizesDoNotMatch() {
     assertThatThrownBy(
             () ->
                 miscHelpersDeneb.verifyBlobSidecarCompleteness(
                     dataStructureUtil.randomBlobSidecars(1),
-                    List.of(
-                        dataStructureUtil.randomKZGCommitment(),
-                        dataStructureUtil.randomKZGCommitment())))
+                    dataStructureUtil.randomSignedBeaconBlockWithCommitments(2)))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Blob sidecars are not complete");
   }
@@ -181,10 +86,20 @@ class MiscHelpersDenebTest {
     assertThatThrownBy(
             () ->
                 miscHelpersDeneb.verifyBlobSidecarCompleteness(
-                    blobSidecars, List.of(dataStructureUtil.randomKZGCommitment())))
+                    blobSidecars, dataStructureUtil.randomSignedBeaconBlockWithCommitments(1)))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
-            "Blob sidecar index mismatch, expected 0, got %s", blobSidecars.get(0).getIndex());
+            "Blob sidecar index mismatch, expected 0, got %s", blobSidecars.getFirst().getIndex());
+  }
+
+  @Test
+  void verifyBlobSidecarCompleteness_shouldNotThrow() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlockWithCommitments(2);
+    final List<BlobSidecar> blobSidecars =
+        List.of(
+            dataStructureUtil.randomBlobSidecarForBlock(block, 0),
+            dataStructureUtil.randomBlobSidecarForBlock(block, 1));
+    assertDoesNotThrow(() -> miscHelpersDeneb.verifyBlobSidecarCompleteness(blobSidecars, block));
   }
 
   @Test
@@ -207,7 +122,8 @@ class MiscHelpersDenebTest {
     assertThat(blobSidecar.getSszKZGCommitment()).isEqualTo(expectedCommitment);
     assertThat(blobSidecar.getSignedBeaconBlockHeader()).isEqualTo(signedBeaconBlock.asHeader());
     // verify the merkle proof
-    assertThat(miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)).isTrue();
+    assertThat(miscHelpersDeneb.verifyBlobKzgCommitmentInclusionProof(blobSidecar)).isTrue();
+    assertThat(blobSidecar.isKzgCommitmentInclusionProofValidated()).isTrue();
   }
 
   @Test
@@ -227,7 +143,7 @@ class MiscHelpersDenebTest {
   }
 
   @Test
-  void verifyBlobSidecarMerkleProofShouldValidate() {
+  void verifyBlobKzgCommitmentInclusionProofShouldValidate() {
     final int numberOfCommitments = 4;
     final BeaconBlockBodyDeneb beaconBlockBody =
         BeaconBlockBodyDeneb.required(
@@ -267,7 +183,8 @@ class MiscHelpersDenebTest {
                       .getBytes())
               .kzgCommitmentInclusionProof(merkleProof)
               .build();
-      assertThat(miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)).isTrue();
+      assertThat(miscHelpersDeneb.verifyBlobKzgCommitmentInclusionProof(blobSidecar)).isTrue();
+      assertThat(blobSidecar.isKzgCommitmentInclusionProofValidated()).isTrue();
 
       // And the same blobSidecar but with wrong merkle proof
       for (int j = 0; j < numberOfCommitments; ++j) {
@@ -296,8 +213,35 @@ class MiscHelpersDenebTest {
                         .getBytes())
                 .kzgCommitmentInclusionProof(merkleProofWrong)
                 .build();
-        assertThat(miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecarWrong)).isFalse();
+        assertThat(miscHelpersDeneb.verifyBlobKzgCommitmentInclusionProof(blobSidecarWrong))
+            .isFalse();
+        assertThat(blobSidecarWrong.isKzgCommitmentInclusionProofValidated()).isFalse();
       }
     }
+  }
+
+  @Test
+  void verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock_returnsTrue() {
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(1);
+    final BlobSidecar blobSidecar =
+        dataStructureUtil.randomBlobSidecarForBlock(signedBeaconBlock, 0);
+    assertThat(
+            miscHelpersDeneb.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
+                blobSidecar, signedBeaconBlock))
+        .isTrue();
+    assertThat(blobSidecar.isSignatureValidated()).isTrue();
+  }
+
+  @Test
+  void verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock_returnsFalse() {
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(1);
+    final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
+    assertThat(
+            miscHelpersDeneb.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
+                blobSidecar, signedBeaconBlock))
+        .isFalse();
+    assertThat(blobSidecar.isSignatureValidated()).isFalse();
   }
 }

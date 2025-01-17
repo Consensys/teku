@@ -67,20 +67,21 @@ public class ForkChoiceUtil {
     this.miscHelpers = miscHelpers;
   }
 
-  public UInt64 getSlotsSinceGenesis(ReadOnlyStore store, boolean useUnixTime) {
-    UInt64 time =
+  public UInt64 getSlotsSinceGenesis(final ReadOnlyStore store, final boolean useUnixTime) {
+    final UInt64 time =
         useUnixTime ? UInt64.valueOf(Instant.now().getEpochSecond()) : store.getTimeSeconds();
     return getCurrentSlot(time, store.getGenesisTime());
   }
 
-  public UInt64 getCurrentSlot(UInt64 currentTime, UInt64 genesisTime) {
+  public UInt64 getCurrentSlot(final UInt64 currentTime, final UInt64 genesisTime) {
     if (currentTime.isLessThan(genesisTime)) {
       return UInt64.ZERO;
     }
     return currentTime.minus(genesisTime).dividedBy(specConfig.getSecondsPerSlot());
   }
 
-  public UInt64 getCurrentSlotForMillis(UInt64 currentTimeMillis, UInt64 genesisTimeMillis) {
+  public UInt64 getCurrentSlotForMillis(
+      final UInt64 currentTimeMillis, final UInt64 genesisTimeMillis) {
     if (currentTimeMillis.isLessThan(genesisTimeMillis)) {
       return UInt64.ZERO;
     }
@@ -89,24 +90,24 @@ public class ForkChoiceUtil {
         .dividedBy(specConfig.getSecondsPerSlot() * MILLIS_PER_SECOND.longValue());
   }
 
-  public UInt64 getSlotStartTime(UInt64 slotNumber, UInt64 genesisTime) {
+  public UInt64 getSlotStartTime(final UInt64 slotNumber, final UInt64 genesisTime) {
     return genesisTime.plus(slotNumber.times(specConfig.getSecondsPerSlot()));
   }
 
-  public UInt64 getSlotStartTimeMillis(UInt64 slotNumber, UInt64 genesisTimeMillis) {
+  public UInt64 getSlotStartTimeMillis(final UInt64 slotNumber, final UInt64 genesisTimeMillis) {
     return genesisTimeMillis.plus(
         slotNumber.times(specConfig.getSecondsPerSlot() * MILLIS_PER_SECOND.longValue()));
   }
 
-  public UInt64 getCurrentSlot(ReadOnlyStore store, boolean useUnixTime) {
+  public UInt64 getCurrentSlot(final ReadOnlyStore store, final boolean useUnixTime) {
     return SpecConfig.GENESIS_SLOT.plus(getSlotsSinceGenesis(store, useUnixTime));
   }
 
-  public UInt64 getCurrentSlot(ReadOnlyStore store) {
+  public UInt64 getCurrentSlot(final ReadOnlyStore store) {
     return getCurrentSlot(store, false);
   }
 
-  public UInt64 computeSlotsSinceEpochStart(UInt64 slot) {
+  public UInt64 computeSlotsSinceEpochStart(final UInt64 slot) {
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
     final UInt64 epochStartSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
     return slot.minus(epochStartSlot);
@@ -123,19 +124,19 @@ public class ForkChoiceUtil {
    *     <a>https://github.com/ethereum/consensus-specs/blob/v0.10.1/specs/phase0/fork-choice.md#get_ancestor</a>
    */
   public Optional<Bytes32> getAncestor(
-      ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 slot) {
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy, final Bytes32 root, final UInt64 slot) {
     return forkChoiceStrategy.getAncestor(root, slot);
   }
 
   public NavigableMap<UInt64, Bytes32> getAncestors(
-      ReadOnlyForkChoiceStrategy forkChoiceStrategy,
-      Bytes32 root,
-      UInt64 startSlot,
-      UInt64 step,
-      UInt64 count) {
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final Bytes32 root,
+      final UInt64 startSlot,
+      final UInt64 step,
+      final UInt64 count) {
     final NavigableMap<UInt64, Bytes32> roots = new TreeMap<>();
     // minus(ONE) because the start block is included
-    final UInt64 endSlot = startSlot.plus(step.times(count)).minus(UInt64.ONE);
+    final UInt64 endSlot = startSlot.plus(step.times(count)).minusMinZero(1);
     Bytes32 parentRoot = root;
     Optional<UInt64> parentSlot = forkChoiceStrategy.blockSlot(parentRoot);
     while (parentSlot.isPresent() && parentSlot.get().compareTo(startSlot) > 0) {
@@ -155,7 +156,9 @@ public class ForkChoiceUtil {
    *     backwards
    */
   public NavigableMap<UInt64, Bytes32> getAncestorsOnFork(
-      ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 startSlot) {
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final Bytes32 root,
+      final UInt64 startSlot) {
     final NavigableMap<UInt64, Bytes32> roots = new TreeMap<>();
     Bytes32 parentRoot = root;
     Optional<UInt64> parentSlot = forkChoiceStrategy.blockSlot(parentRoot);
@@ -366,7 +369,7 @@ public class ForkChoiceUtil {
   }
 
   private AttestationProcessingResult checkIfAttestationShouldBeSavedForFuture(
-      ReadOnlyStore store, Attestation attestation) {
+      final ReadOnlyStore store, final Attestation attestation) {
 
     // Attestations can only affect the fork choice of subsequent slots.
     // Delay consideration in the fork choice until their slot is in the past.
@@ -460,7 +463,7 @@ public class ForkChoiceUtil {
     return BlockImportResult.successful(block);
   }
 
-  private boolean blockIsFromFuture(ReadOnlyStore store, final UInt64 blockSlot) {
+  private boolean blockIsFromFuture(final ReadOnlyStore store, final UInt64 blockSlot) {
     return getCurrentSlot(store).compareTo(blockSlot) < 0;
   }
 
@@ -487,10 +490,10 @@ public class ForkChoiceUtil {
   }
 
   private boolean hasAncestorAtSlot(
-      ReadOnlyForkChoiceStrategy forkChoiceStrategy,
-      Bytes32 root,
-      UInt64 slot,
-      Bytes32 ancestorRoot) {
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final Bytes32 root,
+      final UInt64 slot,
+      final Bytes32 ancestorRoot) {
     return getAncestor(forkChoiceStrategy, root, slot)
         .map(ancestorAtSlot -> ancestorAtSlot.equals(ancestorRoot))
         .orElse(false);

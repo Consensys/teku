@@ -15,14 +15,14 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 public class LateInitDataColumnSidecarCustody implements DataColumnSidecarByRootCustody {
   private DataColumnSidecarByRootCustody delegate = null;
 
-  public void init(DataColumnSidecarByRootCustody delegate) {
+  public void init(final DataColumnSidecarByRootCustody delegate) {
     if (this.delegate != null) {
       throw new IllegalStateException("Delegate was initialized already");
     }
@@ -31,7 +31,7 @@ public class LateInitDataColumnSidecarCustody implements DataColumnSidecarByRoot
 
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecar(
-      DataColumnSlotAndIdentifier columnId) {
+      final DataColumnSlotAndIdentifier columnId) {
     if (delegate == null) {
       throw new IllegalStateException("Delegate was not initialized");
     }
@@ -39,13 +39,14 @@ public class LateInitDataColumnSidecarCustody implements DataColumnSidecarByRoot
   }
 
   @Override
-  public SafeFuture<Boolean> hasCustodyDataColumnSidecar(DataColumnSlotAndIdentifier columnId) {
+  public SafeFuture<Boolean> hasCustodyDataColumnSidecar(
+      final DataColumnSlotAndIdentifier columnId) {
     return delegate.hasCustodyDataColumnSidecar(columnId);
   }
 
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecarByRoot(
-      DataColumnIdentifier columnId) {
+      final DataColumnIdentifier columnId) {
     if (delegate == null) {
       throw new IllegalStateException("Delegate was not initialized");
     }

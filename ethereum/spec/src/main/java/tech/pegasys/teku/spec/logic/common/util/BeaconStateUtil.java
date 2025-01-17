@@ -60,12 +60,12 @@ public class BeaconStateUtil {
     this.beaconStateAccessors = beaconStateAccessors;
   }
 
-  public boolean isValidGenesisState(UInt64 genesisTime, int activeValidatorCount) {
+  public boolean isValidGenesisState(final UInt64 genesisTime, final int activeValidatorCount) {
     return isItMinGenesisTimeYet(genesisTime)
         && isThereEnoughNumberOfValidators(activeValidatorCount);
   }
 
-  private boolean isThereEnoughNumberOfValidators(int activeValidatorCount) {
+  private boolean isThereEnoughNumberOfValidators(final int activeValidatorCount) {
     return activeValidatorCount >= specConfig.getMinGenesisActiveValidatorCount();
   }
 
@@ -80,11 +80,11 @@ public class BeaconStateUtil {
         : currentEpoch.plus(1);
   }
 
-  public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {
+  public Bytes32 getPreviousDutyDependentRoot(final BeaconState state) {
     return getDutyDependentRoot(state, beaconStateAccessors.getPreviousEpoch(state));
   }
 
-  public Bytes32 getCurrentDutyDependentRoot(BeaconState state) {
+  public Bytes32 getCurrentDutyDependentRoot(final BeaconState state) {
     return getDutyDependentRoot(state, beaconStateAccessors.getCurrentEpoch(state));
   }
 
@@ -150,7 +150,7 @@ public class BeaconStateUtil {
                     .toList());
   }
 
-  public boolean all(SszBitvector bitvector, int start, int end) {
+  public boolean all(final SszBitvector bitvector, final int start, final int end) {
     for (int i = start; i < end; i++) {
       if (!bitvector.getBit(i)) {
         return false;
@@ -187,7 +187,7 @@ public class BeaconStateUtil {
 
   public int computeSubnetForAttestation(final BeaconState state, final Attestation attestation) {
     final UInt64 attestationSlot = attestation.getData().getSlot();
-    final UInt64 committeeIndex = attestation.getData().getIndex();
+    final UInt64 committeeIndex = attestation.getFirstCommitteeIndex();
     return computeSubnetForCommittee(state, attestationSlot, committeeIndex);
   }
 

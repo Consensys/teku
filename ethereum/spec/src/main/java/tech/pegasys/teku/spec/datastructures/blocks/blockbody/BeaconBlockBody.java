@@ -28,11 +28,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.B
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodyCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodyDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7594.BeaconBlockBodyEip7594;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7594.BlindedBeaconBlockBodyEip7594;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -87,6 +88,10 @@ public interface BeaconBlockBody extends SszContainer {
     return Optional.empty();
   }
 
+  default Optional<ExecutionRequests> getOptionalExecutionRequests() {
+    return Optional.empty();
+  }
+
   default boolean isBlinded() {
     return false;
   }
@@ -118,7 +123,7 @@ public interface BeaconBlockBody extends SszContainer {
     return Optional.empty();
   }
 
-  default Optional<BeaconBlockBodyEip7594> toVersionEip7594() {
+  default Optional<BeaconBlockBodyElectra> toVersionElectra() {
     return Optional.empty();
   }
 
@@ -126,7 +131,7 @@ public interface BeaconBlockBody extends SszContainer {
     return Optional.empty();
   }
 
-  default Optional<BlindedBeaconBlockBodyEip7594> toBlindedVersionEip7594() {
+  default Optional<BlindedBeaconBlockBodyElectra> toBlindedVersionElectra() {
     return Optional.empty();
   }
 }

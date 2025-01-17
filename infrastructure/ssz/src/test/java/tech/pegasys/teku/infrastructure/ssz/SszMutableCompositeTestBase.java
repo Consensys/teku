@@ -39,7 +39,7 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
   SszData NON_EXISTING_SCHEMA_DATA = NON_EXISTING_SCHEMA.getDefault();
   RandomSszDataGenerator GENERATOR = new RandomSszDataGenerator();
 
-  static SszData getSomeNewChild(SszCompositeSchema<?> schema) {
+  static SszData getSomeNewChild(final SszCompositeSchema<?> schema) {
     final SszSchema<?> childSchema;
     if (schema instanceof SszListSchema) {
       childSchema = ((SszListSchema<?, ?>) schema).getElementSchema();
@@ -88,7 +88,7 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
 
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
-  default void set_throwsIndexOutOfBounds(SszMutableComposite<SszData> data) {
+  default void set_throwsIndexOutOfBounds(final SszMutableComposite<SszData> data) {
     SszData someData = getSomeNewChild(data.getSchema());
     assertThatThrownBy(() -> data.set(data.size() + 1, someData))
         .isInstanceOf(IndexOutOfBoundsException.class);
@@ -97,7 +97,7 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
 
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
-  default void set_throwsNPE(SszMutableComposite<SszData> data) {
+  default void set_throwsNPE(final SszMutableComposite<SszData> data) {
     if (data.getSchema().getMaxLength() == 0) {
       return;
     }
@@ -106,7 +106,7 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
 
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
-  default void set_shouldThrowWhenSchemaMismatch(SszMutableComposite<SszData> data) {
+  default void set_shouldThrowWhenSchemaMismatch(final SszMutableComposite<SszData> data) {
     Assumptions.assumeThat(data).isNotInstanceOf(SszMutablePrimitiveCollection.class);
 
     for (int i = 0; i < data.size(); i++) {
@@ -117,7 +117,8 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
 
   @MethodSource("sszMutableCompositeWithUpdateIndicesArguments")
   @ParameterizedTest
-  default void set_shouldMatchGet(SszMutableComposite<SszData> data, List<Integer> updateIndices) {
+  default void set_shouldMatchGet(
+      final SszMutableComposite<SszData> data, final List<Integer> updateIndices) {
     SszComposite<SszData> origData = data.commitChanges();
 
     SszCompositeSchema<? extends SszComposite<?>> schema = data.getSchema();
@@ -171,13 +172,13 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
 
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
-  default void set_shouldNotHaveSideEffects(SszMutableComposite<SszData> data) {
+  default void set_shouldNotHaveSideEffects(final SszMutableComposite<SszData> data) {
     List<Integer> updatedIndices =
         IntStream.concat(IntStream.range(0, 2), IntStream.of(data.size() - 1))
             .distinct()
             .filter(i -> i >= 0 && i < data.size())
             .boxed()
-            .collect(Collectors.toList());
+            .toList();
 
     SszComposite<SszData> origData = data.commitChanges();
 
@@ -215,7 +216,7 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
 
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
-  default void set_shouldAppendOnExtendableStructures(SszMutableComposite<SszData> data) {
+  default void set_shouldAppendOnExtendableStructures(final SszMutableComposite<SszData> data) {
     if (data.size() < data.getSchema().getMaxLength()) {
       // the structure could be extended (just a List for now)
       int origSize = data.size();
@@ -235,7 +236,7 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
   default void set_shouldThrowWhenSetAboveSizeForExtendableStructures(
-      SszMutableComposite<SszData> data) {
+      final SszMutableComposite<SszData> data) {
     if (data.size() < data.getSchema().getMaxLength()) {
       // the structure could be extended (just a List case for now)
       assertThatThrownBy(
@@ -249,7 +250,7 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
 
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
-  default void set_shouldThrowWhenAppendingAboveMaxLen(SszMutableComposite<SszData> data) {
+  default void set_shouldThrowWhenAppendingAboveMaxLen(final SszMutableComposite<SszData> data) {
     long maxLengthLong = data.getSchema().getMaxLength();
     if (maxLengthLong <= 1024) {
       final int maxLength = (int) maxLengthLong;
@@ -265,7 +266,7 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
 
   @MethodSource("sszMutableCompositeArguments")
   @ParameterizedTest
-  default void setInvalidator_shouldBeNotifiedOnSet(SszMutableComposite<SszData> data) {
+  default void setInvalidator_shouldBeNotifiedOnSet(final SszMutableComposite<SszData> data) {
     if (data.size() == 0) {
       return;
     }

@@ -41,10 +41,10 @@ public class EpochCommitteeResponse {
   @ArraySchema(schema = @Schema(type = "string", example = EXAMPLE_UINT64))
   public final List<UInt64> validators;
 
-  public EpochCommitteeResponse(CommitteeAssignment committeeAssignment) {
-    this.slot = committeeAssignment.getSlot();
-    this.index = committeeAssignment.getCommitteeIndex();
-    this.validators = UInt64Util.intToUInt64List(committeeAssignment.getCommittee());
+  public EpochCommitteeResponse(final CommitteeAssignment committeeAssignment) {
+    this.slot = committeeAssignment.slot();
+    this.index = committeeAssignment.committeeIndex();
+    this.validators = UInt64Util.intToUInt64List(committeeAssignment.committee());
   }
 
   @JsonCreator
@@ -58,7 +58,7 @@ public class EpochCommitteeResponse {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

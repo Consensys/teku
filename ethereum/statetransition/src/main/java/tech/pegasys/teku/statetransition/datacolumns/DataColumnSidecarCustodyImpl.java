@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.datacolumns;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -28,12 +29,13 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
-import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 
@@ -91,12 +93,12 @@ public class DataColumnSidecarCustodyImpl
   private volatile UInt64 currentSlot = null;
 
   public DataColumnSidecarCustodyImpl(
-      Spec spec,
-      CanonicalBlockResolver blockResolver,
-      DataColumnSidecarDbAccessor db,
-      MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator,
-      UInt256 nodeId,
-      int totalCustodySubnetCount) {
+      final Spec spec,
+      final CanonicalBlockResolver blockResolver,
+      final DataColumnSidecarDbAccessor db,
+      final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator,
+      final UInt256 nodeId,
+      final int totalCustodySubnetCount) {
     checkNotNull(spec);
     checkNotNull(blockResolver);
     checkNotNull(minCustodyPeriodSlotCalculator);
@@ -111,17 +113,18 @@ public class DataColumnSidecarCustodyImpl
     this.totalCustodySubnetCount = totalCustodySubnetCount;
   }
 
-  private List<UInt64> getCustodyColumnsForSlot(UInt64 slot) {
+  private List<UInt64> getCustodyColumnsForSlot(final UInt64 slot) {
     return getCustodyColumnsForEpoch(spec.computeEpochAtSlot(slot));
   }
 
-  private List<UInt64> getCustodyColumnsForEpoch(UInt64 epoch) {
-    return MiscHelpersEip7594.required(spec.atEpoch(epoch).miscHelpers())
+  private List<UInt64> getCustodyColumnsForEpoch(final UInt64 epoch) {
+    return MiscHelpersFulu.required(spec.atEpoch(epoch).miscHelpers())
         .computeCustodyColumnIndexes(nodeId, totalCustodySubnetCount);
   }
 
   @Override
-  public SafeFuture<Void> onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar) {
+  public SafeFuture<Void> onNewValidatedDataColumnSidecar(
+      final DataColumnSidecar dataColumnSidecar) {
     if (isMyCustody(dataColumnSidecar.getSlot(), dataColumnSidecar.getIndex())) {
       return db.addSidecar(dataColumnSidecar);
     } else {
@@ -129,14 +132,14 @@ public class DataColumnSidecarCustodyImpl
     }
   }
 
-  private boolean isMyCustody(UInt64 slot, UInt64 columnIndex) {
-    UInt64 epoch = spec.computeEpochAtSlot(slot);
+  private boolean isMyCustody(final UInt64 slot, final UInt64 columnIndex) {
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
     return spec.atEpoch(epoch)
         .miscHelpers()
-        .toVersionEip7594()
+        .toVersionFulu()
         .map(
-            miscHelpersEip7594 ->
-                miscHelpersEip7594
+            miscHelpersFulu ->
+                miscHelpersFulu
                     .computeCustodyColumnIndexes(nodeId, totalCustodySubnetCount)
                     .contains(columnIndex))
         .orElse(false);
@@ -144,28 +147,30 @@ public class DataColumnSidecarCustodyImpl
 
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecar(
-      DataColumnSlotAndIdentifier columnId) {
+      final DataColumnSlotAndIdentifier columnId) {
     return db.getSidecar(columnId);
   }
 
   @Override
-  public SafeFuture<Boolean> hasCustodyDataColumnSidecar(DataColumnSlotAndIdentifier columnId) {
+  public SafeFuture<Boolean> hasCustodyDataColumnSidecar(
+      final DataColumnSlotAndIdentifier columnId) {
     return db.getColumnIdentifiers(new SlotAndBlockRoot(columnId.slot(), columnId.blockRoot()))
         .thenApply(ids -> ids.contains(columnId));
   }
 
   @Override
-  public void onSlot(UInt64 slot) {
+  public void onSlot(final UInt64 slot) {
     currentSlot = slot;
   }
 
   @Override
-  public void onNewFinalizedCheckpoint(Checkpoint checkpoint, boolean fromOptimisticBlock) {
+  public void onNewFinalizedCheckpoint(
+      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
     advanceFirstIncompleteSlot(checkpoint.getEpoch()).ifExceptionGetsHereRaiseABug();
   }
 
-  private SafeFuture<Void> advanceFirstIncompleteSlot(UInt64 finalizedEpoch) {
-    UInt64 firstNonFinalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch.increment());
+  private SafeFuture<Void> advanceFirstIncompleteSlot(final UInt64 finalizedEpoch) {
+    final UInt64 firstNonFinalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch.increment());
     return retrievePotentiallyIncompleteSlotCustodies(firstNonFinalizedSlot)
         .takeUntil(SlotCustody::isIncomplete, true)
         .findLast()
@@ -196,6 +201,11 @@ public class DataColumnSidecarCustodyImpl
   }
 
   private SafeFuture<SlotCustody> retrieveSlotCustody(final UInt64 slot) {
+    if (!spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      return SafeFuture.completedFuture(
+          new SlotCustody(
+              slot, Optional.empty(), Collections.emptyList(), Collections.emptyList()));
+    }
     final SafeFuture<Optional<Bytes32>> maybeCanonicalBlockRoot = getBlockRootIfHaveBlobs(slot);
     final List<UInt64> requiredColumns = getCustodyColumnsForSlot(slot);
     final SafeFuture<List<DataColumnSlotAndIdentifier>> existingColumns =
@@ -210,7 +220,7 @@ public class DataColumnSidecarCustodyImpl
                     existingColumns.getImmediately()));
   }
 
-  private SafeFuture<Optional<Bytes32>> getBlockRootIfHaveBlobs(UInt64 slot) {
+  private SafeFuture<Optional<Bytes32>> getBlockRootIfHaveBlobs(final UInt64 slot) {
     return blockResolver
         .getBlockAtSlot(slot)
         .thenApply(
@@ -220,7 +230,7 @@ public class DataColumnSidecarCustodyImpl
                         block ->
                             block
                                     .getBeaconBlock()
-                                    .flatMap(b -> b.getBody().toVersionEip7594())
+                                    .flatMap(b -> b.getBody().toVersionDeneb())
                                     .map(b -> b.getBlobKzgCommitments().size())
                                     .orElse(0)
                                 > 0)

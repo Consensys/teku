@@ -37,9 +37,9 @@ import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResp
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class GetDataColumnSidecars extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/data_column_sidecars/{block_id}";
@@ -74,7 +74,7 @@ public class GetDataColumnSidecars extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final List<UInt64> indices = request.getQueryParameterList(DATA_COLUMN_INDICES_PARAMETER);
     final SafeFuture<Optional<List<DataColumnSidecar>>> future =
         chainDataProvider.getDataColumnSidecars(
@@ -91,7 +91,7 @@ public class GetDataColumnSidecars extends RestApiEndpoint {
   private static SerializableTypeDefinition<List<DataColumnSidecar>> getResponseType(
       final SchemaDefinitionCache schemaCache) {
     final DeserializableTypeDefinition<DataColumnSidecar> dataColumnSidecarType =
-        SchemaDefinitionsEip7594.required(schemaCache.getSchemaDefinition(SpecMilestone.EIP7594))
+        SchemaDefinitionsFulu.required(schemaCache.getSchemaDefinition(SpecMilestone.FULU))
             .getDataColumnSidecarSchema()
             .getJsonTypeDefinition();
     return SerializableTypeDefinition.<List<DataColumnSidecar>>object()

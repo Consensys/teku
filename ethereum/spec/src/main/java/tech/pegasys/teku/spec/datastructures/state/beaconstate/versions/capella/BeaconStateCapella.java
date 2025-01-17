@@ -37,7 +37,7 @@ public interface BeaconStateCapella extends BeaconStateBellatrix {
   }
 
   static void describeCustomCapellaFields(
-      MoreObjects.ToStringHelper stringBuilder, BeaconStateCapella state) {
+      final MoreObjects.ToStringHelper stringBuilder, final BeaconStateCapella state) {
     BeaconStateBellatrix.describeCustomBellatrixFields(stringBuilder, state);
     stringBuilder.add("next_withdrawal_index", state.getNextWithdrawalIndex());
     stringBuilder.add("next_withdrawal_validator_index", state.getNextWithdrawalValidatorIndex());
@@ -48,8 +48,8 @@ public interface BeaconStateCapella extends BeaconStateBellatrix {
   MutableBeaconStateCapella createWritableCopy();
 
   default <E1 extends Exception, E2 extends Exception, E3 extends Exception>
-      BeaconStateCapella updatedCapella(Mutator<MutableBeaconStateCapella, E1, E2, E3> mutator)
-          throws E1, E2, E3 {
+      BeaconStateCapella updatedCapella(
+          final Mutator<MutableBeaconStateCapella, E1, E2, E3> mutator) throws E1, E2, E3 {
     MutableBeaconStateCapella writableCopy = createWritableCopy();
     mutator.mutate(writableCopy);
     return writableCopy.commitChanges();

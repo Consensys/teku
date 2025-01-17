@@ -32,16 +32,19 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 public class SszListImpl<SszElementT extends SszData> extends AbstractSszCollection<SszElementT>
     implements SszList<SszElementT> {
 
-  protected SszListImpl(SszListSchema<SszElementT, ?> schema, Supplier<TreeNode> lazyBackingNode) {
+  protected SszListImpl(
+      final SszListSchema<SszElementT, ?> schema, final Supplier<TreeNode> lazyBackingNode) {
     super(schema, lazyBackingNode);
   }
 
-  public SszListImpl(SszListSchema<SszElementT, ?> schema, TreeNode backingNode) {
+  public SszListImpl(final SszListSchema<SszElementT, ?> schema, final TreeNode backingNode) {
     super(schema, backingNode);
   }
 
   public SszListImpl(
-      SszListSchema<SszElementT, ?> schema, TreeNode backingNode, IntCache<SszElementT> cache) {
+      final SszListSchema<SszElementT, ?> schema,
+      final TreeNode backingNode,
+      final IntCache<SszElementT> cache) {
     super(schema, backingNode, cache);
   }
 
@@ -66,7 +69,7 @@ public class SszListImpl<SszElementT extends SszData> extends AbstractSszCollect
   }
 
   @Override
-  protected void checkIndex(int index) {
+  protected void checkIndex(final int index) {
     if (index < 0 || index >= size()) {
       throw new IndexOutOfBoundsException(
           "Invalid index " + index + " for list with size " + size());

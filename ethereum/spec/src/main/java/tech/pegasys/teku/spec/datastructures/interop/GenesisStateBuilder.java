@@ -18,19 +18,24 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class GenesisStateBuilder {
+
   private Spec spec;
   private boolean signDeposits = true;
   private UInt64 genesisTime = UInt64.ZERO;
@@ -39,10 +44,19 @@ public class GenesisStateBuilder {
 
   public BeaconState build() {
     checkNotNull(spec, "Must provide a spec");
+
+    // If our Genesis is post-Bellatrix, we must have a non-default Execution Payload Header (but we
+    // should not override if one has been specified)
+    if (executionPayloadHeader.isEmpty()
+        && spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      executionPayloadHeader = Optional.of(mockExecutionPayloadHeader());
+    }
+
     final Bytes32 eth1BlockHash =
         executionPayloadHeader
             .map(ExecutionPayloadSummary::getBlockHash)
             .orElseGet(this::generateMockGenesisBlockHash);
+
     final BeaconState initialState =
         spec.initializeBeaconStateFromEth1(
             eth1BlockHash, genesisTime, genesisDeposits, executionPayloadHeader);
@@ -125,5 +139,32 @@ public class GenesisStateBuilder {
 
   private Bytes32 generateMockGenesisBlockHash() {
     return Bytes32.repeat((byte) 0x42);
+  }
+
+  private ExecutionPayloadHeader mockExecutionPayloadHeader() {
+    return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
+        .getExecutionPayloadHeaderSchema()
+        .createExecutionPayloadHeader(
+            b -> {
+              b.blockHash(generateMockGenesisBlockHash());
+              b.parentHash(Bytes32.ZERO);
+              b.feeRecipient(Bytes20.ZERO);
+              b.stateRoot(Bytes32.ZERO);
+              b.receiptsRoot(Bytes32.ZERO);
+              b.logsBloom(Bytes.repeat((byte) 0x00, 256));
+              b.prevRandao(Bytes32.ZERO);
+              b.blockNumber(UInt64.ZERO);
+              b.gasLimit(UInt64.ZERO);
+              b.gasUsed(UInt64.ZERO);
+              b.timestamp(UInt64.ZERO);
+              b.extraData(Bytes.repeat((byte) 0x00, 20));
+              b.baseFeePerGas(UInt256.ZERO);
+              b.transactionsRoot(Bytes32.ZERO);
+              // Capella
+              b.withdrawalsRoot(() -> Bytes32.ZERO);
+              // Deneb
+              b.blobGasUsed(() -> UInt64.ZERO);
+              b.excessBlobGas(() -> UInt64.ZERO);
+            });
   }
 }

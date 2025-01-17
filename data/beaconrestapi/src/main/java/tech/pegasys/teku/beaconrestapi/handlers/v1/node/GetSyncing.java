@@ -80,7 +80,7 @@ public class GetSyncing extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
     request.respondOk(new SyncStatusData(syncProvider, executionClientDataProvider));
   }
@@ -97,12 +97,11 @@ public class GetSyncing extends RestApiEndpoint {
         final ExecutionClientDataProvider executionClientDataProvider) {
       final SyncingStatus status = syncProvider.getSyncingStatus();
       final SyncState syncState = syncProvider.getCurrentSyncState();
-      this.isSyncing = !syncState.isInSync();
+      this.slotsBehind = calculateSlotsBehind(status, syncState);
+      this.isSyncing = !slotsBehind.isZero();
       this.elOffline = Optional.of(!executionClientDataProvider.isExecutionClientAvailable());
       this.isOptimistic = Optional.of(syncState.isOptimistic());
       this.currentSlot = status.getCurrentSlot();
-      // do this last, after isSyncing is calculated
-      this.slotsBehind = calculateSlotsBehind(status);
     }
 
     SyncStatusData(
@@ -138,8 +137,9 @@ public class GetSyncing extends RestApiEndpoint {
       return slotsBehind;
     }
 
-    private UInt64 calculateSlotsBehind(final SyncingStatus syncingStatus) {
-      if (isSyncing && syncingStatus.getHighestSlot().isPresent()) {
+    private UInt64 calculateSlotsBehind(
+        final SyncingStatus syncingStatus, final SyncState syncState) {
+      if (!syncState.isInSync() && syncingStatus.getHighestSlot().isPresent()) {
         final UInt64 highestSlot = syncingStatus.getHighestSlot().get();
         return highestSlot.minusMinZero(syncingStatus.getCurrentSlot());
       }

@@ -33,11 +33,11 @@ public abstract class AbstractMutableBeaconState<
   private final SlotCaches slotCaches;
   private final boolean builder;
 
-  protected AbstractMutableBeaconState(T backingImmutableView) {
+  protected AbstractMutableBeaconState(final T backingImmutableView) {
     this(backingImmutableView, false);
   }
 
-  protected AbstractMutableBeaconState(T backingImmutableView, boolean builder) {
+  protected AbstractMutableBeaconState(final T backingImmutableView, final boolean builder) {
     super(backingImmutableView);
     this.transitionCaches =
         builder ? TransitionCaches.getNoOp() : backingImmutableView.getTransitionCaches().copy();
@@ -51,7 +51,8 @@ public abstract class AbstractMutableBeaconState<
   }
 
   @Override
-  protected T createImmutableSszComposite(TreeNode backingNode, IntCache<SszData> viewCache) {
+  protected T createImmutableSszComposite(
+      final TreeNode backingNode, final IntCache<SszData> viewCache) {
     return createImmutableBeaconState(
         backingNode,
         viewCache,
@@ -92,7 +93,7 @@ public abstract class AbstractMutableBeaconState<
 
   @Override
   public <E1 extends Exception, E2 extends Exception, E3 extends Exception> BeaconState updated(
-      Mutator<MutableBeaconState, E1, E2, E3> mutator) {
+      final Mutator<MutableBeaconState, E1, E2, E3> mutator) {
     throw new UnsupportedOperationException();
   }
 
@@ -102,7 +103,7 @@ public abstract class AbstractMutableBeaconState<
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(final Object obj) {
     return BeaconStateInvariants.equals(this, obj);
   }
 

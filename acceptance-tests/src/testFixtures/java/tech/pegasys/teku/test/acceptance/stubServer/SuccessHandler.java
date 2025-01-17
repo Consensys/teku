@@ -30,7 +30,7 @@ public class SuccessHandler implements HttpHandler {
   }
 
   @Override
-  public void handle(HttpExchange exchange) throws IOException {
+  public void handle(final HttpExchange exchange) throws IOException {
     InputStream is = exchange.getRequestBody();
     this.responseBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
     String response = "ok";

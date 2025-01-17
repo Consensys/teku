@@ -13,16 +13,19 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getBlobSidecarSubnetTopicName;
+
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.util.Optional;
 import java.util.stream.IntStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
@@ -35,15 +38,18 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlobSidecarGossipManager implements GossipManager {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final GossipNetwork gossipNetwork;
   private final GossipEncoding gossipEncoding;
   private final Int2ObjectMap<Eth2TopicHandler<BlobSidecar>> subnetIdToTopicHandler;
+  private final GossipFailureLogger gossipFailureLogger;
 
   private final Int2ObjectMap<TopicChannel> subnetIdToChannel = new Int2ObjectOpenHashMap<>();
 
@@ -54,15 +60,19 @@ public class BlobSidecarGossipManager implements GossipManager {
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<BlobSidecar> processor) {
+      final OperationProcessor<BlobSidecar> processor,
+      final DebugDataDumper debugDataDumper) {
     final SpecVersion forkSpecVersion = spec.atEpoch(forkInfo.getFork().getEpoch());
     final BlobSidecarSchema gossipType =
         SchemaDefinitionsDeneb.required(forkSpecVersion.getSchemaDefinitions())
             .getBlobSidecarSchema();
     final Int2ObjectMap<Eth2TopicHandler<BlobSidecar>> subnetIdToTopicHandler =
         new Int2ObjectOpenHashMap<>();
-    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(forkSpecVersion.getConfig());
-    IntStream.range(0, specConfigDeneb.getBlobSidecarSubnetCount())
+    final int blobSidecarSubnetCount =
+        SpecConfigDeneb.required(spec.atEpoch(forkInfo.getFork().getEpoch()).getConfig())
+            .getBlobSidecarSubnetCount();
+
+    IntStream.range(0, blobSidecarSubnetCount)
         .forEach(
             subnetId -> {
               final Eth2TopicHandler<BlobSidecar> topicHandler =
@@ -74,28 +84,52 @@ public class BlobSidecarGossipManager implements GossipManager {
                       processor,
                       gossipEncoding,
                       forkInfo,
-                      gossipType);
+                      gossipType,
+                      debugDataDumper);
               subnetIdToTopicHandler.put(subnetId, topicHandler);
             });
     return new BlobSidecarGossipManager(
-        spec, gossipNetwork, gossipEncoding, subnetIdToTopicHandler);
+        spec,
+        gossipNetwork,
+        gossipEncoding,
+        subnetIdToTopicHandler,
+        GossipFailureLogger.createNonSuppressing("blob_sidecar"));
   }
 
   private BlobSidecarGossipManager(
       final Spec spec,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
-      final Int2ObjectMap<Eth2TopicHandler<BlobSidecar>> subnetIdToTopicHandler) {
+      final Int2ObjectMap<Eth2TopicHandler<BlobSidecar>> subnetIdToTopicHandler,
+      final GossipFailureLogger gossipFailureLogger) {
     this.spec = spec;
     this.gossipNetwork = gossipNetwork;
     this.gossipEncoding = gossipEncoding;
     this.subnetIdToTopicHandler = subnetIdToTopicHandler;
+    this.gossipFailureLogger = gossipFailureLogger;
   }
 
-  public void publishBlobSidecar(final BlobSidecar message) {
+  /**
+   * This method is designed to return a future that only completes successfully whenever the gossip
+   * was succeeded (sent to at least one peer) or failed.
+   */
+  public SafeFuture<Void> publishBlobSidecar(final BlobSidecar message) {
     final int subnetId = spec.computeSubnetForBlobSidecar(message).intValue();
-    Optional.ofNullable(subnetIdToChannel.get(subnetId))
-        .ifPresent(channel -> channel.gossip(gossipEncoding.encode(message)));
+    return Optional.ofNullable(subnetIdToChannel.get(subnetId))
+        .map(channel -> channel.gossip(gossipEncoding.encode(message)))
+        .orElse(SafeFuture.failedFuture(new IllegalStateException("Gossip channel not available")))
+        .handle(
+            (__, err) -> {
+              if (err != null) {
+                gossipFailureLogger.log(err, Optional.of(message.getSlot()));
+              } else {
+                LOG.trace(
+                    "Successfully gossiped blob sidecar {} on {}",
+                    () -> message.getSlotAndBlockRoot().toLogString(),
+                    () -> subnetIdToTopicHandler.get(subnetId).getTopic());
+              }
+              return null;
+            });
   }
 
   @VisibleForTesting
@@ -135,20 +169,22 @@ public class BlobSidecarGossipManager implements GossipManager {
       final OperationProcessor<BlobSidecar> processor,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final BlobSidecarSchema gossipType) {
+      final BlobSidecarSchema gossipType,
+      final DebugDataDumper debugDataDumper) {
     return new Eth2TopicHandler<>(
         recentChainData,
         asyncRunner,
         new TopicSubnetIdAwareOperationProcessor(spec, subnetId, processor),
         gossipEncoding,
         forkInfo.getForkDigest(spec),
-        GossipTopicName.getBlobSidecarSubnetTopicName(subnetId),
+        getBlobSidecarSubnetTopicName(subnetId),
         new OperationMilestoneValidator<>(
             spec,
             forkInfo.getFork(),
             blobSidecar -> spec.computeEpochAtSlot(blobSidecar.getSlot())),
         gossipType,
-        spec.getNetworkingConfig());
+        spec.getNetworkingConfig(),
+        debugDataDumper);
   }
 
   private record TopicSubnetIdAwareOperationProcessor(

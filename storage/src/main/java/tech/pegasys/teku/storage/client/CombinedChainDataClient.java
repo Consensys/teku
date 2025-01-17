@@ -31,7 +31,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
@@ -536,7 +536,8 @@ public class CombinedChainDataClient {
     return !recentChainData.isPreGenesis() && !recentChainData.isPreForkChoice();
   }
 
-  public List<CommitteeAssignment> getCommitteesFromState(BeaconState state, UInt64 epoch) {
+  public List<CommitteeAssignment> getCommitteesFromState(
+      final BeaconState state, final UInt64 epoch) {
     List<CommitteeAssignment> result = new ArrayList<>();
     final int slotsPerEpoch = spec.slotsPerEpoch(epoch);
     final UInt64 startingSlot = spec.computeStartSlotAtEpoch(epoch);
@@ -667,7 +668,7 @@ public class CombinedChainDataClient {
   }
 
   public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
-      final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
+      final UInt64 startSlot, final UInt64 endSlot, final long limit) {
     return historicalChainData.getBlobSidecarKeys(startSlot, endSlot, limit);
   }
 

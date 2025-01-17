@@ -66,7 +66,8 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   }
 
   @Override
-  public void subscribeToForkChoiceUpdatedResult(ForkChoiceUpdatedResultSubscriber subscriber) {
+  public void subscribeToForkChoiceUpdatedResult(
+      final ForkChoiceUpdatedResultSubscriber subscriber) {
     forkChoiceUpdatedSubscribers.subscribe(subscriber);
   }
 
@@ -96,16 +97,16 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   }
 
   @Override
-  public void onTerminalBlockReached(Bytes32 executionBlockHash) {
+  public void onTerminalBlockReached(final Bytes32 executionBlockHash) {
     eventThread.execute(() -> internalTerminalBlockReached(executionBlockHash));
   }
 
   @Override
-  public boolean validatorIsConnected(UInt64 validatorIndex, UInt64 currentSlot) {
+  public boolean validatorIsConnected(final UInt64 validatorIndex, final UInt64 currentSlot) {
     return proposersDataManager.validatorIsConnected(validatorIndex, currentSlot);
   }
 
-  private void internalTerminalBlockReached(Bytes32 executionBlockHash) {
+  private void internalTerminalBlockReached(final Bytes32 executionBlockHash) {
     eventThread.checkOnEventThread();
     LOG.debug("internalTerminalBlockReached executionBlockHash {}", executionBlockHash);
     forkChoiceUpdateData = forkChoiceUpdateData.withTerminalBlockHash(executionBlockHash);

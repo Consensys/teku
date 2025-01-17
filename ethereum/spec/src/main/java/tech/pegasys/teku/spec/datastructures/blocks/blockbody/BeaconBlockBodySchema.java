@@ -22,9 +22,13 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7594.BeaconBlockBodySchemaEip7594;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodySchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -66,7 +70,23 @@ public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszCon
     return Optional.empty();
   }
 
-  default Optional<BeaconBlockBodySchemaEip7594<?>> toVersionEip7594() {
+  default Optional<BeaconBlockBodySchemaElectra<?>> toVersionElectra() {
+    return Optional.empty();
+  }
+
+  default Optional<BlindedBeaconBlockBodySchemaBellatrix<?>> toBlindedVersionBellatrix() {
+    return Optional.empty();
+  }
+
+  default Optional<BlindedBeaconBlockBodySchemaCapella<?>> toBlindedVersionCapella() {
+    return Optional.empty();
+  }
+
+  default Optional<BlindedBeaconBlockBodySchemaDeneb<?>> toBlindedVersionDeneb() {
+    return Optional.empty();
+  }
+
+  default Optional<BlindedBeaconBlockBodySchemaElectra<?>> toBlindedVersionElectra() {
     return Optional.empty();
   }
 

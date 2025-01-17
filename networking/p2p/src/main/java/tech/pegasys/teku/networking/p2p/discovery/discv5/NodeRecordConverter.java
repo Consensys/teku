@@ -42,10 +42,18 @@ public class NodeRecordConverter {
   }
 
   public Optional<DiscoveryPeer> convertToDiscoveryPeer(
-      final NodeRecord nodeRecord, final SchemaDefinitions schemaDefinitions) {
-    return nodeRecord
-        .getTcpAddress()
-        .map(address -> socketAddressToDiscoveryPeer(schemaDefinitions, nodeRecord, address));
+      final NodeRecord nodeRecord,
+      final boolean supportsIpv6,
+      final SchemaDefinitions schemaDefinitions) {
+    final Optional<InetSocketAddress> tcpAddress;
+    if (supportsIpv6) {
+      // prefer IPv6 address
+      tcpAddress = nodeRecord.getTcp6Address().or(nodeRecord::getTcpAddress);
+    } else {
+      tcpAddress = nodeRecord.getTcpAddress();
+    }
+    return tcpAddress.map(
+        address -> socketAddressToDiscoveryPeer(schemaDefinitions, nodeRecord, address));
   }
 
   private static DiscoveryPeer socketAddressToDiscoveryPeer(

@@ -15,18 +15,16 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@ExtendWith(BouncyCastleExtension.class)
 public abstract class AbstractBeaconStateTest<
     T extends BeaconState, TMutable extends MutableBeaconState> {
 
@@ -35,10 +33,12 @@ public abstract class AbstractBeaconStateTest<
   protected abstract Spec createSpec();
 
   private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
-  private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConfig);
+  private final BeaconStateSchema<T, TMutable> schema =
+      getSchema(genesisConfig, spec.getGenesisSchemaDefinitions().getSchemaRegistry());
   protected DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  protected abstract BeaconStateSchema<T, TMutable> getSchema(final SpecConfig specConfig);
+  protected abstract BeaconStateSchema<T, TMutable> getSchema(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry);
 
   protected abstract T randomState();
 

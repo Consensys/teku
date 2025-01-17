@@ -17,7 +17,6 @@ import java.util.Optional;
 import tech.pegasys.teku.api.schema.bellatrix.ExecutionPayloadHeaderBellatrix;
 import tech.pegasys.teku.api.schema.capella.ExecutionPayloadHeaderCapella;
 import tech.pegasys.teku.api.schema.deneb.ExecutionPayloadHeaderDeneb;
-import tech.pegasys.teku.api.schema.eip7594.ExecutionPayloadHeaderEip7594;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
 public interface ExecutionPayloadHeader {
@@ -33,10 +32,6 @@ public interface ExecutionPayloadHeader {
   }
 
   default Optional<ExecutionPayloadHeaderDeneb> toVersionDeneb() {
-    return Optional.empty();
-  }
-
-  default Optional<ExecutionPayloadHeaderEip7594> toVersionEip7594() {
     return Optional.empty();
   }
 }

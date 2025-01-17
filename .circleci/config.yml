@@ -68,6 +68,16 @@ executors:
       architecture: "amd64"
       platform: "linux/amd64"
 
+  machine_large_executor_amd64:
+    machine:
+      image: ubuntu-2204:2024.01.1 # https://circleci.com/developer/machine/image/ubuntu-2204
+      docker_layer_caching: true
+    resource_class: large
+    working_directory: ~/project
+    environment:
+      architecture: "amd64"
+      platform: "linux/amd64"
+
   machine_executor_arm64:
     machine:
       image: ubuntu-2204:2024.01.1 # https://circleci.com/developer/machine/image/ubuntu-2204
@@ -237,13 +247,23 @@ jobs:
           path: build/test-results
 
   spotless:
-    executor: small_executor
+    executor: medium_executor
     steps:
       - prepare
       - run:
           name: Spotless
           command: |
-            ./gradlew --no-daemon --parallel checkMavenCoordinateCollisions spotlessCheck checkModuleDependencies
+            ./gradlew --no-daemon --parallel spotlessCheck
+      - notify
+
+  moduleChecks:
+    executor: small_executor
+    steps:
+      - prepare
+      - run:
+          name: Module Checks
+          command: |
+            ./gradlew --no-daemon --parallel checkMavenCoordinateCollisions checkModuleDependencies
       - notify
 
   dockerScan:
@@ -343,8 +363,8 @@ jobs:
           path: build/test-results
 
   acceptanceTests:
-    parallelism: 5
-    executor: machine_executor_amd64
+    parallelism: 4
+    executor: machine_large_executor_amd64
     steps:
       - install_java_21
       - prepare
@@ -562,12 +582,17 @@ workflows:
           filters:
             tags: &filters-release-tags
               only: /^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?/
+      - moduleChecks:
+          filters:
+            tags:
+              <<: *filters-release-tags
       - spotless:
           filters:
             tags:
               <<: *filters-release-tags
       - windowsBuild:
           requires:
+            - moduleChecks
             - spotless
           filters:
             tags:
@@ -630,6 +655,7 @@ workflows:
             - acceptanceTests
             - referenceTests
             - extractAPISpec
+            - moduleChecks
             - spotless
             - windowsBuild
           context:
@@ -649,6 +675,7 @@ workflows:
             - acceptanceTests
             - referenceTests
             - extractAPISpec
+            - moduleChecks
             - spotless
             - windowsBuild
           context:
@@ -668,6 +695,7 @@ workflows:
             - acceptanceTests
             - referenceTests
             - extractAPISpec
+            - moduleChecks
             - spotless
             - windowsBuild
           context:
@@ -700,6 +728,7 @@ workflows:
             - acceptanceTests
             - referenceTests
             - extractAPISpec
+            - moduleChecks
             - spotless
             - windowsBuild
   nightly:

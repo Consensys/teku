@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,6 +42,8 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 /**
  * Maintains a pool of attestations. Attestations can be retrieved either for inclusion in a block
@@ -80,13 +83,19 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   private final NavigableMap<UInt64, Set<Bytes>> dataHashBySlot = new TreeMap<>();
 
   private final Spec spec;
-  private final AtomicInteger size = new AtomicInteger(0);
+  private final RecentChainData recentChainData;
   private final SettableGauge sizeGauge;
   private final int maximumAttestationCount;
 
+  private final AtomicInteger size = new AtomicInteger(0);
+
   public AggregatingAttestationPool(
-      final Spec spec, final MetricsSystem metricsSystem, final int maximumAttestationCount) {
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final MetricsSystem metricsSystem,
+      final int maximumAttestationCount) {
     this.spec = spec;
+    this.recentChainData = recentChainData;
     this.sizeGauge =
         SettableGauge.create(
             metricsSystem,
@@ -97,12 +106,17 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   public synchronized void add(final ValidatableAttestation attestation) {
-    final AttestationData attestationData = attestation.getAttestation().getData();
-    final boolean add = getOrCreateAttestationGroup(attestationData).add(attestation);
-    if (add) {
-      updateSize(1);
-    }
-    // Always keep the latest slot attestations so we don't discard everything
+    final Optional<Int2IntMap> committeesSize =
+        attestation.getCommitteesSize().or(() -> getCommitteesSize(attestation.getAttestation()));
+    getOrCreateAttestationGroup(attestation.getAttestation(), committeesSize)
+        .ifPresent(
+            attestationGroup -> {
+              final boolean added = attestationGroup.add(attestation);
+              if (added) {
+                updateSize(1);
+              }
+            });
+    // Always keep the latest slot attestations, so we don't discard everything
     int currentSize = getSize();
     while (dataHashBySlot.size() > 1 && currentSize > maximumAttestationCount) {
       LOG.trace("Attestation cache at {} exceeds {}, ", currentSize, maximumAttestationCount);
@@ -112,14 +126,48 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     }
   }
 
-  private MatchingDataAttestationGroup getOrCreateAttestationGroup(
-      final AttestationData attestationData) {
+  private Optional<Int2IntMap> getCommitteesSize(final Attestation attestation) {
+    if (attestation.requiresCommitteeBits()) {
+      return getCommitteesSizeUsingTheState(attestation.getData());
+    }
+    return Optional.empty();
+  }
+
+  /**
+   * @param committeesSize Required for aggregating attestations as per <a
+   *     href="https://eips.ethereum.org/EIPS/eip-7549">EIP-7549</a>
+   */
+  private Optional<MatchingDataAttestationGroup> getOrCreateAttestationGroup(
+      final Attestation attestation, final Optional<Int2IntMap> committeesSize) {
+    final AttestationData attestationData = attestation.getData();
+    // if an attestation has committee bits, committees size should have been computed. If this is
+    // not the case, we should ignore this attestation and not add it to the pool
+    if (attestation.requiresCommitteeBits() && committeesSize.isEmpty()) {
+      LOG.warn(
+          "Committees size couldn't be retrieved for attestation at slot {}, block root {} and target root {}. Will NOT add this attestation to the pool.",
+          attestationData.getSlot(),
+          attestationData.getBeaconBlockRoot(),
+          attestationData.getTarget().getRoot());
+      return Optional.empty();
+    }
     dataHashBySlot
         .computeIfAbsent(attestationData.getSlot(), slot -> new HashSet<>())
         .add(attestationData.hashTreeRoot());
-    return attestationGroupByDataHash.computeIfAbsent(
-        attestationData.hashTreeRoot(),
-        key -> new MatchingDataAttestationGroup(spec, attestationData));
+    final MatchingDataAttestationGroup attestationGroup =
+        attestationGroupByDataHash.computeIfAbsent(
+            attestationData.hashTreeRoot(),
+            key -> new MatchingDataAttestationGroup(spec, attestationData, committeesSize));
+    return Optional.of(attestationGroup);
+  }
+
+  // We only have the committees size already available via attestations received in the gossip
+  // flow and have been successfully validated, so querying the state is required for other cases
+  private Optional<Int2IntMap> getCommitteesSizeUsingTheState(
+      final AttestationData attestationData) {
+    return recentChainData
+        .getStore()
+        .getBlockStateIfAvailable(attestationData.getTarget().getRoot())
+        .map(state -> spec.getBeaconCommitteesSize(state, attestationData.getSlot()));
   }
 
   @Override
@@ -157,10 +205,13 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   private void onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
-    final AttestationData attestationData = attestation.getData();
-    final MatchingDataAttestationGroup attestations = getOrCreateAttestationGroup(attestationData);
-    final int numRemoved = attestations.onAttestationIncludedInBlock(slot, attestation);
-    updateSize(-numRemoved);
+    getOrCreateAttestationGroup(attestation, getCommitteesSize(attestation))
+        .ifPresent(
+            attestationGroup -> {
+              final int numRemoved =
+                  attestationGroup.onAttestationIncludedInBlock(slot, attestation);
+              updateSize(-numRemoved);
+            });
   }
 
   private void updateSize(final int delta) {
@@ -177,11 +228,14 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     final UInt64 currentEpoch = spec.getCurrentEpoch(stateAtBlockSlot);
     final int previousEpochLimit = spec.getPreviousEpochAttestationCapacity(stateAtBlockSlot);
 
+    final SchemaDefinitions schemaDefinitions =
+        spec.atSlot(stateAtBlockSlot.getSlot()).getSchemaDefinitions();
+
     final SszListSchema<Attestation, ?> attestationsSchema =
-        spec.atSlot(stateAtBlockSlot.getSlot())
-            .getSchemaDefinitions()
-            .getBeaconBlockBodySchema()
-            .getAttestationsSchema();
+        schemaDefinitions.getBeaconBlockBodySchema().getAttestationsSchema();
+
+    final boolean blockRequiresAttestationsWithCommitteeBits =
+        schemaDefinitions.getAttestationSchema().requiresCommitteeBits();
 
     final AtomicInteger prevEpochCount = new AtomicInteger(0);
     return dataHashBySlot
@@ -196,11 +250,15 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
         .filter(forkChecker::areAttestationsFromCorrectFork)
         .flatMap(MatchingDataAttestationGroup::stream)
-        .limit(attestationsSchema.getMaxLength())
         .map(ValidatableAttestation::getAttestation)
         .filter(
-            att -> {
-              if (spec.computeEpochAtSlot(att.getData().getSlot()).isLessThan(currentEpoch)) {
+            attestation ->
+                attestation.requiresCommitteeBits() == blockRequiresAttestationsWithCommitteeBits)
+        .limit(attestationsSchema.getMaxLength())
+        .filter(
+            attestation -> {
+              if (spec.computeEpochAtSlot(attestation.getData().getSlot())
+                  .isLessThan(currentEpoch)) {
                 final int currentCount = prevEpochCount.getAndIncrement();
                 return currentCount < previousEpochLimit;
               }
@@ -211,14 +269,15 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   public synchronized List<Attestation> getAttestations(
       final Optional<UInt64> maybeSlot, final Optional<UInt64> maybeCommitteeIndex) {
+
     final Predicate<Map.Entry<UInt64, Set<Bytes>>> filterForSlot =
         (entry) -> maybeSlot.map(slot -> entry.getKey().equals(slot)).orElse(true);
 
-    final Predicate<MatchingDataAttestationGroup> filterForCommitteeIndex =
-        (group) ->
-            maybeCommitteeIndex
-                .map(index -> group.getAttestationData().getIndex().equals(index))
-                .orElse(true);
+    final UInt64 slot = maybeSlot.orElse(recentChainData.getCurrentSlot().orElse(UInt64.ZERO));
+    final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
+
+    final boolean requiresCommitteeBits =
+        schemaDefinitions.getAttestationSchema().requiresCommitteeBits();
 
     return dataHashBySlot.descendingMap().entrySet().stream()
         .filter(filterForSlot)
@@ -226,8 +285,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .flatMap(Collection::stream)
         .map(attestationGroupByDataHash::get)
         .filter(Objects::nonNull)
-        .filter(filterForCommitteeIndex)
-        .flatMap(MatchingDataAttestationGroup::stream)
+        .flatMap(
+            matchingDataAttestationGroup ->
+                matchingDataAttestationGroup.stream(maybeCommitteeIndex, requiresCommitteeBits))
         .map(ValidatableAttestation::getAttestation)
         .toList();
   }
@@ -238,9 +298,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   public synchronized Optional<ValidatableAttestation> createAggregateFor(
-      final Bytes32 attestationHashTreeRoot) {
+      final Bytes32 attestationHashTreeRoot, final Optional<UInt64> committeeIndex) {
     return Optional.ofNullable(attestationGroupByDataHash.get(attestationHashTreeRoot))
-        .flatMap(attestations -> attestations.stream().findFirst());
+        .flatMap(attestations -> attestations.stream(committeeIndex).findFirst());
   }
 
   public synchronized void onReorg(final UInt64 commonAncestorSlot) {

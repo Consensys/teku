@@ -51,19 +51,6 @@ public class StubMetricsSystem implements MetricsSystem {
   }
 
   @Override
-  public LabelledMetric<OperationTimer> createSimpleLabelledTimer(
-      final MetricCategory category,
-      final String name,
-      final String help,
-      final String... labelNames) {
-    validateMetricName(name);
-    validateLabelName(labelNames);
-    return labelledOperationTimers
-        .computeIfAbsent(category, __ -> new ConcurrentHashMap<>())
-        .computeIfAbsent(name, __ -> new StubLabelledOperationTimer(category, name, help));
-  }
-
-  @Override
   public LabelledGauge createLabelledGauge(
       final MetricCategory category,
       final String name,
@@ -105,6 +92,15 @@ public class StubMetricsSystem implements MetricsSystem {
         .computeIfAbsent(name, __ -> new StubLabelledOperationTimer(category, name, help));
   }
 
+  @Override
+  public LabelledMetric<OperationTimer> createSimpleLabelledTimer(
+      final MetricCategory category,
+      final String name,
+      final String help,
+      final String... labelNames) {
+    return createLabelledTimer(category, name, help, labelNames);
+  }
+
   public StubGauge getGauge(final MetricCategory category, final String name) {
     validateMetricName(name);
     return Optional.ofNullable(gauges.get(category))
@@ -137,7 +133,7 @@ public class StubMetricsSystem implements MetricsSystem {
             () -> new IllegalArgumentException("Unknown labelled timer: " + category + " " + name));
   }
 
-  private void validateMetricName(String metricName) {
+  private void validateMetricName(final String metricName) {
     if (!METRIC_NAME_PATTERN.matcher(metricName).matches()) {
       throw new IllegalArgumentException(
           String.format(
@@ -146,7 +142,7 @@ public class StubMetricsSystem implements MetricsSystem {
     }
   }
 
-  private void validateLabelName(String... labelNames) {
+  private void validateLabelName(final String... labelNames) {
     for (String labelName : labelNames) {
       if (!LABEL_NAME_PATTERN.matcher(labelName).matches()) {
         throw new IllegalArgumentException(

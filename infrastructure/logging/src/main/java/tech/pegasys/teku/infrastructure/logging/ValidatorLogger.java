@@ -170,7 +170,7 @@ public class ValidatorLogger {
     return blockRoots.stream().map(LogFormatter::formatHashRoot).collect(Collectors.joining(", "));
   }
 
-  public void aggregationSkipped(final UInt64 slot, final int committeeIndex) {
+  public void aggregationSkipped(final UInt64 slot, final UInt64 committeeIndex) {
     log.warn(
         ColorConsolePrinter.print(
             PREFIX

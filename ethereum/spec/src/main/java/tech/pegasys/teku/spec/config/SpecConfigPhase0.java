@@ -19,6 +19,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.constants.WithdrawalPrefixes;
 import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
@@ -120,6 +121,8 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int reorgHeadWeightThreshold;
   private final int reorgParentWeightThreshold;
 
+  private final UInt64 maxPerEpochActivationExitChurnLimit;
+
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
       final UInt64 eth1FollowDistance,
@@ -188,7 +191,8 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int attestationSubnetPrefixBits,
       final int reorgMaxEpochsSinceFinalization,
       final int reorgHeadWeightThreshold,
-      final int reorgParentWeightThreshold) {
+      final int reorgParentWeightThreshold,
+      final UInt64 maxPerEpochActivationExitChurnLimit) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -258,6 +262,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.reorgMaxEpochsSinceFinalization = reorgMaxEpochsSinceFinalization;
     this.reorgHeadWeightThreshold = reorgHeadWeightThreshold;
     this.reorgParentWeightThreshold = reorgParentWeightThreshold;
+    this.maxPerEpochActivationExitChurnLimit = maxPerEpochActivationExitChurnLimit;
   }
 
   @Override
@@ -303,6 +308,11 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public int getMinPerEpochChurnLimit() {
     return minPerEpochChurnLimit;
+  }
+
+  @Override
+  public UInt64 getMaxPerEpochActivationExitChurnLimit() {
+    return maxPerEpochActivationExitChurnLimit;
   }
 
   @Override
@@ -623,6 +633,11 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public int getAttestationSubnetPrefixBits() {
     return attestationSubnetPrefixBits;
+  }
+
+  @Override
+  public SpecMilestone getMilestone() {
+    return SpecMilestone.PHASE0;
   }
 
   @Override

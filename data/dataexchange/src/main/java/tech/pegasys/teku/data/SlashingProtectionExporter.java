@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.data;
 
+import static tech.pegasys.teku.data.SlashingProtectionRepairer.parsePublicKey;
 import static tech.pegasys.teku.data.slashinginterchange.Metadata.INTERCHANGE_VERSION;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,7 +31,6 @@ import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.PublicKeyException;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
@@ -38,12 +38,11 @@ import tech.pegasys.teku.data.slashinginterchange.SigningHistory;
 import tech.pegasys.teku.data.slashinginterchange.SlashingProtectionInterchangeFormat;
 import tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
-import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 
 public class SlashingProtectionExporter {
-  private final JsonProvider jsonProvider = new JsonProvider();
   private final List<SigningHistory> signingHistoryList = new ArrayList<>();
-  private Bytes32 genesisValidatorsRoot = null;
+  private Optional<Bytes32> genesisValidatorsRoot = Optional.empty();
   private final SyncDataAccessor syncDataAccessor;
   protected final Path slashProtectionPath;
 
@@ -54,7 +53,7 @@ public class SlashingProtectionExporter {
 
   // returns a map of errors and the associated keys.
   public Map<BLSPublicKey, String> initialise(final Consumer<String> infoLogger) {
-    File slashingProtectionRecords = slashProtectionPath.toFile();
+    final File slashingProtectionRecords = slashProtectionPath.toFile();
     final Map<BLSPublicKey, String> importErrors = new HashMap<>();
     for (File currentFile : slashingProtectionRecords.listFiles()) {
       final Optional<String> maybeError = readSlashProtectionFile(currentFile, infoLogger);
@@ -72,30 +71,31 @@ public class SlashingProtectionExporter {
   // returns an error if there was one
   Optional<String> readSlashProtectionFile(final File file, final Consumer<String> infoLogger) {
     try {
-      Optional<ValidatorSigningRecord> maybeRecord =
+      final Optional<ValidatorSigningRecord> maybeRecord =
           syncDataAccessor.read(file.toPath()).map(ValidatorSigningRecord::fromBytes);
       if (maybeRecord.isEmpty()) {
         return Optional.of("Failed to read from file " + file.getName());
       }
-      ValidatorSigningRecord validatorSigningRecord = maybeRecord.get();
+      final ValidatorSigningRecord validatorSigningRecord = maybeRecord.get();
 
-      if (validatorSigningRecord.getGenesisValidatorsRoot() != null) {
-        if (genesisValidatorsRoot == null) {
-          this.genesisValidatorsRoot = validatorSigningRecord.getGenesisValidatorsRoot();
-        } else if (!genesisValidatorsRoot.equals(
-            validatorSigningRecord.getGenesisValidatorsRoot())) {
+      if (validatorSigningRecord.genesisValidatorsRoot().isPresent()) {
+        if (genesisValidatorsRoot.isEmpty()) {
+          this.genesisValidatorsRoot = validatorSigningRecord.genesisValidatorsRoot();
+        } else if (!genesisValidatorsRoot
+            .get()
+            .equals(validatorSigningRecord.genesisValidatorsRoot().get())) {
           return Optional.of(
               "The genesisValidatorsRoot of "
                   + file.getName()
                   + " does not match the expected "
-                  + genesisValidatorsRoot.toHexString());
+                  + genesisValidatorsRoot.get().toHexString());
         }
       }
 
       final String pubkey = file.getName().substring(0, file.getName().length() - ".yml".length());
       infoLogger.accept("Exporting " + pubkey);
       signingHistoryList.add(
-          new SigningHistory(BLSPubKey.fromHexString(pubkey), validatorSigningRecord));
+          SigningHistory.createSigningHistory(parsePublicKey(pubkey), validatorSigningRecord));
       return Optional.empty();
     } catch (UncheckedIOException | IOException e) {
       return Optional.of("Failed to read from file " + file);
@@ -119,14 +119,19 @@ public class SlashingProtectionExporter {
   }
 
   String getPrettyJson() throws JsonProcessingException {
-    return jsonProvider.objectToPrettyJSON(
+    final SlashingProtectionInterchangeFormat data =
         new SlashingProtectionInterchangeFormat(
-            new Metadata(INTERCHANGE_VERSION, genesisValidatorsRoot), signingHistoryList));
+            new Metadata(Optional.empty(), INTERCHANGE_VERSION, genesisValidatorsRoot),
+            signingHistoryList);
+    return JsonUtil.prettySerialize(
+        data, SlashingProtectionInterchangeFormat.getJsonTypeDefinition());
   }
 
   String getJson() throws JsonProcessingException {
-    return jsonProvider.objectToJSON(
+    final SlashingProtectionInterchangeFormat data =
         new SlashingProtectionInterchangeFormat(
-            new Metadata(INTERCHANGE_VERSION, genesisValidatorsRoot), signingHistoryList));
+            new Metadata(Optional.empty(), INTERCHANGE_VERSION, genesisValidatorsRoot),
+            signingHistoryList);
+    return JsonUtil.serialize(data, SlashingProtectionInterchangeFormat.getJsonTypeDefinition());
   }
 }

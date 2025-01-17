@@ -18,7 +18,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -32,7 +31,7 @@ public class ObservableValueTest {
       int val;
 
       @Override
-      public void onValueChanged(Integer newValue) {
+      public void onValueChanged(final Integer newValue) {
         if (newValue <= val) {
           Assertions.fail("newValue <= val: " + newValue + " <= " + val);
         }
@@ -61,7 +60,7 @@ public class ObservableValueTest {
             .map(Thread::new)
             .peek(Thread::start)
             .limit(threadCnt)
-            .collect(Collectors.toList());
+            .toList();
 
     startLatch.await(5, TimeUnit.SECONDS);
     observableValue.set(777);

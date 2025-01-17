@@ -33,17 +33,18 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @SuppressWarnings("JavaCase")
 public class DataColumnSidecarsByRootListenerValidatingProxyTest {
-  private final Spec spec = TestSpecFactory.createMainnetEip7594();
+  private final Spec spec = TestSpecFactory.createMainnetFulu();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private DataColumnSidecarsByRootListenerValidatingProxy listenerWrapper;
   private final Eth2Peer peer = mock(Eth2Peer.class);
@@ -154,14 +155,16 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
 
   @Test
   void dataColumnSidecarFailsInclusionProofVerification() {
-    final SchemaDefinitionsEip7594 schemaDefinitionsEip7594 =
-        SchemaDefinitionsEip7594.required(spec.getGenesisSchemaDefinitions());
+    final SchemaDefinitionsElectra schemaDefinitionsElectra =
+        SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions());
     final DataColumnSidecar dataColumnSidecar =
-        schemaDefinitionsEip7594
+        SchemaDefinitionsFulu.required(schemaDefinitionsElectra)
             .getDataColumnSidecarSchema()
             .create(
                 UInt64.ZERO,
-                schemaDefinitionsEip7594.getDataColumnSchema().create(List.of()),
+                SchemaDefinitionsFulu.required(schemaDefinitionsElectra)
+                    .getDataColumnSchema()
+                    .create(List.of()),
                 List.of(),
                 List.of(),
                 new SignedBeaconBlockHeader(

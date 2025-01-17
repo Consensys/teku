@@ -117,7 +117,7 @@ public class HistoricalBatchFetcherTest {
             .map(SignedBlockAndState::getBlock)
             .collect(Collectors.toList());
     lastBlockInBatch = chainBuilder.getLatestBlockAndState().getBlock();
-    firstBlockInBatch = blockBatch.get(0);
+    firstBlockInBatch = blockBatch.getFirst();
     blobSidecarsBatch =
         chainBuilder
             .streamBlobSidecars(10, 20)
@@ -202,7 +202,7 @@ public class HistoricalBatchFetcherTest {
             earliestBlobSidecarSlotCaptor.capture());
     assertThat(blockCaptor.getValue()).containsExactlyElementsOf(blockBatch);
     assertThat(blobSidecarCaptor.getValue()).isEqualTo(blobSidecarsBatch);
-    assertThat(earliestBlobSidecarSlotCaptor.getValue()).contains(blockBatch.get(0).getSlot());
+    assertThat(earliestBlobSidecarSlotCaptor.getValue()).contains(blockBatch.getFirst().getSlot());
   }
 
   @Test

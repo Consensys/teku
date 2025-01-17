@@ -18,7 +18,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 
-public class OperationMilestoneValidator<T> {
+public class OperationMilestoneValidator<T> implements OperationValidator<T> {
 
   private final Spec spec;
   private final Fork expectedFork;
@@ -31,7 +31,8 @@ public class OperationMilestoneValidator<T> {
     this.getEpochForMessage = getEpochForMessage;
   }
 
-  public boolean isValid(T message) {
+  @Override
+  public boolean isValid(final T message) {
     final UInt64 messageEpoch = getEpochForMessage.apply(message);
     final Fork actualFork = spec.getForkSchedule().getFork(messageEpoch);
     return expectedFork.equals(actualFork);

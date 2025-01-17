@@ -29,7 +29,7 @@ public class SignedBeaconBlockHeaderSchema
   }
 
   @Override
-  public SignedBeaconBlockHeader createFromBackingNode(TreeNode node) {
+  public SignedBeaconBlockHeader createFromBackingNode(final TreeNode node) {
     return new SignedBeaconBlockHeader(this, node);
   }
 }

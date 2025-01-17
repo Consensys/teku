@@ -46,7 +46,7 @@ public class BeaconStateSchemaPhase0Test
   public void changeSpecConfigTest_checkPhase0Fields() {
     final Spec standardSpec = TestSpecFactory.createMinimalPhase0();
     final SpecConfig modifiedConfig =
-        SpecConfigLoader.loadConfig("minimal", b -> b.maxAttestations(123));
+        SpecConfigLoader.loadConfig("minimal", b -> b.maxAttestations(123)).specConfig();
 
     BeaconStatePhase0 s1 = getSchema(modifiedConfig).createEmpty();
     BeaconStatePhase0 s2 = getSchema(standardSpec.getGenesisSpecConfig()).createEmpty();

@@ -17,7 +17,7 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
@@ -46,13 +46,13 @@ class CreateAttestationDataRequestTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void createAttestationData_MakesExpectedRequest() throws Exception {
+  public void makesExpectedRequest() throws Exception {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    request.createAttestationData(slot, committeeIndex);
+    request.submit(slot, committeeIndex);
 
     RecordedRequest request = mockWebServer.takeRequest();
 
@@ -65,32 +65,31 @@ class CreateAttestationDataRequestTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void createAttestationData_WhenBadRequest_ThrowsIllegalArgumentException() {
+  public void whenBadRequest_throwsIllegalArgumentException() {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
-    assertThatThrownBy(() -> request.createAttestationData(slot, committeeIndex))
+    assertThatThrownBy(() -> request.submit(slot, committeeIndex))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @TestTemplate
-  public void createAttestationData_WhenNotFound_ThrowsError() {
+  public void whenInvalidResponse_throwsError() {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
 
-    // An attestation could not be created for the specified slot
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
+    // An unexpected response is returned, such as 403-forbidden
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_FORBIDDEN));
 
-    assertThatThrownBy(() -> request.createAttestationData(slot, committeeIndex))
+    assertThatThrownBy(() -> request.submit(slot, committeeIndex))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Unexpected response from Beacon Node API");
   }
 
   @TestTemplate
-  public void createAttestationData_WhenSuccessWithNonData_ReturnsAttestationData()
-      throws Exception {
+  public void dataCanBeRead() throws Exception {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
     final AttestationData expectedAttestationData = dataStructureUtil.randomAttestationData();
@@ -98,7 +97,7 @@ class CreateAttestationDataRequestTest extends AbstractTypeDefRequestTestBase {
         new MockResponse()
             .setResponseCode(SC_OK)
             .setBody(serializeSszObjectToJsonWithDataWrapper(expectedAttestationData)));
-    Optional<AttestationData> attestationData = request.createAttestationData(slot, committeeIndex);
+    Optional<AttestationData> attestationData = request.submit(slot, committeeIndex);
     assertThat(attestationData).isPresent();
 
     assertThat(attestationData.get()).isEqualTo(expectedAttestationData);

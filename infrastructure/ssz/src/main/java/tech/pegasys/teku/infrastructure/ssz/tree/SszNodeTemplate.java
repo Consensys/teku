@@ -44,13 +44,13 @@ public class SszNodeTemplate {
     private final int length;
     private final boolean leaf;
 
-    public Location(int offset, int length, boolean leaf) {
+    public Location(final int offset, final int length, final boolean leaf) {
       this.offset = offset;
       this.length = length;
       this.leaf = leaf;
     }
 
-    public Location withAddedOffset(int addOffset) {
+    public Location withAddedOffset(final int addOffset) {
       return new Location(getOffset() + addOffset, getLength(), isLeaf());
     }
 
@@ -67,21 +67,21 @@ public class SszNodeTemplate {
     }
   }
 
-  public static SszNodeTemplate createFromType(SszSchema<?> sszSchema) {
+  public static SszNodeTemplate createFromType(final SszSchema<?> sszSchema) {
     checkArgument(sszSchema.isFixedSize(), "Only fixed size types supported");
 
     return createFromTree(sszSchema.getDefaultTree());
   }
 
   // This should be CANONICAL binary tree
-  private static SszNodeTemplate createFromTree(TreeNode defaultTree) {
+  private static SszNodeTemplate createFromTree(final TreeNode defaultTree) {
     Map<Long, Location> gIdxToLoc =
         binaryTraverse(
             GIndexUtil.SELF_G_INDEX,
             defaultTree,
             new BinaryVisitor<>() {
               @Override
-              public Map<Long, Location> visitLeaf(long gIndex, LeafNode node) {
+              public Map<Long, Location> visitLeaf(final long gIndex, final LeafNode node) {
                 Long2ObjectMap<Location> ret = new Long2ObjectOpenHashMap<Location>();
                 ret.put(gIndex, new Location(0, node.getData().size(), true));
                 return ret;
@@ -89,10 +89,10 @@ public class SszNodeTemplate {
 
               @Override
               public Map<Long, Location> visitBranch(
-                  long gIndex,
-                  TreeNode node,
-                  Map<Long, Location> leftVisitResult,
-                  Map<Long, Location> rightVisitResult) {
+                  final long gIndex,
+                  final TreeNode node,
+                  final Map<Long, Location> leftVisitResult,
+                  final Map<Long, Location> rightVisitResult) {
                 Location leftChildLoc = leftVisitResult.get(gIdxLeftGIndex(gIndex));
                 Location rightChildLoc = rightVisitResult.get(gIdxRightGIndex(gIndex));
                 rightVisitResult.replaceAll(
@@ -107,7 +107,7 @@ public class SszNodeTemplate {
     return new SszNodeTemplate(gIdxToLoc, defaultTree);
   }
 
-  private static List<Bytes> nodeSsz(TreeNode node) {
+  private static List<Bytes> nodeSsz(final TreeNode node) {
     List<Bytes> sszBytes = new ArrayList<>();
     TreeUtil.iterateLeavesData(node, LEFTMOST_G_INDEX, RIGHTMOST_G_INDEX, sszBytes::add);
     return sszBytes;
@@ -117,12 +117,12 @@ public class SszNodeTemplate {
   private final TreeNode defaultTree;
   private final Map<Long, SszNodeTemplate> subTemplatesCache = new ConcurrentHashMap<>();
 
-  public SszNodeTemplate(Map<Long, Location> gIdxToLoc, TreeNode defaultTree) {
+  public SszNodeTemplate(final Map<Long, Location> gIdxToLoc, final TreeNode defaultTree) {
     this.gIdxToLoc = gIdxToLoc;
     this.defaultTree = defaultTree;
   }
 
-  public Location getNodeSszLocation(long generalizedIndex) {
+  public Location getNodeSszLocation(final long generalizedIndex) {
     return gIdxToLoc.get(generalizedIndex);
   }
 
@@ -130,11 +130,11 @@ public class SszNodeTemplate {
     return gIdxToLoc.get(SELF_G_INDEX).getLength();
   }
 
-  public SszNodeTemplate getSubTemplate(long generalizedIndex) {
+  public SszNodeTemplate getSubTemplate(final long generalizedIndex) {
     return subTemplatesCache.computeIfAbsent(generalizedIndex, this::calcSubTemplate);
   }
 
-  private SszNodeTemplate calcSubTemplate(long generalizedIndex) {
+  private SszNodeTemplate calcSubTemplate(final long generalizedIndex) {
     if (gIdxIsSelf(generalizedIndex)) {
       return this;
     }
@@ -142,11 +142,12 @@ public class SszNodeTemplate {
     return createFromTree(subTree);
   }
 
-  public void update(long generalizedIndex, TreeNode newNode, MutableBytes dest) {
+  public void update(final long generalizedIndex, final TreeNode newNode, final MutableBytes dest) {
     update(generalizedIndex, nodeSsz(newNode), dest);
   }
 
-  private void update(long generalizedIndex, List<Bytes> nodeSsz, MutableBytes dest) {
+  private void update(
+      final long generalizedIndex, final List<Bytes> nodeSsz, final MutableBytes dest) {
     Location leafPos = getNodeSszLocation(generalizedIndex);
     int off = 0;
     for (int i = 0; i < nodeSsz.size(); i++) {
@@ -163,21 +164,24 @@ public class SszNodeTemplate {
         defaultTree,
         new BinaryVisitor<>() {
           @Override
-          public Bytes32 visitLeaf(long gIndex, LeafNode node) {
+          public Bytes32 visitLeaf(final long gIndex, final LeafNode node) {
             Location location = gIdxToLoc.get(gIndex);
             return Bytes32.rightPad(ssz.slice(offset + location.getOffset(), location.getLength()));
           }
 
           @Override
           public Bytes32 visitBranch(
-              long gIndex, TreeNode node, Bytes32 leftVisitResult, Bytes32 rightVisitResult) {
+              final long gIndex,
+              final TreeNode node,
+              final Bytes32 leftVisitResult,
+              final Bytes32 rightVisitResult) {
             return Bytes32.wrap(sha256.digest(leftVisitResult, rightVisitResult));
           }
         });
   }
 
   private static <T> T binaryTraverse(
-      long gIndex, final TreeNode node, final BinaryVisitor<T> visitor) {
+      final long gIndex, final TreeNode node, final BinaryVisitor<T> visitor) {
     if (node instanceof LeafNode) {
       return visitor.visitLeaf(gIndex, (LeafNode) node);
     } else if (node instanceof BranchNode branchNode) {

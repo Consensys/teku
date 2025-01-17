@@ -13,43 +13,53 @@
 
 package tech.pegasys.teku.data.slashinginterchange;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import java.util.List;
-import java.util.Objects;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
-public class SlashingProtectionInterchangeFormat {
-  public final Metadata metadata;
-  public final List<SigningHistory> data;
+public record SlashingProtectionInterchangeFormat(Metadata metadata, List<SigningHistory> data) {
 
-  @JsonCreator
-  public SlashingProtectionInterchangeFormat(
-      @JsonProperty("metadata") final Metadata metadata,
-      @JsonProperty("data") final List<SigningHistory> data) {
-    this.metadata = metadata;
-    this.data = data;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final SlashingProtectionInterchangeFormat that = (SlashingProtectionInterchangeFormat) o;
-    return Objects.equals(metadata, that.metadata) && Objects.equals(data, that.data);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(metadata, data);
+  public static DeserializableTypeDefinition<SlashingProtectionInterchangeFormat>
+      getJsonTypeDefinition() {
+    return DeserializableTypeDefinition.object(
+            SlashingProtectionInterchangeFormat.class,
+            SlashingProtectionInterchangeFormatBuilder.class)
+        .initializer(SlashingProtectionInterchangeFormatBuilder::new)
+        .finisher(SlashingProtectionInterchangeFormatBuilder::build)
+        .withField(
+            "metadata",
+            Metadata.getJsonTypeDefinition(),
+            SlashingProtectionInterchangeFormat::metadata,
+            SlashingProtectionInterchangeFormatBuilder::metadata)
+        .withField(
+            "data",
+            DeserializableTypeDefinition.listOf(SigningHistory.getJsonTypeDefinition()),
+            SlashingProtectionInterchangeFormat::data,
+            SlashingProtectionInterchangeFormatBuilder::data)
+        .build();
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("metadata", metadata).add("data", data).toString();
+  }
+
+  static class SlashingProtectionInterchangeFormatBuilder {
+    Metadata metadata;
+    List<SigningHistory> data;
+
+    SlashingProtectionInterchangeFormatBuilder metadata(final Metadata metadata) {
+      this.metadata = metadata;
+      return this;
+    }
+
+    SlashingProtectionInterchangeFormatBuilder data(final List<SigningHistory> data) {
+      this.data = data;
+      return this;
+    }
+
+    SlashingProtectionInterchangeFormat build() {
+      return new SlashingProtectionInterchangeFormat(metadata, data);
+    }
   }
 }

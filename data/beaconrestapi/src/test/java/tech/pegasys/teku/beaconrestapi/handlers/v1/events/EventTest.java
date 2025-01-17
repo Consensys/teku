@@ -38,10 +38,16 @@ public class EventTest {
 
     final Spec spec = TestSpecFactory.createMinimalPhase0();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final Spec specElectra = TestSpecFactory.createMinimalElectra();
+    final DataStructureUtil dataStructureUtilElectra = new DataStructureUtil(specElectra);
     return Stream.of(
         Arguments.of(
-            "AttestationEvent",
+            "AttestationEvent Phase0",
             new AttestationEvent(dataStructureUtil.randomAttestation()).getJsonTypeDefinition()),
+        Arguments.of(
+            "AttestationEvent Electra",
+            new AttestationEvent(dataStructureUtilElectra.randomAttestation())
+                .getJsonTypeDefinition()),
         Arguments.of(
             "BlockEvent",
             new BlockEvent(dataStructureUtil.randomSignedBeaconBlock(1), false)

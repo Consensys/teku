@@ -1,0 +1,22 @@
+{
+  "title" : "GraffitiResponse",
+  "type" : "object",
+  "required" : [ "data" ],
+  "properties" : {
+    "data" : {
+      "type" : "object",
+      "required" : [ "graffiti" ],
+      "properties" : {
+        "pubkey" : {
+          "$ref" : "#/components/schemas/Pubkey"
+        },
+        "graffiti" : {
+          "type" : "string",
+          "description" : "Bytes32 string",
+          "example" : "Example graffiti",
+          "format" : "byte"
+        }
+      }
+    }
+  }
+}

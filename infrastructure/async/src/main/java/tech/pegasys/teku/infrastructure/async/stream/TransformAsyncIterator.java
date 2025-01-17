@@ -18,13 +18,14 @@ class TransformAsyncIterator<S, T> extends AsyncIterator<T> {
   private final AsyncStreamTransformer<S, T> streamTransformer;
 
   public TransformAsyncIterator(
-      AsyncIterator<S> delegateIterator, AsyncStreamTransformer<S, T> streamTransformer) {
+      final AsyncIterator<S> delegateIterator,
+      final AsyncStreamTransformer<S, T> streamTransformer) {
     this.delegateIterator = delegateIterator;
     this.streamTransformer = streamTransformer;
   }
 
   @Override
-  public void iterate(AsyncStreamHandler<T> callback) {
+  public void iterate(final AsyncStreamHandler<T> callback) {
     delegateIterator.iterate(streamTransformer.process(callback));
   }
 }

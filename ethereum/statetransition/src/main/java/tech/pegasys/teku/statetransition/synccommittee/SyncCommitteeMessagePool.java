@@ -64,7 +64,7 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
   }
 
   public void subscribeOperationAdded(
-      OperationAddedSubscriber<ValidatableSyncCommitteeMessage> subscriber) {
+      final OperationAddedSubscriber<ValidatableSyncCommitteeMessage> subscriber) {
     subscribers.subscribe(subscriber);
   }
 

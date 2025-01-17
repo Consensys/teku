@@ -34,12 +34,13 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipSubValidationUtil;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
-import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.networking.eth2.gossip.topics.OperationValidator;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -49,11 +50,12 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   private final OperationProcessor<MessageT> processor;
   private final GossipEncoding gossipEncoding;
   private final Bytes4 forkDigest;
-  private final String topicName;
   private final SszSchema<MessageT> messageType;
   private final Eth2PreparedGossipMessageFactory preparedGossipMessageFactory;
-  private final OperationMilestoneValidator<MessageT> forkValidator;
+  private final OperationValidator<MessageT> forkValidator;
   private final NetworkingSpecConfig networkingConfig;
+  private final DebugDataDumper debugDataDumper;
+  private final String topic;
 
   public Eth2TopicHandler(
       final RecentChainData recentChainData,
@@ -62,20 +64,22 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final GossipEncoding gossipEncoding,
       final Bytes4 forkDigest,
       final String topicName,
-      final OperationMilestoneValidator<MessageT> forkValidator,
+      final OperationValidator<MessageT> forkValidator,
       final SszSchema<MessageT> messageType,
-      final NetworkingSpecConfig networkingConfig) {
+      final NetworkingSpecConfig networkingConfig,
+      final DebugDataDumper debugDataDumper) {
     this.asyncRunner = asyncRunner;
     this.processor = processor;
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkDigest;
-    this.topicName = topicName;
     this.messageType = messageType;
     this.forkValidator = forkValidator;
     this.networkingConfig = networkingConfig;
     this.preparedGossipMessageFactory =
         gossipEncoding.createPreparedGossipMessageFactory(
             recentChainData::getMilestoneByForkDigest);
+    this.debugDataDumper = debugDataDumper;
+    this.topic = GossipTopics.getTopic(forkDigest, topicName, gossipEncoding);
   }
 
   public Eth2TopicHandler(
@@ -85,9 +89,10 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final GossipEncoding gossipEncoding,
       final Bytes4 forkDigest,
       final GossipTopicName topicName,
-      final OperationMilestoneValidator<MessageT> forkValidator,
+      final OperationValidator<MessageT> forkValidator,
       final SszSchema<MessageT> messageType,
-      final NetworkingSpecConfig networkingConfig) {
+      final NetworkingSpecConfig networkingConfig,
+      final DebugDataDumper debugDataDumper) {
     this(
         recentChainData,
         asyncRunner,
@@ -97,11 +102,12 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
         topicName.toString(),
         forkValidator,
         messageType,
-        networkingConfig);
+        networkingConfig,
+        debugDataDumper);
   }
 
   @Override
-  public SafeFuture<ValidationResult> handleMessage(PreparedGossipMessage message) {
+  public SafeFuture<ValidationResult> handleMessage(final PreparedGossipMessage message) {
     return SafeFuture.of(() -> deserialize(message))
         .thenCompose(
             deserialized -> {
@@ -129,6 +135,11 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final PreparedGossipMessage message) {
     switch (internalValidationResult.code()) {
       case REJECT:
+        debugDataDumper.saveGossipRejectedMessage(
+            getTopic(),
+            message.getArrivalTimestamp(),
+            () -> message.getDecodedMessage().getDecodedMessage().orElse(Bytes.EMPTY),
+            internalValidationResult.getDescription());
         P2P_LOG.onGossipRejected(
             getTopic(),
             message.getDecodedMessage().getDecodedMessage().orElse(Bytes.EMPTY),
@@ -148,10 +159,6 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     }
   }
 
-  private String getTopicName() {
-    return topicName;
-  }
-
   private SszSchema<MessageT> getMessageType() {
     return messageType;
   }
@@ -160,6 +167,9 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final PreparedGossipMessage message, final Throwable err) {
     final ValidationResult response;
     if (ExceptionUtil.hasCause(err, DecodingException.class)) {
+
+      debugDataDumper.saveGossipMessageDecodingError(
+          getTopic(), message.getArrivalTimestamp(), message::getOriginalMessage, err);
       P2P_LOG.onGossipMessageDecodingError(getTopic(), message.getOriginalMessage(), err);
       response = ValidationResult.Invalid;
     } else if (ExceptionUtil.hasCause(err, RejectedExecutionException.class)) {
@@ -191,7 +201,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     return networkingConfig.getGossipMaxSize();
   }
 
-  protected MessageT deserialize(PreparedGossipMessage message) throws DecodingException {
+  protected MessageT deserialize(final PreparedGossipMessage message) throws DecodingException {
     return getGossipEncoding().decodeMessage(message, getMessageType());
   }
 
@@ -200,7 +210,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   }
 
   public String getTopic() {
-    return GossipTopics.getTopic(getForkDigest(), getTopicName(), getGossipEncoding());
+    return topic;
   }
 
   public GossipEncoding getGossipEncoding() {

@@ -17,7 +17,7 @@ import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public interface SszPrimitiveSchema<DataT, SszDataT extends SszPrimitive<DataT, SszDataT>>
+public interface SszPrimitiveSchema<DataT, SszDataT extends SszPrimitive<DataT>>
     extends SszSchema<SszDataT> {
 
   int getBitsSize();
@@ -34,7 +34,7 @@ public interface SszPrimitiveSchema<DataT, SszDataT extends SszPrimitive<DataT, 
    * index'. For example in `Bitvector(512)` the bit value at index `300` is stored at the second
    * leaf node and it's 'internal index' in this node would be `45`
    */
-  default SszDataT createFromPackedNode(TreeNode node, int internalIndex) {
+  default SszDataT createFromPackedNode(final TreeNode node, final int internalIndex) {
     return boxed(createFromPackedNodeUnboxed(node, internalIndex));
   }
 
@@ -47,12 +47,12 @@ public interface SszPrimitiveSchema<DataT, SszDataT extends SszPrimitive<DataT, 
    */
   TreeNode updatePackedNode(TreeNode srcNode, List<PackedNodeUpdate<DataT, SszDataT>> updates);
 
-  final class PackedNodeUpdate<DataT, SszDataT extends SszPrimitive<DataT, SszDataT>> {
+  final class PackedNodeUpdate<DataT, SszDataT extends SszPrimitive<DataT>> {
 
     private final int internalIndex;
     private final SszDataT newValue;
 
-    public PackedNodeUpdate(int internalIndex, SszDataT newValue) {
+    public PackedNodeUpdate(final int internalIndex, final SszDataT newValue) {
       this.internalIndex = internalIndex;
       this.newValue = newValue;
     }

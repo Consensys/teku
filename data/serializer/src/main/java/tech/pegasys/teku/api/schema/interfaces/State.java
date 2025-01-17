@@ -18,6 +18,7 @@ import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.capella.BeaconStateCapella;
 import tech.pegasys.teku.api.schema.deneb.BeaconStateDeneb;
+import tech.pegasys.teku.api.schema.electra.BeaconStateElectra;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 
 @Schema(
@@ -26,6 +27,7 @@ import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
       BeaconStateAltair.class,
       BeaconStateBellatrix.class,
       BeaconStateCapella.class,
-      BeaconStateDeneb.class
+      BeaconStateDeneb.class,
+      BeaconStateElectra.class
     })
 public interface State {}

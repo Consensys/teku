@@ -24,23 +24,42 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.config.SpecConfigEip7594;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecMilestoneTest {
-  private final SpecConfigEip7594 eip7594SpecConfig =
-      SpecConfigEip7594.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+  private final SpecConfigFulu fuluSpecConfig =
+      SpecConfigFulu.required(
+          SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()).specConfig());
+  private final SpecConfigElectra electraSpecConfig =
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
+          .specConfig()
+          .toVersionElectra()
+          .orElseThrow();
   private final SpecConfigDeneb denebSpecConfig =
-      SpecConfigDeneb.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
+          .specConfig()
+          .toVersionDeneb()
+          .orElseThrow();
   private final SpecConfigCapella capellaSpecConfig =
-      SpecConfigCapella.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
+          .specConfig()
+          .toVersionCapella()
+          .orElseThrow();
   private final SpecConfigBellatrix bellatrixSpecConfig =
-      SpecConfigBellatrix.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
+          .specConfig()
+          .toVersionBellatrix()
+          .orElseThrow();
   private final SpecConfigAltair altairSpecConfig =
-      SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
+          .specConfig()
+          .toVersionAltair()
+          .orElseThrow();
   private final SpecConfig phase0SpecConfig =
-      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()).specConfig();
 
   @Test
   public void isGreaterThanOrEqualTo() {
@@ -61,11 +80,11 @@ public class SpecMilestoneTest {
     assertThat(SpecMilestone.DENEB.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)).isTrue();
     assertThat(SpecMilestone.DENEB.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)).isTrue();
     assertThat(SpecMilestone.DENEB.isGreaterThanOrEqualTo(SpecMilestone.DENEB)).isTrue();
-    assertThat(SpecMilestone.DENEB.isGreaterThanOrEqualTo(SpecMilestone.EIP7594)).isFalse();
+    assertThat(SpecMilestone.DENEB.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)).isFalse();
 
-    assertThat(SpecMilestone.EIP7594.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)).isTrue();
-    assertThat(SpecMilestone.EIP7594.isGreaterThanOrEqualTo(SpecMilestone.DENEB)).isTrue();
-    assertThat(SpecMilestone.EIP7594.isGreaterThanOrEqualTo(SpecMilestone.EIP7594)).isTrue();
+    assertThat(SpecMilestone.ELECTRA.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)).isTrue();
+    assertThat(SpecMilestone.ELECTRA.isGreaterThanOrEqualTo(SpecMilestone.DENEB)).isTrue();
+    assertThat(SpecMilestone.ELECTRA.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)).isTrue();
   }
 
   @Test
@@ -75,7 +94,7 @@ public class SpecMilestoneTest {
     assertThat(SpecMilestone.BELLATRIX.getPreviousMilestone()).isEqualTo(SpecMilestone.ALTAIR);
     assertThat(SpecMilestone.CAPELLA.getPreviousMilestone()).isEqualTo(SpecMilestone.BELLATRIX);
     assertThat(SpecMilestone.DENEB.getPreviousMilestone()).isEqualTo(SpecMilestone.CAPELLA);
-    assertThat(SpecMilestone.EIP7594.getPreviousMilestone()).isEqualTo(SpecMilestone.DENEB);
+    assertThat(SpecMilestone.ELECTRA.getPreviousMilestone()).isEqualTo(SpecMilestone.DENEB);
   }
 
   @Test
@@ -112,8 +131,8 @@ public class SpecMilestoneTest {
   }
 
   @Test
-  public void getAllPriorMilestones_eip7594() {
-    assertThat(SpecMilestone.getAllPriorMilestones(SpecMilestone.EIP7594))
+  public void getAllPriorMilestones_electra() {
+    assertThat(SpecMilestone.getAllPriorMilestones(SpecMilestone.ELECTRA))
         .contains(
             SpecMilestone.PHASE0,
             SpecMilestone.ALTAIR,
@@ -157,8 +176,8 @@ public class SpecMilestoneTest {
   }
 
   @Test
-  public void getMilestonesUpTo_eip7594() {
-    assertThat(SpecMilestone.getMilestonesUpTo(SpecMilestone.EIP7594))
+  public void getMilestonesUpTo_electra() {
+    assertThat(SpecMilestone.getMilestonesUpTo(SpecMilestone.ELECTRA))
         .contains(
             SpecMilestone.PHASE0,
             SpecMilestone.ALTAIR,
@@ -195,9 +214,9 @@ public class SpecMilestoneTest {
         .isTrue();
     assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.DENEB, SpecMilestone.CAPELLA))
         .isFalse();
-    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.DENEB, SpecMilestone.EIP7594))
+    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.DENEB, SpecMilestone.ELECTRA))
         .isTrue();
-    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.EIP7594, SpecMilestone.DENEB))
+    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.ELECTRA, SpecMilestone.DENEB))
         .isFalse();
   }
 
@@ -237,10 +256,16 @@ public class SpecMilestoneTest {
   }
 
   @Test
-  public void getForkVersion_eip7594() {
-    final Bytes4 expected = eip7594SpecConfig.getEip7594ForkVersion();
-    assertThat(SpecMilestone.getForkVersion(eip7594SpecConfig, SpecMilestone.EIP7594))
+  public void getForkVersion_electra() {
+    final Bytes4 expected = electraSpecConfig.getElectraForkVersion();
+    assertThat(SpecMilestone.getForkVersion(electraSpecConfig, SpecMilestone.ELECTRA))
         .contains(expected);
+  }
+
+  @Test
+  public void getForkVersion_fulu() {
+    final Bytes4 expected = fuluSpecConfig.getFuluForkVersion();
+    assertThat(SpecMilestone.getForkVersion(fuluSpecConfig, SpecMilestone.FULU)).contains(expected);
   }
 
   @Test
@@ -278,10 +303,16 @@ public class SpecMilestoneTest {
   }
 
   @Test
-  public void getForkEpoch_eip7594() {
-    final UInt64 expected = eip7594SpecConfig.getEip7594ForkEpoch();
-    assertThat(SpecMilestone.getForkEpoch(eip7594SpecConfig, SpecMilestone.EIP7594))
+  public void getForkEpoch_electra() {
+    final UInt64 expected = electraSpecConfig.getElectraForkEpoch();
+    assertThat(SpecMilestone.getForkEpoch(electraSpecConfig, SpecMilestone.ELECTRA))
         .contains(expected);
+  }
+
+  @Test
+  public void getForkEpoch_fulu() {
+    final UInt64 expected = fuluSpecConfig.getFuluForkEpoch();
+    assertThat(SpecMilestone.getForkEpoch(fuluSpecConfig, SpecMilestone.FULU)).contains(expected);
   }
 
   @Test
@@ -309,8 +340,8 @@ public class SpecMilestoneTest {
   }
 
   @Test
-  public void getForkEpoch_eip7594NotScheduled() {
-    assertThat(SpecMilestone.getForkEpoch(denebSpecConfig, SpecMilestone.EIP7594))
+  public void getForkEpoch_electraNotScheduled() {
+    assertThat(SpecMilestone.getForkEpoch(denebSpecConfig, SpecMilestone.ELECTRA))
         .contains(UInt64.MAX_VALUE);
   }
 }

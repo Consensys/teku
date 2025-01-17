@@ -25,10 +25,11 @@ import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 public class ForkScheduleTest {
   private static final SpecConfig MINIMAL_CONFIG =
-      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()).specConfig();
 
   // Set up config for a post-genesis altair transition
   private static final UInt64 FORK_EPOCH_ALTAIR = UInt64.valueOf(10);
@@ -37,19 +38,21 @@ public class ForkScheduleTest {
   private static final SpecConfigAltair TRANSITION_CONFIG =
       SpecConfigAltair.required(
           SpecConfigLoader.loadConfig(
-              Eth2Network.MINIMAL.configName(),
-              c -> c.altairBuilder(a -> a.altairForkEpoch(FORK_EPOCH_ALTAIR))));
+                  Eth2Network.MINIMAL.configName(),
+                  c -> c.altairBuilder(a -> a.altairForkEpoch(FORK_EPOCH_ALTAIR)))
+              .specConfig());
 
   // Set config starting altair at genesis
   private static final SpecConfigAltair ALTAIR_CONFIG =
       SpecConfigAltair.required(
           SpecConfigLoader.loadConfig(
-              Eth2Network.MINIMAL.configName(),
-              c -> c.altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))));
+                  Eth2Network.MINIMAL.configName(),
+                  c -> c.altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO)))
+              .specConfig());
 
   // Set up default config
   private static final SpecConfig PHASE0_CONFIG =
-      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()).specConfig();
 
   // Fork versions
   static final Bytes4 PHASE_0_FORK_VERSION = TRANSITION_CONFIG.getGenesisForkVersion();
@@ -57,10 +60,12 @@ public class ForkScheduleTest {
       TRANSITION_CONFIG.toVersionAltair().orElseThrow().getAltairForkVersion();
   static final Bytes4 UNKNOWN_FORK_VERSION = Bytes4.fromHexStringLenient("0xFFFFFFFF");
 
+  final SchemaRegistryBuilder schemaRegistryBuilder = SchemaRegistryBuilder.create();
+
   @Test
   public void build_validScheduleWithAltairTransition() {
-    final SpecVersion phase0 = SpecVersion.createPhase0(TRANSITION_CONFIG);
-    final SpecVersion altair = SpecVersion.createAltair(TRANSITION_CONFIG);
+    final SpecVersion phase0 = SpecVersion.createPhase0(TRANSITION_CONFIG, schemaRegistryBuilder);
+    final SpecVersion altair = SpecVersion.createAltair(TRANSITION_CONFIG, schemaRegistryBuilder);
 
     final ForkSchedule forkSchedule =
         ForkSchedule.builder().addNextMilestone(phase0).addNextMilestone(altair).build();
@@ -70,8 +75,8 @@ public class ForkScheduleTest {
 
   @Test
   public void build_validScheduleWithAltairAtGenesis_phase0AndAltairSupplied() {
-    final SpecVersion phase0 = SpecVersion.createPhase0(ALTAIR_CONFIG);
-    final SpecVersion altair = SpecVersion.createAltair(ALTAIR_CONFIG);
+    final SpecVersion phase0 = SpecVersion.createPhase0(ALTAIR_CONFIG, schemaRegistryBuilder);
+    final SpecVersion altair = SpecVersion.createAltair(ALTAIR_CONFIG, schemaRegistryBuilder);
 
     final ForkSchedule forkSchedule =
         ForkSchedule.builder().addNextMilestone(phase0).addNextMilestone(altair).build();
@@ -82,7 +87,7 @@ public class ForkScheduleTest {
 
   @Test
   public void build_validScheduleWithAltairAtGenesis_onlyAltairSupplied() {
-    final SpecVersion altair = SpecVersion.createAltair(ALTAIR_CONFIG);
+    final SpecVersion altair = SpecVersion.createAltair(ALTAIR_CONFIG, schemaRegistryBuilder);
 
     final ForkSchedule forkSchedule = ForkSchedule.builder().addNextMilestone(altair).build();
 
@@ -92,7 +97,7 @@ public class ForkScheduleTest {
 
   @Test
   public void build_validPhase0Schedule() {
-    final SpecVersion phase0 = SpecVersion.createPhase0(PHASE0_CONFIG);
+    final SpecVersion phase0 = SpecVersion.createPhase0(PHASE0_CONFIG, schemaRegistryBuilder);
 
     final ForkSchedule forkSchedule = ForkSchedule.builder().addNextMilestone(phase0).build();
 
@@ -102,7 +107,7 @@ public class ForkScheduleTest {
 
   @Test
   public void builder_milestonesSuppliedOutOfOrder_altairProcessedAtNonZeroSlot() {
-    final SpecVersion altair = SpecVersion.createAltair(TRANSITION_CONFIG);
+    final SpecVersion altair = SpecVersion.createAltair(TRANSITION_CONFIG, schemaRegistryBuilder);
     final ForkSchedule.Builder builder = ForkSchedule.builder();
 
     assertThatThrownBy(() -> builder.addNextMilestone(altair))
@@ -112,8 +117,9 @@ public class ForkScheduleTest {
 
   @Test
   public void builder_milestonesSuppliedOutOfOrder_processAltairBeforePhase0() {
-    final SpecVersion altair = SpecVersion.createAltair(ALTAIR_CONFIG);
-    final SpecVersion phase0 = SpecVersion.createPhase0(ALTAIR_CONFIG);
+    final SpecVersion altair = SpecVersion.createAltair(ALTAIR_CONFIG, schemaRegistryBuilder);
+    final SpecVersion phase0 =
+        SpecVersion.createPhase0(ALTAIR_CONFIG, SchemaRegistryBuilder.create());
     final ForkSchedule.Builder builder = ForkSchedule.builder();
 
     builder.addNextMilestone(altair);
@@ -132,7 +138,7 @@ public class ForkScheduleTest {
 
   @Test
   public void getSupportedMilestones_onlyAltairConfigured() {
-    final SpecVersion altair = SpecVersion.createAltair(ALTAIR_CONFIG);
+    final SpecVersion altair = SpecVersion.createAltair(ALTAIR_CONFIG, schemaRegistryBuilder);
 
     final ForkSchedule forkSchedule = ForkSchedule.builder().addNextMilestone(altair).build();
 
@@ -142,7 +148,7 @@ public class ForkScheduleTest {
 
   @Test
   public void getSupportedMilestones_onlyPhase0Configured() {
-    final SpecVersion phase0 = SpecVersion.createPhase0(PHASE0_CONFIG);
+    final SpecVersion phase0 = SpecVersion.createPhase0(PHASE0_CONFIG, schemaRegistryBuilder);
 
     final ForkSchedule forkSchedule = ForkSchedule.builder().addNextMilestone(phase0).build();
 
@@ -398,10 +404,11 @@ public class ForkScheduleTest {
 
   private ForkSchedule buildForkSchedule(final SpecConfig specConfig) {
     final ForkSchedule.Builder builder = ForkSchedule.builder();
-    builder.addNextMilestone(SpecVersion.createPhase0(specConfig));
+    builder.addNextMilestone(SpecVersion.createPhase0(specConfig, schemaRegistryBuilder));
     specConfig
         .toVersionAltair()
-        .ifPresent(a -> builder.addNextMilestone(SpecVersion.createAltair(a)));
+        .ifPresent(
+            a -> builder.addNextMilestone(SpecVersion.createAltair(a, schemaRegistryBuilder)));
 
     return builder.build();
   }

@@ -13,14 +13,25 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema.collections;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.ssz.RandomSszDataGenerator;
+import tech.pegasys.teku.infrastructure.ssz.SszCollection;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszCollectionSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchemaTestBase;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchemaTest;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszUnionSchemaTest;
 
 public abstract class SszCollectionSchemaTestBase extends SszCompositeSchemaTestBase {
+
+  final RandomSszDataGenerator sszDataGenerator = new RandomSszDataGenerator();
 
   static Stream<SszSchema<?>> complexElementSchemas() {
     return Stream.of(
@@ -39,5 +50,15 @@ public abstract class SszCollectionSchemaTestBase extends SszCompositeSchemaTest
                 SszBytes32VectorSchema.create(3),
                 SszUInt64ListSchema.create(3)))
         .flatMap(Function.identity());
+  }
+
+  @MethodSource("testSchemaArguments")
+  @ParameterizedTest
+  <T extends SszData> void createFromElements_shouldCreateCorrectListOfTheSameClass(
+      final SszCollectionSchema<T, ? extends SszCollection<T>> schema) {
+    List<T> elements = sszDataGenerator.randomData(schema).asList();
+    SszCollection<T> collection = schema.createFromElements(elements);
+    assertThat(collection).containsExactlyElementsOf(elements);
+    assertThat(collection.getClass()).isEqualTo(schema.getDefault().getClass());
   }
 }

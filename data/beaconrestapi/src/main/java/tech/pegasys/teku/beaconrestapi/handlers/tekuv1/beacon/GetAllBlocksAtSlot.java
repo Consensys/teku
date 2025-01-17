@@ -18,6 +18,7 @@ import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDepend
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.SIGNATURE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
@@ -64,6 +65,8 @@ public class GetAllBlocksAtSlot extends RestApiEndpoint {
             .tags(TAG_TEKU)
             .pathParam(SLOT_PARAMETER.withDescription("slot of the blocks to retrieve."))
             .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
+            .response(
+                SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
             .withServiceUnavailableResponse()
             .withNotFoundResponse()
             .build());
@@ -71,7 +74,7 @@ public class GetAllBlocksAtSlot extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
 
     final UInt64 slot = request.getPathParameter(SLOT_PARAMETER);

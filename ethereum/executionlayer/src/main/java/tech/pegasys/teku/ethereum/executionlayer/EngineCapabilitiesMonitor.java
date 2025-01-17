@@ -84,11 +84,13 @@ public class EngineCapabilitiesMonitor implements SlotEventsChannel {
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
         .thenAccept(
             engineCapabilities -> {
-              LOG.debug("Engine API capabilities response: " + engineCapabilities);
+              LOG.debug("Engine API capabilities response: {}", engineCapabilities);
+
               final List<String> missingEngineCapabilities =
                   capabilities.stream()
                       .filter(capability -> !engineCapabilities.contains(capability))
                       .toList();
+
               if (!missingEngineCapabilities.isEmpty()) {
                 eventLogger.missingEngineApiCapabilities(missingEngineCapabilities);
               }

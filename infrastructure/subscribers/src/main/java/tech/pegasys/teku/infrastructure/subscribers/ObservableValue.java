@@ -47,7 +47,7 @@ public class ObservableValue<C> {
     private final ValueObserver<C> subscriber;
     private final long subscriptionId;
 
-    public Subscription(ValueObserver<C> subscriber, long subscriptionId) {
+    public Subscription(final ValueObserver<C> subscriber, final long subscriptionId) {
       this.subscriber = subscriber;
       this.subscriptionId = subscriptionId;
     }
@@ -72,7 +72,7 @@ public class ObservableValue<C> {
    * @param suppressCallbackExceptions if true then any exceptions thrown from a subscriber update
    *     callback are just printed to the log
    */
-  public ObservableValue(boolean suppressCallbackExceptions) {
+  public ObservableValue(final boolean suppressCallbackExceptions) {
     this.suppressCallbackExceptions = suppressCallbackExceptions;
   }
 
@@ -83,7 +83,7 @@ public class ObservableValue<C> {
    *
    * @return subscription ID to be used for {@link #unsubscribe(long)}
    */
-  public synchronized long subscribe(ValueObserver<C> subscriber) {
+  public synchronized long subscribe(final ValueObserver<C> subscriber) {
     Subscription<C> subscription = new Subscription<>(subscriber, idCounter++);
     subscriptions.add(subscription);
     if (curValue != null) {
@@ -97,7 +97,7 @@ public class ObservableValue<C> {
    *
    * @param subscriptionId ID return by the {@link #subscribe(ValueObserver)} method
    */
-  public synchronized void unsubscribe(long subscriptionId) {
+  public synchronized void unsubscribe(final long subscriptionId) {
     subscriptions.removeIf(s -> s.getSubscriptionId() == subscriptionId);
   }
 
@@ -106,7 +106,7 @@ public class ObservableValue<C> {
    *
    * @param c the non-null value
    */
-  public void set(C c) {
+  public void set(final C c) {
     Iterator<Subscription<C>> iterator;
     synchronized (this) {
       curValue = c;
@@ -116,7 +116,7 @@ public class ObservableValue<C> {
     iterator.forEachRemaining(l -> notify(l, c));
   }
 
-  private void notify(Subscription<C> subscription, C value) {
+  private void notify(final Subscription<C> subscription, final C value) {
     try {
       subscription.getSubscriber().onValueChanged(value);
     } catch (Throwable throwable) {

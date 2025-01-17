@@ -47,11 +47,11 @@ abstract class AbstractResponseLogger<TRequest, TResponse, TResponseSummary>
   private volatile boolean done = false;
 
   public AbstractResponseLogger(
-      TimeProvider timeProvider,
-      Direction direction,
-      LoggingPeerId peerId,
-      TRequest request,
-      Function<TResponse, TResponseSummary> responseSummarizer) {
+      final TimeProvider timeProvider,
+      final Direction direction,
+      final LoggingPeerId peerId,
+      final TRequest request,
+      final Function<TResponse, TResponseSummary> responseSummarizer) {
     this.timeProvider = timeProvider;
     this.direction = direction;
     this.peerId = peerId;
@@ -66,9 +66,9 @@ abstract class AbstractResponseLogger<TRequest, TResponse, TResponseSummary>
       List<Timestamped<TResponseSummary>> responseSummaries, Optional<Throwable> result);
 
   @Override
-  public synchronized void onNextItem(TResponse responseItem) {
+  public synchronized void onNextItem(final TResponse responseItem) {
     if (getLogger().isDebugEnabled()) {
-      TResponseSummary responseSummary = responseSummarizer.apply(responseItem);
+      final TResponseSummary responseSummary = responseSummarizer.apply(responseItem);
       if (done) {
         getLogger().debug("ERROR: Extra onNextItem: " + responseSummary);
         return;
@@ -90,7 +90,7 @@ abstract class AbstractResponseLogger<TRequest, TResponse, TResponseSummary>
   }
 
   @Override
-  public void onError(Throwable error) {
+  public void onError(final Throwable error) {
     if (getLogger().isDebugEnabled()) {
       if (done) {
         getLogger().debug("ERROR: Extra onError: " + error);
@@ -100,7 +100,7 @@ abstract class AbstractResponseLogger<TRequest, TResponse, TResponseSummary>
     }
   }
 
-  private void finalize(Optional<Throwable> result) {
+  private void finalize(final Optional<Throwable> result) {
     done = true;
     responseComplete(responseSummaries, result);
   }

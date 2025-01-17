@@ -36,10 +36,12 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdate
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV3;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV3;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -143,7 +145,7 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
   @ParameterizedTest
   @MethodSource("denebMethods")
   void shouldProvideExpectedMethodsForDeneb(
-      EngineApiMethod method, Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
+      final EngineApiMethod method, final Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
     final Spec denebSpec = TestSpecFactory.createMinimalDeneb();
 
     final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
@@ -163,9 +165,45 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
   }
 
   @Test
+  void electraMilestoneMethodIsNotSupportedInDeneb() {
+    final Spec capellaSpec = TestSpecFactory.createMinimalDeneb();
+
+    final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
+        new MilestoneBasedEngineJsonRpcMethodsResolver(capellaSpec, executionEngineClient);
+
+    assertThatThrownBy(
+            () ->
+                engineMethodsResolver.getMethod(
+                    ENGINE_GET_PAYLOAD, () -> SpecMilestone.ELECTRA, Object.class))
+        .hasMessage("Can't find method with name engine_getPayload for milestone ELECTRA");
+  }
+
+  @ParameterizedTest
+  @MethodSource("electraMethods")
+  void shouldProvideExpectedMethodsForElectra(
+      final EngineApiMethod method, final Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
+    final Spec electraSpec = TestSpecFactory.createMinimalElectra();
+
+    final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
+        new MilestoneBasedEngineJsonRpcMethodsResolver(electraSpec, executionEngineClient);
+
+    final EngineJsonRpcMethod<Object> providedMethod =
+        engineMethodsResolver.getMethod(method, () -> SpecMilestone.ELECTRA, Object.class);
+
+    assertThat(providedMethod).isExactlyInstanceOf(expectedMethodClass);
+  }
+
+  private static Stream<Arguments> electraMethods() {
+    return Stream.of(
+        arguments(ENGINE_NEW_PAYLOAD, EngineNewPayloadV4.class),
+        arguments(ENGINE_GET_PAYLOAD, EngineGetPayloadV4.class),
+        arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV3.class));
+  }
+
+  @Test
   void getsCapabilities() {
     final Spec spec =
-        TestSpecFactory.createMinimalWithCapellaDenebAndEip7594ForkEpoch(
+        TestSpecFactory.createMinimalWithCapellaDenebAndElectraForkEpoch(
             UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3));
 
     final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
@@ -183,6 +221,8 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
             "engine_forkchoiceUpdatedV2",
             "engine_newPayloadV3",
             "engine_getPayloadV3",
-            "engine_forkchoiceUpdatedV3");
+            "engine_forkchoiceUpdatedV3",
+            "engine_newPayloadV4",
+            "engine_getPayloadV4");
   }
 }

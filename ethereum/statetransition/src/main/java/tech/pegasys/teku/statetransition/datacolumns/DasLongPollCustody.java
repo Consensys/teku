@@ -29,7 +29,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 public class DasLongPollCustody implements UpdatableDataColumnSidecarCustody, SlotEventsChannel {
@@ -41,16 +41,17 @@ public class DasLongPollCustody implements UpdatableDataColumnSidecarCustody, Sl
   @VisibleForTesting final PendingRequests pendingRequests = new PendingRequests();
 
   public DasLongPollCustody(
-      UpdatableDataColumnSidecarCustody delegate,
-      AsyncRunner asyncRunner,
-      Duration waitPeriodForCurrentSlot) {
+      final UpdatableDataColumnSidecarCustody delegate,
+      final AsyncRunner asyncRunner,
+      final Duration waitPeriodForCurrentSlot) {
     this.delegate = delegate;
     this.asyncRunner = asyncRunner;
     this.waitPeriodForCurrentSlot = waitPeriodForCurrentSlot;
   }
 
   @Override
-  public SafeFuture<Void> onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar) {
+  public SafeFuture<Void> onNewValidatedDataColumnSidecar(
+      final DataColumnSidecar dataColumnSidecar) {
     return delegate
         .onNewValidatedDataColumnSidecar(dataColumnSidecar)
         .thenRun(
@@ -66,15 +67,16 @@ public class DasLongPollCustody implements UpdatableDataColumnSidecarCustody, Sl
 
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecar(
-      DataColumnSlotAndIdentifier columnId) {
-    SafeFuture<Optional<DataColumnSidecar>> pendingFuture = addPendingRequest(columnId);
-    SafeFuture<Optional<DataColumnSidecar>> existingFuture =
+      final DataColumnSlotAndIdentifier columnId) {
+    final SafeFuture<Optional<DataColumnSidecar>> pendingFuture = addPendingRequest(columnId);
+    final SafeFuture<Optional<DataColumnSidecar>> existingFuture =
         delegate.getCustodyDataColumnSidecar(columnId);
     return anyNonEmpty(pendingFuture, existingFuture);
   }
 
   @Override
-  public SafeFuture<Boolean> hasCustodyDataColumnSidecar(DataColumnSlotAndIdentifier columnId) {
+  public SafeFuture<Boolean> hasCustodyDataColumnSidecar(
+      final DataColumnSlotAndIdentifier columnId) {
     SafeFuture<Optional<Boolean>> pendingFuture =
         addPendingRequest(columnId).thenApply(maybeSidecar -> maybeSidecar.map(__ -> true));
     SafeFuture<Optional<Boolean>> existingFuture =
@@ -98,7 +100,7 @@ public class DasLongPollCustody implements UpdatableDataColumnSidecarCustody, Sl
   }
 
   @Override
-  public void onSlot(UInt64 slot) {
+  public void onSlot(final UInt64 slot) {
     asyncRunner
         .runAfterDelay(
             () -> pendingRequests.setNoWaitSlot(slot.increment()), waitPeriodForCurrentSlot)
@@ -106,7 +108,7 @@ public class DasLongPollCustody implements UpdatableDataColumnSidecarCustody, Sl
   }
 
   private static <T> SafeFuture<Optional<T>> anyNonEmpty(
-      SafeFuture<Optional<T>> future1, SafeFuture<Optional<T>> future2) {
+      final SafeFuture<Optional<T>> future1, final SafeFuture<Optional<T>> future2) {
     return SafeFuture.anyOf(future1, future2)
         .thenCompose(
             __ -> {
@@ -154,15 +156,15 @@ public class DasLongPollCustody implements UpdatableDataColumnSidecarCustody, Sl
 
     synchronized List<SafeFuture<Optional<DataColumnSidecar>>> remove(
         final DataColumnSlotAndIdentifier columnId) {
-      List<SafeFuture<Optional<DataColumnSidecar>>> ret = requests.remove(columnId);
+      final List<SafeFuture<Optional<DataColumnSidecar>>> ret = requests.remove(columnId);
       return ret == null ? Collections.emptyList() : ret;
     }
 
-    void setNoWaitSlot(UInt64 tillSlotExclusive) {
+    void setNoWaitSlot(final UInt64 tillSlotExclusive) {
       final List<SafeFuture<Optional<DataColumnSidecar>>> toCancel;
       synchronized (this) {
         this.noWaitSlot = tillSlotExclusive;
-        SortedMap<DataColumnSlotAndIdentifier, List<SafeFuture<Optional<DataColumnSidecar>>>>
+        final SortedMap<DataColumnSlotAndIdentifier, List<SafeFuture<Optional<DataColumnSidecar>>>>
             toRemove =
                 requests.headMap(
                     DataColumnSlotAndIdentifier.minimalComparableForSlot(tillSlotExclusive));

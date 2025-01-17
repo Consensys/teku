@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.versions.phase0.operations.validation;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
@@ -38,18 +37,17 @@ public class OperationValidatorPhase0 implements OperationValidator {
   private final VoluntaryExitValidator voluntaryExitValidator;
 
   public OperationValidatorPhase0(
-      final SpecConfig specConfig,
       final Predicates predicates,
       final BeaconStateAccessors beaconStateAccessors,
       final AttestationDataValidator attestationDataValidator,
-      final AttestationUtil attestationUtil) {
+      final AttestationUtil attestationUtil,
+      final VoluntaryExitValidator voluntaryExitValidator) {
     this.attestationDataValidator = attestationDataValidator;
     this.attesterSlashingValidator =
         new AttesterSlashingValidator(predicates, beaconStateAccessors, attestationUtil);
     this.proposerSlashingValidator =
         new ProposerSlashingValidator(predicates, beaconStateAccessors);
-    this.voluntaryExitValidator =
-        new VoluntaryExitValidator(specConfig, predicates, beaconStateAccessors);
+    this.voluntaryExitValidator = voluntaryExitValidator;
   }
 
   @Override
@@ -69,7 +67,7 @@ public class OperationValidatorPhase0 implements OperationValidator {
       final Fork fork,
       final BeaconState state,
       final AttesterSlashing attesterSlashing,
-      SlashedIndicesCaptor slashedIndicesCaptor) {
+      final SlashedIndicesCaptor slashedIndicesCaptor) {
     return attesterSlashingValidator.validate(fork, state, attesterSlashing, slashedIndicesCaptor);
   }
 

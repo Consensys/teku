@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.ssz.collections.impl;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.BitSet;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
 import org.apache.tuweni.bytes.Bytes;
@@ -32,7 +33,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
 
-  public static Bytes sszTruncateLeadingBit(Bytes bytes, int length) {
+  public static Bytes sszTruncateLeadingBit(final Bytes bytes, final int length) {
     Bytes bytesWithoutLast = bytes.slice(0, bytes.size() - 1);
     if (length % 8 == 0) {
       return bytesWithoutLast;
@@ -44,7 +45,7 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
     }
   }
 
-  public static int sszGetLengthAndValidate(Bytes bytes) {
+  public static int sszGetLengthAndValidate(final Bytes bytes) {
     int numBytes = bytes.size();
     checkArgument(numBytes > 0, "BitlistImpl must contain at least one byte");
     checkArgument(bytes.get(numBytes - 1) != 0, "BitlistImpl data must contain end marker bit");
@@ -54,7 +55,7 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
   }
 
   public static SszBitlist nullableOr(
-      @Nullable SszBitlist bitlist1OrNull, @Nullable SszBitlist bitlist2OrNull) {
+      final @Nullable SszBitlist bitlist1OrNull, final @Nullable SszBitlist bitlist2OrNull) {
     checkArgument(
         bitlist1OrNull != null || bitlist2OrNull != null,
         "At least one argument should be non-null");
@@ -67,18 +68,24 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
     }
   }
 
-  public static SszBitlistImpl ofBits(SszBitlistSchema<?> schema, int size, int... bits) {
+  public static SszBitlistImpl ofBits(
+      final SszBitlistSchema<?> schema, final int size, final int... bits) {
     return new SszBitlistImpl(schema, new BitlistImpl(size, schema.getMaxLength(), bits));
+  }
+
+  public static SszBitlistImpl wrapBitSet(
+      final SszBitlistSchema<?> schema, final int size, final BitSet bitSet) {
+    return new SszBitlistImpl(schema, new BitlistImpl(size, schema.getMaxLength(), bitSet));
   }
 
   private final BitlistImpl value;
 
-  public SszBitlistImpl(SszListSchema<SszBit, ?> schema, TreeNode backingNode) {
+  public SszBitlistImpl(final SszListSchema<SszBit, ?> schema, final TreeNode backingNode) {
     super(schema, backingNode);
     value = getBitlist(this);
   }
 
-  public SszBitlistImpl(SszListSchema<SszBit, ?> schema, BitlistImpl value) {
+  public SszBitlistImpl(final SszListSchema<SszBit, ?> schema, final BitlistImpl value) {
     super(schema, () -> toSszBitList(schema, value).getBackingNode());
     this.value = value;
   }
@@ -95,17 +102,17 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
     return IntCache.noop();
   }
 
-  private BitlistImpl toBitlistImpl(SszBitlist bl) {
+  private BitlistImpl toBitlistImpl(final SszBitlist bl) {
     return ((SszBitlistImpl) bl).value;
   }
 
   @Override
-  public SszBitlist or(SszBitlist other) {
+  public SszBitlist or(final SszBitlist other) {
     return new SszBitlistImpl(getSchema(), value.or(toBitlistImpl(other)));
   }
 
   @Override
-  public boolean getBit(int i) {
+  public boolean getBit(final int i) {
     return value.getBit(i);
   }
 
@@ -115,12 +122,12 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
   }
 
   @Override
-  public boolean intersects(SszBitlist other) {
+  public boolean intersects(final SszBitlist other) {
     return value.intersects(toBitlistImpl(other));
   }
 
   @Override
-  public boolean isSuperSetOf(SszBitlist other) {
+  public boolean isSuperSetOf(final SszBitlist other) {
     return value.isSuperSetOf(toBitlistImpl(other));
   }
 
@@ -140,11 +147,11 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
   }
 
   private static SszList<SszBit> toSszBitList(
-      SszListSchema<SszBit, ?> schema, BitlistImpl bitlist) {
+      final SszListSchema<SszBit, ?> schema, final BitlistImpl bitlist) {
     return schema.sszDeserialize(SszReader.fromBytes(bitlist.serialize()));
   }
 
-  private static BitlistImpl getBitlist(SszList<SszBit> bitlistView) {
+  private static BitlistImpl getBitlist(final SszList<SszBit> bitlistView) {
     return BitlistImpl.fromSszBytes(
         bitlistView.sszSerialize(), bitlistView.getSchema().getMaxLength());
   }
@@ -162,5 +169,9 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
   @Override
   public String toString() {
     return "SszBitlist{size=" + this.size() + ", " + value.toString() + "}";
+  }
+
+  public static SszBitlist fromBytes(final SszBitlistSchema<?> schema, final Bytes value) {
+    return new SszBitlistImpl(schema, BitlistImpl.fromSszBytes(value, schema.getMaxLength()));
   }
 }

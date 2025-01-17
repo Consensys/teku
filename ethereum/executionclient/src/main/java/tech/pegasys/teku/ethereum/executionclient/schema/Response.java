@@ -38,7 +38,7 @@ public class Response<T> {
   }
 
   public static <T> Response<T> withNullPayload() {
-    return new Response<>(null, null);
+    return new Response<>(null);
   }
 
   public static <T> Response<T> withErrorMessage(final String errorMessage) {
@@ -112,7 +112,7 @@ public class Response<T> {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

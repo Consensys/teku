@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
@@ -22,6 +23,7 @@ import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SignedContributionAndProofGossipManager
@@ -35,7 +37,8 @@ public class SignedContributionAndProofGossipManager
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<SignedContributionAndProof> processor,
-      final NetworkingSpecConfig networkingConfig) {
+      final NetworkingSpecConfig networkingConfig,
+      final DebugDataDumper debugDataDumper) {
     super(
         recentChainData,
         GossipTopicName.SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF,
@@ -45,11 +48,15 @@ public class SignedContributionAndProofGossipManager
         forkInfo,
         processor,
         schemaDefinitions.getSignedContributionAndProofSchema(),
+        message -> Optional.of(message.getMessage().getContribution().getSlot()),
         message ->
             recentChainData
                 .getSpec()
                 .computeEpochAtSlot(message.getMessage().getContribution().getSlot()),
-        networkingConfig);
+        networkingConfig,
+        GossipFailureLogger.createSuppressing(
+            GossipTopicName.SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF.toString()),
+        debugDataDumper);
   }
 
   public void publishContribution(final SignedContributionAndProof message) {

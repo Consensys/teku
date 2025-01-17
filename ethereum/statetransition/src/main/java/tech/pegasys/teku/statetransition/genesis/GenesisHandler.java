@@ -27,6 +27,7 @@ import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
@@ -68,7 +69,7 @@ public class GenesisHandler implements Eth1EventsChannel {
   }
 
   @Override
-  public void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event) {
+  public void onMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
     if (!recentChainData.isPreGenesis()) {
       return;
     }
@@ -77,10 +78,14 @@ public class GenesisHandler implements Eth1EventsChannel {
   }
 
   private void processNewData(
-      Bytes32 blockHash, UInt64 timestamp, List<DepositWithIndex> deposits) {
-    validateDeposits(deposits);
+      final Bytes32 blockHash,
+      final UInt64 timestamp,
+      final List<DepositWithIndex> depositsWithIndex) {
+    validateDeposits(depositsWithIndex);
     final int previousValidatorRequirementPercent =
         roundPercent(genesisGenerator.getActiveValidatorCount());
+    final List<Deposit> deposits =
+        depositsWithIndex.stream().map(DepositWithIndex::deposit).toList();
     genesisGenerator.updateCandidateState(blockHash, timestamp, deposits);
 
     final int newActiveValidatorCount = genesisGenerator.getActiveValidatorCount();
@@ -101,21 +106,21 @@ public class GenesisHandler implements Eth1EventsChannel {
 
     final UInt64 expectedIndex = UInt64.valueOf(genesisGenerator.getDepositCount());
     final DepositWithIndex firstDeposit = deposits.get(0);
-    if (!firstDeposit.getIndex().equals(expectedIndex)) {
+    if (!firstDeposit.index().equals(expectedIndex)) {
       throw InvalidDepositEventsException.expectedDepositAtIndex(
-          expectedIndex, firstDeposit.getIndex());
+          expectedIndex, firstDeposit.index());
     }
   }
 
-  private int roundPercent(int activeValidatorCount) {
+  private int roundPercent(final int activeValidatorCount) {
     return activeValidatorCount
         * 100
         / spec.getGenesisSpecConfig().getMinGenesisActiveValidatorCount();
   }
 
-  private void eth2Genesis(BeaconState genesisState) {
+  private void eth2Genesis(final BeaconState genesisState) {
     recentChainData.initializeFromGenesis(genesisState, timeProvider.getTimeInSeconds());
-    Bytes32 genesisBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final Bytes32 genesisBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     EVENT_LOG.genesisEvent(
         genesisState.hashTreeRoot(), genesisBlockRoot, genesisState.getGenesisTime());
   }

@@ -46,7 +46,7 @@ public interface LeafNode extends TreeNode, LeafDataNode {
   LeafNode EMPTY_LEAF = ZERO_LEAVES[0];
 
   /** Creates a basic Leaf node instance with the data {@literal <= } 32 bytes */
-  static LeafNode create(Bytes data) {
+  static LeafNode create(final Bytes data) {
     return new SimpleLeafNode(data);
   }
 
@@ -73,14 +73,16 @@ public interface LeafNode extends TreeNode, LeafDataNode {
    */
   @NotNull
   @Override
-  default TreeNode get(long target) {
+  default TreeNode get(final long target) {
     checkArgument(target == 1, "Invalid root index: %s", target);
     return this;
   }
 
   @Override
   default boolean iterate(
-      long thisGeneralizedIndex, long startGeneralizedIndex, TreeVisitor visitor) {
+      final long thisGeneralizedIndex,
+      final long startGeneralizedIndex,
+      final TreeVisitor visitor) {
     if (GIndexUtil.gIdxCompare(thisGeneralizedIndex, startGeneralizedIndex) == NodeRelation.LEFT) {
       return true;
     } else {
@@ -89,7 +91,7 @@ public interface LeafNode extends TreeNode, LeafDataNode {
   }
 
   @Override
-  default TreeNode updated(long target, Function<TreeNode, TreeNode> nodeUpdater) {
+  default TreeNode updated(final long target, final Function<TreeNode, TreeNode> nodeUpdater) {
     checkArgument(target == 1, "Invalid root index: %s", target);
     return nodeUpdater.apply(this);
   }

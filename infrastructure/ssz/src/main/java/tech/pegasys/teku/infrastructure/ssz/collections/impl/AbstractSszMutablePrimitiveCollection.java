@@ -34,7 +34,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeUpdates;
 
 public abstract class AbstractSszMutablePrimitiveCollection<
-        ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+        ElementT, SszElementT extends SszPrimitive<ElementT>>
     extends AbstractSszMutableCollection<SszElementT, SszElementT>
     implements SszMutablePrimitiveCollection<ElementT, SszElementT> {
 
@@ -42,7 +42,7 @@ public abstract class AbstractSszMutablePrimitiveCollection<
 
   @SuppressWarnings("unchecked")
   protected AbstractSszMutablePrimitiveCollection(
-      AbstractSszComposite<SszElementT> backingImmutableData) {
+      final AbstractSszComposite<SszElementT> backingImmutableData) {
     super(backingImmutableData);
     elementSchemaCache = (SszPrimitiveSchema<ElementT, SszElementT>) getSchema().getElementSchema();
   }
@@ -53,7 +53,7 @@ public abstract class AbstractSszMutablePrimitiveCollection<
   }
 
   @Override
-  protected void validateChildSchema(int index, SszElementT value) {
+  protected void validateChildSchema(final int index, final SszElementT value) {
     // no need to check primitive value schema
   }
 
@@ -63,7 +63,7 @@ public abstract class AbstractSszMutablePrimitiveCollection<
    */
   @Override
   protected TreeUpdates changesToNewNodes(
-      Stream<Map.Entry<Integer, SszElementT>> newChildValues, TreeNode original) {
+      final Stream<Map.Entry<Integer, SszElementT>> newChildValues, final TreeNode original) {
     SszCollectionSchema<?, ?> type = getSchema();
     int elementsPerChunk = type.getElementsPerChunk();
 
@@ -116,17 +116,16 @@ public abstract class AbstractSszMutablePrimitiveCollection<
     throw new UnsupportedOperationException();
   }
 
-  private static class NodeUpdate<
-      ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>> {
+  private static class NodeUpdate<ElementT, SszElementT extends SszPrimitive<ElementT>> {
     private final List<PackedNodeUpdate<ElementT, SszElementT>> updates;
     private final long nodeGIndex;
 
-    public NodeUpdate(long nodeGIndex, int maxElementsPerChunk) {
+    public NodeUpdate(final long nodeGIndex, final int maxElementsPerChunk) {
       this.updates = new ArrayList<>(maxElementsPerChunk);
       this.nodeGIndex = nodeGIndex;
     }
 
-    public void addUpdate(int internalNodeIndex, SszElementT newValue) {
+    public void addUpdate(final int internalNodeIndex, final SszElementT newValue) {
       updates.add(new PackedNodeUpdate<>(internalNodeIndex, newValue));
     }
 

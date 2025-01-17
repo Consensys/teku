@@ -18,6 +18,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.custom.SszCustomListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
@@ -26,7 +27,8 @@ public class SszListSchemaTest extends SszListSchemaTestBase {
 
   @Override
   public Stream<? extends SszSchema<?>> testSchemas() {
-    return SszListSchemaTestBase.complexListSchemas();
+    return Stream.concat(
+        SszListSchemaTestBase.complexListSchemas(), Stream.of(new SszCustomListSchema()));
   }
 
   @Test

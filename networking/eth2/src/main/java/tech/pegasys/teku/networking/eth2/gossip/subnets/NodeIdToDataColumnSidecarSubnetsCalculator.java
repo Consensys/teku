@@ -23,8 +23,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigEip7594;
-import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 
 @FunctionalInterface
 public interface NodeIdToDataColumnSidecarSubnetsCalculator {
@@ -35,14 +36,15 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
 
   /** Creates a calculator instance for the specific slot */
   private static NodeIdToDataColumnSidecarSubnetsCalculator createAtSlot(
-      SpecConfigEip7594 config, MiscHelpersEip7594 miscHelpers, UInt64 currentSlot) {
+      final SpecConfigFulu config, final MiscHelpers miscHelpers, final UInt64 currentSlot) {
     UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(currentSlot);
     SszBitvectorSchema<SszBitvector> bitvectorSchema =
         SszBitvectorSchema.create(config.getDataColumnSidecarSubnetCount());
     return (nodeId, subnetCount) -> {
       List<UInt64> nodeSubnets =
-          miscHelpers.computeDataColumnSidecarBackboneSubnets(
-              nodeId, currentEpoch, subnetCount.orElse(config.getCustodyRequirement()));
+          MiscHelpersFulu.required(miscHelpers)
+              .computeDataColumnSidecarBackboneSubnets(
+                  nodeId, currentEpoch, subnetCount.orElse(config.getCustodyRequirement()));
       return Optional.of(
           bitvectorSchema.ofBits(nodeSubnets.stream().map(UInt64::intValue).toList()));
     };
@@ -50,20 +52,20 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
 
   /** Create an instance base on the current slot */
   static NodeIdToDataColumnSidecarSubnetsCalculator create(
-      Spec spec, Supplier<Optional<UInt64>> currentSlotSupplier) {
+      final Spec spec, final Supplier<Optional<UInt64>> currentSlotSupplier) {
 
     return (nodeId, subnetCount) ->
         currentSlotSupplier
             .get()
             .flatMap(
                 slot -> {
-                  SpecVersion specVersion = spec.atSlot(slot);
+                  final SpecVersion specVersion = spec.atSlot(slot);
                   final NodeIdToDataColumnSidecarSubnetsCalculator calculatorAtSlot;
-                  if (specVersion.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7594)) {
+                  if (specVersion.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
                     calculatorAtSlot =
                         createAtSlot(
-                            SpecConfigEip7594.required(specVersion.getConfig()),
-                            MiscHelpersEip7594.required(specVersion.miscHelpers()),
+                            SpecConfigFulu.required(specVersion.getConfig()),
+                            specVersion.miscHelpers(),
                             slot);
                   } else {
                     calculatorAtSlot = NOOP;

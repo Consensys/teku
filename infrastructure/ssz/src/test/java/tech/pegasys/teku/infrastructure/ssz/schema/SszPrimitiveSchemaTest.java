@@ -47,19 +47,19 @@ public class SszPrimitiveSchemaTest extends SszSchemaTestBase {
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  void isPrimitive_shouldReturnTrue(SszPrimitiveSchema<?, ?> schema) {
+  void isPrimitive_shouldReturnTrue(final SszPrimitiveSchema<?, ?> schema) {
     assertThat(schema.isPrimitive()).isTrue();
   }
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  void getDefaultTree_shouldReturnLeaf(SszPrimitiveSchema<?, ?> schema) {
+  void getDefaultTree_shouldReturnLeaf(final SszPrimitiveSchema<?, ?> schema) {
     assertThat(schema.getDefaultTree()).isInstanceOf(LeafNode.class);
   }
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  <V, SszV extends SszPrimitive<V, SszV>> void boxed_roundtrip(SszPrimitiveSchema<V, SszV> schema) {
+  <V, SszV extends SszPrimitive<V>> void boxed_roundtrip(final SszPrimitiveSchema<V, SszV> schema) {
     SszV d = randomSsz.randomData(schema);
     V v = d.get();
     SszV d1 = schema.boxed(v);

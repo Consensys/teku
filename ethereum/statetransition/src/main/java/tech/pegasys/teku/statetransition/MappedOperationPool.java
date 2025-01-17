@@ -98,7 +98,7 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
     validationReasonCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
-            OPERATION_POOL_SIZE_VALIDATION_REASON + metricType,
+            OPERATION_POOL_SIZE_VALIDATION_REASON + metricType + "_total",
             "Total number of attempts to add an operation to the pool, broken down by validation result",
             "result");
 
@@ -109,13 +109,12 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
         this::updateLocalSubmissionsErrorHandler);
   }
 
-  private void updateLocalSubmissionsErrorHandler(Throwable throwable) {
+  private void updateLocalSubmissionsErrorHandler(final Throwable throwable) {
     LOG.debug("Failed to update " + metricType, throwable);
   }
 
   private void updateLocalSubmissions() {
-    final UInt64 staleTime =
-        timeProvider.getTimeInSeconds().minus(Duration.ofHours(2).getSeconds());
+    final UInt64 staleTime = timeProvider.getTimeInSeconds().minus(Duration.ofHours(2).toSeconds());
     final List<OperationPoolEntry<T>> staleLocalOperations =
         operations.values().stream()
             .filter(OperationPoolEntry::isLocal)
@@ -152,7 +151,7 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
   }
 
   private static InternalValidationResult rejectForDuplicatedMessage(
-      String metricType, final int validatorIndex) {
+      final String metricType, final int validatorIndex) {
     final String logMessage =
         String.format(
             "Cannot add to %s as validator %s is already in this pool.",
@@ -264,7 +263,7 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
     return operations.size();
   }
 
-  private SafeFuture<InternalValidationResult> add(T item, boolean fromNetwork) {
+  private SafeFuture<InternalValidationResult> add(final T item, final boolean fromNetwork) {
     final int validatorIndex = item.getValidatorId();
     return operationValidator
         .validateForGossip(item)

@@ -13,19 +13,22 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLS_TO_EXECUTION_CHANGE_SCHEMA;
+
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SignedBlsToExecutionChangeSchema
     extends ContainerSchema2<SignedBlsToExecutionChange, BlsToExecutionChange, SszSignature> {
 
-  public SignedBlsToExecutionChangeSchema() {
+  public SignedBlsToExecutionChangeSchema(final SchemaRegistry schemaRegistry) {
     super(
         "SignedBLSToExecutionChange",
-        namedSchema("message", new BlsToExecutionChangeSchema()),
+        namedSchema("message", schemaRegistry.get(BLS_TO_EXECUTION_CHANGE_SCHEMA)),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
   }
 

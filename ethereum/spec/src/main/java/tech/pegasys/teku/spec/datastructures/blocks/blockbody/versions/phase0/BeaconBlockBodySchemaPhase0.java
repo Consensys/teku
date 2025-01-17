@@ -29,14 +29,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
+import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
 public class BeaconBlockBodySchemaPhase0
     extends ContainerSchema8<
@@ -53,14 +53,14 @@ public class BeaconBlockBodySchemaPhase0
 
   private BeaconBlockBodySchemaPhase0(
       final String containerName,
-      NamedSchema<SszSignature> randaoRevealSchema,
-      NamedSchema<Eth1Data> eth1DataSchema,
-      NamedSchema<SszBytes32> graffitiSchema,
-      NamedSchema<SszList<ProposerSlashing>> proposerSlashingsSchema,
-      NamedSchema<SszList<AttesterSlashing>> attesterSlashingsSchema,
-      NamedSchema<SszList<Attestation>> attestationsSchema,
-      NamedSchema<SszList<Deposit>> depositsSchema,
-      NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema) {
+      final NamedSchema<SszSignature> randaoRevealSchema,
+      final NamedSchema<Eth1Data> eth1DataSchema,
+      final NamedSchema<SszBytes32> graffitiSchema,
+      final NamedSchema<SszList<ProposerSlashing>> proposerSlashingsSchema,
+      final NamedSchema<SszList<AttesterSlashing>> attesterSlashingsSchema,
+      final NamedSchema<SszList<Attestation>> attestationsSchema,
+      final NamedSchema<SszList<Deposit>> depositsSchema,
+      final NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema) {
     super(
         containerName,
         randaoRevealSchema,
@@ -75,8 +75,8 @@ public class BeaconBlockBodySchemaPhase0
 
   public static BeaconBlockBodySchemaPhase0 create(
       final SpecConfig specConfig,
-      final AttesterSlashingSchema attesterSlashingSchema,
-      final String containerName) {
+      final String containerName,
+      final SchemaRegistry schemaRegistry) {
     return new BeaconBlockBodySchemaPhase0(
         containerName,
         namedSchema(BlockBodyFields.RANDAO_REVEAL, SszSignatureSchema.INSTANCE),
@@ -88,11 +88,14 @@ public class BeaconBlockBodySchemaPhase0
                 ProposerSlashing.SSZ_SCHEMA, specConfig.getMaxProposerSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTER_SLASHINGS,
-            SszListSchema.create(attesterSlashingSchema, specConfig.getMaxAttesterSlashings())),
+            SszListSchema.create(
+                schemaRegistry.get(SchemaTypes.ATTESTER_SLASHING_SCHEMA),
+                specConfig.getMaxAttesterSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTATIONS,
             SszListSchema.create(
-                new AttestationSchema(specConfig), specConfig.getMaxAttestations())),
+                schemaRegistry.get(SchemaTypes.ATTESTATION_SCHEMA),
+                specConfig.getMaxAttestations())),
         namedSchema(
             BlockBodyFields.DEPOSITS,
             SszListSchema.create(Deposit.SSZ_SCHEMA, specConfig.getMaxDeposits())),
@@ -150,7 +153,7 @@ public class BeaconBlockBodySchemaPhase0
   }
 
   @Override
-  public BeaconBlockBodyPhase0 createFromBackingNode(TreeNode node) {
+  public BeaconBlockBodyPhase0 createFromBackingNode(final TreeNode node) {
     return new BeaconBlockBodyPhase0(this, node);
   }
 }

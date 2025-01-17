@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.validator.coordinator.duties;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 public class AttesterDutiesGenerator {
   private final Spec spec;
 
-  public AttesterDutiesGenerator(Spec spec) {
+  public AttesterDutiesGenerator(final Spec spec) {
     this.spec = spec;
   }
 
@@ -49,22 +49,22 @@ public class AttesterDutiesGenerator {
 
   private List<AttesterDuty> createAttesterDuties(
       final BeaconState state, final UInt64 epoch, final IntCollection validatorIndices) {
-    final List<Optional<AttesterDuty>> maybeAttesterDutyList = new ArrayList<>();
+    final List<AttesterDuty> attesterDutyList = new ArrayList<>();
     final BeaconStateAccessors beaconStateAccessors = spec.atEpoch(epoch).beaconStateAccessors();
     final UInt64 committeeCountPerSlot =
         beaconStateAccessors.getCommitteeCountPerSlot(state, epoch);
-    final Map<Integer, CommitteeAssignment> validatorIndexToCommitteeAssignmentMap =
+    final Int2ObjectMap<CommitteeAssignment> validatorIndexToCommitteeAssignmentMap =
         spec.getValidatorIndexToCommitteeAssignmentMap(state, epoch);
-    for (final Integer validatorIndex : validatorIndices) {
+    for (final int validatorIndex : validatorIndices) {
       final CommitteeAssignment committeeAssignment =
           validatorIndexToCommitteeAssignmentMap.get(validatorIndex);
       if (committeeAssignment != null) {
-        maybeAttesterDutyList.add(
-            attesterDutyFromCommitteeAssignment(
-                committeeAssignment, validatorIndex, committeeCountPerSlot, state));
+        attesterDutyFromCommitteeAssignment(
+                committeeAssignment, validatorIndex, committeeCountPerSlot, state)
+            .ifPresent(attesterDutyList::add);
       }
     }
-    return maybeAttesterDutyList.stream().filter(Optional::isPresent).map(Optional::get).toList();
+    return attesterDutyList;
   }
 
   private Optional<AttesterDuty> attesterDutyFromCommitteeAssignment(
@@ -78,10 +78,10 @@ public class AttesterDutiesGenerator {
                 new AttesterDuty(
                     publicKey,
                     validatorIndex,
-                    committeeAssignment.getCommittee().size(),
-                    committeeAssignment.getCommitteeIndex().intValue(),
+                    committeeAssignment.committee().size(),
+                    committeeAssignment.committeeIndex().intValue(),
                     committeeCountPerSlot.intValue(),
-                    committeeAssignment.getCommittee().indexOf(validatorIndex),
-                    committeeAssignment.getSlot()));
+                    committeeAssignment.committee().indexOf(validatorIndex),
+                    committeeAssignment.slot()));
   }
 }

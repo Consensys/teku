@@ -42,8 +42,8 @@ public class CustomRunner {
       new Blackhole(
           "Today's password is swordfish. I understand instantiating Blackholes directly is dangerous.");
   private final Map<String, Consumer<Blackhole>> benches = new LinkedHashMap<>();
-  private int runIterations = 10;
-  private int runsCount = 10;
+  private final int runIterations;
+  private final int runsCount;
 
   public CustomRunner(int runIterations, int runsCount) {
     this.runIterations = runIterations;

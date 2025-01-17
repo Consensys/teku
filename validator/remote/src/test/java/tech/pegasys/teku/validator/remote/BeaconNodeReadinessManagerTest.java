@@ -15,13 +15,18 @@ package tech.pegasys.teku.validator.remote;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
+import org.assertj.core.api.InstanceOfAssertFactories;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
+import tech.pegasys.teku.ethereum.json.types.node.PeerCountBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -29,8 +34,11 @@ import tech.pegasys.teku.validator.api.required.SyncingStatus;
 
 public class BeaconNodeReadinessManagerTest {
 
-  private static final SyncingStatus SYNCED_STATUS =
-      new SyncingStatus(UInt64.ONE, UInt64.ZERO, false, Optional.empty(), Optional.empty());
+  private static final SyncingStatus SYNCED_OPTIMISTIC_STATUS =
+      new SyncingStatus(UInt64.ONE, UInt64.ZERO, false, Optional.of(true), Optional.empty());
+
+  private static final SyncingStatus SYNCED_NON_OPTIMISTIC_STATUS =
+      new SyncingStatus(UInt64.ONE, UInt64.ZERO, false, Optional.of(false), Optional.empty());
 
   private static final SyncingStatus SYNCING_STATUS =
       new SyncingStatus(UInt64.ONE, UInt64.ZERO, true, Optional.empty(), Optional.empty());
@@ -40,6 +48,11 @@ public class BeaconNodeReadinessManagerTest {
 
   private static final SyncingStatus EL_OFFLINE_STATUS =
       new SyncingStatus(UInt64.ONE, UInt64.ZERO, true, Optional.of(true), Optional.of(true));
+
+  private final PeerCount notEnoughPeers =
+      new PeerCountBuilder().connected(UInt64.valueOf(2)).disconnected(UInt64.valueOf(60)).build();
+  private final PeerCount enoughPeers =
+      new PeerCountBuilder().connected(UInt64.valueOf(51)).disconnected(UInt64.valueOf(60)).build();
 
   private final RemoteValidatorApiChannel beaconNodeApi = mock(RemoteValidatorApiChannel.class);
   private final RemoteValidatorApiChannel failoverBeaconNodeApi =
@@ -56,6 +69,13 @@ public class BeaconNodeReadinessManagerTest {
           List.of(failoverBeaconNodeApi),
           validatorLogger,
           beaconNodeReadinessChannel);
+
+  @BeforeEach
+  public void setup() {
+    when(beaconNodeApi.getPeerCount()).thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(failoverBeaconNodeApi.getPeerCount())
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+  }
 
   @Test
   public void performsReadinessCheckOnStartup() {
@@ -89,7 +109,8 @@ public class BeaconNodeReadinessManagerTest {
 
     verifyNoInteractions(validatorLogger, beaconNodeReadinessChannel);
 
-    when(beaconNodeApi.getSyncingStatus()).thenReturn(SafeFuture.completedFuture(SYNCED_STATUS));
+    when(beaconNodeApi.getSyncingStatus())
+        .thenReturn(SafeFuture.completedFuture(SYNCED_OPTIMISTIC_STATUS));
     when(failoverBeaconNodeApi.getSyncingStatus())
         .thenReturn(SafeFuture.completedFuture(SYNCING_STATUS));
 
@@ -115,14 +136,16 @@ public class BeaconNodeReadinessManagerTest {
     verify(beaconNodeReadinessChannel).onPrimaryNodeNotReady();
 
     // primary node recovers
-    when(beaconNodeApi.getSyncingStatus()).thenReturn(SafeFuture.completedFuture(SYNCED_STATUS));
+    when(beaconNodeApi.getSyncingStatus())
+        .thenReturn(SafeFuture.completedFuture(SYNCED_OPTIMISTIC_STATUS));
 
     advanceToNextQueryPeriod(beaconNodeReadinessManager);
 
     assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isTrue();
 
     verify(validatorLogger).primaryBeaconNodeIsBackAndReady();
-    verify(beaconNodeReadinessChannel).onPrimaryNodeBackReady();
+    // call it every time we check, channel will filter it
+    verify(beaconNodeReadinessChannel, times(2)).onPrimaryNodeReady();
   }
 
   @Test
@@ -136,7 +159,7 @@ public class BeaconNodeReadinessManagerTest {
     when(beaconNodeApi.getSyncingStatus())
         .thenReturn(SafeFuture.completedFuture(EL_OFFLINE_STATUS));
     when(failoverBeaconNodeApi.getSyncingStatus())
-        .thenReturn(SafeFuture.completedFuture(SYNCED_STATUS));
+        .thenReturn(SafeFuture.completedFuture(SYNCED_OPTIMISTIC_STATUS));
 
     advanceToNextQueryPeriod(beaconNodeReadinessManager);
 
@@ -148,30 +171,73 @@ public class BeaconNodeReadinessManagerTest {
   }
 
   @Test
-  public void ordersFailoversByReadiness() {
-    final RemoteValidatorApiChannel anotherFailover = mock(RemoteValidatorApiChannel.class);
-    final RemoteValidatorApiChannel yetAnotherFailover = mock(RemoteValidatorApiChannel.class);
+  public void ordersFailoversByReadinessStatus() {
+
+    // Primary BN, synced optimistic
+    final RemoteValidatorApiChannel primaryBeaconNodeApi = mock(RemoteValidatorApiChannel.class);
+    when(primaryBeaconNodeApi.getSyncingStatus())
+        .thenReturn(SafeFuture.completedFuture(SYNCED_OPTIMISTIC_STATUS));
+    // Since the BN is optimistic, the peer count won't be checked
+    when(primaryBeaconNodeApi.getPeerCount())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(enoughPeers)));
+
+    // Failover BN, syncing
+    final RemoteValidatorApiChannel syncingFailover = mock(RemoteValidatorApiChannel.class);
+    when(syncingFailover.getSyncingStatus()).thenReturn(SafeFuture.completedFuture(SYNCING_STATUS));
+    // Since the BN is syncing/not ready, the peer count won't be checked
+    when(syncingFailover.getPeerCount())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(enoughPeers)));
+
+    // Failover BN, synced optimistic
+    final RemoteValidatorApiChannel syncedOptimisticFailover =
+        mock(RemoteValidatorApiChannel.class);
+    when(syncedOptimisticFailover.getSyncingStatus())
+        .thenReturn(SafeFuture.completedFuture(SYNCED_OPTIMISTIC_STATUS));
+    // Since the BN is optimistic, the peer count won't be checked
+    when(syncedOptimisticFailover.getPeerCount())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(enoughPeers)));
+
+    // Failover BN synced and non-optimistic/ready
+    final RemoteValidatorApiChannel syncedNonOptimisticNotEnoughPeersFailover =
+        mock(RemoteValidatorApiChannel.class);
+    when(syncedNonOptimisticNotEnoughPeersFailover.getSyncingStatus())
+        .thenReturn(SafeFuture.completedFuture(SYNCED_NON_OPTIMISTIC_STATUS));
+    // Failover BN doesn't have enough connected peers
+    when(syncedNonOptimisticNotEnoughPeersFailover.getPeerCount())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(notEnoughPeers)));
+
+    // Failover BN synced and non-optimistic/ready
+    final RemoteValidatorApiChannel syncedNonOptimisticEnoughPeersFailover =
+        mock(RemoteValidatorApiChannel.class);
+    when(syncedNonOptimisticEnoughPeersFailover.getSyncingStatus())
+        .thenReturn(SafeFuture.completedFuture(SYNCED_NON_OPTIMISTIC_STATUS));
+    // Failover BN has enough connected peers
+    when(syncedNonOptimisticEnoughPeersFailover.getPeerCount())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(enoughPeers)));
+
     final BeaconNodeReadinessManager beaconNodeReadinessManager =
         new BeaconNodeReadinessManager(
-            beaconNodeApi,
-            List.of(failoverBeaconNodeApi, anotherFailover, yetAnotherFailover),
+            primaryBeaconNodeApi,
+            List.of(
+                syncingFailover,
+                syncedOptimisticFailover,
+                syncedNonOptimisticNotEnoughPeersFailover,
+                syncedNonOptimisticEnoughPeersFailover),
             validatorLogger,
             beaconNodeReadinessChannel);
 
-    when(beaconNodeApi.getSyncingStatus()).thenReturn(SafeFuture.completedFuture(SYNCED_STATUS));
-
-    when(failoverBeaconNodeApi.getSyncingStatus())
-        .thenReturn(SafeFuture.completedFuture(SYNCING_STATUS));
-    when(anotherFailover.getSyncingStatus()).thenReturn(SafeFuture.completedFuture(SYNCED_STATUS));
-    when(yetAnotherFailover.getSyncingStatus())
-        .thenReturn(SafeFuture.completedFuture(SYNCING_STATUS));
-
     advanceToNextQueryPeriod(beaconNodeReadinessManager);
 
+    // The expected order should be: ready/non-optimistic with enough peers -> ready/non-optimistic
+    // without enough peers -> optimistic -> syncing/not ready
     assertThat(beaconNodeReadinessManager.getFailoversInOrderOfReadiness())
         .toIterable()
-        .asList()
-        .containsExactly(anotherFailover, failoverBeaconNodeApi, yetAnotherFailover);
+        .asInstanceOf(InstanceOfAssertFactories.LIST)
+        .containsExactly(
+            syncedNonOptimisticEnoughPeersFailover,
+            syncedNonOptimisticNotEnoughPeersFailover,
+            syncedOptimisticFailover,
+            syncingFailover);
   }
 
   private void advanceToNextQueryPeriod(

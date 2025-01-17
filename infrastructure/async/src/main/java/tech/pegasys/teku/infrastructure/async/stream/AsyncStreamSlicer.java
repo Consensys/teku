@@ -28,33 +28,33 @@ public interface AsyncStreamSlicer<T> {
     SKIP_AND_STOP
   }
 
-  SliceResult slice(T element);
+  SliceResult slice(final T element);
 
-  static <T> AsyncStreamSlicer<T> limit(long count) {
+  static <T> AsyncStreamSlicer<T> limit(final long count) {
     return new AsyncStreamSlicer<>() {
       private final AtomicLong remainCount = new AtomicLong(count);
 
       @Override
-      public SliceResult slice(T element) {
+      public SliceResult slice(final T element) {
         return remainCount.decrementAndGet() > 0 ? CONTINUE : INCLUDE_AND_STOP;
       }
     };
   }
 
-  static <T> AsyncStreamSlicer<T> takeWhile(Predicate<T> condition) {
+  static <T> AsyncStreamSlicer<T> takeWhile(final Predicate<T> condition) {
     return t -> condition.test(t) ? CONTINUE : SKIP_AND_STOP;
   }
 
-  default AsyncStreamSlicer<T> then(AsyncStreamSlicer<T> nextSlicer) {
+  default AsyncStreamSlicer<T> then(final AsyncStreamSlicer<T> nextSlicer) {
     return new AsyncStreamSlicer<>() {
       private boolean thisSlicerCompleted = false;
 
       @Override
-      public SliceResult slice(T element) {
+      public SliceResult slice(final T element) {
         if (thisSlicerCompleted) {
           return nextSlicer.slice(element);
         } else {
-          SliceResult result = AsyncStreamSlicer.this.slice(element);
+          final SliceResult result = AsyncStreamSlicer.this.slice(element);
           return switch (result) {
             case CONTINUE -> result;
             case SKIP_AND_STOP -> {

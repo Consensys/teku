@@ -16,15 +16,19 @@ package tech.pegasys.teku.services;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.networking.nat.NatService;
+import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainService;
 import tech.pegasys.teku.services.chainstorage.StorageService;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerService;
 import tech.pegasys.teku.services.powchain.PowchainService;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 import tech.pegasys.teku.validator.client.slashingriskactions.DoppelgangerDetectionShutDown;
 import tech.pegasys.teku.validator.client.slashingriskactions.SlashedValidatorShutDown;
@@ -43,7 +47,8 @@ public class BeaconNodeServiceController extends ServiceController {
                 .powchain()
                 .getDepositTreeSnapshotConfiguration()
                 .isBundledDepositSnapshotEnabled(),
-            tekuConfig.metricsConfig().isBlobSidecarsStorageCountersEnabled()));
+            tekuConfig.metricsConfig().isBlobSidecarsStorageCountersEnabled(),
+            tekuConfig.beaconChain().eth2NetworkConfig().getEth2Network()));
     Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider = Optional.empty();
     if (tekuConfig.executionLayer().isEnabled()) {
       // Need to make sure the execution engine is listening before starting the beacon chain
@@ -55,12 +60,29 @@ public class BeaconNodeServiceController extends ServiceController {
     final BeaconChainService beaconChainService =
         new BeaconChainService(serviceConfig, tekuConfig.beaconChain());
     services.add(beaconChainService);
+    final NetworkConfig networkConfig = tekuConfig.network();
     services.add(
         new NatService(
             tekuConfig.natConfiguration(),
-            tekuConfig.network().getListenPort(),
+            networkConfig.getListenPort(),
+            networkConfig.getNetworkInterfaces().size() == 2
+                // IPv4 and IPv6 (dual-stack)
+                ? Optional.of(networkConfig.getListenPortIpv6())
+                : Optional.empty(),
             tekuConfig.discovery().isDiscoveryEnabled()));
-    powchainService(tekuConfig, serviceConfig, maybeExecutionWeb3jClientProvider)
+    // making it a Supplier ensures that BeaconChainService has been started and RecentChainData has
+    // been initialized when `get()` is called
+    final Supplier<Optional<BeaconState>> finalizedStateSupplier =
+        () -> {
+          final RecentChainData recentChainData =
+              beaconChainService.getBeaconChainController().getRecentChainData();
+          if (recentChainData.isPreGenesis()) {
+            return Optional.empty();
+          }
+          return Optional.of(recentChainData.getStore().getLatestFinalized().getState());
+        };
+    powchainService(
+            tekuConfig, serviceConfig, maybeExecutionWeb3jClientProvider, finalizedStateSupplier)
         .ifPresent(services::add);
 
     final Optional<SlashingRiskAction> maybeValidatorSlashedAction =
@@ -79,7 +101,8 @@ public class BeaconNodeServiceController extends ServiceController {
   private Optional<PowchainService> powchainService(
       final TekuConfiguration tekuConfig,
       final ServiceConfig serviceConfig,
-      final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider) {
+      final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider,
+      final Supplier<Optional<BeaconState>> finalizedStateSupplier) {
     if (tekuConfig.beaconChain().interopConfig().isInteropEnabled()
         || (!tekuConfig.powchain().isEnabled() && maybeExecutionWeb3jClientProvider.isEmpty())) {
       return Optional.empty();
@@ -92,7 +115,10 @@ public class BeaconNodeServiceController extends ServiceController {
     }
     final PowchainService powchainService =
         new PowchainService(
-            serviceConfig, tekuConfig.powchain(), maybeExecutionWeb3jClientProvider);
+            serviceConfig,
+            tekuConfig.powchain(),
+            maybeExecutionWeb3jClientProvider,
+            finalizedStateSupplier);
     serviceConfig.getEventChannels().subscribe(FinalizedCheckpointChannel.class, powchainService);
     return Optional.of(powchainService);
   }

@@ -24,13 +24,13 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStreamHandler;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 
 public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
   private final BatchDataColumnsByRootReqResp batchRpc;
 
-  public DataColumnReqRespBatchingImpl(BatchDataColumnsByRootReqResp batchRpc) {
+  public DataColumnReqRespBatchingImpl(final BatchDataColumnsByRootReqResp batchRpc) {
     this.batchRpc = batchRpc;
   }
 
@@ -44,7 +44,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
 
   @Override
   public SafeFuture<DataColumnSidecar> requestDataColumnSidecar(
-      UInt256 nodeId, DataColumnIdentifier columnIdentifier) {
+      final UInt256 nodeId, final DataColumnIdentifier columnIdentifier) {
     RequestEntry entry = new RequestEntry(nodeId, columnIdentifier, new SafeFuture<>());
     bufferedRequests.add(entry);
     return entry.promise();
@@ -62,7 +62,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
     }
   }
 
-  private void flushForNode(UInt256 nodeId, List<RequestEntry> nodeRequests) {
+  private void flushForNode(final UInt256 nodeId, final List<RequestEntry> nodeRequests) {
     AsyncStream<DataColumnSidecar> response =
         batchRpc.requestDataColumnSidecarsByRoot(
             nodeId, nodeRequests.stream().map(e -> e.columnIdentifier).toList());
@@ -75,9 +75,10 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
                   .collect(Collectors.toMap(RequestEntry::columnIdentifier, req -> req));
 
           @Override
-          public SafeFuture<Boolean> onNext(DataColumnSidecar dataColumnSidecar) {
-            DataColumnIdentifier colId = DataColumnIdentifier.createFromSidecar(dataColumnSidecar);
-            RequestEntry request = requestsNyColumnId.get(colId);
+          public SafeFuture<Boolean> onNext(final DataColumnSidecar dataColumnSidecar) {
+            final DataColumnIdentifier colId =
+                DataColumnIdentifier.createFromSidecar(dataColumnSidecar);
+            final RequestEntry request = requestsNyColumnId.get(colId);
             if (request == null) {
               return SafeFuture.failedFuture(
                   new IllegalArgumentException(
@@ -99,14 +100,14 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
           }
 
           @Override
-          public void onError(Throwable err) {
+          public void onError(final Throwable err) {
             nodeRequests.forEach(e -> e.promise().completeExceptionally(err));
           }
         });
   }
 
   @Override
-  public int getCurrentRequestLimit(UInt256 nodeId) {
+  public int getCurrentRequestLimit(final UInt256 nodeId) {
     return batchRpc.getCurrentRequestLimit(nodeId);
   }
 }

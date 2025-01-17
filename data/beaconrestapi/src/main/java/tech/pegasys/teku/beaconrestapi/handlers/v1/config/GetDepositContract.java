@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.config;
 
-import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH1ADDRESS_TYPE;
+import static tech.pegasys.teku.ethereum.execution.types.Eth1Address.ETH1ADDRESS_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_CONFIG;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
@@ -64,7 +64,7 @@ public class GetDepositContract extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final long depositChainId = configProvider.getGenesisSpecConfig().getDepositChainId();
     request.respondOk(new DepositContractData(depositChainId, depositContractAddress));
   }
@@ -73,7 +73,7 @@ public class GetDepositContract extends RestApiEndpoint {
     final UInt64 chainId;
     final Eth1Address address;
 
-    DepositContractData(long chainId, Eth1Address address) {
+    DepositContractData(final long chainId, final Eth1Address address) {
       this.chainId = UInt64.valueOf(chainId);
       this.address = address;
     }

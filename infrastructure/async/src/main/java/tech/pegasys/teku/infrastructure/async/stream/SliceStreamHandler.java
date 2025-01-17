@@ -19,13 +19,14 @@ class SliceStreamHandler<T> extends AbstractDelegatingStreamHandler<T, T> {
 
   private final AsyncStreamSlicer<T> slicer;
 
-  protected SliceStreamHandler(AsyncStreamHandler<T> delegate, AsyncStreamSlicer<T> slicer) {
+  protected SliceStreamHandler(
+      final AsyncStreamHandler<T> delegate, final AsyncStreamSlicer<T> slicer) {
     super(delegate);
     this.slicer = slicer;
   }
 
   @Override
-  public SafeFuture<Boolean> onNext(T t) {
+  public SafeFuture<Boolean> onNext(final T t) {
     AsyncStreamSlicer.SliceResult sliceResult = slicer.slice(t);
     return switch (sliceResult) {
       case CONTINUE -> delegate.onNext(t);

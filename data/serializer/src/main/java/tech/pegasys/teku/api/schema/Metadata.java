@@ -24,7 +24,7 @@ import java.util.Locale;
 import java.util.Objects;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageAltair;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.eip7594.MetadataMessageEip7594;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.fulu.MetadataMessageFulu;
 
 @Schema(
     description =
@@ -81,15 +81,15 @@ public class Metadata {
     this.attestationSubnetSubscriptions =
         metadataMessage.getAttnets().sszSerialize().toHexString().toLowerCase(Locale.ROOT);
 
-    if (metadataMessage instanceof MetadataMessageEip7594) {
+    if (metadataMessage instanceof MetadataMessageFulu) {
       this.syncCommitteeSubscriptions =
-          ((MetadataMessageEip7594) metadataMessage)
+          ((MetadataMessageFulu) metadataMessage)
               .getSyncnets()
               .sszSerialize()
               .toHexString()
               .toLowerCase(Locale.ROOT);
       this.custodySubnetCount =
-          ((MetadataMessageEip7594) metadataMessage).getCustodySubnetCount().toString();
+          ((MetadataMessageFulu) metadataMessage).getCustodySubnetCount().toString();
     } else if (metadataMessage instanceof MetadataMessageAltair) {
       this.syncCommitteeSubscriptions =
           ((MetadataMessageAltair) metadataMessage)

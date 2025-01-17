@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
@@ -78,6 +79,8 @@ public class PostValidatorLiveness extends RestApiEndpoint {
             .pathParam(EPOCH_PARAMETER)
             .requestBodyType(DeserializableTypeDefinition.listOf(UINT64_TYPE, 1))
             .response(SC_OK, "Successful Response", RESPONSE_TYPE)
+            .response(
+                SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
             .withServiceUnavailableResponse()
             .build());
     this.chainDataProvider = chainDataProvider;
@@ -86,7 +89,7 @@ public class PostValidatorLiveness extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     if (!chainDataProvider.isStoreAvailable() || syncDataProvider.isSyncing()) {
       throw new ServiceUnavailableException();
     }

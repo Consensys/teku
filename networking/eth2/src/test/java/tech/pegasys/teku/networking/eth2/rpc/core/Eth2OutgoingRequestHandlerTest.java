@@ -18,9 +18,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler.READ_COMPLETE_TIMEOUT;
+import static tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler.RESPONSE_CHUNK_ARRIVAL_TIMEOUT;
 
-import java.io.IOException;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -65,10 +65,6 @@ public class Eth2OutgoingRequestHandlerTest
       Eth2RpcResponseHandler.expectMultipleResponses(res -> responseListener.get().onResponse(res));
   private final int maxChunks = 3;
   private final SafeFuture<Void> finishedProcessingFuture = responseHandler.getCompletedFuture();
-  private final Duration ttbfTimeout =
-      Duration.ofSeconds(spec.getGenesisSpecConfig().getTtfbTimeout());
-  private final Duration respTimeout =
-      Duration.ofSeconds(spec.getGenesisSpecConfig().getRespTimeout());
 
   private RpcResponseEncoder<SignedBeaconBlock, ?> responseEncoder;
   private List<Bytes> chunks;
@@ -106,8 +102,7 @@ public class Eth2OutgoingRequestHandlerTest
         responseDecoder,
         method.shouldReceiveResponse(),
         request,
-        responseHandler,
-        spec.getNetworkingConfig());
+        responseHandler);
   }
 
   @Override
@@ -270,63 +265,30 @@ public class Eth2OutgoingRequestHandlerTest
   }
 
   @Test
-  public void disconnectsIfInitialBytesAreNotReceivedInTime() {
+  public void disconnectsIfFirstChunkIsNotReceivedInTime() {
     sendInitialPayload();
-    verify(rpcStream).closeWriteStream();
-    verify(rpcStream, never()).closeAbruptly();
-
-    // Run async tasks
-    timeProvider.advanceTimeByMillis(ttbfTimeout.toMillis());
-    timeoutRunner.executeDueActions();
-    verify(rpcStream).closeAbruptly();
-  }
-
-  @Test
-  public void doesNotDisconnectIfInitialBytesAreReceivedInTime() throws Exception {
-    sendInitialPayload();
-    verify(rpcStream).closeWriteStream();
-    verify(rpcStream, never()).closeAbruptly();
-
-    // Deliver some bytes just in time
-    timeProvider.advanceTimeByMillis(ttbfTimeout.toMillis() - 1);
-    timeoutRunner.executeDueActions();
-    deliverInitialBytes();
-
-    // Go past the time the first bytes should have been received and check it doesn't timeout
-    timeProvider.advanceTimeByMillis(10);
-    timeoutRunner.executeDueActions();
-    verify(rpcStream, never()).closeAbruptly();
-  }
-
-  @Test
-  public void disconnectsIfFirstChunkIsNotReceivedInTime() throws Exception {
-    sendInitialPayload();
-
-    deliverInitialBytes();
 
     // Run timeouts
-    timeProvider.advanceTimeByMillis(respTimeout.toMillis());
+    timeProvider.advanceTimeByMillis(RESPONSE_CHUNK_ARRIVAL_TIMEOUT.toMillis());
     timeoutRunner.executeDueActions();
     verify(rpcStream).closeAbruptly();
   }
 
   @Test
-  public void doNotDisconnectsIfFirstChunkReceivedInTime() throws Exception {
+  public void doNotDisconnectsIfFirstChunkReceivedInTime() {
     sendInitialPayload();
 
-    // First byte is received just in time
-    timeProvider.advanceTimeByMillis(ttbfTimeout.toMillis() - 1);
     deliverChunk(0);
 
     // Go past the time the first chunk would have timed out but not enough to trigger timeout on
     // the second chunk and ensure the timeout never fires.
-    timeProvider.advanceTimeByMillis(respTimeout.toMillis() - 1);
+    timeProvider.advanceTimeByMillis(RESPONSE_CHUNK_ARRIVAL_TIMEOUT.toMillis() - 1);
     timeoutRunner.executeDueActions();
     verify(rpcStream, never()).closeAbruptly();
   }
 
   @Test
-  public void disconnectsIfSecondChunkNotReceivedInTime() throws Exception {
+  public void disconnectsIfSecondChunkNotReceivedInTime() {
     sendInitialPayload();
 
     timeProvider.advanceTimeByMillis(100);
@@ -335,13 +297,13 @@ public class Eth2OutgoingRequestHandlerTest
     assertThat(blocks.size()).isEqualTo(1);
 
     // Run timeouts
-    timeProvider.advanceTimeByMillis(respTimeout.toMillis());
+    timeProvider.advanceTimeByMillis(RESPONSE_CHUNK_ARRIVAL_TIMEOUT.toMillis());
     timeoutRunner.executeDueActions();
     verify(rpcStream).closeAbruptly();
   }
 
   @Test
-  public void abortsWhenNoReadComplete() throws Exception {
+  public void abortsWhenNoReadComplete() {
     sendInitialPayload();
 
     timeProvider.advanceTimeByMillis(100);
@@ -352,7 +314,7 @@ public class Eth2OutgoingRequestHandlerTest
     asyncRequestRunner.executeQueuedActions();
 
     // Run timeouts
-    timeProvider.advanceTimeByMillis(respTimeout.toMillis());
+    timeProvider.advanceTimeByMillis(READ_COMPLETE_TIMEOUT.toMillis());
     timeoutRunner.executeDueActions();
     verify(rpcStream).closeAbruptly();
   }
@@ -362,7 +324,7 @@ public class Eth2OutgoingRequestHandlerTest
     sendInitialPayload();
 
     timeProvider.advanceTimeByMillis(100);
-    final Bytes chunkBytes = chunks.get(0);
+    final Bytes chunkBytes = chunks.getFirst();
     deliverBytes(chunkBytes.slice(0, chunkBytes.size() - 1));
 
     asyncRequestRunner.executeQueuedActions();
@@ -373,7 +335,7 @@ public class Eth2OutgoingRequestHandlerTest
   }
 
   @Test
-  public void doNotDisconnectsIfSecondChunkReceivedInTime() throws Exception {
+  public void doNotDisconnectsIfSecondChunkReceivedInTime() {
     sendInitialPayload();
 
     timeProvider.advanceTimeByMillis(100);
@@ -382,14 +344,14 @@ public class Eth2OutgoingRequestHandlerTest
     assertThat(blocks.size()).isEqualTo(1);
 
     // Second chunk is received just in time
-    timeProvider.advanceTimeByMillis(respTimeout.toMillis() - 1);
+    timeProvider.advanceTimeByMillis(RESPONSE_CHUNK_ARRIVAL_TIMEOUT.toMillis() - 1);
     timeoutRunner.executeDueActions();
     deliverChunk(1);
     asyncRequestRunner.executeQueuedActions();
 
     // Go past the time the second chunk would have timed out but not enough to trigger timeout on
     // the third chunk and ensure the timeout never fires.
-    timeProvider.advanceTimeByMillis(respTimeout.toMillis() - 1);
+    timeProvider.advanceTimeByMillis(RESPONSE_CHUNK_ARRIVAL_TIMEOUT.toMillis() - 1);
     timeoutRunner.executeDueActions();
     verify(rpcStream, never()).closeAbruptly();
     assertThat(blocks.size()).isEqualTo(2);
@@ -424,7 +386,7 @@ public class Eth2OutgoingRequestHandlerTest
     assertAllReceivedSuccessfully(0);
   }
 
-  private void assertAllReceivedSuccessfully(int chunkCount) throws InterruptedException {
+  private void assertAllReceivedSuccessfully(final int chunkCount) throws InterruptedException {
     asyncRequestRunner.waitForExactly(chunkCount);
     timeoutRunner.executeUntilDone();
     Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
@@ -437,11 +399,6 @@ public class Eth2OutgoingRequestHandlerTest
 
   private void sendInitialPayload() {
     reqHandler.handleInitialPayloadSent(rpcStream);
-  }
-
-  private void deliverInitialBytes() throws IOException {
-    final Bytes firstByte = chunks.get(0).slice(0, 1);
-    deliverBytes(firstByte);
   }
 
   private Bytes chunkBytes(final int chunk) {

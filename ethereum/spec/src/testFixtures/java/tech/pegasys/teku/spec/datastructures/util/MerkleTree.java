@@ -30,7 +30,7 @@ public class MerkleTree {
   private final List<Bytes32> zeroHashes;
   protected final int treeDepth; // Root does not count as depth, i.e. tree height is treeDepth + 1
 
-  public MerkleTree(int treeDepth) {
+  public MerkleTree(final int treeDepth) {
     checkArgument(treeDepth > 1, "MerkleTree: treeDepth must be greater than 1");
     this.treeDepth = treeDepth;
     this.tree = new ArrayList<>();
@@ -40,8 +40,8 @@ public class MerkleTree {
     this.zeroHashes = generateZeroHashes(treeDepth);
   }
 
-  protected static List<Bytes32> generateZeroHashes(int height) {
-    List<Bytes32> zeroHashes = new ArrayList<>();
+  protected static List<Bytes32> generateZeroHashes(final int height) {
+    final List<Bytes32> zeroHashes = new ArrayList<>();
     zeroHashes.add(Bytes32.ZERO);
     for (int i = 1; i < height; i++) {
       zeroHashes.add(i, Hash.sha256(zeroHashes.get(i - 1), zeroHashes.get(i - 1)));
@@ -49,57 +49,57 @@ public class MerkleTree {
     return zeroHashes;
   }
 
-  public void add(Bytes32 leaf) {
-    if (!tree.get(0).isEmpty()
-        && tree.get(0).get(tree.get(0).size() - 1).equals(zeroHashes.get(0))) {
-      tree.get(0).remove(tree.get(0).size() - 1);
+  public void add(final Bytes32 leaf) {
+    if (!tree.getFirst().isEmpty() && tree.getFirst().getLast().equals(zeroHashes.getFirst())) {
+      tree.getFirst().removeLast();
     }
-    int stageSize = tree.get(0).size();
-    tree.get(0).add(leaf);
-    for (int h = 0; h <= treeDepth; h++) {
-      List<Bytes32> stage = tree.get(h);
-      if (h > 0) {
+    int mutableStageSize = tree.getFirst().size();
+    tree.getFirst().add(leaf);
+    for (int depth = 0; depth <= treeDepth; depth++) {
+      final List<Bytes32> stage = tree.get(depth);
+      if (depth > 0) {
         // Remove elements that should be modified
-        stageSize = stageSize / 2;
-        while (stage.size() != stageSize) {
-          stage.remove(stage.size() - 1);
+        mutableStageSize /= 2;
+        while (stage.size() != mutableStageSize) {
+          stage.removeLast();
         }
 
-        List<Bytes32> previousStage = tree.get(h - 1);
-        int previousStageSize = previousStage.size();
+        final List<Bytes32> previousStage = tree.get(depth - 1);
+        final int previousStageSize = previousStage.size();
         stage.add(
             Hash.sha256(
                 previousStage.get(previousStageSize - 2),
                 previousStage.get(previousStageSize - 1)));
       }
-      if (stage.size() % 2 == 1 && h != treeDepth) {
-        stage.add(zeroHashes.get(h));
+      if (stage.size() % 2 == 1 && depth != treeDepth) {
+        stage.add(zeroHashes.get(depth));
       }
     }
   }
 
   public int getNumberOfLeaves() {
-    int lastLeafIndex = tree.get(0).size() - 1;
-    if (tree.get(0).get(lastLeafIndex).equals(Bytes32.ZERO)) {
-      return tree.get(0).size() - 1;
+    final int lastLeafIndex = tree.getFirst().size() - 1;
+    if (tree.getFirst().get(lastLeafIndex).equals(Bytes32.ZERO)) {
+      return tree.getFirst().size() - 1;
     }
-    return tree.get(0).size();
+    return tree.getFirst().size();
   }
 
-  public List<Bytes32> getProof(Bytes32 value) {
-    int index = tree.get(0).indexOf(value);
+  public List<Bytes32> getProof(final Bytes32 value) {
+    final int index = tree.getFirst().indexOf(value);
     if (index == -1) {
       throw new IllegalArgumentException("Leaf value is missing from the MerkleTree");
     }
     return getProof(index);
   }
 
-  public List<Bytes32> getProof(int itemIndex) {
-    List<Bytes32> proof = new ArrayList<>();
+  public List<Bytes32> getProof(final int itemIndex) {
+    int mutableIndex = itemIndex;
+    final List<Bytes32> proof = new ArrayList<>();
     for (int i = 0; i < treeDepth; i++) {
 
       // Get index of sibling node
-      int siblingIndex = itemIndex % 2 == 1 ? itemIndex - 1 : itemIndex + 1;
+      final int siblingIndex = mutableIndex % 2 == 1 ? mutableIndex - 1 : mutableIndex + 1;
 
       // If sibling is contained in the tree
       if (siblingIndex < tree.get(i).size()) {
@@ -113,25 +113,25 @@ public class MerkleTree {
         proof.add(zeroHashes.get(i));
       }
 
-      itemIndex /= 2;
+      mutableIndex /= 2;
     }
     proof.add(calcMixInValue());
     return proof;
   }
 
-  private Bytes32 calcViewBoundaryRoot(int depth, int viewLimit) {
+  private Bytes32 calcViewBoundaryRoot(final int depth, final int viewLimit) {
     if (depth == 0) {
-      return zeroHashes.get(0);
+      return zeroHashes.getFirst();
     }
-    depth -= 1;
-    Bytes32 deeperRoot = calcViewBoundaryRoot(depth, viewLimit);
+    final int deeperDepth = depth - 1;
+    final Bytes32 deeperRoot = calcViewBoundaryRoot(deeperDepth, viewLimit);
     // Check if given the viewLimit at the leaf layer, is root in left or right subtree
-    if ((viewLimit & (1 << depth)) != 0) {
+    if ((viewLimit & (1 << deeperDepth)) != 0) {
       // For the right subtree
-      return Hash.sha256(tree.get(depth).get((viewLimit >> depth) - 1), deeperRoot);
+      return Hash.sha256(tree.get(deeperDepth).get((viewLimit >> deeperDepth) - 1), deeperRoot);
     } else {
       // For the left subtree
-      return Hash.sha256(deeperRoot, zeroHashes.get(depth));
+      return Hash.sha256(deeperRoot, zeroHashes.get(deeperDepth));
     }
   }
 
@@ -140,8 +140,8 @@ public class MerkleTree {
    * @param viewLimit number of leaves in the tree
    * @return proof (i.e. collection of siblings on the way to root for the given leaf)
    */
-  public List<Bytes32> getProofWithViewBoundary(Bytes32 value, int viewLimit) {
-    return getProofWithViewBoundary(tree.get(0).indexOf(value), viewLimit);
+  public List<Bytes32> getProofWithViewBoundary(final Bytes32 value, final int viewLimit) {
+    return getProofWithViewBoundary(tree.getFirst().indexOf(value), viewLimit);
   }
 
   /**
@@ -149,13 +149,13 @@ public class MerkleTree {
    * @param viewLimit number of leaves in the tree
    * @return proof (i.e. collection of siblings on the way to root for the given leaf)
    */
-  public List<Bytes32> getProofWithViewBoundary(int itemIndex, int viewLimit) {
+  public List<Bytes32> getProofWithViewBoundary(final int itemIndex, final int viewLimit) {
     checkArgument(itemIndex < viewLimit, "MerkleTree: Index must be less than the view limit");
-
-    List<Bytes32> proof = new ArrayList<>();
+    int mutableIndex = itemIndex;
+    final List<Bytes32> proof = new ArrayList<>();
     for (int i = 0; i < treeDepth; i++) {
       // Get index of sibling node
-      int siblingIndex = itemIndex % 2 == 1 ? itemIndex - 1 : itemIndex + 1;
+      final int siblingIndex = mutableIndex % 2 == 1 ? mutableIndex - 1 : mutableIndex + 1;
 
       // Check how much of the tree at this level is strictly within the view limit.
       int limit = viewLimit >> i;
@@ -176,13 +176,13 @@ public class MerkleTree {
         // Return the tree node as-is without modifications
         proof.add(tree.get(i).get(siblingIndex));
       }
-      itemIndex >>>= 1;
+      mutableIndex >>>= 1;
     }
     proof.add(calcMixInValue(viewLimit));
     return proof;
   }
 
-  public Bytes32 calcMixInValue(int viewLimit) {
+  public Bytes32 calcMixInValue(final int viewLimit) {
     return (Bytes32)
         Bytes.concatenate(Bytes.ofUnsignedLong(viewLimit, LITTLE_ENDIAN), Bytes.wrap(new byte[24]));
   }
@@ -192,19 +192,18 @@ public class MerkleTree {
   }
 
   public Bytes32 getRoot() {
-    return Hash.sha256(tree.get(treeDepth).get(0), calcMixInValue());
+    return Hash.sha256(tree.get(treeDepth).getFirst(), calcMixInValue());
   }
 
   @Override
   public String toString() {
     StringBuilder returnString = new StringBuilder();
-    int numLeaves = (int) Math.pow(2, treeDepth);
-    int height = 0;
-    int stageFullSize;
+    final int numLeaves = (int) Math.pow(2, treeDepth);
+    int mutableHeight = 0;
     for (int i = treeDepth; i >= 0; i--) {
-      stageFullSize = (int) Math.pow(2, height);
-      height++;
-      int stageNonZeroSize = tree.get(i).size();
+      final int stageFullSize = (int) Math.pow(2, mutableHeight);
+      mutableHeight++;
+      final int stageNonZeroSize = tree.get(i).size();
       List<Bytes32> stageItems = new ArrayList<>(tree.get(i));
       for (int j = stageNonZeroSize; j < stageFullSize; j++) {
         stageItems.add(zeroHashes.get(i));
@@ -214,15 +213,15 @@ public class MerkleTree {
     return "MerkleTree{" + "tree=" + returnString + ", treeDepth=" + treeDepth + '}';
   }
 
-  private String centerPrint(List<Bytes32> stageItems, int numLeaves) {
-    String emptySpaceOnSide =
-        IntStream.range(0, (numLeaves - stageItems.size()))
-            .mapToObj(i -> "    ")
-            .collect(Collectors.joining("    "));
-    if (numLeaves == stageItems.size()) {
-      emptySpaceOnSide = "                ";
-    }
-    String stageString =
+  private String centerPrint(final List<Bytes32> stageItems, final int numLeaves) {
+    final String emptySpaceOnSide =
+        numLeaves == stageItems.size()
+            ? "                "
+            : IntStream.range(0, (numLeaves - stageItems.size()))
+                .mapToObj(i -> "    ")
+                .collect(Collectors.joining("    "));
+
+    final String stageString =
         stageItems.stream()
             .map(item -> item.toHexString().substring(63))
             .collect(Collectors.joining(emptySpaceOnSide));

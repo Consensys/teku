@@ -15,26 +15,26 @@ package tech.pegasys.teku.storage.api;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 
 public class StubSidecarUpdateChannel implements SidecarUpdateChannel {
   @Override
-  public SafeFuture<Void> onFirstCustodyIncompleteSlot(UInt64 slot) {
+  public SafeFuture<Void> onFirstCustodyIncompleteSlot(final UInt64 slot) {
     return SafeFuture.COMPLETE;
   }
 
   @Override
-  public SafeFuture<Void> onFirstSamplerIncompleteSlot(UInt64 slot) {
+  public SafeFuture<Void> onFirstSamplerIncompleteSlot(final UInt64 slot) {
     return SafeFuture.COMPLETE;
   }
 
   @Override
-  public SafeFuture<Void> onNewSidecar(DataColumnSidecar sidecar) {
+  public SafeFuture<Void> onNewSidecar(final DataColumnSidecar sidecar) {
     return SafeFuture.COMPLETE;
   }
 
   @Override
-  public SafeFuture<Void> onSidecarsAvailabilitySlot(UInt64 earliestSlotRequired) {
+  public SafeFuture<Void> onSidecarsAvailabilitySlot(final UInt64 earliestSlotRequired) {
     return SafeFuture.COMPLETE;
   }
 }

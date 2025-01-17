@@ -59,12 +59,13 @@ public class GetStateValidators extends RestApiEndpoint {
             .tags(TAG_BEACON)
             .response(SC_OK, "Request successful", STATE_VALIDATORS_RESPONSE_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = provider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final List<String> validators = request.getQueryParameterList(ID_PARAMETER);
     final List<StatusParameter> statusParameters = request.getQueryParameterList(STATUS_PARAMETER);
 

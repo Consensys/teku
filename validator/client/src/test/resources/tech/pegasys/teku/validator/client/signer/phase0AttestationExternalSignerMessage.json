@@ -1,0 +1,25 @@
+{
+  "signingRoot" : "0x235bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464",
+  "type" : "ATTESTATION",
+  "fork_info" : {
+    "fork" : {
+      "previous_version" : "0x1f86d83f",
+      "current_version" : "0x32a7d23f",
+      "epoch" : "4603879456717562315"
+    },
+    "genesis_validators_root" : "0x0c65de3f6bad3d7be19d0de5aff82b13d6d8b49f26588dba111e361d6f545486"
+  },
+  "attestation" : {
+    "slot" : "4665021361504678828",
+    "index" : "4669978815449698508",
+    "beacon_block_root" : "0x103ac9406cdc59b89027eb1c9e97f607dd5fdccfa8fb2da4eaeea9d25032add9",
+    "source" : {
+      "epoch" : "542502839",
+      "root" : "0x8200a6402ca295554fb9562193cc71d60272d63beeaf2201fdf53e846e77f919"
+    },
+    "target" : {
+      "epoch" : "542887588",
+      "root" : "0x5cbeb140ec0ad7cb653388caecba483cf66bd817821ed18ca1f3b7f3b9b58a04"
+    }
+  }
+}

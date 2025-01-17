@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.client;
 
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
@@ -58,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -147,11 +150,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.spec = spec;
   }
 
-  public void subscribeStoreInitialized(Runnable runnable) {
+  public void subscribeStoreInitialized(final Runnable runnable) {
     storeInitializedFuture.always(runnable);
   }
 
-  public void subscribeBestBlockInitialized(Runnable runnable) {
+  public void subscribeBestBlockInitialized(final Runnable runnable) {
     bestBlockInitialized.always(runnable);
   }
 
@@ -192,8 +195,29 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return secondsToMillis(genesisTime);
   }
 
-  public UInt64 computeTimeAtSlot(UInt64 slot) {
+  public UInt64 computeTimeAtSlot(final UInt64 slot) {
     return genesisTime.plus(slot.times(spec.getSecondsPerSlot(slot)));
+  }
+
+  @VisibleForTesting
+  boolean isCloseToInSync(final UInt64 currentTimeSeconds) {
+    final SpecVersion specVersion = spec.getGenesisSpec();
+    final MiscHelpers miscHelpers = specVersion.miscHelpers();
+    final SpecConfig specConfig = specVersion.getConfig();
+    final UInt64 networkSlot = miscHelpers.computeSlotAtTime(getGenesisTime(), currentTimeSeconds);
+
+    final int maxLookaheadEpochs = specConfig.getMaxSeedLookahead();
+    final int slotsPerEpoch = specVersion.getSlotsPerEpoch();
+    final int maxLookaheadSlots = slotsPerEpoch * maxLookaheadEpochs;
+
+    return networkSlot.minusMinZero(getHeadSlot()).isLessThanOrEqualTo(maxLookaheadSlots);
+  }
+
+  public boolean isCloseToInSync() {
+    if (store == null) {
+      return false;
+    }
+    return isCloseToInSync(store.getTimeInSeconds());
   }
 
   public Optional<GenesisData> getGenesisData() {
@@ -219,7 +243,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return chainHead.isEmpty();
   }
 
-  boolean setStore(UpdatableStore store) {
+  boolean setStore(final UpdatableStore store) {
     if (!storeInitialized.compareAndSet(false, true)) {
       return false;
     }
@@ -266,7 +290,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .orElseGet(TreeMap::new);
   }
 
-  public NavigableMap<UInt64, Bytes32> getAncestorsOnFork(final UInt64 startSlot, Bytes32 root) {
+  public NavigableMap<UInt64, Bytes32> getAncestorsOnFork(
+      final UInt64 startSlot, final Bytes32 root) {
     return spec.getAncestorsOnFork(store.getForkChoiceStrategy(), root, startSlot);
   }
 
@@ -294,7 +319,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    * @param root The new head block root
    * @param currentSlot The current slot - the slot at which the new head was selected
    */
-  public void updateHead(Bytes32 root, UInt64 currentSlot) {
+  public void updateHead(final Bytes32 root, final UInt64 currentSlot) {
     synchronized (this) {
       if (chainHead.map(head -> head.getRoot().equals(root)).orElse(false)) {
         LOG.trace("Skipping head update because new head is same as previous head");
@@ -664,7 +689,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     lateBlockReorgLogic.setBlockTimelinessFromArrivalTime(block, arrivalTime);
   }
 
-  public void setBlockTimelinessIfEmpty(SignedBeaconBlock block) {
+  public void setBlockTimelinessIfEmpty(final SignedBeaconBlock block) {
     lateBlockReorgLogic.setBlockTimelinessFromArrivalTime(block, store.getTimeInMillis());
   }
 }

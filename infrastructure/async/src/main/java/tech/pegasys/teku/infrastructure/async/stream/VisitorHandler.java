@@ -18,7 +18,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 class VisitorHandler<T> extends AbstractDelegatingStreamHandler<T, T> {
   private final AsyncStreamVisitor<T> visitor;
 
-  public VisitorHandler(AsyncStreamHandler<T> delegate, AsyncStreamVisitor<T> visitor) {
+  public VisitorHandler(final AsyncStreamHandler<T> delegate, final AsyncStreamVisitor<T> visitor) {
     super(delegate);
     this.visitor = visitor;
   }
@@ -30,13 +30,13 @@ class VisitorHandler<T> extends AbstractDelegatingStreamHandler<T, T> {
   }
 
   @Override
-  public void onError(Throwable t) {
+  public void onError(final Throwable t) {
     visitor.onError(t);
     delegate.onError(t);
   }
 
   @Override
-  public SafeFuture<Boolean> onNext(T t) {
+  public SafeFuture<Boolean> onNext(final T t) {
     visitor.onNext(t);
     return delegate.onNext(t);
   }

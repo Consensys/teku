@@ -29,7 +29,7 @@ class BitlistImpl {
     return (size / 8) + 1;
   }
 
-  public static BitlistImpl fromSszBytes(Bytes bytes, long maxSize) {
+  public static BitlistImpl fromSszBytes(final Bytes bytes, final long maxSize) {
     int bitlistSize = SszBitlistImpl.sszGetLengthAndValidate(bytes);
     BitSet bitSet = BitSet.valueOf(bytes.toArrayUnsafe()).get(0, bitlistSize);
     return new BitlistImpl(bitlistSize, bitSet, maxSize);
@@ -39,7 +39,7 @@ class BitlistImpl {
   private final int size;
   private final long maxSize;
 
-  public BitlistImpl(int size, long maxSize, int... bitIndices) {
+  public BitlistImpl(final int size, final long maxSize, final int... bitIndices) {
     checkArgument(size >= 0, "Negative size");
     checkArgument(maxSize >= size, "maxSize should be >= size");
     this.size = size;
@@ -51,7 +51,15 @@ class BitlistImpl {
     }
   }
 
-  private BitlistImpl(int size, BitSet data, long maxSize) {
+  public BitlistImpl(final int size, final long maxSize, final BitSet bitSet) {
+    checkArgument(size >= 0, "Negative size");
+    checkArgument(maxSize >= size, "maxSize should be >= size");
+    this.size = size;
+    this.data = bitSet;
+    this.maxSize = maxSize;
+  }
+
+  private BitlistImpl(final int size, final BitSet data, final long maxSize) {
     this.size = size;
     this.data = data;
     this.maxSize = maxSize;
@@ -63,7 +71,7 @@ class BitlistImpl {
    * @throws IllegalArgumentException if the size of the other BitlistImpl is greater than the size
    *     of this BitlistImpl
    */
-  public BitlistImpl or(BitlistImpl other) {
+  public BitlistImpl or(final BitlistImpl other) {
     if (other.getCurrentSize() > getCurrentSize()) {
       throw new IllegalArgumentException(
           "Argument bitfield size is greater: "
@@ -76,7 +84,7 @@ class BitlistImpl {
     return new BitlistImpl(size, newData, maxSize);
   }
 
-  public boolean getBit(int i) {
+  public boolean getBit(final int i) {
     checkElementIndex(i, size);
     return data.get(i);
   }
@@ -85,7 +93,7 @@ class BitlistImpl {
     return data.cardinality();
   }
 
-  public boolean intersects(BitlistImpl other) {
+  public boolean intersects(final BitlistImpl other) {
     return data.intersects(other.data);
   }
 

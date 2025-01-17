@@ -82,7 +82,8 @@ public class BeaconBlockBodyDeneb extends BeaconBlockBodyAltair {
   }
 
   public BeaconBlockBodyDeneb(
-      tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb
+              .BeaconBlockBodyDeneb
           message) {
     super(message);
     checkNotNull(message.getExecutionPayload(), "Execution Payload is required for Deneb blocks");

@@ -26,16 +26,18 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.Meta
 public class MetadataMessagePhase0
     extends Container2<MetadataMessagePhase0, SszUInt64, SszBitvector> implements MetadataMessage {
 
-  MetadataMessagePhase0(MetadataMessageSchemaPhase0 type, TreeNode backingNode) {
+  MetadataMessagePhase0(final MetadataMessageSchemaPhase0 type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  MetadataMessagePhase0(MetadataMessageSchemaPhase0 type) {
+  MetadataMessagePhase0(final MetadataMessageSchemaPhase0 type) {
     super(type);
   }
 
   MetadataMessagePhase0(
-      MetadataMessageSchemaPhase0 schema, UInt64 seqNumber, SszBitvector attnets) {
+      final MetadataMessageSchemaPhase0 schema,
+      final UInt64 seqNumber,
+      final SszBitvector attnets) {
     super(schema, SszUInt64.of(seqNumber), attnets);
   }
 

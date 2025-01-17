@@ -20,13 +20,13 @@ class MapStreamHandler<T, S> extends AbstractDelegatingStreamHandler<T, S> {
 
   private final Function<S, T> mapper;
 
-  protected MapStreamHandler(AsyncStreamHandler<T> delegate, Function<S, T> mapper) {
+  protected MapStreamHandler(final AsyncStreamHandler<T> delegate, final Function<S, T> mapper) {
     super(delegate);
     this.mapper = mapper;
   }
 
   @Override
-  public SafeFuture<Boolean> onNext(S s) {
+  public SafeFuture<Boolean> onNext(final S s) {
     try {
       return delegate.onNext(mapper.apply(s));
     } catch (Exception e) {

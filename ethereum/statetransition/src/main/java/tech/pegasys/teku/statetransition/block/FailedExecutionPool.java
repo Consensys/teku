@@ -27,7 +27,6 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
@@ -112,7 +111,7 @@ public class FailedExecutionPool {
     SafeFuture.of(
             () ->
                 blockManager
-                    .importBlock(block, BroadcastValidationLevel.NOT_REQUIRED)
+                    .importBlock(block)
                     .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult))
         .exceptionally(BlockImportResult::internalError)
         .thenAccept(result -> handleExecutionResult(block, result))

@@ -84,6 +84,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
 
   private final KvStoreVariable<UInt64> optimisticTransitionBlockSlot;
   private final KvStoreVariable<UInt64> earliestBlobSidecarSlot;
+  private final KvStoreVariable<UInt64> earliestBlockSlot;
   private final KvStoreVariable<UInt64> firstCustodyIncompleteSlot;
   private final KvStoreVariable<UInt64> firstSamplerIncompleteSlot;
 
@@ -102,8 +103,9 @@ public abstract class V6SchemaCombined implements SchemaCombined {
 
     optimisticTransitionBlockSlot = KvStoreVariable.create(finalizedOffset + 1, UINT64_SERIALIZER);
     earliestBlobSidecarSlot = KvStoreVariable.create(finalizedOffset + 2, UINT64_SERIALIZER);
-    firstCustodyIncompleteSlot = KvStoreVariable.create(finalizedOffset + 3, UINT64_SERIALIZER);
-    firstSamplerIncompleteSlot = KvStoreVariable.create(finalizedOffset + 4, UINT64_SERIALIZER);
+    earliestBlockSlot = KvStoreVariable.create(finalizedOffset + 3, UINT64_SERIALIZER);
+    firstCustodyIncompleteSlot = KvStoreVariable.create(finalizedOffset + 4, UINT64_SERIALIZER);
+    firstSamplerIncompleteSlot = KvStoreVariable.create(finalizedOffset + 5, UINT64_SERIALIZER);
   }
 
   @Override
@@ -197,6 +199,11 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   }
 
   @Override
+  public KvStoreVariable<UInt64> getVariableEarliestBlockSlot() {
+    return earliestBlockSlot;
+  }
+
+  @Override
   public KvStoreVariable<UInt64> getVariableFirstCustodyIncompleteSlot() {
     return firstCustodyIncompleteSlot;
   }
@@ -241,6 +248,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
         .put("OPTIMISTIC_TRANSITION_BLOCK_SLOT", getOptimisticTransitionBlockSlot())
         .put("FINALIZED_DEPOSIT_SNAPSHOT", getVariableFinalizedDepositSnapshot())
         .put("EARLIEST_BLOB_SIDECAR_SLOT", getVariableEarliestBlobSidecarSlot())
+        .put("EARLIEST_BLOCK_SLOT_AVAILABLE", getVariableEarliestBlockSlot())
         .put("FIRST_CUSTODY_INCOMPLETE_SLOT", getVariableFirstCustodyIncompleteSlot())
         .put("FIRST_SAMPLER_INCOMPLETE_SLOT", getVariableFirstSamplerIncompleteSlot())
         .build();

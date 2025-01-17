@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -53,7 +52,7 @@ public class ThrottlingTaskQueueWithPriorityTest {
                   }
                   return taskQueue.queueTask(() -> request);
                 })
-            .collect(Collectors.toList());
+            .toList();
 
     assertThat(getQueuedTasksGaugeValue(true)).isEqualTo(33);
     assertThat(getQueuedTasksGaugeValue(false)).isEqualTo(64);

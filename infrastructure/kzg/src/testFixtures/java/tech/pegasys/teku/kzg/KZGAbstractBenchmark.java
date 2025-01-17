@@ -28,9 +28,9 @@ public class KZGAbstractBenchmark {
     return kzg;
   }
 
-  protected void printStats(List<Integer> validationTimes) {
+  protected void printStats(final List<Integer> validationTimes) {
     int sum = 0;
-    int size = validationTimes.size();
+    final int size = validationTimes.size();
 
     // Sum of elements
     for (int time : validationTimes) {
@@ -38,7 +38,7 @@ public class KZGAbstractBenchmark {
     }
 
     // Mean
-    double mean = (double) sum / size;
+    final double mean = (double) sum / size;
     System.out.printf("Mean, ms: %.2f%n", mean);
 
     // Standard Deviation
@@ -46,12 +46,12 @@ public class KZGAbstractBenchmark {
     for (int time : validationTimes) {
       sumOfSquares += Math.pow(time - mean, 2);
     }
-    double standardDeviation = Math.sqrt(sumOfSquares / size);
+    final double standardDeviation = Math.sqrt(sumOfSquares / size);
     System.out.printf("Std, ms: %.2f%n", standardDeviation);
 
     // Min and Max
-    int min = Collections.min(validationTimes);
-    int max = Collections.max(validationTimes);
+    final int min = Collections.min(validationTimes);
+    final int max = Collections.max(validationTimes);
     System.out.println("Min, ms: " + min);
     System.out.println("Max, ms: " + max);
   }

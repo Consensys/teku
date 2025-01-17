@@ -79,7 +79,7 @@ public class Eth2PeerFactory {
         RateTracker.create(
             peerRateLimit * BLOCK_RATE_LIMIT_BOOST, TIME_OUT, timeProvider, "blocks"),
         RateTracker.create(
-            peerRateLimit * spec.getMaxBlobsPerBlock().orElse(1),
+            peerRateLimit * spec.getMaxBlobsPerBlockForHighestMilestone().orElse(1),
             TIME_OUT,
             timeProvider,
             "blobSidecars"),

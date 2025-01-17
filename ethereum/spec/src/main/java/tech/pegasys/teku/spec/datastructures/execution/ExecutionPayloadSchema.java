@@ -20,8 +20,17 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 
 public interface ExecutionPayloadSchema<T extends ExecutionPayload>
     extends SszContainerSchema<T>, BuilderPayloadSchema<T> {
@@ -35,7 +44,34 @@ public interface ExecutionPayloadSchema<T extends ExecutionPayload>
 
   WithdrawalSchema getWithdrawalSchemaRequired();
 
+  SszListSchema<DepositRequest, ? extends SszList<DepositRequest>>
+      getDepositRequestsSchemaRequired();
+
+  DepositRequestSchema getDepositRequestSchemaRequired();
+
+  SszListSchema<WithdrawalRequest, ? extends SszList<WithdrawalRequest>>
+      getWithdrawalRequestsSchemaRequired();
+
+  WithdrawalRequestSchema getWithdrawalRequestSchemaRequired();
+
+  ConsolidationRequestSchema getConsolidationRequestSchemaRequired();
+
+  SszListSchema<ConsolidationRequest, ? extends SszList<ConsolidationRequest>>
+      getConsolidationRequestsSchemaRequired();
+
   LongList getBlindedNodeGeneralizedIndices();
 
   ExecutionPayload createExecutionPayload(Consumer<ExecutionPayloadBuilder> builderConsumer);
+
+  default ExecutionPayloadSchemaBellatrix toVersionBellatrixRequired() {
+    throw new UnsupportedOperationException("Not a Bellatrix schema");
+  }
+
+  default ExecutionPayloadSchemaCapella toVersionCapellaRequired() {
+    throw new UnsupportedOperationException("Not a Capella schema");
+  }
+
+  default ExecutionPayloadSchemaDeneb toVersionDenebRequired() {
+    throw new UnsupportedOperationException("Not a Deneb schema");
+  }
 }

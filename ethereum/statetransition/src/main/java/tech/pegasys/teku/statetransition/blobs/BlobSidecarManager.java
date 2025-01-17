@@ -69,6 +69,9 @@ public interface BlobSidecarManager extends AvailabilityCheckerFactory<BlobSidec
 
   boolean isAvailabilityRequiredAtSlot(UInt64 slot);
 
+  @Override
+  AvailabilityChecker<BlobSidecar> createAvailabilityChecker(SignedBeaconBlock block);
+
   DataAndValidationResult<BlobSidecar> createAvailabilityCheckerAndValidateImmediately(
       SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
 
@@ -78,6 +81,8 @@ public interface BlobSidecarManager extends AvailabilityCheckerFactory<BlobSidec
 
   enum RemoteOrigin {
     RPC,
-    GOSSIP
+    GOSSIP,
+    LOCAL_EL,
+    LOCAL_PROPOSAL
   }
 }

@@ -36,9 +36,9 @@ public class LightClientBootstrapSchema
   }
 
   public LightClientBootstrap create(
-      LightClientHeader lightClientHeader,
-      SyncCommittee syncCommittee,
-      SszBytes32Vector syncCommitteeBranch) {
+      final LightClientHeader lightClientHeader,
+      final SyncCommittee syncCommittee,
+      final SszBytes32Vector syncCommitteeBranch) {
     return new LightClientBootstrap(this, lightClientHeader, syncCommittee, syncCommitteeBranch);
   }
 
@@ -48,7 +48,7 @@ public class LightClientBootstrapSchema
   }
 
   @Override
-  public LightClientBootstrap createFromBackingNode(TreeNode node) {
+  public LightClientBootstrap createFromBackingNode(final TreeNode node) {
     return new LightClientBootstrap(this, node);
   }
 }

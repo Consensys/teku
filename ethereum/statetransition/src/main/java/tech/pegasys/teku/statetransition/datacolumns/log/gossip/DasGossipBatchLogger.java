@@ -28,7 +28,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.statetransition.datacolumns.util.StringifyUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -40,7 +40,7 @@ public class DasGossipBatchLogger implements DasGossipLogger {
 
   private List<Event> events = new ArrayList<>();
 
-  public DasGossipBatchLogger(AsyncRunner asyncRunner, TimeProvider timeProvider) {
+  public DasGossipBatchLogger(final AsyncRunner asyncRunner, final TimeProvider timeProvider) {
     this.timeProvider = timeProvider;
     asyncRunner.runWithFixedDelay(
         this::logBatchedEvents,
@@ -83,8 +83,8 @@ public class DasGossipBatchLogger implements DasGossipLogger {
     logSubscriptionEvents(eventsLoc);
   }
 
-  private void logReceiveEvents(SlotAndBlockRoot blockId, List<ReceiveEvent> events) {
-    Map<ValidationResultCode, List<ReceiveEvent>> eventsByValidateCode =
+  private void logReceiveEvents(final SlotAndBlockRoot blockId, final List<ReceiveEvent> events) {
+    final Map<ValidationResultCode, List<ReceiveEvent>> eventsByValidateCode =
         events.stream().collect(Collectors.groupingBy(e -> e.validationResult().code()));
     eventsByValidateCode.forEach(
         (validationCode, codeEvents) -> {
@@ -100,8 +100,8 @@ public class DasGossipBatchLogger implements DasGossipLogger {
         });
   }
 
-  private void logPublishEvents(SlotAndBlockRoot blockId, List<PublishEvent> events) {
-    Map<Optional<Class<?>>, List<PublishEvent>> eventsByError =
+  private void logPublishEvents(final SlotAndBlockRoot blockId, final List<PublishEvent> events) {
+    final Map<Optional<Class<?>>, List<PublishEvent>> eventsByError =
         events.stream()
             .collect(
                 Collectors.groupingBy(
@@ -130,9 +130,9 @@ public class DasGossipBatchLogger implements DasGossipLogger {
         });
   }
 
-  private void logSubscriptionEvents(List<Event> events) {
-    List<Integer> subscribedSubnets = new ArrayList<>();
-    List<Integer> unsubscribedSubnets = new ArrayList<>();
+  private void logSubscriptionEvents(final List<Event> events) {
+    final List<Integer> subscribedSubnets = new ArrayList<>();
+    final List<Integer> unsubscribedSubnets = new ArrayList<>();
     events.forEach(
         e -> {
           switch (e) {
@@ -160,13 +160,13 @@ public class DasGossipBatchLogger implements DasGossipLogger {
     }
   }
 
-  private String columnIndexesString(List<? extends ColumnEvent> events) {
-    List<Integer> columnIndexes =
+  private String columnIndexesString(final List<? extends ColumnEvent> events) {
+    final List<Integer> columnIndexes =
         events.stream().map(e -> e.sidecar().getIndex().intValue()).toList();
     return StringifyUtil.toIntRangeString(columnIndexes);
   }
 
-  private static String blockIdString(SlotAndBlockRoot blockId) {
+  private static String blockIdString(final SlotAndBlockRoot blockId) {
     return "#"
         + blockId.getSlot()
         + " (0x"
@@ -174,7 +174,7 @@ public class DasGossipBatchLogger implements DasGossipLogger {
         + ")";
   }
 
-  private String msAgoString(List<? extends Event> events) {
+  private String msAgoString(final List<? extends Event> events) {
     long curTime = timeProvider.getTimeInMillis().longValue();
     long firstMillisAgo = curTime - events.getFirst().time();
     long lastMillisAgo = curTime - events.getLast().time();
@@ -184,13 +184,13 @@ public class DasGossipBatchLogger implements DasGossipLogger {
         + " ago";
   }
 
-  private boolean needToLogEvent(boolean isSevereEvent) {
+  private boolean needToLogEvent(final boolean isSevereEvent) {
     return LOG.isDebugEnabled() || (isSevereEvent && LOG.isInfoEnabled());
   }
 
   @Override
   public synchronized void onReceive(
-      DataColumnSidecar sidecar, InternalValidationResult validationResult) {
+      final DataColumnSidecar sidecar, final InternalValidationResult validationResult) {
     if (needToLogEvent(validationResult.isReject())) {
       events.add(
           new ReceiveEvent(timeProvider.getTimeInMillis().longValue(), sidecar, validationResult));
@@ -198,21 +198,22 @@ public class DasGossipBatchLogger implements DasGossipLogger {
   }
 
   @Override
-  public synchronized void onPublish(DataColumnSidecar sidecar, Optional<Throwable> result) {
+  public synchronized void onPublish(
+      final DataColumnSidecar sidecar, final Optional<Throwable> result) {
     if (needToLogEvent(result.isPresent())) {
       events.add(new PublishEvent(timeProvider.getTimeInMillis().longValue(), sidecar, result));
     }
   }
 
   @Override
-  public void onDataColumnSubnetSubscribe(int subnetId) {
+  public void onDataColumnSubnetSubscribe(final int subnetId) {
     if (needToLogEvent(false)) {
       events.add(new SubscribeEvent(timeProvider.getTimeInMillis().longValue(), subnetId));
     }
   }
 
   @Override
-  public void onDataColumnSubnetUnsubscribe(int subnetId) {
+  public void onDataColumnSubnetUnsubscribe(final int subnetId) {
     if (needToLogEvent(false)) {
       events.add(new UnsubscribeEvent(timeProvider.getTimeInMillis().longValue(), subnetId));
     }
@@ -220,14 +221,15 @@ public class DasGossipBatchLogger implements DasGossipLogger {
 
   private static <TEvent extends ColumnEvent>
       SortedMap<SlotAndBlockRoot, List<TEvent>> groupByBlock(
-          Class<TEvent> eventClass, List<Event> allEvents) {
-    SortedMap<SlotAndBlockRoot, List<TEvent>> eventsByBlock = new TreeMap<>();
-    for (Event event : allEvents) {
+          final Class<TEvent> eventClass, final List<Event> allEvents) {
+    final SortedMap<SlotAndBlockRoot, List<TEvent>> eventsByBlock = new TreeMap<>();
+    for (final Event event : allEvents) {
       if (eventClass.isAssignableFrom(event.getClass())) {
         @SuppressWarnings("unchecked")
-        TEvent e = (TEvent) event;
-        DataColumnSidecar sidecar = e.sidecar();
-        SlotAndBlockRoot blockId = new SlotAndBlockRoot(sidecar.getSlot(), sidecar.getBlockRoot());
+        final TEvent e = (TEvent) event;
+        final DataColumnSidecar sidecar = e.sidecar();
+        final SlotAndBlockRoot blockId =
+            new SlotAndBlockRoot(sidecar.getSlot(), sidecar.getBlockRoot());
         eventsByBlock.computeIfAbsent(blockId, __ -> new ArrayList<>()).add(e);
       }
     }

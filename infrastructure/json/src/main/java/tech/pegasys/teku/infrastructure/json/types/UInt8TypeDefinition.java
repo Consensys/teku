@@ -63,7 +63,7 @@ public class UInt8TypeDefinition extends PrimitiveTypeDefinition<Byte> {
   }
 
   @Override
-  public PrimitiveTypeDefinition<Byte> withDescription(String description) {
+  public PrimitiveTypeDefinition<Byte> withDescription(final String description) {
     return new UInt8TypeDefinition(description);
   }
 }

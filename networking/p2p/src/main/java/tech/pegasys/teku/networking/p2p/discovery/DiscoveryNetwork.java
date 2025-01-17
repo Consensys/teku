@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.p2p.discovery;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -116,11 +117,11 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   @Override
-  public Optional<String> getDiscoveryAddress() {
-    return discoveryService.getDiscoveryAddress();
+  public Optional<List<String>> getDiscoveryAddresses() {
+    return discoveryService.getDiscoveryAddresses();
   }
 
-  public void setLongTermAttestationSubnetSubscriptions(Iterable<Integer> subnetIds) {
+  public void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIds) {
     discoveryService.updateCustomENRField(
         ATTESTATION_SUBNET_ENR_FIELD,
         currentSchemaDefinitionsSupplier
@@ -129,7 +130,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             .sszSerialize());
   }
 
-  public void setSyncCommitteeSubnetSubscriptions(Iterable<Integer> subnetIds) {
+  public void setSyncCommitteeSubnetSubscriptions(final Iterable<Integer> subnetIds) {
     discoveryService.updateCustomENRField(
         SYNC_COMMITTEE_SUBNET_ENR_FIELD,
         currentSchemaDefinitionsSupplier
@@ -138,7 +139,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             .sszSerialize());
   }
 
-  public void setDASTotalCustodySubnetCount(int count) {
+  public void setDASTotalCustodySubnetCount(final int count) {
     if (count < 0) {
       throw new IllegalArgumentException(
           String.format("Custody subnet count should be a positive number, but was %s", count));
@@ -177,7 +178,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     this.enrForkId = Optional.of(enrForkId);
   }
 
-  private boolean dontConnectPeersWithDifferentForkDigests(DiscoveryPeer peer) {
+  private boolean dontConnectPeersWithDifferentForkDigests(final DiscoveryPeer peer) {
     return enrForkId
         .map(EnrForkId::getForkDigest)
         .flatMap(

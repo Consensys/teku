@@ -22,25 +22,21 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.infrastructure.ssz.SszTestUtils;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@ExtendWith(BouncyCastleExtension.class)
 class DepositTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
-  private SszBytes32Vector branch = setupMerkleBranch();
-  private DepositData depositData = dataStructureUtil.randomDepositData();
+  private final SszBytes32Vector branch = setupMerkleBranch();
+  private final DepositData depositData = dataStructureUtil.randomDepositData();
 
-  private Deposit deposit = new Deposit(branch, depositData);
+  private final Deposit deposit = new Deposit(branch, depositData);
 
   @Test
   void equalsReturnsTrueWhenObjectsAreSame() {
@@ -99,6 +95,6 @@ class DepositTest {
 
   private SszBytes32Vector setupMerkleBranch() {
     return dataStructureUtil.randomSszBytes32Vector(
-        Deposit.SSZ_SCHEMA.getProofSchema(), (Supplier<Bytes32>) Bytes32::random);
+        Deposit.SSZ_SCHEMA.getProofSchema(), Bytes32::random);
   }
 }

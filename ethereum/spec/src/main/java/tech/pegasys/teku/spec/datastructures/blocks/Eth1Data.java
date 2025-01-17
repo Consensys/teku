@@ -36,7 +36,7 @@ public class Eth1Data extends Container3<Eth1Data, SszBytes32, SszUInt64, SszByt
     }
 
     @Override
-    public Eth1Data createFromBackingNode(TreeNode node) {
+    public Eth1Data createFromBackingNode(final TreeNode node) {
       return new Eth1Data(this, node);
     }
   }
@@ -49,11 +49,11 @@ public class Eth1Data extends Container3<Eth1Data, SszBytes32, SszUInt64, SszByt
   public static final Bytes32 EMPTY_DEPOSIT_ROOT =
       Bytes32.fromHexString("0xd70a234731285c6804c2a4f56711ddb8c82c99740f207854891028af34e27e5e");
 
-  private Eth1Data(Eth1DataSchema type, TreeNode backingNode) {
+  private Eth1Data(final Eth1DataSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public Eth1Data(Bytes32 depositRoot, UInt64 depositCount, Bytes32 blockHash) {
+  public Eth1Data(final Bytes32 depositRoot, final UInt64 depositCount, final Bytes32 blockHash) {
     super(
         SSZ_SCHEMA,
         SszBytes32.of(depositRoot),

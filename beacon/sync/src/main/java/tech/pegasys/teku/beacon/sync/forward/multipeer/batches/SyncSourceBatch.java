@@ -103,12 +103,12 @@ public class SyncSourceBatch implements Batch {
 
   @Override
   public Optional<SignedBeaconBlock> getFirstBlock() {
-    return blocks.isEmpty() ? Optional.empty() : Optional.of(blocks.get(0));
+    return blocks.isEmpty() ? Optional.empty() : Optional.of(blocks.getFirst());
   }
 
   @Override
   public Optional<SignedBeaconBlock> getLastBlock() {
-    return blocks.isEmpty() ? Optional.empty() : Optional.of(blocks.get(blocks.size() - 1));
+    return blocks.isEmpty() ? Optional.empty() : Optional.of(blocks.getLast());
   }
 
   @Override
@@ -328,8 +328,7 @@ public class SyncSourceBatch implements Batch {
       blobSidecarsByBlockRoot.putAll(newBlobSidecarsByBlockRoot);
     }
 
-    if (newBlocks.isEmpty()
-        || newBlocks.get(newBlocks.size() - 1).getSlot().equals(getLastSlot())) {
+    if (newBlocks.isEmpty() || newBlocks.getLast().getSlot().equals(getLastSlot())) {
       complete = true;
     }
   }
@@ -362,8 +361,8 @@ public class SyncSourceBatch implements Batch {
     if (blocks.isEmpty() || newBlocks.isEmpty()) {
       return true;
     }
-    final SignedBeaconBlock previousBlock = blocks.get(blocks.size() - 1);
-    final SignedBeaconBlock firstNewBlock = newBlocks.get(0);
+    final SignedBeaconBlock previousBlock = blocks.getLast();
+    final SignedBeaconBlock firstNewBlock = newBlocks.getFirst();
     if (!firstNewBlock.getParentRoot().equals(previousBlock.getRoot())) {
       LOG.debug(
           "Marking batch invalid because new blocks do not form a chain with previous blocks");
@@ -377,37 +376,39 @@ public class SyncSourceBatch implements Batch {
       final Map<Bytes32, List<BlobSidecar>> newBlobSidecarsByBlockRoot) {
     final Set<Bytes32> blockRootsWithKzgCommitments = new HashSet<>(newBlocks.size());
     for (final SignedBeaconBlock block : newBlocks) {
-      final Bytes32 blockRoot = block.getRoot();
-      final List<BlobSidecar> blobSidecars =
-          newBlobSidecarsByBlockRoot.getOrDefault(blockRoot, List.of());
-      final int numberOfKzgCommitments =
-          block
-              .getMessage()
-              .getBody()
-              .toVersionDeneb()
-              .map(BeaconBlockBodyDeneb::getBlobKzgCommitments)
-              .map(SszList::size)
-              .orElse(0);
-      if (numberOfKzgCommitments > 0) {
-        blockRootsWithKzgCommitments.add(blockRoot);
-      }
-      if (blobSidecars.size() != numberOfKzgCommitments) {
-        LOG.debug(
-            "Marking batch invalid because {} blob sidecars were received, but the number of KZG commitments in a block ({}) were {}",
-            blobSidecars.size(),
-            blockRoot,
-            numberOfKzgCommitments);
-        return false;
-      }
-      final UInt64 blockSlot = block.getSlot();
-      for (final BlobSidecar blobSidecar : blobSidecars) {
-        if (!blobSidecar.getSlot().equals(blockSlot)) {
+      if (blobSidecarManager.isAvailabilityRequiredAtSlot(block.getSlot())) {
+        final Bytes32 blockRoot = block.getRoot();
+        final List<BlobSidecar> blobSidecars =
+            newBlobSidecarsByBlockRoot.getOrDefault(blockRoot, List.of());
+        final int numberOfKzgCommitments =
+            block
+                .getMessage()
+                .getBody()
+                .toVersionDeneb()
+                .map(BeaconBlockBodyDeneb::getBlobKzgCommitments)
+                .map(SszList::size)
+                .orElse(0);
+        if (numberOfKzgCommitments > 0) {
+          blockRootsWithKzgCommitments.add(blockRoot);
+        }
+        if (blobSidecars.size() != numberOfKzgCommitments) {
           LOG.debug(
-              "Marking batch invalid because blob sidecar for root {} was received with slot {} which is different than the block slot {}",
+              "Marking batch invalid because {} blob sidecars were received, but the number of KZG commitments in a block ({}) were {}",
+              blobSidecars.size(),
               blockRoot,
-              blobSidecar.getSlot(),
-              blockSlot);
+              numberOfKzgCommitments);
           return false;
+        }
+        final UInt64 blockSlot = block.getSlot();
+        for (final BlobSidecar blobSidecar : blobSidecars) {
+          if (!blobSidecar.getSlot().equals(blockSlot)) {
+            LOG.debug(
+                "Marking batch invalid because blob sidecar for root {} was received with slot {} which is different than the block slot {}",
+                blockRoot,
+                blobSidecar.getSlot(),
+                blockSlot);
+            return false;
+          }
         }
       }
     }

@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -81,6 +82,7 @@ class GossipForkSubscriptionsCapellaTest {
         noopOperationProcessor,
         noopOperationProcessor,
         noopOperationProcessor,
-        noopOperationProcessor);
+        noopOperationProcessor,
+        DebugDataDumper.NOOP);
   }
 }

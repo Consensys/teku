@@ -16,34 +16,33 @@ package tech.pegasys.teku.spec.datastructures.execution;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 
 public class FallbackData {
 
-  private final ExecutionPayload executionPayload;
-  private final Optional<BlobsBundle> blobsBundle;
+  private final GetPayloadResponse getPayloadResponse;
   private final FallbackReason reason;
 
-  public FallbackData(final ExecutionPayload executionPayload, final FallbackReason reason) {
-    this.executionPayload = executionPayload;
-    this.blobsBundle = Optional.empty();
-    this.reason = reason;
-  }
-
-  public FallbackData(
-      final ExecutionPayload executionPayload,
-      final Optional<BlobsBundle> blobsBundle,
-      final FallbackReason reason) {
-    this.executionPayload = executionPayload;
-    this.blobsBundle = blobsBundle;
+  public FallbackData(final GetPayloadResponse getPayloadResponse, final FallbackReason reason) {
+    this.getPayloadResponse = getPayloadResponse;
     this.reason = reason;
   }
 
   public ExecutionPayload getExecutionPayload() {
-    return executionPayload;
+    return getPayloadResponse.getExecutionPayload();
   }
 
   public Optional<BlobsBundle> getBlobsBundle() {
-    return blobsBundle;
+    return getPayloadResponse.getBlobsBundle();
+  }
+
+  public UInt256 getExecutionPayloadValue() {
+    return getPayloadResponse.getExecutionPayloadValue();
+  }
+
+  public Optional<ExecutionRequests> getExecutionRequests() {
+    return getPayloadResponse.getExecutionRequests();
   }
 
   public FallbackReason getReason() {
@@ -59,21 +58,18 @@ public class FallbackData {
       return false;
     }
     final FallbackData that = (FallbackData) o;
-    return Objects.equals(executionPayload, that.executionPayload)
-        && Objects.equals(blobsBundle, that.blobsBundle)
-        && reason == that.reason;
+    return Objects.equals(getPayloadResponse, that.getPayloadResponse) && reason == that.reason;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(executionPayload, blobsBundle, reason);
+    return Objects.hash(getPayloadResponse, reason);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("executionPayload", executionPayload)
-        .add("blobsBundle", blobsBundle)
+        .add("getPayloadResponse", getPayloadResponse)
         .add("reason", reason)
         .toString();
   }

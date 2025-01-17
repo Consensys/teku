@@ -20,12 +20,14 @@ import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_
 
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.OptionalInt;
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
+import tech.pegasys.teku.cli.converter.OptionalIntConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
@@ -34,9 +36,10 @@ import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 
 public class ValidatorOptions {
 
-  @Mixin private ValidatorKeysOptions validatorKeysOptions = new ValidatorKeysOptions();
+  @Mixin private final ValidatorKeysOptions validatorKeysOptions = new ValidatorKeysOptions();
 
-  @Mixin private ValidatorProposerOptions validatorProposerOptions = new ValidatorProposerOptions();
+  @Mixin
+  private final ValidatorProposerOptions validatorProposerOptions = new ValidatorProposerOptions();
 
   @Option(
       names = {"--validators-graffiti"},
@@ -113,8 +116,9 @@ public class ValidatorOptions {
       showDefaultValue = Visibility.ALWAYS,
       description = "Set the maximum queue size of the validator executor",
       hidden = true,
+      converter = OptionalIntConverter.class,
       arity = "1")
-  private int executorMaxQueueSize = ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
+  private OptionalInt executorMaxQueueSize = OptionalInt.empty();
 
   @Option(
       names = {"--doppelganger-detection-enabled"},
@@ -133,16 +137,6 @@ public class ValidatorOptions {
       hidden = true,
       arity = "1")
   private int executorThreads = DEFAULT_VALIDATOR_EXECUTOR_THREADS;
-
-  @Option(
-      names = {"--Xblock-v3-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Enable the Block V3 API for block production",
-      hidden = true,
-      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
-      arity = "0..1",
-      fallbackValue = "true")
-  private boolean blockV3Enabled = ValidatorConfig.DEFAULT_BLOCK_V3_ENABLED;
 
   @Option(
       names = {"--exit-when-no-validator-keys-enabled"},
@@ -174,27 +168,27 @@ public class ValidatorOptions {
       fallbackValue = "true")
   private boolean shutdownWhenValidatorSlashed = DEFAULT_SHUTDOWN_WHEN_VALIDATOR_SLASHED_ENABLED;
 
-  public void configure(TekuConfiguration.Builder builder) {
+  public void configure(final TekuConfiguration.Builder builder) {
     builder.validator(
-        config ->
-            config
-                .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
-                .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
-                .validatorExternalSignerSlashingProtectionEnabled(
-                    validatorExternalSignerSlashingProtectionEnabled)
-                .isLocalSlashingProtectionSynchronizedModeEnabled(
-                    isLocalSlashingProtectionSynchronizedEnabled)
-                .graffitiProvider(
-                    new FileBackedGraffitiProvider(
-                        Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
-                .clientGraffitiAppendFormat(clientGraffitiAppendFormat)
-                .generateEarlyAttestations(generateEarlyAttestations)
-                .executorMaxQueueSize(executorMaxQueueSize)
-                .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
-                .executorThreads(executorThreads)
-                .blockV3enabled(blockV3Enabled)
-                .exitWhenNoValidatorKeysEnabled(exitWhenNoValidatorKeysEnabled)
-                .shutdownWhenValidatorSlashedEnabled(shutdownWhenValidatorSlashed));
+        config -> {
+          config
+              .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
+              .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
+              .validatorExternalSignerSlashingProtectionEnabled(
+                  validatorExternalSignerSlashingProtectionEnabled)
+              .isLocalSlashingProtectionSynchronizedModeEnabled(
+                  isLocalSlashingProtectionSynchronizedEnabled)
+              .graffitiProvider(
+                  new FileBackedGraffitiProvider(
+                      Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
+              .clientGraffitiAppendFormat(clientGraffitiAppendFormat)
+              .generateEarlyAttestations(generateEarlyAttestations)
+              .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
+              .executorThreads(executorThreads)
+              .exitWhenNoValidatorKeysEnabled(exitWhenNoValidatorKeysEnabled)
+              .shutdownWhenValidatorSlashedEnabled(shutdownWhenValidatorSlashed);
+          executorMaxQueueSize.ifPresent(config::executorMaxQueueSize);
+        });
     validatorProposerOptions.configure(builder);
     validatorKeysOptions.configure(builder);
   }

@@ -32,7 +32,7 @@ public final class GoodbyeMessage extends Container1<GoodbyeMessage, SszUInt64>
     }
 
     @Override
-    public GoodbyeMessage createFromBackingNode(TreeNode node) {
+    public GoodbyeMessage createFromBackingNode(final TreeNode node) {
       return new GoodbyeMessage(this, node);
     }
   }
@@ -51,11 +51,11 @@ public final class GoodbyeMessage extends Container1<GoodbyeMessage, SszUInt64>
   public static final UInt64 REASON_BAD_SCORE = UInt64.valueOf(250);
   public static final UInt64 REASON_BANNED = UInt64.valueOf(251);
 
-  private GoodbyeMessage(GoodbyeMessageSchema type, TreeNode backingNode) {
+  private GoodbyeMessage(final GoodbyeMessageSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public GoodbyeMessage(UInt64 reason) {
+  public GoodbyeMessage(final UInt64 reason) {
     super(SSZ_SCHEMA, SszUInt64.of(reason));
     checkArgument(
         REASON_CLIENT_SHUT_DOWN.equals(reason)

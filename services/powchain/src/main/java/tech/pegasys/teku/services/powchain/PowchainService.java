@@ -15,6 +15,7 @@ package tech.pegasys.teku.services.powchain;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.beacon.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import okhttp3.OkHttpClient;
@@ -56,6 +58,7 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -70,6 +73,7 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
   private final ServiceConfig serviceConfig;
   private final PowchainConfiguration powConfig;
   private final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider;
+  private final Supplier<Optional<BeaconState>> finalizedStateSupplier;
 
   private List<Web3j> web3js;
   private Eth1Providers eth1Providers;
@@ -79,15 +83,21 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
   public PowchainService(
       final ServiceConfig serviceConfig,
       final PowchainConfiguration powConfig,
-      final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider) {
+      final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider,
+      final Supplier<Optional<BeaconState>> finalizedStateSupplier) {
     checkArgument(powConfig.isEnabled() || maybeExecutionWeb3jClientProvider.isPresent());
     this.serviceConfig = serviceConfig;
     this.powConfig = powConfig;
     this.maybeExecutionWeb3jClientProvider = maybeExecutionWeb3jClientProvider;
+    this.finalizedStateSupplier = finalizedStateSupplier;
   }
 
   @Override
   protected SafeFuture<?> doStart() {
+    if (isFormerDepositMechanismDisabled()) {
+      // no need to initialize and start services if Eth1 polling has already been disabled
+      return SafeFuture.COMPLETE;
+    }
     return SafeFuture.fromRunnable(this::initialize)
         .thenPeek(__ -> hasInitialized.set(true))
         .thenCompose(
@@ -118,6 +128,25 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
     if (!isRunning()) {
       return;
     }
+    if (isFormerDepositMechanismDisabled()) {
+      //  stop Eth1 polling
+      stop()
+          .finish(
+              () -> {
+                if (hasInitialized.get()) {
+                  // only log if polling has been enabled and now stopped
+                  STATUS_LOG.eth1PollingHasBeenDisabled();
+                }
+              },
+              LOG::error);
+    }
+  }
+
+  private boolean isFormerDepositMechanismDisabled() {
+    return finalizedStateSupplier
+        .get()
+        .map(powConfig.getSpec()::isFormerDepositMechanismDisabled)
+        .orElse(false);
   }
 
   @VisibleForTesting

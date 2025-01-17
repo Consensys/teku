@@ -55,7 +55,7 @@ public class ValidatorKeystores {
 
   Optional<File> maybeTarball = Optional.empty();
 
-  public ValidatorKeystores(List<ValidatorKeys> validatorKeys) {
+  public ValidatorKeystores(final List<ValidatorKeys> validatorKeys) {
     this.validatorKeys = validatorKeys;
   }
 
@@ -150,7 +150,7 @@ public class ValidatorKeystores {
     keystoreGenerator.generateKeystoreAndPasswordFiles(validatorKeys);
   }
 
-  private static void copyDirectoryToTarFile(Path inputDirectoryPath, Path outputPath)
+  private static void copyDirectoryToTarFile(final Path inputDirectoryPath, final Path outputPath)
       throws IOException {
     File outputFile = outputPath.toFile();
 

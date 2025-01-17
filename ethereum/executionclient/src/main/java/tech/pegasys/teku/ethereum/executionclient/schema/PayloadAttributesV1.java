@@ -46,9 +46,9 @@ public class PayloadAttributesV1 {
   public final Bytes20 suggestedFeeRecipient;
 
   public PayloadAttributesV1(
-      @JsonProperty("timestamp") UInt64 timestamp,
-      @JsonProperty("prevRandao") Bytes32 prevRandao,
-      @JsonProperty("suggestedFeeRecipient") Bytes20 suggestedFeeRecipient) {
+      final @JsonProperty("timestamp") UInt64 timestamp,
+      final @JsonProperty("prevRandao") Bytes32 prevRandao,
+      final @JsonProperty("suggestedFeeRecipient") Bytes20 suggestedFeeRecipient) {
     checkNotNull(timestamp, "timestamp");
     checkNotNull(prevRandao, "prevRandao");
     checkNotNull(suggestedFeeRecipient, "suggestedFeeRecipient");
@@ -58,9 +58,9 @@ public class PayloadAttributesV1 {
   }
 
   public static Optional<PayloadAttributesV1> fromInternalPayloadBuildingAttributes(
-      Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
+      final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
     return payloadBuildingAttributes.map(
-        (payloadAttributes) ->
+        payloadAttributes ->
             new PayloadAttributesV1(
                 payloadAttributes.getTimestamp(),
                 payloadAttributes.getPrevRandao(),
