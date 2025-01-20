@@ -263,6 +263,7 @@ public class RocksDbInstance implements KvStoreAccessor {
       final KvStoreColumn<K, V> column,
       final Consumer<RocksIterator> setupIterator,
       final Predicate<K> continueTest) {
+    assertOpen();
     final ColumnFamilyHandle handle = columnHandles.get(column);
     final RocksIterator rocksDbIterator = db.newIterator(handle);
     setupIterator.accept(rocksDbIterator);
