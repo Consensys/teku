@@ -33,13 +33,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 public class DepositTree {
   private MerkleTree tree;
   private long totalDepositCount;
-  private long finalizedDepositCount;
+  private UInt64 finalizedDepositCount;
   private Optional<BlockHashAndHeight> finalizedExecutionBlock;
 
   public DepositTree() {
     tree = MerkleTree.create(emptyList(), DEPOSIT_CONTRACT_TREE_DEPTH);
     totalDepositCount = 0;
-    finalizedDepositCount = 0;
+    finalizedDepositCount = UInt64.ZERO;
     finalizedExecutionBlock = Optional.empty();
   }
 
@@ -53,7 +53,7 @@ public class DepositTree {
         "Incorrect Deposit Tree snapshot %s, deposit root doesn't match",
         snapshot);
     this.totalDepositCount = snapshot.getDepositCount();
-    this.finalizedDepositCount = snapshot.getDepositCount();
+    this.finalizedDepositCount = UInt64.valueOf(snapshot.getDepositCount());
     this.finalizedExecutionBlock =
         Optional.of(
             new BlockHashAndHeight(
@@ -93,19 +93,21 @@ public class DepositTree {
 
   public void finalize(final Eth1Data eth1Data, final UInt64 blockHeight) {
     checkArgument(
-        totalDepositCount >= eth1Data.getDepositCount().longValue(),
+        eth1Data.getDepositCount().isLessThanOrEqualTo(totalDepositCount),
         "Merkle tree does not contain all deposits to be finalized");
     if (eth1Data.getDepositCount().equals(UInt64.ZERO)) {
       return;
     }
     finalizedExecutionBlock =
         Optional.of(new BlockHashAndHeight(eth1Data.getBlockHash(), blockHeight));
-    finalizedDepositCount = eth1Data.getDepositCount().longValue();
-    tree = tree.finalize(finalizedDepositCount, DEPOSIT_CONTRACT_TREE_DEPTH);
+    finalizedDepositCount = eth1Data.getDepositCount();
+    tree = tree.finalize(finalizedDepositCount.longValue(), DEPOSIT_CONTRACT_TREE_DEPTH);
   }
 
   public List<Bytes32> getProof(final long index) {
-    checkArgument(index >= finalizedDepositCount, "Cannot get proof for finalized deposits");
+    checkArgument(
+        finalizedDepositCount.isLessThanOrEqualTo(index),
+        "Cannot get proof for finalized deposits");
     final List<Bytes32> proof = tree.generateProof(index, DEPOSIT_CONTRACT_TREE_DEPTH);
     proof.add(uintToBytes32(totalDepositCount));
     return proof;
@@ -126,7 +128,7 @@ public class DepositTree {
 
   public DepositTree getTreeAtDepositIndex(final long lastDepositIndex) {
     checkArgument(
-        lastDepositIndex >= finalizedDepositCount,
+        finalizedDepositCount.isLessThanOrEqualTo(lastDepositIndex),
         "Cannot recreate tree before finalized deposit count");
     final DepositTree treeForProof =
         getSnapshot().map(DepositTree::fromSnapshot).orElseGet(DepositTree::new);

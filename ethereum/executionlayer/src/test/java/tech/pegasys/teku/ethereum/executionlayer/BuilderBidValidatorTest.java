@@ -207,7 +207,10 @@ public class BuilderBidValidatorTest {
 
     verify(eventLogger)
         .builderBidNotHonouringGasLimit(
-            UInt64.valueOf(1024_000), UInt64.valueOf(1024_000), UInt64.valueOf(1020_000));
+            UInt64.valueOf(1024_000),
+            UInt64.valueOf(1024_000),
+            UInt64.valueOf(1023_001),
+            UInt64.valueOf(1020_000));
   }
 
   @Test
@@ -220,7 +223,10 @@ public class BuilderBidValidatorTest {
 
     verify(eventLogger)
         .builderBidNotHonouringGasLimit(
-            UInt64.valueOf(1024_000), UInt64.valueOf(1020_000), UInt64.valueOf(1028_000));
+            UInt64.valueOf(1024_000),
+            UInt64.valueOf(1020_000),
+            UInt64.valueOf(1024_999),
+            UInt64.valueOf(1028_000));
   }
 
   static Stream<Arguments> expectedGasLimitPermutations() {

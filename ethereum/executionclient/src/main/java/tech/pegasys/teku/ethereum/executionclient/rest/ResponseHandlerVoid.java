@@ -15,15 +15,10 @@ package tech.pegasys.teku.ethereum.executionclient.rest;
 
 import java.io.IOException;
 import okhttp3.Request;
-import okhttp3.ResponseBody;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class ResponseHandlerVoid extends AbstractResponseHandler {
-  private static final Logger LOG = LogManager.getLogger();
-
   final SafeFuture<Response<Void>> futureResponse = new SafeFuture<>();
 
   @Override
@@ -36,14 +31,8 @@ public class ResponseHandlerVoid extends AbstractResponseHandler {
     if (handleResponseError(request, response, futureResponse)) {
       return;
     }
-    try (final ResponseBody responseBody = response.body()) {
-      if (!bodyIsEmpty(responseBody)) {
-        LOG.warn("Response body was not empty [{}]", request.url());
-      }
-      futureResponse.complete(Response.fromNullPayload());
-    } catch (final Throwable ex) {
-      futureResponse.completeExceptionally(ex);
-    }
+    response.close();
+    futureResponse.complete(Response.fromNullPayload());
   }
 
   public SafeFuture<Response<Void>> getFutureResponse() {

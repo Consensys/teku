@@ -203,7 +203,7 @@ public class StatusLogger {
     }
   }
 
-  public void doppelgangerCheck(final long epoch, final Set<String> publicKeys) {
+  public void doppelgangerCheck(final UInt64 epoch, final Set<String> publicKeys) {
     log.info(
         "Performing doppelganger check. Epoch {}, Public keys {}",
         epoch,
@@ -391,7 +391,7 @@ public class StatusLogger {
     log.info("Storing validator data in: {}", dataPath.toAbsolutePath());
   }
 
-  public void eth1ServiceDown(final long interval) {
+  public void eth1ServiceDown(final UInt64 interval) {
     log.warn("Eth1 service down or still syncing for {}s, retrying", interval);
   }
 

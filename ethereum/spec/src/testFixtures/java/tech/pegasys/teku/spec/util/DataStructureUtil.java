@@ -2647,6 +2647,15 @@ public final class DataStructureUtil {
             SszUInt64.of(randomUInt64()));
   }
 
+  public PendingPartialWithdrawal randomPendingPartialWithdrawal(final long validatorIndex) {
+    return getElectraSchemaDefinitions(randomSlot())
+        .getPendingPartialWithdrawalSchema()
+        .create(
+            SszUInt64.of(UInt64.valueOf(validatorIndex)),
+            SszUInt64.of(randomUInt64()),
+            SszUInt64.of(randomUInt64()));
+  }
+
   public UInt64 randomBlobSidecarIndex() {
     return randomUInt64(
         spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
