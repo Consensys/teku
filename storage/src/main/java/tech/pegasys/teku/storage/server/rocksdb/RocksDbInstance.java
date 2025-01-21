@@ -277,6 +277,8 @@ public class RocksDbInstance implements KvStoreAccessor {
         openTransaction.closeViaDatabase();
       }
       db.syncWal();
+      columnHandles.values().forEach(ColumnFamilyHandle::close);
+      db.close();
       for (final AutoCloseable resource : resources) {
         resource.close();
       }
