@@ -25,6 +25,9 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.rocksdb.AbstractRocksIterator;
 import org.rocksdb.ColumnFamilyHandle;
@@ -46,6 +49,8 @@ public class RocksDbInstance implements KvStoreAccessor {
   private final Set<RocksDbTransaction> openTransactions = new HashSet<>();
 
   private final AtomicBoolean closed = new AtomicBoolean(false);
+
+  private static final Logger LOG = LogManager.getLogger();
 
   RocksDbInstance(
       final TransactionDB db,
@@ -277,9 +282,9 @@ public class RocksDbInstance implements KvStoreAccessor {
         openTransaction.closeViaDatabase();
       }
       db.syncWal();
-      columnHandles.values().forEach(ColumnFamilyHandle::close);
-      db.close();
+
       for (final AutoCloseable resource : resources) {
+        LOG.debug("Closing resource: {}", resource);
         resource.close();
       }
     }
