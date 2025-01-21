@@ -57,7 +57,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -214,16 +213,15 @@ public class BlockOperationSelectorFactory {
     if (exitedValidators.contains(validatorIndex)) {
       return false;
     }
-    final Optional<BeaconStateElectra> electraState = blockSlotState.toVersionElectra();
     // if there is  a pending withdrawal, the exit is not valid for inclusion in a block.
-    if (electraState.isPresent()) {
-      if (electraState.get().getPendingPartialWithdrawals().stream()
-          .map(PendingPartialWithdrawal::getValidatorIndex)
-          .anyMatch(i -> i.equals(exit.getValidatorId()))) {
-        return false;
-      }
-    }
-    return true;
+    return blockSlotState
+        .toVersionElectra()
+        .map(
+            beaconStateElectra ->
+                beaconStateElectra.getPendingPartialWithdrawals().stream()
+                    .map(PendingPartialWithdrawal::getValidatorIndex)
+                    .noneMatch(index -> index == validatorIndex.intValue()))
+        .orElse(true);
   }
 
   private SafeFuture<Void> setExecutionData(
