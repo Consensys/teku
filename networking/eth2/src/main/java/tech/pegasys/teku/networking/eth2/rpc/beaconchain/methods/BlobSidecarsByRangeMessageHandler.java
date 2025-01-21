@@ -93,7 +93,8 @@ public class BlobSidecarsByRangeMessageHandler
 
     final long requestedCount = calculateRequestedCount(request, maxBlobsPerBlock);
 
-    if (requestedCount > maxRequestBlobSidecars) {
+    // handle overflows
+    if (requestedCount < 0 || requestedCount > maxRequestBlobSidecars) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(
