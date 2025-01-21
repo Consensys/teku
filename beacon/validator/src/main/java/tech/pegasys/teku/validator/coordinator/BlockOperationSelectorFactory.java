@@ -222,14 +222,6 @@ public class BlockOperationSelectorFactory {
           .anyMatch(i -> i.equals(exit.getValidatorId()))) {
         return false;
       }
-      // if there is a pending deposit in the state, then it should not be included in a block.
-      if (electraState.get().getPendingDeposits().stream()
-          .map(p -> spec.getValidatorIndex(blockSlotState, p.getPublicKey()))
-          .filter(Optional::isPresent)
-          .map(Optional::get)
-          .anyMatch(i -> i.equals(exit.getValidatorId()))) {
-        return false;
-      }
     }
     return true;
   }

@@ -42,8 +42,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -78,15 +76,11 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
-import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
-import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.BlsToExecutionChangesValidator.BlsToExecutionChangeInvalidReason;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
@@ -96,7 +90,6 @@ import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.Volunt
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.SimpleOperationPool;
@@ -280,49 +273,6 @@ class BlockOperationSelectorFactoryTest {
     blockSlotState
         .getPendingPartialWithdrawals()
         .append(dataStructureUtil.randomPendingPartialWithdrawal(1));
-    final SignedVoluntaryExit voluntaryExit =
-        dataStructureUtil.randomSignedVoluntaryExit(UInt64.valueOf(1));
-    final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
-    final UInt256 blockExecutionValue = dataStructureUtil.randomUInt256();
-
-    addToPool(voluntaryExitPool, voluntaryExit);
-    prepareBlockProductionWithPayload(
-        randomExecutionPayload,
-        executionPayloadContext,
-        blockSlotState,
-        Optional.of(blockExecutionValue));
-
-    safeJoin(
-        factory
-            .createSelector(
-                parentRoot,
-                blockSlotState,
-                randaoReveal,
-                Optional.of(defaultGraffiti),
-                Optional.empty(),
-                BlockProductionPerformance.NOOP)
-            .apply(bodyBuilder));
-    assertThat(bodyBuilder.voluntaryExits).isEmpty();
-  }
-
-  @Test
-  void shouldNotSelectVoluntaryExitWhenValidatorHasPendingDeposit() {
-    final UInt64 slot = UInt64.ONE;
-    final MutableBeaconStateElectra blockSlotState =
-        dataStructureUtil.randomBeaconState(slot).toVersionElectra().get().createWritableCopy();
-    final SchemaDefinitionsElectra schemaDefinitionsElectra =
-        spec.getGenesisSchemaDefinitions().toVersionElectra().get();
-    final Validator validator = blockSlotState.getValidators().get(1);
-    final PendingDeposit deposit =
-        schemaDefinitionsElectra
-            .getPendingDepositSchema()
-            .create(
-                new SszPublicKey(validator.getPublicKey().toBytesCompressed()),
-                SszBytes32.of(validator.getWithdrawalCredentials()),
-                SszUInt64.of(UInt64.ONE),
-                new SszSignature(dataStructureUtil.randomSignature()),
-                SszUInt64.of(dataStructureUtil.randomUInt64()));
-    blockSlotState.getPendingDeposits().append(deposit);
     final SignedVoluntaryExit voluntaryExit =
         dataStructureUtil.randomSignedVoluntaryExit(UInt64.valueOf(1));
     final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
