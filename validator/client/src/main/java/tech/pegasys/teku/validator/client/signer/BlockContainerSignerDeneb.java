@@ -55,8 +55,8 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
                             () ->
                                 new RuntimeException(
                                     String.format(
-                                        "Unable to get KZG Proofs when signing Deneb block at slot %d",
-                                        unsignedBlockContainer.getSlot().longValue())));
+                                        "Unable to get KZG Proofs when signing Deneb block at slot %s",
+                                        unsignedBlockContainer.getSlot())));
                 final SszList<Blob> blobs =
                     unsignedBlockContainer
                         .getBlobs()
@@ -64,8 +64,8 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
                             () ->
                                 new RuntimeException(
                                     String.format(
-                                        "Unable to get blobs when signing Deneb block at slot %d",
-                                        unsignedBlockContainer.getSlot().longValue())));
+                                        "Unable to get blobs when signing Deneb block at slot %s",
+                                        unsignedBlockContainer.getSlot())));
                 return getSignedBlockContentsSchema(signedBlock.getSlot())
                     .create(signedBlock, kzgProofs, blobs);
               }

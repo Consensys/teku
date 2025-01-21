@@ -215,7 +215,7 @@ public class DoppelgangerDetector {
               .filter(pubKey -> !detectedDoppelgangers.containsValue(pubKey))
               .collect(Collectors.toSet());
       statusLog.doppelgangerCheck(
-          epoch.longValue(), mapToAbbreviatedKeys(inactivePubKeys).collect(Collectors.toSet()));
+          epoch, mapToAbbreviatedKeys(inactivePubKeys).collect(Collectors.toSet()));
 
       return validatorApiChannel
           .getValidatorIndices(inactivePubKeys)

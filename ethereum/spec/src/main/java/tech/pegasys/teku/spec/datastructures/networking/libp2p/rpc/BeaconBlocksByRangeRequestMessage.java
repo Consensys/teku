@@ -72,6 +72,6 @@ public final class BeaconBlocksByRangeRequestMessage
 
   @Override
   public int getMaximumResponseChunks() {
-    return Math.toIntExact(getCount().longValue());
+    return getCount().intValue();
   }
 }
