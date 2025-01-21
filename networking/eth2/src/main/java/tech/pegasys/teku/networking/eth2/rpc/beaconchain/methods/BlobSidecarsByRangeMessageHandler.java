@@ -91,10 +91,9 @@ public class BlobSidecarsByRangeMessageHandler
     final int maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
     final int maxBlobsPerBlock = specConfig.getMaxBlobsPerBlock();
 
-    final long requestedCount = calculateRequestedCount(request, maxBlobsPerBlock);
+    final int requestedCount = calculateRequestedCount(request, maxBlobsPerBlock);
 
-    // handle overflows
-    if (requestedCount < 0 || requestedCount > maxRequestBlobSidecars) {
+    if (requestedCount == -1 || requestedCount > maxRequestBlobSidecars) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(
@@ -193,9 +192,14 @@ public class BlobSidecarsByRangeMessageHandler
             });
   }
 
-  private long calculateRequestedCount(
+  private int calculateRequestedCount(
       final BlobSidecarsByRangeRequestMessage message, final int maxBlobsPerBlock) {
-    return maxBlobsPerBlock * message.getCount().longValue();
+    try {
+      return message.getCount().times(maxBlobsPerBlock).intValue();
+    } catch (final ArithmeticException ex) {
+      // handle overflows by returning -1 which will ensure the request is rejected
+      return -1;
+    }
   }
 
   private boolean checkBlobSidecarsAreAvailable(
