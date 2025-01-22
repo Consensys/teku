@@ -124,7 +124,7 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
       if (valueType == null) {
         return DecodedMessageResult.failed();
       } else {
-        final Bytes decodedMessage = uncompressPayload(networkingConfig.getGossipMaxSize());
+        final Bytes decodedMessage = uncompressPayload(networkingConfig.getMaxPayloadSize());
         return DecodedMessageResult.successful(decodedMessage);
       }
     } catch (DecodingException e) {

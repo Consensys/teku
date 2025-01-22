@@ -102,7 +102,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final Eth1Address depositContractAddress;
 
   // Networking
-  private final int gossipMaxSize;
+  private final int maxPayloadSize;
   private final int maxChunkSize;
   private final int maxRequestBlocks;
   private final int epochsPerSubnetSubscription;
@@ -174,7 +174,7 @@ public class SpecConfigPhase0 implements SpecConfig {
       final long depositChainId,
       final long depositNetworkId,
       final Eth1Address depositContractAddress,
-      final int gossipMaxSize,
+      final int maxPayloadSize,
       final int maxChunkSize,
       final int maxRequestBlocks,
       final int epochsPerSubnetSubscription,
@@ -244,7 +244,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.depositNetworkId = depositNetworkId;
     this.depositContractAddress = depositContractAddress;
     this.squareRootSlotsPerEpoch = MathHelpers.integerSquareRoot(slotsPerEpoch);
-    this.gossipMaxSize = gossipMaxSize;
+    this.maxPayloadSize = maxPayloadSize;
     this.maxChunkSize = maxChunkSize;
     this.maxRequestBlocks = maxRequestBlocks;
     this.epochsPerSubnetSubscription = epochsPerSubnetSubscription;
@@ -561,8 +561,8 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public int getGossipMaxSize() {
-    return gossipMaxSize;
+  public int getMaxPayloadSize() {
+    return maxPayloadSize;
   }
 
   @Override
@@ -683,7 +683,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         && proposerScoreBoost == that.proposerScoreBoost
         && depositChainId == that.depositChainId
         && depositNetworkId == that.depositNetworkId
-        && gossipMaxSize == that.gossipMaxSize
+        && maxPayloadSize == that.maxPayloadSize
         && maxChunkSize == that.maxChunkSize
         && maxRequestBlocks == that.maxRequestBlocks
         && epochsPerSubnetSubscription == that.epochsPerSubnetSubscription
@@ -768,7 +768,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         depositChainId,
         depositNetworkId,
         depositContractAddress,
-        gossipMaxSize,
+            maxPayloadSize,
         maxChunkSize,
         maxRequestBlocks,
         epochsPerSubnetSubscription,

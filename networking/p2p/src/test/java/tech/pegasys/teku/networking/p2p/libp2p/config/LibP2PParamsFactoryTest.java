@@ -50,6 +50,6 @@ public class LibP2PParamsFactoryTest {
         LibP2PParamsFactory.createGossipParams(gossipConfig, networkingSpecConfig);
 
     assertThat(gossipParams.getMaxGossipMessageSize()).isEqualTo(expectedGossipMaxSize);
-    verify(networkingSpecConfig).getGossipMaxSize();
+    verify(networkingSpecConfig).getMaxPayloadSize();
   }
 }

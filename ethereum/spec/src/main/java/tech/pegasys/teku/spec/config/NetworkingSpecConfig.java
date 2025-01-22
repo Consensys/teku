@@ -17,7 +17,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 
 public interface NetworkingSpecConfig {
 
-  int getGossipMaxSize();
+  int getMaxPayloadSize();
 
   int getMaxChunkSize();
 
