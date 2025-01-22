@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client.loader;
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.spec.signatures.Signer;
@@ -73,6 +74,7 @@ public class SlashingProtectedValidatorSource implements ValidatorSource {
 
   private class SlashingProtectedValidatorProvider implements ValidatorProvider {
     private final ValidatorProvider delegate;
+    private final ConcurrentHashMap<BLSPublicKey, SlashingProtectedSigner> signerCache = new ConcurrentHashMap<>();
 
     private SlashingProtectedValidatorProvider(final ValidatorProvider delegate) {
       this.delegate = delegate;
@@ -90,10 +92,9 @@ public class SlashingProtectedValidatorSource implements ValidatorSource {
 
     @Override
     public Signer createSigner() {
-      // TODO: Consider caching these to guarantee we can't possible use different
-      // `SlashingProtectedSigner` instances with the same key
-      return new SlashingProtectedSigner(
-          getPublicKey(), slashingProtector, delegate.createSigner());
+      return signerCache.computeIfAbsent(
+          getPublicKey(),
+          key -> new SlashingProtectedSigner(key, slashingProtector, delegate.createSigner()));
     }
   }
 }
