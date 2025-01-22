@@ -196,7 +196,10 @@ public class RocksDbStats implements AutoCloseable {
                 + "_"
                 + histogram.name().toLowerCase(Locale.ROOT),
             "RocksDB histogram for " + histogram.name(),
-            () -> ifOpen(() -> provideExternalSummary(stats, histogram), new ExternalSummary(0, 0, Collections.emptyList())));
+            () ->
+                ifOpen(
+                    () -> provideExternalSummary(stats, histogram),
+                    new ExternalSummary(0, 0, Collections.emptyList())));
       }
     }
   }
