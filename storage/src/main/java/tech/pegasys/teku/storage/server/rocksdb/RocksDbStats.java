@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.rocksdb;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Supplier;
@@ -195,7 +196,7 @@ public class RocksDbStats implements AutoCloseable {
                 + "_"
                 + histogram.name().toLowerCase(Locale.ROOT),
             "RocksDB histogram for " + histogram.name(),
-            () -> provideExternalSummary(stats, histogram));
+            () -> ifOpen(() -> provideExternalSummary(stats, histogram), new ExternalSummary(0, 0, Collections.emptyList())));
       }
     }
   }
