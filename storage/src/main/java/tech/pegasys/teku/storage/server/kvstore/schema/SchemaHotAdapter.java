@@ -70,19 +70,19 @@ public class SchemaHotAdapter implements Schema {
     return delegate.getColumnBlobSidecarBySlotRootBlobIndex();
   }
 
-  public KvStoreUnchunckedVariable<UInt64> getVariableGenesisTime() {
+  public KvStoreUnchunkedVariable<UInt64> getVariableGenesisTime() {
     return delegate.getVariableGenesisTime();
   }
 
-  public KvStoreUnchunckedVariable<Checkpoint> getVariableJustifiedCheckpoint() {
+  public KvStoreUnchunkedVariable<Checkpoint> getVariableJustifiedCheckpoint() {
     return delegate.getVariableJustifiedCheckpoint();
   }
 
-  public KvStoreUnchunckedVariable<Checkpoint> getVariableBestJustifiedCheckpoint() {
+  public KvStoreUnchunkedVariable<Checkpoint> getVariableBestJustifiedCheckpoint() {
     return delegate.getVariableBestJustifiedCheckpoint();
   }
 
-  public KvStoreUnchunckedVariable<Checkpoint> getVariableFinalizedCheckpoint() {
+  public KvStoreUnchunkedVariable<Checkpoint> getVariableFinalizedCheckpoint() {
     return delegate.getVariableFinalizedCheckpoint();
   }
 
@@ -90,19 +90,19 @@ public class SchemaHotAdapter implements Schema {
     return delegate.getVariableLatestFinalizedState();
   }
 
-  public KvStoreUnchunckedVariable<MinGenesisTimeBlockEvent> getVariableMinGenesisTimeBlock() {
+  public KvStoreUnchunkedVariable<MinGenesisTimeBlockEvent> getVariableMinGenesisTimeBlock() {
     return delegate.getVariableMinGenesisTimeBlock();
   }
 
-  public KvStoreUnchunckedVariable<Checkpoint> getVariableWeakSubjectivityCheckpoint() {
+  public KvStoreUnchunkedVariable<Checkpoint> getVariableWeakSubjectivityCheckpoint() {
     return delegate.getVariableWeakSubjectivityCheckpoint();
   }
 
-  public KvStoreUnchunckedVariable<Checkpoint> getVariableAnchorCheckpoint() {
+  public KvStoreUnchunkedVariable<Checkpoint> getVariableAnchorCheckpoint() {
     return delegate.getVariableAnchorCheckpoint();
   }
 
-  public KvStoreUnchunckedVariable<DepositTreeSnapshot> getVariableFinalizedDepositSnapshot() {
+  public KvStoreUnchunkedVariable<DepositTreeSnapshot> getVariableFinalizedDepositSnapshot() {
     return delegate.getVariableFinalizedDepositSnapshot();
   }
 
@@ -126,7 +126,7 @@ public class SchemaHotAdapter implements Schema {
         getColumnBlobSidecarBySlotRootBlobIndex());
   }
 
-  public Map<String, KvStoreVariable> getVariableMap() {
+  public Map<String, KvStoreVariable<?>> getVariableMap() {
     return Map.of(
         "GENESIS_TIME",
         getVariableGenesisTime(),
@@ -154,7 +154,7 @@ public class SchemaHotAdapter implements Schema {
   }
 
   @Override
-  public Collection<KvStoreVariable> getAllVariables() {
+  public Collection<KvStoreVariable<?>> getAllVariables() {
     return getVariableMap().values();
   }
 

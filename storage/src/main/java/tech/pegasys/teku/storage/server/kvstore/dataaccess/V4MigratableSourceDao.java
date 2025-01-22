@@ -22,7 +22,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreChunkedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
-import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunckedVariable;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunkedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
 public interface V4MigratableSourceDao {
@@ -30,7 +30,7 @@ public interface V4MigratableSourceDao {
 
   Map<String, KvStoreVariable<?>> getVariableMap();
 
-  <T> Optional<Bytes> getRawVariable(final KvStoreUnchunckedVariable<T> var);
+  <T> Optional<Bytes> getRawVariable(final KvStoreUnchunkedVariable<T> var);
 
   <T> Optional<List<Bytes>> getRawVariable(final KvStoreChunkedVariable<T> var);
 

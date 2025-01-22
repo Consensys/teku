@@ -14,13 +14,15 @@
 package tech.pegasys.teku.storage.server.leveldb;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.unsigned.ByteUtil.toByteExact;
 
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreChunkedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
-import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunckedVariable;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunkedVariable;
 
 class LevelDbUtils {
 
@@ -33,7 +35,27 @@ class LevelDbUtils {
     return keyAfterColumn;
   }
 
-  static byte[] getVariableKey(final KvStoreUnchunckedVariable<?> variable) {
+  static byte[] getVariableKey(final KvStoreUnchunkedVariable<?> variable) {
+    final byte[] suffix = variable.getId().toArrayUnsafe();
+    final byte[] key = new byte[suffix.length + 1];
+    // All 1s in binary so right at the end of the index.
+    key[0] = VARIABLE_COLUMN_PREFIX;
+    System.arraycopy(suffix, 0, key, 1, suffix.length);
+    return key;
+  }
+
+  static byte[] getChunkedVariableKey(final KvStoreChunkedVariable<?> variable, final int chunkId) {
+    final byte[] idSuffix = variable.getId().toArrayUnsafe();
+    final byte[] key = new byte[idSuffix.length + 2];
+    // All 1s in binary so right at the end of the index.
+    key[0] = VARIABLE_COLUMN_PREFIX;
+    System.arraycopy(idSuffix, 0, key, 1, idSuffix.length);
+    // last is chunk id
+    key[key.length - 1] = toByteExact(chunkId);
+    return key;
+  }
+
+  static byte[] getChunkedVariableChunksKey(final KvStoreChunkedVariable<?> variable) {
     final byte[] suffix = variable.getId().toArrayUnsafe();
     final byte[] key = new byte[suffix.length + 1];
     // All 1s in binary so right at the end of the index.

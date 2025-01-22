@@ -16,6 +16,8 @@ package tech.pegasys.teku.storage.server.leveldb;
 import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.asColumnEntry;
 import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.asOptionalColumnEntry;
 import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.deserializeKey;
+import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.getChunkedVariableChunksKey;
+import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.getChunkedVariableKey;
 import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.getColumnKey;
 import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.getKeyAfterColumn;
 import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.getVariableKey;
@@ -29,10 +31,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,7 +55,7 @@ import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreChunkedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
-import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunckedVariable;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunkedVariable;
 
 /**
  * Implements {@link KvStoreAccessor} using LevelDB to store the data.
@@ -93,7 +97,7 @@ public class LevelDbInstance implements KvStoreAccessor {
   }
 
   @Override
-  public <T> Optional<T> get(final KvStoreUnchunckedVariable<T> variable) {
+  public <T> Optional<T> get(final KvStoreUnchunkedVariable<T> variable) {
     return getRaw(variable)
         .map(value -> variable.getSerializer().deserialize(value.toArrayUnsafe()));
   }
@@ -101,11 +105,15 @@ public class LevelDbInstance implements KvStoreAccessor {
   @Override
   public <T> Optional<T> get(final KvStoreChunkedVariable<T> variable) {
     return getRaw(variable)
-        .map(value -> variable.getSerializer().deserialize(value.toArrayUnsafe()));
+        .map(
+            value ->
+                variable
+                    .getSerializer()
+                    .deserialize(value.stream().map(Bytes::toArrayUnsafe).toList()));
   }
 
   @Override
-  public Optional<Bytes> getRaw(final KvStoreUnchunckedVariable<?> variable) {
+  public Optional<Bytes> getRaw(final KvStoreUnchunkedVariable<?> variable) {
     assertOpen();
     return Optional.ofNullable(db.get(getVariableKey(variable))).map(Bytes::wrap);
   }
@@ -113,8 +121,21 @@ public class LevelDbInstance implements KvStoreAccessor {
   @Override
   public Optional<List<Bytes>> getRaw(final KvStoreChunkedVariable<?> variable) {
     assertOpen();
-    // TODO implement the lookup to get number of chunks and then get all the chunks
-    return Optional.empty();
+    return Optional.ofNullable(db.get(getChunkedVariableChunksKey(variable)))
+        .map(Bytes::wrap)
+        .map(
+            chunksNumber -> {
+              if (chunksNumber.size() > 1) {
+                // this is a non chunked variable to be migrated
+                return List.of(Bytes.wrap(chunksNumber));
+              }
+              // TODO implement with an iterator
+              return IntStream.range(0, Byte.toUnsignedInt(chunksNumber.get(0)))
+                  .mapToObj(i -> db.get(getChunkedVariableKey(variable, i)))
+                  .peek(Objects::requireNonNull)
+                  .map(Bytes::wrap)
+                  .toList();
+            });
   }
 
   @Override

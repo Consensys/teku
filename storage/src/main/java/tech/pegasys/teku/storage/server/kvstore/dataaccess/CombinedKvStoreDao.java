@@ -47,7 +47,7 @@ import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransacti
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateStorageLogic.FinalizedStateUpdater;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreChunkedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
-import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunckedVariable;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunkedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombined;
 
@@ -241,7 +241,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     if (variable.toUnchunkedVariable().isPresent()) {
-      final KvStoreUnchunckedVariable<?> unchunckedVariable =
+      final KvStoreUnchunkedVariable<?> unchunckedVariable =
           variable.toUnchunkedVariable().orElseThrow();
       dao.getRawVariable(unchunckedVariable)
           .ifPresent(value -> transaction.putRaw(unchunckedVariable, value));
@@ -262,7 +262,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public <T> Optional<Bytes> getRawVariable(final KvStoreUnchunckedVariable<T> var) {
+  public <T> Optional<Bytes> getRawVariable(final KvStoreUnchunkedVariable<T> var) {
     return db.getRaw(var);
   }
 

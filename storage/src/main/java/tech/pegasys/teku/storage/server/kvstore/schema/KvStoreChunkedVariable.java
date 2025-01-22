@@ -50,7 +50,7 @@ public class KvStoreChunkedVariable<TValue> implements KvStoreVariable<TValue> {
   }
 
   @Override
-  public Optional<KvStoreUnchunckedVariable<TValue>> toUnchunkedVariable() {
+  public Optional<KvStoreUnchunkedVariable<TValue>> toUnchunkedVariable() {
     return Optional.empty();
   }
 

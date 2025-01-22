@@ -34,8 +34,9 @@ import org.rocksdb.TransactionDB;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreChunkedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
-import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunckedVariable;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunkedVariable;
 
 public class RocksDbInstance implements KvStoreAccessor {
 
@@ -59,12 +60,17 @@ public class RocksDbInstance implements KvStoreAccessor {
   }
 
   @Override
-  public <T> Optional<T> get(final KvStoreUnchunckedVariable<T> variable) {
+  public <T> Optional<T> get(final KvStoreUnchunkedVariable<T> variable) {
     return getRaw(variable).map(data -> variable.getSerializer().deserialize(data.toArrayUnsafe()));
   }
 
   @Override
-  public Optional<Bytes> getRaw(final KvStoreUnchunckedVariable<?> variable) {
+  public <T> Optional<T> get(final KvStoreChunkedVariable<T> variable) {
+    throw new UnsupportedOperationException("Not yet implemented");
+  }
+
+  @Override
+  public Optional<Bytes> getRaw(final KvStoreUnchunkedVariable<?> variable) {
     assertOpen();
     try {
       return Optional.ofNullable(db.get(defaultHandle, variable.getId().toArrayUnsafe()))
@@ -72,6 +78,11 @@ public class RocksDbInstance implements KvStoreAccessor {
     } catch (RocksDBException e) {
       throw RocksDbExceptionUtil.wrapException("Failed to get value", e);
     }
+  }
+
+  @Override
+  public Optional<List<Bytes>> getRaw(final KvStoreChunkedVariable<?> variable) {
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override

@@ -37,7 +37,7 @@ class BeaconStateChunkingSerializer implements KvStoreChunkingSerializer<BeaconS
   public List<byte[]> serialize(final BeaconState value) {
     final SszByteArrayChunksWriter sszByteArrayChunksWriter =
         new SszByteArrayChunksWriter(
-            value.getBeaconStateSchema().getSszSize(value.getBackingNode()), 10240);
+            value.getBeaconStateSchema().getSszSize(value.getBackingNode()), 1024_000);
     value.sszSerialize(sszByteArrayChunksWriter);
     return sszByteArrayChunksWriter.getChunks();
   }

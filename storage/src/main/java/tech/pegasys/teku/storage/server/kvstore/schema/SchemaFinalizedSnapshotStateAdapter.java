@@ -70,7 +70,7 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return getColumnMap().values();
   }
 
-  public Collection<KvStoreUnchunckedVariable<?>> getAllVariables() {
+  public Collection<KvStoreVariable<?>> getAllVariables() {
     return getVariableMap().values();
   }
 
@@ -98,19 +98,19 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return delegate.getColumnNonCanonicalRootsBySlot();
   }
 
-  public KvStoreUnchunckedVariable<UInt64> getOptimisticTransitionBlockSlot() {
+  public KvStoreUnchunkedVariable<UInt64> getOptimisticTransitionBlockSlot() {
     return delegate.getOptimisticTransitionBlockSlot();
   }
 
-  public KvStoreUnchunckedVariable<UInt64> getVariableEarliestBlobSidecarSlot() {
+  public KvStoreUnchunkedVariable<UInt64> getVariableEarliestBlobSidecarSlot() {
     return delegate.getVariableEarliestBlobSidecarSlot();
   }
 
-  public KvStoreUnchunckedVariable<UInt64> getVariableEarliestBlockSlot() {
+  public KvStoreUnchunkedVariable<UInt64> getVariableEarliestBlockSlot() {
     return delegate.getVariableEarliestBlockSlot();
   }
 
-  public Map<String, KvStoreUnchunckedVariable<?>> getVariableMap() {
+  public Map<String, KvStoreVariable<?>> getVariableMap() {
     return Map.of(
         "OPTIMISTIC_TRANSITION_BLOCK_SLOT",
         getOptimisticTransitionBlockSlot(),

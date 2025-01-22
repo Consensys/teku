@@ -45,7 +45,7 @@ public class ChunkedVariableKeySerializer
   }
 
   public record IdAndChunkKey(Bytes id, Bytes chunkKey) {
-    public static IdAndChunkKey fromBytes(Bytes bytes) {
+    public static IdAndChunkKey fromBytes(final Bytes bytes) {
       return new IdAndChunkKey(
           bytes.slice(0, ID_KEY_SIZE), bytes.slice(ID_KEY_SIZE, CHUNK_KEY_SIZE));
     }

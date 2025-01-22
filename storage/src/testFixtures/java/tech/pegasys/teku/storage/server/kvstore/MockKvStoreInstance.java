@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -30,23 +31,25 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreChunkedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
-import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunckedVariable;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunkedVariable;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
 public class MockKvStoreInstance implements KvStoreAccessor {
   private final Set<KvStoreColumn<?, ?>> columns;
-  private final Set<KvStoreUnchunckedVariable<?>> variables;
+  private final Set<KvStoreVariable<?>> variables;
 
   private final Map<KvStoreColumn<?, ?>, NavigableMap<Bytes, Bytes>> columnData;
-  private final Map<KvStoreUnchunckedVariable<?>, Bytes> variableData;
+  private final Map<KvStoreVariable<?>, Bytes> variableData;
 
   private final AtomicBoolean closed = new AtomicBoolean(false);
 
   public MockKvStoreInstance(
       final Collection<KvStoreColumn<?, ?>> columns,
-      final Collection<KvStoreUnchunckedVariable<?>> variables,
+      final Collection<KvStoreVariable<?>> variables,
       final Map<KvStoreColumn<?, ?>, NavigableMap<Bytes, Bytes>> columnData,
-      final Map<KvStoreUnchunckedVariable<?>, Bytes> variableData) {
+      final Map<KvStoreVariable<?>, Bytes> variableData) {
     this.columns = new HashSet<>(columns);
     this.variables = new HashSet<>(variables);
     this.columnData = columnData;
@@ -63,26 +66,36 @@ public class MockKvStoreInstance implements KvStoreAccessor {
 
   public static MockKvStoreInstance createEmpty(
       final Collection<KvStoreColumn<?, ?>> columns,
-      final Collection<KvStoreUnchunckedVariable<?>> variables) {
+      final Collection<KvStoreVariable<?>> variables) {
     checkArgument(columns.size() > 0, "No columns attached to schema");
 
     final Map<KvStoreColumn<?, ?>, NavigableMap<Bytes, Bytes>> columnData =
         columns.stream()
             .collect(Collectors.toConcurrentMap(col -> col, __ -> new ConcurrentSkipListMap<>()));
-    final Map<KvStoreUnchunckedVariable<?>, Bytes> variableData = new ConcurrentHashMap<>();
+    final Map<KvStoreVariable<?>, Bytes> variableData = new ConcurrentHashMap<>();
     return new MockKvStoreInstance(columns, variables, columnData, variableData);
   }
 
   @Override
-  public <T> Optional<T> get(final KvStoreUnchunckedVariable<T> variable) {
+  public <T> Optional<T> get(final KvStoreUnchunkedVariable<T> variable) {
     return getRaw(variable).map(Bytes::toArrayUnsafe).map(variable.getSerializer()::deserialize);
   }
 
   @Override
-  public Optional<Bytes> getRaw(final KvStoreUnchunckedVariable<?> variable) {
+  public <T> Optional<T> get(final KvStoreChunkedVariable<T> variable) {
+    throw new UnsupportedOperationException("Not yet implemented");
+  }
+
+  @Override
+  public Optional<Bytes> getRaw(final KvStoreUnchunkedVariable<?> variable) {
     assertOpen();
     assertValidVariable(variable);
     return Optional.ofNullable(variableData.get(variable));
+  }
+
+  @Override
+  public Optional<List<Bytes>> getRaw(final KvStoreChunkedVariable<?> variable) {
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override
@@ -242,7 +255,7 @@ public class MockKvStoreInstance implements KvStoreAccessor {
     closed.set(true);
   }
 
-  private void assertValidVariable(final KvStoreUnchunckedVariable<?> variable) {
+  private void assertValidVariable(final KvStoreUnchunkedVariable<?> variable) {
     checkArgument(variables.contains(variable), "Unknown RocksDbVariable supplied");
   }
 
@@ -261,7 +274,7 @@ public class MockKvStoreInstance implements KvStoreAccessor {
     private final MockKvStoreInstance dbInstance;
     private final Map<KvStoreColumn<?, ?>, Map<Bytes, Bytes>> columnUpdates = new HashMap<>();
     private final Map<KvStoreColumn<?, ?>, Set<Bytes>> deletedColumnKeys = new HashMap<>();
-    private final Map<KvStoreUnchunckedVariable<?>, Optional<Bytes>> variableUpdates =
+    private final Map<KvStoreUnchunkedVariable<?>, Optional<Bytes>> variableUpdates =
         new HashMap<>();
     private boolean closed = false;
 
@@ -270,16 +283,27 @@ public class MockKvStoreInstance implements KvStoreAccessor {
     }
 
     @Override
-    public <T> void put(final KvStoreUnchunckedVariable<T> variable, final T value) {
+    public <T> void put(final KvStoreUnchunkedVariable<T> variable, final T value) {
       final Bytes valueBytes = Bytes.wrap(variable.getSerializer().serialize(value));
       putRaw(variable, valueBytes);
     }
 
     @Override
-    public <T> void putRaw(final KvStoreUnchunckedVariable<T> variable, final Bytes value) {
+    public <T> void put(final KvStoreChunkedVariable<T> variable, final T value) {
+      throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    @Override
+    public <T> void putRaw(final KvStoreUnchunkedVariable<T> variable, final Bytes value) {
       assertOpen();
       dbInstance.assertValidVariable(variable);
       variableUpdates.put(variable, Optional.of(value));
+    }
+
+    @Override
+    public <T> void putRaw(
+        final KvStoreChunkedVariable<T> variable, final List<Bytes> valueChunks) {
+      throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
@@ -322,7 +346,7 @@ public class MockKvStoreInstance implements KvStoreAccessor {
     }
 
     @Override
-    public <T> void delete(final KvStoreUnchunckedVariable<T> variable) {
+    public <T> void delete(final KvStoreUnchunkedVariable<T> variable) {
       assertOpen();
       dbInstance.assertValidVariable(variable);
       variableUpdates.put(variable, Optional.empty());

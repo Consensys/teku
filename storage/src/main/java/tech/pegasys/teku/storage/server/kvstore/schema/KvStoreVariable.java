@@ -19,5 +19,5 @@ public interface KvStoreVariable<TValue> {
 
   Optional<KvStoreChunkedVariable<TValue>> toChunkedVariable();
 
-  Optional<KvStoreUnchunckedVariable<TValue>> toUnchunkedVariable();
+  Optional<KvStoreUnchunkedVariable<TValue>> toUnchunkedVariable();
 }

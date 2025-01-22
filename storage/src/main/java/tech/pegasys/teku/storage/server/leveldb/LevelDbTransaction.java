@@ -14,11 +14,15 @@
 package tech.pegasys.teku.storage.server.leveldb;
 
 import static tech.pegasys.teku.infrastructure.logging.DbLogger.DB_LOGGER;
+import static tech.pegasys.teku.infrastructure.unsigned.ByteUtil.toByteExact;
+import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.getChunkedVariableChunksKey;
+import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.getChunkedVariableKey;
 import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.getColumnKey;
 import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.getVariableKey;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 import org.apache.tuweni.bytes.Bytes;
@@ -28,7 +32,7 @@ import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreChunkedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
-import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunckedVariable;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunkedVariable;
 
 public class LevelDbTransaction implements KvStoreTransaction {
 
@@ -47,18 +51,31 @@ public class LevelDbTransaction implements KvStoreTransaction {
   }
 
   @Override
-  public <T> void put(final KvStoreUnchunckedVariable<T> variable, final T value) {
+  public <T> void put(final KvStoreUnchunkedVariable<T> variable, final T value) {
     putRaw(variable, Bytes.wrap(variable.getSerializer().serialize(value)));
   }
 
   @Override
   public <T> void put(final KvStoreChunkedVariable<T> variable, final T value) {
-    putRaw(variable, Bytes.wrap(variable.getValueSerializer().serialize(value)));
+    putRaw(variable, variable.getSerializer().serialize(value).stream().map(Bytes::wrap).toList());
   }
 
   @Override
-  public <T> void putRaw(final KvStoreUnchunckedVariable<T> variable, final Bytes value) {
+  public <T> void putRaw(final KvStoreUnchunkedVariable<T> variable, final Bytes value) {
     applyUpdate(() -> writeBatch.put(getVariableKey(variable), value.toArrayUnsafe()));
+  }
+
+  @Override
+  public <T> void putRaw(final KvStoreChunkedVariable<T> variable, final List<Bytes> valueChunks) {
+    applyUpdate(
+        () -> {
+          writeBatch.put(
+              getChunkedVariableChunksKey(variable), new byte[] {toByteExact(valueChunks.size())});
+          for (int index = 0; index < valueChunks.size(); index++) {
+            writeBatch.put(
+                getChunkedVariableKey(variable, index), valueChunks.get(index).toArrayUnsafe());
+          }
+        });
   }
 
   @Override
@@ -90,7 +107,7 @@ public class LevelDbTransaction implements KvStoreTransaction {
   }
 
   @Override
-  public <T> void delete(final KvStoreUnchunckedVariable<T> variable) {
+  public <T> void delete(final KvStoreUnchunkedVariable<T> variable) {
     applyUpdate(() -> writeBatch.delete(getVariableKey(variable)));
   }
 
