@@ -768,7 +768,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         depositChainId,
         depositNetworkId,
         depositContractAddress,
-            maxPayloadSize,
+        maxPayloadSize,
         maxChunkSize,
         maxRequestBlocks,
         epochsPerSubnetSubscription,
