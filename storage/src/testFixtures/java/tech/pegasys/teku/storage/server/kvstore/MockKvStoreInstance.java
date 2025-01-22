@@ -31,22 +31,22 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
-import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunckedVariable;
 
 public class MockKvStoreInstance implements KvStoreAccessor {
   private final Set<KvStoreColumn<?, ?>> columns;
-  private final Set<KvStoreVariable<?>> variables;
+  private final Set<KvStoreUnchunckedVariable<?>> variables;
 
   private final Map<KvStoreColumn<?, ?>, NavigableMap<Bytes, Bytes>> columnData;
-  private final Map<KvStoreVariable<?>, Bytes> variableData;
+  private final Map<KvStoreUnchunckedVariable<?>, Bytes> variableData;
 
   private final AtomicBoolean closed = new AtomicBoolean(false);
 
   public MockKvStoreInstance(
       final Collection<KvStoreColumn<?, ?>> columns,
-      final Collection<KvStoreVariable<?>> variables,
+      final Collection<KvStoreUnchunckedVariable<?>> variables,
       final Map<KvStoreColumn<?, ?>, NavigableMap<Bytes, Bytes>> columnData,
-      final Map<KvStoreVariable<?>, Bytes> variableData) {
+      final Map<KvStoreUnchunckedVariable<?>, Bytes> variableData) {
     this.columns = new HashSet<>(columns);
     this.variables = new HashSet<>(variables);
     this.columnData = columnData;
@@ -63,23 +63,23 @@ public class MockKvStoreInstance implements KvStoreAccessor {
 
   public static MockKvStoreInstance createEmpty(
       final Collection<KvStoreColumn<?, ?>> columns,
-      final Collection<KvStoreVariable<?>> variables) {
+      final Collection<KvStoreUnchunckedVariable<?>> variables) {
     checkArgument(columns.size() > 0, "No columns attached to schema");
 
     final Map<KvStoreColumn<?, ?>, NavigableMap<Bytes, Bytes>> columnData =
         columns.stream()
             .collect(Collectors.toConcurrentMap(col -> col, __ -> new ConcurrentSkipListMap<>()));
-    final Map<KvStoreVariable<?>, Bytes> variableData = new ConcurrentHashMap<>();
+    final Map<KvStoreUnchunckedVariable<?>, Bytes> variableData = new ConcurrentHashMap<>();
     return new MockKvStoreInstance(columns, variables, columnData, variableData);
   }
 
   @Override
-  public <T> Optional<T> get(final KvStoreVariable<T> variable) {
+  public <T> Optional<T> get(final KvStoreUnchunckedVariable<T> variable) {
     return getRaw(variable).map(Bytes::toArrayUnsafe).map(variable.getSerializer()::deserialize);
   }
 
   @Override
-  public Optional<Bytes> getRaw(final KvStoreVariable<?> variable) {
+  public Optional<Bytes> getRaw(final KvStoreUnchunckedVariable<?> variable) {
     assertOpen();
     assertValidVariable(variable);
     return Optional.ofNullable(variableData.get(variable));
@@ -242,7 +242,7 @@ public class MockKvStoreInstance implements KvStoreAccessor {
     closed.set(true);
   }
 
-  private void assertValidVariable(final KvStoreVariable<?> variable) {
+  private void assertValidVariable(final KvStoreUnchunckedVariable<?> variable) {
     checkArgument(variables.contains(variable), "Unknown RocksDbVariable supplied");
   }
 
@@ -261,7 +261,8 @@ public class MockKvStoreInstance implements KvStoreAccessor {
     private final MockKvStoreInstance dbInstance;
     private final Map<KvStoreColumn<?, ?>, Map<Bytes, Bytes>> columnUpdates = new HashMap<>();
     private final Map<KvStoreColumn<?, ?>, Set<Bytes>> deletedColumnKeys = new HashMap<>();
-    private final Map<KvStoreVariable<?>, Optional<Bytes>> variableUpdates = new HashMap<>();
+    private final Map<KvStoreUnchunckedVariable<?>, Optional<Bytes>> variableUpdates =
+        new HashMap<>();
     private boolean closed = false;
 
     public MockKvStoreTransaction(final MockKvStoreInstance mockRocksDbInstance) {
@@ -269,13 +270,13 @@ public class MockKvStoreInstance implements KvStoreAccessor {
     }
 
     @Override
-    public <T> void put(final KvStoreVariable<T> variable, final T value) {
+    public <T> void put(final KvStoreUnchunckedVariable<T> variable, final T value) {
       final Bytes valueBytes = Bytes.wrap(variable.getSerializer().serialize(value));
       putRaw(variable, valueBytes);
     }
 
     @Override
-    public <T> void putRaw(final KvStoreVariable<T> variable, final Bytes value) {
+    public <T> void putRaw(final KvStoreUnchunckedVariable<T> variable, final Bytes value) {
       assertOpen();
       dbInstance.assertValidVariable(variable);
       variableUpdates.put(variable, Optional.of(value));
@@ -321,7 +322,7 @@ public class MockKvStoreInstance implements KvStoreAccessor {
     }
 
     @Override
-    public <T> void delete(final KvStoreVariable<T> variable) {
+    public <T> void delete(final KvStoreUnchunckedVariable<T> variable) {
       assertOpen();
       dbInstance.assertValidVariable(variable);
       variableUpdates.put(variable, Optional.empty());

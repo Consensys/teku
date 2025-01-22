@@ -150,8 +150,8 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   }
 
   @Override
-  public Map<String, KvStoreVariable<?>> getVariableMap() {
-    return ImmutableMap.<String, KvStoreVariable<?>>builder()
+  public Map<String, KvStoreUnchunckedVariable<?>> getVariableMap() {
+    return ImmutableMap.<String, KvStoreUnchunckedVariable<?>>builder()
         .put("GENESIS_TIME", getVariableGenesisTime())
         .put("JUSTIFIED_CHECKPOINT", getVariableJustifiedCheckpoint())
         .put("BEST_JUSTIFIED_CHECKPOINT", getVariableBestJustifiedCheckpoint())
@@ -200,7 +200,7 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   }
 
   @Override
-  public Collection<KvStoreVariable<?>> getAllVariables() {
+  public Collection<KvStoreUnchunckedVariable<?>> getAllVariables() {
     return getVariableMap().values();
   }
 

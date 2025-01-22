@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreChunkingSerializer;
 import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
 
 public abstract class V6SchemaCombined implements SchemaCombined {
@@ -63,28 +64,28 @@ public abstract class V6SchemaCombined implements SchemaCombined {
           KvStoreColumn.create(7, BYTES32_SERIALIZER, CHECKPOINT_EPOCHS_SERIALIZER);
 
   // Variables
-  private static final KvStoreVariable<UInt64> GENESIS_TIME =
-      KvStoreVariable.create(1, UINT64_SERIALIZER);
-  private static final KvStoreVariable<Checkpoint> JUSTIFIED_CHECKPOINT =
-      KvStoreVariable.create(2, CHECKPOINT_SERIALIZER);
-  private static final KvStoreVariable<Checkpoint> BEST_JUSTIFIED_CHECKPOINT =
-      KvStoreVariable.create(3, CHECKPOINT_SERIALIZER);
-  private static final KvStoreVariable<Checkpoint> FINALIZED_CHECKPOINT =
-      KvStoreVariable.create(4, CHECKPOINT_SERIALIZER);
-  private final KvStoreVariable<BeaconState> latestFinalizedState;
-  private static final KvStoreVariable<MinGenesisTimeBlockEvent> MIN_GENESIS_TIME_BLOCK =
-      KvStoreVariable.create(6, MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER);
+  private static final KvStoreUnchunckedVariable<UInt64> GENESIS_TIME =
+      KvStoreUnchunckedVariable.create(1, UINT64_SERIALIZER);
+  private static final KvStoreUnchunckedVariable<Checkpoint> JUSTIFIED_CHECKPOINT =
+      KvStoreUnchunckedVariable.create(2, CHECKPOINT_SERIALIZER);
+  private static final KvStoreUnchunckedVariable<Checkpoint> BEST_JUSTIFIED_CHECKPOINT =
+      KvStoreUnchunckedVariable.create(3, CHECKPOINT_SERIALIZER);
+  private static final KvStoreUnchunckedVariable<Checkpoint> FINALIZED_CHECKPOINT =
+      KvStoreUnchunckedVariable.create(4, CHECKPOINT_SERIALIZER);
+  private final KvStoreChunkedVariable<BeaconState> latestFinalizedState;
+  private static final KvStoreUnchunckedVariable<MinGenesisTimeBlockEvent> MIN_GENESIS_TIME_BLOCK =
+      KvStoreUnchunckedVariable.create(6, MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER);
   // 7 was the protoarray snapshot variable but is no longer used.
-  private static final KvStoreVariable<Checkpoint> WEAK_SUBJECTIVITY_CHECKPOINT =
-      KvStoreVariable.create(8, CHECKPOINT_SERIALIZER);
-  private static final KvStoreVariable<Checkpoint> ANCHOR_CHECKPOINT =
-      KvStoreVariable.create(9, CHECKPOINT_SERIALIZER);
-  private static final KvStoreVariable<DepositTreeSnapshot> FINALIZED_DEPOSIT_SNAPSHOT =
-      KvStoreVariable.create(10, DEPOSIT_SNAPSHOT_SERIALIZER);
+  private static final KvStoreUnchunckedVariable<Checkpoint> WEAK_SUBJECTIVITY_CHECKPOINT =
+      KvStoreUnchunckedVariable.create(8, CHECKPOINT_SERIALIZER);
+  private static final KvStoreUnchunckedVariable<Checkpoint> ANCHOR_CHECKPOINT =
+      KvStoreUnchunckedVariable.create(9, CHECKPOINT_SERIALIZER);
+  private static final KvStoreUnchunckedVariable<DepositTreeSnapshot> FINALIZED_DEPOSIT_SNAPSHOT =
+      KvStoreUnchunckedVariable.create(10, DEPOSIT_SNAPSHOT_SERIALIZER);
 
-  private final KvStoreVariable<UInt64> optimisticTransitionBlockSlot;
-  private final KvStoreVariable<UInt64> earliestBlobSidecarSlot;
-  private final KvStoreVariable<UInt64> earliestBlockSlot;
+  private final KvStoreUnchunckedVariable<UInt64> optimisticTransitionBlockSlot;
+  private final KvStoreUnchunckedVariable<UInt64> earliestBlobSidecarSlot;
+  private final KvStoreUnchunckedVariable<UInt64> earliestBlockSlot;
 
   protected V6SchemaCombined(final Spec spec, final int finalizedOffset) {
     this.finalizedOffset = finalizedOffset;
@@ -95,13 +96,18 @@ public abstract class V6SchemaCombined implements SchemaCombined {
         KvStoreSerializer.createStateSerializer(spec);
     checkpointStates = KvStoreColumn.create(2, CHECKPOINT_SERIALIZER, stateSerializer);
     hotStatesByRoot = KvStoreColumn.create(6, BYTES32_SERIALIZER, stateSerializer);
-    latestFinalizedState = KvStoreVariable.create(5, stateSerializer);
+    final KvStoreChunkingSerializer<BeaconState> stateChunkingSerializer =
+        KvStoreChunkingSerializer.createStateSerializer(spec);
+
+    latestFinalizedState = KvStoreChunkedVariable.create(5, stateSerializer);
 
     votes = KvStoreColumn.create(3, UINT64_SERIALIZER, VOTE_TRACKER_SERIALIZER);
 
-    optimisticTransitionBlockSlot = KvStoreVariable.create(finalizedOffset + 1, UINT64_SERIALIZER);
-    earliestBlobSidecarSlot = KvStoreVariable.create(finalizedOffset + 2, UINT64_SERIALIZER);
-    earliestBlockSlot = KvStoreVariable.create(finalizedOffset + 3, UINT64_SERIALIZER);
+    optimisticTransitionBlockSlot =
+        KvStoreUnchunckedVariable.create(finalizedOffset + 1, UINT64_SERIALIZER);
+    earliestBlobSidecarSlot =
+        KvStoreUnchunckedVariable.create(finalizedOffset + 2, UINT64_SERIALIZER);
+    earliestBlockSlot = KvStoreUnchunckedVariable.create(finalizedOffset + 3, UINT64_SERIALIZER);
   }
 
   @Override
@@ -140,62 +146,62 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   }
 
   @Override
-  public KvStoreVariable<UInt64> getVariableGenesisTime() {
+  public KvStoreUnchunckedVariable<UInt64> getVariableGenesisTime() {
     return GENESIS_TIME;
   }
 
   @Override
-  public KvStoreVariable<Checkpoint> getVariableJustifiedCheckpoint() {
+  public KvStoreUnchunckedVariable<Checkpoint> getVariableJustifiedCheckpoint() {
     return JUSTIFIED_CHECKPOINT;
   }
 
   @Override
-  public KvStoreVariable<Checkpoint> getVariableBestJustifiedCheckpoint() {
+  public KvStoreUnchunckedVariable<Checkpoint> getVariableBestJustifiedCheckpoint() {
     return BEST_JUSTIFIED_CHECKPOINT;
   }
 
   @Override
-  public KvStoreVariable<Checkpoint> getVariableFinalizedCheckpoint() {
+  public KvStoreUnchunckedVariable<Checkpoint> getVariableFinalizedCheckpoint() {
     return FINALIZED_CHECKPOINT;
   }
 
   @Override
-  public KvStoreVariable<BeaconState> getVariableLatestFinalizedState() {
+  public KvStoreChunkedVariable<BeaconState> getVariableLatestFinalizedState() {
     return latestFinalizedState;
   }
 
   @Override
-  public KvStoreVariable<MinGenesisTimeBlockEvent> getVariableMinGenesisTimeBlock() {
+  public KvStoreUnchunckedVariable<MinGenesisTimeBlockEvent> getVariableMinGenesisTimeBlock() {
     return MIN_GENESIS_TIME_BLOCK;
   }
 
   @Override
-  public KvStoreVariable<Checkpoint> getVariableWeakSubjectivityCheckpoint() {
+  public KvStoreUnchunckedVariable<Checkpoint> getVariableWeakSubjectivityCheckpoint() {
     return WEAK_SUBJECTIVITY_CHECKPOINT;
   }
 
   @Override
-  public KvStoreVariable<Checkpoint> getVariableAnchorCheckpoint() {
+  public KvStoreUnchunckedVariable<Checkpoint> getVariableAnchorCheckpoint() {
     return ANCHOR_CHECKPOINT;
   }
 
   @Override
-  public KvStoreVariable<UInt64> getOptimisticTransitionBlockSlot() {
+  public KvStoreUnchunckedVariable<UInt64> getOptimisticTransitionBlockSlot() {
     return optimisticTransitionBlockSlot;
   }
 
   @Override
-  public KvStoreVariable<DepositTreeSnapshot> getVariableFinalizedDepositSnapshot() {
+  public KvStoreUnchunckedVariable<DepositTreeSnapshot> getVariableFinalizedDepositSnapshot() {
     return FINALIZED_DEPOSIT_SNAPSHOT;
   }
 
   @Override
-  public KvStoreVariable<UInt64> getVariableEarliestBlobSidecarSlot() {
+  public KvStoreUnchunckedVariable<UInt64> getVariableEarliestBlobSidecarSlot() {
     return earliestBlobSidecarSlot;
   }
 
   @Override
-  public KvStoreVariable<UInt64> getVariableEarliestBlockSlot() {
+  public KvStoreUnchunckedVariable<UInt64> getVariableEarliestBlockSlot() {
     return earliestBlockSlot;
   }
 
@@ -221,8 +227,8 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   }
 
   @Override
-  public Map<String, KvStoreVariable<?>> getVariableMap() {
-    return ImmutableMap.<String, KvStoreVariable<?>>builder()
+  public Map<String, KvStoreUnchunckedVariable<?>> getVariableMap() {
+    return ImmutableMap.<String, KvStoreUnchunckedVariable<?>>builder()
         .put("GENESIS_TIME", getVariableGenesisTime())
         .put("JUSTIFIED_CHECKPOINT", getVariableJustifiedCheckpoint())
         .put("BEST_JUSTIFIED_CHECKPOINT", getVariableBestJustifiedCheckpoint())

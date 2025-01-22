@@ -38,6 +38,7 @@ import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.HotUpdater;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunckedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHotAdapter;
 
@@ -142,7 +143,7 @@ public class V4HotKvStoreDao {
     return new V4HotUpdater(db, schema);
   }
 
-  public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
+  public <T> Optional<Bytes> getRawVariable(final KvStoreUnchunckedVariable<T> var) {
     return db.getRaw(var);
   }
 
@@ -164,7 +165,7 @@ public class V4HotKvStoreDao {
     return schema.getColumnMap();
   }
 
-  public Map<String, KvStoreVariable<?>> getVariableMap() {
+  public Map<String, KvStoreVariable> getVariableMap() {
     return schema.getVariableMap();
   }
 

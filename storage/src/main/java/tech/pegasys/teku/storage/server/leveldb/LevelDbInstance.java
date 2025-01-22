@@ -49,8 +49,9 @@ import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreChunkedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
-import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunckedVariable;
 
 /**
  * Implements {@link KvStoreAccessor} using LevelDB to store the data.
@@ -92,15 +93,28 @@ public class LevelDbInstance implements KvStoreAccessor {
   }
 
   @Override
-  public <T> Optional<T> get(final KvStoreVariable<T> variable) {
+  public <T> Optional<T> get(final KvStoreUnchunckedVariable<T> variable) {
     return getRaw(variable)
         .map(value -> variable.getSerializer().deserialize(value.toArrayUnsafe()));
   }
 
   @Override
-  public Optional<Bytes> getRaw(final KvStoreVariable<?> variable) {
+  public <T> Optional<T> get(final KvStoreChunkedVariable<T> variable) {
+    return getRaw(variable)
+        .map(value -> variable.getSerializer().deserialize(value.toArrayUnsafe()));
+  }
+
+  @Override
+  public Optional<Bytes> getRaw(final KvStoreUnchunckedVariable<?> variable) {
     assertOpen();
     return Optional.ofNullable(db.get(getVariableKey(variable))).map(Bytes::wrap);
+  }
+
+  @Override
+  public Optional<List<Bytes>> getRaw(final KvStoreChunkedVariable<?> variable) {
+    assertOpen();
+    // TODO implement the lookup to get number of chunks and then get all the chunks
+    return Optional.empty();
   }
 
   @Override

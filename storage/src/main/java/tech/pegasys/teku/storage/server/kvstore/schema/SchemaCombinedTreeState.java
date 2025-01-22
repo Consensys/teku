@@ -26,7 +26,7 @@ public interface SchemaCombinedTreeState extends SchemaCombined {
   Map<String, KvStoreColumn<?, ?>> getColumnMap();
 
   @Override
-  Map<String, KvStoreVariable<?>> getVariableMap();
+  Map<String, KvStoreUnchunckedVariable<?>> getVariableMap();
 
   @Override
   default Collection<KvStoreColumn<?, ?>> getAllColumns() {
@@ -34,7 +34,7 @@ public interface SchemaCombinedTreeState extends SchemaCombined {
   }
 
   @Override
-  default Collection<KvStoreVariable<?>> getAllVariables() {
+  default Collection<KvStoreUnchunckedVariable<?>> getAllVariables() {
     return getVariableMap().values();
   }
 

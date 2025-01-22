@@ -26,8 +26,9 @@ import org.iq80.leveldb.DB;
 import org.iq80.leveldb.WriteBatch;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreChunkedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
-import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunckedVariable;
 
 public class LevelDbTransaction implements KvStoreTransaction {
 
@@ -46,12 +47,17 @@ public class LevelDbTransaction implements KvStoreTransaction {
   }
 
   @Override
-  public <T> void put(final KvStoreVariable<T> variable, final T value) {
+  public <T> void put(final KvStoreUnchunckedVariable<T> variable, final T value) {
     putRaw(variable, Bytes.wrap(variable.getSerializer().serialize(value)));
   }
 
   @Override
-  public <T> void putRaw(final KvStoreVariable<T> variable, final Bytes value) {
+  public <T> void put(final KvStoreChunkedVariable<T> variable, final T value) {
+    putRaw(variable, Bytes.wrap(variable.getValueSerializer().serialize(value)));
+  }
+
+  @Override
+  public <T> void putRaw(final KvStoreUnchunckedVariable<T> variable, final Bytes value) {
     applyUpdate(() -> writeBatch.put(getVariableKey(variable), value.toArrayUnsafe()));
   }
 
@@ -84,7 +90,7 @@ public class LevelDbTransaction implements KvStoreTransaction {
   }
 
   @Override
-  public <T> void delete(final KvStoreVariable<T> variable) {
+  public <T> void delete(final KvStoreUnchunckedVariable<T> variable) {
     applyUpdate(() -> writeBatch.delete(getVariableKey(variable)));
   }
 

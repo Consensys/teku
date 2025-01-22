@@ -22,7 +22,7 @@ public interface SchemaCombinedSnapshotState extends SchemaCombined, SchemaFinal
   Map<String, KvStoreColumn<?, ?>> getColumnMap();
 
   @Override
-  Map<String, KvStoreVariable<?>> getVariableMap();
+  Map<String, KvStoreUnchunckedVariable<?>> getVariableMap();
 
   default SchemaFinalizedSnapshotStateAdapter asSchemaFinalized() {
     return new SchemaFinalizedSnapshotStateAdapter(this);
@@ -34,7 +34,7 @@ public interface SchemaCombinedSnapshotState extends SchemaCombined, SchemaFinal
   }
 
   @Override
-  default Collection<KvStoreVariable<?>> getAllVariables() {
+  default Collection<KvStoreUnchunckedVariable<?>> getAllVariables() {
     return getVariableMap().values();
   }
 }

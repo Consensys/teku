@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
-import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunckedVariable;
 
 class LevelDbUtils {
 
@@ -33,7 +33,7 @@ class LevelDbUtils {
     return keyAfterColumn;
   }
 
-  static byte[] getVariableKey(final KvStoreVariable<?> variable) {
+  static byte[] getVariableKey(final KvStoreUnchunckedVariable<?> variable) {
     final byte[] suffix = variable.getId().toArrayUnsafe();
     final byte[] key = new byte[suffix.length + 1];
     // All 1s in binary so right at the end of the index.

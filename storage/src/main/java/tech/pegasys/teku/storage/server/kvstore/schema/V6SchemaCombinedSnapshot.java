@@ -172,7 +172,7 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   }
 
   @Override
-  public Collection<KvStoreVariable<?>> getAllVariables() {
+  public Collection<KvStoreUnchunckedVariable<?>> getAllVariables() {
     return getVariableMap().values();
   }
 

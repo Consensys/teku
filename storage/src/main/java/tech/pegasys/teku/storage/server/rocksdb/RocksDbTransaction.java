@@ -27,7 +27,7 @@ import org.rocksdb.WriteOptions;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
-import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunckedVariable;
 
 public class RocksDbTransaction implements KvStoreTransaction {
   private final ColumnFamilyHandle defaultHandle;
@@ -53,13 +53,13 @@ public class RocksDbTransaction implements KvStoreTransaction {
   }
 
   @Override
-  public <T> void put(final KvStoreVariable<T> variable, final T value) {
+  public <T> void put(final KvStoreUnchunckedVariable<T> variable, final T value) {
     final Bytes serialized = Bytes.wrap(variable.getSerializer().serialize(value));
     putRaw(variable, serialized);
   }
 
   @Override
-  public <T> void putRaw(final KvStoreVariable<T> variable, final Bytes value) {
+  public <T> void putRaw(final KvStoreUnchunckedVariable<T> variable, final Bytes value) {
     applyUpdate(
         () -> {
           try {
@@ -122,7 +122,7 @@ public class RocksDbTransaction implements KvStoreTransaction {
   }
 
   @Override
-  public <T> void delete(final KvStoreVariable<T> variable) {
+  public <T> void delete(final KvStoreUnchunckedVariable<T> variable) {
     applyUpdate(
         () -> {
           try {

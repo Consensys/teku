@@ -57,6 +57,8 @@ public interface KvStoreSerializer<T> {
       SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER =
           new SlotAndBlockRootAndBlobIndexKeySerializer();
 
+  ChunkedVariableKeySerializer CHUNKED_VARIABLE_KEY_SERIALIZER = new ChunkedVariableKeySerializer();
+
   static KvStoreSerializer<BeaconState> createStateSerializer(final Spec spec) {
     return new BeaconStateSerializer(spec);
   }

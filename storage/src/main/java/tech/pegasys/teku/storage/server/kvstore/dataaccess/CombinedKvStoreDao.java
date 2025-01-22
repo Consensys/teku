@@ -45,7 +45,9 @@ import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateStorageLogic.FinalizedStateUpdater;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreChunkedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunckedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombined;
 
@@ -205,8 +207,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
       try (final KvStoreTransaction transaction = db.startTransaction()) {
         for (String key : newVariables.keySet()) {
           logger.accept(String.format("Copy variable %s", key));
-          dao.getRawVariable(oldVariables.get(key))
-              .ifPresent(value -> transaction.putRaw(newVariables.get(key), value));
+          handleVariableMigration(dao, newVariables.get(key), transaction);
         }
         transaction.commit();
       }
@@ -228,6 +229,28 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
   }
 
+  private void handleVariableMigration(
+      final V4MigratableSourceDao dao,
+      final KvStoreVariable<?> variable,
+      final KvStoreTransaction transaction) {
+    if (variable.toChunkedVariable().isPresent()) {
+      final KvStoreChunkedVariable<?> chunkedVariable = variable.toChunkedVariable().orElseThrow();
+      dao.getRawVariable(chunkedVariable)
+          .ifPresent(chunks -> transaction.putRaw(chunkedVariable, chunks));
+      return;
+    }
+
+    if (variable.toUnchunkedVariable().isPresent()) {
+      final KvStoreUnchunckedVariable<?> unchunckedVariable =
+          variable.toUnchunkedVariable().orElseThrow();
+      dao.getRawVariable(unchunckedVariable)
+          .ifPresent(value -> transaction.putRaw(unchunckedVariable, value));
+      return;
+    }
+
+    throw new IllegalStateException("Variable must be chunked or unchunked");
+  }
+
   @Override
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return schema.getColumnMap();
@@ -239,7 +262,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
+  public <T> Optional<Bytes> getRawVariable(final KvStoreUnchunckedVariable<T> var) {
+    return db.getRaw(var);
+  }
+
+  @Override
+  public <T> Optional<List<Bytes>> getRawVariable(final KvStoreChunkedVariable<T> var) {
     return db.getRaw(var);
   }
 

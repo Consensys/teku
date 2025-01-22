@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,13 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.kvstore.schema;
+package tech.pegasys.teku.storage.server.kvstore.serialization;
 
-import java.util.Optional;
+import java.util.List;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public interface KvStoreVariable<TValue> {
+public interface KvStoreChunkingSerializer<T> {
 
-  Optional<KvStoreChunkedVariable<TValue>> toChunkedVariable();
+  static KvStoreChunkingSerializer<BeaconState> createStateSerializer(final Spec spec) {
+    return new BeaconStateChunkingSerializer(spec);
+  }
 
-  Optional<KvStoreUnchunckedVariable<TValue>> toUnchunkedVariable();
+  T deserialize(List<byte[]> data);
+
+  List<byte[]> serialize(T value);
 }

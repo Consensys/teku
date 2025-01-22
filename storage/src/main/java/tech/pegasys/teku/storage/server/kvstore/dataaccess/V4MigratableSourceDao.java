@@ -14,12 +14,15 @@
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
 import com.google.errorprone.annotations.MustBeClosed;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreChunkedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunckedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
 public interface V4MigratableSourceDao {
@@ -27,7 +30,9 @@ public interface V4MigratableSourceDao {
 
   Map<String, KvStoreVariable<?>> getVariableMap();
 
-  <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var);
+  <T> Optional<Bytes> getRawVariable(final KvStoreUnchunckedVariable<T> var);
+
+  <T> Optional<List<Bytes>> getRawVariable(final KvStoreChunkedVariable<T> var);
 
   @MustBeClosed
   <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(final KvStoreColumn<K, V> kvStoreColumn);

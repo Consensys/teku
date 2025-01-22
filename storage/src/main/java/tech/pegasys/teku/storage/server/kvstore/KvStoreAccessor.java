@@ -14,18 +14,24 @@
 package tech.pegasys.teku.storage.server.kvstore;
 
 import com.google.errorprone.annotations.MustBeClosed;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreChunkedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
-import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunckedVariable;
 
 public interface KvStoreAccessor extends AutoCloseable {
 
-  <T> Optional<T> get(KvStoreVariable<T> variable);
+  <T> Optional<T> get(KvStoreUnchunckedVariable<T> variable);
 
-  Optional<Bytes> getRaw(KvStoreVariable<?> variable);
+  <T> Optional<T> get(KvStoreChunkedVariable<T> variable);
+
+  Optional<Bytes> getRaw(KvStoreUnchunckedVariable<?> variable);
+
+  Optional<List<Bytes>> getRaw(KvStoreChunkedVariable<?> variable);
 
   <K, V> Optional<V> get(KvStoreColumn<K, V> column, K key);
 
@@ -112,14 +118,18 @@ public interface KvStoreAccessor extends AutoCloseable {
 
   interface KvStoreTransaction extends AutoCloseable {
 
-    <T> void put(KvStoreVariable<T> variable, T value);
+    <T> void put(KvStoreUnchunckedVariable<T> variable, T value);
+
+    <T> void put(KvStoreChunkedVariable<T> variable, T value);
 
     /**
      * Write raw bytes to a specified variable.
      *
      * <p>WARNING: should only be used to migrate data between database instances
      */
-    <T> void putRaw(KvStoreVariable<T> variable, Bytes value);
+    <T> void putRaw(KvStoreUnchunckedVariable<T> variable, Bytes value);
+
+    <T> void putRaw(KvStoreChunkedVariable<T> variable, List<Bytes> value);
 
     <K, V> void put(KvStoreColumn<K, V> column, K key, V value);
 
@@ -134,7 +144,7 @@ public interface KvStoreAccessor extends AutoCloseable {
 
     <K, V> void delete(KvStoreColumn<K, V> column, K key);
 
-    <T> void delete(KvStoreVariable<T> variable);
+    <T> void delete(KvStoreUnchunckedVariable<T> variable);
 
     void commit();
 

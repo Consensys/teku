@@ -41,6 +41,7 @@ import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedKvStoreDao.V4FinalizedUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4HotKvStoreDao.V4HotUpdater;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunckedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
 public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4MigratableSourceDao {
@@ -359,15 +360,15 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
-  public Map<String, KvStoreVariable<?>> getVariableMap() {
-    final Map<String, KvStoreVariable<?>> allVariables = new HashMap<>();
+  public Map<String, KvStoreVariable> getVariableMap() {
+    final Map<String, KvStoreVariable> allVariables = new HashMap<>();
     allVariables.putAll(hotDao.getVariableMap());
     allVariables.putAll(finalizedDao.getVariableMap());
     return allVariables;
   }
 
   @Override
-  public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
+  public <T> Optional<Bytes> getRawVariable(final KvStoreUnchunckedVariable<T> var) {
     if (hotDao.getVariableMap().containsValue(var)) {
       return hotDao.getRawVariable(var);
     } else {
