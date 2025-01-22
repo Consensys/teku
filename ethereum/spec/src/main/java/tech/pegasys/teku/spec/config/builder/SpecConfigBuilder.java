@@ -108,7 +108,7 @@ public class SpecConfigBuilder {
   private Eth1Address depositContractAddress;
 
   // Networking
-  private Integer gossipMaxSize;
+  private Integer maxPayloadSize;
   private Integer maxChunkSize;
   private Integer maxRequestBlocks;
   private Integer epochsPerSubnetSubscription;
@@ -200,7 +200,7 @@ public class SpecConfigBuilder {
                 depositChainId,
                 depositNetworkId,
                 depositContractAddress,
-                gossipMaxSize,
+                maxPayloadSize,
                 maxChunkSize,
                 maxRequestBlocks,
                 epochsPerSubnetSubscription,
@@ -274,7 +274,7 @@ public class SpecConfigBuilder {
     constants.put("depositNetworkId", depositNetworkId);
     constants.put("depositContractAddress", depositContractAddress);
 
-    constants.put("gossipMaxSize", gossipMaxSize);
+    constants.put("gossipMaxSize", maxPayloadSize);
     constants.put("maxChunkSize", maxChunkSize);
     constants.put("maxRequestBlocks", maxRequestBlocks);
     constants.put("epochsPerSubnetSubscription", epochsPerSubnetSubscription);
@@ -626,8 +626,8 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder gossipMaxSize(final Integer gossipMaxSize) {
-    this.gossipMaxSize = gossipMaxSize;
+  public SpecConfigBuilder maxPayloadSize(final Integer maxPayloadSize) {
+    this.maxPayloadSize = maxPayloadSize;
     return this;
   }
 
