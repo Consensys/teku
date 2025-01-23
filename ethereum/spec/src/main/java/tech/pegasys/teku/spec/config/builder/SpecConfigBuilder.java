@@ -146,6 +146,14 @@ public class SpecConfigBuilder {
             rawConfig.put(key, value);
           }
         });
+
+    if (maxPayloadSize == null && rawConfig.containsKey("GOSSIP_MAX_SIZE")) {
+      // for compatibility, add this constant if its missing but we got GOSSIP_MAX_SIZE
+      // both need to be able to initialize due to renamed global config constant.
+      final String gossipMaxSize = (String) rawConfig.get("GOSSIP_MAX_SIZE");
+      rawConfig.put("MAX_PAYLOAD_SIZE", gossipMaxSize);
+      maxPayloadSize(Integer.parseInt(gossipMaxSize));
+    }
     validate();
     final SpecConfigAndParent<SpecConfig> config =
         SpecConfigAndParent.of(
@@ -274,7 +282,7 @@ public class SpecConfigBuilder {
     constants.put("depositNetworkId", depositNetworkId);
     constants.put("depositContractAddress", depositContractAddress);
 
-    constants.put("gossipMaxSize", maxPayloadSize);
+    constants.put("maxPayloadSize", maxPayloadSize);
     constants.put("maxChunkSize", maxChunkSize);
     constants.put("maxRequestBlocks", maxRequestBlocks);
     constants.put("epochsPerSubnetSubscription", epochsPerSubnetSubscription);
