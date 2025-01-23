@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 
 public class SnappyBlockCompressorTest {
 
-  private static final long GOSSIP_MAX_SIZE = Long.MAX_VALUE;
+  private static final long MAX_PAYLOAD_SIZE = Long.MAX_VALUE;
 
   private final SnappyBlockCompressor compressor = new SnappyBlockCompressor();
 
@@ -33,7 +33,7 @@ public class SnappyBlockCompressorTest {
     final Bytes compressed = compressor.compress(original);
     assertThat(compressed).isNotEqualTo(original);
     final Bytes uncompressed =
-        compressor.uncompress(compressed, SszLengthBounds.ofBytes(0, 1000), GOSSIP_MAX_SIZE);
+        compressor.uncompress(compressed, SszLengthBounds.ofBytes(0, 1000), MAX_PAYLOAD_SIZE);
 
     assertThat(uncompressed).isEqualTo(original);
   }
@@ -43,7 +43,7 @@ public class SnappyBlockCompressorTest {
     final Bytes data = Bytes.fromHexString("0x0102");
 
     assertThatThrownBy(
-            () -> compressor.uncompress(data, SszLengthBounds.ofBytes(0, 1000), GOSSIP_MAX_SIZE))
+            () -> compressor.uncompress(data, SszLengthBounds.ofBytes(0, 1000), MAX_PAYLOAD_SIZE))
         .isInstanceOf(DecodingException.class);
   }
 
@@ -53,7 +53,8 @@ public class SnappyBlockCompressorTest {
 
     final Bytes compressed = compressor.compress(original);
     assertThatThrownBy(
-            () -> compressor.uncompress(compressed, SszLengthBounds.ofBytes(0, 4), GOSSIP_MAX_SIZE))
+            () ->
+                compressor.uncompress(compressed, SszLengthBounds.ofBytes(0, 4), MAX_PAYLOAD_SIZE))
         .isInstanceOf(DecodingException.class)
         .hasMessageContaining("not within expected bounds");
   }
@@ -67,7 +68,7 @@ public class SnappyBlockCompressorTest {
     assertThatThrownBy(
             () ->
                 compressor.uncompress(
-                    compressed, SszLengthBounds.ofBytes(100, 200), GOSSIP_MAX_SIZE))
+                    compressed, SszLengthBounds.ofBytes(100, 200), MAX_PAYLOAD_SIZE))
         .isInstanceOf(DecodingException.class)
         .hasMessageContaining("not within expected bounds");
   }
