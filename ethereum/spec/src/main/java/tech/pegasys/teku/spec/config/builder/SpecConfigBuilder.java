@@ -147,13 +147,17 @@ public class SpecConfigBuilder {
           }
         });
 
-    if (maxPayloadSize == null && rawConfig.containsKey("GOSSIP_MAX_SIZE")) {
-      // for compatibility, add this constant if its missing but we got GOSSIP_MAX_SIZE
-      // both need to be able to initialize due to renamed global config constant.
-      final String gossipMaxSize = (String) rawConfig.get("GOSSIP_MAX_SIZE");
-      rawConfig.put("MAX_PAYLOAD_SIZE", gossipMaxSize);
-      maxPayloadSize(Integer.parseInt(gossipMaxSize));
-    }
+      if (maxPayloadSize == null && rawConfig.containsKey("GOSSIP_MAX_SIZE")) {
+        try {
+          // for compatibility, add this constant if its missing but we got GOSSIP_MAX_SIZE
+          // both need to be able to initialize due to renamed global config constant.
+          final String gossipMaxSize = (String) rawConfig.get("GOSSIP_MAX_SIZE");
+          rawConfig.put("MAX_PAYLOAD_SIZE", gossipMaxSize);
+          maxPayloadSize(Integer.parseInt(gossipMaxSize));
+        } catch (NumberFormatException e) {
+          LOG.error("Failed to parse GOSSIP_MAX_SIZE", e);
+        }
+      }
     validate();
     final SpecConfigAndParent<SpecConfig> config =
         SpecConfigAndParent.of(
