@@ -214,7 +214,11 @@ public class EraFile {
             block.getParentRoot().equals(previousArchiveLastBlock.getRoot()),
             "First block in archive does not match last block of previous archive.");
       }
-      // TODO should verify signature
+      
+      Preconditions.checkArgument(
+          spec.verifyBlockSignature(verifiedState, block),
+          "Invalid block signature at slot " + currentSlot);
+      
       ++populatedSlots;
     }
     System.out.println(
