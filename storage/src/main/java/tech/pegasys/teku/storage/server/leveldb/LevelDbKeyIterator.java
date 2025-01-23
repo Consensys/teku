@@ -22,19 +22,18 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import org.iq80.leveldb.DBIterator;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 
 public class LevelDbKeyIterator<K, V> implements Iterator<byte[]> {
 
   private final LevelDbInstance dbInstance;
-  private final DBIterator iterator;
+  private final CustomDBIterator iterator;
   private final KvStoreColumn<K, V> column;
   private final byte[] lastKey;
 
   public LevelDbKeyIterator(
       final LevelDbInstance dbInstance,
-      final DBIterator iterator,
+      final CustomDBIterator iterator,
       final KvStoreColumn<K, V> column,
       final byte[] lastKey) {
     this.dbInstance = dbInstance;
@@ -52,7 +51,7 @@ public class LevelDbKeyIterator<K, V> implements Iterator<byte[]> {
   }
 
   private boolean isValidKey() {
-    final byte[] nextKey = iterator.peekNext().getKey();
+    final byte[] nextKey = iterator.peekNextKey();
     return isFromColumn(column, nextKey) && Arrays.compareUnsigned(nextKey, lastKey) <= 0;
   }
 
@@ -60,7 +59,7 @@ public class LevelDbKeyIterator<K, V> implements Iterator<byte[]> {
   public byte[] next() {
     synchronized (dbInstance) {
       dbInstance.assertOpen();
-      return removeKeyPrefix(column, iterator.next().getKey());
+      return removeKeyPrefix(column, iterator.nextKey());
     }
   }
 
