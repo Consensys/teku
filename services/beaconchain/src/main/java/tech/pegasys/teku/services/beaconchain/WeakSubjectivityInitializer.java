@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
-import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.ERROR_EXIT_CODE;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.FINALIZED_STATE_URL_PATH;
 
@@ -88,8 +87,10 @@ public class WeakSubjectivityInitializer {
     STATUS_LOG.loadingInitialStateResource(sanitizedResource);
     final BeaconState state = ChainDataLoader.loadState(spec, stateResource);
     if (state.getSlot().isGreaterThan(state.getLatestBlockHeader().getSlot())) {
-      STATUS_LOG.errorIncompatibleInitialState(spec.computeEpochAtSlot(state.getSlot()));
-      System.exit(ERROR_EXIT_CODE);
+      STATUS_LOG.warningUnexpectedInitialState(
+          spec.computeEpochAtSlot(state.getSlot()),
+          state.getSlot(),
+          state.getLatestBlockHeader().getSlot());
     }
     final AnchorPoint anchor = AnchorPoint.fromInitialState(spec, state);
     STATUS_LOG.loadedInitialStateResource(

@@ -80,19 +80,13 @@ public class StateSelectorFactory extends AbstractSelectorFactory<StateSelector>
   @Override
   public StateSelector finalizedSelector() {
     return () ->
-        SafeFuture.completedFuture(
-            client
-                .getLatestFinalized()
-                .map(
-                    finalized ->
-                        addMetaData(
-                            finalized.getState(),
-                            // The finalized checkpoint may change because of optimistically
-                            // imported blocks at the head and if the head isn't optimistic, the
-                            // finalized block can't be optimistic.
-                            client.isChainHeadOptimistic(),
-                            true,
-                            true)));
+        client
+            .getBestFinalizedState()
+            .thenApply(
+                maybeFinalized ->
+                    maybeFinalized.map(
+                        finalized ->
+                            addMetaData(finalized, client.isChainHeadOptimistic(), true, true)));
   }
 
   @Override
