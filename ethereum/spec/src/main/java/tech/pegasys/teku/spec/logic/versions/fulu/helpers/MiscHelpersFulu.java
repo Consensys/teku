@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
@@ -97,32 +96,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return Optional.of(this);
   }
 
-  public UInt64 computeSubnetForDataColumnSidecar(final UInt64 columnIndex) {
-    return columnIndex.mod(specConfigFulu.getDataColumnSidecarSubnetCount());
-  }
-
-  private UInt64 computeCustodySubnetIndex(final UInt256 nodeId) {
-    return bytesToUInt64(Hash.sha256(uint256ToBytes(nodeId)).slice(0, 8))
-        .mod(specConfigFulu.getDataColumnSidecarSubnetCount());
-  }
-
-  public List<UInt64> computeCustodySubnetIndexes(final UInt256 nodeId, final int subnetCount) {
-    //     assert custody_subnet_count <= DATA_COLUMN_SIDECAR_SUBNET_COUNT
-    if (subnetCount > specConfigFulu.getDataColumnSidecarSubnetCount()) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Subnet count %s couldn't exceed number of subnet columns %s",
-              subnetCount, specConfigFulu.getDataColumnSidecarSubnetCount()));
-    }
-
-    return Stream.iterate(nodeId, this::incrementByModule)
-        .map(this::computeCustodySubnetIndex)
-        .distinct()
-        .limit(subnetCount)
-        .sorted()
-        .toList();
-  }
-
   private UInt256 incrementByModule(final UInt256 n) {
     if (n.equals(UInt256.MAX_VALUE)) {
       return UInt256.ZERO;
@@ -131,26 +104,61 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     }
   }
 
-  public List<UInt64> computeCustodyColumnIndexes(final UInt256 nodeId, final int subnetCount) {
-    final List<UInt64> subnetIds = computeCustodySubnetIndexes(nodeId, subnetCount);
-    final int columnsPerSubnet =
-        specConfigFulu.getNumberOfColumns() / specConfigFulu.getDataColumnSidecarSubnetCount();
-    return subnetIds.stream()
-        .flatMap(
-            subnetId -> IntStream.range(0, columnsPerSubnet).mapToObj(i -> Pair.of(subnetId, i)))
-        .map(
-            // ColumnIndex(DATA_COLUMN_SIDECAR_SUBNET_COUNT * i + subnet_id)
-            pair ->
-                specConfigFulu.getDataColumnSidecarSubnetCount() * pair.getRight()
-                    + pair.getLeft().intValue())
-        .map(UInt64::valueOf)
-        .sorted()
-        .toList();
+  public UInt64 computeSubnetForDataColumnSidecar(final UInt64 columnIndex) {
+    return columnIndex.mod(specConfigFulu.getDataColumnSidecarSubnetCount());
   }
 
   public List<UInt64> computeDataColumnSidecarBackboneSubnets(
-      final UInt256 nodeId, final UInt64 epoch, final int subnetCount) {
-    return computeCustodySubnetIndexes(nodeId, subnetCount);
+      final UInt256 nodeId, final UInt64 epoch, final int groupCount) {
+    final List<UInt64> columns = computeCustodyColumnIndexes(nodeId, groupCount);
+    return columns.stream().map(this::computeSubnetForDataColumnSidecar).toList();
+  }
+
+  public List<UInt64> computeCustodyColumnIndexes(final UInt256 nodeId, final int groupCount) {
+    final List<UInt64> custodyGroups = getCustodyGroups(nodeId, groupCount);
+    return custodyGroups.stream()
+        .flatMap(group -> computeColumnsForCustodyGroup(group).stream())
+        .toList();
+  }
+
+  public List<UInt64> computeColumnsForCustodyGroup(final UInt64 custodyGroup) {
+    if (custodyGroup.isGreaterThanOrEqualTo(specConfigFulu.getNumberOfCustodyGroups())) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Custody group %s couldn't exceed number of groups %s",
+              custodyGroup, specConfigFulu.getNumberOfCustodyGroups()));
+    }
+
+    final int columnsPerGroup =
+        specConfigFulu.getNumberOfColumns() / specConfigFulu.getNumberOfCustodyGroups();
+
+    return IntStream.range(0, columnsPerGroup)
+        .mapToLong(
+            i -> (long) specConfigFulu.getNumberOfCustodyGroups() * i + custodyGroup.intValue())
+        .sorted()
+        .mapToObj(UInt64::valueOf)
+        .toList();
+  }
+
+  private UInt64 computeCustodyGroupIndex(final UInt256 nodeId) {
+    return bytesToUInt64(Hash.sha256(uint256ToBytes(nodeId)).slice(0, 8))
+        .mod(specConfigFulu.getNumberOfCustodyGroups());
+  }
+
+  public List<UInt64> getCustodyGroups(final UInt256 nodeId, final int custodyGroupCount) {
+    if (custodyGroupCount > specConfigFulu.getNumberOfCustodyGroups()) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Custody group count %s couldn't exceed number of groups %s",
+              custodyGroupCount, specConfigFulu.getNumberOfCustodyGroups()));
+    }
+
+    return Stream.iterate(nodeId, this::incrementByModule)
+        .map(this::computeCustodyGroupIndex)
+        .distinct()
+        .limit(custodyGroupCount)
+        .sorted()
+        .toList();
   }
 
   public boolean verifyDataColumnSidecarKzgProof(

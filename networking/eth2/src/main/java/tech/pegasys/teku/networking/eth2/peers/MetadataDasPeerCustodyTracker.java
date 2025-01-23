@@ -37,7 +37,7 @@ public class MetadataDasPeerCustodyTracker
 
   private void onPeerMetadataUpdate(final Eth2Peer peer, final MetadataMessage metadata) {
     metadata
-        .getOptionalCustodySubnetCount()
+        .getOptionalCustodyGroupCount()
         .ifPresent(
             subnetCount ->
                 connectedPeerSubnetCount.put(
@@ -45,7 +45,7 @@ public class MetadataDasPeerCustodyTracker
   }
 
   @Override
-  public int getCustodyCountForPeer(final UInt256 nodeId) {
+  public int getCustodyGroupCountForPeer(final UInt256 nodeId) {
     return connectedPeerSubnetCount.getOrDefault(nodeId, 0);
   }
 }

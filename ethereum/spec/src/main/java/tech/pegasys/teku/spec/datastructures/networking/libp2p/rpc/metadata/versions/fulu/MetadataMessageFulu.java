@@ -38,8 +38,8 @@ public class MetadataMessageFulu
       final UInt64 seqNumber,
       final SszBitvector attNets,
       final SszBitvector syncNets,
-      final UInt64 custodySubnetCount) {
-    super(schema, SszUInt64.of(seqNumber), attNets, syncNets, SszUInt64.of(custodySubnetCount));
+      final UInt64 custodyGroupCount) {
+    super(schema, SszUInt64.of(seqNumber), attNets, syncNets, SszUInt64.of(custodyGroupCount));
   }
 
   @Override
@@ -56,7 +56,7 @@ public class MetadataMessageFulu
     return getField2();
   }
 
-  public UInt64 getCustodySubnetCount() {
+  public UInt64 getCustodyGroupCount() {
     return getField3().get();
   }
 
@@ -66,7 +66,7 @@ public class MetadataMessageFulu
   }
 
   @Override
-  public Optional<UInt64> getOptionalCustodySubnetCount() {
-    return Optional.of(getCustodySubnetCount());
+  public Optional<UInt64> getOptionalCustodyGroupCount() {
+    return Optional.of(getCustodyGroupCount());
   }
 }

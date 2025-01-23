@@ -22,7 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.DAS_CUSTODY_GROUP_COUNT_ENR_FIELD;
 
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
@@ -296,7 +296,7 @@ class DiscoveryNetworkTest {
   public void cscIsCorrectlyEncoded(final String hexString, final Integer csc) {
     discoveryNetwork.setDASTotalCustodySubnetCount(csc);
     verify(discoveryService)
-        .updateCustomENRField(DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD, Bytes.fromHexString(hexString));
+        .updateCustomENRField(DAS_CUSTODY_GROUP_COUNT_ENR_FIELD, Bytes.fromHexString(hexString));
   }
 
   public DiscoveryPeer createDiscoveryPeer(final Optional<EnrForkId> maybeForkId) {

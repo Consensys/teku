@@ -28,10 +28,10 @@ import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -43,9 +43,9 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
   private final RecentChainData recentChainData;
   private final OperationProcessor<DataColumnSidecar> processor;
   private final ForkInfo forkInfo;
-  private final int subnetCount;
   private final DataColumnSidecarSchema dataColumnSidecarSchema;
   private final DebugDataDumper debugDataDumper;
+  private final MiscHelpersFulu miscHelpersFulu;
 
   public DataColumnSidecarSubnetSubscriptions(
       final Spec spec,
@@ -67,8 +67,8 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
     this.dataColumnSidecarSchema =
         SchemaDefinitionsFulu.required(specVersion.getSchemaDefinitions())
             .getDataColumnSidecarSchema();
-    this.subnetCount =
-        SpecConfigFulu.required(specVersion.getConfig()).getDataColumnSidecarSubnetCount();
+    this.miscHelpersFulu =
+        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
   }
 
   public SafeFuture<?> gossip(final DataColumnSidecar sidecar) {
@@ -101,6 +101,6 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
   }
 
   private int computeSubnetForSidecar(final DataColumnSidecar sidecar) {
-    return sidecar.getIndex().mod(subnetCount).intValue();
+    return miscHelpersFulu.computeSubnetForDataColumnSidecar(sidecar.getIndex()).intValue();
   }
 }

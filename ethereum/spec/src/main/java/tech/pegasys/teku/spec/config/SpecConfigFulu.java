@@ -41,6 +41,8 @@ public interface SpecConfigFulu extends SpecConfigElectra {
 
   int getNumberOfColumns();
 
+  int getNumberOfCustodyGroups();
+
   // networking
   int getDataColumnSidecarSubnetCount();
 

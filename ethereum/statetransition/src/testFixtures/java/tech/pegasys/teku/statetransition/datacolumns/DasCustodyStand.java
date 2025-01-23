@@ -66,7 +66,7 @@ public class DasCustodyStand {
 
   private final List<SlotEventsChannel> slotListeners = new CopyOnWriteArrayList<>();
   private final List<FinalizedCheckpointChannel> finalizedListeners = new CopyOnWriteArrayList<>();
-  private final int totalCustodySubnetCount;
+  private final int totalCustodyGroupCount;
 
   private UInt64 currentSlot = UInt64.ZERO;
 
@@ -74,7 +74,7 @@ public class DasCustodyStand {
       final Spec spec,
       final UInt64 currentSlot,
       final UInt256 myNodeId,
-      final int totalCustodySubnetCount,
+      final int totalCustodyGroupCount,
       final Optional<Duration> asyncDbDelay,
       final Optional<Duration> asyncBlockResolverDelay) {
     this.spec = spec;
@@ -107,7 +107,7 @@ public class DasCustodyStand {
             dbAccessor,
             minCustodyPeriodSlotCalculator,
             myNodeId,
-            totalCustodySubnetCount);
+            totalCustodyGroupCount);
     subscribeToSlotEvents(this.custody);
     subscribeToFinalizedEvents(this.custody);
 
@@ -116,7 +116,7 @@ public class DasCustodyStand {
     final BLSPublicKey singlePubKey = util.randomPublicKey();
     this.dataStructureUtil =
         util.withSignatureGenerator(__ -> singleSignature).withPubKeyGenerator(() -> singlePubKey);
-    this.totalCustodySubnetCount = totalCustodySubnetCount;
+    this.totalCustodyGroupCount = totalCustodyGroupCount;
   }
 
   public void advanceTimeGradually(final Duration delta) {
@@ -162,7 +162,7 @@ public class DasCustodyStand {
         .toVersionFulu()
         .map(
             miscHelpersFulu ->
-                miscHelpersFulu.computeCustodyColumnIndexes(myNodeId, totalCustodySubnetCount))
+                miscHelpersFulu.computeCustodyColumnIndexes(myNodeId, totalCustodyGroupCount))
         .orElse(Collections.emptyList());
   }
 
@@ -214,7 +214,7 @@ public class DasCustodyStand {
     private Spec spec;
     private UInt64 currentSlot = UInt64.ZERO;
     private UInt256 myNodeId = UInt256.ONE;
-    private Integer totalCustodySubnetCount;
+    private Integer totalCustodyGroupCount;
     private Optional<Duration> asyncDbDelay = Optional.empty();
     private Optional<Duration> asyncBlockResolverDelay = Optional.empty();
 
@@ -234,7 +234,7 @@ public class DasCustodyStand {
     }
 
     public Builder withTotalCustodySubnetCount(final Integer totalCustodySubnetCount) {
-      this.totalCustodySubnetCount = totalCustodySubnetCount;
+      this.totalCustodyGroupCount = totalCustodySubnetCount;
       return this;
     }
 
@@ -249,17 +249,17 @@ public class DasCustodyStand {
     }
 
     public DasCustodyStand build() {
-      if (totalCustodySubnetCount == null) {
+      if (totalCustodyGroupCount == null) {
         checkNotNull(spec);
         final SpecConfigFulu configFulu =
             SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
-        totalCustodySubnetCount = configFulu.getCustodyRequirement();
+        totalCustodyGroupCount = configFulu.getCustodyRequirement();
       }
       return new DasCustodyStand(
           spec,
           currentSlot,
           myNodeId,
-          totalCustodySubnetCount,
+          totalCustodyGroupCount,
           asyncDbDelay,
           asyncBlockResolverDelay);
     }

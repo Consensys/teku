@@ -52,6 +52,7 @@ public class SimpleSidecarRetriever
   private static final Logger LOG = LogManager.getLogger("das-nyota");
 
   private final Spec spec;
+  private final MiscHelpersFulu miscHelpersFulu;
   private final DataColumnPeerSearcher peerSearcher;
   private final DasPeerCustodyCountSupplier custodyCountSupplier;
   private final DataColumnReqResp reqResp;
@@ -75,6 +76,8 @@ public class SimpleSidecarRetriever
       final AsyncRunner asyncRunner,
       final Duration roundPeriod) {
     this.spec = spec;
+    this.miscHelpersFulu =
+        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
     this.peerSearcher = peerSearcher;
     this.custodyCountSupplier = custodyCountSupplier;
     this.asyncRunner = asyncRunner;
@@ -289,13 +292,12 @@ public class SimpleSidecarRetriever
 
     private Set<UInt64> calcNodeCustodyIndexes(final CacheKey cacheKey) {
       return new HashSet<>(
-          MiscHelpersFulu.required(cacheKey.specVersion().miscHelpers())
-              .computeCustodyColumnIndexes(nodeId, cacheKey.custodyCount()));
+          miscHelpersFulu.computeCustodyColumnIndexes(nodeId, cacheKey.custodyCount()));
     }
 
     private Set<UInt64> getNodeCustodyIndexes(final SpecVersion specVersion) {
       return custodyIndexesCache.get(
-          new CacheKey(specVersion, custodyCountSupplier.getCustodyCountForPeer(nodeId)),
+          new CacheKey(specVersion, custodyCountSupplier.getCustodyGroupCountForPeer(nodeId)),
           this::calcNodeCustodyIndexes);
     }
 

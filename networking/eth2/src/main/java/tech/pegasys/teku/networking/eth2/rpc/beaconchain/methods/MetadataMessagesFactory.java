@@ -26,7 +26,7 @@ public class MetadataMessagesFactory {
   private final AtomicLong seqNumberGenerator = new AtomicLong(0L);
   private Iterable<Integer> attestationSubnetIds = Collections.emptyList();
   private Iterable<Integer> syncCommitteeSubnetIds = Collections.emptyList();
-  private Optional<UInt64> custodySubnetCount = Optional.empty();
+  private Optional<UInt64> custodyGroupCount = Optional.empty();
 
   public synchronized void updateAttestationSubnetIds(
       final Iterable<Integer> attestationSubnetIds) {
@@ -40,8 +40,8 @@ public class MetadataMessagesFactory {
     handleUpdate();
   }
 
-  public synchronized void updateCustodySubnetCount(final UInt64 custodySubnetCount) {
-    this.custodySubnetCount = Optional.of(custodySubnetCount);
+  public synchronized void updateCustodyGroupCount(final UInt64 custodyGroupCount) {
+    this.custodyGroupCount = Optional.of(custodyGroupCount);
     handleUpdate();
   }
 
@@ -51,7 +51,7 @@ public class MetadataMessagesFactory {
 
   public synchronized MetadataMessage createMetadataMessage(final MetadataMessageSchema<?> schema) {
     return schema.create(
-        getCurrentSeqNumber(), attestationSubnetIds, syncCommitteeSubnetIds, custodySubnetCount);
+        getCurrentSeqNumber(), attestationSubnetIds, syncCommitteeSubnetIds, custodyGroupCount);
   }
 
   public PingMessage createPingMessage() {

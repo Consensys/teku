@@ -163,11 +163,11 @@ public class Eth2P2PNetworkBuilder {
       statusMessageFactory = new StatusMessageFactory(combinedChainDataClient.getRecentChainData());
     }
 
-    final Optional<UInt64> dasTotalCustodySubnetCount =
+    final Optional<UInt64> dasTotalCustodyGroupCount =
         spec.isMilestoneSupported(SpecMilestone.FULU)
             ? Optional.of(
                 UInt64.valueOf(
-                    config.getTotalCustodySubnetCount(spec.forMilestone(SpecMilestone.FULU))))
+                    config.getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU))))
             : Optional.empty();
 
     final Eth2PeerManager eth2PeerManager =
@@ -190,7 +190,7 @@ public class Eth2P2PNetworkBuilder {
             spec,
             kzg,
             discoveryNodeIdExtractor,
-            dasTotalCustodySubnetCount,
+            dasTotalCustodyGroupCount,
             dasReqRespLogger);
     final Collection<RpcMethod<?, ?, ?>> eth2RpcMethods =
         eth2PeerManager.getBeaconChainMethods().all();
@@ -218,7 +218,7 @@ public class Eth2P2PNetworkBuilder {
         gossipEncoding,
         config.getGossipConfigurator(),
         processedAttestationSubscriptionProvider,
-        dasTotalCustodySubnetCount.orElse(UInt64.ZERO).intValue(),
+        dasTotalCustodyGroupCount.orElse(UInt64.ZERO).intValue(),
         config.isAllTopicsFilterEnabled());
   }
 

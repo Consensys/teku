@@ -29,25 +29,25 @@ import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 
-public class GetCustodyColumnsTestExecutor implements TestExecutor {
+public class GetCustodyGroupsTestExecutor implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
-    final GetCustodyColumnsMetaData metaData =
-        loadYaml(testDefinition, "meta.yaml", GetCustodyColumnsMetaData.class);
+    final GetCustodyGroupsMetaData metaData =
+        loadYaml(testDefinition, "meta.yaml", GetCustodyGroupsMetaData.class);
     final SpecVersion spec = testDefinition.getSpec().getGenesisSpec();
     final List<UInt64> actualResult =
         MiscHelpersFulu.required(spec.miscHelpers())
-            .computeCustodyColumnIndexes(metaData.getNodeId(), metaData.getCustodySubnetCount());
+            .getCustodyGroups(metaData.getNodeId(), metaData.getCustodySubnetCount());
     assertThat(new HashSet<>(actualResult)).isEqualTo(metaData.getResult());
   }
 
-  private static class GetCustodyColumnsMetaData {
+  private static class GetCustodyGroupsMetaData {
 
     @JsonProperty(value = "node_id", required = true)
     private String nodeId;
 
-    @JsonProperty(value = "custody_subnet_count", required = true)
+    @JsonProperty(value = "custody_group_count", required = true)
     private int custodySubnetCount;
 
     @JsonProperty(value = "result", required = true)

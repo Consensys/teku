@@ -107,7 +107,7 @@ public class GossipTopicDasPeerCustodyTracker
   }
 
   @Override
-  public int getCustodyCountForPeer(final UInt256 nodeId) {
+  public int getCustodyGroupCountForPeer(final UInt256 nodeId) {
     Entry entry = connectedPeerSubnets.get(nodeId);
     return entry != null ? entry.subnetCount() : 0;
   }

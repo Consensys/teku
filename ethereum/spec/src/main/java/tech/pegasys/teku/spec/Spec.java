@@ -1022,12 +1022,6 @@ public class Spec {
         .isLessThanOrEqualTo(specConfigFulu.getMinEpochsForDataColumnSidecarsRequests());
   }
 
-  public UInt64 computeSubnetForDataColumnSidecar(final DataColumnSidecar dataColumnSidecar) {
-    final SpecConfig config = atSlot(dataColumnSidecar.getSlot()).getConfig();
-    final SpecConfigFulu specConfigFulu = SpecConfigFulu.required(config);
-    return dataColumnSidecar.getIndex().mod(specConfigFulu.getDataColumnSidecarSubnetCount());
-  }
-
   public Optional<UInt64> computeFirstSlotWithBlobSupport() {
     return getSpecConfigDeneb()
         .map(SpecConfigDeneb::getDenebForkEpoch)

@@ -87,7 +87,7 @@ public class DataColumnSidecarCustodyImpl
   private final DataColumnSidecarDbAccessor db;
   private final CanonicalBlockResolver blockResolver;
   private final UInt256 nodeId;
-  private final int totalCustodySubnetCount;
+  private final int totalCustodyGroupCount;
   private final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator;
 
   private volatile UInt64 currentSlot = null;
@@ -98,7 +98,7 @@ public class DataColumnSidecarCustodyImpl
       final DataColumnSidecarDbAccessor db,
       final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator,
       final UInt256 nodeId,
-      final int totalCustodySubnetCount) {
+      final int totalCustodyGroupCount) {
     checkNotNull(spec);
     checkNotNull(blockResolver);
     checkNotNull(minCustodyPeriodSlotCalculator);
@@ -110,7 +110,7 @@ public class DataColumnSidecarCustodyImpl
     this.blockResolver = blockResolver;
     this.minCustodyPeriodSlotCalculator = minCustodyPeriodSlotCalculator;
     this.nodeId = nodeId;
-    this.totalCustodySubnetCount = totalCustodySubnetCount;
+    this.totalCustodyGroupCount = totalCustodyGroupCount;
   }
 
   private List<UInt64> getCustodyColumnsForSlot(final UInt64 slot) {
@@ -119,7 +119,7 @@ public class DataColumnSidecarCustodyImpl
 
   private List<UInt64> getCustodyColumnsForEpoch(final UInt64 epoch) {
     return MiscHelpersFulu.required(spec.atEpoch(epoch).miscHelpers())
-        .computeCustodyColumnIndexes(nodeId, totalCustodySubnetCount);
+        .computeCustodyColumnIndexes(nodeId, totalCustodyGroupCount);
   }
 
   @Override
@@ -140,7 +140,7 @@ public class DataColumnSidecarCustodyImpl
         .map(
             miscHelpersFulu ->
                 miscHelpersFulu
-                    .computeCustodyColumnIndexes(nodeId, totalCustodySubnetCount)
+                    .computeCustodyColumnIndexes(nodeId, totalCustodyGroupCount)
                     .contains(columnIndex))
         .orElse(false);
   }

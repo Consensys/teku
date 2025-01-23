@@ -14,7 +14,7 @@
 package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ATTESTATION_SUBNET_ENR_FIELD;
-import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.DAS_CUSTODY_GROUP_COUNT_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ETH2_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.SYNC_COMMITTEE_SUBNET_ENR_FIELD;
 
@@ -78,7 +78,7 @@ public class NodeRecordConverter {
     final Optional<Integer> dasTotalCustodySubnetCount =
         parseField(
             nodeRecord,
-            DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD,
+            DAS_CUSTODY_GROUP_COUNT_ENR_FIELD,
             bytes -> UInt64.fromBytes(bytes).intValue());
 
     return new DiscoveryPeer(

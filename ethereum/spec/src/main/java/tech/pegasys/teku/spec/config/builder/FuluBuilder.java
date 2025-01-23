@@ -36,6 +36,8 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
   private UInt64 fieldElementsPerExtBlob;
   private UInt64 kzgCommitmentsInclusionProofDepth;
   private Integer numberOfColumns;
+  // FIXME: remove hardcode when Kurtosis config is updated according to the Fulu spec
+  private Integer numberOfCustodyGroups = 128;
   private Integer dataColumnSidecarSubnetCount;
   private Integer custodyRequirement;
   private Integer samplesPerSlot;
@@ -56,6 +58,7 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
             fieldElementsPerExtBlob,
             kzgCommitmentsInclusionProofDepth,
             numberOfColumns,
+            numberOfCustodyGroups,
             dataColumnSidecarSubnetCount,
             custodyRequirement,
             samplesPerSlot,
@@ -98,6 +101,12 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
   public FuluBuilder numberOfColumns(final Integer numberOfColumns) {
     checkNotNull(numberOfColumns);
     this.numberOfColumns = numberOfColumns;
+    return this;
+  }
+
+  public FuluBuilder numberOfCustodyGroups(final Integer numberOfCustodyGroups) {
+    checkNotNull(numberOfCustodyGroups);
+    this.numberOfCustodyGroups = numberOfCustodyGroups;
     return this;
   }
 
@@ -153,6 +162,7 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     constants.put("fuluForkEpoch", fuluForkEpoch);
     constants.put("fuluForkVersion", fuluForkVersion);
     constants.put("numberOfColumns", numberOfColumns);
+    constants.put("numberOfCustodyGroups", numberOfCustodyGroups);
     constants.put("dataColumnSidecarSubnetCount", dataColumnSidecarSubnetCount);
     constants.put("custodyRequirement", custodyRequirement);
     constants.put("samplesPerSlot", samplesPerSlot);

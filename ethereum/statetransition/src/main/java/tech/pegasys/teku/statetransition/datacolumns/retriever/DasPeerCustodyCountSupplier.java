@@ -26,8 +26,8 @@ public interface DasPeerCustodyCountSupplier {
 
   static DasPeerCustodyCountSupplier capped(
       final DasPeerCustodyCountSupplier delegate, final int minValue, final int maxValue) {
-    return (nodeId) -> min(maxValue, max(minValue, delegate.getCustodyCountForPeer(nodeId)));
+    return (nodeId) -> min(maxValue, max(minValue, delegate.getCustodyGroupCountForPeer(nodeId)));
   }
 
-  int getCustodyCountForPeer(UInt256 nodeId);
+  int getCustodyGroupCountForPeer(UInt256 nodeId);
 }

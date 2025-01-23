@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.Spec;
 public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChannel {
   private final Eth2P2PNetwork eth2P2PNetwork;
   private final UInt256 nodeId;
-  private final int totalSubnetCount;
+  private final int totalGroupCount;
   private final Spec spec;
 
   private IntSet currentSubscribedSubnets = IntSet.of();
@@ -36,11 +36,11 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
       final Spec spec,
       final Eth2P2PNetwork eth2P2PNetwork,
       final UInt256 nodeId,
-      final int totalSubnetCount) {
+      final int totalGroupCount) {
     this.spec = spec;
     this.eth2P2PNetwork = eth2P2PNetwork;
     this.nodeId = nodeId;
-    this.totalSubnetCount = totalSubnetCount;
+    this.totalGroupCount = totalGroupCount;
   }
 
   private void subscribeToSubnets(final Collection<Integer> newSubscriptions) {
@@ -70,7 +70,7 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
             miscHelpersFulu -> {
               List<UInt64> subnets =
                   miscHelpersFulu.computeDataColumnSidecarBackboneSubnets(
-                      nodeId, epoch, totalSubnetCount);
+                      nodeId, epoch, totalGroupCount);
               subscribeToSubnets(subnets.stream().map(UInt64::intValue).toList());
             });
   }

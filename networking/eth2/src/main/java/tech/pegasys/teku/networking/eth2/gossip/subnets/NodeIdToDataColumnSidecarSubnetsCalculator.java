@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 @FunctionalInterface
 public interface NodeIdToDataColumnSidecarSubnetsCalculator {
 
-  Optional<SszBitvector> calculateSubnets(UInt256 nodeId, Optional<Integer> subnetCount);
+  Optional<SszBitvector> calculateSubnets(UInt256 nodeId, Optional<Integer> groupCount);
 
   NodeIdToDataColumnSidecarSubnetsCalculator NOOP = (nodeId, subnetCount) -> Optional.empty();
 
@@ -40,11 +40,11 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
     UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(currentSlot);
     SszBitvectorSchema<SszBitvector> bitvectorSchema =
         SszBitvectorSchema.create(config.getDataColumnSidecarSubnetCount());
-    return (nodeId, subnetCount) -> {
+    return (nodeId, groupCount) -> {
       List<UInt64> nodeSubnets =
           MiscHelpersFulu.required(miscHelpers)
               .computeDataColumnSidecarBackboneSubnets(
-                  nodeId, currentEpoch, subnetCount.orElse(config.getCustodyRequirement()));
+                  nodeId, currentEpoch, groupCount.orElse(config.getCustodyRequirement()));
       return Optional.of(
           bitvectorSchema.ofBits(nodeSubnets.stream().map(UInt64::intValue).toList()));
     };
@@ -54,7 +54,7 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
   static NodeIdToDataColumnSidecarSubnetsCalculator create(
       final Spec spec, final Supplier<Optional<UInt64>> currentSlotSupplier) {
 
-    return (nodeId, subnetCount) ->
+    return (nodeId, groupCount) ->
         currentSlotSupplier
             .get()
             .flatMap(
@@ -70,7 +70,7 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
                   } else {
                     calculatorAtSlot = NOOP;
                   }
-                  return calculatorAtSlot.calculateSubnets(nodeId, subnetCount);
+                  return calculatorAtSlot.calculateSubnets(nodeId, groupCount);
                 });
   }
 }

@@ -45,7 +45,7 @@ public class DataColumnSidecarCustodyImplTest {
 
   final SpecConfigFulu config =
       SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
-  final int subnetCount = config.getDataColumnSidecarSubnetCount();
+  final int groupCount = config.getNumberOfCustodyGroups();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
 
@@ -66,7 +66,7 @@ public class DataColumnSidecarCustodyImplTest {
             dbAccessor,
             MinCustodyPeriodSlotCalculator.createFromSpec(spec),
             myNodeId,
-            subnetCount);
+            groupCount);
     BeaconBlock block = blockResolver.addBlock(10, true);
     DataColumnSidecar sidecar0 = createSidecar(block, 0);
     DataColumnSidecar sidecar1 = createSidecar(block, 1);

@@ -63,6 +63,11 @@ public class DelegatingSpecConfigFulu extends DelegatingSpecConfigElectra
   }
 
   @Override
+  public int getNumberOfCustodyGroups() {
+    return delegate.getNumberOfCustodyGroups();
+  }
+
+  @Override
   public int getDataColumnSidecarSubnetCount() {
     return delegate.getDataColumnSidecarSubnetCount();
   }

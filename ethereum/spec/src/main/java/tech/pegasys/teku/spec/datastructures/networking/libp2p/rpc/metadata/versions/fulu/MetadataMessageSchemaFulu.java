@@ -36,7 +36,7 @@ public class MetadataMessageSchemaFulu
             "attnets", SszBitvectorSchema.create(networkingSpecConfig.getAttestationSubnetCount())),
         namedSchema(
             "syncnets", SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT)),
-        namedSchema("custody_subnet_count", SszPrimitiveSchemas.UINT64_SCHEMA));
+        namedSchema("custody_group_count", SszPrimitiveSchemas.UINT64_SCHEMA));
   }
 
   @Override
@@ -44,13 +44,13 @@ public class MetadataMessageSchemaFulu
       final UInt64 seqNumber,
       final Iterable<Integer> attnets,
       final Iterable<Integer> syncnets,
-      final Optional<UInt64> custodySubnetCount) {
+      final Optional<UInt64> custodyGroupCount) {
     return new MetadataMessageFulu(
         this,
         seqNumber,
         getAttnestSchema().ofBits(attnets),
         getSyncnetsSchema().ofBits(syncnets),
-        custodySubnetCount.orElse(UInt64.ZERO));
+        custodyGroupCount.orElse(UInt64.ZERO));
   }
 
   @Override

@@ -96,7 +96,7 @@ public class SimpleSidecarRetrieverTest {
 
   List<UInt64> nodeCustodyColumns(final UInt256 nodeId) {
     return miscHelpers.computeCustodyColumnIndexes(
-        nodeId, custodyCountSupplier.getCustodyCountForPeer(nodeId));
+        nodeId, custodyCountSupplier.getCustodyGroupCountForPeer(nodeId));
   }
 
   Stream<UInt256> craftNodeIds() {
@@ -281,7 +281,7 @@ public class SimpleSidecarRetrieverTest {
 
     colIds.forEach(simpleSidecarRetriever::retrieve);
 
-    int peerCustodyCount = custodyCountSupplier.getCustodyCountForPeer(peer.getNodeId());
+    int peerCustodyCount = custodyCountSupplier.getCustodyGroupCountForPeer(peer.getNodeId());
 
     advanceTimeGradually(retrieverRound);
     assertThat(peer.getRequests()).hasSize(peerCustodyCount);

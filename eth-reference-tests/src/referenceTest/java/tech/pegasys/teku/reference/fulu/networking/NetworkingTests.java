@@ -19,6 +19,9 @@ import tech.pegasys.teku.reference.TestExecutor;
 public class NetworkingTests {
   public static final ImmutableMap<String, TestExecutor> NETWORKING_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
-          .put("networking/get_custody_columns", new GetCustodyColumnsTestExecutor())
+          .put("networking/get_custody_groups", new GetCustodyGroupsTestExecutor())
+          .put(
+              "networking/compute_columns_for_custody_group",
+              new ComputeColumnsForCustodyGroupTestExecutor())
           .build();
 }

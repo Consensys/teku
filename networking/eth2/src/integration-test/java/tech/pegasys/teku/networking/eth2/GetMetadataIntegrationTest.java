@@ -130,7 +130,7 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     MetadataMessage md1 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
 
     Assumptions.assumeTrue(md1 instanceof MetadataMessageFulu, "Milestone skipped");
-    assertThat(((MetadataMessageFulu) md1).getCustodySubnetCount().isGreaterThan(0)).isTrue();
+    assertThat(((MetadataMessageFulu) md1).getCustodyGroupCount().isGreaterThan(0)).isTrue();
   }
 
   @ParameterizedTest(name = "{0} => {1}, nextSpecEnabledLocally={2}, nextSpecEnabledRemotely={3}")
@@ -153,7 +153,7 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     assertThat(res).isCompleted();
     final MetadataMessage metadata = safeJoin(res);
     assertThat(metadata).isInstanceOf(expectedType);
-    // There will be update of custody_subnet_count in this case
+    // There will be update of custody_group_count in this case
     if (!(nextMilestone == SpecMilestone.FULU && nextSpecEnabledRemotely)) {
       assertThat(metadata.getSeqNumber()).isEqualTo(UInt64.ZERO);
     }

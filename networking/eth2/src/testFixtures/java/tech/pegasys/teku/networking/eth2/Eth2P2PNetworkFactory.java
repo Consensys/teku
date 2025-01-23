@@ -232,7 +232,7 @@ public class Eth2P2PNetworkFactory {
             spec.isMilestoneSupported(SpecMilestone.FULU)
                 ? Optional.of(
                     UInt64.valueOf(
-                        config.getTotalCustodySubnetCount(spec.forMilestone(SpecMilestone.FULU))))
+                        config.getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU))))
                 : Optional.empty();
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(

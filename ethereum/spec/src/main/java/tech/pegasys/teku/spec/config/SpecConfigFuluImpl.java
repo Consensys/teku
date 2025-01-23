@@ -25,6 +25,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
   private final UInt64 fuluForkEpoch;
 
   private final int numberOfColumns;
+  private final int numberOfCustodyGroups;
   private final int dataColumnSidecarSubnetCount;
   private final int custodyRequirement;
   private final int samplesPerSlot;
@@ -42,6 +43,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
       final UInt64 fieldElementsPerExtBlob,
       final UInt64 kzgCommitmentsInclusionProofDepth,
       final int numberOfColumns,
+      final int numberOfCustodyGroups,
       final int dataColumnSidecarSubnetCount,
       final int custodyRequirement,
       final int samplesPerSlot,
@@ -54,6 +56,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
     this.fieldElementsPerExtBlob = fieldElementsPerExtBlob;
     this.kzgCommitmentsInclusionProofDepth = kzgCommitmentsInclusionProofDepth;
     this.numberOfColumns = numberOfColumns;
+    this.numberOfCustodyGroups = numberOfCustodyGroups;
     this.dataColumnSidecarSubnetCount = dataColumnSidecarSubnetCount;
     this.custodyRequirement = custodyRequirement;
     this.samplesPerSlot = samplesPerSlot;
@@ -89,6 +92,11 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
   @Override
   public int getNumberOfColumns() {
     return numberOfColumns;
+  }
+
+  @Override
+  public int getNumberOfCustodyGroups() {
+    return numberOfCustodyGroups;
   }
 
   @Override
@@ -142,6 +150,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
         && Objects.equals(fieldElementsPerExtBlob, that.fieldElementsPerExtBlob)
         && Objects.equals(kzgCommitmentsInclusionProofDepth, that.kzgCommitmentsInclusionProofDepth)
         && numberOfColumns == that.numberOfColumns
+        && numberOfCustodyGroups == that.numberOfCustodyGroups
         && dataColumnSidecarSubnetCount == that.dataColumnSidecarSubnetCount
         && custodyRequirement == that.custodyRequirement
         && minEpochsForDataColumnSidecarsRequests == that.minEpochsForDataColumnSidecarsRequests
@@ -155,6 +164,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
         fuluForkVersion,
         fuluForkEpoch,
         numberOfColumns,
+        numberOfCustodyGroups,
         dataColumnSidecarSubnetCount,
         custodyRequirement,
         fieldElementsPerCell,

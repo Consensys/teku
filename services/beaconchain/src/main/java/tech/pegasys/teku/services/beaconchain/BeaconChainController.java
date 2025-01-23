@@ -728,10 +728,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 .getBlockAtSlotExact(slot)
                 .thenApply(sbb -> sbb.flatMap(SignedBeaconBlock::getBeaconBlock));
 
-    int minCustodyRequirement = specConfigFulu.getCustodyRequirement();
-    int maxSubnets = specConfigFulu.getDataColumnSidecarSubnetCount();
-    int totalMyCustodySubnets =
-        beaconConfig.p2pConfig().getTotalCustodySubnetCount(spec.forMilestone(SpecMilestone.FULU));
+    final int minCustodyGroupRequirement = specConfigFulu.getCustodyRequirement();
+    final int maxGroups = specConfigFulu.getNumberOfCustodyGroups();
+    final int totalMyCustodyGroups =
+        beaconConfig.p2pConfig().getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU));
 
     final UpdatableDataColumnSidecarCustody custody;
     {
@@ -742,7 +742,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               dbAccessor,
               minCustodyPeriodSlotCalculator,
               nodeId,
-              totalMyCustodySubnets);
+              totalMyCustodyGroups);
       eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
       eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
 
@@ -781,7 +781,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     MetadataDasPeerCustodyTracker peerCustodyTracker = new MetadataDasPeerCustodyTracker();
     p2pNetwork.subscribeConnect(peerCustodyTracker);
     DasPeerCustodyCountSupplier custodyCountSupplier =
-        DasPeerCustodyCountSupplier.capped(peerCustodyTracker, minCustodyRequirement, maxSubnets);
+        DasPeerCustodyCountSupplier.capped(
+            peerCustodyTracker, minCustodyGroupRequirement, maxGroups);
 
     // TODO NOOP peer searcher should work for interop but needs to be implemented
     DataColumnPeerSearcher dataColumnPeerSearcher = DataColumnPeerSearcher.NOOP;
@@ -827,8 +828,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             custody,
             recoveringSidecarRetriever,
             nodeId,
-            totalMyCustodySubnets);
-    LOG.info("DAS Basic Sampler initialized with {} subnets to sample", totalMyCustodySubnets);
+            totalMyCustodyGroups);
+    LOG.info("DAS Basic Sampler initialized with {} groups to sample", totalMyCustodyGroups);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, dasSampler);
     this.dataAvailabilitySampler = dasSampler;
   }
@@ -1164,7 +1165,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             nodeId,
             beaconConfig
                 .p2pConfig()
-                .getTotalCustodySubnetCount(spec.forMilestone(SpecMilestone.FULU)));
+                .getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU)));
 
     eventChannels.subscribe(SlotEventsChannel.class, subnetBackboneSubscriber);
   }

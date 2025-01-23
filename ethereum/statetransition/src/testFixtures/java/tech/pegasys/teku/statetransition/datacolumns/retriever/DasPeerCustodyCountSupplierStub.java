@@ -26,7 +26,7 @@ public class DasPeerCustodyCountSupplierStub implements DasPeerCustodyCountSuppl
   }
 
   @Override
-  public int getCustodyCountForPeer(final UInt256 nodeId) {
+  public int getCustodyGroupCountForPeer(final UInt256 nodeId) {
     return customCounts.getOrDefault(nodeId, defaultCount);
   }
 

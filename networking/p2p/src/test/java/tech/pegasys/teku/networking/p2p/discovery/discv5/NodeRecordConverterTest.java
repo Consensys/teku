@@ -15,7 +15,7 @@ package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ATTESTATION_SUBNET_ENR_FIELD;
-import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.DAS_CUSTODY_GROUP_COUNT_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ETH2_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.SYNC_COMMITTEE_SUBNET_ENR_FIELD;
 
@@ -353,7 +353,7 @@ class NodeRecordConverterTest {
                 false,
                 new EnrField(EnrField.IP_V4, Bytes.wrap(new byte[] {127, 0, 0, 1})),
                 new EnrField(EnrField.TCP, 1234),
-                new EnrField(DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD, Bytes.fromHexString(hexString))))
+                new EnrField(DAS_CUSTODY_GROUP_COUNT_ENR_FIELD, Bytes.fromHexString(hexString))))
         .contains(
             new DiscoveryPeer(
                 PUB_KEY,

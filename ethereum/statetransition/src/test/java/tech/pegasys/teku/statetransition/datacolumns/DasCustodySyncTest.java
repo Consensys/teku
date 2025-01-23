@@ -50,6 +50,7 @@ public class DasCustodySyncTest {
                       fuluBuilder
                           .dataColumnSidecarSubnetCount(4)
                           .numberOfColumns(8)
+                          .numberOfCustodyGroups(8)
                           .custodyRequirement(2)
                           .minEpochsForDataColumnSidecarsRequests(64)));
 

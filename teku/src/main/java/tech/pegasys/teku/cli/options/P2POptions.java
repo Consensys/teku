@@ -402,12 +402,12 @@ public class P2POptions {
       GossipConfig.DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
 
   @Option(
-      names = {"--Xdas-extra-custody-subnet-count"},
+      names = {"--Xdas-extra-custody-group-count"},
       paramLabel = "<NUMBER>",
-      description = "Number of extra custody subnets",
+      description = "Number of extra custody groups",
       arity = "1",
       hidden = true)
-  private int dasExtraCustodySubnetCount = P2PConfig.DEFAULT_DAS_EXTRA_CUSTODY_SUBNET_COUNT;
+  private int dasExtraCustodyGroupCount = P2PConfig.DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT;
 
   @Option(
       names = {"--Xdas-lossy-sampler-enabled"},
@@ -453,7 +453,7 @@ public class P2POptions {
                   .peerRequestLimit(peerRequestLimit)
                   .floodPublishMaxMessageSizeThreshold(floodPublishMaxMessageSizeThreshold)
                   .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled)
-                  .dasExtraCustodySubnetCount(dasExtraCustodySubnetCount)
+                  .dasExtraCustodyGroupCount(dasExtraCustodyGroupCount)
                   .dasLossySamplerEnabled(dasLossySamplerEnabled);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
             })

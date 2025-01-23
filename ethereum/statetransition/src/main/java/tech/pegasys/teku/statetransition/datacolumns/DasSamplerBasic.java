@@ -45,7 +45,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
   private static final Logger LOG = LogManager.getLogger("das-nyota");
 
   private final UInt256 nodeId;
-  private final int totalCustodySubnetCount;
+  private final int myTotalCustodyGroups;
   private final UpdatableDataColumnSidecarCustody custody;
   private final DataColumnSidecarRetriever retriever;
 
@@ -60,7 +60,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
       final UpdatableDataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
       final UInt256 nodeId,
-      final int totalCustodySubnetCount) {
+      final int myTotalCustodyGroups) {
     this.currentSlotProvider = currentSlotProvider;
     checkNotNull(spec);
     checkNotNull(db);
@@ -71,7 +71,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
     this.custody = custody;
     this.retriever = retriever;
     this.nodeId = nodeId;
-    this.totalCustodySubnetCount = totalCustodySubnetCount;
+    this.myTotalCustodyGroups = myTotalCustodyGroups;
   }
 
   private int getColumnCount(final UInt64 slot) {
@@ -85,7 +85,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
     return maybeMiscHelpers
         .map(
             miscHelpersFulu ->
-                miscHelpersFulu.computeCustodyColumnIndexes(nodeId, totalCustodySubnetCount))
+                miscHelpersFulu.computeCustodyColumnIndexes(nodeId, myTotalCustodyGroups))
         .orElse(Collections.emptyList())
         .stream()
         .map(columnIndex -> new DataColumnSlotAndIdentifier(slot, blockRoot, columnIndex))

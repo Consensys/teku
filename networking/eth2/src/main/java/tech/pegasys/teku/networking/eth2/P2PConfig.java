@@ -47,7 +47,7 @@ public class P2PConfig {
   public static final int DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY = 15_000;
   public static final int DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE = 250;
   public static final boolean DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED = false;
-  public static final int DEFAULT_DAS_EXTRA_CUSTODY_SUBNET_COUNT = 0;
+  public static final int DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT = 0;
   public static final boolean DEFAULT_DAS_LOSSY_SAMPLER_ENABLED = false;
 
   private final Spec spec;
@@ -59,7 +59,7 @@ public class P2PConfig {
   private final GossipEncoding gossipEncoding;
   private final int targetSubnetSubscriberCount;
   private final boolean subscribeAllSubnetsEnabled;
-  private final int dasExtraCustodySubnetCount;
+  private final int dasExtraCustodyGroupCount;
   private final boolean dasLossySamplerEnabled;
   private final int peerRateLimit;
   private final int peerRequestLimit;
@@ -78,7 +78,7 @@ public class P2PConfig {
       final GossipEncoding gossipEncoding,
       final int targetSubnetSubscriberCount,
       final boolean subscribeAllSubnetsEnabled,
-      final int dasExtraCustodySubnetCount,
+      final int dasExtraCustodyGroupCount,
       final boolean dasLossySamplerEnabled,
       final int peerRateLimit,
       final int peerRequestLimit,
@@ -95,7 +95,7 @@ public class P2PConfig {
     this.gossipEncoding = gossipEncoding;
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
-    this.dasExtraCustodySubnetCount = dasExtraCustodySubnetCount;
+    this.dasExtraCustodyGroupCount = dasExtraCustodyGroupCount;
     this.dasLossySamplerEnabled = dasLossySamplerEnabled;
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
@@ -140,13 +140,13 @@ public class P2PConfig {
     return subscribeAllSubnetsEnabled;
   }
 
-  public int getTotalCustodySubnetCount(final SpecVersion specVersion) {
+  public int getTotalCustodyGroupCount(final SpecVersion specVersion) {
     final SpecConfigFulu specConfig = SpecConfigFulu.required(specVersion.getConfig());
-    final int minCustodyRequirement = specConfig.getCustodyRequirement();
-    final int maxSubnets = specConfig.getDataColumnSidecarSubnetCount();
+    final int minCustodyGroupRequirement = specConfig.getCustodyRequirement();
+    final int maxGroups = specConfig.getNumberOfCustodyGroups();
     return Integer.min(
-        maxSubnets,
-        MathHelpers.intPlusMaxIntCapped(minCustodyRequirement, dasExtraCustodySubnetCount));
+        maxGroups,
+        MathHelpers.intPlusMaxIntCapped(minCustodyGroupRequirement, dasExtraCustodyGroupCount));
   }
 
   public int getPeerRateLimit() {
@@ -199,7 +199,7 @@ public class P2PConfig {
     private Integer targetSubnetSubscriberCount = DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
     private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private Boolean subscribeAllCustodySubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
-    private int dasExtraCustodySubnetCount = DEFAULT_DAS_EXTRA_CUSTODY_SUBNET_COUNT;
+    private int dasExtraCustodyGroupCount = DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT;
     private boolean dasLossySamplerEnabled = DEFAULT_DAS_LOSSY_SAMPLER_ENABLED;
     private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
@@ -245,7 +245,7 @@ public class P2PConfig {
           OptionalInt.of(networkConfig.getAdvertisedPortIpv6()));
 
       if (subscribeAllCustodySubnetsEnabled) {
-        dasExtraCustodySubnetCount = Integer.MAX_VALUE;
+        dasExtraCustodyGroupCount = Integer.MAX_VALUE;
       }
 
       return new P2PConfig(
@@ -256,7 +256,7 @@ public class P2PConfig {
           gossipEncoding,
           targetSubnetSubscriberCount,
           subscribeAllSubnetsEnabled,
-          dasExtraCustodySubnetCount,
+          dasExtraCustodyGroupCount,
           dasLossySamplerEnabled,
           peerRateLimit,
           peerRequestLimit,
@@ -315,8 +315,8 @@ public class P2PConfig {
       return this;
     }
 
-    public Builder dasExtraCustodySubnetCount(final int dasExtraCustodySubnetCount) {
-      this.dasExtraCustodySubnetCount = dasExtraCustodySubnetCount;
+    public Builder dasExtraCustodyGroupCount(final int dasExtraCustodyGroupCount) {
+      this.dasExtraCustodyGroupCount = dasExtraCustodyGroupCount;
       return this;
     }
 

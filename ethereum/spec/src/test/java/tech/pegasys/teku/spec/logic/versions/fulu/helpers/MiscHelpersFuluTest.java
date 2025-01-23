@@ -59,7 +59,11 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
       TestSpecFactory.createMinimalFulu(
           builder ->
               builder.fuluBuilder(
-                  fuluBuilder -> fuluBuilder.numberOfColumns(128).samplesPerSlot(16)));
+                  fuluBuilder ->
+                      fuluBuilder
+                          .numberOfColumns(128)
+                          .numberOfCustodyGroups(128)
+                          .samplesPerSlot(16)));
   private final PredicatesElectra predicates = new PredicatesElectra(spec.getGenesisSpecConfig());
   private final SchemaDefinitionsElectra schemaDefinitionsElectra =
       SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions());

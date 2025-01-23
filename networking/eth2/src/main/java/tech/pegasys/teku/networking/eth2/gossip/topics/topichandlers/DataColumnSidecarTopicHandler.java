@@ -21,9 +21,11 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -59,15 +61,27 @@ public class DataColumnSidecarTopicHandler {
         debugDataDumper);
   }
 
-  private record TopicSubnetIdAwareOperationProcessor(
-      Spec spec, int subnetId, OperationProcessor<DataColumnSidecar> delegate)
+  private static class TopicSubnetIdAwareOperationProcessor
       implements OperationProcessor<DataColumnSidecar> {
+    private final int subnetId;
+    private final OperationProcessor<DataColumnSidecar> delegate;
+    private final MiscHelpersFulu miscHelpersFulu;
+
+    TopicSubnetIdAwareOperationProcessor(
+        final Spec spec, final int subnetId, final OperationProcessor<DataColumnSidecar> delegate) {
+      this.subnetId = subnetId;
+      this.delegate = delegate;
+      this.miscHelpersFulu =
+          MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
+    }
 
     @Override
     public SafeFuture<InternalValidationResult> process(
         final DataColumnSidecar dataColumnSidecar, final Optional<UInt64> arrivalTimestamp) {
       final int dataColumnSidecarSubnet =
-          spec.computeSubnetForDataColumnSidecar(dataColumnSidecar).intValue();
+          miscHelpersFulu
+              .computeSubnetForDataColumnSidecar(dataColumnSidecar.getIndex())
+              .intValue();
       if (dataColumnSidecarSubnet != subnetId) {
         return SafeFuture.completedFuture(
             InternalValidationResult.reject(
