@@ -83,6 +83,7 @@ public class BlockPruner extends Service {
 
   @Override
   protected synchronized SafeFuture<?> doStop() {
+    LOG.debug("Stopping block pruner");
     asyncRunner.shutdown();
     scheduledPruner.ifPresent(Cancellable::cancel);
     return SafeFuture.COMPLETE;

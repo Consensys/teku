@@ -89,6 +89,7 @@ public class StatePruner extends Service {
 
   @Override
   protected synchronized SafeFuture<?> doStop() {
+    LOG.debug("Stopping state pruner");
     asyncRunner.shutdown();
     scheduledPruner.ifPresent(Cancellable::cancel);
     return SafeFuture.COMPLETE;
