@@ -64,6 +64,7 @@ public class RocksDbInstance implements KvStoreAccessor {
 
   @Override
   public <T> Optional<T> get(final KvStoreVariable<T> variable) {
+    assertOpen();
     return getRaw(variable).map(data -> variable.getSerializer().deserialize(data.toArrayUnsafe()));
   }
 
@@ -258,7 +259,7 @@ public class RocksDbInstance implements KvStoreAccessor {
     final ColumnFamilyHandle handle = columnHandles.get(column);
     final RocksIterator rocksDbIterator = db.newIterator(handle);
     setupIterator.accept(rocksDbIterator);
-    return RocksDbIterator.create(column, rocksDbIterator, continueTest, closed::get).toStream();
+    return RocksDbIterator.create(column, rocksDbIterator, continueTest, closed::get).toStream().onClose(rocksDbIterator::close);
   }
 
   @SuppressWarnings("MustBeClosedChecker")
@@ -271,7 +272,7 @@ public class RocksDbInstance implements KvStoreAccessor {
     final ColumnFamilyHandle handle = columnHandles.get(column);
     final RocksIterator rocksDbIterator = db.newIterator(handle);
     setupIterator.accept(rocksDbIterator);
-    return RocksDbKeyIterator.create(column, rocksDbIterator, continueTest, closed::get).toStream();
+    return RocksDbKeyIterator.create(column, rocksDbIterator, continueTest, closed::get).toStream().onClose(rocksDbIterator::close);
   }
 
   @Override
