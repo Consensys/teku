@@ -35,7 +35,8 @@ public class ReferenceTestFinder {
           TestFork.ALTAIR,
           TestFork.BELLATRIX,
           TestFork.CAPELLA,
-          TestFork.DENEB); // TODO: Add Electra fork tests back
+          TestFork.DENEB,
+          TestFork.ELECTRA);
 
   @MustBeClosed
   public static Stream<TestDefinition> findReferenceTests() throws IOException {

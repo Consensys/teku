@@ -99,7 +99,7 @@ public class MetricRecordingAbstractClientTest {
     when(delegatedTestClient.testMethod(any()))
         .thenAnswer(
             __ -> {
-              stubTimeProvider.advanceTimeByMillis(RESPONSE_DELAY.longValue());
+              stubTimeProvider.advanceTimeByMillis(RESPONSE_DELAY);
               return response;
             });
   }

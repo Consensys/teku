@@ -77,7 +77,7 @@ public abstract class BeaconStateAccessors {
 
   public Optional<BLSPublicKey> getValidatorPubKey(
       final BeaconState state, final UInt64 validatorIndex) {
-    if (state.getValidators().size() <= validatorIndex.longValue()
+    if (validatorIndex.isGreaterThanOrEqualTo(state.getValidators().size())
         || validatorIndex.longValue() < 0) {
       return Optional.empty();
     }

@@ -53,6 +53,10 @@ public class StubTimeProvider implements TimeProvider {
     this.timeInMillis = timeInMillis.plus(millis);
   }
 
+  public void advanceTimeByMillis(final UInt64 millis) {
+    this.timeInMillis = timeInMillis.plus(millis);
+  }
+
   @Override
   public UInt64 getTimeInMillis() {
     return timeInMillis;
