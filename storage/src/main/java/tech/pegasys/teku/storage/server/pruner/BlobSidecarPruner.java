@@ -115,7 +115,9 @@ public class BlobSidecarPruner extends Service {
 
   @Override
   protected synchronized SafeFuture<?> doStop() {
+    asyncRunner.shutdown();
     scheduledPruner.ifPresent(Cancellable::cancel);
+
     return SafeFuture.COMPLETE;
   }
 
