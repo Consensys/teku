@@ -164,7 +164,7 @@ public class SnappyPreparedGossipMessageTest {
 
   @Test
   public void getDecodedMessage_ShouldPassGossipMaxSizeToUncompressor() throws DecodingException {
-    final long gossipMaxSize = spec.getNetworkingConfig().getGossipMaxSize();
+    final long gossipMaxSize = spec.getNetworkingConfig().getMaxPayloadSize();
     final Uncompressor uncompressor = mock(Uncompressor.class);
     when(uncompressor.uncompress(any(), any(), anyLong())).thenReturn(Bytes.random(1000));
 

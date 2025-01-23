@@ -66,12 +66,21 @@ public class LibP2PParamsFactory {
         .DOut(Math.min(gossipConfig.getD() / 2, Math.max(0, gossipConfig.getDLow() - 1)));
   }
 
+  // max_compressed_len from p2p-interface spec
+  private static int maxCompressedLength(final int length) {
+    return length + 32 + length / 6;
+  }
+
+  // max_message_size from p2p-interface spec
+  private static int maxMessageSize(final int maxPayloadSize) {
+    return Math.max(maxCompressedLength(maxPayloadSize) + 1024, 1024 * 1024);
+  }
+
   private static void addGossipParamsMaxValues(
       final NetworkingSpecConfig networkingSpecConfig, final GossipParamsBuilder builder) {
-    final int gossipMaxSize = networkingSpecConfig.getGossipMaxSize();
-    final int compressedMaxGossipSize = 32 + gossipMaxSize + (gossipMaxSize / 6);
+    final int maxPayloadSize = networkingSpecConfig.getMaxPayloadSize();
     builder
-        .maxGossipMessageSize(compressedMaxGossipSize)
+        .maxGossipMessageSize(maxMessageSize(maxPayloadSize))
         .maxPublishedMessages(1000)
         .maxTopicsPerPublishedMessage(1)
         .maxSubscriptions(MAX_SUBSCRIPTIONS_PER_MESSAGE)
