@@ -97,12 +97,9 @@ public class ThrottlingSyncSource implements SyncSource {
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRange(
       final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecar> listener) {
-    final long blobSidecarsCount =
-        maybeMaxBlobsPerBlock
-            .map(maxBlobsPerBlock -> maxBlobsPerBlock * count.longValue())
-            .orElse(0L);
+    final UInt64 blobSidecarsCount = maybeMaxBlobsPerBlock.map(count::times).orElse(UInt64.ZERO);
     return blobSidecarsRateTracker
-        .approveObjectsRequest(blobSidecarsCount)
+        .approveObjectsRequest(blobSidecarsCount.longValue())
         .map(
             requestApproval -> {
               LOG.debug("Sending request for approximately {} blob sidecars", blobSidecarsCount);
