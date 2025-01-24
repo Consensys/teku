@@ -934,7 +934,7 @@ public class KvStoreDatabase implements Database {
       final int pruneLimit,
       final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableNoncanonicalBlobKeys =
-            streamNonCanonicalBlobSidecarKeys(UInt64.ZERO, lastSlotToPrune)) {
+        streamNonCanonicalBlobSidecarKeys(UInt64.ZERO, lastSlotToPrune)) {
       return pruneBlobSidecars(pruneLimit, prunableNoncanonicalBlobKeys, archiveWriter, true);
     }
   }
