@@ -33,6 +33,11 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 /**
  * Represents an "anchor" - a trusted, finalized (block, state, checkpoint) tuple from which we can
  * sync.
+ *
+ * <p>NOTE: Anchor point is a teku concept. <br>
+ * - state needs to be the anchor_state as used in fork choice<br>
+ * - checkpoint is an actual checkpoint as defined in fork choice, is the first slot of epoch<br>
+ * - blockSummary is the block from the finalized anchor state
  */
 public class AnchorPoint extends StateAndBlockSummary {
   private final Spec spec;
@@ -64,14 +69,6 @@ public class AnchorPoint extends StateAndBlockSummary {
     final BeaconBlockSummary blockSummary =
         block.<BeaconBlockSummary>map(a -> a).orElseGet(() -> BeaconBlockHeader.fromState(state));
     return new AnchorPoint(spec, checkpoint, state, blockSummary);
-  }
-
-  public static AnchorPoint create(
-      final Spec spec,
-      final Checkpoint checkpoint,
-      final SignedBeaconBlock block,
-      final BeaconState state) {
-    return new AnchorPoint(spec, checkpoint, state, block);
   }
 
   public static AnchorPoint create(
@@ -107,16 +104,16 @@ public class AnchorPoint extends StateAndBlockSummary {
     }
   }
 
-  private static boolean isGenesisState(final BeaconState state) {
-    return state.getSlot().equals(SpecConfig.GENESIS_SLOT);
-  }
-
   public static AnchorPoint fromInitialBlockAndState(
       final Spec spec, final SignedBlockAndState blockAndState) {
     return fromInitialBlockAndState(spec, blockAndState.getBlock(), blockAndState.getState());
   }
 
-  public static AnchorPoint fromInitialBlockAndState(
+  private static boolean isGenesisState(final BeaconState state) {
+    return state.getSlot().equals(SpecConfig.GENESIS_SLOT);
+  }
+
+  private static AnchorPoint fromInitialBlockAndState(
       final Spec spec, final SignedBeaconBlock block, final BeaconState state) {
     checkArgument(
         Objects.equals(block.getStateRoot(), state.hashTreeRoot()),
