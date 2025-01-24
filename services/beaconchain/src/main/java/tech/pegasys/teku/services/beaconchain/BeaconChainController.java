@@ -146,7 +146,7 @@ import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
-import tech.pegasys.teku.statetransition.inclusionlist.InclusionListPool;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
@@ -168,6 +168,7 @@ import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.SignedBlsToExecutionChangeValidator;
+import tech.pegasys.teku.statetransition.validation.SignedInclusionListValidator;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.statetransition.validation.signatures.AggregatingSignatureVerificationService;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
@@ -255,7 +256,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile Eth2P2PNetwork p2pNetwork;
   protected volatile Optional<BeaconRestApi> beaconRestAPI = Optional.empty();
   protected volatile AggregatingAttestationPool attestationPool;
-  protected volatile InclusionListPool inclusionListPool;
+  protected volatile InclusionListManager inclusionListManager;
   protected volatile DepositProvider depositProvider;
   protected volatile SyncService syncService;
   protected volatile AttestationManager attestationManager;
@@ -524,7 +525,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initCombinedChainDataClient();
     initSignatureVerificationService();
     initAttestationPool();
-    initInclusionListPool();
+    initInclusionListManager();
     initAttesterSlashingPool();
     initProposerSlashingPool();
     initVoluntaryExitPool();
@@ -773,7 +774,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .validatorApiChannel(
                 eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner))
             .attestationPool(attestationPool)
-            .inclusionListPool(inclusionListPool)
+            .inclusionListPool(inclusionListManager)
             .blockBlobSidecarsTrackersPool(blockBlobSidecarsTrackersPool)
             .attestationManager(attestationManager)
             .isLivenessTrackingEnabled(getLivenessTrackingEnabled(beaconConfig))
@@ -1157,7 +1158,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedSignedContributionAndProofProcessor(syncCommitteeContributionPool::addRemote)
             .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::addRemote)
             .gossipedSignedBlsToExecutionChangeProcessor(blsToExecutionChangePool::addRemote)
-            .gossipedSignedInclusionListProcessor(inclusionListPool::addRemote)
+            .gossipedSignedInclusionListProcessor(inclusionListManager::addSignedInclusionList)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .metricsSystem(metricsSystem)
@@ -1212,10 +1213,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
         attestationPool::onAttestationsIncludedInBlock);
   }
 
-  protected void initInclusionListPool() {
+  protected void initInclusionListManager() {
     LOG.debug("BeaconChainController.initInclusionListPool()");
-    inclusionListPool = new InclusionListPool();
-    eventChannels.subscribe(SlotEventsChannel.class, inclusionListPool);
+    final SignedInclusionListValidator signedInclusionListValidator =
+        new SignedInclusionListValidator(spec, recentChainData);
+    inclusionListManager = new InclusionListManager(signedInclusionListValidator);
+    eventChannels.subscribe(SlotEventsChannel.class, inclusionListManager);
   }
 
   public void initRestAPI() {
