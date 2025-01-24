@@ -923,7 +923,7 @@ public class KvStoreDatabase implements Database {
       final int pruneLimit,
       final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys =
-            streamBlobSidecarKeys(UInt64.ZERO, lastSlotToPrune)) {
+        streamBlobSidecarKeys(UInt64.ZERO, lastSlotToPrune)) {
       return pruneBlobSidecars(pruneLimit, prunableBlobKeys, archiveWriter, false);
     }
   }
@@ -934,10 +934,8 @@ public class KvStoreDatabase implements Database {
       final int pruneLimit,
       final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableNoncanonicalBlobKeys =
-            streamNonCanonicalBlobSidecarKeys(UInt64.ZERO, lastSlotToPrune);
-        final FinalizedUpdater updater = finalizedUpdater()) {
-      return pruneBlobSidecars(
-          pruneLimit, prunableNoncanonicalBlobKeys, archiveWriter, true);
+            streamNonCanonicalBlobSidecarKeys(UInt64.ZERO, lastSlotToPrune)) {
+      return pruneBlobSidecars(pruneLimit, prunableNoncanonicalBlobKeys, archiveWriter, true);
     }
   }
 
@@ -957,20 +955,20 @@ public class KvStoreDatabase implements Database {
 
     // pruneLimit is the number of slots to prune, not the number of BlobSidecars
     final List<UInt64> slots = prunableMap.keySet().stream().sorted().limit(pruneLimit).toList();
-    try(final FinalizedUpdater updater = finalizedUpdater()) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
       for (final UInt64 slot : slots) {
         final List<SlotAndBlockRootAndBlobIndex> keys = prunableMap.get(slot);
 
         // Retrieve the BlobSidecars for archiving.
         final List<BlobSidecar> blobSidecars =
-                keys.stream()
-                        .map(
-                                nonCanonicalBlobSidecars
-                                        ? this::getNonCanonicalBlobSidecar
-                                        : this::getBlobSidecar)
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .toList();
+            keys.stream()
+                .map(
+                    nonCanonicalBlobSidecars
+                        ? this::getNonCanonicalBlobSidecar
+                        : this::getBlobSidecar)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .toList();
 
         // Just warn if we failed to find all the BlobSidecars.
         if (keys.size() != blobSidecars.size()) {
