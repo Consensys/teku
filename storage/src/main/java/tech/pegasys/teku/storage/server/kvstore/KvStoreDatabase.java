@@ -922,7 +922,7 @@ public class KvStoreDatabase implements Database {
       final UInt64 lastSlotToPrune,
       final int pruneLimit,
       final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
-      return pruneBlobSidecars(pruneLimit, lastSlotToPrune , archiveWriter, false );
+    return pruneBlobSidecars(pruneLimit, lastSlotToPrune, archiveWriter, false);
   }
 
   @Override
@@ -930,23 +930,24 @@ public class KvStoreDatabase implements Database {
       final UInt64 lastSlotToPrune,
       final int pruneLimit,
       final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
-          return pruneBlobSidecars(pruneLimit, lastSlotToPrune, archiveWriter, true );
-
+    return pruneBlobSidecars(pruneLimit, lastSlotToPrune, archiveWriter, true);
   }
 
   private boolean pruneBlobSidecars(
-          final int pruneLimit,
-          final UInt64 lastSlotToPrune, final DataArchiveWriter<List<BlobSidecar>> archiveWriter,
-          final boolean nonCanonicalBlobSidecars) {
+      final int pruneLimit,
+      final UInt64 lastSlotToPrune,
+      final DataArchiveWriter<List<BlobSidecar>> archiveWriter,
+      final boolean nonCanonicalBlobSidecars) {
 
     int pruned = 0;
     Optional<UInt64> earliestBlobSidecarSlot = getEarliestBlobSidecarSlot();
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys =
-                 streamNonCanonicalBlobSidecarKeys(earliestBlobSidecarSlot.orElse(UInt64.ZERO), lastSlotToPrune)) {
+        streamNonCanonicalBlobSidecarKeys(
+            earliestBlobSidecarSlot.orElse(UInt64.ZERO), lastSlotToPrune)) {
       // Group the BlobSidecars by slot. Potential for higher memory usage
       // if it hasn't been pruned in a while
       final Map<UInt64, List<SlotAndBlockRootAndBlobIndex>> prunableMap =
-              prunableBlobKeys.collect(groupingBy(SlotAndBlockRootAndBlobIndex::getSlot));
+          prunableBlobKeys.collect(groupingBy(SlotAndBlockRootAndBlobIndex::getSlot));
 
       // pruneLimit is the number of slots to prune, not the number of BlobSidecars
       final List<UInt64> slots = prunableMap.keySet().stream().sorted().limit(pruneLimit).toList();
@@ -956,14 +957,14 @@ public class KvStoreDatabase implements Database {
 
           // Retrieve the BlobSidecars for archiving.
           final List<BlobSidecar> blobSidecars =
-                  keys.stream()
-                          .map(
-                                  nonCanonicalBlobSidecars
-                                          ? this::getNonCanonicalBlobSidecar
-                                          : this::getBlobSidecar)
-                          .filter(Optional::isPresent)
-                          .map(Optional::get)
-                          .toList();
+              keys.stream()
+                  .map(
+                      nonCanonicalBlobSidecars
+                          ? this::getNonCanonicalBlobSidecar
+                          : this::getBlobSidecar)
+                  .filter(Optional::isPresent)
+                  .map(Optional::get)
+                  .toList();
 
           // Just warn if we failed to find all the BlobSidecars.
           if (keys.size() != blobSidecars.size()) {
