@@ -29,7 +29,7 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
-import tech.pegasys.teku.statetransition.inclusionlist.InclusionListPool;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -105,7 +105,7 @@ public class DataProvider {
     private SyncService syncService;
     private ValidatorApiChannel validatorApiChannel;
     private AggregatingAttestationPool attestationPool;
-    private InclusionListPool inclusionListPool;
+    private InclusionListManager inclusionListManager;
     private BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
     private AttestationManager attestationManager;
     private ActiveValidatorChannel activeValidatorChannel;
@@ -154,8 +154,8 @@ public class DataProvider {
       return this;
     }
 
-    public Builder inclusionListPool(final InclusionListPool inclusionListPool) {
-      this.inclusionListPool = inclusionListPool;
+    public Builder inclusionListPool(final InclusionListManager inclusionListManager) {
+      this.inclusionListManager = inclusionListManager;
       return this;
     }
 
@@ -230,7 +230,7 @@ public class DataProvider {
       final NodeDataProvider nodeDataProvider =
           new NodeDataProvider(
               attestationPool,
-              inclusionListPool,
+              inclusionListManager,
               attesterSlashingPool,
               proposerSlashingPool,
               voluntaryExitPool,
