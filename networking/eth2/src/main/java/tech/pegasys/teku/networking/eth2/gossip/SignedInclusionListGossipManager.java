@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -36,6 +37,7 @@ public class SignedInclusionListGossipManager extends AbstractGossipManager<Sign
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
+      final Bytes4 forkDigest,
       final OperationProcessor<SignedInclusionList> processor,
       final DebugDataDumper debugDataDumper) {
     super(
@@ -45,6 +47,7 @@ public class SignedInclusionListGossipManager extends AbstractGossipManager<Sign
         gossipNetwork,
         gossipEncoding,
         forkInfo,
+        forkDigest,
         processor,
         schemaDefinitions.getSignedInclusionListSchema(),
         signedInclusionList -> Optional.of(signedInclusionList.getMessage().getSlot()),

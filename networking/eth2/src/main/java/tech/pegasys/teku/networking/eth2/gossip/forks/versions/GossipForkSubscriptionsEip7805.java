@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.SignedInclusionListGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -87,12 +88,13 @@ public class GossipForkSubscriptionsEip7805 extends GossipForkSubscriptionsElect
   }
 
   @Override
-  protected void addGossipManagers(final ForkInfo forkInfo) {
-    super.addGossipManagers(forkInfo);
-    addSignedInclusionListManagerGossipManager(forkInfo);
+  protected void addGossipManagers(final ForkInfo forkInfo, final Bytes4 forkDigest) {
+    super.addGossipManagers(forkInfo, forkDigest);
+    addSignedInclusionListManagerGossipManager(forkInfo, forkDigest);
   }
 
-  void addSignedInclusionListManagerGossipManager(final ForkInfo forkInfo) {
+  void addSignedInclusionListManagerGossipManager(
+      final ForkInfo forkInfo, final Bytes4 forkDigest) {
     final SchemaDefinitionsEip7805 schemaDefinitions =
         SchemaDefinitionsEip7805.required(
             spec.atEpoch(getActivationEpoch()).getSchemaDefinitions());
@@ -105,6 +107,7 @@ public class GossipForkSubscriptionsEip7805 extends GossipForkSubscriptionsElect
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
+            forkDigest,
             signedInclusionListOperationProcessor,
             debugDataDumper);
     addGossipManager(signedInclusionListGossipManager);
