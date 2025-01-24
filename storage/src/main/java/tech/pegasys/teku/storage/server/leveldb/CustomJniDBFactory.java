@@ -64,8 +64,9 @@ public class CustomJniDBFactory extends JniDBFactory {
 
     try (final InputStream is = JniDBFactory.class.getResourceAsStream("version.txt")) {
       if (is != null) {
-        try (final InputStreamReader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
-          v = new BufferedReader(reader).readLine();
+        try (final BufferedReader reader =
+            new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+          v = reader.readLine();
         }
       }
     } catch (final Throwable ignored) {
