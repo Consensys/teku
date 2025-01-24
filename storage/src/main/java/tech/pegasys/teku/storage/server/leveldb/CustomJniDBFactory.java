@@ -42,9 +42,9 @@ public class CustomJniDBFactory extends JniDBFactory {
 
   @Override
   public DB open(final File path, final Options options) throws IOException {
-    NativeDB db = null;
-    OptionsResourceHolder holder = new OptionsResourceHolder();
+    final OptionsResourceHolder holder = new OptionsResourceHolder();
 
+    NativeDB db = null;
     try {
       holder.init(options);
       db = NativeDB.open(holder.options, path);
@@ -62,8 +62,12 @@ public class CustomJniDBFactory extends JniDBFactory {
     NativeDB.LIBRARY.load();
     String v = "unknown";
 
-    try (InputStream is = JniDBFactory.class.getResourceAsStream("version.txt")) {
-      v = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8)).readLine();
+    try (final InputStream is = JniDBFactory.class.getResourceAsStream("version.txt")) {
+      if (is != null) {
+        try (final InputStreamReader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
+          v = new BufferedReader(reader).readLine();
+        }
+      }
     } catch (final Throwable ignored) {
     }
 
