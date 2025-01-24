@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -34,7 +37,8 @@ public class SignedInclusionListValidator {
   }
 
   public SafeFuture<InternalValidationResult> validate(
-      final SignedInclusionList signedInclusionList) {
+      final SignedInclusionList signedInclusionList,
+      final Map<UInt64, List<SignedInclusionList>> validatorIndexToInclusionLists) {
 
     final InclusionList inclusionList = signedInclusionList.getMessage();
     final UInt64 slot = inclusionList.getSlot();
@@ -91,8 +95,15 @@ public class SignedInclusionListValidator {
     /*
      * [IGNORE] The message is either the first or second valid message received from the validator with index message.validator_index.
      */
-    // TODO EIP7805 add an inclusion list cache to track how many we've received from each validator
-    // and enforce this rule
+    if (validatorIndexToInclusionLists
+            .getOrDefault(inclusionList.getValidatorIndex(), Collections.emptyList())
+            .size()
+        > 2) {
+      return SafeFuture.completedFuture(
+          InternalValidationResult.ignore(
+              "Already received 2 Inclusion Lists from validator with index %d",
+              inclusionList.getValidatorIndex().intValue()));
+    }
 
     return recentChainData
         .retrieveStateInEffectAtSlot(slot)
