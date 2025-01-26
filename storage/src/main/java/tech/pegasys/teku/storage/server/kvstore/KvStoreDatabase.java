@@ -401,24 +401,31 @@ public class KvStoreDatabase implements Database {
   @Override
   public UInt64 pruneFinalizedBlocks(
       final UInt64 lastSlotToPrune, final int pruneLimit, final UInt64 checkpointInitialSlot) {
-    final Optional<UInt64> earliestBlockSlot =
+    final Optional<UInt64> earliestFinalizedBlockSlot =
         dao.getEarliestFinalizedBlock().map(SignedBeaconBlock::getSlot);
     LOG.debug(
         "Earliest block slot stored is {}",
-        () -> earliestBlockSlot.isEmpty() ? "EMPTY" : earliestBlockSlot.get().toString());
-    if (earliestBlockSlot.isEmpty()) {
+        () ->
+            earliestFinalizedBlockSlot.isEmpty()
+                ? "EMPTY"
+                : earliestFinalizedBlockSlot.get().toString());
+    if (earliestFinalizedBlockSlot.isEmpty()) {
       return lastSlotToPrune;
     }
-    return pruneToBlock(lastSlotToPrune, pruneLimit, checkpointInitialSlot);
+    return pruneToBlock(
+        lastSlotToPrune, earliestFinalizedBlockSlot.get(), pruneLimit, checkpointInitialSlot);
   }
 
   private UInt64 pruneToBlock(
-      final UInt64 lastSlotToPrune, final int pruneLimit, final UInt64 checkpointInitialSlot) {
+      final UInt64 lastSlotToPrune,
+      final UInt64 earliestFinalizedBlockSlot,
+      final int pruneLimit,
+      final UInt64 checkpointInitialSlot) {
     final List<Pair<UInt64, Bytes32>> blocksToPrune;
     final Optional<UInt64> earliestSlotAvailableAfterPrune;
     LOG.debug("Pruning finalized blocks to slot {} (included)", lastSlotToPrune);
     try (final Stream<SignedBeaconBlock> stream =
-        dao.streamFinalizedBlocks(UInt64.ZERO, lastSlotToPrune)) {
+        dao.streamFinalizedBlocks(earliestFinalizedBlockSlot, lastSlotToPrune)) {
       // get an extra block to set earliest finalized block slot available after pruning runs
       // ensuring it is an existing block in the DB
       blocksToPrune =
@@ -431,7 +438,7 @@ public class KvStoreDatabase implements Database {
     }
 
     try (final Stream<SignedBeaconBlock> stream =
-        dao.streamFinalizedBlocks(UInt64.ZERO, checkpointInitialSlot)) {
+        dao.streamFinalizedBlocks(earliestFinalizedBlockSlot, checkpointInitialSlot)) {
 
       earliestSlotAvailableAfterPrune =
           stream
@@ -996,7 +1003,7 @@ public class KvStoreDatabase implements Database {
         }
         updater.commit();
       }
-
+      LOG.debug("Pruned {} BlobSidecars", pruned);
       // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar in a slot
       return pruned >= pruneLimit;
     }
