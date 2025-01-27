@@ -56,7 +56,7 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigFulu implements S
   }
 
   @Override
-  public int getIlCommitteeSize() {
+  public int getInclusionListCommitteeSize() {
     return ilCommitteeSize;
   }
 

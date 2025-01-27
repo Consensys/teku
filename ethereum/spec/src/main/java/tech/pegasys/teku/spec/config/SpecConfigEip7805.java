@@ -33,7 +33,7 @@ public interface SpecConfigEip7805 extends SpecConfigFulu {
 
   UInt64 getEip7805ForkEpoch();
 
-  int getIlCommitteeSize();
+  int getInclusionListCommitteeSize();
 
   int getMaxTransactionsPerInclusionList();
 
