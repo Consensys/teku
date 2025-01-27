@@ -402,7 +402,7 @@ public class KvStoreDatabase implements Database {
   public UInt64 pruneFinalizedBlocks(
       final UInt64 lastSlotToPrune, final int pruneLimit, final UInt64 checkpointInitialSlot) {
     final Optional<UInt64> earliestFinalizedBlockSlot =
-        dao.getEarliestFinalizedBlock().map(SignedBeaconBlock::getSlot);
+        dao.getEarliestFinalizedBlockSlot();
     LOG.debug(
         "Earliest block slot stored is {}",
         () ->
