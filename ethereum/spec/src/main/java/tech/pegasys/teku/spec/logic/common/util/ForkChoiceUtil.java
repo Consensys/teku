@@ -436,7 +436,7 @@ public class ForkChoiceUtil {
 
   public void applyExecutionPayloadToStore(
       final MutableStore store,
-      final UInt64 slot,
+      final SignedBeaconBlock block,
       final SignedExecutionPayloadEnvelope executionPayloadEnvelope,
       final BeaconState postState,
       final boolean isBlockOptimistic,
@@ -448,7 +448,7 @@ public class ForkChoiceUtil {
     // realize new finality
     // info
     if (miscHelpers
-        .computeEpochAtSlot(slot)
+        .computeEpochAtSlot(block.getSlot())
         .isLessThan(miscHelpers.computeEpochAtSlot(getCurrentSlot(store)))) {
       blockCheckpoints = blockCheckpoints.realizeNextEpoch();
     }
@@ -461,6 +461,7 @@ public class ForkChoiceUtil {
 
     // Add new execution payload to store
     store.putExecutionPayloadEnvelopeAndState(
+        block,
         executionPayloadEnvelope,
         postState,
         blockCheckpoints,
