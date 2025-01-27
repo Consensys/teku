@@ -401,8 +401,7 @@ public class KvStoreDatabase implements Database {
   @Override
   public UInt64 pruneFinalizedBlocks(
       final UInt64 lastSlotToPrune, final int pruneLimit, final UInt64 checkpointInitialSlot) {
-    final Optional<UInt64> earliestFinalizedBlockSlot =
-        dao.getEarliestFinalizedBlockSlot();
+    final Optional<UInt64> earliestFinalizedBlockSlot = dao.getEarliestFinalizedBlockSlot();
     LOG.debug(
         "Earliest block slot stored is {}",
         () ->
