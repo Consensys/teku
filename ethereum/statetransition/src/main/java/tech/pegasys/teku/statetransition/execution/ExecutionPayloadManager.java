@@ -21,16 +21,14 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
-import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class ExecutionPayloadManager implements ReceivedBlockEventsChannel {
+public class ExecutionPayloadManager {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Map<Bytes32, SignedExecutionPayloadEnvelope> validatedExecutionPayloadEnvelopes =
@@ -83,13 +81,5 @@ public class ExecutionPayloadManager implements ReceivedBlockEventsChannel {
   public Optional<SignedExecutionPayloadEnvelope> getValidatedExecutionPayloadEnvelope(
       final Bytes32 blockRoot) {
     return Optional.ofNullable(validatedExecutionPayloadEnvelopes.get(blockRoot));
-  }
-
-  @Override
-  public void onBlockValidated(final SignedBeaconBlock block) {}
-
-  @Override
-  public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
-    validatedExecutionPayloadEnvelopes.remove(block.getRoot());
   }
 }

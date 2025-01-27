@@ -1386,7 +1386,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     executionPayloadManager =
         new ExecutionPayloadManager(
             executionPayloadValidator, forkChoice, recentChainData, executionLayer);
-    eventChannels.subscribe(ReceivedBlockEventsChannel.class, executionPayloadManager);
   }
 
   public void initPayloadAttestationManager() {

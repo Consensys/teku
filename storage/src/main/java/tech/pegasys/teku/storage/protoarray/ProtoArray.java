@@ -134,11 +134,18 @@ public class ProtoArray {
       final UInt64 executionBlockNumber,
       final Bytes32 executionBlockHash,
       final boolean optimisticallyProcessed) {
-    if (indices.contains(blockRoot)) {
-      return;
+    final boolean alreadyTrackedNode = indices.contains(blockRoot);
+    Optional<Integer> trackedNodeIndex = Optional.empty();
+    if (alreadyTrackedNode) {
+      trackedNodeIndex = indices.get(blockRoot);
+      final ProtoNode trackedNode = nodes.get(trackedNodeIndex.orElseThrow());
+      // proceed with ignoring pre-ePBS
+      if (!trackedNode.getExecutionBlockHash().isZero()) {
+        return;
+      }
     }
 
-    int nodeIndex = getTotalTrackedNodeCount();
+    int nodeIndex = trackedNodeIndex.orElse(getTotalTrackedNodeCount());
 
     ProtoNode node =
         new ProtoNode(
@@ -156,7 +163,13 @@ public class ProtoArray {
             optimisticallyProcessed && !executionBlockHash.isZero() ? OPTIMISTIC : VALID);
 
     indices.add(blockRoot, nodeIndex);
-    nodes.add(node);
+
+    // in ePBS, we call on block twice with a different execution number and hash
+    if (alreadyTrackedNode) {
+      nodes.set(nodeIndex, node);
+    } else {
+      nodes.add(node);
+    }
 
     updateBestDescendantOfParent(node, nodeIndex);
   }
