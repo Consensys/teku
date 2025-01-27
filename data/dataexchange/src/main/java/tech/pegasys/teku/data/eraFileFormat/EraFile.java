@@ -214,7 +214,7 @@ public class EraFile {
             block.getParentRoot().equals(previousArchiveLastBlock.getRoot()),
             "First block in archive does not match last block of previous archive.");
       }
-      // TODO should verify signature
+      // when fully implemented, we would check signature also
       ++populatedSlots;
     }
     System.out.println(

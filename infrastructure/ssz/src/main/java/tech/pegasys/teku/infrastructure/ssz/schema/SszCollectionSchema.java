@@ -49,7 +49,7 @@ public interface SszCollectionSchema<
   }
 
   default TreeNode createTreeFromElements(final List<? extends SszElementT> elements) {
-    // TODO: probably suboptimal method implementation:
+    // https://github.com/Consensys/teku/issues/9035
     // This is a generic implementation which works for both Vector and List but it potentially
     // could do better if construct the tree directly in List/Vector subclasses
     checkArgument(elements.size() <= getMaxLength(), "Too many elements for this collection type");
