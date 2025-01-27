@@ -215,9 +215,9 @@ public class LibP2PNetworkBuilder {
           b.getTransports().add(TcpTransport::new);
           b.getSecureChannels().add(NoiseXXSecureChannel::new);
 
-          // yamux MUST take precedence during negotiation
+          // Yamux must take precedence during negotiation
           if (config.isYamuxEnabled()) {
-            // TODO: https://github.com/Consensys/teku/issues/7532
+            // https://github.com/Consensys/teku/issues/7532
             final int maxBufferedConnectionWrites = 150 * 1024 * 1024;
             b.getMuxers().add(StreamMuxerProtocol.getYamux(maxBufferedConnectionWrites));
           }
