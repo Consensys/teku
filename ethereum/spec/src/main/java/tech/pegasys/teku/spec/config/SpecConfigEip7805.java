@@ -33,7 +33,7 @@ public interface SpecConfigEip7805 extends SpecConfigElectra {
 
   UInt64 getEip7805ForkEpoch();
 
-  int getIlCommitteeSize();
+  int getInclusionListCommitteeSize();
 
   int getMaxTransactionsPerInclusionList();
 
