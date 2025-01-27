@@ -113,23 +113,22 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
 
   @Override
   public void putExecutionPayloadEnvelopeAndState(
+      final SignedBeaconBlock block,
       final SignedExecutionPayloadEnvelope executionPayloadEnvelope,
       final BeaconState state,
       final BlockCheckpoints blockCheckpoints,
       final Optional<List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     executionPayloadEnvelopeData.put(
-        executionPayloadEnvelope.getMessage().getBeaconBlockRoot(),
+        block.getRoot(),
         new TransactionExecutionPayloadEnvelopeData(
-            executionPayloadEnvelope, state, blockCheckpoints));
-    final SlotAndBlockRoot slotAndBlockRoot =
-        new SlotAndBlockRoot(
-            state.getSlot(), executionPayloadEnvelope.getMessage().getBeaconBlockRoot());
-    blobSidecars.ifPresent(sidecars -> this.blobSidecars.put(slotAndBlockRoot, sidecars));
+            block, executionPayloadEnvelope, state, blockCheckpoints));
+    blobSidecars.ifPresent(
+        sidecars -> this.blobSidecars.put(block.getSlotAndBlockRoot(), sidecars));
     if (needToUpdateEarliestBlobSidecarSlot(maybeEarliestBlobSidecarSlot)) {
       this.maybeEarliestBlobSidecarTransactionSlot = maybeEarliestBlobSidecarSlot;
     }
-    putStateRoot(state.hashTreeRoot(), slotAndBlockRoot);
+    putStateRoot(state.hashTreeRoot(), block.getSlotAndBlockRoot());
   }
 
   private boolean needToUpdateEarliestBlobSidecarSlot(
@@ -144,11 +143,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     }
     // New value is smaller than an old one - true
     final UInt64 newEarliestBlobSidecarSlot = maybeNewEarliestBlobSidecarSlot.get();
-    if (newEarliestBlobSidecarSlot.isLessThan(maybeEarliestBlobSidecarTransactionSlot.get())) {
-      return true;
-    } else {
-      return false;
-    }
+    return newEarliestBlobSidecarSlot.isLessThan(maybeEarliestBlobSidecarTransactionSlot.get());
   }
 
   @Override

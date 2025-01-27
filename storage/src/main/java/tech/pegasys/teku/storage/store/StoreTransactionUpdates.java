@@ -24,8 +24,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedExecutionPayloadEnvelopeAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.FinalizedChainData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -48,11 +50,17 @@ class StoreTransactionUpdates {
   private final Optional<Bytes32> latestCanonicalBlockRoot;
   private final boolean blobSidecarsEnabled;
 
+  // ePBS
+  private final Map<Bytes32, SignedExecutionPayloadEnvelopeAndState>
+      hotExecutionPayloadEnvelopeAndStates;
+
   StoreTransactionUpdates(
       final StoreTransaction tx,
       final Optional<FinalizedChainData> finalizedChainData,
       final Map<Bytes32, BlockAndCheckpoints> hotBlocks,
       final Map<Bytes32, SignedBlockAndState> hotBlockAndStates,
+      final Map<Bytes32, SignedExecutionPayloadEnvelopeAndState>
+          hotExecutionPayloadEnvelopeAndStates,
       final Map<Bytes32, BeaconState> hotStatesToPersist,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot,
@@ -66,6 +74,7 @@ class StoreTransactionUpdates {
     checkNotNull(finalizedChainData, "Finalized data is required");
     checkNotNull(hotBlocks, "Hot blocks are required");
     checkNotNull(hotBlockAndStates, "Hot states are required");
+    checkNotNull(hotExecutionPayloadEnvelopeAndStates, "Hot states are required");
     checkNotNull(hotStatesToPersist, "Hot states to persist are required");
     checkNotNull(blobSidecars, "BlobSidecars are required");
     checkNotNull(maybeEarliestBlobSidecarSlot, "Hot maybe earliest blobSidecar slot is required");
@@ -79,6 +88,7 @@ class StoreTransactionUpdates {
     this.hotBlocks = hotBlocks;
     this.hotBlockAndStates = hotBlockAndStates;
     this.hotStatesToPersist = hotStatesToPersist;
+    this.hotExecutionPayloadEnvelopeAndStates = hotExecutionPayloadEnvelopeAndStates;
     this.blobSidecars = blobSidecars;
     this.maybeEarliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
     this.prunedHotBlockRoots = prunedHotBlockRoots;
@@ -115,6 +125,9 @@ class StoreTransactionUpdates {
     tx.bestJustifiedCheckpoint.ifPresent(store::updateBestJustifiedCheckpoint);
     store.cacheBlocks(hotBlocks.values());
     store.cacheStates(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
+    store.cacheExecutionPayloadStates(
+        Maps.transformValues(
+            hotExecutionPayloadEnvelopeAndStates, this::executionPayloadAndStateAsSummary));
     store.cacheBlobSidecars(blobSidecars);
     if (optimisticTransitionBlockRootSet) {
       store.cacheFinalizedOptimisticTransitionPayload(
@@ -146,5 +159,10 @@ class StoreTransactionUpdates {
 
   private StateAndBlockSummary blockAndStateAsSummary(final SignedBlockAndState blockAndState) {
     return blockAndState;
+  }
+
+  private StateAndExecutionPayloadSummary executionPayloadAndStateAsSummary(
+      final SignedExecutionPayloadEnvelopeAndState executionPayloadAndState) {
+    return executionPayloadAndState;
   }
 }

@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedExecutionPayloadEnvelopeAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -47,6 +48,9 @@ class StoreTransactionUpdatesFactory {
 
   private final Map<Bytes32, BlockAndCheckpoints> hotBlocks;
   private final Map<Bytes32, SignedBlockAndState> hotBlockAndStates;
+  // ePBS
+  private final Map<Bytes32, SignedExecutionPayloadEnvelopeAndState>
+      hotExecutionPayloadEnvelopeAndStates;
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
   private final Optional<UInt64> maybeEarliestBlobSidecarSlot;
   private final Optional<Bytes32> maybeLatestCanonicalBlockRoot;
@@ -64,12 +68,18 @@ class StoreTransactionUpdatesFactory {
     this.tx = tx;
     this.latestFinalized = latestFinalized;
     // Save copy of tx data that may be pruned
-    hotBlocks =
-        tx.blockData.entrySet().stream()
-            .collect(
-                Collectors.toMap(
-                    Map.Entry::getKey, entry -> entry.getValue().toBlockAndCheckpoints()));
+    hotBlocks = new HashMap<>();
+    tx.blockData.forEach(
+        (key, txData) -> {
+          hotBlocks.put(key, txData.toBlockAndCheckpoints());
+        });
+    // ePBS
+    tx.executionPayloadEnvelopeData.forEach(
+        (key, txData) -> {
+          hotBlocks.put(key, txData.toBlockAndCheckpoints());
+        });
     hotBlockAndStates = new ConcurrentHashMap<>(tx.blockData);
+    hotExecutionPayloadEnvelopeAndStates = new ConcurrentHashMap<>(tx.executionPayloadEnvelopeData);
     stateRoots = new ConcurrentHashMap<>(tx.stateRoots);
     blobSidecars = new ConcurrentHashMap<>(tx.blobSidecars);
     maybeEarliestBlobSidecarSlot = tx.maybeEarliestBlobSidecarTransactionSlot;
@@ -132,6 +142,7 @@ class StoreTransactionUpdatesFactory {
     calculatePrunedHotBlockRoots();
     prunedHotBlockRoots.forEach(hotBlocks::remove);
     prunedHotBlockRoots.forEach(hotBlockAndStates::remove);
+    prunedHotBlockRoots.forEach(hotExecutionPayloadEnvelopeAndStates::remove);
 
     final Optional<FinalizedChainData> finalizedChainData =
         Optional.of(
@@ -148,22 +159,28 @@ class StoreTransactionUpdatesFactory {
 
   /** Pull subset of hot states that sit at epoch boundaries to persist */
   private Map<Bytes32, BeaconState> getHotStatesToPersist() {
-    final Map<Bytes32, BeaconState> statesToPersist =
-        hotBlockAndStates.entrySet().stream()
-            .filter(
-                e ->
-                    baseStore.shouldPersistState(
-                        e.getValue().getSlot(), blockSlot(e.getValue().getParentRoot())))
-            .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getState()));
-    if (statesToPersist.size() > 0) {
-      LOG.trace("Persist {} hot states", statesToPersist.size());
-    }
+    final Map<Bytes32, BeaconState> statesToPersist = new HashMap<>();
+    hotBlockAndStates.entrySet().stream()
+        .filter(
+            e ->
+                baseStore.shouldPersistState(
+                    e.getValue().getSlot(), blockSlot(e.getValue().getParentRoot())))
+        .forEach((entry) -> statesToPersist.put(entry.getKey(), entry.getValue().getState()));
+    LOG.trace("Persist {} hot states", statesToPersist.size());
+    hotExecutionPayloadEnvelopeAndStates.forEach(
+        (key, payloadAndState) -> statesToPersist.put(key, payloadAndState.getState()));
     return statesToPersist;
   }
 
   private Optional<UInt64> blockSlot(final Bytes32 root) {
     return Optional.ofNullable(hotBlockAndStates.get(root))
         .map(SignedBlockAndState::getSlot)
+        // ePBS
+        .or(
+            () ->
+                Optional.ofNullable(hotExecutionPayloadEnvelopeAndStates.get(root))
+                    .map(SignedExecutionPayloadEnvelopeAndState::getState)
+                    .map(BeaconState::getSlot))
         .or(() -> baseStore.getForkChoiceStrategy().blockSlot(root));
   }
 
@@ -252,6 +269,7 @@ class StoreTransactionUpdatesFactory {
         finalizedChainData,
         hotBlocks,
         hotBlockAndStates,
+        hotExecutionPayloadEnvelopeAndStates,
         getHotStatesToPersist(),
         blobSidecars,
         maybeEarliestBlobSidecarSlot,

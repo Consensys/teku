@@ -317,6 +317,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
 
   @Override
   public void putExecutionPayloadEnvelopeAndState(
+      final SignedBeaconBlock block,
       final SignedExecutionPayloadEnvelope executionPayloadEnvelope,
       final BeaconState state,
       final BlockCheckpoints blockCheckpoints,

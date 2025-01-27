@@ -763,13 +763,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
 
-    // Now that we're on the fork choice thread, make sure the block still descends from finalized
-    // (which may have changed while we were processing the block)
-    if (!forkChoiceUtil.blockDescendsFromLatestFinalizedBlock(
-        block.getSlot(), block.getParentRoot(), recentChainData.getStore(), forkChoiceStrategy)) {
-      return;
-    }
-
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     addParentStateRoots(spec, blockSlotState, transaction);
 
@@ -791,16 +784,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     forkChoiceUtil.applyExecutionPayloadToStore(
         transaction,
-        block.getSlot(),
+        block,
         executionPayloadEnvelope,
         postState,
         payloadResult.hasNotValidatedStatus(),
         blobSidecars,
         earliestBlobSidecarsSlot);
-
-    if (shouldApplyProposerBoost(block, transaction)) {
-      transaction.setProposerBoostRoot(block.getRoot());
-    }
 
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();

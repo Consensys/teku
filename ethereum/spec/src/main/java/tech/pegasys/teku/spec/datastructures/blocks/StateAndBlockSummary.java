@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateEip7732;
 
 public class StateAndBlockSummary implements BeaconBlockSummary {
   protected final BeaconState state;
@@ -107,7 +108,10 @@ public class StateAndBlockSummary implements BeaconBlockSummary {
   }
 
   public Optional<Bytes32> getExecutionBlockHash() {
-    return getLatestExecutionPayloadHeader().map(ExecutionPayloadSummary::getBlockHash);
+    return getLatestExecutionPayloadHeader()
+        .map(ExecutionPayloadSummary::getBlockHash)
+        // ePBS
+        .or(() -> state.toVersionEip7732().map(BeaconStateEip7732::getLatestBlockHash));
   }
 
   @Override
