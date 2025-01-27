@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -93,6 +94,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 root) {
     return db.get(schema.getColumnHotBlocksByRoot(), root);
+  }
+
+  @Override
+  public Optional<SignedExecutionPayloadEnvelope> getHotExecutionPayloadEnvelope(
+      final Bytes32 root) {
+    return db.get(schema.getColumnHotExecutionPayloadEnvelopesByRoot(), root);
   }
 
   @Override

@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -51,6 +52,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   CombinedUpdater combinedUpdater();
 
   Optional<SignedBeaconBlock> getHotBlock(Bytes32 root);
+
+  Optional<SignedExecutionPayloadEnvelope> getHotExecutionPayloadEnvelope(Bytes32 root);
 
   Optional<Bytes> getHotBlockAsSsz(Bytes32 root);
 

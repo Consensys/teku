@@ -58,6 +58,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
@@ -253,6 +254,16 @@ public class KvStoreDatabase implements Database {
   @Override
   public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot) {
     return dao.getHotBlock(blockRoot);
+  }
+
+  @Override
+  public Map<Bytes32, SignedExecutionPayloadEnvelope> getHotExecutionPayloadEnvelopes(
+      final Set<Bytes32> blockRoots) {
+    return blockRoots.stream()
+        .flatMap(root -> dao.getHotExecutionPayloadEnvelope(root).stream())
+        .collect(
+            Collectors.toMap(
+                envelope -> envelope.getMessage().getBeaconBlockRoot(), Function.identity()));
   }
 
   @Override

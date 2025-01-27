@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -49,6 +50,8 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   protected final int finalizedOffset;
 
   private final KvStoreColumn<Bytes32, SignedBeaconBlock> hotBlocksByRoot;
+  private final KvStoreColumn<Bytes32, SignedExecutionPayloadEnvelope>
+      hotExecutionPayloadEnvelopesByRoot;
 
   // Checkpoint states are no longer stored, keeping only for backwards compatibility.
   private final KvStoreColumn<Checkpoint, BeaconState> checkpointStates;
@@ -104,11 +107,24 @@ public abstract class V6SchemaCombined implements SchemaCombined {
     optimisticTransitionBlockSlot = KvStoreVariable.create(finalizedOffset + 1, UINT64_SERIALIZER);
     earliestBlobSidecarSlot = KvStoreVariable.create(finalizedOffset + 2, UINT64_SERIALIZER);
     earliestBlockSlot = KvStoreVariable.create(finalizedOffset + 3, UINT64_SERIALIZER);
+
+    // ePBS
+    final KvStoreSerializer<SignedExecutionPayloadEnvelope>
+        signedExecutionPayloadEnvelopeSerializer =
+            KvStoreSerializer.createSignedExecutionPayloadEnvelopeSerializer(spec);
+    hotExecutionPayloadEnvelopesByRoot =
+        KvStoreColumn.create(16, BYTES32_SERIALIZER, signedExecutionPayloadEnvelopeSerializer);
   }
 
   @Override
   public KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnHotBlocksByRoot() {
     return hotBlocksByRoot;
+  }
+
+  @Override
+  public KvStoreColumn<Bytes32, SignedExecutionPayloadEnvelope>
+      getColumnHotExecutionPayloadEnvelopesByRoot() {
+    return hotExecutionPayloadEnvelopesByRoot;
   }
 
   @Override
@@ -224,6 +240,10 @@ public abstract class V6SchemaCombined implements SchemaCombined {
         .put(
             "BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
             getColumnBlobSidecarBySlotRootBlobIndex())
+        // ePBS
+        .put(
+            "HOT_EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT",
+            getColumnHotExecutionPayloadEnvelopesByRoot())
         .build();
   }
 

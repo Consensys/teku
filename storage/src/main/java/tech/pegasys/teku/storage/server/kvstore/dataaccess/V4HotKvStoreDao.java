@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -77,6 +78,11 @@ public class V4HotKvStoreDao {
 
   public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 root) {
     return db.get(schema.getColumnHotBlocksByRoot(), root);
+  }
+
+  public Optional<SignedExecutionPayloadEnvelope> getHotExecutionPayloadEnvelope(
+      final Bytes32 root) {
+    return db.get(schema.getColumnHotExecutionPayloadEnvelopesByRoot(), root);
   }
 
   public Optional<Bytes> getHotBlockRaw(final Bytes32 root) {
@@ -250,6 +256,14 @@ public class V4HotKvStoreDao {
     public void addHotBlock(final BlockAndCheckpoints block) {
       final Bytes32 blockRoot = block.getRoot();
       transaction.put(schema.getColumnHotBlocksByRoot(), blockRoot, block.getBlock());
+      block
+          .getExecutionPayloadEnvelope()
+          .ifPresent(
+              executionPayloadEnvelope ->
+                  transaction.put(
+                      schema.getColumnHotExecutionPayloadEnvelopesByRoot(),
+                      blockRoot,
+                      executionPayloadEnvelope));
       addHotBlockCheckpointEpochs(blockRoot, block.getBlockCheckpoints());
     }
 

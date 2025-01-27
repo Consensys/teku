@@ -228,11 +228,10 @@ public class ChainStorage
         });
   }
 
-  // EIP-7732 TODO: implement
   @Override
   public SafeFuture<Map<Bytes32, SignedExecutionPayloadEnvelope>>
       getHotExecutionPayloadEnvelopesByRoot(final Set<Bytes32> blockRoots) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    return SafeFuture.of(() -> database.getHotExecutionPayloadEnvelopes(blockRoots));
   }
 
   @Override
