@@ -24,7 +24,7 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigElectra
 
   private final Bytes4 eip7805ForkVersion;
   private final UInt64 eip7805ForkEpoch;
-  private final int ilCommitteeSize;
+  private final int inclusionListCommitteeSize;
   private final int maxTransactionsPerInclusionList;
   private final int maxRequestInclusionList;
   private final int maxBytesPerInclusionList;
@@ -33,14 +33,14 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigElectra
       final SpecConfigElectra specConfig,
       final Bytes4 eip7805ForkVersion,
       final UInt64 eip7805ForkEpoch,
-      final int ilCommitteeSize,
+      final int inclusionListCommitteeSize,
       final int maxTransactionsPerInclusionList,
       final int maxRequestInclusionList,
       final int maxBytesPerInclusionList) {
     super(specConfig);
     this.eip7805ForkVersion = eip7805ForkVersion;
     this.eip7805ForkEpoch = eip7805ForkEpoch;
-    this.ilCommitteeSize = ilCommitteeSize;
+    this.inclusionListCommitteeSize = inclusionListCommitteeSize;
     this.maxTransactionsPerInclusionList = maxTransactionsPerInclusionList;
     this.maxRequestInclusionList = maxRequestInclusionList;
     this.maxBytesPerInclusionList = maxBytesPerInclusionList;
@@ -58,7 +58,7 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigElectra
 
   @Override
   public int getInclusionListCommitteeSize() {
-    return ilCommitteeSize;
+    return inclusionListCommitteeSize;
   }
 
   @Override
@@ -98,7 +98,7 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigElectra
     return Objects.equals(specConfig, that.specConfig)
         && Objects.equals(eip7805ForkVersion, that.eip7805ForkVersion)
         && Objects.equals(eip7805ForkEpoch, that.eip7805ForkEpoch)
-        && ilCommitteeSize == that.ilCommitteeSize
+        && inclusionListCommitteeSize == that.inclusionListCommitteeSize
         && maxTransactionsPerInclusionList == that.maxTransactionsPerInclusionList
         && maxRequestInclusionList == that.maxRequestInclusionList
         && maxBytesPerInclusionList == that.maxBytesPerInclusionList;
@@ -110,7 +110,7 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigElectra
         specConfig,
         eip7805ForkVersion,
         eip7805ForkEpoch,
-        ilCommitteeSize,
+        inclusionListCommitteeSize,
         maxTransactionsPerInclusionList,
         maxRequestInclusionList,
         maxBytesPerInclusionList);
