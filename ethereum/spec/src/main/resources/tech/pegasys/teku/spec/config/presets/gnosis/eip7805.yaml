@@ -2,7 +2,7 @@
 # Inclusion List Committee
 # ---------------------------------------------------------------
 # 2**4 (= 16)
-IL_COMMITTEE_SIZE: 16
+INCLUSION_LIST_COMMITTEE_SIZE: 16
 
 # Execution
 # ---------------------------------------------------------------
