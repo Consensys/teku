@@ -67,11 +67,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   public Optional<UInt64> getGenesisTime() {
-    try {
-      return db.get(schema.getVariableGenesisTime());
-    } catch (final Exception e) {
-      return Optional.empty();
-    }
+    return db.get(schema.getVariableGenesisTime());
   }
 
   @Override
