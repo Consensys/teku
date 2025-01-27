@@ -57,7 +57,7 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigElectra
   }
 
   @Override
-  public int getIlCommitteeSize() {
+  public int getInclusionListCommitteeSize() {
     return ilCommitteeSize;
   }
 
