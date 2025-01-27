@@ -14,12 +14,9 @@
 package tech.pegasys.teku.statetransition.inclusionlist;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -31,8 +28,8 @@ public class InclusionListManager implements SlotEventsChannel {
 
   private final SignedInclusionListValidator signedInclusionListValidator;
 
-  private final ConcurrentHashMap<UInt64, List<SignedInclusionList>> validatorIndexToInclusionLists =
-      new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<UInt64, List<SignedInclusionList>>
+      validatorIndexToInclusionLists = new ConcurrentHashMap<>();
 
   public InclusionListManager(final SignedInclusionListValidator signedInclusionListValidator) {
     this.signedInclusionListValidator = signedInclusionListValidator;
