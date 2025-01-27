@@ -91,9 +91,15 @@ public class BlobSidecarsByRangeMessageHandler
     final int maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
     final int maxBlobsPerBlock = specConfig.getMaxBlobsPerBlock();
 
-    final long requestedCount = calculateRequestedCount(request, maxBlobsPerBlock);
+    int requestedCount;
+    try {
+      requestedCount = calculateRequestedCount(request, maxBlobsPerBlock);
+    } catch (final ArithmeticException __) {
+      // handle overflows
+      requestedCount = -1;
+    }
 
-    if (requestedCount > maxRequestBlobSidecars) {
+    if (requestedCount == -1 || requestedCount > maxRequestBlobSidecars) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(
@@ -122,7 +128,7 @@ public class BlobSidecarsByRangeMessageHandler
         startSlot);
 
     final SpecConfigDeneb specConfig = SpecConfigDeneb.required(spec.atSlot(endSlot).getConfig());
-    final long requestedCount = calculateRequestedCount(message, specConfig.getMaxBlobsPerBlock());
+    final int requestedCount = calculateRequestedCount(message, specConfig.getMaxBlobsPerBlock());
 
     final Optional<RequestApproval> blobSidecarsRequestApproval =
         peer.approveBlobSidecarsRequest(callback, requestedCount);
@@ -192,9 +198,10 @@ public class BlobSidecarsByRangeMessageHandler
             });
   }
 
-  private long calculateRequestedCount(
-      final BlobSidecarsByRangeRequestMessage message, final int maxBlobsPerBlock) {
-    return maxBlobsPerBlock * message.getCount().longValue();
+  private int calculateRequestedCount(
+      final BlobSidecarsByRangeRequestMessage message, final int maxBlobsPerBlock)
+      throws ArithmeticException {
+    return message.getCount().times(maxBlobsPerBlock).intValue();
   }
 
   private boolean checkBlobSidecarsAreAvailable(

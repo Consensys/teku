@@ -198,7 +198,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
 
   @Override
   public int getMaxMessageSize() {
-    return networkingConfig.getGossipMaxSize();
+    return networkingConfig.getMaxPayloadSize();
   }
 
   protected MessageT deserialize(final PreparedGossipMessage message) throws DecodingException {

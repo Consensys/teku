@@ -318,8 +318,8 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public int getGossipMaxSize() {
-    return specConfig.getGossipMaxSize();
+  public int getMaxPayloadSize() {
+    return specConfig.getMaxPayloadSize();
   }
 
   @Override
