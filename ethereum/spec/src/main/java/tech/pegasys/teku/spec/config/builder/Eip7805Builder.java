@@ -33,7 +33,7 @@ public class Eip7805Builder extends BaseForkBuilder
   private Bytes4 eip7805ForkVersion;
   private UInt64 eip7805ForkEpoch;
 
-  private Integer ilCommitteeSize;
+  private Integer inclusionListCommitteeSize;
   private Integer maxTransactionsPerInclusionList;
   private Integer maxRequestInclusionList;
   private Integer maxBytesPerInclusionList;
@@ -48,7 +48,7 @@ public class Eip7805Builder extends BaseForkBuilder
             specConfigAndParent.specConfig(),
             eip7805ForkVersion,
             eip7805ForkEpoch,
-            ilCommitteeSize,
+            inclusionListCommitteeSize,
             maxTransactionsPerInclusionList,
             maxRequestInclusionList,
             maxBytesPerInclusionList),
@@ -67,9 +67,9 @@ public class Eip7805Builder extends BaseForkBuilder
     return this;
   }
 
-  public Eip7805Builder ilCommitteeSize(final Integer ilCommitteeSize) {
-    checkNotNull(ilCommitteeSize);
-    this.ilCommitteeSize = ilCommitteeSize;
+  public Eip7805Builder inclusionListCommitteeSize(final Integer inclusionListCommitteeSize) {
+    checkNotNull(inclusionListCommitteeSize);
+    this.inclusionListCommitteeSize = inclusionListCommitteeSize;
     return this;
   }
 
@@ -113,7 +113,7 @@ public class Eip7805Builder extends BaseForkBuilder
 
     constants.put("eip7805ForkEpoch", eip7805ForkEpoch);
     constants.put("eip7805ForkVersion", eip7805ForkVersion);
-    constants.put("ilCommitteeSize", ilCommitteeSize);
+    constants.put("inclusionListCommitteeSize", inclusionListCommitteeSize);
     constants.put("maxTransactionsPerInclusionList", maxTransactionsPerInclusionList);
     constants.put("maxRequestInclusionList", maxRequestInclusionList);
     constants.put("maxBytesPerInclusionList", maxBytesPerInclusionList);
