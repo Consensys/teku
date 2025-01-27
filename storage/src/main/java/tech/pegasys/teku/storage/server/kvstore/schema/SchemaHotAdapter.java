@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -39,6 +40,11 @@ public class SchemaHotAdapter implements Schema {
 
   public KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnHotBlocksByRoot() {
     return delegate.getColumnHotBlocksByRoot();
+  }
+
+  public KvStoreColumn<Bytes32, SignedExecutionPayloadEnvelope>
+      getColumnHotExecutionPayloadEnvelopesByRoot() {
+    return delegate.getColumnHotExecutionPayloadEnvelopesByRoot();
   }
 
   public KvStoreColumn<Bytes32, BlockCheckpoints> getColumnHotBlockCheckpointEpochsByRoot() {

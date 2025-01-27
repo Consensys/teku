@@ -69,6 +69,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
@@ -346,6 +347,16 @@ public class Spec {
         .getSchemaDefinitions()
         .getSignedBeaconBlockSchema()
         .sszDeserialize(serializedSignedBlock);
+  }
+
+  public SignedExecutionPayloadEnvelope deserializeSignedExecutionPayloadEnvelope(
+      final Bytes serializedSignedExecutionPayloadEnvelope) {
+    return forMilestone(SpecMilestone.EIP7732)
+        .getSchemaDefinitions()
+        .toVersionEip7732()
+        .orElseThrow()
+        .getSignedExecutionPayloadEnvelopeSchema()
+        .sszDeserialize(serializedSignedExecutionPayloadEnvelope);
   }
 
   public SignedBlockContainer deserializeSignedBlockContainer(

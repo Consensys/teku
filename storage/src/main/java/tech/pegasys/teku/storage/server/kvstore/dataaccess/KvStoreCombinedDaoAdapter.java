@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -91,6 +92,12 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   @Override
   public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 root) {
     return hotDao.getHotBlock(root);
+  }
+
+  @Override
+  public Optional<SignedExecutionPayloadEnvelope> getHotExecutionPayloadEnvelope(
+      final Bytes32 root) {
+    return hotDao.getHotExecutionPayloadEnvelope(root);
   }
 
   @Override
