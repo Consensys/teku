@@ -30,6 +30,7 @@ import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndExecutionPayloadAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -103,6 +104,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   @Override
   public Optional<Bytes> getHotBlockAsSsz(final Bytes32 root) {
     return hotDao.getHotBlockRaw(root);
+  }
+
+  @Override
+  public Optional<Bytes> getHotExecutionPayloadEnvelopeAsSsz(final Bytes32 root) {
+    return hotDao.getHotExecutionPayloadEnvelopeRaw(root);
   }
 
   @Override
@@ -463,6 +469,12 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
+    public void addHotExecutionPayload(
+        final BlockAndExecutionPayloadAndCheckpoints blockAndExecutionPayloadAndCheckpoints) {
+      hotUpdater.addHotExecutionPayload(blockAndExecutionPayloadAndCheckpoints);
+    }
+
+    @Override
     public void addBlobSidecar(final BlobSidecar blobSidecar) {
       finalizedUpdater.addBlobSidecar(blobSidecar);
     }
@@ -525,6 +537,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
+    public void deleteHotExecutionPayloadOnly(final Bytes32 blockRoot) {
+      hotUpdater.deleteHotExecutionPayloadOnly(blockRoot);
+    }
+
+    @Override
     public void deleteHotBlockOnly(final Bytes32 blockRoot) {
       hotUpdater.deleteHotBlockOnly(blockRoot);
     }
@@ -546,6 +563,18 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
+    public void addFinalizedExecutionPayload(
+        final UInt64 slot, final SignedExecutionPayloadEnvelope executionPayload) {
+      finalizedUpdater.addFinalizedExecutionPayload(slot, executionPayload);
+    }
+
+    @Override
+    public void addFinalizedExecutionPayloadRaw(
+        final UInt64 slot, final Bytes32 blockRoot, final Bytes executionPayloadBytes) {
+      finalizedUpdater.addFinalizedExecutionPayloadRaw(slot, blockRoot, executionPayloadBytes);
+    }
+
+    @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       finalizedUpdater.addNonCanonicalBlock(block);
     }
@@ -553,6 +582,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
       finalizedUpdater.deleteFinalizedBlock(slot, blockRoot);
+    }
+
+    @Override
+    public void deleteFinalizedExecutionPayload(final UInt64 slot, final Bytes32 blockRoot) {
+      finalizedUpdater.deleteFinalizedExecutionPayload(slot, blockRoot);
     }
 
     @Override
