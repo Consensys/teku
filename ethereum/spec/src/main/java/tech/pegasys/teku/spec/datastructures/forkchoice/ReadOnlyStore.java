@@ -134,6 +134,8 @@ public interface ReadOnlyStore extends TimeProvider {
 
   SafeFuture<Optional<BeaconState>> retrieveBlockState(Bytes32 blockRoot);
 
+  SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(Bytes32 blockRoot);
+
   SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint);
 
   SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(SlotAndBlockRoot checkpoint);

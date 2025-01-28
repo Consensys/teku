@@ -442,6 +442,16 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(final Bytes32 blockRoot) {
+    if (executionPayloadEnvelopeData.containsKey(blockRoot)) {
+      return SafeFuture.completedFuture(
+          Optional.of(executionPayloadEnvelopeData.get(blockRoot))
+              .map(SignedExecutionPayloadEnvelopeAndState::getState));
+    }
+    return store.retrieveExecutionPayloadState(blockRoot);
+  }
+
+  @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {
     SignedBlockAndState inMemoryCheckpointBlockState = blockData.get(checkpoint.getRoot());
     if (inMemoryCheckpointBlockState != null) {

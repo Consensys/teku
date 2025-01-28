@@ -248,6 +248,12 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     return SafeFuture.completedFuture(getBlockStateIfAvailable(blockRoot));
   }
 
+  // EIP-7732 TODO: implement
+  @Override
+  public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(final Bytes32 blockRoot) {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {
     return SafeFuture.completedFuture(getCheckpointState(checkpoint));

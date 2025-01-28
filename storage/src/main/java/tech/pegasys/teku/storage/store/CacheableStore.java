@@ -23,9 +23,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndExecutionPayloadAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedExecutionPayloadEnvelopeAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.blocks.StateAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 
@@ -46,7 +46,7 @@ public abstract class CacheableStore implements UpdatableStore {
   abstract void cacheStates(Map<Bytes32, StateAndBlockSummary> stateAndBlockSummaries);
 
   abstract void cacheExecutionPayloadStates(
-      Map<Bytes32, StateAndExecutionPayloadSummary> stateAndExecutionPayloadSummaries);
+      Map<Bytes32, SignedExecutionPayloadEnvelopeAndState> executionPayloadAndStates);
 
   abstract void cacheBlobSidecars(Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsMap);
 

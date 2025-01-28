@@ -62,9 +62,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndExecutionPayloadAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedExecutionPayloadEnvelopeAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.blocks.StateAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -131,7 +131,8 @@ class Store extends CacheableStore {
 
   // ePBS
   private final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads;
-  private final CachingTaskQueue<Bytes32, StateAndExecutionPayloadSummary> executionPayloadStates;
+  private final CachingTaskQueue<Bytes32, SignedExecutionPayloadEnvelopeAndState>
+      executionPayloadStates;
   private final Map<Bytes32, List<Byte>> ptcVote;
 
   private Store(
@@ -157,7 +158,8 @@ class Store extends CacheableStore {
       final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
       final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads,
-      final CachingTaskQueue<Bytes32, StateAndExecutionPayloadSummary> executionPayloadStates,
+      final CachingTaskQueue<Bytes32, SignedExecutionPayloadEnvelopeAndState>
+          executionPayloadStates,
       final Map<Bytes32, List<Byte>> ptcVote) {
     checkArgument(
         time.isGreaterThanOrEqualTo(genesisTime),
@@ -271,7 +273,7 @@ class Store extends CacheableStore {
     // ePBS
     final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads =
         LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
-    final CachingTaskQueue<Bytes32, StateAndExecutionPayloadSummary>
+    final CachingTaskQueue<Bytes32, SignedExecutionPayloadEnvelopeAndState>
         executionPayloadStateTaskQueue =
             CachingTaskQueue.create(
                 asyncRunner,
@@ -635,7 +637,7 @@ class Store extends CacheableStore {
   public Optional<BeaconState> getExecutionPayloadStateIfAvailable(final Bytes32 blockRoot) {
     return executionPayloadStates
         .getIfAvailable(blockRoot)
-        .map(StateAndExecutionPayloadSummary::getState);
+        .map(SignedExecutionPayloadEnvelopeAndState::getState);
   }
 
   @Override
@@ -790,6 +792,12 @@ class Store extends CacheableStore {
                 maybeStateAndBlockSummary.map(StateAndBlockSummary::getState));
   }
 
+  // EIP-7732 TODO: implement
+  @Override
+  public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(final Bytes32 blockRoot) {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {
     return checkpointStates.perform(
@@ -902,10 +910,11 @@ class Store extends CacheableStore {
     states.cacheAll(stateAndBlockSummaries);
   }
 
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
   @Override
   void cacheExecutionPayloadStates(
-      final Map<Bytes32, StateAndExecutionPayloadSummary> stateAndExecutionPayloadSummaries) {
-    executionPayloadStates.cacheAll(stateAndExecutionPayloadSummaries);
+      final Map<Bytes32, SignedExecutionPayloadEnvelopeAndState> executionPayloadAndStates) {
+    executionPayloadStates.cacheAll(executionPayloadAndStates);
   }
 
   /** Non-synchronized, no lock, unsafe if Store is not locked externally */

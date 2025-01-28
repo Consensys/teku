@@ -28,7 +28,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedExecutionPayloadEnvelopeAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.blocks.StateAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.FinalizedChainData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -132,9 +131,7 @@ class StoreTransactionUpdates {
     store.cacheBlocks(hotBlocks.values());
     store.cacheExecutionPayloads(hotExecutionPayloads.values());
     store.cacheStates(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
-    store.cacheExecutionPayloadStates(
-        Maps.transformValues(
-            hotExecutionPayloadEnvelopeAndStates, this::executionPayloadAndStateAsSummary));
+    store.cacheExecutionPayloadStates(hotExecutionPayloadEnvelopeAndStates);
     store.cacheBlobSidecars(blobSidecars);
     if (optimisticTransitionBlockRootSet) {
       store.cacheFinalizedOptimisticTransitionPayload(
@@ -167,10 +164,5 @@ class StoreTransactionUpdates {
 
   private StateAndBlockSummary blockAndStateAsSummary(final SignedBlockAndState blockAndState) {
     return blockAndState;
-  }
-
-  private StateAndExecutionPayloadSummary executionPayloadAndStateAsSummary(
-      final SignedExecutionPayloadEnvelopeAndState executionPayloadAndState) {
-    return executionPayloadAndState;
   }
 }

@@ -62,12 +62,13 @@ public class TransactionExecutionPayloadEnvelopeData
         (TransactionExecutionPayloadEnvelopeData) o;
     return Objects.equals(getExecutionPayloadEnvelope(), that.getExecutionPayloadEnvelope())
         && Objects.equals(getState(), that.getState())
+        && Objects.equals(block, that.block)
         && Objects.equals(checkpoints, that.checkpoints);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getExecutionPayloadEnvelope(), getState(), checkpoints);
+    return Objects.hash(getExecutionPayloadEnvelope(), getState(), block, checkpoints);
   }
 
   @Override
@@ -75,6 +76,7 @@ public class TransactionExecutionPayloadEnvelopeData
     return MoreObjects.toStringHelper(this)
         .add("executionPayloadEnvelope", getExecutionPayloadEnvelope())
         .add("state", getState())
+        .add("block", block)
         .add("checkpoints", checkpoints)
         .toString();
   }

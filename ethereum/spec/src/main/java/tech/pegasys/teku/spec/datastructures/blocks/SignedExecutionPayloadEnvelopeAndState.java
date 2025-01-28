@@ -13,23 +13,37 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 /** Helper datastructure that holds a signed execution envelope with its corresponding state */
-public class SignedExecutionPayloadEnvelopeAndState extends StateAndExecutionPayloadSummary {
+public class SignedExecutionPayloadEnvelopeAndState {
+
   private final SignedExecutionPayloadEnvelope executionPayloadEnvelope;
+  private final BeaconState state;
 
   public SignedExecutionPayloadEnvelopeAndState(
       final SignedExecutionPayloadEnvelope executionPayloadEnvelope, final BeaconState state) {
-    super(state, executionPayloadEnvelope.getMessage().getPayload());
+    checkNotNull(executionPayloadEnvelope);
+    checkNotNull(state);
+    checkArgument(
+        executionPayloadEnvelope.getMessage().getStateRoot().equals(state.hashTreeRoot()),
+        "Execution payload envelope state root must match the supplied state");
     this.executionPayloadEnvelope = executionPayloadEnvelope;
+    this.state = state;
   }
 
   public SignedExecutionPayloadEnvelope getExecutionPayloadEnvelope() {
     return executionPayloadEnvelope;
+  }
+
+  public BeaconState getState() {
+    return state;
   }
 
   @Override
@@ -41,8 +55,8 @@ public class SignedExecutionPayloadEnvelopeAndState extends StateAndExecutionPay
       return false;
     }
     final SignedExecutionPayloadEnvelopeAndState that = (SignedExecutionPayloadEnvelopeAndState) o;
-    return Objects.equals(getExecutionPayloadEnvelope(), that.getExecutionPayloadEnvelope())
-        && Objects.equals(getState(), that.getState());
+    return Objects.equals(executionPayloadEnvelope, that.executionPayloadEnvelope)
+        && Objects.equals(state, that.state);
   }
 
   @Override
