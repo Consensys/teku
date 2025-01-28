@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.Executio
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.ExecutionPayloadProcessingException;
 import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.MiscHelpersEip7732;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 
@@ -92,7 +93,20 @@ public class CachingExecutionPayloadAndBlobSidecarsRevealer
                 blobKzgCommitments,
                 false,
                 state.hashTreeRoot());
-    return Optional.of(executionPayload);
+    try {
+      final BeaconState newState =
+          spec.atSlot(block.getSlot())
+              .getExecutionPayloadProcessor()
+              .orElseThrow()
+              .processUnsignedExecutionPayload(state, executionPayload, Optional.empty());
+      return Optional.of(executionPayload.withStateRoot(newState.hashTreeRoot()));
+    } catch (ExecutionPayloadProcessingException ex) {
+      LOG.warn(
+          "State transition error while processing execution payload with beacon block root"
+              + executionPayload.getBeaconBlockRoot(),
+          ex);
+      return Optional.empty();
+    }
   }
 
   @Override

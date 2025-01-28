@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.spec.logic.common.execution;
 
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.ExecutionPayloadProcessingException;
@@ -29,7 +31,7 @@ public abstract class AbstractExecutionPayloadProcessor implements ExecutionPayl
   public BeaconState processAndVerifyExecutionPayload(
       final BeaconState preState,
       final SignedExecutionPayloadEnvelope signedEnvelope,
-      final OptimisticExecutionPayloadExecutor payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws StateTransitionException {
     if (!verifyExecutionPayloadEnvelopeSignature(preState, signedEnvelope)) {
       throw new StateTransitionException(
@@ -54,6 +56,15 @@ public abstract class AbstractExecutionPayloadProcessor implements ExecutionPayl
           "State root of the signed envelope does not match the post-processing state root");
     }
     return postState;
+  }
+
+  @Override
+  public BeaconState processUnsignedExecutionPayload(
+      final BeaconState preState,
+      final ExecutionPayloadEnvelope envelope,
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      throws ExecutionPayloadProcessingException {
+    return preState.updated(state -> processExecutionPayload(state, envelope, payloadExecutor));
   }
 
   // Catch generic errors and wrap them in an ExecutionPayloadProcessingException
