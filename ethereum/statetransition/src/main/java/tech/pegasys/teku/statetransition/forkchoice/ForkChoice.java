@@ -563,7 +563,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     try {
       postState =
           spec.getExecutionPayloadProcessor(blockSlotState.getSlot())
-              .processAndVerifyExecutionPayload(blockSlotState, signedEnvelope, payloadExecutor);
+              .processAndVerifyExecutionPayload(
+                  blockSlotState, signedEnvelope, Optional.of(payloadExecutor));
     } catch (final StateTransitionException ex) {
       return SafeFuture.failedFuture(ex);
     }
