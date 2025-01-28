@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.eip7732.execution;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -84,7 +85,7 @@ public class ExecutionPayloadProcessorEip7732 extends AbstractExecutionPayloadPr
   public void processExecutionPayload(
       final MutableBeaconState state,
       final ExecutionPayloadEnvelope envelope,
-      final OptimisticExecutionPayloadExecutor payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws ExecutionPayloadProcessingException {
     final ExecutionPayloadCapella payload = ExecutionPayloadCapella.required(envelope.getPayload());
     final Bytes32 previousStateRoot = state.hashTreeRoot();
@@ -171,12 +172,14 @@ public class ExecutionPayloadProcessorEip7732 extends AbstractExecutionPayloadPr
     }
 
     // Verify the execution payload is valid
-    final NewPayloadRequest payloadToExecute = computeNewPayloadRequest(state, envelope);
-    final boolean optimisticallyAccept =
-        payloadExecutor.optimisticallyExecute(committedHeader, payloadToExecute);
-    if (!optimisticallyAccept) {
-      throw new ExecutionPayloadProcessingException(
-          "Execution payload was not optimistically accepted");
+    if (payloadExecutor.isPresent()) {
+      final NewPayloadRequest payloadToExecute = computeNewPayloadRequest(state, envelope);
+      final boolean optimisticallyAccept =
+          payloadExecutor.get().optimisticallyExecute(committedHeader, payloadToExecute);
+      if (!optimisticallyAccept) {
+        throw new ExecutionPayloadProcessingException(
+            "Execution payload was not optimistically accepted");
+      }
     }
 
     processOperationsNoValidation(state, envelope);

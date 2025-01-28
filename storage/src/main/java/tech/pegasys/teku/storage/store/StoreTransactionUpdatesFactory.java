@@ -17,6 +17,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -168,20 +169,13 @@ class StoreTransactionUpdatesFactory {
 
   /** Pull subset of hot states that sit at epoch boundaries to persist */
   private Map<Bytes32, BeaconState> getHotStatesToPersist() {
-    final Map<Bytes32, BeaconState> statesToPersist = new HashMap<>();
-    hotBlockAndStates.entrySet().stream()
-        .filter(
-            e ->
-                baseStore.shouldPersistState(
-                    e.getValue().getSlot(), blockSlot(e.getValue().getParentRoot())))
-        .forEach((entry) -> statesToPersist.put(entry.getKey(), entry.getValue().getState()));
-    hotExecutionPayloadEnvelopeAndStates.forEach(
-        (key, payloadAndState) -> {
-          // replace block states after processing the EP
-          if (statesToPersist.containsKey(key)) {
-            statesToPersist.put(key, payloadAndState.getState());
-          }
-        });
+    final Map<Bytes32, BeaconState> statesToPersist =
+        hotBlockAndStates.entrySet().stream()
+            .filter(
+                e ->
+                    baseStore.shouldPersistState(
+                        e.getValue().getSlot(), blockSlot(e.getValue().getParentRoot())))
+            .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getState()));
     LOG.trace("Persist {} hot states", statesToPersist.size());
     return statesToPersist;
   }
@@ -232,9 +226,7 @@ class StoreTransactionUpdatesFactory {
       final StoreTransaction tx, final Map<Bytes32, Bytes32> finalizedChildToParent) {
     final Map<Bytes32, BeaconState> states = new HashMap<>();
     for (Bytes32 finalizedRoot : finalizedChildToParent.keySet()) {
-      // ePBS
-      tx.getExecutionPayloadStateIfAvailable(finalizedRoot)
-          .or(() -> tx.getBlockStateIfAvailable(finalizedRoot))
+      tx.getBlockStateIfAvailable(finalizedRoot)
           .ifPresent(state -> states.put(finalizedRoot, state));
     }
     return states;

@@ -87,6 +87,18 @@ public class ExecutionPayloadEnvelope
     return getField6().get();
   }
 
+  public ExecutionPayloadEnvelope withStateRoot(final Bytes32 stateRoot) {
+    return new ExecutionPayloadEnvelope(
+        this.getSchema(),
+        getPayload(),
+        getExecutionRequests(),
+        getBuilderIndex(),
+        getBeaconBlockRoot(),
+        getBlobKzgCommitments(),
+        isPayloadWithheld(),
+        stateRoot);
+  }
+
   @Override
   public ExecutionPayloadEnvelopeSchema getSchema() {
     return (ExecutionPayloadEnvelopeSchema) super.getSchema();
