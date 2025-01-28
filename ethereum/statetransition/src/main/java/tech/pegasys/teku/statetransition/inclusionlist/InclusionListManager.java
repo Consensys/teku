@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -62,7 +63,9 @@ public class InclusionListManager implements SlotEventsChannel {
         });
   }
 
-  public List<SignedInclusionList> getInclusionLists(final UInt64 slot) {
+  // TODO EIP7805
+  public List<SignedInclusionList> getInclusionLists(
+      final UInt64 slot, final SszBitvector committeeIndices) {
     return Collections.emptyList();
   }
 }

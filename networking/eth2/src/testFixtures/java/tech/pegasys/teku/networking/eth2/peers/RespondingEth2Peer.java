@@ -56,6 +56,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 
@@ -333,6 +334,13 @@ public class RespondingEth2Peer implements Eth2Peer {
   @Override
   public Optional<RequestApproval> approveBlobSidecarsRequest(
       final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
+    return Optional.of(
+        new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build());
+  }
+
+  @Override
+  public Optional<RequestApproval> approveInclusionListsRequest(
+      final ResponseCallback<SignedInclusionList> callback, final long inclusionListsCount) {
     return Optional.of(
         new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build());
   }

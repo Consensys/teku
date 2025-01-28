@@ -322,6 +322,15 @@ public class P2POptions {
   private Integer peerBlobSidecarsRateLimit = P2PConfig.DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT;
 
   @Option(
+      names = {"--Xpeer-inclusion-list-rate-limit"},
+      paramLabel = "<NUMBER>",
+      description =
+          "The number of requested inclusion list per peer to allow per minute before disconnecting the peer.",
+      arity = "1",
+      hidden = true)
+  private Integer peerInclusionListsRateLimit = P2PConfig.DEFAULT_PEER_INCLUSION_LISTS_RATE_LIMIT;
+
+  @Option(
       names = {"--Xp2p-gossip-blobs-after-block-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -450,6 +459,7 @@ public class P2POptions {
                   .isGossipScoringEnabled(gossipScoringEnabled)
                   .peerBlocksRateLimit(peerBlocksRateLimit)
                   .peerBlobSidecarsRateLimit(peerBlobSidecarsRateLimit)
+                  .peerInclusionListsRateLimit(peerInclusionListsRateLimit)
                   .allTopicsFilterEnabled(allTopicsFilterEnabled)
                   .peerRequestLimit(peerRequestLimit)
                   .floodPublishMaxMessageSizeThreshold(floodPublishMaxMessageSizeThreshold)
