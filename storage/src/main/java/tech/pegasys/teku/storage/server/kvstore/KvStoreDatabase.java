@@ -428,8 +428,11 @@ public class KvStoreDatabase implements Database {
     final List<Pair<UInt64, Bytes32>> blocksToPrune;
     final Optional<UInt64> earliestSlotAvailableAfterPrune;
     LOG.debug("Pruning finalized blocks to slot {} (included)", lastSlotToPrune);
-    if(lastSlotToPrune.isLessThanOrEqualTo(earliestFinalizedBlockSlot)) {
-      LOG.debug("Last slot to prune {} was lower than the earliest finalized block slot in the database {}", lastSlotToPrune, earliestFinalizedBlockSlot);
+    if (lastSlotToPrune.isLessThanOrEqualTo(earliestFinalizedBlockSlot)) {
+      LOG.debug(
+          "Last slot to prune {} was lower than the earliest finalized block slot in the database {}",
+          lastSlotToPrune,
+          earliestFinalizedBlockSlot);
       return lastSlotToPrune;
     }
     try (final Stream<SignedBeaconBlock> stream =
@@ -938,6 +941,10 @@ public class KvStoreDatabase implements Database {
       final int pruneLimit,
       final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
     final Optional<UInt64> earliestBlobSidecarSlot = getEarliestBlobSidecarSlot();
+    if (earliestBlobSidecarSlot.isPresent()
+        && earliestBlobSidecarSlot.get().isGreaterThan(lastSlotToPrune)) {
+      return false;
+    }
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys =
         streamBlobSidecarKeys(earliestBlobSidecarSlot.orElse(UInt64.ZERO), lastSlotToPrune)) {
       return pruneBlobSidecars(pruneLimit, prunableBlobKeys, archiveWriter, false);
@@ -950,6 +957,10 @@ public class KvStoreDatabase implements Database {
       final int pruneLimit,
       final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
     final Optional<UInt64> earliestBlobSidecarSlot = getEarliestBlobSidecarSlot();
+    if (earliestBlobSidecarSlot.isPresent()
+        && earliestBlobSidecarSlot.get().isGreaterThan(lastSlotToPrune)) {
+      return false;
+    }
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableNoncanonicalBlobKeys =
         streamNonCanonicalBlobSidecarKeys(
             earliestBlobSidecarSlot.orElse(UInt64.ZERO), lastSlotToPrune)) {
