@@ -381,6 +381,11 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public Map<String, Optional<String>> getVariables() {
+    return dao.getVariables();
+  }
+
+  @Override
   public long getBlobSidecarColumnCount() {
     return dao.getBlobSidecarColumnCount();
   }
