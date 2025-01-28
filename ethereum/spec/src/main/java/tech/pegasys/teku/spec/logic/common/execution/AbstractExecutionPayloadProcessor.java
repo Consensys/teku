@@ -51,7 +51,7 @@ public abstract class AbstractExecutionPayloadProcessor implements ExecutionPayl
                 throw new StateTransitionException(ex);
               }
             });
-    if (signedEnvelope.getMessage().getStateRoot().equals(postState.hashTreeRoot())) {
+    if (!signedEnvelope.getMessage().getStateRoot().equals(postState.hashTreeRoot())) {
       throw new StateTransitionException(
           "State root of the signed envelope does not match the post-processing state root");
     }
