@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server.rocksdb;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -150,7 +151,7 @@ public class RocksDbStats implements AutoCloseable {
     HistogramType.READ_NUM_MERGE_OPERANDS,
   };
 
-  private boolean closed = false;
+  private final AtomicBoolean closed = new AtomicBoolean(false);
   private final Statistics stats;
   private final MetricsSystem metricsSystem;
   private final MetricCategory category;
@@ -230,16 +231,14 @@ public class RocksDbStats implements AutoCloseable {
   }
 
   @Override
-  public synchronized void close() {
-    if (closed) {
-      return;
+  public void close() {
+    if (closed.compareAndSet(false, true)) {
+      stats.close();
     }
-    closed = true;
-    stats.close();
   }
 
-  private synchronized <T> T ifOpen(final Supplier<T> supplier, final T defaultValue) {
-    if (closed) {
+  private <T> T ifOpen(final Supplier<T> supplier, final T defaultValue) {
+    if (closed.get()) {
       return defaultValue;
     }
     return supplier.get();
