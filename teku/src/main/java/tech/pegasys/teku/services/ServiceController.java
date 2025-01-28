@@ -14,6 +14,7 @@
 package tech.pegasys.teku.services;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
@@ -41,7 +42,7 @@ public abstract class ServiceController extends Service implements ServiceContro
   protected SafeFuture<?> doStop() {
     // Stop services in reverse order
     final List<Service> reversedServices = new ArrayList<>(services);
-    reversedServices.sort((a, b) -> -1);
+    Collections.reverse(reversedServices);
     return SafeFuture.allOf(
         reversedServices.stream()
             .map(
