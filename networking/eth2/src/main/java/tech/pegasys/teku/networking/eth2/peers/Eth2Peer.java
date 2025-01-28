@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public interface Eth2Peer extends Peer, SyncSource {
@@ -49,6 +50,7 @@ public interface Eth2Peer extends Peer, SyncSource {
       final PeerChainValidator peerChainValidator,
       final RateTracker blockRequestTracker,
       final RateTracker blobSidecarsRequestTracker,
+      final RateTracker inclusionListRequestTracker,
       final RateTracker requestTracker,
       final KZG kzg) {
     return new DefaultEth2Peer(
@@ -61,6 +63,7 @@ public interface Eth2Peer extends Peer, SyncSource {
         peerChainValidator,
         blockRequestTracker,
         blobSidecarsRequestTracker,
+        inclusionListRequestTracker,
         requestTracker,
         kzg);
   }
@@ -114,6 +117,9 @@ public interface Eth2Peer extends Peer, SyncSource {
 
   Optional<RequestApproval> approveBlobSidecarsRequest(
       ResponseCallback<BlobSidecar> callback, long blobSidecarsCount);
+
+  Optional<RequestApproval> approveInclusionListsRequest(
+      ResponseCallback<SignedInclusionList> callback, long inclusionListsCount);
 
   void adjustBlobSidecarsRequest(
       RequestApproval blobSidecarsRequest, long returnedBlobSidecarsCount);
