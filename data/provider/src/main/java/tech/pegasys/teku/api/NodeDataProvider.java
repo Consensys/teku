@@ -25,6 +25,7 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
@@ -114,8 +115,9 @@ public class NodeDataProvider {
     return attestationPool.getAttestations(maybeSlot, maybeCommitteeIndex);
   }
 
-  public List<SignedInclusionList> getInclusionLists(final UInt64 slot) {
-    return inclusionListManager.getInclusionLists(slot);
+  public List<SignedInclusionList> getInclusionLists(
+      final UInt64 slot, final SszBitvector committeeIndices) {
+    return inclusionListManager.getInclusionLists(slot, committeeIndices);
   }
 
   public ObjectAndMetaData<List<Attestation>> getAttestationsAndMetaData(

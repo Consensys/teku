@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.RpcRequestBodySelector;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.SingleRpcRequestBodySelector;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public interface Eth2Peer extends Peer, SyncSource {
@@ -56,6 +57,7 @@ public interface Eth2Peer extends Peer, SyncSource {
       final RateTracker blockRequestTracker,
       final RateTracker blobSidecarsRequestTracker,
       final RateTracker dataColumnSidecarsRequestTracker,
+      final RateTracker inclusionListRequestTracker,
       final RateTracker requestTracker,
       final KZG kzg,
       final MetricsSystem metricsSystem,
@@ -71,6 +73,7 @@ public interface Eth2Peer extends Peer, SyncSource {
         blockRequestTracker,
         blobSidecarsRequestTracker,
         dataColumnSidecarsRequestTracker,
+        inclusionListRequestTracker,
         requestTracker,
         kzg,
         metricsSystem,
@@ -146,6 +149,9 @@ public interface Eth2Peer extends Peer, SyncSource {
       ResponseCallback<DataColumnSidecar> callback, long dataColumnSidecarsCount);
 
   void adjustDataColumnSidecarsRequest(RequestKey requestKey, long objectCount);
+
+  Optional<RequestKey> approveInclusionListsRequest(
+      ResponseCallback<SignedInclusionList> callback, long inclusionListsCount);
 
   boolean approveRequest();
 

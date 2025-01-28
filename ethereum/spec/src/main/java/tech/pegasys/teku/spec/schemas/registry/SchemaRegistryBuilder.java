@@ -57,6 +57,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYL
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_BATCH_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARIES_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INCLUSION_LIST_BY_COMMITTEE_INDICES_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INCLUSION_LIST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.MATRIX_ENTRY_SCHEMA;
@@ -139,6 +140,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsB
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.InclusionListByCommitteeRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.fulu.MetadataMessageSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0.MetadataMessageSchemaPhase0;
@@ -242,7 +244,8 @@ public class SchemaRegistryBuilder {
 
         // EIP7805
         .addProvider(createInclusionListSchemaProvider())
-        .addProvider(createSignedInclusionListSchemaProvider());
+        .addProvider(createSignedInclusionListSchemaProvider())
+        .addProvider(createInclusionListByCommitteeIndicesRequestMessageSchemaProvider());
   }
 
   private static SchemaProvider<?> createSingleAttestationSchemaProvider() {
@@ -850,6 +853,17 @@ public class SchemaRegistryBuilder {
             EIP7805,
             (registry, specConfig, schemaName) ->
                 new SignedInclusionListSchema(schemaName, registry))
+        .build();
+  }
+
+  private static SchemaProvider<?>
+      createInclusionListByCommitteeIndicesRequestMessageSchemaProvider() {
+    return providerBuilder(INCLUSION_LIST_BY_COMMITTEE_INDICES_REQUEST_MESSAGE_SCHEMA)
+        .withCreator(
+            EIP7805,
+            (registry, specConfig, schemaName) ->
+                new InclusionListByCommitteeRequestMessageSchema(
+                    SpecConfigEip7805.required(specConfig)))
         .build();
   }
 

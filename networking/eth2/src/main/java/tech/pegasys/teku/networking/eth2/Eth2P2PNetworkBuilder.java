@@ -99,6 +99,7 @@ import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.store.KeyValueStore;
@@ -119,6 +120,7 @@ public class Eth2P2PNetworkBuilder {
   protected DataColumnSidecarByRootCustody dataColumnSidecarCustody;
   protected CustodyGroupCountManager custodyGroupCountManager;
   protected MetadataMessagesFactory metadataMessagesFactory;
+  protected InclusionListManager inclusionListManager;
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
   protected OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor;
   protected OperationProcessor<ValidatableAttestation> gossipedAttestationConsumer;
@@ -189,6 +191,7 @@ public class Eth2P2PNetworkBuilder {
             dataColumnSidecarCustody,
             custodyGroupCountManager,
             metadataMessagesFactory,
+            inclusionListManager,
             metricsSystem,
             attestationSubnetService,
             syncCommitteeSubnetService,
@@ -201,6 +204,7 @@ public class Eth2P2PNetworkBuilder {
             timeProvider,
             config.getPeerBlocksRateLimit(),
             config.getPeerBlobSidecarsRateLimit(),
+            config.getPeerInclusionListsRateLimit(),
             config.getPeerRequestLimit(),
             spec,
             kzg,
@@ -606,6 +610,13 @@ public class Eth2P2PNetworkBuilder {
       final CombinedChainDataClient combinedChainDataClient) {
     checkNotNull(combinedChainDataClient);
     this.combinedChainDataClient = combinedChainDataClient;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder inclusionListManager(
+      final InclusionListManager inclusionListManager) {
+    checkNotNull(inclusionListManager);
+    this.inclusionListManager = inclusionListManager;
     return this;
   }
 

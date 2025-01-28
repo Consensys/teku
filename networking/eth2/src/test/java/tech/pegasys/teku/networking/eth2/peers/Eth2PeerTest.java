@@ -68,6 +68,7 @@ class Eth2PeerTest {
   private final RateTracker blockRateTracker = mock(RateTracker.class);
   private final RateTracker blobSidecarsRateTracker = mock(RateTracker.class);
   private final RateTracker dataColumnSidecarsRateTracker = mock(RateTracker.class);
+  private final RateTracker inclusionListRateTracker = mock(RateTracker.class);
   private final RateTracker rateTracker = mock(RateTracker.class);
   private final KZG kzg = mock(KZG.class);
   private final MetricsSystem metricsSystem = mock(MetricsSystem.class);
@@ -87,6 +88,7 @@ class Eth2PeerTest {
           blockRateTracker,
           blobSidecarsRateTracker,
           dataColumnSidecarsRateTracker,
+          inclusionListRateTracker,
           rateTracker,
           kzg,
           metricsSystem,

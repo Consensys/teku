@@ -78,6 +78,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.SingleRpcRequestBodySelector;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessage;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
@@ -102,6 +103,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final RateTracker blockRequestTracker;
   private final RateTracker blobSidecarsRequestTracker;
   private final RateTracker dataColumnSidecarsRequestTracker;
+  private final RateTracker inclusionListRequestTracker;
   private final RateTracker requestTracker;
   private final KZG kzg;
   private final MetricsSystem metricsSystem;
@@ -127,6 +129,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final RateTracker blockRequestTracker,
       final RateTracker blobSidecarsRequestTracker,
       final RateTracker dataColumnSidecarsRequestTracker,
+      final RateTracker inclusionListRequestTracker,
       final RateTracker requestTracker,
       final KZG kzg,
       final MetricsSystem metricsSystem,
@@ -141,6 +144,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     this.blockRequestTracker = blockRequestTracker;
     this.blobSidecarsRequestTracker = blobSidecarsRequestTracker;
     this.dataColumnSidecarsRequestTracker = dataColumnSidecarsRequestTracker;
+    this.inclusionListRequestTracker = inclusionListRequestTracker;
     this.requestTracker = requestTracker;
     this.kzg = kzg;
     this.metricsSystem = metricsSystem;
@@ -512,6 +516,13 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
     return getRequestKeyIfAvailable(
         "blob sidecars", blobSidecarsRequestTracker, blobSidecarsCount, callback);
+  }
+
+  @Override
+  public Optional<RequestKey> approveInclusionListsRequest(
+      final ResponseCallback<SignedInclusionList> callback, final long inclusionListsCount) {
+    return getRequestKeyIfAvailable(
+        "inclusion lists", inclusionListRequestTracker, inclusionListsCount, callback);
   }
 
   @Override

@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.versio
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -63,6 +64,7 @@ public class BeaconChainMethodsTest {
   final AsyncRunner asyncRunner = new StubAsyncRunner();
   final CombinedChainDataClient combinedChainDataClient = mock(CombinedChainDataClient.class);
   final RecentChainData recentChainData = mock(RecentChainData.class);
+  final InclusionListManager inclusionListManager = mock(InclusionListManager.class);
   final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   final StatusMessageFactory statusMessageFactory =
       new StatusMessageFactory(spec, combinedChainDataClient);
@@ -190,6 +192,7 @@ public class BeaconChainMethodsTest {
         DataColumnSidecarByRootCustody.NOOP,
         CustodyGroupCountManager.NOOP,
         recentChainData,
+        inclusionListManager,
         metricsSystem,
         statusMessageFactory,
         metadataMessagesFactory,

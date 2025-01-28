@@ -113,6 +113,7 @@ import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StubStorageQueryChannel;
@@ -149,6 +150,7 @@ public class Eth2P2PNetworkFactory {
     protected AsyncRunner asyncRunner;
     protected EventChannels eventChannels;
     protected RecentChainData recentChainData;
+    protected InclusionListManager inclusionListManager;
     protected StorageQueryChannel historicalChainData = new StubStorageQueryChannel();
     protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
     protected OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor;
@@ -248,6 +250,7 @@ public class Eth2P2PNetworkFactory {
                 DataColumnSidecarByRootCustody.NOOP,
                 CustodyGroupCountManager.NOOP,
                 new MetadataMessagesFactory(),
+                inclusionListManager,
                 METRICS_SYSTEM,
                 attestationSubnetService,
                 syncCommitteeSubnetService,
@@ -260,6 +263,7 @@ public class Eth2P2PNetworkFactory {
                 timeProvider,
                 P2PConfig.DEFAULT_PEER_BLOCKS_RATE_LIMIT,
                 P2PConfig.DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT,
+                P2PConfig.DEFAULT_PEER_INCLUSION_LISTS_RATE_LIMIT,
                 P2PConfig.DEFAULT_PEER_REQUEST_LIMIT,
                 spec,
                 NoOpKZG.INSTANCE,
@@ -486,8 +490,7 @@ public class Eth2P2PNetworkFactory {
                 syncCommitteeMessageProcessor,
                 signedBlsToExecutionChangeProcessor,
                 debugDataDumper);
-        // TODO EIP7805
-        case ELECTRA, EIP7805 ->
+        case ELECTRA ->
             new GossipForkSubscriptionsElectra(
                 forkAndSpecMilestone.getFork(),
                 spec,
@@ -507,7 +510,8 @@ public class Eth2P2PNetworkFactory {
                 syncCommitteeMessageProcessor,
                 signedBlsToExecutionChangeProcessor,
                 debugDataDumper);
-        case FULU ->
+        // TODO EIP7805
+        case FULU, EIP7805 ->
             new GossipForkSubscriptionsFulu(
                 forkAndSpecMilestone.getFork(),
                 spec,
@@ -668,6 +672,13 @@ public class Eth2P2PNetworkFactory {
     public Eth2P2PNetworkBuilder recentChainData(final RecentChainData recentChainData) {
       checkNotNull(recentChainData);
       this.recentChainData = recentChainData;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder inclusionListManager(
+        final InclusionListManager inclusionListManager) {
+      checkNotNull(inclusionListManager);
+      this.inclusionListManager = inclusionListManager;
       return this;
     }
 

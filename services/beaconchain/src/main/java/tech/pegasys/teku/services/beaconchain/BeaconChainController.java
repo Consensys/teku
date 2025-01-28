@@ -1607,6 +1607,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
         createEth2P2PNetworkBuilder()
             .config(beaconConfig.p2pConfig())
             .eventChannels(eventChannels)
+            .combinedChainDataClient(combinedChainDataClient)
+            .inclusionListManager(inclusionListManager)
             .combinedChainDataClient(
                 throttlingCombinedChainDataClient.orElse(combinedChainDataClient))
             .dataColumnSidecarCustody(dataColumnSidecarCustody)
