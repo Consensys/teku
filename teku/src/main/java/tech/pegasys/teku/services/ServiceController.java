@@ -14,6 +14,7 @@
 package tech.pegasys.teku.services;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -37,6 +38,8 @@ public abstract class ServiceController extends Service implements ServiceContro
 
   @Override
   protected SafeFuture<?> doStop() {
+    // Stop services in reverse order
+    Collections.reverse(services);
     return SafeFuture.allOf(services.stream().map(Service::stop).toArray(SafeFuture[]::new));
   }
 
