@@ -76,7 +76,6 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new HashMap<>();
   Optional<UInt64> maybeEarliestBlobSidecarTransactionSlot = Optional.empty();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
-
   // ePBS
   Map<Bytes32, TransactionExecutionPayloadEnvelopeData> executionPayloadEnvelopeData =
       new HashMap<>();
@@ -382,6 +381,13 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public Optional<BeaconState> getExecutionPayloadStateIfAvailable(final Bytes32 blockRoot) {
+    return Optional.ofNullable(executionPayloadEnvelopeData.get(blockRoot))
+        .map(SignedExecutionPayloadEnvelopeAndState::getState)
+        .or(() -> store.getExecutionPayloadStateIfAvailable(blockRoot));
+  }
+
+  @Override
   public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(final Bytes32 blockRoot) {
     if (blockData.containsKey(blockRoot)) {
       return SafeFuture.completedFuture(
@@ -521,6 +527,14 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     return Optional.ofNullable(blockData.get(blockRoot))
         .map(SignedBlockAndState::getBlock)
         .or(() -> store.getBlockIfAvailable(blockRoot));
+  }
+
+  @Override
+  public Optional<SignedExecutionPayloadEnvelope> getExecutionPayloadIfAvailable(
+      final Bytes32 blockRoot) {
+    return Optional.ofNullable(executionPayloadEnvelopeData.get(blockRoot))
+        .map(SignedExecutionPayloadEnvelopeAndState::getExecutionPayloadEnvelope)
+        .or(() -> store.getExecutionPayloadIfAvailable(blockRoot));
   }
 
   @Override

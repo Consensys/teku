@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndExecutionPayloadAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndExecutionPayloadSummary;
@@ -38,6 +39,9 @@ public abstract class CacheableStore implements UpdatableStore {
   abstract void cacheProposerBoostRoot(Optional<Bytes32> proposerBoostRoot);
 
   abstract void cacheBlocks(Collection<BlockAndCheckpoints> blockAndCheckpoints);
+
+  abstract void cacheExecutionPayloads(
+      Collection<BlockAndExecutionPayloadAndCheckpoints> executionPayloadAndCheckpoints);
 
   abstract void cacheStates(Map<Bytes32, StateAndBlockSummary> stateAndBlockSummaries);
 

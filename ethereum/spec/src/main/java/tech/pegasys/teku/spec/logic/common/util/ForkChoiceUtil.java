@@ -556,9 +556,15 @@ public class ForkChoiceUtil {
 
   // ePBS
   public boolean isParentNodeFull(final ReadOnlyStore store, final SignedBeaconBlock block) {
-    final Optional<SignedBeaconBlock> parent = store.getBlockIfAvailable(block.getParentRoot());
-    if (parent.isEmpty()) {
+    final Optional<SignedBeaconBlock> maybeParent =
+        store.getBlockIfAvailable(block.getParentRoot());
+    if (maybeParent.isEmpty()) {
       return false;
+    }
+    final SignedBeaconBlock parent = maybeParent.get();
+    if (parent.getMessage().getBody().toVersionEip7732().isEmpty()) {
+      // pre-ePBS parent is always full
+      return true;
     }
     final BeaconBlockBodyEip7732 body =
         BeaconBlockBodyEip7732.required(block.getMessage().getBody());
@@ -566,7 +572,7 @@ public class ForkChoiceUtil {
         ExecutionPayloadHeaderEip7732.required(body.getSignedExecutionPayloadHeader().getMessage())
             .getParentBlockHash();
     final BeaconBlockBodyEip7732 parentBody =
-        BeaconBlockBodyEip7732.required(parent.get().getMessage().getBody());
+        BeaconBlockBodyEip7732.required(parent.getMessage().getBody());
     final Bytes32 messageBlockHash =
         ExecutionPayloadHeaderEip7732.required(
                 parentBody.getSignedExecutionPayloadHeader().getMessage())

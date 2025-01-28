@@ -107,7 +107,7 @@ public class StoreBuilder {
         .bestJustifiedCheckpoint(data.getBestJustifiedCheckpoint())
         .blockInformation(data.getBlockInformation())
         .votes(data.getVotes())
-        // EIP-7732 TODO: figure out this
+        // EIP-7732 TODO: skip for initial interop
         .ptcVote(new HashMap<>());
   }
 

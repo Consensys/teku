@@ -20,28 +20,14 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
-import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 
 public class BlockAndCheckpoints implements BeaconBlockSummary {
   private final SignedBeaconBlock block;
-  // ePBS
-  private final Optional<SignedExecutionPayloadEnvelope> executionPayloadEnvelope;
   private final BlockCheckpoints blockCheckpoints;
 
   public BlockAndCheckpoints(
       final SignedBeaconBlock block, final BlockCheckpoints blockCheckpoints) {
     this.block = block;
-    this.executionPayloadEnvelope = Optional.empty();
-    this.blockCheckpoints = blockCheckpoints;
-  }
-
-  public BlockAndCheckpoints(
-      final SignedBeaconBlock block,
-      final SignedExecutionPayloadEnvelope executionPayloadEnvelope,
-      final BlockCheckpoints blockCheckpoints) {
-    this.block = block;
-    this.executionPayloadEnvelope = Optional.of(executionPayloadEnvelope);
     this.blockCheckpoints = blockCheckpoints;
   }
 
@@ -53,10 +39,6 @@ public class BlockAndCheckpoints implements BeaconBlockSummary {
 
   public SignedBeaconBlock getBlock() {
     return block;
-  }
-
-  public Optional<SignedExecutionPayloadEnvelope> getExecutionPayloadEnvelope() {
-    return executionPayloadEnvelope;
   }
 
   public BlockCheckpoints getBlockCheckpoints() {
@@ -121,34 +103,23 @@ public class BlockAndCheckpoints implements BeaconBlockSummary {
     }
     final BlockAndCheckpoints that = (BlockAndCheckpoints) o;
     return Objects.equals(block, that.block)
-        && Objects.equals(executionPayloadEnvelope, that.executionPayloadEnvelope)
         && Objects.equals(blockCheckpoints, that.blockCheckpoints);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(block, executionPayloadEnvelope, blockCheckpoints);
+    return Objects.hash(block, blockCheckpoints);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("block", block)
-        .add("executionPayloadEnvelope", executionPayloadEnvelope)
         .add("blockCheckpoints", blockCheckpoints)
         .toString();
   }
 
   private Optional<ExecutionPayload> getExecutionPayload() {
-    return block
-        .getMessage()
-        .getBody()
-        .getOptionalExecutionPayload()
-        .or(
-            () ->
-                // ePBS
-                executionPayloadEnvelope
-                    .map(SignedExecutionPayloadEnvelope::getMessage)
-                    .map(ExecutionPayloadEnvelope::getPayload));
+    return block.getMessage().getBody().getOptionalExecutionPayload();
   }
 }

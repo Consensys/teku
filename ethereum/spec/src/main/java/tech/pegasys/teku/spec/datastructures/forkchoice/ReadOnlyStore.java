@@ -99,6 +99,8 @@ public interface ReadOnlyStore extends TimeProvider {
    */
   Optional<BeaconState> getBlockStateIfAvailable(Bytes32 blockRoot);
 
+  Optional<BeaconState> getExecutionPayloadStateIfAvailable(Bytes32 blockRoot);
+
   /**
    * Returns a block only if it is immediately available (not pruned).
    *
@@ -106,6 +108,14 @@ public interface ReadOnlyStore extends TimeProvider {
    * @return The block if available.
    */
   Optional<SignedBeaconBlock> getBlockIfAvailable(Bytes32 blockRoot);
+
+  /**
+   * Returns an execution payload only if it is immediately available (not pruned).
+   *
+   * @param blockRoot The block root of the execution payload to retrieve
+   * @return The execution payload if available.
+   */
+  Optional<SignedExecutionPayloadEnvelope> getExecutionPayloadIfAvailable(Bytes32 blockRoot);
 
   Optional<List<BlobSidecar>> getBlobSidecarsIfAvailable(SlotAndBlockRoot slotAndBlockRoot);
 

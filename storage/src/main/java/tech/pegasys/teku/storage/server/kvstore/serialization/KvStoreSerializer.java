@@ -50,8 +50,6 @@ public interface KvStoreSerializer<T> {
   KvStoreSerializer<CompressedBranchInfo> COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER =
       new CompressedBranchInfoSerializer();
   KvStoreSerializer<VoteTracker> VOTE_TRACKER_SERIALIZER = new VoteTrackerSerializer();
-
-  KvStoreSerializer<Void> VOID_SERIALIZER = new VoidSerializer();
   KvStoreSerializer<SlotAndBlockRoot> SLOT_AND_BLOCK_ROOT_KEY_SERIALIZER =
       new SlotAndBlockRootKeySerializer();
   KvStoreSerializer<SlotAndBlockRootAndBlobIndex>
