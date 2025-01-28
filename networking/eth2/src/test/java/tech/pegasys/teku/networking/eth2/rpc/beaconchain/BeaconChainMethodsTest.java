@@ -35,6 +35,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -56,6 +57,7 @@ public class BeaconChainMethodsTest {
   final AsyncRunner asyncRunner = new StubAsyncRunner();
   final CombinedChainDataClient combinedChainDataClient = mock(CombinedChainDataClient.class);
   final RecentChainData recentChainData = mock(RecentChainData.class);
+  final InclusionListManager inclusionListManager = mock(InclusionListManager.class);
   final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(recentChainData);
   final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
@@ -151,6 +153,7 @@ public class BeaconChainMethodsTest {
         peerLookup,
         combinedChainDataClient,
         recentChainData,
+        inclusionListManager,
         metricsSystem,
         statusMessageFactory,
         metadataMessagesFactory,

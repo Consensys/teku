@@ -28,6 +28,7 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BeaconBlocksByR
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRootMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.GoodbyeMessageHandler;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.InclusionListByCommitteeIndicesMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.PingMessageHandler;
@@ -54,10 +55,15 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsB
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage.EmptyMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.InclusionListByCommitteeRequestMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.InclusionListByCommitteeRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7805;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -73,6 +79,8 @@ public class BeaconChainMethods {
       blobSidecarsByRoot;
   private final Optional<Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar>>
       blobSidecarsByRange;
+  private final Optional<Eth2RpcMethod<InclusionListByCommitteeRequestMessage, SignedInclusionList>>
+      inclusionListByCommitteeIndices;
   private final Eth2RpcMethod<EmptyMessage, MetadataMessage> getMetadata;
   private final Eth2RpcMethod<PingMessage, PingMessage> ping;
 
@@ -87,6 +95,8 @@ public class BeaconChainMethods {
           blobSidecarsByRoot,
       final Optional<Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar>>
           blobSidecarsByRange,
+      final Optional<Eth2RpcMethod<InclusionListByCommitteeRequestMessage, SignedInclusionList>>
+          inclusionListByCommitteeIndices,
       final Eth2RpcMethod<EmptyMessage, MetadataMessage> getMetadata,
       final Eth2RpcMethod<PingMessage, PingMessage> ping) {
     this.status = status;
@@ -95,6 +105,7 @@ public class BeaconChainMethods {
     this.beaconBlocksByRange = beaconBlocksByRange;
     this.blobSidecarsByRoot = blobSidecarsByRoot;
     this.blobSidecarsByRange = blobSidecarsByRange;
+    this.inclusionListByCommitteeIndices = inclusionListByCommitteeIndices;
     this.getMetadata = getMetadata;
     this.ping = ping;
     this.allMethods =
@@ -110,6 +121,7 @@ public class BeaconChainMethods {
       final PeerLookup peerLookup,
       final CombinedChainDataClient combinedChainDataClient,
       final RecentChainData recentChainData,
+      final InclusionListManager inclusionListManager,
       final MetricsSystem metricsSystem,
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
@@ -140,6 +152,14 @@ public class BeaconChainMethods {
             metricsSystem,
             asyncRunner,
             combinedChainDataClient,
+            peerLookup,
+            rpcEncoding,
+            recentChainData),
+        createInclusionListByCommitteeIndices(
+            spec,
+            metricsSystem,
+            asyncRunner,
+            inclusionListManager,
             peerLookup,
             rpcEncoding,
             recentChainData),
@@ -332,6 +352,48 @@ public class BeaconChainMethods {
             peerLookup));
   }
 
+  private static Optional<
+          Eth2RpcMethod<InclusionListByCommitteeRequestMessage, SignedInclusionList>>
+      createInclusionListByCommitteeIndices(
+          final Spec spec,
+          final MetricsSystem metricsSystem,
+          final AsyncRunner asyncRunner,
+          final InclusionListManager inclusionListManager,
+          final PeerLookup peerLookup,
+          final RpcEncoding rpcEncoding,
+          final RecentChainData recentChainData) {
+
+    if (!spec.isMilestoneSupported(SpecMilestone.EIP7805)) {
+      return Optional.empty();
+    }
+
+    final RpcContextCodec<Bytes4, SignedInclusionList> forkDigestContextCodec =
+        RpcContextCodec.forkDigest(
+            spec, recentChainData, ForkDigestPayloadContext.SIGNED_INCLUSION_LIST);
+
+    final InclusionListByCommitteeIndicesMessageHandler
+        inclusionListByCommitteeIndicesMessageHandler =
+            new InclusionListByCommitteeIndicesMessageHandler(
+                spec, metricsSystem, inclusionListManager);
+    final InclusionListByCommitteeRequestMessageSchema
+        inclusionListByCommitteeRequestMessageSchema =
+            SchemaDefinitionsEip7805.required(
+                    spec.forMilestone(SpecMilestone.EIP7805).getSchemaDefinitions())
+                .getInclusionListByCommitteeRequestMessageSchema();
+
+    return Optional.of(
+        new SingleProtocolEth2RpcMethod<>(
+            asyncRunner,
+            BeaconChainMethodIds.INCLUSION_LIST_BY_COMMITTEE_INDICES,
+            1,
+            rpcEncoding,
+            inclusionListByCommitteeRequestMessageSchema,
+            true,
+            forkDigestContextCodec,
+            inclusionListByCommitteeIndicesMessageHandler,
+            peerLookup));
+  }
+
   private static Eth2RpcMethod<EmptyMessage, MetadataMessage> createMetadata(
       final Spec spec,
       final AsyncRunner asyncRunner,
@@ -439,6 +501,11 @@ public class BeaconChainMethods {
   public Optional<Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar>>
       blobSidecarsByRange() {
     return blobSidecarsByRange;
+  }
+
+  public Optional<Eth2RpcMethod<InclusionListByCommitteeRequestMessage, SignedInclusionList>>
+      inclusionListByCommitteeIndices() {
+    return inclusionListByCommitteeIndices;
   }
 
   public Eth2RpcMethod<EmptyMessage, MetadataMessage> getMetadata() {

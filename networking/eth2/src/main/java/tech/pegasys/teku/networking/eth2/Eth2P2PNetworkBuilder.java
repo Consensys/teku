@@ -84,6 +84,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Validata
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.store.KeyValueStore;
@@ -101,6 +102,7 @@ public class Eth2P2PNetworkBuilder {
   protected P2PConfig config;
   protected EventChannels eventChannels;
   protected CombinedChainDataClient combinedChainDataClient;
+  protected InclusionListManager inclusionListManager;
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
   protected OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor;
   protected OperationProcessor<ValidatableAttestation> gossipedAttestationConsumer;
@@ -155,6 +157,7 @@ public class Eth2P2PNetworkBuilder {
         Eth2PeerManager.create(
             asyncRunner,
             combinedChainDataClient,
+            inclusionListManager,
             metricsSystem,
             attestationSubnetService,
             syncCommitteeSubnetService,
@@ -167,6 +170,7 @@ public class Eth2P2PNetworkBuilder {
             timeProvider,
             config.getPeerBlocksRateLimit(),
             config.getPeerBlobSidecarsRateLimit(),
+            config.getPeerInclusionListsRateLimit(),
             config.getPeerRequestLimit(),
             spec,
             kzg,
@@ -484,6 +488,13 @@ public class Eth2P2PNetworkBuilder {
       final CombinedChainDataClient combinedChainDataClient) {
     checkNotNull(combinedChainDataClient);
     this.combinedChainDataClient = combinedChainDataClient;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder inclusionListManager(
+      final InclusionListManager inclusionListManager) {
+    checkNotNull(inclusionListManager);
+    this.inclusionListManager = inclusionListManager;
     return this;
   }
 

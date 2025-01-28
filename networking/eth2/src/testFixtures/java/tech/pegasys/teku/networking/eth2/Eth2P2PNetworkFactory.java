@@ -98,6 +98,7 @@ import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StubStorageQueryChannel;
@@ -132,6 +133,7 @@ public class Eth2P2PNetworkFactory {
     protected AsyncRunner asyncRunner;
     protected EventChannels eventChannels;
     protected RecentChainData recentChainData;
+    protected InclusionListManager inclusionListManager;
     protected StorageQueryChannel historicalChainData = new StubStorageQueryChannel();
     protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
     protected OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor;
@@ -215,6 +217,7 @@ public class Eth2P2PNetworkFactory {
             Eth2PeerManager.create(
                 asyncRunner,
                 combinedChainDataClient,
+                inclusionListManager,
                 METRICS_SYSTEM,
                 attestationSubnetService,
                 syncCommitteeSubnetService,
@@ -227,6 +230,7 @@ public class Eth2P2PNetworkFactory {
                 timeProvider,
                 P2PConfig.DEFAULT_PEER_BLOCKS_RATE_LIMIT,
                 P2PConfig.DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT,
+                P2PConfig.DEFAULT_PEER_INCLUSION_LISTS_RATE_LIMIT,
                 P2PConfig.DEFAULT_PEER_REQUEST_LIMIT,
                 spec,
                 KZG.NOOP,
@@ -597,6 +601,13 @@ public class Eth2P2PNetworkFactory {
     public Eth2P2PNetworkBuilder recentChainData(final RecentChainData recentChainData) {
       checkNotNull(recentChainData);
       this.recentChainData = recentChainData;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder inclusionListManager(
+        final InclusionListManager inclusionListManager) {
+      checkNotNull(inclusionListManager);
+      this.inclusionListManager = inclusionListManager;
       return this;
     }
 

@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.schemas;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.InclusionListByCommitteeRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.InclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
@@ -25,11 +26,15 @@ public class SchemaDefinitionsEip7805 extends SchemaDefinitionsElectra {
 
   private final InclusionListSchema inclusionListSchema;
   private final SignedInclusionListSchema signedInclusionListSchema;
+  private final InclusionListByCommitteeRequestMessageSchema
+      inclusionListByCommitteeRequestMessageSchema;
 
   public SchemaDefinitionsEip7805(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
     this.inclusionListSchema = schemaRegistry.get(SchemaTypes.INCLUSION_LIST_SCHEMA);
     this.signedInclusionListSchema = schemaRegistry.get(SchemaTypes.SIGNED_INCLUSION_LIST_SCHEMA);
+    this.inclusionListByCommitteeRequestMessageSchema =
+        schemaRegistry.get(SchemaTypes.INCLUSION_LIST_BY_COMMITTEE_INDICES_REQUEST_MESSAGE_SCHEMA);
   }
 
   public static SchemaDefinitionsEip7805 required(final SchemaDefinitions schemaDefinitions) {
@@ -47,6 +52,11 @@ public class SchemaDefinitionsEip7805 extends SchemaDefinitionsElectra {
 
   public SignedInclusionListSchema getSignedInclusionListSchema() {
     return signedInclusionListSchema;
+  }
+
+  public InclusionListByCommitteeRequestMessageSchema
+      getInclusionListByCommitteeRequestMessageSchema() {
+    return inclusionListByCommitteeRequestMessageSchema;
   }
 
   @Override
