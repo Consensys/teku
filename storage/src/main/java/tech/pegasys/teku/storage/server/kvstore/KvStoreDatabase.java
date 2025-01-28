@@ -428,6 +428,10 @@ public class KvStoreDatabase implements Database {
     final List<Pair<UInt64, Bytes32>> blocksToPrune;
     final Optional<UInt64> earliestSlotAvailableAfterPrune;
     LOG.debug("Pruning finalized blocks to slot {} (included)", lastSlotToPrune);
+    if(lastSlotToPrune.isLessThanOrEqualTo(earliestFinalizedBlockSlot)) {
+      LOG.debug("Last slot to prune {} was lower than the earliest finalized block slot in the database {}", lastSlotToPrune, earliestFinalizedBlockSlot);
+      return lastSlotToPrune;
+    }
     try (final Stream<SignedBeaconBlock> stream =
         dao.streamFinalizedBlocks(earliestFinalizedBlockSlot, lastSlotToPrune)) {
       // get an extra block to set earliest finalized block slot available after pruning runs
