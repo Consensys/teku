@@ -37,6 +37,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -48,6 +49,7 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
   protected final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   protected final RecentChainData recentChainData = mock(RecentChainData.class);
+  protected final InclusionListManager inclusionListManager = mock(InclusionListManager.class);
 
   protected BeaconChainMethods beaconChainMethods;
 
@@ -65,6 +67,7 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
             peerLookup,
             combinedChainDataClient,
             recentChainData,
+            inclusionListManager,
             new NoOpMetricsSystem(),
             new StatusMessageFactory(recentChainData),
             new MetadataMessagesFactory(),

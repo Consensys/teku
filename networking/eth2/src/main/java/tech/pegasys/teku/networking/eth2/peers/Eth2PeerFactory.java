@@ -37,6 +37,7 @@ public class Eth2PeerFactory {
   private final Optional<Checkpoint> requiredCheckpoint;
   private final int peerBlocksRateLimit;
   private final int peerBlobSidecarsRateLimit;
+  private final int peerInclusionListsRateLimit;
   private final int peerRequestLimit;
   private final KZG kzg;
   private final DiscoveryNodeIdExtractor discoveryNodeIdExtractor;
@@ -51,6 +52,7 @@ public class Eth2PeerFactory {
       final Optional<Checkpoint> requiredCheckpoint,
       final int peerBlocksRateLimit,
       final int peerBlobSidecarsRateLimit,
+      final int peerInclusionListsRateLimit,
       final int peerRequestLimit,
       final KZG kzg,
       final DiscoveryNodeIdExtractor discoveryNodeIdExtractor) {
@@ -63,6 +65,7 @@ public class Eth2PeerFactory {
     this.requiredCheckpoint = requiredCheckpoint;
     this.peerBlocksRateLimit = peerBlocksRateLimit;
     this.peerBlobSidecarsRateLimit = peerBlobSidecarsRateLimit;
+    this.peerInclusionListsRateLimit = peerInclusionListsRateLimit;
     this.peerRequestLimit = peerRequestLimit;
     this.kzg = kzg;
     this.discoveryNodeIdExtractor = discoveryNodeIdExtractor;
@@ -79,6 +82,7 @@ public class Eth2PeerFactory {
         PeerChainValidator.create(spec, metricsSystem, chainDataClient, requiredCheckpoint),
         RateTracker.create(peerBlocksRateLimit, TIME_OUT, timeProvider),
         RateTracker.create(peerBlobSidecarsRateLimit, TIME_OUT, timeProvider),
+        RateTracker.create(peerInclusionListsRateLimit, TIME_OUT, timeProvider),
         RateTracker.create(peerRequestLimit, TIME_OUT, timeProvider),
         kzg);
   }

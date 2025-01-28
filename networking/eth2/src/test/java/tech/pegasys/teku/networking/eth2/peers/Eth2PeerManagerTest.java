@@ -45,6 +45,7 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -56,6 +57,7 @@ public class Eth2PeerManagerTest {
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
+  private final InclusionListManager inclusionListManager = mock(InclusionListManager.class);
   private final Eth2PeerFactory eth2PeerFactory = mock(Eth2PeerFactory.class);
   private final StatusMessageFactory statusMessageFactory =
       new StatusMessageFactory(recentChainData);
@@ -70,6 +72,7 @@ public class Eth2PeerManagerTest {
           asyncRunner,
           combinedChainDataClient,
           recentChainData,
+          inclusionListManager,
           new NoOpMetricsSystem(),
           eth2PeerFactory,
           statusMessageFactory,
