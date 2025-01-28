@@ -202,9 +202,22 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     return Optional.ofNullable(getBlockState(blockRoot));
   }
 
+  // EIP-7732 TODO: implement
+  @Override
+  public Optional<BeaconState> getExecutionPayloadStateIfAvailable(final Bytes32 blockRoot) {
+    return Optional.empty();
+  }
+
   @Override
   public Optional<SignedBeaconBlock> getBlockIfAvailable(final Bytes32 blockRoot) {
     return Optional.ofNullable(getSignedBlock(blockRoot));
+  }
+
+  // EIP-7732 TODO: implement
+  @Override
+  public Optional<SignedExecutionPayloadEnvelope> getExecutionPayloadIfAvailable(
+      final Bytes32 blockRoot) {
+    return Optional.empty();
   }
 
   @Override

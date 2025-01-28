@@ -27,6 +27,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndExecutionPayloadAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -87,6 +88,10 @@ public class V4HotKvStoreDao {
 
   public Optional<Bytes> getHotBlockRaw(final Bytes32 root) {
     return db.getRaw(schema.getColumnHotBlocksByRoot(), root);
+  }
+
+  public Optional<Bytes> getHotExecutionPayloadEnvelopeRaw(final Bytes32 root) {
+    return db.getRaw(schema.getColumnHotExecutionPayloadEnvelopesByRoot(), root);
   }
 
   public Optional<BlockCheckpoints> getHotBlockCheckpointEpochs(final Bytes32 root) {
@@ -256,15 +261,18 @@ public class V4HotKvStoreDao {
     public void addHotBlock(final BlockAndCheckpoints block) {
       final Bytes32 blockRoot = block.getRoot();
       transaction.put(schema.getColumnHotBlocksByRoot(), blockRoot, block.getBlock());
-      block
-          .getExecutionPayloadEnvelope()
-          .ifPresent(
-              executionPayloadEnvelope ->
-                  transaction.put(
-                      schema.getColumnHotExecutionPayloadEnvelopesByRoot(),
-                      blockRoot,
-                      executionPayloadEnvelope));
       addHotBlockCheckpointEpochs(blockRoot, block.getBlockCheckpoints());
+    }
+
+    @Override
+    public void addHotExecutionPayload(
+        final BlockAndExecutionPayloadAndCheckpoints executionPayload) {
+      final Bytes32 blockRoot = executionPayload.getBlock().getRoot();
+      transaction.put(
+          schema.getColumnHotExecutionPayloadEnvelopesByRoot(),
+          blockRoot,
+          executionPayload.getExecutionPayload());
+      addHotBlockCheckpointEpochs(blockRoot, executionPayload.getBlockCheckpoints());
     }
 
     private void addHotBlockCheckpointEpochs(
@@ -304,6 +312,11 @@ public class V4HotKvStoreDao {
       transaction.delete(schema.getColumnHotBlocksByRoot(), blockRoot);
       transaction.delete(schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot);
       deleteHotState(blockRoot);
+    }
+
+    @Override
+    public void deleteHotExecutionPayloadOnly(final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnHotExecutionPayloadEnvelopesByRoot(), blockRoot);
     }
 
     @Override

@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndExecutionPayloadAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -391,6 +392,11 @@ public class KvStoreDatabase implements Database {
     return dao.getHotBlock(root);
   }
 
+  protected Optional<SignedExecutionPayloadEnvelope> getFinalizedExecutionPayload(
+      final Bytes32 root) {
+    return dao.getHotExecutionPayloadEnvelope(root);
+  }
+
   @Override
   public Map<String, Long> getColumnCounts(final Optional<String> maybeColumnFilter) {
     return dao.getColumnCounts(maybeColumnFilter);
@@ -495,7 +501,11 @@ public class KvStoreDatabase implements Database {
 
       try (final FinalizedUpdater updater = finalizedUpdater()) {
         blocksToPrune.forEach(
-            pair -> updater.deleteFinalizedBlock(pair.getLeft(), pair.getRight()));
+            pair -> {
+              updater.deleteFinalizedBlock(pair.getLeft(), pair.getRight());
+              // ePBS
+              updater.deleteFinalizedExecutionPayload(pair.getLeft(), pair.getRight());
+            });
         earliestSlotAvailableAfterPrune.ifPresentOrElse(
             updater::setEarliestBlockSlot, updater::deleteEarliestBlockSlot);
         updater.commit();
@@ -588,8 +598,23 @@ public class KvStoreDatabase implements Database {
     deletedHotBlockRoots.forEach(updater::deleteHotBlock);
   }
 
+  protected void updateHotExecutionPayloads(
+      final HotUpdater updater,
+      final Map<Bytes32, BlockAndExecutionPayloadAndCheckpoints> addedExecutionPayloads,
+      final Set<Bytes32> deletedHotBlockRoots) {
+    updater.addHotExecutionPayloads(addedExecutionPayloads);
+    deletedHotBlockRoots.forEach(updater::deleteHotExecutionPayloadOnly);
+  }
+
   protected void addFinalizedBlock(final SignedBeaconBlock block, final FinalizedUpdater updater) {
     updater.addFinalizedBlock(block);
+  }
+
+  protected void addFinalizedExecutionPayload(
+      final UInt64 slot,
+      final SignedExecutionPayloadEnvelope executionPayload,
+      final FinalizedUpdater updater) {
+    updater.addFinalizedExecutionPayload(slot, executionPayload);
   }
 
   protected void storeNonCanonicalBlocks(
@@ -790,6 +815,10 @@ public class KvStoreDatabase implements Database {
 
     final Optional<SignedBeaconBlock> finalizedBlock =
         getFinalizedBlock(finalizedCheckpoint.getRoot());
+    // EIP-7732 TODO: use this
+    @SuppressWarnings("unused")
+    final Optional<SignedExecutionPayloadEnvelope> finalizedExecutionPayload =
+        getFinalizedExecutionPayload(finalizedCheckpoint.getRoot());
     final AnchorPoint latestFinalized =
         AnchorPoint.create(spec, finalizedCheckpoint, finalizedState, finalizedBlock);
     final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload =
@@ -1131,6 +1160,7 @@ public class KvStoreDatabase implements Database {
         updateFinalizedData(
             update.getFinalizedChildToParentMap(),
             update.getFinalizedBlocks(),
+            update.getFinalizedExecutionPayloads(),
             update.getFinalizedStates(),
             update.getDeletedHotBlocks(),
             update.isFinalizedOptimisticTransitionBlockRootSet(),
@@ -1170,7 +1200,9 @@ public class KvStoreDatabase implements Database {
       update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
       latestFinalizedStateUpdateEndTime = System.currentTimeMillis();
 
-      updateHotBlocks(updater, update.getHotBlocks(), update.getDeletedHotBlocks().keySet());
+      final Set<Bytes32> deletedHotBlockRoots = update.getDeletedHotBlocks().keySet();
+      updateHotBlocks(updater, update.getHotBlocks(), deletedHotBlockRoots);
+      updateHotExecutionPayloads(updater, update.getHotExecutionPayloads(), deletedHotBlockRoots);
       updater.addHotStates(update.getHotStates());
 
       if (update.getStateRoots().size() > 0) {
@@ -1222,6 +1254,7 @@ public class KvStoreDatabase implements Database {
   private Optional<SlotAndExecutionPayloadSummary> updateFinalizedData(
       final Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> finalizedExecutionPayloads,
       final Map<Bytes32, BeaconState> finalizedStates,
       final Map<Bytes32, UInt64> deletedHotBlocksRootsWithSlot,
       final boolean isFinalizedOptimisticBlockRootSet,
@@ -1235,9 +1268,11 @@ public class KvStoreDatabase implements Database {
         updateFinalizedOptimisticTransitionBlock(
             isFinalizedOptimisticBlockRootSet, finalizedOptimisticTransitionBlockRoot);
     if (stateStorageMode.storesFinalizedStates()) {
-      updateFinalizedDataArchiveMode(finalizedChildToParentMap, finalizedBlocks, finalizedStates);
+      updateFinalizedDataArchiveMode(
+          finalizedChildToParentMap, finalizedBlocks, finalizedExecutionPayloads, finalizedStates);
     } else {
-      updateFinalizedDataPruneMode(finalizedChildToParentMap, finalizedBlocks);
+      updateFinalizedDataPruneMode(
+          finalizedChildToParentMap, finalizedBlocks, finalizedExecutionPayloads);
     }
 
     storeNonCanonicalBlocks(deletedHotBlocksRootsWithSlot.keySet(), finalizedChildToParentMap);
@@ -1312,6 +1347,7 @@ public class KvStoreDatabase implements Database {
   private void updateFinalizedDataArchiveMode(
       final Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> finalizedExecutionPayloads,
       final Map<Bytes32, BeaconState> finalizedStates) {
 
     final Optional<Checkpoint> initialCheckpoint = dao.getAnchor();
@@ -1339,7 +1375,12 @@ public class KvStoreDatabase implements Database {
           final Bytes32 blockRoot = finalizedRoots.get(i);
 
           final Optional<UInt64> maybeBlockSlot =
-              addFinalizedBlock(blockRoot, finalizedBlocks, updater, initialBlockRoot);
+              addFinalizedBlockAndExecutionPayload(
+                  blockRoot,
+                  finalizedBlocks,
+                  finalizedExecutionPayloads,
+                  updater,
+                  initialBlockRoot);
 
           Optional.ofNullable(finalizedStates.get(blockRoot))
               .or(() -> getHotState(blockRoot))
@@ -1364,7 +1405,8 @@ public class KvStoreDatabase implements Database {
 
   private void updateFinalizedDataPruneMode(
       final Map<Bytes32, Bytes32> finalizedChildToParentMap,
-      final Map<Bytes32, SignedBeaconBlock> finalizedBlocks) {
+      final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> finalizedExecutionPayloads) {
     final Optional<Bytes32> initialBlockRoot = dao.getAnchor().map(Checkpoint::getRoot);
 
     final List<Bytes32> finalizedRoots = new ArrayList<>(finalizedChildToParentMap.keySet());
@@ -1375,7 +1417,8 @@ public class KvStoreDatabase implements Database {
         while (i < finalizedRoots.size() && (i - start) < TX_BATCH_SIZE) {
           final Bytes32 root = finalizedRoots.get(i);
 
-          addFinalizedBlock(root, finalizedBlocks, updater, initialBlockRoot);
+          addFinalizedBlockAndExecutionPayload(
+              root, finalizedBlocks, finalizedExecutionPayloads, updater, initialBlockRoot);
 
           i++;
         }
@@ -1387,21 +1430,32 @@ public class KvStoreDatabase implements Database {
     }
   }
 
-  private Optional<UInt64> addFinalizedBlock(
+  private Optional<UInt64> addFinalizedBlockAndExecutionPayload(
       final Bytes32 blockRoot,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> finalizedExecutionPayloads,
       final FinalizedUpdater updater,
       final Optional<Bytes32> initialBlockRoot) {
     final SignedBeaconBlock block = finalizedBlocks.get(blockRoot);
+    final SignedExecutionPayloadEnvelope executionPayload =
+        finalizedExecutionPayloads.get(blockRoot);
     if (block != null) {
       addFinalizedBlock(block, updater);
+      // ePBS
+      if (executionPayload != null) {
+        addFinalizedExecutionPayload(block.getSlot(), executionPayload, updater);
+      }
       return Optional.of(block.getSlot());
     }
 
     final Optional<Bytes> rawBlock = dao.getHotBlockAsSsz(blockRoot);
+    final Optional<Bytes> rawExecutionPayload = dao.getHotExecutionPayloadEnvelopeAsSsz(blockRoot);
     if (rawBlock.isPresent()) {
       final UInt64 slot = BeaconBlockInvariants.extractSignedBlockContainerSlot(rawBlock.get());
       updater.addFinalizedBlockRaw(slot, blockRoot, rawBlock.get());
+      // ePBS
+      rawExecutionPayload.ifPresent(
+          rawEp -> updater.addFinalizedExecutionPayloadRaw(slot, blockRoot, rawEp));
       return Optional.of(slot);
     }
 

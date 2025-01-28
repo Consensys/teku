@@ -726,12 +726,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final BlobSidecarsAndValidationResult blobSidecarsAndValidationResult) {
     final PayloadStatus payloadResult = payloadValidationResult.getStatus();
     if (payloadResult.hasInvalidStatus()) {
-      final BlockImportResult result =
-          BlockImportResult.failedStateTransition(
-              new IllegalStateException(
-                  "Invalid ExecutionPayload: "
-                      + payloadResult.getValidationError().orElse("No reason provided")));
-      reportInvalidBlock(block, result);
       payloadValidationResult
           .getInvalidTransitionBlockRoot()
           .ifPresentOrElse(

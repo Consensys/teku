@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
@@ -318,6 +319,24 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
+    public void addFinalizedExecutionPayload(
+        final UInt64 slot, final SignedExecutionPayloadEnvelope executionPayload) {
+      transaction.put(schema.getColumnFinalizedExecutionPayloadsBySlot(), slot, executionPayload);
+    }
+
+    @Override
+    public void addFinalizedExecutionPayloadRaw(
+        final UInt64 slot, final Bytes32 blockRoot, final Bytes executionPayloadBytes) {
+      final KvStoreColumn<UInt64, SignedExecutionPayloadEnvelope>
+          columnFinalizedExecutionPayloadsBySlot =
+              schema.getColumnFinalizedExecutionPayloadsBySlot();
+      transaction.putRaw(
+          columnFinalizedExecutionPayloadsBySlot,
+          Bytes.wrap(columnFinalizedExecutionPayloadsBySlot.getKeySerializer().serialize(slot)),
+          executionPayloadBytes);
+    }
+
+    @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       transaction.put(schema.getColumnNonCanonicalBlocksByRoot(), block.getRoot(), block);
     }
@@ -326,6 +345,11 @@ public class V4FinalizedKvStoreDao {
     public void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnFinalizedBlocksBySlot(), slot);
       transaction.delete(schema.getColumnSlotsByFinalizedRoot(), blockRoot);
+    }
+
+    @Override
+    public void deleteFinalizedExecutionPayload(final UInt64 slot, final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnFinalizedExecutionPayloadsBySlot(), slot);
     }
 
     @Override

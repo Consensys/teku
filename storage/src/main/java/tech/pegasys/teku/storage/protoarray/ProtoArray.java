@@ -134,18 +134,11 @@ public class ProtoArray {
       final UInt64 executionBlockNumber,
       final Bytes32 executionBlockHash,
       final boolean optimisticallyProcessed) {
-    final boolean alreadyTrackedNode = indices.contains(blockRoot);
-    Optional<Integer> trackedNodeIndex = Optional.empty();
-    if (alreadyTrackedNode) {
-      trackedNodeIndex = indices.get(blockRoot);
-      final ProtoNode trackedNode = nodes.get(trackedNodeIndex.orElseThrow());
-      // proceed with ignoring pre-ePBS
-      if (!trackedNode.getExecutionBlockHash().isZero()) {
-        return;
-      }
+    if (indices.contains(blockRoot)) {
+      return;
     }
 
-    int nodeIndex = trackedNodeIndex.orElse(getTotalTrackedNodeCount());
+    int nodeIndex = getTotalTrackedNodeCount();
 
     ProtoNode node =
         new ProtoNode(
@@ -164,12 +157,7 @@ public class ProtoArray {
 
     indices.add(blockRoot, nodeIndex);
 
-    // in ePBS, we call on block twice with a different execution number and hash
-    if (alreadyTrackedNode) {
-      nodes.set(nodeIndex, node);
-    } else {
-      nodes.add(node);
-    }
+    nodes.add(node);
 
     updateBestDescendantOfParent(node, nodeIndex);
   }
@@ -200,6 +188,41 @@ public class ProtoArray {
     }
 
     applyToNodes(this::updateBestDescendantOfParent);
+  }
+
+  /** Register an execution payload with the fork choice. */
+  public void onExecutionPayload(
+      final UInt64 blockSlot,
+      final Bytes32 blockRoot,
+      final Bytes32 parentRoot,
+      final Bytes32 stateRoot,
+      final BlockCheckpoints checkpoints,
+      final UInt64 executionBlockNumber,
+      final Bytes32 executionBlockHash,
+      final boolean optimisticallyProcessed) {
+    if (!indices.contains(blockRoot)) {
+      return;
+    }
+    final int trackedIndex = indices.get(blockRoot).orElseThrow();
+
+    final ProtoNode node =
+        new ProtoNode(
+            blockSlot,
+            stateRoot,
+            blockRoot,
+            parentRoot,
+            indices.get(parentRoot),
+            checkpoints,
+            executionBlockNumber,
+            executionBlockHash,
+            UInt64.ZERO,
+            Optional.empty(),
+            Optional.empty(),
+            optimisticallyProcessed && !executionBlockHash.isZero() ? OPTIMISTIC : VALID);
+
+    nodes.set(trackedIndex, node);
+
+    updateBestDescendantOfParent(node, trackedIndex);
   }
 
   /**

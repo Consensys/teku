@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranch
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
 
@@ -50,6 +51,10 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   private final KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
       nonCanonicalBlobSidecarBySlotRootBlobIndex;
   private final List<Bytes> deletedColumnIds;
+
+  // ePBS
+  private final KvStoreColumn<UInt64, SignedExecutionPayloadEnvelope>
+      finalizedExecutionPayloadsBySlot;
 
   public V6SchemaCombinedTreeState(final Spec spec) {
     super(spec, V6_FINALIZED_OFFSET);
@@ -95,6 +100,13 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
             asColumnId(finalizedOffset + 11),
             asColumnId(finalizedOffset + 12),
             asColumnId(finalizedOffset + 13));
+
+    // ePBS
+    finalizedExecutionPayloadsBySlot =
+        KvStoreColumn.create(
+            finalizedOffset + 16,
+            UINT64_SERIALIZER,
+            KvStoreSerializer.createSignedExecutionPayloadEnvelopeSerializer(spec));
   }
 
   @Override
@@ -120,6 +132,12 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   @Override
   public KvStoreColumn<UInt64, SignedBeaconBlock> getColumnFinalizedBlocksBySlot() {
     return finalizedBlocksBySlot;
+  }
+
+  @Override
+  public KvStoreColumn<UInt64, SignedExecutionPayloadEnvelope>
+      getColumnFinalizedExecutionPayloadsBySlot() {
+    return finalizedExecutionPayloadsBySlot;
   }
 
   @Override
@@ -192,6 +210,7 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         .put(
             "NON_CANONICAL_BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
             getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex())
+        .put("FINALIZED_EXECUTION_PAYLOADS_BY_SLOT", getColumnFinalizedExecutionPayloadsBySlot())
         .build();
   }
 

@@ -28,6 +28,7 @@ import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndExecutionPayloadAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -56,6 +57,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   Optional<SignedExecutionPayloadEnvelope> getHotExecutionPayloadEnvelope(Bytes32 root);
 
   Optional<Bytes> getHotBlockAsSsz(Bytes32 root);
+
+  Optional<Bytes> getHotExecutionPayloadEnvelopeAsSsz(Bytes32 root);
 
   @MustBeClosed
   Stream<SignedBeaconBlock> streamHotBlocks();
@@ -179,7 +182,19 @@ public interface KvStoreCombinedDao extends AutoCloseable {
       blocks.values().forEach(this::addHotBlock);
     }
 
+    // ePBS
+    void addHotExecutionPayload(
+        BlockAndExecutionPayloadAndCheckpoints blockAndExecutionPayloadAndCheckpointEpochs);
+
+    default void addHotExecutionPayloads(
+        final Map<Bytes32, BlockAndExecutionPayloadAndCheckpoints> executionPayloads) {
+      executionPayloads.values().forEach(this::addHotExecutionPayload);
+    }
+
     void deleteHotBlock(Bytes32 blockRoot);
+
+    // ePBS
+    void deleteHotExecutionPayloadOnly(Bytes32 blockRoot);
 
     void deleteHotBlockOnly(Bytes32 blockRoot);
 
@@ -237,9 +252,18 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void addFinalizedBlockRaw(UInt64 slot, Bytes32 blockRoot, Bytes blockBytes);
 
+    // ePBS
+    void addFinalizedExecutionPayload(UInt64 slot, SignedExecutionPayloadEnvelope executionPayload);
+
+    void addFinalizedExecutionPayloadRaw(
+        UInt64 slot, Bytes32 blockRoot, Bytes executionPayloadBytes);
+
     void addNonCanonicalBlock(final SignedBeaconBlock block);
 
     void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot);
+
+    // ePBS
+    void deleteFinalizedExecutionPayload(final UInt64 slot, final Bytes32 blockRoot);
 
     void deleteNonCanonicalBlockOnly(final Bytes32 blockRoot);
 

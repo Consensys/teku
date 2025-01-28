@@ -30,6 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndExecutionPayloadAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ChildNode;
@@ -470,6 +471,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   @Override
   public void applyUpdate(
       final Collection<BlockAndCheckpoints> newBlocks,
+      final Collection<BlockAndExecutionPayloadAndCheckpoints> newExecutionPayloads,
       final Collection<Bytes32> pulledUpBlocks,
       final Map<Bytes32, UInt64> removedBlockRoots,
       final Checkpoint finalizedCheckpoint) {
@@ -487,6 +489,27 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
                       block.getBlockCheckpoints(),
                       block.getExecutionBlockNumber().orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
                       block.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH)));
+      // ePBS
+      newExecutionPayloads.stream()
+          .sorted(Comparator.comparing(executionPayload -> executionPayload.getBlock().getSlot()))
+          .forEach(
+              executionPayload ->
+                  processExecutionPayload(
+                      executionPayload.getBlock().getSlot(),
+                      executionPayload.getBlock().getRoot(),
+                      executionPayload.getBlock().getParentRoot(),
+                      executionPayload.getBlock().getStateRoot(),
+                      executionPayload.getBlockCheckpoints(),
+                      executionPayload
+                          .getExecutionPayload()
+                          .getMessage()
+                          .getPayload()
+                          .getBlockNumber(),
+                      executionPayload
+                          .getExecutionPayload()
+                          .getMessage()
+                          .getPayload()
+                          .getBlockHash()));
       removedBlockRoots.forEach((root, uInt64) -> protoArray.removeBlockRoot(root));
       pulledUpBlocks.forEach(protoArray::pullUpBlockCheckpoints);
       protoArray.maybePrune(finalizedCheckpoint.getRoot());
@@ -537,6 +560,25 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       final UInt64 executionBlockNumber,
       final Bytes32 executionBlockHash) {
     protoArray.onBlock(
+        blockSlot,
+        blockRoot,
+        parentRoot,
+        stateRoot,
+        checkpoints,
+        executionBlockNumber,
+        executionBlockHash,
+        spec.isBlockProcessorOptimistic(blockSlot));
+  }
+
+  void processExecutionPayload(
+      final UInt64 blockSlot,
+      final Bytes32 blockRoot,
+      final Bytes32 parentRoot,
+      final Bytes32 stateRoot,
+      final BlockCheckpoints checkpoints,
+      final UInt64 executionBlockNumber,
+      final Bytes32 executionBlockHash) {
+    protoArray.onExecutionPayload(
         blockSlot,
         blockRoot,
         parentRoot,

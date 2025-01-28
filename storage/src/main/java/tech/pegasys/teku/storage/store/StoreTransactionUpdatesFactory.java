@@ -30,10 +30,12 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndExecutionPayloadAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedExecutionPayloadEnvelopeAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -49,6 +51,7 @@ class StoreTransactionUpdatesFactory {
   private final Map<Bytes32, BlockAndCheckpoints> hotBlocks;
   private final Map<Bytes32, SignedBlockAndState> hotBlockAndStates;
   // ePBS
+  private final Map<Bytes32, BlockAndExecutionPayloadAndCheckpoints> hotExecutionPayloads;
   private final Map<Bytes32, SignedExecutionPayloadEnvelopeAndState>
       hotExecutionPayloadEnvelopeAndStates;
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
@@ -68,17 +71,18 @@ class StoreTransactionUpdatesFactory {
     this.tx = tx;
     this.latestFinalized = latestFinalized;
     // Save copy of tx data that may be pruned
-    hotBlocks = new HashMap<>();
-    tx.blockData.forEach(
-        (key, txData) -> {
-          hotBlocks.put(key, txData.toBlockAndCheckpoints());
-        });
-    // ePBS
-    tx.executionPayloadEnvelopeData.forEach(
-        (key, txData) -> {
-          hotBlocks.put(key, txData.toBlockAndCheckpoints());
-        });
+    hotBlocks =
+        tx.blockData.entrySet().stream()
+            .collect(
+                Collectors.toMap(
+                    Map.Entry::getKey, entry -> entry.getValue().toBlockAndCheckpoints()));
     hotBlockAndStates = new ConcurrentHashMap<>(tx.blockData);
+    hotExecutionPayloads =
+        tx.executionPayloadEnvelopeData.entrySet().stream()
+            .collect(
+                Collectors.toMap(
+                    Map.Entry::getKey,
+                    entry -> entry.getValue().toBlockAndExecutionPayloadAndCheckpoints()));
     hotExecutionPayloadEnvelopeAndStates = new ConcurrentHashMap<>(tx.executionPayloadEnvelopeData);
     stateRoots = new ConcurrentHashMap<>(tx.stateRoots);
     blobSidecars = new ConcurrentHashMap<>(tx.blobSidecars);
@@ -116,6 +120,9 @@ class StoreTransactionUpdatesFactory {
         collectFinalizedRoots(latestFinalized.getRoot());
     final Set<SignedBeaconBlock> finalizedBlocks =
         collectFinalizedBlocks(tx, finalizedChildToParent);
+    // ePBS
+    final Set<SignedExecutionPayloadEnvelope> finalizedExecutionPayloads =
+        collectFinalizedExecutionPayloads(tx, finalizedChildToParent);
     final Map<Bytes32, BeaconState> finalizedStates =
         collectFinalizedStates(tx, finalizedChildToParent);
 
@@ -142,6 +149,7 @@ class StoreTransactionUpdatesFactory {
     calculatePrunedHotBlockRoots();
     prunedHotBlockRoots.forEach(hotBlocks::remove);
     prunedHotBlockRoots.forEach(hotBlockAndStates::remove);
+    prunedHotBlockRoots.forEach(hotExecutionPayloads::remove);
     prunedHotBlockRoots.forEach(hotExecutionPayloadEnvelopeAndStates::remove);
 
     final Optional<FinalizedChainData> finalizedChainData =
@@ -150,6 +158,7 @@ class StoreTransactionUpdatesFactory {
                 .latestFinalized(latestFinalized)
                 .finalizedChildAndParent(finalizedChildToParent)
                 .finalizedBlocks(finalizedBlocks)
+                .finalizedExecutionPayloads(finalizedExecutionPayloads)
                 .finalizedStates(finalizedStates)
                 .build());
 
@@ -166,21 +175,20 @@ class StoreTransactionUpdatesFactory {
                 baseStore.shouldPersistState(
                     e.getValue().getSlot(), blockSlot(e.getValue().getParentRoot())))
         .forEach((entry) -> statesToPersist.put(entry.getKey(), entry.getValue().getState()));
-    LOG.trace("Persist {} hot states", statesToPersist.size());
     hotExecutionPayloadEnvelopeAndStates.forEach(
-        (key, payloadAndState) -> statesToPersist.put(key, payloadAndState.getState()));
+        (key, payloadAndState) -> {
+          // replace block states after processing the EP
+          if (statesToPersist.containsKey(key)) {
+            statesToPersist.put(key, payloadAndState.getState());
+          }
+        });
+    LOG.trace("Persist {} hot states", statesToPersist.size());
     return statesToPersist;
   }
 
   private Optional<UInt64> blockSlot(final Bytes32 root) {
     return Optional.ofNullable(hotBlockAndStates.get(root))
         .map(SignedBlockAndState::getSlot)
-        // ePBS
-        .or(
-            () ->
-                Optional.ofNullable(hotExecutionPayloadEnvelopeAndStates.get(root))
-                    .map(SignedExecutionPayloadEnvelopeAndState::getState)
-                    .map(BeaconState::getSlot))
         .or(() -> baseStore.getForkChoiceStrategy().blockSlot(root));
   }
 
@@ -213,11 +221,20 @@ class StoreTransactionUpdatesFactory {
         .collect(Collectors.toSet());
   }
 
+  private Set<SignedExecutionPayloadEnvelope> collectFinalizedExecutionPayloads(
+      final StoreTransaction tx, final Map<Bytes32, Bytes32> finalizedChildToParent) {
+    return finalizedChildToParent.keySet().stream()
+        .flatMap(root -> tx.getExecutionPayloadIfAvailable(root).stream())
+        .collect(Collectors.toSet());
+  }
+
   private Map<Bytes32, BeaconState> collectFinalizedStates(
       final StoreTransaction tx, final Map<Bytes32, Bytes32> finalizedChildToParent) {
     final Map<Bytes32, BeaconState> states = new HashMap<>();
     for (Bytes32 finalizedRoot : finalizedChildToParent.keySet()) {
-      tx.getBlockStateIfAvailable(finalizedRoot)
+      // ePBS
+      tx.getExecutionPayloadStateIfAvailable(finalizedRoot)
+          .or(() -> tx.getBlockStateIfAvailable(finalizedRoot))
           .ifPresent(state -> states.put(finalizedRoot, state));
     }
     return states;
@@ -269,6 +286,7 @@ class StoreTransactionUpdatesFactory {
         finalizedChainData,
         hotBlocks,
         hotBlockAndStates,
+        hotExecutionPayloads,
         hotExecutionPayloadEnvelopeAndStates,
         getHotStatesToPersist(),
         blobSidecars,

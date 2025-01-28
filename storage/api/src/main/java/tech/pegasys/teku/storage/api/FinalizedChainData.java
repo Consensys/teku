@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -29,16 +30,19 @@ public class FinalizedChainData {
   private final AnchorPoint latestFinalized;
   private final Map<Bytes32, Bytes32> finalizedChildToParentMap;
   private final Map<Bytes32, SignedBeaconBlock> finalizedBlocks;
+  private final Map<Bytes32, SignedExecutionPayloadEnvelope> finalizedExecutionPayloads;
   private final Map<Bytes32, BeaconState> finalizedStates;
 
   private FinalizedChainData(
       final AnchorPoint latestFinalized,
       final Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> finalizedExecutionPayloads,
       final Map<Bytes32, BeaconState> finalizedStates) {
     this.latestFinalized = latestFinalized;
     this.finalizedChildToParentMap = finalizedChildToParentMap;
     this.finalizedBlocks = finalizedBlocks;
+    this.finalizedExecutionPayloads = finalizedExecutionPayloads;
     this.finalizedStates = finalizedStates;
   }
 
@@ -62,6 +66,10 @@ public class FinalizedChainData {
     return finalizedBlocks;
   }
 
+  public Map<Bytes32, SignedExecutionPayloadEnvelope> getExecutionPayloads() {
+    return finalizedExecutionPayloads;
+  }
+
   public Map<Bytes32, BeaconState> getStates() {
     return finalizedStates;
   }
@@ -74,12 +82,18 @@ public class FinalizedChainData {
     private AnchorPoint latestFinalized;
     private final Map<Bytes32, Bytes32> finalizedChildToParentMap = new HashMap<>();
     private final Map<Bytes32, SignedBeaconBlock> finalizedBlocks = new HashMap<>();
+    private final Map<Bytes32, SignedExecutionPayloadEnvelope> finalizedExecutionPayloads =
+        new HashMap<>();
     private final Map<Bytes32, BeaconState> finalizedStates = new HashMap<>();
 
     public FinalizedChainData build() {
       assertValid();
       return new FinalizedChainData(
-          latestFinalized, finalizedChildToParentMap, finalizedBlocks, finalizedStates);
+          latestFinalized,
+          finalizedChildToParentMap,
+          finalizedBlocks,
+          finalizedExecutionPayloads,
+          finalizedStates);
     }
 
     private void assertValid() {
@@ -106,6 +120,17 @@ public class FinalizedChainData {
     public Builder finalizedBlocks(final Collection<SignedBeaconBlock> finalizedBlocks) {
       checkNotNull(finalizedBlocks);
       finalizedBlocks.forEach(this::finalizedBlock);
+      return this;
+    }
+
+    public Builder finalizedExecutionPayloads(
+        final Collection<SignedExecutionPayloadEnvelope> finalizedExecutionPayloads) {
+      checkNotNull(finalizedExecutionPayloads);
+      finalizedExecutionPayloads.forEach(
+          finalizedExecutionPayload ->
+              this.finalizedExecutionPayloads.put(
+                  finalizedExecutionPayload.getMessage().getBeaconBlockRoot(),
+                  finalizedExecutionPayload));
       return this;
     }
 

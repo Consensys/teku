@@ -34,6 +34,7 @@ import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndExecutionPayloadAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -105,6 +106,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public Optional<Bytes> getHotBlockAsSsz(final Bytes32 root) {
     return db.getRaw(schema.getColumnHotBlocksByRoot(), root);
+  }
+
+  @Override
+  public Optional<Bytes> getHotExecutionPayloadEnvelopeAsSsz(final Bytes32 root) {
+    return db.getRaw(schema.getColumnHotExecutionPayloadEnvelopesByRoot(), root);
   }
 
   @Override
@@ -633,6 +639,17 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
       addHotBlockCheckpointEpochs(blockRoot, block.getBlockCheckpoints());
     }
 
+    @Override
+    public void addHotExecutionPayload(
+        final BlockAndExecutionPayloadAndCheckpoints executionPayload) {
+      final Bytes32 blockRoot = executionPayload.getBlock().getRoot();
+      transaction.put(
+          schema.getColumnHotExecutionPayloadEnvelopesByRoot(),
+          blockRoot,
+          executionPayload.getExecutionPayload());
+      addHotBlockCheckpointEpochs(blockRoot, executionPayload.getBlockCheckpoints());
+    }
+
     private void addHotBlockCheckpointEpochs(
         final Bytes32 blockRoot, final BlockCheckpoints blockCheckpoints) {
       transaction.put(
@@ -670,6 +687,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
       transaction.delete(schema.getColumnHotBlocksByRoot(), blockRoot);
       transaction.delete(schema.getColumnHotBlockCheckpointEpochsByRoot(), blockRoot);
       deleteHotState(blockRoot);
+    }
+
+    @Override
+    public void deleteHotExecutionPayloadOnly(final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnHotExecutionPayloadEnvelopesByRoot(), blockRoot);
     }
 
     @Override
@@ -750,6 +772,24 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void addFinalizedExecutionPayload(
+        final UInt64 slot, final SignedExecutionPayloadEnvelope executionPayload) {
+      transaction.put(schema.getColumnFinalizedExecutionPayloadsBySlot(), slot, executionPayload);
+    }
+
+    @Override
+    public void addFinalizedExecutionPayloadRaw(
+        final UInt64 slot, final Bytes32 blockRoot, final Bytes executionPayloadBytes) {
+      final KvStoreColumn<UInt64, SignedExecutionPayloadEnvelope>
+          columnFinalizedExecutionPayloadsBySlot =
+              schema.getColumnFinalizedExecutionPayloadsBySlot();
+      transaction.putRaw(
+          columnFinalizedExecutionPayloadsBySlot,
+          Bytes.wrap(columnFinalizedExecutionPayloadsBySlot.getKeySerializer().serialize(slot)),
+          executionPayloadBytes);
+    }
+
+    @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       transaction.put(schema.getColumnNonCanonicalBlocksByRoot(), block.getRoot(), block);
     }
@@ -758,6 +798,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     public void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnFinalizedBlocksBySlot(), slot);
       transaction.delete(schema.getColumnSlotsByFinalizedRoot(), blockRoot);
+    }
+
+    @Override
+    public void deleteFinalizedExecutionPayload(final UInt64 slot, final Bytes32 blockRoot) {
+      transaction.delete(schema.getColumnFinalizedExecutionPayloadsBySlot(), slot);
     }
 
     @Override

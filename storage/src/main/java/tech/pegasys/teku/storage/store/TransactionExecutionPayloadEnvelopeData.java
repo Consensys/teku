@@ -15,7 +15,7 @@ package tech.pegasys.teku.storage.store;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndExecutionPayloadAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedExecutionPayloadEnvelopeAndState;
@@ -45,8 +45,9 @@ public class TransactionExecutionPayloadEnvelopeData
     return checkpoints;
   }
 
-  public BlockAndCheckpoints toBlockAndCheckpoints() {
-    return new BlockAndCheckpoints(getBlock(), getExecutionPayloadEnvelope(), getCheckpoints());
+  public BlockAndExecutionPayloadAndCheckpoints toBlockAndExecutionPayloadAndCheckpoints() {
+    return new BlockAndExecutionPayloadAndCheckpoints(
+        getBlock(), getExecutionPayloadEnvelope(), getCheckpoints());
   }
 
   @Override

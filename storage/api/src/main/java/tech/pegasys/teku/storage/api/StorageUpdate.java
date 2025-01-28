@@ -27,8 +27,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndExecutionPayloadAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -40,6 +42,8 @@ public class StorageUpdate {
   private final Optional<Checkpoint> bestJustifiedCheckpoint;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final Map<Bytes32, BlockAndCheckpoints> hotBlocks;
+  // ePBS
+  private final Map<Bytes32, BlockAndExecutionPayloadAndCheckpoints> hotExecutionPayloads;
   private final Map<Bytes32, BeaconState> hotStates;
   private final Map<Bytes32, UInt64> deletedHotBlocks;
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
@@ -56,6 +60,7 @@ public class StorageUpdate {
       final Optional<Checkpoint> justifiedCheckpoint,
       final Optional<Checkpoint> bestJustifiedCheckpoint,
       final Map<Bytes32, BlockAndCheckpoints> hotBlocks,
+      final Map<Bytes32, BlockAndExecutionPayloadAndCheckpoints> hotExecutionPayloads,
       final Map<Bytes32, BeaconState> hotStates,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot,
@@ -70,6 +75,7 @@ public class StorageUpdate {
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.hotBlocks = hotBlocks;
+    this.hotExecutionPayloads = hotExecutionPayloads;
     this.hotStates = hotStates;
     this.blobSidecars = blobSidecars;
     this.maybeEarliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
@@ -89,6 +95,7 @@ public class StorageUpdate {
             && finalizedChainData.isEmpty()
             && bestJustifiedCheckpoint.isEmpty()
             && hotBlocks.isEmpty()
+            && hotExecutionPayloads.isEmpty()
             && hotStates.isEmpty()
             && deletedHotBlocks.isEmpty()
             && stateRoots.isEmpty()
@@ -122,6 +129,10 @@ public class StorageUpdate {
     return hotBlocks;
   }
 
+  public Map<Bytes32, BlockAndExecutionPayloadAndCheckpoints> getHotExecutionPayloads() {
+    return hotExecutionPayloads;
+  }
+
   public Map<SlotAndBlockRoot, List<BlobSidecar>> getBlobSidecars() {
     return blobSidecars;
   }
@@ -146,6 +157,12 @@ public class StorageUpdate {
 
   public Map<Bytes32, SignedBeaconBlock> getFinalizedBlocks() {
     return finalizedChainData.map(FinalizedChainData::getBlocks).orElse(Collections.emptyMap());
+  }
+
+  public Map<Bytes32, SignedExecutionPayloadEnvelope> getFinalizedExecutionPayloads() {
+    return finalizedChainData
+        .map(FinalizedChainData::getExecutionPayloads)
+        .orElse(Collections.emptyMap());
   }
 
   public Map<Bytes32, BeaconState> getFinalizedStates() {

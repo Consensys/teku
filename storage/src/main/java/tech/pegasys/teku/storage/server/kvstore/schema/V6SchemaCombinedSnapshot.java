@@ -30,6 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
@@ -48,6 +49,10 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   private final KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
       nonCanonicalBlobSidecarBySlotRootBlobIndex;
   private final List<Bytes> deletedColumnIds;
+
+  // ePBS
+  private final KvStoreColumn<UInt64, SignedExecutionPayloadEnvelope>
+      finalizedExecutionPayloadsBySlot;
 
   private V6SchemaCombinedSnapshot(final Spec spec, final int finalizedOffset) {
     super(spec, finalizedOffset);
@@ -89,6 +94,13 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
             asColumnId(finalizedOffset + 9),
             asColumnId(finalizedOffset + 10),
             asColumnId(finalizedOffset + 11));
+
+    // ePBS
+    finalizedExecutionPayloadsBySlot =
+        KvStoreColumn.create(
+            finalizedOffset + 14,
+            UINT64_SERIALIZER,
+            KvStoreSerializer.createSignedExecutionPayloadEnvelopeSerializer(spec));
   }
 
   public static V6SchemaCombinedSnapshot createV4(final Spec spec) {
@@ -112,6 +124,12 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   @Override
   public KvStoreColumn<UInt64, SignedBeaconBlock> getColumnFinalizedBlocksBySlot() {
     return finalizedBlocksBySlot;
+  }
+
+  @Override
+  public KvStoreColumn<UInt64, SignedExecutionPayloadEnvelope>
+      getColumnFinalizedExecutionPayloadsBySlot() {
+    return finalizedExecutionPayloadsBySlot;
   }
 
   @Override
@@ -163,6 +181,7 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
         .put(
             "NON_CANONICAL_BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
             getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex())
+        .put("FINALIZED_EXECUTION_PAYLOADS_BY_SLOT", getColumnFinalizedExecutionPayloadsBySlot())
         .build();
   }
 

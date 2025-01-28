@@ -54,10 +54,12 @@ import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.constants.PayloadStatus;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndExecutionPayloadAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -97,6 +99,8 @@ class Store extends CacheableStore {
   private Optional<SettableGauge> blockCountGauge = Optional.empty();
   private Optional<SettableGauge> epochStatesCountGauge = Optional.empty();
   private Optional<SettableGauge> blobSidecarsBlocksCountGauge = Optional.empty();
+  // ePBS
+  private Optional<SettableGauge> executionPayloadCountGauge = Optional.empty();
 
   private final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates;
 
@@ -126,6 +130,7 @@ class Store extends CacheableStore {
   private UInt64 parentThreshold = UInt64.ZERO;
 
   // ePBS
+  private final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads;
   private final CachingTaskQueue<Bytes32, StateAndExecutionPayloadSummary> executionPayloadStates;
   private final Map<Bytes32, List<Byte>> ptcVote;
 
@@ -151,6 +156,7 @@ class Store extends CacheableStore {
       final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates,
       final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
+      final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads,
       final CachingTaskQueue<Bytes32, StateAndExecutionPayloadSummary> executionPayloadStates,
       final Map<Bytes32, List<Byte>> ptcVote) {
     checkArgument(
@@ -200,15 +206,14 @@ class Store extends CacheableStore {
                         .orElseGet(Collections::emptyMap)),
             createBlockProviderFromMapWhileLocked(this.blocks),
             blockProvider);
-    // EIP-7732 TODO: implement as above
     this.executionPayloadEnvelopeProvider = executionPayloadEnvelopeProvider;
 
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
 
     // ePBS
+    this.executionPayloads = executionPayloads;
     this.executionPayloadStates = executionPayloadStates;
     this.ptcVote = new HashMap<>(ptcVote);
-    states.cache(finalizedAnchor.getRoot(), finalizedAnchor);
     this.ptcVote.put(finalizedAnchor.getRoot(), new ArrayList<>());
   }
 
@@ -264,6 +269,8 @@ class Store extends CacheableStore {
     final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars =
         LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
     // ePBS
+    final Map<Bytes32, SignedExecutionPayloadEnvelope> executionPayloads =
+        LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
     final CachingTaskQueue<Bytes32, StateAndExecutionPayloadSummary>
         executionPayloadStateTaskQueue =
             CachingTaskQueue.create(
@@ -294,6 +301,7 @@ class Store extends CacheableStore {
         checkpointStateTaskQueue,
         maybeEpochStates,
         blobSidecars,
+        executionPayloads,
         executionPayloadStateTaskQueue,
         ptcVote);
   }
@@ -440,7 +448,15 @@ class Store extends CacheableStore {
                     "memory_epoch_states_cache_size",
                     "Number of Epoch aligned states held in the in-memory store"));
       }
+      executionPayloadCountGauge =
+          Optional.of(
+              SettableGauge.create(
+                  metricsSystem,
+                  TekuMetricCategory.STORAGE,
+                  "memory_execution_payload_count",
+                  "Number of execution payloads held in the in-memory store"));
       states.startMetrics();
+      executionPayloadStates.startMetrics();
       checkpointStates.startMetrics();
     } finally {
       votesLock.writeLock().unlock();
@@ -459,6 +475,8 @@ class Store extends CacheableStore {
     states.clear();
     checkpointStates.clear();
     blocks.clear();
+    executionPayloads.clear();
+    executionPayloadStates.clear();
   }
 
   @Override
@@ -587,7 +605,10 @@ class Store extends CacheableStore {
   public boolean containsExecutionPayloadEnvelope(final Bytes32 blockRoot) {
     readLock.lock();
     try {
-      return forkChoiceStrategy.executionBlockHash(blockRoot).isPresent();
+      return forkChoiceStrategy
+          .executionBlockHash(blockRoot)
+          .map(blockHash -> !blockHash.isZero())
+          .orElse(false);
     } finally {
       readLock.unlock();
     }
@@ -611,10 +632,28 @@ class Store extends CacheableStore {
   }
 
   @Override
+  public Optional<BeaconState> getExecutionPayloadStateIfAvailable(final Bytes32 blockRoot) {
+    return executionPayloadStates
+        .getIfAvailable(blockRoot)
+        .map(StateAndExecutionPayloadSummary::getState);
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getBlockIfAvailable(final Bytes32 blockRoot) {
     readLock.lock();
     try {
       return Optional.ofNullable(blocks.get(blockRoot));
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public Optional<SignedExecutionPayloadEnvelope> getExecutionPayloadIfAvailable(
+      final Bytes32 blockRoot) {
+    readLock.lock();
+    try {
+      return Optional.ofNullable(executionPayloads.get(blockRoot));
     } finally {
       readLock.unlock();
     }
@@ -692,13 +731,18 @@ class Store extends CacheableStore {
         headUnrealizedJustifiedCheckpoint.equals(parentUnrealizedJustifiedCheckpoint));
   }
 
-  // EIP-7732 TODO: Turn 256 into constant PAYLOAD_TIMELY_THRESHOLD
   @Override
   public boolean isPayloadPresent(final Bytes32 root) {
     return ptcVote.getOrDefault(root, Collections.emptyList()).stream()
             .filter(vote -> vote.equals(PayloadStatus.PAYLOAD_PRESENT.getCode()))
             .count()
-        > 256;
+        // PAYLOAD_TIMELY_THRESHOLD
+        > spec.forMilestone(SpecMilestone.EIP7732)
+                .getConfig()
+                .toVersionEip7732()
+                .orElseThrow()
+                .getPtcSize()
+            / 2;
   }
 
   private Optional<ProtoNodeData> getBlockDataFromForkChoiceStrategy(final Bytes32 root) {
@@ -817,6 +861,19 @@ class Store extends CacheableStore {
         .map(BlockAndCheckpoints::getBlock)
         .forEach(block -> blocks.put(block.getRoot(), block));
     blockCountGauge.ifPresent(gauge -> gauge.set(blocks.size()));
+  }
+
+  @Override
+  void cacheExecutionPayloads(
+      final Collection<BlockAndExecutionPayloadAndCheckpoints> executionPayloadAndCheckpoints) {
+    executionPayloadAndCheckpoints.stream()
+        .sorted(Comparator.comparing(key -> key.getBlock().getSlot()))
+        .map(BlockAndExecutionPayloadAndCheckpoints::getExecutionPayload)
+        .forEach(
+            executionPayload ->
+                executionPayloads.put(
+                    executionPayload.getMessage().getBeaconBlockRoot(), executionPayload));
+    executionPayloadCountGauge.ifPresent(gauge -> gauge.set(executionPayloads.size()));
   }
 
   /** Non-synchronized, no lock, unsafe if Store is not locked externally */
@@ -1132,7 +1189,9 @@ class Store extends CacheableStore {
 
   void removeStateAndBlock(final Bytes32 root) {
     blocks.remove(root);
+    executionPayloads.remove(root);
     states.remove(root);
+    executionPayloadStates.remove(root);
     maybeEpochStates.ifPresent(
         epochStates -> {
           if (!finalizedAnchor.getRoot().equals(root)) {
