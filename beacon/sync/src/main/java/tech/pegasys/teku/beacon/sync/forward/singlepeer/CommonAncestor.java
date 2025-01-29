@@ -67,7 +67,7 @@ public class CommonAncestor {
         peer,
         lowestHeadSlot.minusMinZero(BLOCK_COUNT_PER_ATTEMPT.decrement()),
         firstNonFinalSlot,
-        1);
+        0);
   }
 
   private SafeFuture<UInt64> getCommonAncestor(
@@ -75,7 +75,7 @@ public class CommonAncestor {
       final UInt64 firstRequestedSlot,
       final UInt64 firstNonFinalSlot,
       final int attempt) {
-    if (attempt > maxAttempts || firstRequestedSlot.isLessThanOrEqualTo(firstNonFinalSlot)) {
+    if (attempt >= maxAttempts || firstRequestedSlot.isLessThanOrEqualTo(firstNonFinalSlot)) {
       return SafeFuture.completedFuture(firstNonFinalSlot);
     }
 
@@ -102,7 +102,7 @@ public class CommonAncestor {
                             getCommonAncestor(
                                 peer,
                                 firstRequestedSlot.minusMinZero(
-                                    SLOTS_TO_JUMP_BACK_EXPONENTIAL_BASE.times(1L << (attempt - 1))),
+                                    SLOTS_TO_JUMP_BACK_EXPONENTIAL_BASE.times(1L << attempt)),
                                 firstNonFinalSlot,
                                 attempt + 1)));
   }
