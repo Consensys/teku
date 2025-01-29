@@ -257,6 +257,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Map<String, Optional<String>> getVariables() {
+    return new HashMap<>();
+  }
+
+  @Override
   public long getBlobSidecarColumnCount() {
     return 0L;
   }

@@ -54,8 +54,6 @@ class ScoringConfig {
 
   private ScoringConfig(final Spec spec, final int d) {
     this.spec = spec;
-    // TODO(#3356) Use spec provider through-out rather than relying only on genesis constants and
-    //  genesis spec
     this.genesisConfig = spec.getGenesisSpecConfig();
     this.genesisSpec = spec.getGenesisSpec();
     this.d = d;

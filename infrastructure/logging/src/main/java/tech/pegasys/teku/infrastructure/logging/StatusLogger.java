@@ -278,6 +278,10 @@ public class StatusLogger {
     log.info("Storage initialization complete");
   }
 
+  public void emptyChainData() {
+    log.info("Empty storage. Initialization complete.");
+  }
+
   public void recordedFinalizedBlocks(final int numberRecorded, final int totalToRecord) {
     log.info("Recorded {} of {} finalized blocks", numberRecorded, totalToRecord);
   }

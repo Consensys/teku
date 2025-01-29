@@ -296,7 +296,7 @@ public class LevelDbInstance implements KvStoreAccessor {
   private Stream<ColumnEntry<byte[], byte[]>> streamRaw(
       final KvStoreColumn<?, ?> column, final byte[] fromBytes, final byte[] toBytes) {
     assertOpen();
-    final DBIterator iterator = createIterator();
+    final CustomDBIterator iterator = createIterator();
     iterator.seek(fromBytes);
     return new LevelDbIterator<>(this, iterator, column, toBytes)
         .toStream()
@@ -307,7 +307,7 @@ public class LevelDbInstance implements KvStoreAccessor {
   private Stream<byte[]> streamKeysRaw(
       final KvStoreColumn<?, ?> column, final byte[] fromBytes, final byte[] toBytes) {
     assertOpen();
-    final DBIterator iterator = createIterator();
+    final CustomDBIterator iterator = createIterator();
     iterator.seek(fromBytes);
     return new LevelDbKeyIterator<>(this, iterator, column, toBytes)
         .toStream()
@@ -371,8 +371,9 @@ public class LevelDbInstance implements KvStoreAccessor {
     }
   }
 
-  private DBIterator createIterator() {
-    final DBIterator iterator = db.iterator(new ReadOptions().fillCache(false));
+  private CustomDBIterator createIterator() {
+    final CustomDBIterator iterator =
+        (CustomDBIterator) db.iterator(new ReadOptions().fillCache(false));
     openIterators.add(iterator);
     openedIteratorsCounter.inc();
     return iterator;
