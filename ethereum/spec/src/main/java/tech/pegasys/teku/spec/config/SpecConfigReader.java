@@ -71,7 +71,8 @@ public class SpecConfigReader {
           "TRANSITION_TOTAL_DIFFICULTY",
           // Deprecated fields
           "GOSSIP_MAX_SIZE_BELLATRIX",
-          "MAX_CHUNK_SIZE_BELLATRIX");
+          "MAX_CHUNK_SIZE_BELLATRIX",
+          "MAX_CHUNK_SIZE");
   private static final ImmutableSet<String> CONSTANT_KEYS =
       ImmutableSet.of(
           // Phase0 constants which may exist in legacy config files, but should now be ignored

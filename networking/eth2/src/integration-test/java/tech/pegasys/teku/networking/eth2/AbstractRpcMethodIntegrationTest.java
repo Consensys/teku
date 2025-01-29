@@ -186,7 +186,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
               .builder()
               .rpcEncoding(
                   RpcEncoding.createSszSnappyEncoding(
-                      remoteSpec.getNetworkingConfig().getMaxChunkSize()))
+                      remoteSpec.getNetworkingConfig().getMaxPayloadSize()))
               .recentChainData(peerStorage.recentChainData())
               .historicalChainData(peerStorage.chainStorage())
               .spec(remoteSpec)
@@ -197,7 +197,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
               .builder()
               .rpcEncoding(
                   RpcEncoding.createSszSnappyEncoding(
-                      localSpec.getNetworkingConfig().getMaxChunkSize()))
+                      localSpec.getNetworkingConfig().getMaxPayloadSize()))
               .peer(remotePeerNetwork)
               .recentChainData(localStorage.recentChainData())
               .historicalChainData(localStorage.chainStorage())

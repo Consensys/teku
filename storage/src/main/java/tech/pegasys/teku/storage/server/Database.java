@@ -215,6 +215,8 @@ public interface Database extends AutoCloseable {
 
   Map<String, Long> getColumnCounts(final Optional<String> maybeColumnFilter);
 
+  Map<String, Optional<String>> getVariables();
+
   long getBlobSidecarColumnCount();
 
   long getNonCanonicalBlobSidecarColumnCount();

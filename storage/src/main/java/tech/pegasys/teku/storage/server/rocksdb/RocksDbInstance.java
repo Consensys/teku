@@ -201,7 +201,7 @@ public class RocksDbInstance implements KvStoreAccessor {
   @MustBeClosed
   public synchronized KvStoreTransaction startTransaction() {
     assertOpen();
-    RocksDbTransaction tx =
+    final RocksDbTransaction tx =
         new RocksDbTransaction(db, defaultHandle, columnHandles, openTransactions::remove);
     openTransactions.add(tx);
     return tx;
@@ -249,6 +249,7 @@ public class RocksDbInstance implements KvStoreAccessor {
       final KvStoreColumn<K, V> column,
       final Consumer<RocksIterator> setupIterator,
       final Predicate<K> continueTest) {
+    assertOpen();
     final ColumnFamilyHandle handle = columnHandles.get(column);
     final RocksIterator rocksDbIterator = db.newIterator(handle);
     setupIterator.accept(rocksDbIterator);
@@ -261,6 +262,7 @@ public class RocksDbInstance implements KvStoreAccessor {
       final KvStoreColumn<K, V> column,
       final Consumer<RocksIterator> setupIterator,
       final Predicate<K> continueTest) {
+    assertOpen();
     final ColumnFamilyHandle handle = columnHandles.get(column);
     final RocksIterator rocksDbIterator = db.newIterator(handle);
     setupIterator.accept(rocksDbIterator);

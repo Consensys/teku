@@ -118,8 +118,8 @@ public class BlobSidecarsByRootMessageHandlerTest {
                 .orElseThrow()
                 .getBlobSidecarsByRootRequestMessageSchema();
     currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
-    final int maxChunkSize = spec.getNetworkingConfig().getMaxChunkSize();
-    final RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(maxChunkSize);
+    final RpcEncoding rpcEncoding =
+        RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
     protocolId = BeaconChainMethodIds.getBlobSidecarsByRootMethodId(1, rpcEncoding);
     handler = new BlobSidecarsByRootMessageHandler(spec, metricsSystem, combinedChainDataClient);
 
