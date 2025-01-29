@@ -13,10 +13,11 @@
 
 package tech.pegasys.teku.statetransition.inclusionlist;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.TreeMap;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -27,10 +28,13 @@ import tech.pegasys.teku.statetransition.validation.SignedInclusionListValidator
 
 public class InclusionListManager implements SlotEventsChannel {
 
+  private static final UInt64 SLOTS_TO_RETAIN = UInt64.valueOf(4);
+
   private final SignedInclusionListValidator signedInclusionListValidator;
 
-  private final ConcurrentHashMap<UInt64, List<SignedInclusionList>>
-      validatorIndexToInclusionLists = new ConcurrentHashMap<>();
+  // TODO EIP7805 Could use a more efficient DS
+  private final NavigableMap<UInt64, Map<UInt64, List<SignedInclusionList>>>
+      slotToInclusionListsByValidatorIndex = new TreeMap<>();
 
   public InclusionListManager(final SignedInclusionListValidator signedInclusionListValidator) {
     this.signedInclusionListValidator = signedInclusionListValidator;
@@ -38,22 +42,31 @@ public class InclusionListManager implements SlotEventsChannel {
 
   @Override
   public synchronized void onSlot(final UInt64 slot) {
-    validatorIndexToInclusionLists.clear();
+    slotToInclusionListsByValidatorIndex.headMap(slot.minusMinZero(SLOTS_TO_RETAIN)).clear();
   }
 
   public void add(final SignedInclusionList signedInclusionList) {
     final UInt64 validatorIndex = signedInclusionList.getMessage().getValidatorIndex();
-    if (validatorIndexToInclusionLists.containsKey(validatorIndex)) {
-      validatorIndexToInclusionLists.get(validatorIndex).add(signedInclusionList);
+    final UInt64 slot = signedInclusionList.getMessage().getSlot();
+    if (slotToInclusionListsByValidatorIndex.containsKey(slot)) {
+      if (slotToInclusionListsByValidatorIndex.get(slot).containsKey(validatorIndex)) {
+        slotToInclusionListsByValidatorIndex.get(slot).get(validatorIndex).add(signedInclusionList);
+      } else {
+        slotToInclusionListsByValidatorIndex
+            .get(slot)
+            .put(validatorIndex, List.of(signedInclusionList));
+      }
     } else {
-      validatorIndexToInclusionLists.put(validatorIndex, List.of(signedInclusionList));
+      slotToInclusionListsByValidatorIndex.put(
+          slot, Map.of(validatorIndex, List.of(signedInclusionList)));
     }
   }
 
   public SafeFuture<InternalValidationResult> addSignedInclusionList(
       final SignedInclusionList signedInclusionList, final Optional<UInt64> arrivalTimestamp) {
     final SafeFuture<InternalValidationResult> validationResult =
-        signedInclusionListValidator.validate(signedInclusionList, validatorIndexToInclusionLists);
+        signedInclusionListValidator.validate(
+            signedInclusionList, slotToInclusionListsByValidatorIndex);
     return validationResult.thenApply(
         result -> {
           if (result.isAccept()) {
@@ -63,9 +76,13 @@ public class InclusionListManager implements SlotEventsChannel {
         });
   }
 
-  // TODO EIP7805
   public List<SignedInclusionList> getInclusionLists(
       final UInt64 slot, final SszBitvector committeeIndices) {
-    return Collections.emptyList();
+    final Map<UInt64, List<SignedInclusionList>> inclusionListsForSlot =
+        slotToInclusionListsByValidatorIndex.getOrDefault(slot, Map.of());
+    return inclusionListsForSlot.entrySet().stream()
+        .filter(e -> committeeIndices.isSet(e.getKey().intValue()))
+        .flatMap(e -> e.getValue().stream())
+        .toList();
   }
 }

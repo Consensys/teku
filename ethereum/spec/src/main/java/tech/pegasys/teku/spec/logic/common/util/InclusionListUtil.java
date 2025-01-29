@@ -85,6 +85,10 @@ public class InclusionListUtil {
     return BLS.verify(pubkey, signingRoot, signedInclusionList.getSignature());
   }
 
+  public IntList getInclusionListCommittee(final BeaconState state, final UInt64 slot) {
+    return beaconStateAccessors.getInclusionListCommittee(state, slot);
+  }
+
   // TODO EIP7805 this IntList to SszList conversion to get the HTR could be improved
   public boolean hasCorrectCommitteeRoot(
       final BeaconState state, final UInt64 slot, final Bytes32 committeeRoot) {

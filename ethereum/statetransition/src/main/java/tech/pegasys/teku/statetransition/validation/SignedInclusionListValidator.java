@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Set;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -38,7 +40,8 @@ public class SignedInclusionListValidator {
 
   public SafeFuture<InternalValidationResult> validate(
       final SignedInclusionList signedInclusionList,
-      final Map<UInt64, List<SignedInclusionList>> validatorIndexToInclusionLists) {
+      final NavigableMap<UInt64, Map<UInt64, List<SignedInclusionList>>>
+          slotToInclusionListsByValidatorIndex) {
 
     final InclusionList inclusionList = signedInclusionList.getMessage();
     final UInt64 slot = inclusionList.getSlot();
@@ -95,9 +98,7 @@ public class SignedInclusionListValidator {
     /*
      * [IGNORE] The message is either the first or second valid message received from the validator with index message.validator_index.
      */
-    if (validatorIndexToInclusionLists
-            .getOrDefault(inclusionList.getValidatorIndex(), Collections.emptyList())
-            .size()
+    if (countInclusionLists(slotToInclusionListsByValidatorIndex, inclusionList.getValidatorIndex())
         > 2) {
       return SafeFuture.completedFuture(
           InternalValidationResult.ignore(
@@ -140,5 +141,16 @@ public class SignedInclusionListValidator {
 
               return InternalValidationResult.ACCEPT;
             });
+  }
+
+  private int countInclusionLists(
+      final NavigableMap<UInt64, Map<UInt64, List<SignedInclusionList>>>
+          slotToInclusionListsByValidatorIndex,
+      final UInt64 validatorIndex) {
+    final Set<Map<UInt64, List<SignedInclusionList>>> validatorInclusionLists =
+        slotToInclusionListsByValidatorIndex.values().stream()
+            .filter(e -> e.containsKey(validatorIndex))
+            .collect(Collectors.toSet());
+    return validatorInclusionLists.stream().mapToInt(e -> e.get(validatorIndex).size()).sum();
   }
 }
