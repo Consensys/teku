@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,18 +26,26 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class CommonAncestor {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int MAX_ATTEMPTS = 3;
-  private static final UInt64 BLOCK_COUNT_PER_ATTEMPT = UInt64.valueOf(10);
-  private static final UInt64 SLOTS_TO_JUMP_BACK_ON_EACH_ATTEMPT = UInt64.valueOf(100);
+  private static final int DEFAULT_MAX_ATTEMPTS = 5;
+  static final UInt64 BLOCK_COUNT_PER_ATTEMPT = UInt64.valueOf(10);
+  static final UInt64 SLOTS_TO_JUMP_BACK_EXPONENTIAL_BASE = UInt64.valueOf(100);
+  // We will try to find a common block downloading 10 blocks per attempt.
+  // We will try 5 times, each time jumping back 100 * 2^attempt slots.
+  // Which means we will jump back 100 slots, then 200, then 400, then 800, then 1600
+  // We will download 50 blocks in total, before defaulting to firstNonFinalSlot
 
   private final RecentChainData recentChainData;
-
-  static final UInt64 OPTIMISTIC_HISTORY_LENGTH = UInt64.valueOf(3000);
-  // prysm allows a maximum range of 1000 blocks (endSlot - startSlot) due to database limitations
-  static final UInt64 BLOCK_COUNT = UInt64.valueOf(100);
+  private final int maxAttempts;
 
   public CommonAncestor(final RecentChainData recentChainData) {
     this.recentChainData = recentChainData;
+    this.maxAttempts = DEFAULT_MAX_ATTEMPTS;
+  }
+
+  @VisibleForTesting
+  CommonAncestor(final RecentChainData recentChainData, final int maxAttempts) {
+    this.recentChainData = recentChainData;
+    this.maxAttempts = maxAttempts;
   }
 
   public SafeFuture<UInt64> getCommonAncestor(
@@ -54,17 +63,17 @@ public class CommonAncestor {
 
     return getCommonAncestor(
         peer,
-        lowestHeadSlot.minusMinZero(BLOCK_COUNT_PER_ATTEMPT),
+        lowestHeadSlot.minusMinZero(BLOCK_COUNT_PER_ATTEMPT.decrement()),
         firstNonFinalSlot,
-        MAX_ATTEMPTS);
+        1);
   }
 
   private SafeFuture<UInt64> getCommonAncestor(
       final SyncSource peer,
       final UInt64 firstRequestedSlot,
       final UInt64 defaultSlot,
-      final int remainingAttempts) {
-    if (remainingAttempts <= 0 || firstRequestedSlot.isLessThanOrEqualTo(defaultSlot)) {
+      final int attempt) {
+    if (attempt > maxAttempts || firstRequestedSlot.isLessThanOrEqualTo(defaultSlot)) {
       return SafeFuture.completedFuture(defaultSlot);
     }
 
@@ -90,9 +99,10 @@ public class CommonAncestor {
                         () ->
                             getCommonAncestor(
                                 peer,
-                                firstRequestedSlot.minusMinZero(SLOTS_TO_JUMP_BACK_ON_EACH_ATTEMPT),
+                                firstRequestedSlot.minusMinZero(
+                                    SLOTS_TO_JUMP_BACK_EXPONENTIAL_BASE.times(1L << (attempt - 1))),
                                 defaultSlot,
-                                remainingAttempts - 1)));
+                                attempt + 1)));
   }
 
   private static class BestBlockListener implements RpcResponseListener<SignedBeaconBlock> {
