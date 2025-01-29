@@ -108,10 +108,18 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
 
     try {
       if (!miscHelpers.verifyBlobKzgProofBatch(kzg, blobSidecars)) {
-        return BlobSidecarsAndValidationResult.invalidResult(blobSidecars);
+        return BlobSidecarsAndValidationResult.invalidResult(
+            blobSidecars,
+            new IllegalStateException("Blob sidecars failed verify_blob_kzg_proof_batch check"));
       }
 
-      miscHelpers.verifyBlobSidecarCompleteness(blobSidecars, block);
+      blockBlobSidecarsTracker
+          .getExecutionPayloadEnvelope()
+          .ifPresentOrElse(
+              executionPayloadEnvelope ->
+                  // ePBS
+                  miscHelpers.verifyBlobSidecarCompleteness(blobSidecars, executionPayloadEnvelope),
+              () -> miscHelpers.verifyBlobSidecarCompleteness(blobSidecars, block));
     } catch (final Exception ex) {
       return BlobSidecarsAndValidationResult.invalidResult(blobSidecars, ex);
     }
