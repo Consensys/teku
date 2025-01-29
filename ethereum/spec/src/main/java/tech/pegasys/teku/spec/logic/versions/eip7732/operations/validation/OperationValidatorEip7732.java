@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.eip7732.operations.validation;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -29,6 +30,9 @@ public class OperationValidatorEip7732 extends OperationValidatorCapella {
 
   private final ExecutionPayloadHeaderValidator executionPayloadHeaderValidator =
       new ExecutionPayloadHeaderValidator();
+
+  private final PayloadAttestationValidator payloadAttestationValidator =
+      new PayloadAttestationValidator();
 
   public OperationValidatorEip7732(
       final Predicates predicates,
@@ -50,5 +54,11 @@ public class OperationValidatorEip7732 extends OperationValidatorCapella {
       final BeaconState state,
       final SignedExecutionPayloadHeader executionPayloadHeader) {
     return executionPayloadHeaderValidator.validate(fork, state, executionPayloadHeader);
+  }
+
+  @Override
+  public Optional<OperationInvalidReason> validatePayloadAttestation(
+      final Fork fork, final BeaconState state, final PayloadAttestationData payloadAttestation) {
+    return payloadAttestationValidator.validate(fork, state, payloadAttestation);
   }
 }
