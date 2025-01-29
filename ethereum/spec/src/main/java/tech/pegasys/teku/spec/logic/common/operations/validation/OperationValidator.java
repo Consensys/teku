@@ -18,6 +18,7 @@ import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHea
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -48,4 +49,7 @@ public interface OperationValidator {
 
   Optional<OperationInvalidReason> validateExecutionPayloadHeader(
       Fork fork, BeaconState state, SignedExecutionPayloadHeader executionPayloadHeader);
+
+  Optional<OperationInvalidReason> validatePayloadAttestation(
+      Fork fork, BeaconState state, PayloadAttestationData payloadAttestation);
 }

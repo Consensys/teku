@@ -18,6 +18,7 @@ import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHea
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -96,5 +97,11 @@ public class OperationValidatorPhase0 implements OperationValidator {
       final BeaconState state,
       final SignedExecutionPayloadHeader executionPayloadHeader) {
     return Optional.of(() -> "Execution payload header is not valid before EIP7732 fork");
+  }
+
+  @Override
+  public Optional<OperationInvalidReason> validatePayloadAttestation(
+      final Fork fork, final BeaconState state, final PayloadAttestationData payloadAttestation) {
+    return Optional.of(() -> "Payload attestation is not valid before EIP7732 fork");
   }
 }

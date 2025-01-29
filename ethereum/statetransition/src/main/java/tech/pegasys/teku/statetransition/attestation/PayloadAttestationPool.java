@@ -35,7 +35,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodySchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationData;
@@ -78,7 +77,6 @@ public class PayloadAttestationPool implements SlotEventsChannel {
     final PayloadAttestationSchema payloadAttestationSchema =
         SchemaDefinitionsEip7732.required(specVersion.getSchemaDefinitions())
             .getPayloadAttestationSchema();
-    final int ptcSize = SpecConfigEip7732.required(specVersion.getConfig()).getPtcSize();
     getOrCreatePayloadAttestationGroup(payloadAttestationMessage)
         .ifPresent(
             attestationGroup -> {
@@ -87,9 +85,7 @@ public class PayloadAttestationPool implements SlotEventsChannel {
                       payloadAttestationSchema.create(
                           payloadAttestationSchema
                               .getAggregationBitsSchema()
-                              .ofBits(
-                                  ptcSize,
-                                  payloadAttestationMessage.getValidatorIndex().intValue()),
+                              .ofBits(payloadAttestationMessage.getValidatorIndex().intValue()),
                           payloadAttestationMessage.getData(),
                           payloadAttestationMessage.getSignature()));
               if (added) {
@@ -152,11 +148,9 @@ public class PayloadAttestationPool implements SlotEventsChannel {
         .collect(payloadAttestationsSchema.collector());
   }
 
-  /** TODO EIP7732 Implement validatePayloadAttestationData in OperationValidatorEip7732 */
-  @SuppressWarnings("unused")
   private boolean isValid(
       final BeaconState stateAtBlockSlot, final PayloadAttestationData payloadAttestationData) {
-    return true;
+    return spec.validatePayloadAttestation(stateAtBlockSlot, payloadAttestationData).isEmpty();
   }
 
   @Override
@@ -188,7 +182,7 @@ public class PayloadAttestationPool implements SlotEventsChannel {
     dataHashesToRemove.clear();
   }
 
-  /** TODO EIP7732 */
+  /** EIP-7732 TODO */
   public void onPayloadAttestationsIncludedInBlock(
       final SszList<PayloadAttestation> payloadAttestations) {}
 }

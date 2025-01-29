@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationSchema;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 import tech.pegasys.teku.statetransition.attestation.utils.PayloadAttestationBitsAggregator;
 
 public class PayloadAttestationAggregateBuilder {
@@ -56,10 +57,8 @@ public class PayloadAttestationAggregateBuilder {
         payloadAttestationBitsAggregator != null,
         "Must aggregate at least one payload attestation");
     final PayloadAttestationSchema payloadAttestationSchema =
-        spec.atSlot(payloadAttestationData.getSlot())
-            .getSchemaDefinitions()
-            .toVersionEip7732()
-            .orElseThrow()
+        SchemaDefinitionsEip7732.required(
+                spec.atSlot(payloadAttestationData.getSlot()).getSchemaDefinitions())
             .getPayloadAttestationSchema();
     return payloadAttestationSchema.create(
         payloadAttestationBitsAggregator.getAggregationBits(),
