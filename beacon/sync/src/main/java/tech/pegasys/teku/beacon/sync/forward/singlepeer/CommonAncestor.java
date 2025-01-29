@@ -31,8 +31,10 @@ public class CommonAncestor {
   static final UInt64 SLOTS_TO_JUMP_BACK_EXPONENTIAL_BASE = UInt64.valueOf(100);
   // We will try to find a common block downloading 10 blocks per attempt.
   // We will try 5 times, each time jumping back 100 * 2^attempt slots.
-  // Which means we will jump back 100 slots, then 200, then 400, then 800, then 1600
-  // We will download 50 blocks in total, before defaulting to firstNonFinalSlot
+  // Which means we will jump back 100 slots, then 200 from previous 100, then 400, then 800, then
+  // 1600 slots.
+  // So max attempted distance from initial slot will be 3100.
+  // We will download max 50 blocks in total, before defaulting to firstNonFinalSlot
 
   private final RecentChainData recentChainData;
   private final int maxAttempts;
@@ -71,10 +73,10 @@ public class CommonAncestor {
   private SafeFuture<UInt64> getCommonAncestor(
       final SyncSource peer,
       final UInt64 firstRequestedSlot,
-      final UInt64 defaultSlot,
+      final UInt64 firstNonFinalSlot,
       final int attempt) {
-    if (attempt > maxAttempts || firstRequestedSlot.isLessThanOrEqualTo(defaultSlot)) {
-      return SafeFuture.completedFuture(defaultSlot);
+    if (attempt > maxAttempts || firstRequestedSlot.isLessThanOrEqualTo(firstNonFinalSlot)) {
+      return SafeFuture.completedFuture(firstNonFinalSlot);
     }
 
     final UInt64 lastSlot = firstRequestedSlot.plus(BLOCK_COUNT_PER_ATTEMPT);
@@ -101,7 +103,7 @@ public class CommonAncestor {
                                 peer,
                                 firstRequestedSlot.minusMinZero(
                                     SLOTS_TO_JUMP_BACK_EXPONENTIAL_BASE.times(1L << (attempt - 1))),
-                                defaultSlot,
+                                firstNonFinalSlot,
                                 attempt + 1)));
   }
 
