@@ -41,7 +41,7 @@ public class BlockPropagationIntegrationTest {
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
   private final Spec spec = TestSpecFactory.createDefault();
   private final RpcEncoding rpcEncoding =
-      RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxChunkSize());
+      RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
 
   @AfterEach
   public void tearDown() throws Exception {
