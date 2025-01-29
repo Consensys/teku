@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.generator.AggregateGenerator;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -77,7 +76,7 @@ class AttestationManagerIntegrationTest {
       new AggregatingAttestationPool(
           spec, recentChainData, new NoOpMetricsSystem(), DEFAULT_MAXIMUM_ATTESTATION_COUNT);
   private final MergeTransitionBlockValidator transitionBlockValidator =
-      new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
+      new MergeTransitionBlockValidator(spec, recentChainData);
   private final ForkChoice forkChoice =
       new ForkChoice(
           spec,

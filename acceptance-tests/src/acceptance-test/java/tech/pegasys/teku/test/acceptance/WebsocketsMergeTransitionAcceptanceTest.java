@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
+import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
@@ -41,7 +42,6 @@ public class WebsocketsMergeTransitionAcceptanceTest extends AcceptanceTestBase 
         createBesuNode(
             config ->
                 config
-                    .withMiningEnabled(true)
                     .withMergeSupport()
                     .withGenesisFile("besu/preMergeGenesis.json")
                     .withJwtTokenAuthorization(jwtFile));
@@ -49,7 +49,14 @@ public class WebsocketsMergeTransitionAcceptanceTest extends AcceptanceTestBase 
 
     final int totalValidators = 4;
     final ValidatorKeystores validatorKeystores =
-        createTekuDepositSender(NETWORK_NAME).sendValidatorDeposits(eth1Node, totalValidators);
+        createTekuDepositSender(NETWORK_NAME).generateValidatorKeys(totalValidators);
+    final GenesisGenerator.InitialStateData genesis =
+        createGenesisGenerator()
+            .network(NETWORK_NAME)
+            .withAltairEpoch(UInt64.ZERO)
+            .withBellatrixEpoch(UInt64.ONE)
+            .validatorKeys(validatorKeystores)
+            .generate();
     tekuNode =
         createTekuBeaconNode(
             configureTekuNode(genesisTime)
@@ -57,8 +64,9 @@ public class WebsocketsMergeTransitionAcceptanceTest extends AcceptanceTestBase 
                 .withStartupTargetPeerCount(0)
                 .withValidatorProposerDefaultFeeRecipient(
                     "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
-                .withExecutionEngine(eth1Node)
+                .withExecutionEngineEndpoint(eth1Node.getInternalEngineWebsocketsRpcUrl())
                 .withJwtSecretFile(jwtFile)
+                .withInitialState(genesis)
                 .withReadOnlyKeystorePath(validatorKeystores)
                 .build());
     tekuNode.start();
@@ -74,7 +82,7 @@ public class WebsocketsMergeTransitionAcceptanceTest extends AcceptanceTestBase 
 
   private TekuNodeConfigBuilder configureTekuNode(final int genesisTime) throws IOException {
     return TekuNodeConfigBuilder.createBeaconNode()
-        .withTotalTerminalDifficulty(10001)
+        .withTerminalBlockHash(DEFAULT_EL_GENESIS_HASH, 1)
         .withBellatrixEpoch(UInt64.ONE)
         .withGenesisTime(genesisTime);
   }

@@ -323,11 +323,6 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public int getMaxChunkSize() {
-    return specConfig.getMaxChunkSize();
-  }
-
-  @Override
   public int getTtfbTimeout() {
     return specConfig.getTtfbTimeout();
   }
