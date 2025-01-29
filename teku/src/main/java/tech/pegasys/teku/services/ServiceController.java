@@ -16,14 +16,11 @@ package tech.pegasys.teku.services;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceFacade;
 
 public abstract class ServiceController extends Service implements ServiceControllerFacade {
-  private static final Logger LOG = LogManager.getLogger();
   protected final List<Service> services = new ArrayList<>();
 
   @Override
