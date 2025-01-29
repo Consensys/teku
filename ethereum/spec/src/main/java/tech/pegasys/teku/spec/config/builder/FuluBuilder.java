@@ -41,7 +41,8 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
   private Integer dataColumnSidecarSubnetCount;
   private Integer custodyRequirement;
   private Integer samplesPerSlot;
-  private Integer minEpochsForDataColumnSidecarsRequests;
+  // FIXME: remove hardcode when Kurtosis config is updated according to the Fulu spec
+  private Integer minEpochsForDataColumnSidecarsRequests = 4096;
   private Integer maxRequestDataColumnSidecars;
 
   FuluBuilder() {}
@@ -128,9 +129,10 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     return this;
   }
 
-  public FuluBuilder minEpochsForDataColumnSidecarsRequests(final Integer custodyEpochs) {
-    checkNotNull(custodyEpochs);
-    this.minEpochsForDataColumnSidecarsRequests = custodyEpochs;
+  public FuluBuilder minEpochsForDataColumnSidecarsRequests(
+      final Integer minEpochsForDataColumnSidecarsRequests) {
+    checkNotNull(minEpochsForDataColumnSidecarsRequests);
+    this.minEpochsForDataColumnSidecarsRequests = minEpochsForDataColumnSidecarsRequests;
     return this;
   }
 
