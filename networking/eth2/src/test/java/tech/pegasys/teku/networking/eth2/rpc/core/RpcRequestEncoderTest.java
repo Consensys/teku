@@ -40,7 +40,7 @@ public class RpcRequestEncoderTest {
   private final RpcRequestEncoder requestEncoder =
       new RpcRequestEncoder(
           RpcEncoding.createSszSnappyEncoding(
-              TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize()));
+              TestSpecFactory.createDefault().getNetworkingConfig().getMaxPayloadSize()));
 
   @Test
   public void shouldEncodeStatusRequest() {

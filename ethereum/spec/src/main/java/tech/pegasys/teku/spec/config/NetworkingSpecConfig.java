@@ -19,8 +19,6 @@ public interface NetworkingSpecConfig {
 
   int getMaxPayloadSize();
 
-  int getMaxChunkSize();
-
   int getMaxRequestBlocks();
 
   int getEpochsPerSubnetSubscription();
