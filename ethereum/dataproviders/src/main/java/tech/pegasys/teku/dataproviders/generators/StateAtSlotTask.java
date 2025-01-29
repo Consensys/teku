@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedExecutionPayloadEnvelopeAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -126,6 +127,23 @@ public class StateAtSlotTask implements CacheableTask<SlotAndBlockRoot, BeaconSt
       return (Bytes32 root) -> {
         if (Objects.equals(root, blockAndState.getRoot())) {
           return SafeFuture.completedFuture(Optional.of(blockAndState.getState()));
+        } else {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+      };
+    }
+
+    static AsyncStateProvider fromExecutionPayloadEnvelopeAndState(
+        final SignedExecutionPayloadEnvelopeAndState executionPayloadEnvelopeAndState) {
+      return (Bytes32 root) -> {
+        if (Objects.equals(
+            root,
+            executionPayloadEnvelopeAndState
+                .getExecutionPayloadEnvelope()
+                .getMessage()
+                .getBeaconBlockRoot())) {
+          return SafeFuture.completedFuture(
+              Optional.of(executionPayloadEnvelopeAndState.getState()));
         } else {
           return SafeFuture.completedFuture(Optional.empty());
         }

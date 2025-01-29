@@ -616,6 +616,14 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return store.retrieveStateAtSlot(slotAndBlockRoot);
   }
 
+  public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadStateAtSlot(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    if (store == null) {
+      return EmptyStoreResults.EMPTY_STATE_FUTURE;
+    }
+    return store.retrieveExecutionPayloadStateAtSlot(slotAndBlockRoot);
+  }
+
   public SafeFuture<Optional<BeaconState>> retrieveStateInEffectAtSlot(final UInt64 slot) {
     Optional<Bytes32> rootAtSlot = getBlockRootInEffectBySlot(slot);
     if (rootAtSlot.isEmpty()) {

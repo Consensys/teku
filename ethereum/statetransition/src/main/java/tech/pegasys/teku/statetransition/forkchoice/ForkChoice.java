@@ -64,6 +64,7 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateEip7732;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.Status;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -220,8 +221,31 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final BlockBroadcastValidator blockBroadcastValidator,
       final ExecutionLayerChannel executionLayer) {
     recentChainData.setBlockTimelinessIfEmpty(block);
-    return recentChainData
-        .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
+    final SafeFuture<Optional<BeaconState>> blockSlotStateFuture;
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(block.getSlot(), block.getParentRoot());
+    if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+      blockSlotStateFuture =
+          recentChainData
+              .retrieveExecutionPayloadStateAtSlot(slotAndBlockRoot)
+              .thenCombine(
+                  recentChainData.retrieveStateAtSlot(slotAndBlockRoot),
+                  (executionPayloadState, state) -> {
+                    if (executionPayloadState.isPresent()) {
+                      LOG.info(
+                          "Using a state with latest full slot {} and latest block hash {} for fork choice processing",
+                          BeaconStateEip7732.required(executionPayloadState.get())
+                              .getLatestFullSlot(),
+                          BeaconStateEip7732.required(executionPayloadState.get())
+                              .getLatestBlockHash());
+                      return executionPayloadState;
+                    }
+                    return state;
+                  });
+    } else {
+      blockSlotStateFuture = recentChainData.retrieveStateAtSlot(slotAndBlockRoot);
+    }
+    return blockSlotStateFuture
         .thenPeek(__ -> blockImportPerformance.ifPresent(BlockImportPerformance::preStateRetrieved))
         .thenCompose(
             blockSlotState ->
@@ -308,14 +332,14 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .ifExceptionGetsHereRaiseABug();
   }
 
-  // EIP-7732 TODO: implement
+  /** EIP-7732 TODO: not urgent for interop */
   @SuppressWarnings("unused")
   public SafeFuture<AttestationProcessingResult> onPayloadAttestationMessage(
       final PayloadAttestationMessage payloadAttestationMessage) {
     return SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL);
   }
 
-  // EIP-7732 TODO: implement
+  /** EIP-7732 TODO: not urgent for interop */
   @SuppressWarnings("unused")
   public void applyPayloadAttestationMessages(
       final List<PayloadAttestationMessage> payloadAttestationMessages) {}

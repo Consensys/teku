@@ -74,7 +74,7 @@ public class ExecutionPayloadHeaderFactory {
             maybeExecutionPayloadContext -> {
               final ExecutionPayloadContext executionPayloadContext =
                   maybeExecutionPayloadContext.orElseThrow();
-              // TODO: EIP-7732 Disable the builder flow for the prototype
+              // EIP-7732 TODO: Disable the builder flow for the prototype
               final ExecutionPayloadResult executionPayloadResult =
                   executionLayerBlockProductionManager.initiateBlockProduction(
                       executionPayloadContext,

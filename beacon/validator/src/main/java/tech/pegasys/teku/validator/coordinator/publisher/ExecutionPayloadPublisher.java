@@ -15,6 +15,8 @@ package tech.pegasys.teku.validator.coordinator.publisher;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
@@ -28,6 +30,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadAndBlobSidecarsRevealer;
 
 public class ExecutionPayloadPublisher {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final ExecutionPayloadManager executionPayloadManager;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
@@ -65,6 +68,10 @@ public class ExecutionPayloadPublisher {
   @SuppressWarnings("FutureReturnValueIgnored")
   private void publishExecutionPayloadAndBlobSidecars(
       final SignedExecutionPayloadEnvelope executionPayload, final List<BlobSidecar> blobSidecars) {
+    LOG.info(
+        "Publishing execution payload and {} blob sidecars for block {}",
+        blobSidecars.size(),
+        executionPayload.getMessage().getBeaconBlockRoot());
     executionPayloadGossipChannel.publishExecutionPayload(executionPayload);
     blobSidecarGossipChannel.publishBlobSidecars(blobSidecars);
   }

@@ -111,6 +111,7 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.BeaconStateAccessorsEip7732;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 public class Spec {
@@ -351,10 +352,8 @@ public class Spec {
 
   public SignedExecutionPayloadEnvelope deserializeSignedExecutionPayloadEnvelope(
       final Bytes serializedSignedExecutionPayloadEnvelope) {
-    return forMilestone(SpecMilestone.EIP7732)
-        .getSchemaDefinitions()
-        .toVersionEip7732()
-        .orElseThrow()
+    return SchemaDefinitionsEip7732.required(
+            forMilestone(SpecMilestone.EIP7732).getSchemaDefinitions())
         .getSignedExecutionPayloadEnvelopeSchema()
         .sszDeserialize(serializedSignedExecutionPayloadEnvelope);
   }
