@@ -115,9 +115,9 @@ public class InclusionListByCommitteeIndicesMessageHandler
     totalInclusionListsRequestedCounter.inc(message.size());
 
     // TODO EIP7805 review logic / handle errors
-    final List<SignedInclusionList> inclusionList =
+    final List<SignedInclusionList> signedInclusionLists =
         inclusionListManager.getInclusionLists(message.getSlot(), message.getCommitteeIndices());
-    inclusionList.forEach(callback::respond);
+    signedInclusionLists.forEach(callback::respond);
     callback.completeSuccessfully();
   }
 }
