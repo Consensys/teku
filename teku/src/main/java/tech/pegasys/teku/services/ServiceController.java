@@ -42,7 +42,7 @@ public abstract class ServiceController extends Service implements ServiceContro
     Collections.reverse(services);
     final Service storageService = services.removeFirst();
     return SafeFuture.allOf(services.stream().map(Service::stop).toArray(SafeFuture[]::new))
-        .thenRun(storageService::stop);
+        .thenCompose(__ -> SafeFuture.fromRunnable(storageService::stop));
   }
 
   @Override
