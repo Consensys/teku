@@ -16,13 +16,10 @@ package tech.pegasys.teku.spec.logic.versions.bellatrix.helpers;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
-import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 
 public class BellatrixTransitionHelpers {
@@ -46,21 +43,19 @@ public class BellatrixTransitionHelpers {
    * <p>That is, the PoW chain stops as soon as one block has exceeded TTD and from that point on
    * merges into the beacon chain.
    *
-   * @param executionLayer the execution layer to use for verification
    * @param executionPayloadSummary the first non-empty payload on the beacon chain
    * @param blockSlot the slot of the block the executionPayload is from
    * @return a future containing the validation result for the execution payload
    */
   public SafeFuture<PayloadStatus> validateMergeBlock(
-      final ExecutionLayerChannel executionLayer,
-      final ExecutionPayloadSummary executionPayloadSummary,
-      final UInt64 blockSlot) {
+      final ExecutionPayloadSummary executionPayloadSummary, final UInt64 blockSlot) {
     if (!specConfig.getTerminalBlockHash().isZero()) {
       return validateWithTerminalBlockHash(executionPayloadSummary, blockSlot);
     }
-    return executionLayer
-        .eth1GetPowBlock(executionPayloadSummary.getParentHash())
-        .thenCompose(maybePowBlock -> validatePowBlock(executionLayer, maybePowBlock));
+
+    return SafeFuture.completedFuture(
+        PayloadStatus.invalid(
+            Optional.empty(), Optional.of("Total difficulty check is no more supported")));
   }
 
   private SafeFuture<PayloadStatus> validateWithTerminalBlockHash(
@@ -76,44 +71,7 @@ public class BellatrixTransitionHelpers {
     return SafeFuture.completedFuture(PayloadStatus.VALID);
   }
 
-  private SafeFuture<PayloadStatus> validatePowBlock(
-      final ExecutionLayerChannel executionLayer, final Optional<PowBlock> maybePowBlock) {
-    if (maybePowBlock.isEmpty()) {
-      return completedFuture(PayloadStatus.SYNCING);
-    }
-    final PowBlock powBlock = maybePowBlock.get();
-    if (isBelowTotalDifficulty(powBlock)) {
-      return invalid("PowBlock has not reached terminal total difficulty");
-    }
-    return validateParentPowBlock(executionLayer, powBlock.getParentHash());
-  }
-
   private static SafeFuture<PayloadStatus> invalid(final String message) {
     return completedFuture(PayloadStatus.invalid(Optional.empty(), Optional.of(message)));
-  }
-
-  private SafeFuture<PayloadStatus> validateParentPowBlock(
-      final ExecutionLayerChannel executionLayer, final Bytes32 parentBlockHash) {
-    // fast check for genesis
-    if (parentBlockHash.isZero()) {
-      return completedFuture(PayloadStatus.VALID);
-    }
-    return executionLayer
-        .eth1GetPowBlock(parentBlockHash)
-        .thenCompose(
-            maybeParentPowBlock -> {
-              if (maybeParentPowBlock.isEmpty()) {
-                return completedFuture(PayloadStatus.SYNCING);
-              }
-              final PowBlock parentPowBlock = maybeParentPowBlock.get();
-              if (!isBelowTotalDifficulty(parentPowBlock)) {
-                return invalid("Parent PowBlock exceeds terminal total difficulty");
-              }
-              return completedFuture(PayloadStatus.VALID);
-            });
-  }
-
-  private boolean isBelowTotalDifficulty(final PowBlock powBlock) {
-    return powBlock.getTotalDifficulty().lessThan(specConfig.getTerminalTotalDifficulty());
   }
 }
