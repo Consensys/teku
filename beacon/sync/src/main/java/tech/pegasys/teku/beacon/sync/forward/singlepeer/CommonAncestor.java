@@ -44,7 +44,7 @@ public class CommonAncestor {
     final UInt64 ourHeadSlot = recentChainData.getHeadSlot();
     final UInt64 lowestHeadSlot = ourHeadSlot.min(peerHeadSlot);
 
-    final UInt64 localNonFinalisedSlotCount = lowestHeadSlot.minus(firstNonFinalSlot);
+    final UInt64 localNonFinalisedSlotCount = lowestHeadSlot.minusMinZero(firstNonFinalSlot);
 
     LOG.debug(
         "Local head slot {}. Have {} non finalized slots, peer head is {}",
@@ -90,7 +90,7 @@ public class CommonAncestor {
                         () ->
                             getCommonAncestor(
                                 peer,
-                                firstRequestedSlot.minus(SLOTS_TO_JUMP_BACK_ON_EACH_ATTEMPT),
+                                firstRequestedSlot.minusMinZero(SLOTS_TO_JUMP_BACK_ON_EACH_ATTEMPT),
                                 defaultSlot,
                                 remainingAttempts - 1)));
   }
