@@ -30,6 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateEip7732;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -212,20 +214,57 @@ public class CombinedChainDataClient {
     return regenerateStateAndSlotExact(slot);
   }
 
+  // EIP-7732 TODO: FIX implement regenerate
+  public SafeFuture<Optional<BeaconState>> getExecutionPayloadStateAtSlotExact(final UInt64 slot) {
+    final Optional<Bytes32> recentBlockRoot = recentChainData.getBlockRootInEffectBySlot(slot);
+    if (recentBlockRoot.isPresent()) {
+      return getStore()
+          .retrieveExecutionPayloadStateAtSlot(new SlotAndBlockRoot(slot, recentBlockRoot.get()))
+          .thenCompose(
+              maybeState ->
+                  maybeState.isPresent()
+                      ? SafeFuture.completedFuture(maybeState)
+                      : completedFuture(Optional.empty()));
+    }
+    return completedFuture(Optional.empty());
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateAtSlotExactForBlockProduction(
+      final UInt64 slot) {
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+      return getExecutionPayloadStateAtSlotExact(slot)
+          .thenCombine(
+              getStateAtSlotExact(slot),
+              (executionPayloadState, state) -> {
+                if (executionPayloadState.isPresent()) {
+                  LOG.info(
+                      "Using a state with latest full slot {} and latest block hash {}",
+                      BeaconStateEip7732.required(executionPayloadState.get()).getLatestFullSlot(),
+                      BeaconStateEip7732.required(executionPayloadState.get())
+                          .getLatestBlockHash());
+                  return executionPayloadState;
+                }
+                return state;
+              });
+    }
+    return getStateAtSlotExact(slot);
+  }
+
   public SafeFuture<Optional<BeaconState>> getStateForBlockProduction(
       final UInt64 slot, final boolean isForkChoiceLateBlockReorgEnabled) {
     if (!isForkChoiceLateBlockReorgEnabled) {
-      return getStateAtSlotExact(slot);
+      return getStateAtSlotExactForBlockProduction(slot);
     }
     final Optional<Bytes32> headRoot = getBestBlockRoot();
     if (headRoot.isEmpty()) {
-      return getStateAtSlotExact(slot);
+      return getStateAtSlotExactForBlockProduction(slot);
     }
     final Bytes32 root = recentChainData.getProposerHead(headRoot.get(), slot);
     if (root.equals(headRoot.get())) {
-      return getStateAtSlotExact(slot);
+      return getStateAtSlotExactForBlockProduction(slot);
     }
     // otherwise we're looking for the parent slot
+    // EIP-7732 TODO: edge case, will cover later
     return getStateByBlockRoot(root)
         .thenCompose(
             maybeState ->

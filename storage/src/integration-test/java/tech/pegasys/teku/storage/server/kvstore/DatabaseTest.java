@@ -1644,7 +1644,7 @@ public class DatabaseTest {
             .bestJustifiedCheckpoint(data.getBestJustifiedCheckpoint())
             .blockInformation(data.getBlockInformation())
             .votes(data.getVotes())
-            // EIP-7732 TODO: figure out this
+            // EIP-7732 TODO: not urgent for interop
             .ptcVote(new HashMap<>())
             .asyncRunner(mock(AsyncRunner.class))
             .blockProvider(mock(BlockProvider.class))

@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromBlockAndState;
+import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromExecutionPayloadEnvelopeAndState;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -479,6 +480,23 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
           .performTask();
     }
     return store.retrieveStateAtSlot(slotAndBlockRoot);
+  }
+
+  @Override
+  public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadStateAtSlot(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    final SignedExecutionPayloadEnvelopeAndState inMemoryCheckpointExecutionPayloadState =
+        executionPayloadEnvelopeData.get(slotAndBlockRoot.getBlockRoot());
+    if (inMemoryCheckpointExecutionPayloadState != null) {
+      // Not executing the task via the task queue to avoid caching the result before the tx is
+      // committed
+      return new StateAtSlotTask(
+              spec,
+              slotAndBlockRoot,
+              fromExecutionPayloadEnvelopeAndState(inMemoryCheckpointExecutionPayloadState))
+          .performTask();
+    }
+    return store.retrieveExecutionPayloadStateAtSlot(slotAndBlockRoot);
   }
 
   @Override

@@ -56,6 +56,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.constants.PayloadStatus;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
@@ -739,10 +740,7 @@ class Store extends CacheableStore {
             .filter(vote -> vote.equals(PayloadStatus.PAYLOAD_PRESENT.getCode()))
             .count()
         // PAYLOAD_TIMELY_THRESHOLD
-        > spec.forMilestone(SpecMilestone.EIP7732)
-                .getConfig()
-                .toVersionEip7732()
-                .orElseThrow()
+        > SpecConfigEip7732.required(spec.forMilestone(SpecMilestone.EIP7732).getConfig())
                 .getPtcSize()
             / 2;
   }
@@ -792,10 +790,13 @@ class Store extends CacheableStore {
                 maybeStateAndBlockSummary.map(StateAndBlockSummary::getState));
   }
 
-  // EIP-7732 TODO: implement
+  // EIP-7732 TODO: FIX regenerate
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(final Bytes32 blockRoot) {
-    return SafeFuture.completedFuture(Optional.empty());
+    return SafeFuture.completedFuture(
+        executionPayloadStates
+            .getIfAvailable(blockRoot)
+            .map(SignedExecutionPayloadEnvelopeAndState::getState));
   }
 
   @Override
@@ -809,6 +810,14 @@ class Store extends CacheableStore {
       final SlotAndBlockRoot slotAndBlockRoot) {
     return checkpointStates.perform(
         new StateAtSlotTask(spec, slotAndBlockRoot, this::retrieveBlockState));
+  }
+
+  // EIP-7732 TODO: Implement caching
+  @Override
+  public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadStateAtSlot(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return new StateAtSlotTask(spec, slotAndBlockRoot, this::retrieveExecutionPayloadState)
+        .performTask();
   }
 
   @Override

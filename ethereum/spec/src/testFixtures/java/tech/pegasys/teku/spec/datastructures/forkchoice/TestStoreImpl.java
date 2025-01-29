@@ -265,6 +265,13 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     throw new UnsupportedOperationException("Not implemented");
   }
 
+  // EIP-7732 TODO: implement
+  @Override
+  public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadStateAtSlot(
+      final SlotAndBlockRoot checkpoint) {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
   @Override
   public SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState() {
     final BeaconState state = getCheckpointState(finalizedCheckpoint).orElseThrow();

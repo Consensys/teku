@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodySchemaEip7732;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationData;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessag
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 
 public class PayloadAttestationPool implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -74,12 +76,9 @@ public class PayloadAttestationPool implements SlotEventsChannel {
   public synchronized void add(final PayloadAttestationMessage payloadAttestationMessage) {
     final SpecVersion specVersion = spec.atSlot(payloadAttestationMessage.getData().getSlot());
     final PayloadAttestationSchema payloadAttestationSchema =
-        specVersion
-            .getSchemaDefinitions()
-            .toVersionEip7732()
-            .orElseThrow()
+        SchemaDefinitionsEip7732.required(specVersion.getSchemaDefinitions())
             .getPayloadAttestationSchema();
-    final int ptcSize = specVersion.getConfig().toVersionEip7732().orElseThrow().getPtcSize();
+    final int ptcSize = SpecConfigEip7732.required(specVersion.getConfig()).getPtcSize();
     getOrCreatePayloadAttestationGroup(payloadAttestationMessage)
         .ifPresent(
             attestationGroup -> {
