@@ -731,6 +731,13 @@ public class Spec {
         .validateExecutionPayloadHeader(state.getFork(), state, executionPayloadHeader);
   }
 
+  public Optional<OperationInvalidReason> validatePayloadAttestation(
+      final BeaconState state, final PayloadAttestationData payloadAttestation) {
+    return atState(state)
+        .getOperationValidator()
+        .validatePayloadAttestation(state.getFork(), state, payloadAttestation);
+  }
+
   public boolean verifyBlsToExecutionChangeSignature(
       final BeaconState state,
       final SignedBlsToExecutionChange signedBlsToExecutionChange,

@@ -51,6 +51,6 @@ public class PayloadAttestationSchema
 
   public SszBitvector createEmptyAggregationBits() {
     final SszBitvectorSchema<?> bitvectorSchema = getAggregationBitsSchema();
-    return bitvectorSchema.ofBits(Math.toIntExact(bitvectorSchema.getMaxLength()));
+    return bitvectorSchema.ofBits();
   }
 }
