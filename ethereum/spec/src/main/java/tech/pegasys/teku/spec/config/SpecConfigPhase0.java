@@ -103,7 +103,6 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   // Networking
   private final int maxPayloadSize;
-  private final int maxChunkSize;
   private final int maxRequestBlocks;
   private final int epochsPerSubnetSubscription;
   private final int minEpochsForBlockRequests;
@@ -175,7 +174,6 @@ public class SpecConfigPhase0 implements SpecConfig {
       final long depositNetworkId,
       final Eth1Address depositContractAddress,
       final int maxPayloadSize,
-      final int maxChunkSize,
       final int maxRequestBlocks,
       final int epochsPerSubnetSubscription,
       final int minEpochsForBlockRequests,
@@ -245,7 +243,6 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.depositContractAddress = depositContractAddress;
     this.squareRootSlotsPerEpoch = MathHelpers.integerSquareRoot(slotsPerEpoch);
     this.maxPayloadSize = maxPayloadSize;
-    this.maxChunkSize = maxChunkSize;
     this.maxRequestBlocks = maxRequestBlocks;
     this.epochsPerSubnetSubscription = epochsPerSubnetSubscription;
     this.minEpochsForBlockRequests = minEpochsForBlockRequests;
@@ -566,11 +563,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public int getMaxChunkSize() {
-    return maxChunkSize;
-  }
-
-  @Override
   public int getMaxRequestBlocks() {
     return maxRequestBlocks;
   }
@@ -684,7 +676,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && depositChainId == that.depositChainId
         && depositNetworkId == that.depositNetworkId
         && maxPayloadSize == that.maxPayloadSize
-        && maxChunkSize == that.maxChunkSize
         && maxRequestBlocks == that.maxRequestBlocks
         && epochsPerSubnetSubscription == that.epochsPerSubnetSubscription
         && subnetsPerNode == that.subnetsPerNode
@@ -769,7 +760,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         depositNetworkId,
         depositContractAddress,
         maxPayloadSize,
-        maxChunkSize,
         maxRequestBlocks,
         epochsPerSubnetSubscription,
         ttfbTimeout,

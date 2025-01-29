@@ -71,7 +71,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
       new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build();
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(
-          TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
+          TestSpecFactory.createDefault().getNetworkingConfig().getMaxPayloadSize());
   private final UInt64 genesisTime = UInt64.valueOf(1982239L);
   private final UInt64 currentForkEpoch = UInt64.valueOf(1);
   private final UInt64 count = UInt64.valueOf(5);
