@@ -72,7 +72,12 @@ public class PayloadAttestationDutyLoader
         .getValidator(duty.publicKey())
         .ifPresent(
             validator ->
-                scheduledDuties.scheduleProductionOrAdd(
-                    duty.slot(), validator, d -> d.addValidator(validator, duty.validatorIndex())));
+                scheduledDuties.scheduleProduction(
+                    duty.slot(),
+                    validator,
+                    d -> {
+                      d.addValidator(validator, duty.validatorIndex());
+                      return null;
+                    }));
   }
 }
