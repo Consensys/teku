@@ -34,7 +34,6 @@ import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.BeaconStateAccessorsEip7732;
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
@@ -68,13 +67,15 @@ public class AttestationUtilEip7732 extends AttestationUtilElectra {
     return Optional.empty();
   }
 
+  // EIP-7732 TODO: fix (doesn't work in local interop)
   /** get_attesting_indices is modified to ignore PTC votes */
   @Override
   public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
     final IntList attestingIndices = super.getAttestingIndices(state, attestation);
-    final IntList ptc =
-        BeaconStateAccessorsEip7732.required(beaconStateAccessors)
-            .getPtc(state, attestation.getData().getSlot());
+    //    final IntList ptc =
+    //        BeaconStateAccessorsEip7732.required(beaconStateAccessors)
+    //            .getPtc(state, attestation.getData().getSlot());
+    final IntList ptc = IntList.of();
     return IntList.of(attestingIndices.intStream().filter(i -> !ptc.contains(i)).toArray());
   }
 

@@ -552,6 +552,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return Optional.ofNullable(store).map(s -> s.containsBlock(root)).orElse(false);
   }
 
+  public boolean containsExecutionPayloadEnvelope(final Bytes32 root) {
+    return Optional.ofNullable(store)
+        .map(s -> s.containsExecutionPayloadEnvelope(root))
+        .orElse(false);
+  }
+
   public Optional<UInt64> getSlotForBlockRoot(final Bytes32 root) {
     return getForkChoiceStrategy().flatMap(forkChoice -> forkChoice.blockSlot(root));
   }

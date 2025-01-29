@@ -60,7 +60,8 @@ public class ExecutionPayloadPublisher {
         executionPayloadAndBlobSidecarsRevealer.revealBlobSidecars(block, executionPayload);
     publishExecutionPayloadAndBlobSidecars(executionPayload, blobSidecars);
     // provide blobs for the execution payload before importing it
-    blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
+    blockBlobSidecarsTrackersPool.onCompletedBlockExecutionPayloadAndBlobSidecars(
+        block, executionPayload, blobSidecars);
     return executionPayloadManager.validateAndImportExecutionPayload(
         executionPayload, Optional.of(timeProvider.getTimeInMillis()));
   }

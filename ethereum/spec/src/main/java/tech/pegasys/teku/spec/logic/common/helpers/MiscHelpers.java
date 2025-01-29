@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
@@ -425,6 +426,13 @@ public class MiscHelpers {
   public boolean verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
       final BlobSidecar blobSidecar, final SignedBeaconBlock signedBeaconBlock) {
     throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
+  }
+
+  public void verifyBlobSidecarCompleteness(
+      final List<BlobSidecar> verifiedBlobSidecars,
+      final ExecutionPayloadEnvelope executionPayloadEnvelope)
+      throws IllegalArgumentException {
+    throw new UnsupportedOperationException("No ExecutionPayloadEnvelope before EIP-7732");
   }
 
   public void verifyBlobSidecarCompleteness(
