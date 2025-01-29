@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 
@@ -44,6 +45,12 @@ public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
         @Override
         public void onCompletedBlockAndBlobSidecars(
             final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {}
+
+        @Override
+        public void onCompletedBlockExecutionPayloadAndBlobSidecars(
+            final SignedBeaconBlock block,
+            final SignedExecutionPayloadEnvelope executionPayload,
+            final List<BlobSidecar> blobSidecars) {}
 
         @Override
         public void removeAllForBlock(final Bytes32 blockRoot) {}
@@ -120,6 +127,11 @@ public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
   void onNewBlock(SignedBeaconBlock block, Optional<RemoteOrigin> remoteOrigin);
 
   void onCompletedBlockAndBlobSidecars(SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
+
+  void onCompletedBlockExecutionPayloadAndBlobSidecars(
+      SignedBeaconBlock block,
+      SignedExecutionPayloadEnvelope executionPayload,
+      List<BlobSidecar> blobSidecars);
 
   void removeAllForBlock(Bytes32 blockRoot);
 

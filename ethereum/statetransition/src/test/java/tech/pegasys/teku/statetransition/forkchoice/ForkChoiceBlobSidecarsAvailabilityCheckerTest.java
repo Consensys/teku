@@ -146,7 +146,9 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     when(miscHelpers.verifyBlobKzgProofBatch(any(), any())).thenReturn(true);
     when(miscHelpers.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(anyList(), any()))
         .thenReturn(true);
-    doThrow(error).when(miscHelpers).verifyBlobSidecarCompleteness(anyList(), any());
+    doThrow(error)
+        .when(miscHelpers)
+        .verifyBlobSidecarCompleteness(anyList(), any(SignedBeaconBlock.class));
 
     final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
         runAvailabilityCheck();

@@ -259,7 +259,7 @@ public class RespondingEth2Peer implements Eth2Peer {
     return createPendingBlobSidecarRequest(handler);
   }
 
-  // EIP-7732 TODO: implement
+  // EIP-7732 TODO: implement (test)
   @Override
   public SafeFuture<Void> requestExecutionPayloadEnvelopesByRoot(
       final List<Bytes32> blockRoots,
@@ -294,7 +294,7 @@ public class RespondingEth2Peer implements Eth2Peer {
     return createPendingBlobSidecarRequest(handler);
   }
 
-  // EIP-7732 TODO: implement
+  // EIP-7732 TODO: implement (test)
   @Override
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> requestExecutionPayloadEnvelopeByRoot(
       final Bytes32 blockRoot) {

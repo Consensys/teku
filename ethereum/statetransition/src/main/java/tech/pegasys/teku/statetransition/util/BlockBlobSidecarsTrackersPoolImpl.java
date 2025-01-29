@@ -55,6 +55,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -329,6 +330,48 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
         getOrCreateBlobSidecarsTracker(slotAndBlockRoot, __ -> {}, __ -> {});
 
     blobSidecarsTracker.setBlock(block);
+
+    long addedBlobs =
+        blobSidecars.stream()
+            .filter(
+                blobSidecar -> {
+                  final boolean isNew = blobSidecarsTracker.add(blobSidecar);
+                  if (isNew) {
+                    newBlobSidecarSubscribers.deliver(
+                        NewBlobSidecarSubscriber::onNewBlobSidecar, blobSidecar);
+                  }
+                  return isNew;
+                })
+            .count();
+    totalBlobSidecars += (int) addedBlobs;
+    sizeGauge.set(totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
+
+    if (!blobSidecarsTracker.isComplete()) {
+      LOG.error(
+          "Tracker for block {} is supposed to be completed but it is not. Missing blob sidecars: {}",
+          block.toLogString(),
+          blobSidecarsTracker.getMissingBlobSidecars().count());
+    }
+
+    if (orderedBlobSidecarsTrackers.add(slotAndBlockRoot)) {
+      sizeGauge.set(orderedBlobSidecarsTrackers.size(), GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
+    }
+  }
+
+  @Override
+  public void onCompletedBlockExecutionPayloadAndBlobSidecars(
+      final SignedBeaconBlock block,
+      final SignedExecutionPayloadEnvelope executionPayload,
+      final List<BlobSidecar> blobSidecars) {
+    if (recentChainData.containsExecutionPayloadEnvelope(block.getRoot())) {
+      return;
+    }
+    final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
+
+    final BlockBlobSidecarsTracker blobSidecarsTracker =
+        getOrCreateBlobSidecarsTracker(slotAndBlockRoot, __ -> {}, __ -> {});
+
+    blobSidecarsTracker.setBlockAndExecutionPayloadEnvelope(block, executionPayload.getMessage());
 
     long addedBlobs =
         blobSidecars.stream()

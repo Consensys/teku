@@ -13,9 +13,12 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip7732.helpers;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -26,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodySchemaEip7732;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -61,6 +65,36 @@ public class MiscHelpersEip7732 extends MiscHelpersElectra {
   public byte removeFlag(final byte participationFlags, final int flagIndex) {
     final byte flag = (byte) (1 << flagIndex);
     return (byte) (participationFlags & ~flag);
+  }
+
+  /**
+   * Verifies that blob sidecars are complete and with expected indexes
+   *
+   * @param completeVerifiedBlobSidecars blob sidecars to verify, It is assumed that it is an
+   *     ordered list based on BlobSidecar index
+   * @param executionPayloadEnvelope execution payload envelope with commitments
+   */
+  @Override
+  public void verifyBlobSidecarCompleteness(
+      final List<BlobSidecar> completeVerifiedBlobSidecars,
+      final ExecutionPayloadEnvelope executionPayloadEnvelope)
+      throws IllegalArgumentException {
+    int commitmentCount = executionPayloadEnvelope.getBlobKzgCommitments().size();
+    checkArgument(
+        completeVerifiedBlobSidecars.size() == commitmentCount, "Blob sidecars are not complete");
+
+    IntStream.range(0, completeVerifiedBlobSidecars.size())
+        .forEach(
+            index -> {
+              final BlobSidecar blobSidecar = completeVerifiedBlobSidecars.get(index);
+              final UInt64 blobIndex = blobSidecar.getIndex();
+
+              checkArgument(
+                  blobIndex.longValue() == index,
+                  "Blob sidecar index mismatch, expected %s, got %s",
+                  index,
+                  blobIndex);
+            });
   }
 
   @Override

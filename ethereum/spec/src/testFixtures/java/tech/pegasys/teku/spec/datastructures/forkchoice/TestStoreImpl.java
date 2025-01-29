@@ -169,7 +169,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     return blocks.containsKey(blockRoot);
   }
 
-  // EIP-7732 TODO: implement
+  // EIP-7732 TODO: implement (test)
   @Override
   public boolean containsExecutionPayloadEnvelope(final Bytes32 blockRoot) {
     return false;
@@ -202,7 +202,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     return Optional.ofNullable(getBlockState(blockRoot));
   }
 
-  // EIP-7732 TODO: implement
+  // EIP-7732 TODO: implement (test)
   @Override
   public Optional<BeaconState> getExecutionPayloadStateIfAvailable(final Bytes32 blockRoot) {
     return Optional.empty();
@@ -213,7 +213,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     return Optional.ofNullable(getSignedBlock(blockRoot));
   }
 
-  // EIP-7732 TODO: implement
+  // EIP-7732 TODO: implement (test)
   @Override
   public Optional<SignedExecutionPayloadEnvelope> getExecutionPayloadIfAvailable(
       final Bytes32 blockRoot) {
@@ -225,7 +225,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     return SafeFuture.completedFuture(getBlockIfAvailable(blockRoot));
   }
 
-  // EIP-7732 TODO: implement
+  // EIP-7732 TODO: implement (test)
   @Override
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveExecutionPayloadEnvelope(
       final Bytes32 blockRoot) {
@@ -248,7 +248,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     return SafeFuture.completedFuture(getBlockStateIfAvailable(blockRoot));
   }
 
-  // EIP-7732 TODO: implement
+  // EIP-7732 TODO: implement (test)
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadState(final Bytes32 blockRoot) {
     return SafeFuture.completedFuture(Optional.empty());
@@ -265,7 +265,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     throw new UnsupportedOperationException("Not implemented");
   }
 
-  // EIP-7732 TODO: implement
+  // EIP-7732 TODO: implement (test)
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveExecutionPayloadStateAtSlot(
       final SlotAndBlockRoot checkpoint) {
@@ -349,7 +349,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       final BlockCheckpoints blockCheckpoints,
       final Optional<List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> earliestBlobSidecarSlot) {
-    // EIP-7732 TODO: implement
+    // EIP-7732 TODO: implement (test)
   }
 
   @Override
