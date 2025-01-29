@@ -1026,7 +1026,7 @@ public class KvStoreDatabase implements Database {
       }
       updater.commit();
     }
-      LOG.debug("Pruned {} BlobSidecars", pruned);
+    LOG.debug("Pruned {} BlobSidecars", pruned);
     // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar in a slot
     return pruned >= pruneLimit;
   }
