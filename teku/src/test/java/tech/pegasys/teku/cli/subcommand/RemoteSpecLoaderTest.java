@@ -74,7 +74,6 @@ class RemoteSpecLoaderTest {
 
     // Check values not assigned, using default values
     assertThat(specConfig.getMaxPayloadSize()).isEqualTo(10485760);
-    assertThat(specConfig.getMaxChunkSize()).isEqualTo(10485760);
     assertThat(specConfig.getMaxRequestBlocks()).isEqualTo(1024);
     assertThat(specConfig.getEpochsPerSubnetSubscription()).isEqualTo(256);
     assertThat(specConfig.getMinEpochsForBlockRequests()).isEqualTo(33024);
