@@ -409,10 +409,7 @@ public class KvStoreDatabase implements Database {
     final Optional<UInt64> earliestFinalizedBlockSlot = dao.getEarliestFinalizedBlockSlot();
     LOG.debug(
         "Earliest block slot stored is {}",
-        () ->
-            earliestFinalizedBlockSlot.isEmpty()
-                ? "EMPTY"
-                : earliestFinalizedBlockSlot.get().toString());
+        () -> earliestFinalizedBlockSlot.map(UInt64::toString).orElse("EMPTY"));
     if (earliestFinalizedBlockSlot.isEmpty()) {
       return lastSlotToPrune;
     }
