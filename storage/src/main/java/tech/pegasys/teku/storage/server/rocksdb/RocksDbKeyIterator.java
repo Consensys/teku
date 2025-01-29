@@ -98,7 +98,7 @@ class RocksDbKeyIterator<TKey, TValue> implements Iterator<byte[]>, AutoCloseabl
   }
 
   private void assertOpen() {
-    if (this.isDatabaseClosed.get()) {
+    if (isDatabaseClosed.get()) {
       throw new ShuttingDownException();
     }
     if (closed.get()) {

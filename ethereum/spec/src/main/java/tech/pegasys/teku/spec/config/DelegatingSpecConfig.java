@@ -318,13 +318,8 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public int getGossipMaxSize() {
-    return specConfig.getGossipMaxSize();
-  }
-
-  @Override
-  public int getMaxChunkSize() {
-    return specConfig.getMaxChunkSize();
+  public int getMaxPayloadSize() {
+    return specConfig.getMaxPayloadSize();
   }
 
   @Override

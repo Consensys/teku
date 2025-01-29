@@ -56,6 +56,10 @@ public class SpecConfigData {
     configAttributes.put("DOMAIN_SELECTION_PROOF", getDomainSelectionProof().toHexString());
     configAttributes.put("DOMAIN_AGGREGATE_AND_PROOF", getDomainAggregateAndProof().toHexString());
     configAttributes.put("DOMAIN_APPLICATION_BUILDER", getDomainApplicationBuilder().toHexString());
+    // Backwards compatibility with old phase0 constants, otherwise nodes won't start
+    configAttributes.put("GOSSIP_MAX_SIZE", configAttributes.get("MAX_PAYLOAD_SIZE"));
+    // Backwards compatibility with old phase0 constants, otherwise nodes won't start
+    configAttributes.put("MAX_CHUNK_SIZE", configAttributes.get("MAX_PAYLOAD_SIZE"));
     getDomainSyncCommittee()
         .ifPresent(
             committee -> configAttributes.put("DOMAIN_SYNC_COMMITTEE", committee.toHexString()));

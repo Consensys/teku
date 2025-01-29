@@ -59,7 +59,6 @@ public class Eth1StatusLogger {
   }
 
   private void reportOutage(final UInt64 outageStartInSeconds) {
-    STATUS_LOG.eth1ServiceDown(
-        timeProvider.getTimeInSeconds().minus(outageStartInSeconds).longValue());
+    STATUS_LOG.eth1ServiceDown(timeProvider.getTimeInSeconds().minus(outageStartInSeconds));
   }
 }

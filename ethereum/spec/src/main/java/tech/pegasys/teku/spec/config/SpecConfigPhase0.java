@@ -102,8 +102,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final Eth1Address depositContractAddress;
 
   // Networking
-  private final int gossipMaxSize;
-  private final int maxChunkSize;
+  private final int maxPayloadSize;
   private final int maxRequestBlocks;
   private final int epochsPerSubnetSubscription;
   private final int minEpochsForBlockRequests;
@@ -174,8 +173,7 @@ public class SpecConfigPhase0 implements SpecConfig {
       final long depositChainId,
       final long depositNetworkId,
       final Eth1Address depositContractAddress,
-      final int gossipMaxSize,
-      final int maxChunkSize,
+      final int maxPayloadSize,
       final int maxRequestBlocks,
       final int epochsPerSubnetSubscription,
       final int minEpochsForBlockRequests,
@@ -244,8 +242,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.depositNetworkId = depositNetworkId;
     this.depositContractAddress = depositContractAddress;
     this.squareRootSlotsPerEpoch = MathHelpers.integerSquareRoot(slotsPerEpoch);
-    this.gossipMaxSize = gossipMaxSize;
-    this.maxChunkSize = maxChunkSize;
+    this.maxPayloadSize = maxPayloadSize;
     this.maxRequestBlocks = maxRequestBlocks;
     this.epochsPerSubnetSubscription = epochsPerSubnetSubscription;
     this.minEpochsForBlockRequests = minEpochsForBlockRequests;
@@ -561,13 +558,8 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public int getGossipMaxSize() {
-    return gossipMaxSize;
-  }
-
-  @Override
-  public int getMaxChunkSize() {
-    return maxChunkSize;
+  public int getMaxPayloadSize() {
+    return maxPayloadSize;
   }
 
   @Override
@@ -683,8 +675,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         && proposerScoreBoost == that.proposerScoreBoost
         && depositChainId == that.depositChainId
         && depositNetworkId == that.depositNetworkId
-        && gossipMaxSize == that.gossipMaxSize
-        && maxChunkSize == that.maxChunkSize
+        && maxPayloadSize == that.maxPayloadSize
         && maxRequestBlocks == that.maxRequestBlocks
         && epochsPerSubnetSubscription == that.epochsPerSubnetSubscription
         && subnetsPerNode == that.subnetsPerNode
@@ -768,8 +759,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         depositChainId,
         depositNetworkId,
         depositContractAddress,
-        gossipMaxSize,
-        maxChunkSize,
+        maxPayloadSize,
         maxRequestBlocks,
         epochsPerSubnetSubscription,
         ttfbTimeout,
