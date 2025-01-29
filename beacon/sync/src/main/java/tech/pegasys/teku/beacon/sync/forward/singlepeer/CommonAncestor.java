@@ -26,7 +26,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class CommonAncestor {
   private static final Logger LOG = LogManager.getLogger();
   private static final int MAX_ATTEMPTS = 3;
-  private static final UInt64 BLOCKS_COUNT_PER_ATTEMPT = UInt64.valueOf(10);
+  private static final UInt64 BLOCK_COUNT_PER_ATTEMPT = UInt64.valueOf(10);
   private static final UInt64 SLOTS_TO_JUMP_BACK_ON_EACH_ATTEMPT = UInt64.valueOf(100);
 
   private final RecentChainData recentChainData;
@@ -54,7 +54,7 @@ public class CommonAncestor {
 
     return getCommonAncestor(
         peer,
-        lowestHeadSlot.minusMinZero(BLOCKS_COUNT_PER_ATTEMPT),
+        lowestHeadSlot.minusMinZero(BLOCK_COUNT_PER_ATTEMPT),
         firstNonFinalSlot,
         MAX_ATTEMPTS);
   }
@@ -68,7 +68,7 @@ public class CommonAncestor {
       return SafeFuture.completedFuture(defaultSlot);
     }
 
-    final UInt64 lastSlot = firstRequestedSlot.plus(BLOCKS_COUNT_PER_ATTEMPT);
+    final UInt64 lastSlot = firstRequestedSlot.plus(BLOCK_COUNT_PER_ATTEMPT);
 
     LOG.debug("Sampling ahead from {} to {}.", firstRequestedSlot, lastSlot);
 
@@ -77,10 +77,10 @@ public class CommonAncestor {
         new PeerSyncBlockListener(
             SafeFuture.COMPLETE,
             firstRequestedSlot,
-            BLOCKS_COUNT_PER_ATTEMPT,
+            BLOCK_COUNT_PER_ATTEMPT,
             blockResponseListener);
 
-    return peer.requestBlocksByRange(firstRequestedSlot, BLOCKS_COUNT_PER_ATTEMPT, blockListener)
+    return peer.requestBlocksByRange(firstRequestedSlot, BLOCK_COUNT_PER_ATTEMPT, blockListener)
         .thenCompose(
             __ ->
                 blockResponseListener
