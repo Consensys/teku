@@ -32,7 +32,6 @@ public class InclusionListManager implements SlotEventsChannel {
 
   private final SignedInclusionListValidator signedInclusionListValidator;
 
-  // TODO EIP7805 Could use a more efficient DS
   private final NavigableMap<UInt64, Map<UInt64, List<SignedInclusionList>>>
       slotToInclusionListsByValidatorIndex = new TreeMap<>();
 
@@ -81,8 +80,11 @@ public class InclusionListManager implements SlotEventsChannel {
     final Map<UInt64, List<SignedInclusionList>> inclusionListsForSlot =
         slotToInclusionListsByValidatorIndex.getOrDefault(slot, Map.of());
     return inclusionListsForSlot.entrySet().stream()
-        .filter(e -> committeeIndices.isSet(e.getKey().intValue()))
-        .flatMap(e -> e.getValue().stream())
+        .filter(
+            validatorIndexToInclusionLists ->
+                committeeIndices.isSet(validatorIndexToInclusionLists.getKey().intValue()))
+        .flatMap(
+            validatorIndexToInclusionLists -> validatorIndexToInclusionLists.getValue().stream())
         .toList();
   }
 }

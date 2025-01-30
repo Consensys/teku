@@ -124,6 +124,9 @@ public interface Eth2Peer extends Peer, SyncSource {
   void adjustBlobSidecarsRequest(
       RequestApproval blobSidecarsRequest, long returnedBlobSidecarsCount);
 
+  void adjustInclusionListsRequest(
+      RequestApproval inclusionListsRequest, long returnedInclusionListsCount);
+
   boolean approveRequest();
 
   SafeFuture<UInt64> sendPing();
