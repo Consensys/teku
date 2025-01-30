@@ -350,6 +350,10 @@ public class RespondingEth2Peer implements Eth2Peer {
       final RequestApproval blobSidecarRequests, final long returnedBlobSidecarsCount) {}
 
   @Override
+  public void adjustInclusionListsRequest(
+      final RequestApproval inclusionListsRequest, final long returnedInclusionListsCount) {}
+
+  @Override
   public boolean approveRequest() {
     return true;
   }
