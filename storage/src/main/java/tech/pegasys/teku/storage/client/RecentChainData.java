@@ -558,6 +558,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .orElse(false);
   }
 
+  public boolean containsExecutionBlockHash(final Bytes32 blockHash) {
+    return getForkChoiceStrategy()
+        .map(forkChoice -> forkChoice.containsExecutionBlockHash(blockHash))
+        .orElse(false);
+  }
+
   public Optional<UInt64> getSlotForBlockRoot(final Bytes32 root) {
     return getForkChoiceStrategy().flatMap(forkChoice -> forkChoice.blockSlot(root));
   }
