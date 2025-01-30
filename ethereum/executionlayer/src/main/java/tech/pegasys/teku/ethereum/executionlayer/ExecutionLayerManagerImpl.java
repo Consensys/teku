@@ -130,7 +130,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final boolean setUserAgentHeader) {
 
     final RestBuilderClient restBuilderClient =
-        new RestBuilderClient(restClient, spec, setUserAgentHeader);
+        new RestBuilderClient(restClient, timeProvider, spec, setUserAgentHeader);
     final MetricRecordingBuilderClient metricRecordingBuilderClient =
         new MetricRecordingBuilderClient(restBuilderClient, timeProvider, metricsSystem);
     return new ThrottlingBuilderClient(
