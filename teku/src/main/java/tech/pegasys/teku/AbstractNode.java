@@ -245,15 +245,14 @@ public abstract class AbstractNode implements Node {
     // Stop async actions
     asyncRunnerFactory.shutdown();
 
-
-    metricsEndpoint.stop()
-            .orTimeout(5, TimeUnit.SECONDS);
+    metricsEndpoint.stop().orTimeout(5, TimeUnit.SECONDS);
 
     // Stop services. This includes closing the database.
-    getServiceController().stop()
-            .orTimeout(30, TimeUnit.SECONDS)
-            .handleException(error -> LOG.error("Failed to stop services", error))
-            .thenRun(vertx::close)
-            .join();
+    getServiceController()
+        .stop()
+        .orTimeout(30, TimeUnit.SECONDS)
+        .handleException(error -> LOG.error("Failed to stop services", error))
+        .thenRun(vertx::close)
+        .join();
   }
 }
