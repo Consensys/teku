@@ -152,6 +152,10 @@ public class BesuNode extends Node {
     return "http://" + nodeAlias + ":" + ENGINE_JSON_RPC_PORT;
   }
 
+  public String getInternalEngineWebsocketsRpcUrl() {
+    return "ws://" + nodeAlias + ":" + ENGINE_JSON_RPC_PORT;
+  }
+
   private String getInternalP2pUrl(final String nodeId) {
     return "enode://" + nodeId + "@" + getInternalIpAddress() + ":" + P2P_PORT;
   }
