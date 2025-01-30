@@ -72,9 +72,10 @@ public class InclusionListByCommitteeIndicesMessageHandler
     final SpecConfigEip7805 specConfig =
         SpecConfigEip7805.required(spec.atSlot(request.getSlot()).getConfig());
 
+    final int requestedCount = request.getCommitteeIndices().getAllSetBits().size();
     final int maxRequestInclusionList = specConfig.getMaxRequestInclusionList();
 
-    if (request.size() > maxRequestInclusionList) {
+    if (requestedCount > maxRequestInclusionList) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(
@@ -86,7 +87,6 @@ public class InclusionListByCommitteeIndicesMessageHandler
     return Optional.empty();
   }
 
-  // TODO EIP7805 review logic, add counter
   @SuppressWarnings("FutureReturnValueIgnored")
   @Override
   protected void onIncomingMessage(
