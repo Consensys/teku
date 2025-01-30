@@ -109,7 +109,6 @@ public class SpecConfigBuilder {
 
   // Networking
   private Integer maxPayloadSize;
-  private Integer maxChunkSize;
   private Integer maxRequestBlocks;
   private Integer epochsPerSubnetSubscription;
   private Integer ttfbTimeout;
@@ -213,7 +212,6 @@ public class SpecConfigBuilder {
                 depositNetworkId,
                 depositContractAddress,
                 maxPayloadSize,
-                maxChunkSize,
                 maxRequestBlocks,
                 epochsPerSubnetSubscription,
                 minEpochsForBlockRequests,
@@ -287,7 +285,6 @@ public class SpecConfigBuilder {
     constants.put("depositContractAddress", depositContractAddress);
 
     constants.put("maxPayloadSize", maxPayloadSize);
-    constants.put("maxChunkSize", maxChunkSize);
     constants.put("maxRequestBlocks", maxRequestBlocks);
     constants.put("epochsPerSubnetSubscription", epochsPerSubnetSubscription);
     constants.put("minEpochsForBlockRequests", minEpochsForBlockRequests);
@@ -640,11 +637,6 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder maxPayloadSize(final Integer maxPayloadSize) {
     this.maxPayloadSize = maxPayloadSize;
-    return this;
-  }
-
-  public SpecConfigBuilder maxChunkSize(final Integer maxChunkSize) {
-    this.maxChunkSize = maxChunkSize;
     return this;
   }
 

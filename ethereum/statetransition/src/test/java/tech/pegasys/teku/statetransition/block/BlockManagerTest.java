@@ -79,7 +79,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
@@ -182,8 +181,7 @@ public class BlockManagerTest {
                 spec, historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
     this.localChain = InMemoryStorageSystemBuilder.buildDefault(spec);
     this.localRecentChainData = localChain.recentChainData();
-    this.transitionBlockValidator =
-        new MergeTransitionBlockValidator(spec, localRecentChainData, ExecutionLayerChannel.NOOP);
+    this.transitionBlockValidator = new MergeTransitionBlockValidator(spec, localRecentChainData);
     this.forkChoice =
         new ForkChoice(
             spec,
@@ -193,7 +191,7 @@ public class BlockManagerTest {
             forkChoiceNotifier,
             transitionBlockValidator,
             metricsSystem);
-    this.executionLayer = spy(new ExecutionLayerChannelStub(spec, false, Optional.empty()));
+    this.executionLayer = spy(new ExecutionLayerChannelStub(spec, false));
     this.blockImporter =
         new BlockImporter(
             asyncRunner,

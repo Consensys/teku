@@ -38,6 +38,9 @@ public class AcceptanceTestBase {
     System.setProperty("org.apache.tuweni.crypto.useSodium", "false");
   }
 
+  public static final String DEFAULT_EL_GENESIS_HASH =
+      "0x14e88057b0b7538a8205cb07726a0de03dd69d9a70e88bcffae15ca3fc6b5215";
+
   private final List<Node> nodes = new ArrayList<>();
   private final Network network = Network.newNetwork();
 
