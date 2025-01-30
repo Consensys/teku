@@ -30,6 +30,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.data.Log;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -282,7 +283,10 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   public Optional<SignedBeaconBlock> getEarliestFinalizedBlock() {
-    return db.getFirstEntry(schema.getColumnFinalizedBlocksBySlot()).map(ColumnEntry::getValue);
+    LOG.debug("Fetching earliest beacon block from db");
+     final Optional <SignedBeaconBlock> earliestBeaconBlock = db.getFirstEntry(schema.getColumnFinalizedBlocksBySlot()).map(ColumnEntry::getValue);
+    LOG.debug("Earliest block slot in column: {}", earliestBeaconBlock);
+     return earliestBeaconBlock;
   }
 
   @Override
