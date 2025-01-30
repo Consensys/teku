@@ -40,8 +40,7 @@ public class CommonAncestor {
   private final int maxAttempts;
 
   public CommonAncestor(final RecentChainData recentChainData) {
-    this.recentChainData = recentChainData;
-    this.maxAttempts = DEFAULT_MAX_ATTEMPTS;
+    this(recentChainData, DEFAULT_MAX_ATTEMPTS);
   }
 
   @VisibleForTesting

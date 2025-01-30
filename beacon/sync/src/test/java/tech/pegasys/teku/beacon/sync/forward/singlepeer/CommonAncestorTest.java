@@ -24,7 +24,6 @@ import static tech.pegasys.teku.beacon.sync.forward.singlepeer.CommonAncestor.BL
 import static tech.pegasys.teku.beacon.sync.forward.singlepeer.CommonAncestor.SLOTS_TO_JUMP_BACK_EXPONENTIAL_BASE;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
-import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -35,8 +34,7 @@ public class CommonAncestorTest extends AbstractSyncTest {
   private final CommonAncestor commonAncestor = new CommonAncestor(recentChainData, 4);
 
   @Test
-  void shouldNotSearchCommonAncestorWithoutSufficientLocalData()
-      throws ExecutionException, InterruptedException {
+  void shouldNotSearchCommonAncestorWithoutSufficientLocalData() {
     final UInt64 firstNonFinalSlot = dataStructureUtil.randomUInt64();
     final UInt64 currentLocalHead = firstNonFinalSlot.plus(BLOCK_COUNT_PER_ATTEMPT.minus(1));
     final PeerStatus status =
@@ -47,9 +45,9 @@ public class CommonAncestorTest extends AbstractSyncTest {
 
     when(recentChainData.getHeadSlot()).thenReturn(currentLocalHead);
 
-    assertThat(
-            commonAncestor.getCommonAncestor(peer, firstNonFinalSlot, status.getHeadSlot()).get())
-        .isEqualTo(firstNonFinalSlot);
+    assertThatSafeFuture(
+            commonAncestor.getCommonAncestor(peer, firstNonFinalSlot, status.getHeadSlot()))
+        .isCompletedWithValue(firstNonFinalSlot);
 
     verifyNoInteractions(peer);
   }
