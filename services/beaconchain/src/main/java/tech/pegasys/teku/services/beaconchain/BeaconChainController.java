@@ -611,8 +611,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   recentChainData,
                   forkChoiceNotifier,
                   beaconAsyncRunner,
-                  EVENT_LOG,
-                  timeProvider));
+                  EVENT_LOG));
     }
   }
 
@@ -822,7 +821,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoiceNotifier,
             forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
-            new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
+            new MergeTransitionBlockValidator(spec, recentChainData),
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
             debugDataDumper,
             metricsSystem);

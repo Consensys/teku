@@ -30,7 +30,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -42,15 +41,10 @@ public class MergeTransitionBlockValidator {
 
   private final Spec spec;
   private final RecentChainData recentChainData;
-  private final ExecutionLayerChannel executionLayer;
 
-  public MergeTransitionBlockValidator(
-      final Spec spec,
-      final RecentChainData recentChainData,
-      final ExecutionLayerChannel executionLayer) {
+  public MergeTransitionBlockValidator(final Spec spec, final RecentChainData recentChainData) {
     this.spec = spec;
     this.recentChainData = recentChainData;
-    this.executionLayer = executionLayer;
   }
 
   public SafeFuture<PayloadValidationResult> verifyTransitionBlock(
@@ -151,7 +145,7 @@ public class MergeTransitionBlockValidator {
                     new IllegalStateException(
                         "Attempting to validate a bellatrix block when spec does not have bellatrix transition helpers"));
     return bellatrixTransitionHelpers
-        .validateMergeBlock(executionLayer, executionPayload, slot)
+        .validateMergeBlock(executionPayload, slot)
         .exceptionally(
             error -> {
               LOG.error("Error while validating merge block", error);

@@ -41,7 +41,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -154,7 +153,7 @@ class ForkChoiceTest {
     this.chainBuilder = storageSystem.chainBuilder();
     this.genesis = chainBuilder.generateGenesis();
     this.recentChainData = storageSystem.recentChainData();
-    this.executionLayer = new ExecutionLayerChannelStub(spec, false, Optional.empty());
+    this.executionLayer = new ExecutionLayerChannelStub(spec, false);
     this.forkChoice =
         new ForkChoice(
             spec,
@@ -1224,19 +1223,11 @@ class ForkChoiceTest {
   }
 
   private SignedBlockAndState generateMergeBlock() {
-    final UInt256 terminalTotalDifficulty =
-        spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalTotalDifficulty();
     final Bytes32 terminalBlockHash = dataStructureUtil.randomBytes32();
     final Bytes32 terminalBlockParentHash = dataStructureUtil.randomBytes32();
-    final PowBlock terminalBlock =
-        new PowBlock(
-            terminalBlockHash, terminalBlockParentHash, terminalTotalDifficulty.plus(1), ZERO);
+    final PowBlock terminalBlock = new PowBlock(terminalBlockHash, terminalBlockParentHash, ZERO);
     final PowBlock terminalParentBlock =
-        new PowBlock(
-            terminalBlockParentHash,
-            dataStructureUtil.randomBytes32(),
-            terminalTotalDifficulty.subtract(1),
-            ZERO);
+        new PowBlock(terminalBlockParentHash, dataStructureUtil.randomBytes32(), ZERO);
     executionLayer.addPowBlock(terminalBlock);
     executionLayer.addPowBlock(terminalParentBlock);
     return chainBuilder.generateBlockAtSlot(
