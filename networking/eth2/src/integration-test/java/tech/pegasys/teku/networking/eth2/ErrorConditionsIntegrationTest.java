@@ -37,7 +37,7 @@ public class ErrorConditionsIntegrationTest {
 
   private final Spec spec = TestSpecFactory.createDefault();
   private final RpcEncoding rpcEncoding =
-      RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxChunkSize());
+      RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
 
   @AfterEach
