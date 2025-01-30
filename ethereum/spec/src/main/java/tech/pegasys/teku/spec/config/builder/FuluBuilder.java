@@ -36,14 +36,13 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
   private UInt64 fieldElementsPerExtBlob;
   private UInt64 kzgCommitmentsInclusionProofDepth;
   private Integer numberOfColumns;
-  // FIXME: remove hardcode when Kurtosis config is updated according to the Fulu spec
-  private Integer numberOfCustodyGroups = 128;
+  private Integer numberOfCustodyGroups;
   private Integer dataColumnSidecarSubnetCount;
   private Integer custodyRequirement;
   private Integer samplesPerSlot;
-  // FIXME: remove hardcode when Kurtosis config is updated according to the Fulu spec
-  private Integer minEpochsForDataColumnSidecarsRequests = 4096;
+  private Integer minEpochsForDataColumnSidecarsRequests;
   private Integer maxRequestDataColumnSidecars;
+  private Integer maxBlobsPerBlockFulu;
 
   FuluBuilder() {}
 
@@ -64,7 +63,8 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
             custodyRequirement,
             samplesPerSlot,
             minEpochsForDataColumnSidecarsRequests,
-            maxRequestDataColumnSidecars),
+            maxRequestDataColumnSidecars,
+            maxBlobsPerBlockFulu),
         specConfigAndParent);
   }
 
@@ -142,6 +142,12 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     return this;
   }
 
+  public FuluBuilder maxBlobsPerBlockFulu(final Integer maxBlobsPerBlockFulu) {
+    checkNotNull(maxBlobsPerBlockFulu);
+    this.maxBlobsPerBlockFulu = maxBlobsPerBlockFulu;
+    return this;
+  }
+
   @Override
   public void validate() {
     if (fuluForkEpoch == null) {
@@ -173,6 +179,7 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     constants.put("kzgCommitmentsInclusionProofDepth", kzgCommitmentsInclusionProofDepth);
     constants.put("minEpochsForDataColumnSidecarsRequests", minEpochsForDataColumnSidecarsRequests);
     constants.put("maxRequestDataColumnSidecars", maxRequestDataColumnSidecars);
+    constants.put("maxBlobsPerBlockFulu", maxBlobsPerBlockFulu);
 
     return constants;
   }

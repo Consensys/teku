@@ -34,6 +34,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
   private final UInt64 kzgCommitmentsInclusionProofDepth;
   private final int minEpochsForDataColumnSidecarsRequests;
   private final int maxRequestDataColumnSidecars;
+  private final int maxBlobsPerBlockFulu;
 
   public SpecConfigFuluImpl(
       final SpecConfigElectra specConfig,
@@ -48,7 +49,8 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
       final int custodyRequirement,
       final int samplesPerSlot,
       final int minEpochsForDataColumnSidecarsRequests,
-      final int maxRequestDataColumnSidecars) {
+      final int maxRequestDataColumnSidecars,
+      final int maxBlobsPerBlockFulu) {
     super(specConfig);
     this.fuluForkVersion = fuluForkVersion;
     this.fuluForkEpoch = fuluForkEpoch;
@@ -62,6 +64,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
     this.samplesPerSlot = samplesPerSlot;
     this.minEpochsForDataColumnSidecarsRequests = minEpochsForDataColumnSidecarsRequests;
     this.maxRequestDataColumnSidecars = maxRequestDataColumnSidecars;
+    this.maxBlobsPerBlockFulu = maxBlobsPerBlockFulu;
   }
 
   @Override
@@ -125,6 +128,11 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
   }
 
   @Override
+  public int getMaxBlobsPerBlock() {
+    return maxBlobsPerBlockFulu;
+  }
+
+  @Override
   public SpecMilestone getMilestone() {
     return SpecMilestone.FULU;
   }
@@ -154,7 +162,8 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
         && dataColumnSidecarSubnetCount == that.dataColumnSidecarSubnetCount
         && custodyRequirement == that.custodyRequirement
         && minEpochsForDataColumnSidecarsRequests == that.minEpochsForDataColumnSidecarsRequests
-        && maxRequestDataColumnSidecars == that.maxRequestDataColumnSidecars;
+        && maxRequestDataColumnSidecars == that.maxRequestDataColumnSidecars
+        && maxBlobsPerBlockFulu == that.maxBlobsPerBlockFulu;
   }
 
   @Override
@@ -171,6 +180,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
         fieldElementsPerExtBlob,
         kzgCommitmentsInclusionProofDepth,
         minEpochsForDataColumnSidecarsRequests,
-        maxRequestDataColumnSidecars);
+        maxRequestDataColumnSidecars,
+        maxBlobsPerBlockFulu);
   }
 }
