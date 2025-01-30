@@ -64,7 +64,7 @@ public class MergedGenesisAcceptanceTest extends AcceptanceTestBase {
                 .withNetwork(NETWORK_NAME)
                 .withAltairEpoch(UInt64.ZERO)
                 .withBellatrixEpoch(UInt64.ZERO)
-                .withTotalTerminalDifficulty(0)
+                .withTerminalBlockHash(DEFAULT_EL_GENESIS_HASH, 0)
                 .withInitialState(initialStateData)
                 .withStartupTargetPeerCount(0)
                 .withReadOnlyKeystorePath(validatorKeys)

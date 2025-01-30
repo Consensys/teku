@@ -406,24 +406,34 @@ public class KvStoreDatabase implements Database {
   @Override
   public UInt64 pruneFinalizedBlocks(
       final UInt64 lastSlotToPrune, final int pruneLimit, final UInt64 checkpointInitialSlot) {
-    final Optional<UInt64> earliestBlockSlot =
-        dao.getEarliestFinalizedBlock().map(SignedBeaconBlock::getSlot);
+    final Optional<UInt64> earliestFinalizedBlockSlot = dao.getEarliestFinalizedBlockSlot();
     LOG.debug(
         "Earliest block slot stored is {}",
-        () -> earliestBlockSlot.isEmpty() ? "EMPTY" : earliestBlockSlot.get().toString());
-    if (earliestBlockSlot.isEmpty()) {
+        () -> earliestFinalizedBlockSlot.map(UInt64::toString).orElse("EMPTY"));
+    if (earliestFinalizedBlockSlot.isEmpty()) {
       return lastSlotToPrune;
     }
-    return pruneToBlock(lastSlotToPrune, pruneLimit, checkpointInitialSlot);
+    return pruneToBlock(
+        lastSlotToPrune, earliestFinalizedBlockSlot.get(), pruneLimit, checkpointInitialSlot);
   }
 
   private UInt64 pruneToBlock(
-      final UInt64 lastSlotToPrune, final int pruneLimit, final UInt64 checkpointInitialSlot) {
+      final UInt64 lastSlotToPrune,
+      final UInt64 earliestFinalizedBlockSlot,
+      final int pruneLimit,
+      final UInt64 checkpointInitialSlot) {
     final List<Pair<UInt64, Bytes32>> blocksToPrune;
     final Optional<UInt64> earliestSlotAvailableAfterPrune;
     LOG.debug("Pruning finalized blocks to slot {} (included)", lastSlotToPrune);
+    if (lastSlotToPrune.isLessThanOrEqualTo(earliestFinalizedBlockSlot)) {
+      LOG.debug(
+          "Last slot to prune {} was lower than the earliest finalized block slot in the database {}",
+          lastSlotToPrune,
+          earliestFinalizedBlockSlot);
+      return lastSlotToPrune;
+    }
     try (final Stream<SignedBeaconBlock> stream =
-        dao.streamFinalizedBlocks(UInt64.ZERO, lastSlotToPrune)) {
+        dao.streamFinalizedBlocks(earliestFinalizedBlockSlot, lastSlotToPrune)) {
       // get an extra block to set earliest finalized block slot available after pruning runs
       // ensuring it is an existing block in the DB
       blocksToPrune =
@@ -436,7 +446,7 @@ public class KvStoreDatabase implements Database {
     }
 
     try (final Stream<SignedBeaconBlock> stream =
-        dao.streamFinalizedBlocks(UInt64.ZERO, checkpointInitialSlot)) {
+        dao.streamFinalizedBlocks(earliestFinalizedBlockSlot, checkpointInitialSlot)) {
 
       earliestSlotAvailableAfterPrune =
           stream
@@ -927,8 +937,13 @@ public class KvStoreDatabase implements Database {
       final UInt64 lastSlotToPrune,
       final int pruneLimit,
       final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
+    final Optional<UInt64> earliestBlobSidecarSlot = getEarliestBlobSidecarSlot();
+    if (earliestBlobSidecarSlot.isPresent()
+        && earliestBlobSidecarSlot.get().isGreaterThan(lastSlotToPrune)) {
+      return false;
+    }
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys =
-        streamBlobSidecarKeys(UInt64.ZERO, lastSlotToPrune)) {
+        streamBlobSidecarKeys(earliestBlobSidecarSlot.orElse(UInt64.ZERO), lastSlotToPrune)) {
       return pruneBlobSidecars(pruneLimit, prunableBlobKeys, archiveWriter, false);
     }
   }
@@ -938,8 +953,14 @@ public class KvStoreDatabase implements Database {
       final UInt64 lastSlotToPrune,
       final int pruneLimit,
       final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
+    final Optional<UInt64> earliestBlobSidecarSlot = getEarliestBlobSidecarSlot();
+    if (earliestBlobSidecarSlot.isPresent()
+        && earliestBlobSidecarSlot.get().isGreaterThan(lastSlotToPrune)) {
+      return false;
+    }
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableNoncanonicalBlobKeys =
-        streamNonCanonicalBlobSidecarKeys(UInt64.ZERO, lastSlotToPrune)) {
+        streamNonCanonicalBlobSidecarKeys(
+            earliestBlobSidecarSlot.orElse(UInt64.ZERO), lastSlotToPrune)) {
       return pruneBlobSidecars(pruneLimit, prunableNoncanonicalBlobKeys, archiveWriter, true);
     }
   }
@@ -1005,7 +1026,7 @@ public class KvStoreDatabase implements Database {
       }
       updater.commit();
     }
-
+    LOG.debug("Pruned {} BlobSidecars", pruned);
     // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar in a slot
     return pruned >= pruneLimit;
   }

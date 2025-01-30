@@ -14,18 +14,14 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayDeque;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -38,15 +34,8 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class TerminalPowBlockMonitor {
   private static final Logger LOG = LogManager.getLogger();
-  // number of samples to average out totalDifficulty
-  private static final int TD_SAMPLES = 40;
-  // minimum collected samples required for an accurate estimation
-  static final int TD_MIN_SAMPLES = 15;
-  // how many times we produce the event, based on polling period (secondsPerEth1Block)
-  private static final int ETA_EVENT_FREQUENCY_IN_POLLING_PERIODS = 5;
 
   private final EventLogger eventLogger;
-  private final TimeProvider timeProvider;
   private final ExecutionLayerChannel executionLayer;
   private final AsyncRunner asyncRunner;
   private Optional<Cancellable> timer = Optional.empty();
@@ -55,15 +44,12 @@ public class TerminalPowBlockMonitor {
   private final ForkChoiceNotifier forkChoiceNotifier;
 
   private Duration pollingPeriod;
-  private int pollingCounter = 0;
 
-  private Optional<Bytes32> maybeBlockHashTracking = Optional.empty();
+  private Optional<Bytes32> blockHashTracking = Optional.empty();
   private Optional<Bytes32> foundTerminalBlockHash = Optional.empty();
   private SpecConfigBellatrix specConfigBellatrix;
   private boolean isBellatrixActive = false;
   private boolean inSync = true;
-
-  private final ArrayDeque<PowBlock> lastPowBlocks = new ArrayDeque<>();
 
   public TerminalPowBlockMonitor(
       final ExecutionLayerChannel executionLayer,
@@ -71,15 +57,13 @@ public class TerminalPowBlockMonitor {
       final RecentChainData recentChainData,
       final ForkChoiceNotifier forkChoiceNotifier,
       final AsyncRunner asyncRunner,
-      final EventLogger eventLogger,
-      final TimeProvider timeProvider) {
+      final EventLogger eventLogger) {
     this.executionLayer = executionLayer;
     this.asyncRunner = asyncRunner;
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.eventLogger = eventLogger;
-    this.timeProvider = timeProvider;
   }
 
   public synchronized void start() {
@@ -94,6 +78,13 @@ public class TerminalPowBlockMonitor {
       return;
     }
     specConfigBellatrix = maybeSpecConfigBellatrix.get();
+
+    final boolean isMergeTransitionComplete =
+        isMergeTransitionComplete(recentChainData.getChainHead());
+    if (!isMergeTransitionComplete && specConfigBellatrix.getTerminalBlockHash().isZero()) {
+      throw new InvalidConfigurationException(
+          "Bellatrix transition by terminal total difficulty is no more supported");
+    }
 
     pollingPeriod = Duration.ofSeconds(spec.getGenesisSpec().getConfig().getSecondsPerEth1Block());
     timer =
@@ -120,9 +111,6 @@ public class TerminalPowBlockMonitor {
   }
 
   public synchronized void onNodeSyncStateChanged(final boolean inSync) {
-    if (!this.inSync && inSync) {
-      lastPowBlocks.clear();
-    }
     this.inSync = inSync;
   }
 
@@ -135,8 +123,6 @@ public class TerminalPowBlockMonitor {
       }
     }
 
-    pollingCounter++;
-
     if (isMergeTransitionComplete(recentChainData.getChainHead())) {
       LOG.debug("MERGE is completed.");
       stop();
@@ -148,8 +134,7 @@ public class TerminalPowBlockMonitor {
       return;
     }
 
-    maybeBlockHashTracking.ifPresentOrElse(
-        this::checkTerminalBlockByBlockHash, this::checkTerminalBlockByTTD);
+    checkTerminalBlockByBlockHash(blockHashTracking.orElseThrow());
   }
 
   private Boolean isMergeTransitionComplete(final Optional<ChainHead> chainHead) {
@@ -179,18 +164,11 @@ public class TerminalPowBlockMonitor {
       return;
     }
 
-    if (specConfigBellatrix.getTerminalBlockHash().isZero()) {
-      maybeBlockHashTracking = Optional.empty();
-      LOG.debug(
-          "Enabling tracking by Block Total Difficulty {}",
-          specConfigBellatrix.getTerminalTotalDifficulty());
-    } else {
-      maybeBlockHashTracking = Optional.of(specConfigBellatrix.getTerminalBlockHash());
-      LOG.debug(
-          "Enabling tracking by Block Hash {} and Activation Epoch {}",
-          specConfigBellatrix.getTerminalBlockHash(),
-          specConfigBellatrix.getTerminalBlockHashActivationEpoch());
-    }
+    blockHashTracking = Optional.of(specConfigBellatrix.getTerminalBlockHash());
+    LOG.debug(
+        "Enabling tracking by Block Hash {} and Activation Epoch {}",
+        specConfigBellatrix.getTerminalBlockHash(),
+        specConfigBellatrix.getTerminalBlockHashActivationEpoch());
 
     isBellatrixActive = true;
   }
@@ -228,132 +206,6 @@ public class TerminalPowBlockMonitor {
           .finish(
               error -> LOG.error("Unexpected error while searching Terminal Block by Hash", error));
     }
-  }
-
-  private void checkTerminalBlockByTTD() {
-    executionLayer
-        .eth1GetPowChainHead()
-        .thenCompose(
-            powBlock -> {
-              if (powBlock == null) {
-                LOG.debug("checkTerminalBlockByTTD: Not checking - Latest pow block is null");
-                return SafeFuture.COMPLETE;
-              }
-              final UInt256 totalDifficulty = powBlock.getTotalDifficulty();
-              if (totalDifficulty.compareTo(specConfigBellatrix.getTerminalTotalDifficulty()) < 0) {
-                LOG.trace("checkTerminalBlockByTTD: Total Terminal Difficulty not reached.");
-                try {
-                  checkTtdEta(powBlock);
-                } catch (Exception ex) {
-                  LOG.debug("TTD ETA calculation exception", ex);
-                }
-
-                return SafeFuture.COMPLETE;
-              }
-              if (powBlock.getBlockTimestamp().isGreaterThan(timeProvider.getTimeInSeconds())) {
-                LOG.trace("checkTerminalBlockByTTD: Chain head is in the future, ignoring for now");
-                return SafeFuture.COMPLETE;
-              }
-
-              // TTD is reached
-              if (notYetFound(powBlock.getBlockHash())) {
-                LOG.trace("checkTerminalBlockByTTD: Terminal Block found!");
-                return validateTerminalBlockParentByTTD(powBlock)
-                    .thenAccept(
-                        valid -> {
-                          if (valid) {
-                            LOG.trace(
-                                "Total Difficulty of Terminal Block parent has been validated.");
-                            onTerminalPowBlockFound(powBlock.getBlockHash());
-                          } else {
-                            LOG.warn(
-                                "A candidate Terminal Block has been found but its parent has a Total Difficulty greater than terminal total difficulty. "
-                                    + "It is likely the Terminal Block has been already chosen by the network and The Merge will complete shortly.");
-                          }
-                        });
-              }
-              return SafeFuture.COMPLETE;
-            })
-        .finish(error -> LOG.error("Unexpected error while checking TTD", error));
-  }
-
-  private SafeFuture<Boolean> validateTerminalBlockParentByTTD(final PowBlock terminalBlock) {
-    // if it's genesis validate fast way
-    if (terminalBlock.getParentHash().isZero()) {
-      return SafeFuture.completedFuture(true);
-    }
-    return executionLayer
-        .eth1GetPowBlock(terminalBlock.getParentHash())
-        .thenApply(
-            powBlock -> {
-              UInt256 parentTotalDifficulty =
-                  powBlock
-                      .orElseThrow(
-                          () -> new IllegalStateException("Terminal Block Parent not found!"))
-                      .getTotalDifficulty();
-              return parentTotalDifficulty.lessThan(
-                  specConfigBellatrix.getTerminalTotalDifficulty());
-            });
-  }
-
-  private synchronized void checkTtdEta(final PowBlock currentHead) {
-    lastPowBlocks.addFirst(currentHead);
-    if (lastPowBlocks.size() > TD_SAMPLES) {
-      lastPowBlocks.removeLast();
-    }
-
-    if (!inSync
-        || lastPowBlocks.size() < TD_MIN_SAMPLES
-        || pollingCounter % ETA_EVENT_FREQUENCY_IN_POLLING_PERIODS != 0) {
-      return;
-    }
-
-    final PowBlock latestBlock = lastPowBlocks.getFirst();
-    final PowBlock oldestBlock = lastPowBlocks.getLast();
-
-    final UInt256 timeFrameInSeconds =
-        UInt256.valueOf(
-            latestBlock.getBlockTimestamp().minus(oldestBlock.getBlockTimestamp()).longValue());
-    // Make sure we don't just have the same block multiple times.
-    if (timeFrameInSeconds.isZero()) {
-      return;
-    }
-    final UInt256 averageTdPerSeconds =
-        lastPowBlocks
-            .getFirst()
-            .getTotalDifficulty()
-            .subtract(lastPowBlocks.getLast().getTotalDifficulty())
-            .divide(timeFrameInSeconds);
-
-    if (averageTdPerSeconds.isZero()) {
-      return;
-    }
-
-    final long now = timeProvider.getTimeInSeconds().longValue();
-
-    final UInt256 secondsToTTD =
-        specConfigBellatrix
-            .getTerminalTotalDifficulty()
-            .subtract(latestBlock.getTotalDifficulty())
-            .divide(averageTdPerSeconds);
-
-    // avoid negative time diff due to time discrepancy with EL
-    final UInt256 timeDiff =
-        UInt256.valueOf(Math.max(0, now - latestBlock.getBlockTimestamp().longValue()));
-
-    final long secondsToTTDAdjusted;
-    // by subtracting timeDiff we could go after the merge and get negative result,
-    // let's avoid that.
-    if (secondsToTTD.greaterThan(timeDiff)) {
-      secondsToTTDAdjusted = secondsToTTD.subtract(timeDiff).toLong();
-    } else {
-      secondsToTTDAdjusted = 0L;
-    }
-
-    final Duration eta = Duration.ofSeconds(secondsToTTDAdjusted);
-    final Instant etaInstant = Instant.ofEpochSecond(now + secondsToTTDAdjusted);
-
-    eventLogger.terminalPowBlockTtdEta(latestBlock.getTotalDifficulty(), eta, etaInstant);
   }
 
   private void onTerminalPowBlockFound(final Bytes32 blockHash) {
