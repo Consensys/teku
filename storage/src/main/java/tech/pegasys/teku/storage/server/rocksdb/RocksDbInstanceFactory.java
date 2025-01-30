@@ -151,7 +151,8 @@ public class RocksDbInstanceFactory {
             .setLogFileTimeToRoll(TIME_TO_ROLL_LOG_FILE)
             .setKeepLogFileNum(NUMBER_OF_LOG_FILES_TO_KEEP)
             .setEnv(Env.getDefault().setBackgroundThreads(configuration.getBackgroundThreadCount()))
-            .setStatistics(stats);
+            .setStatistics(stats)
+            .setParanoidChecks(false);
 
     // Java docs suggests this if db is under 1GB, nearly impossible atm
     if (configuration.optimizeForSmallDb()) {
@@ -164,6 +165,7 @@ public class RocksDbInstanceFactory {
   private static ColumnFamilyOptions createColumnFamilyOptions(
       final KvStoreConfiguration configuration, final Cache cache) {
     return new ColumnFamilyOptions()
+        .setLevelCompactionDynamicLevelBytes(true)
         .setCompressionType(configuration.getCompressionType())
         .setBottommostCompressionType(configuration.getBottomMostCompressionType())
         .setTtl(0)
@@ -189,7 +191,8 @@ public class RocksDbInstanceFactory {
         .setBlockCache(cache)
         .setFilterPolicy(new BloomFilter(10, false))
         .setPartitionFilters(true)
-        .setCacheIndexAndFilterBlocks(false)
+        .setCacheIndexAndFilterBlocks(true)
+        .setPinL0FilterAndIndexBlocksInCache(true)
         .setBlockSize(ROCKSDB_BLOCK_SIZE);
   }
 }

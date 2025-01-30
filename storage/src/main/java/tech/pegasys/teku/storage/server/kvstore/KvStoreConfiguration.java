@@ -61,7 +61,7 @@ public class KvStoreConfiguration {
   /** RocksDb Time to roll a log file (1 day = 3600 * 24 seconds) */
   public static final long TIME_TO_ROLL_LOG_FILE = 86_400L;
 
-  public static final long ROCKSDB_BLOCK_SIZE = 32_768;
+  public static final long ROCKSDB_BLOCK_SIZE = 16_384;
 
   /* --------------- Safe to Change Properties ------------ */
 
