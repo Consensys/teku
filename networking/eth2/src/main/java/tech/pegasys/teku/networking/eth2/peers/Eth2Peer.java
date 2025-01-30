@@ -153,6 +153,9 @@ public interface Eth2Peer extends Peer, SyncSource {
   Optional<RequestKey> approveInclusionListsRequest(
       ResponseCallback<SignedInclusionList> callback, long inclusionListsCount);
 
+  void adjustInclusionListsRequest(
+      RequestKey inclusionListsRequest, long returnedInclusionListsCount);
+
   boolean approveRequest();
 
   SafeFuture<UInt64> sendPing();

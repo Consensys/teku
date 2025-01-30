@@ -15,21 +15,24 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
+import com.google.common.base.Throwables;
+import java.nio.channels.ClosedChannelException;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.InclusionListByCommitteeRequestMessage;
@@ -72,9 +75,10 @@ public class InclusionListByCommitteeIndicesMessageHandler
     final SpecConfigEip7805 specConfig =
         SpecConfigEip7805.required(spec.atSlot(request.getSlot()).getConfig());
 
+    final int requestedCount = request.getCommitteeIndices().getAllSetBits().size();
     final int maxRequestInclusionList = specConfig.getMaxRequestInclusionList();
 
-    if (request.size() > maxRequestInclusionList) {
+    if (requestedCount > maxRequestInclusionList) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(
@@ -86,8 +90,6 @@ public class InclusionListByCommitteeIndicesMessageHandler
     return Optional.empty();
   }
 
-  // TODO EIP7805 review logic, add counter
-  @SuppressWarnings("FutureReturnValueIgnored")
   @Override
   protected void onIncomingMessage(
       final String protocolId,
@@ -96,15 +98,14 @@ public class InclusionListByCommitteeIndicesMessageHandler
       final ResponseCallback<SignedInclusionList> callback) {
 
     LOG.trace(
-        "Peer {} requested Inclusion Lists for slot {} with committee indices {}",
+        "Peer {} requested Inclusion Lists for slot {} for committee indices {}",
         peer.getId(),
         message.getSlot(),
-        message.getCommitteeIndices().stream()
-            .map(SszBit::toString)
-            .collect(Collectors.joining(",")));
+        message.getCommitteeIndices().getAllSetBits().intStream());
 
+    final int requestedCount = message.getCommitteeIndices().getAllSetBits().size();
     final Optional<RequestKey> inclusionListsRequestApproval =
-        peer.approveInclusionListsRequest(callback, message.size());
+        peer.approveInclusionListsRequest(callback, requestedCount);
 
     if (!peer.approveRequest() || inclusionListsRequestApproval.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
@@ -112,12 +113,49 @@ public class InclusionListByCommitteeIndicesMessageHandler
     }
 
     requestCounter.labels("ok").inc();
-    totalInclusionListsRequestedCounter.inc(message.size());
+    totalInclusionListsRequestedCounter.inc(requestedCount);
 
-    // TODO EIP7805 review logic / handle errors
+    final AtomicInteger sentInclusionLists = new AtomicInteger(0);
     final List<SignedInclusionList> signedInclusionLists =
         inclusionListManager.getInclusionLists(message.getSlot(), message.getCommitteeIndices());
-    signedInclusionLists.forEach(callback::respond);
-    callback.completeSuccessfully();
+    SafeFuture<Void> future = SafeFuture.COMPLETE;
+    for (SignedInclusionList signedInclusionList : signedInclusionLists) {
+      future =
+          future.thenCompose(
+              __ ->
+                  callback
+                      .respond(signedInclusionList)
+                      .thenRun(sentInclusionLists::incrementAndGet));
+    }
+    future.finish(
+        () -> {
+          if (sentInclusionLists.get() != requestedCount) {
+            peer.adjustInclusionListsRequest(
+                inclusionListsRequestApproval.get(), sentInclusionLists.get());
+          }
+          callback.completeSuccessfully();
+        },
+        err -> {
+          peer.adjustInclusionListsRequest(inclusionListsRequestApproval.get(), 0);
+          handleError(callback, err);
+        });
+  }
+
+  private void handleError(
+      final ResponseCallback<SignedInclusionList> callback, final Throwable error) {
+    final Throwable rootCause = Throwables.getRootCause(error);
+    if (rootCause instanceof RpcException) {
+      LOG.trace(
+          "Rejecting inclusion lists by committee indices request", error); // Keep full context
+      callback.completeWithErrorResponse((RpcException) rootCause);
+    } else {
+      if (rootCause instanceof StreamClosedException
+          || rootCause instanceof ClosedChannelException) {
+        LOG.trace("Stream closed while sending requested inclusion lists", error);
+      } else {
+        LOG.error("Failed to process inclusion lists by committee indices request", error);
+      }
+      callback.completeWithUnexpectedError(error);
+    }
   }
 }

@@ -553,6 +553,13 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
+  public void adjustInclusionListsRequest(
+      final RequestKey inclusionListsRequest, final long returnedInclusionListsCount) {
+    adjustObjectsRequest(
+        inclusionListRequestTracker, inclusionListsRequest, returnedInclusionListsCount);
+  }
+
+  @Override
   public boolean approveRequest() {
     if (requestTracker.generateRequestKey(1L).isEmpty()) {
       LOG.debug("Peer {} disconnected due to request rate limits for {}", getId(), requestTracker);

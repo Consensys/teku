@@ -413,6 +413,10 @@ public class RespondingEth2Peer implements Eth2Peer {
       final RequestKey dataColumnSidecarRequests, final long objectCount) {}
 
   @Override
+  public void adjustInclusionListsRequest(
+      final RequestKey inclusionListsRequest, final long returnedInclusionListsCount) {}
+
+  @Override
   public boolean approveRequest() {
     return true;
   }
