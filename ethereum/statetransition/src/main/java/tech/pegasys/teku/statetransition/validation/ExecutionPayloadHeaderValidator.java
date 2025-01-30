@@ -130,21 +130,16 @@ public class ExecutionPayloadHeaderValidator
               /*
                * [IGNORE] header.parent_block_hash is the block hash of a known execution payload in fork choice.
                */
-              final Optional<Bytes32> parentBlockHash =
-                  recentChainData.getExecutionBlockHashForBlockRoot(header.getParentBlockRoot());
-              if (parentBlockHash.isEmpty()
-                  || !header.getParentBlockHash().equals(parentBlockHash.get())) {
-                return InternalValidationResult.ignore("parent block hash is unknown");
+              if (!recentChainData.containsExecutionBlockHash(header.getParentBlockHash())) {
+                return InternalValidationResult.ignore(
+                    "parent block hash %s is unknown", header.getParentBlockHash());
               }
               /*
                * [IGNORE] header.parent_block_root is the hash tree root of a known beacon block in fork choice.
                */
-              final Optional<Boolean> parentBlockRootIsKnown =
-                  recentChainData
-                      .getForkChoiceStrategy()
-                      .map(forkChoice -> forkChoice.contains(header.getParentBlockRoot()));
-              if (parentBlockRootIsKnown.isEmpty() || !parentBlockRootIsKnown.get()) {
-                return InternalValidationResult.ignore("parent block root is unknown");
+              if (!recentChainData.containsBlock(header.getParentBlockRoot())) {
+                return InternalValidationResult.ignore(
+                    "parent block root %s is unknown", header.getParentBlockRoot());
               }
               /*
                * [IGNORE] header.slot is the current slot or the next slot.

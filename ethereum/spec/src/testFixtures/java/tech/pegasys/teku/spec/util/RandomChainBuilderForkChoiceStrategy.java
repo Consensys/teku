@@ -132,6 +132,12 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
     return getBlock(blockRoot).isPresent();
   }
 
+  // EIP-7732 TODO: implement (test)
+  @Override
+  public boolean containsExecutionBlockHash(final Bytes32 blockHash) {
+    return false;
+  }
+
   @Override
   public Optional<Boolean> isOptimistic(final Bytes32 blockRoot) {
     return Optional.of(false);

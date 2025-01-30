@@ -47,6 +47,8 @@ public interface ReadOnlyForkChoiceStrategy {
 
   boolean contains(Bytes32 blockRoot);
 
+  boolean containsExecutionBlockHash(Bytes32 blockHash);
+
   Optional<Boolean> isOptimistic(Bytes32 blockRoot);
 
   boolean isFullyValidated(final Bytes32 blockRoot);

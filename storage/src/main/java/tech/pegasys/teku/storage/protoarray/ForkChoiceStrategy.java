@@ -33,6 +33,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndExecutionPayloadAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip7732.BeaconBlockBodyEip7732;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ChildNode;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -275,6 +279,17 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
+  public boolean containsExecutionBlockHash(final Bytes32 blockHash) {
+    protoArrayLock.readLock().lock();
+    try {
+      return protoArray.getNodes().stream()
+          .anyMatch(node -> node.getExecutionBlockHash().equals(blockHash));
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  @Override
   public Optional<UInt64> blockSlot(final Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
@@ -488,7 +503,22 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
                       block.getBlock().getStateRoot(),
                       block.getBlockCheckpoints(),
                       block.getExecutionBlockNumber().orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
-                      block.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH)));
+                      block
+                          .getExecutionBlockHash()
+                          // post-ePBS use the parent block hash from the header because there is no
+                          // payload
+                          .or(
+                              () ->
+                                  block
+                                      .getBlock()
+                                      .getMessage()
+                                      .getBody()
+                                      .toVersionEip7732()
+                                      .map(BeaconBlockBodyEip7732::getSignedExecutionPayloadHeader)
+                                      .map(SignedExecutionPayloadHeader::getMessage)
+                                      .flatMap(ExecutionPayloadHeader::toVersionEip7732)
+                                      .map(ExecutionPayloadHeaderEip7732::getParentBlockHash))
+                          .orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH)));
       // ePBS
       newExecutionPayloads.stream()
           .sorted(Comparator.comparing(executionPayload -> executionPayload.getBlock().getSlot()))

@@ -517,6 +517,12 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       return blocks.containsKey(blockRoot);
     }
 
+    // EIP-7732 TODO: implement (test)
+    @Override
+    public boolean containsExecutionBlockHash(final Bytes32 blockHash) {
+      return false;
+    }
+
     @Override
     public Optional<Boolean> isOptimistic(final Bytes32 blockRoot) {
       throw new UnsupportedOperationException("Not implemented");
