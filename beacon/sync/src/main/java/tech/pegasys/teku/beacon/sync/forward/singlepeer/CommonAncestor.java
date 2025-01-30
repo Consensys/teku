@@ -26,15 +26,15 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class CommonAncestor {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int DEFAULT_MAX_ATTEMPTS = 5;
-  static final UInt64 BLOCK_COUNT_PER_ATTEMPT = UInt64.valueOf(10);
+  private static final int DEFAULT_MAX_ATTEMPTS = 6;
+  static final UInt64 BLOCK_COUNT_PER_ATTEMPT = UInt64.valueOf(16);
   static final UInt64 SLOTS_TO_JUMP_BACK_EXPONENTIAL_BASE = UInt64.valueOf(100);
-  // We will try to find a common block downloading 10 blocks per attempt.
-  // We will try 5 times, each time jumping back 100 * 2^attempt slots.
-  // Which means we will jump back 100 slots, then 200 from previous 100, then 400, then 800, then
-  // 1600 slots.
-  // So max attempted distance from initial slot will be 3100.
-  // We will download max 50 blocks in total, before defaulting to firstNonFinalSlot
+  // We will try to find a common block downloading 16 blocks per attempt.
+  // We will try 6 times, each time jumping back 100 * 2^attempt slots.
+  // Which means we will jump back 100 slots, then 200 from previous 100,
+  // then 400, and so on up to 3200.
+  // So max attempted distance from initial slot will be 6300 slots.
+  // We will download max 96 blocks in total, before defaulting to firstNonFinalSlot
 
   private final RecentChainData recentChainData;
   private final int maxAttempts;
