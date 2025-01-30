@@ -115,7 +115,7 @@ public class ScheduledExecutorAsyncRunner implements AsyncRunner {
       scheduler.awaitTermination(30, TimeUnit.SECONDS);
       workerPool.awaitTermination(30, TimeUnit.SECONDS);
     } catch (InterruptedException e) {
-        throw new RuntimeException(e);
+      throw new RuntimeException(e);
     }
   }
 
