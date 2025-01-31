@@ -1383,7 +1383,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new ExecutionPayloadValidator(spec, recentChainData);
     executionPayloadManager =
         new ExecutionPayloadManager(
-            executionPayloadValidator, forkChoice, recentChainData, executionLayer);
+            executionPayloadValidator,
+            blockBlobSidecarsTrackersPool,
+            forkChoice,
+            recentChainData,
+            executionLayer);
   }
 
   public void initPayloadAttestationManager() {

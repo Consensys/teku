@@ -43,11 +43,17 @@ public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
             final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {}
 
         @Override
+        public void onNewExecutionPayload(
+            final SignedBeaconBlock block,
+            final SignedExecutionPayloadEnvelope executionPayload,
+            final Optional<RemoteOrigin> remoteOrigin) {}
+
+        @Override
         public void onCompletedBlockAndBlobSidecars(
             final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {}
 
         @Override
-        public void onCompletedBlockExecutionPayloadAndBlobSidecars(
+        public void onCompletedExecutionPayloadAndBlobSidecars(
             final SignedBeaconBlock block,
             final SignedExecutionPayloadEnvelope executionPayload,
             final List<BlobSidecar> blobSidecars) {}
@@ -126,9 +132,14 @@ public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
 
   void onNewBlock(SignedBeaconBlock block, Optional<RemoteOrigin> remoteOrigin);
 
+  void onNewExecutionPayload(
+      SignedBeaconBlock block,
+      SignedExecutionPayloadEnvelope executionPayload,
+      Optional<RemoteOrigin> remoteOrigin);
+
   void onCompletedBlockAndBlobSidecars(SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
 
-  void onCompletedBlockExecutionPayloadAndBlobSidecars(
+  void onCompletedExecutionPayloadAndBlobSidecars(
       SignedBeaconBlock block,
       SignedExecutionPayloadEnvelope executionPayload,
       List<BlobSidecar> blobSidecars);

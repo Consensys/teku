@@ -94,6 +94,7 @@ public class CachingExecutionPayloadAndBlobSidecarsRevealer
                 false,
                 state.hashTreeRoot());
     try {
+      // Run state transition and set state root
       final BeaconState newState =
           spec.atSlot(block.getSlot())
               .getExecutionPayloadProcessor()
@@ -102,7 +103,7 @@ public class CachingExecutionPayloadAndBlobSidecarsRevealer
       return Optional.of(executionPayload.withStateRoot(newState.hashTreeRoot()));
     } catch (ExecutionPayloadProcessingException ex) {
       LOG.warn(
-          "State transition error while processing execution payload with beacon block root"
+          "State transition error while processing execution payload with beacon block root "
               + executionPayload.getBeaconBlockRoot(),
           ex);
       return Optional.empty();

@@ -55,6 +55,7 @@ public class BlockBlobSidecarsTracker {
   private final AtomicReference<Optional<SignedBeaconBlock>> block =
       new AtomicReference<>(Optional.empty());
 
+  // ePBS
   private final AtomicReference<Optional<ExecutionPayloadEnvelope>> executionPayloadEnvelope =
       new AtomicReference<>(Optional.empty());
 
@@ -185,22 +186,20 @@ public class BlockBlobSidecarsTracker {
     return true;
   }
 
-  public boolean setBlockAndExecutionPayloadEnvelope(
+  // EIP-7732 TODO: debug timings
+  public boolean setExecutionPayloadEnvelope(
       final SignedBeaconBlock block, final ExecutionPayloadEnvelope executionPayloadEnvelope) {
-    checkArgument(block.getSlotAndBlockRoot().equals(slotAndBlockRoot), "Wrong block");
-    final Optional<SignedBeaconBlock> oldBlock = this.block.getAndSet(Optional.of(block));
+    checkArgument(
+        executionPayloadEnvelope.getBeaconBlockRoot().equals(slotAndBlockRoot.getBlockRoot()),
+        "Wrong execution payload envelope");
+    this.block.set(Optional.of(block));
     final Optional<ExecutionPayloadEnvelope> oldExecutionPayloadEnvelope =
         this.executionPayloadEnvelope.getAndSet(Optional.of(executionPayloadEnvelope));
-    if (oldBlock.isPresent() || oldExecutionPayloadEnvelope.isPresent()) {
+    if (oldExecutionPayloadEnvelope.isPresent()) {
       return false;
     }
 
-    LOG.debug(
-        "Block and execution payload envelope received for {}", slotAndBlockRoot::toLogString);
-    maybeDebugTimings.ifPresent(
-        debugTimings -> {
-          debugTimings.put(BLOCK_ARRIVAL_TIMING_IDX, System.currentTimeMillis());
-        });
+    LOG.debug("Execution payload envelope received for {}", slotAndBlockRoot::toLogString);
 
     pruneExcessiveBlobSidecars();
     checkCompletion();
