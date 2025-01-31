@@ -58,6 +58,7 @@ import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
@@ -230,6 +231,14 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     return executionClientHandler
         .engineGetBlobs(blobVersionedHashes, slot)
         .thenApply(blobsAndProofs -> blobsAndProofs.stream().map(Optional::ofNullable).toList());
+  }
+
+  @Override
+  public SafeFuture<List<Transaction>> engineGetInclusionList(
+      final Bytes32 parentHash, final UInt64 slot) {
+    LOG.trace(
+        "calling engineGetInclusionList(engineGetInclusionList={}, slot={})", parentHash, slot);
+    return executionClientHandler.engineGetInclusionList(parentHash, slot);
   }
 
   @Override
