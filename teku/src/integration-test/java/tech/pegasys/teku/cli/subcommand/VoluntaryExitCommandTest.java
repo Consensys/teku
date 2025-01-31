@@ -293,7 +293,7 @@ public class VoluntaryExitCommandTest {
     int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
 
     assertThat(parseResult).isEqualTo(1);
-    assertThat(stdOut.toString(UTF_8)).contains(VoluntaryExitCommand.WITHDRAWALS_PERMANENT_MESASGE);
+    assertThat(stdOut.toString(UTF_8)).contains(VoluntaryExitCommand.WITHDRAWALS_PERMANENT_MESSAGE);
     assertThat(stdOut.toString(UTF_8)).doesNotContain(VoluntaryExitCommand.WITHDRAWALS_NOT_ACTIVE);
     assertValidatorsNotExited(
         validatorPubKey1, validatorPubKey2, keyManagerPubKey1, keyManagerPubKey2, nonExistingKey);
