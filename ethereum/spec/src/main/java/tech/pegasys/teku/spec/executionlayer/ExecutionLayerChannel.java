@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.executionlayer;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
@@ -86,6 +88,12 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
+        public SafeFuture<List<Transaction>> engineGetInclusionList(
+            final Bytes32 parentHash, final UInt64 slot) {
+          return SafeFuture.completedFuture(Collections.emptyList());
+        }
+
+        @Override
         public SafeFuture<Void> builderRegisterValidators(
             final SszList<SignedValidatorRegistration> signedValidatorRegistrations,
             final UInt64 slot) {
@@ -126,6 +134,8 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
   SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobs(
       List<VersionedHash> blobVersionedHashes, UInt64 slot);
+
+  SafeFuture<List<Transaction>> engineGetInclusionList(Bytes32 parentHash, UInt64 slot);
 
   /**
    * This is low level method, use {@link
