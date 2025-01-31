@@ -72,7 +72,11 @@ public class BlobSidecarGossipValidatorTest {
 
     blobSidecarValidator =
         BlobSidecarGossipValidator.create(
-            specContext.getSpec(), invalidBlocks, gossipValidationHelper, miscHelpersDeneb, kzg);
+            specContext.getSpec(),
+            invalidBlocks,
+            gossipValidationHelper,
+            (__) -> miscHelpersDeneb,
+            kzg);
 
     parentSlot = UInt64.valueOf(1);
 
@@ -147,7 +151,7 @@ public class BlobSidecarGossipValidatorTest {
 
     blobSidecarValidator =
         BlobSidecarGossipValidator.create(
-            spec, invalidBlocks, gossipValidationHelper, miscHelpersDeneb, kzg);
+            spec, invalidBlocks, gossipValidationHelper, (__) -> miscHelpersDeneb, kzg);
 
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
@@ -387,7 +391,7 @@ public class BlobSidecarGossipValidatorTest {
     when(specVersion.getSlotsPerEpoch()).thenReturn(1);
     this.blobSidecarValidator =
         BlobSidecarGossipValidator.create(
-            specMock, invalidBlocks, gossipValidationHelper, miscHelpersDeneb, kzg);
+            specMock, invalidBlocks, gossipValidationHelper, (__) -> miscHelpersDeneb, kzg);
     // Accept everything
     when(gossipValidationHelper.isSlotFinalized(any())).thenReturn(false);
     when(gossipValidationHelper.isSlotFromFuture(any())).thenReturn(false);
