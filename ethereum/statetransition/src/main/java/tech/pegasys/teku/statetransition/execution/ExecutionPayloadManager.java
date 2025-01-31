@@ -33,8 +33,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class ExecutionPayloadManager {
   private static final Logger LOG = LogManager.getLogger();
 
-  // EIP-7732 TODO: cleanup when the execution payload has been imported (similar to
-  // ReceivedBlockEventsChannel usage)
+  // EIP-7732 TODO: cleanup cache
   private final Map<Bytes32, SignedExecutionPayloadEnvelope> validatedExecutionPayloadEnvelopes =
       new ConcurrentHashMap<>();
 
