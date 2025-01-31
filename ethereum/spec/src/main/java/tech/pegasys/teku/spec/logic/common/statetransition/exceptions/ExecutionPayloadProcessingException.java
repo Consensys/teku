@@ -13,14 +13,18 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.exceptions;
 
+import com.google.errorprone.annotations.FormatMethod;
+import com.google.errorprone.annotations.FormatString;
+
 public final class ExecutionPayloadProcessingException extends Exception {
 
   public ExecutionPayloadProcessingException(final String message) {
     super(message);
   }
 
-  public ExecutionPayloadProcessingException(final String template, Object... args) {
-    super(String.format(template, args));
+  @FormatMethod
+  public ExecutionPayloadProcessingException(@FormatString final String format, Object... args) {
+    super(String.format(format, args));
   }
 
   public ExecutionPayloadProcessingException(final Exception ex) {
