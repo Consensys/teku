@@ -378,6 +378,12 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
+  public SafeFuture<Bytes8> engineUpdatePayloadWithInclusionList(
+      final Bytes8 payloadId, final List<Transaction> inclusionList, final UInt64 slot) {
+    return SafeFuture.completedFuture(payloadId);
+  }
+
+  @Override
   public SafeFuture<Void> builderRegisterValidators(
       final SszList<SignedValidatorRegistration> signedValidatorRegistrations, final UInt64 slot) {
     offlineCheck();
