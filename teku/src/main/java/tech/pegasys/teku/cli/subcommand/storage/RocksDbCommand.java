@@ -27,6 +27,7 @@ import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbHelper;
 
+
 @Command(
     name = "rocksdb",
     description = "Print RocksDB information",
@@ -82,7 +83,7 @@ public class RocksDbCommand implements Runnable {
       @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
       @Mixin final Eth2NetworkOptions eth2NetworkOptions) {
 
-    String dbPath =
+    final String dbPath =
         DataDirLayout.createFrom(beaconNodeDataOptions.getDataConfig()).getBeaconDataDirectory()
             + "/db";
     final Eth2NetworkConfiguration networkConfiguration =
