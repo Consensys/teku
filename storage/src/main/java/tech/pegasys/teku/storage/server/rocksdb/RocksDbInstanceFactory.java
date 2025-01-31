@@ -151,8 +151,7 @@ public class RocksDbInstanceFactory {
             .setLogFileTimeToRoll(TIME_TO_ROLL_LOG_FILE)
             .setKeepLogFileNum(NUMBER_OF_LOG_FILES_TO_KEEP)
             .setEnv(Env.getDefault().setBackgroundThreads(configuration.getBackgroundThreadCount()))
-            .setStatistics(stats)
-            .setParanoidChecks(false);
+            .setStatistics(stats);
 
     // Java docs suggests this if db is under 1GB, nearly impossible atm
     if (configuration.optimizeForSmallDb()) {
