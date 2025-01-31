@@ -11,22 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionclient.methods;
+package tech.pegasys.teku.spec.datastructures.execution.versions.eip7805;
 
-public enum EngineApiMethod {
-  ENGINE_NEW_PAYLOAD("engine_newPayload"),
-  ENGINE_GET_PAYLOAD("engine_getPayload"),
-  ENGINE_FORK_CHOICE_UPDATED("engine_forkchoiceUpdated"),
-  ENGINE_GET_INCLUSION_LIST("engine_getInclusionList"),
-  ENGINE_UPDATE_PAYLOAD_WITH_INCLUSION_LIST("engine_updatePayloadWithInclusionList");
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 
-  private final String name;
-
-  EngineApiMethod(final String name) {
-    this.name = name;
-  }
-
-  public String getName() {
-    return name;
-  }
-}
+public record UpdatePayloadWithInclusionListResponse(Bytes8 payloadId) {}

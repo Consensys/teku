@@ -45,6 +45,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.UpdatePayloadWithInclusionListV1Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -57,6 +58,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   private static final Duration GET_CLIENT_VERSION_TIMEOUT = Duration.ofSeconds(1);
   private static final Duration GET_BLOBS_TIMEOUT = Duration.ofSeconds(1);
   private static final Duration GET_INCLUSION_LIST_TIMEOUT = Duration.ofSeconds(1);
+  private static final Duration UPDATE_PAYLOAD_WITH_INCLUSION_LIST_TIMEOUT = Duration.ofSeconds(1);
 
   private final Web3JClient web3JClient;
 
@@ -339,6 +341,18 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     return web3JClient.doRequest(web3jRequest, GET_INCLUSION_LIST_TIMEOUT);
   }
 
+  @Override
+  public SafeFuture<Response<UpdatePayloadWithInclusionListV1Response>>
+      updatePayloadWithInclusionListV1(final Bytes8 payloadId, final List<Bytes> inclusionList) {
+    final Request<?, UpdatePayloadWithInclusionListV1Web3jResponse> web3jRequest =
+        new Request<>(
+            "engine_updatePayloadWithInclusionListV1",
+            list(payloadId, inclusionList),
+            web3JClient.getWeb3jService(),
+            UpdatePayloadWithInclusionListV1Web3jResponse.class);
+    return web3JClient.doRequest(web3jRequest, UPDATE_PAYLOAD_WITH_INCLUSION_LIST_TIMEOUT);
+  }
+
   static class ExecutionPayloadV1Web3jResponse
       extends org.web3j.protocol.core.Response<ExecutionPayloadV1> {}
 
@@ -374,6 +388,9 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   static class GetnclusionListVersionV1Web3jResponse
       extends org.web3j.protocol.core.Response<GetInclusionListV1Response> {}
+
+  static class UpdatePayloadWithInclusionListV1Web3jResponse
+      extends org.web3j.protocol.core.Response<UpdatePayloadWithInclusionListV1Response> {}
 
   /**
    * Returns a list that supports null items.

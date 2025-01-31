@@ -21,7 +21,9 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.UpdatePayloadWithInclusionListV1Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
@@ -197,5 +199,22 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
                       .getTransactionSchema();
               return response.transactions.stream().map(transactionSchema::fromBytes).toList();
             });
+  }
+
+  @Override
+  public SafeFuture<Bytes8> engineUpdatePayloadWithInclusionList(
+      final Bytes8 payloadId, final List<Transaction> inclusionList, final UInt64 slot) {
+    final TransactionSchema transactionSchema =
+        spec.atSlot(slot)
+            .getSchemaDefinitions()
+            .toVersionEip7805()
+            .orElseThrow()
+            .getInclusionListSchema()
+            .getTransactionSchema();
+    return executionEngineClient
+        .updatePayloadWithInclusionListV1(
+            payloadId, inclusionList.stream().map(transactionSchema::sszSerialize).toList())
+        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
+        .thenApply(UpdatePayloadWithInclusionListV1Response::getPayloadId);
   }
 }

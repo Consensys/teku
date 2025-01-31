@@ -40,6 +40,7 @@ import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClient;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -254,9 +255,20 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   @Override
   public SafeFuture<List<Transaction>> engineGetInclusionList(
       final Bytes32 parentHash, final UInt64 slot) {
-    LOG.trace(
-        "calling engineGetInclusionList(engineGetInclusionList={}, slot={})", parentHash, slot);
+    LOG.trace("calling engineGetInclusionList(parentHash={}, slot={})", parentHash, slot);
     return executionClientHandler.engineGetInclusionList(parentHash, slot);
+  }
+
+  @Override
+  public SafeFuture<Bytes8> engineUpdatePayloadWithInclusionList(
+      final Bytes8 payloadId, final List<Transaction> inclusionList, final UInt64 slot) {
+    LOG.trace(
+        "calling engineUpdatePayloadWithInclusionList(payloadId={}, inclusionList={}, slot={})",
+        payloadId,
+        inclusionList,
+        slot);
+    return executionClientHandler.engineUpdatePayloadWithInclusionList(
+        payloadId, inclusionList, slot);
   }
 
   @Override
