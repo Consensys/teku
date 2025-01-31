@@ -143,7 +143,6 @@ public class RocksDbInstanceFactory {
             .setCreateIfMissing(true)
             .setIncreaseParallelism(Runtime.getRuntime().availableProcessors())
             .setMaxBackgroundJobs(configuration.getMaxBackgroundJobs())
-            .setDbWriteBufferSize(configuration.getWriteBufferCapacity())
             .setMaxOpenFiles(configuration.getMaxOpenFiles())
             .setBytesPerSync(1_048_576L) // 1MB
             .setWalBytesPerSync(1_048_576L)
