@@ -62,6 +62,10 @@ public class InclusionListSchema
 
   @SuppressWarnings("unchecked")
   public SszListSchema<Transaction, ?> getTransactionsSchema() {
-    return (SszListSchema<Transaction, ?>) getChildSchema(getFieldIndex(FIELD_TRANSACTIONS));
+    return (SszListSchema<Transaction, ?>) getFieldSchema3();
+  }
+
+  public TransactionSchema getTransactionSchema() {
+    return (TransactionSchema) getTransactionsSchema().getElementSchema();
   }
 }
