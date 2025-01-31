@@ -36,6 +36,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.UpdatePayloadWithInclusionListV1Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.metrics.MetricsCountersByIntervals;
@@ -71,6 +72,8 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   public static final String GET_CLIENT_VERSION_V1_METHOD = "get_client_versionV1";
   public static final String GET_BLOBS_V1_METHOD = "get_blobs_versionV1";
   public static final String GET_INCLUSION_LIST_V1_METHOD = "get_inclusion_list_versionV1";
+  public static final String UPDATE_PAYLOAD_WITH_INCLUSION_LIST_V1_METHOD =
+      "update_payload_with_inclusion_list_versionV1";
 
   private final ExecutionEngineClient delegate;
 
@@ -230,5 +233,13 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
       final Bytes32 parentHash) {
     return countRequest(
         () -> delegate.getInclusionListV1(parentHash), GET_INCLUSION_LIST_V1_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<UpdatePayloadWithInclusionListV1Response>>
+      updatePayloadWithInclusionListV1(final Bytes8 payloadId, final List<Bytes> inclusionList) {
+    return countRequest(
+        () -> delegate.updatePayloadWithInclusionListV1(payloadId, inclusionList),
+        UPDATE_PAYLOAD_WITH_INCLUSION_LIST_V1_METHOD);
   }
 }
