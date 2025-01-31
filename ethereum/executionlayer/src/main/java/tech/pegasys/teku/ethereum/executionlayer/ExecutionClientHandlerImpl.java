@@ -116,7 +116,8 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
             .add(executionPayload)
             .addOptional(newPayloadRequest.getVersionedHashes())
             .addOptional(newPayloadRequest.getParentBeaconBlockRoot())
-            .addOptional(newPayloadRequest.getExecutionRequests());
+            .addOptional(newPayloadRequest.getExecutionRequests())
+            .addOptional(newPayloadRequest.getInclusionList());
 
     return engineMethodsResolver
         .getMethod(

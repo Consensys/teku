@@ -27,12 +27,14 @@ public class NewPayloadRequest {
   private final Optional<List<VersionedHash>> versionedHashes;
   private final Optional<Bytes32> parentBeaconBlockRoot;
   private final Optional<List<Bytes>> executionRequests;
+  private final Optional<List<Bytes>> inclusionList;
 
   public NewPayloadRequest(final ExecutionPayload executionPayload) {
     this.executionPayload = executionPayload;
     this.versionedHashes = Optional.empty();
     this.parentBeaconBlockRoot = Optional.empty();
     this.executionRequests = Optional.empty();
+    this.inclusionList = Optional.empty();
   }
 
   public NewPayloadRequest(
@@ -43,6 +45,7 @@ public class NewPayloadRequest {
     this.versionedHashes = Optional.of(versionedHashes);
     this.parentBeaconBlockRoot = Optional.of(parentBeaconBlockRoot);
     this.executionRequests = Optional.empty();
+    this.inclusionList = Optional.empty();
   }
 
   public NewPayloadRequest(
@@ -54,6 +57,20 @@ public class NewPayloadRequest {
     this.versionedHashes = Optional.of(versionedHashes);
     this.parentBeaconBlockRoot = Optional.of(parentBeaconBlockRoot);
     this.executionRequests = Optional.of(executionRequests);
+    this.inclusionList = Optional.empty();
+  }
+
+  public NewPayloadRequest(
+      final ExecutionPayload executionPayload,
+      final List<VersionedHash> versionedHashes,
+      final Bytes32 parentBeaconBlockRoot,
+      final List<Bytes> executionRequests,
+      final List<Bytes> inclusionList) {
+    this.executionPayload = executionPayload;
+    this.versionedHashes = Optional.of(versionedHashes);
+    this.parentBeaconBlockRoot = Optional.of(parentBeaconBlockRoot);
+    this.executionRequests = Optional.of(executionRequests);
+    this.inclusionList = Optional.of(inclusionList);
   }
 
   public ExecutionPayload getExecutionPayload() {
@@ -72,6 +89,10 @@ public class NewPayloadRequest {
     return executionRequests;
   }
 
+  public Optional<List<Bytes>> getInclusionList() {
+    return inclusionList;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -82,7 +103,8 @@ public class NewPayloadRequest {
       return Objects.equals(executionPayload, that.executionPayload)
           && Objects.equals(versionedHashes, that.versionedHashes)
           && Objects.equals(parentBeaconBlockRoot, that.parentBeaconBlockRoot)
-          && Objects.equals(executionRequests, that.executionRequests);
+          && Objects.equals(executionRequests, that.executionRequests)
+          && Objects.equals(inclusionList, that.inclusionList);
     } else {
       return false;
     }
@@ -91,7 +113,7 @@ public class NewPayloadRequest {
   @Override
   public int hashCode() {
     return Objects.hash(
-        executionPayload, versionedHashes, parentBeaconBlockRoot, executionRequests);
+        executionPayload, versionedHashes, parentBeaconBlockRoot, executionRequests, inclusionList);
   }
 
   @Override
@@ -101,6 +123,7 @@ public class NewPayloadRequest {
         .add("versionedHashes", versionedHashes)
         .add("parentBeaconBlockRoot", parentBeaconBlockRoot)
         .add("executionRequests", executionRequests)
+        .add("inclusionList", inclusionList)
         .toString();
   }
 }

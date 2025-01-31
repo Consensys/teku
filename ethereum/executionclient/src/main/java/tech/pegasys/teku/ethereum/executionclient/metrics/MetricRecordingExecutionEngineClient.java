@@ -69,6 +69,7 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   public static final String GET_PAYLOAD_V5_METHOD = "get_payloadV5";
   public static final String NEW_PAYLOAD_V3_METHOD = "new_payloadV3";
   public static final String NEW_PAYLOAD_V4_METHOD = "new_payloadV4";
+  public static final String NEW_PAYLOAD_V5_METHOD = "new_payloadV5";
   public static final String EXCHANGE_CAPABILITIES_METHOD = "exchange_capabilities";
   public static final String GET_CLIENT_VERSION_V1_METHOD = "get_client_versionV1";
   public static final String GET_BLOBS_V1_METHOD = "get_blobs_versionV1";
@@ -161,6 +162,24 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
             delegate.newPayloadV4(
                 executionPayload, blobVersionedHashes, parentBeaconBlockRoot, executionRequests),
         NEW_PAYLOAD_V4_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<PayloadStatusV1>> newPayloadV5(
+      final ExecutionPayloadV3 executionPayload,
+      final List<VersionedHash> blobVersionedHashes,
+      final Bytes32 parentBeaconBlockRoot,
+      final List<Bytes> executionRequests,
+      final List<Bytes> inclusionList) {
+    return countRequest(
+        () ->
+            delegate.newPayloadV5(
+                executionPayload,
+                blobVersionedHashes,
+                parentBeaconBlockRoot,
+                executionRequests,
+                inclusionList),
+        NEW_PAYLOAD_V5_METHOD);
   }
 
   @Override
