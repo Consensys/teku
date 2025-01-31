@@ -282,9 +282,10 @@ class RestBuilderClientTest {
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(response -> assertThat(response.isSuccess()).isTrue());
 
-    assertThat(mockWebServer.getRequestCount()).isEqualTo(2);
     verifyPostRequestSsz("/eth/v1/builder/validators", signedValidatorRegistrations);
     verifyPostRequestJson("/eth/v1/builder/validators", signedValidatorRegistrationsRequest);
+
+    assertThat(mockWebServer.getRequestCount()).isEqualTo(2);
   }
 
   @TestTemplate
@@ -299,9 +300,13 @@ class RestBuilderClientTest {
     final SszList<SignedValidatorRegistration> signedValidatorRegistrations =
         createSignedValidatorRegistrations();
 
+    // First call, will try SSZ and fallback into JSON
     assertThat(restBuilderClient.registerValidators(SLOT, signedValidatorRegistrations))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(response -> assertThat(response.isSuccess()).isTrue());
+
+    verifyPostRequestSsz("/eth/v1/builder/validators", signedValidatorRegistrations);
+    verifyPostRequestJson("/eth/v1/builder/validators", signedValidatorRegistrationsRequest);
 
     // After backoff period, will try SSZ again
     timeProvider.advanceTimeBy(Duration.ofDays(1));
@@ -309,10 +314,9 @@ class RestBuilderClientTest {
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(response -> assertThat(response.isSuccess()).isTrue());
 
+    verifyPostRequestSsz("/eth/v1/builder/validators", signedValidatorRegistrations);
+
     assertThat(mockWebServer.getRequestCount()).isEqualTo(3);
-    verifyPostRequestSsz("/eth/v1/builder/validators", signedValidatorRegistrations);
-    verifyPostRequestJson("/eth/v1/builder/validators", signedValidatorRegistrationsRequest);
-    verifyPostRequestSsz("/eth/v1/builder/validators", signedValidatorRegistrations);
   }
 
   @TestTemplate

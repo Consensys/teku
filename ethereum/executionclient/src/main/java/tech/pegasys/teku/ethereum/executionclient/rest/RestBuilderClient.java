@@ -250,7 +250,6 @@ public class RestBuilderClient implements BuilderClient {
             () ->
                 new IllegalArgumentException(
                     specVersion.getMilestone()
-                        + " is not a supported milestone for the builder rest api. Milestones >= Bellatrix are "
-                        + "supported."));
+                        + " is not a supported milestone for the builder rest api. Milestones >= Bellatrix are supported."));
   }
 }
