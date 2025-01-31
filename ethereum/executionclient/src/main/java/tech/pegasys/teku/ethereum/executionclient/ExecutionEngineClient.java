@@ -68,6 +68,13 @@ public interface ExecutionEngineClient {
       Bytes32 parentBeaconBlockRoot,
       List<Bytes> executionRequests);
 
+  SafeFuture<Response<PayloadStatusV1>> newPayloadV5(
+      ExecutionPayloadV3 executionPayload,
+      List<VersionedHash> blobVersionedHashes,
+      Bytes32 parentBeaconBlockRoot,
+      List<Bytes> executionRequests,
+      List<Bytes> inclusionList);
+
   SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV1(
       ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV1> payloadAttributes);
 
