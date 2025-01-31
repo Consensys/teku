@@ -77,7 +77,8 @@ public class RocksDbInstanceFactory {
     final ColumnFamilyOptions columnFamilyOptions =
         createColumnFamilyOptions(configuration, blockCache);
     final List<AutoCloseable> resources =
-        new ArrayList<>(List.of(txOptions, dbOptions, columnFamilyOptions, blockCache));
+        new ArrayList<>(
+            List.of(txOptions, dbOptions, columnFamilyOptions, rocksDbStats, blockCache));
 
     List<ColumnFamilyDescriptor> columnDescriptors =
         createColumnFamilyDescriptors(columns, deletedColumns, columnFamilyOptions);
@@ -109,7 +110,6 @@ public class RocksDbInstanceFactory {
       final ImmutableMap<KvStoreColumn<?, ?>, ColumnFamilyHandle> columnHandlesMap =
           builder.build();
       final ColumnFamilyHandle defaultHandle = getDefaultHandle(columnHandles);
-      resources.add(rocksDbStats);
       resources.add(db);
 
       rocksDbStats.registerMetrics(db);
