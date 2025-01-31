@@ -23,7 +23,8 @@ public final class ExecutionPayloadProcessingException extends Exception {
   }
 
   @FormatMethod
-  public ExecutionPayloadProcessingException(@FormatString final String format, Object... args) {
+  public ExecutionPayloadProcessingException(
+      @FormatString final String format, final Object... args) {
     super(String.format(format, args));
   }
 
