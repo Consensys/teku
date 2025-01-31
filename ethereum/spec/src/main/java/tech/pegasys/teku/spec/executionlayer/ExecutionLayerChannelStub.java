@@ -73,6 +73,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsBuilderElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
@@ -427,6 +428,13 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   @Override
   public SafeFuture<List<BlobAndCellProofs>> engineGetBlobAndCellProofsList(
       final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
+    return SafeFuture.completedFuture(Collections.emptyList());
+  }
+
+  @Override
+  public SafeFuture<List<Transaction>> engineGetInclusionList(
+      final Bytes32 parentHash, final UInt64 slot) {
+    // TODO EIP7805 generate transactions
     return SafeFuture.completedFuture(Collections.emptyList());
   }
 

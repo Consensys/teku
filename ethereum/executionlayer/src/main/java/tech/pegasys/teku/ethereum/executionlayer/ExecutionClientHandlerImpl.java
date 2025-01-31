@@ -33,6 +33,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -174,6 +176,25 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
                               ? null
                               : blobAndProofV2.asInternalBlobAndProofs(blobSchema))
                   .toList();
+            });
+  }
+
+  @Override
+  public SafeFuture<List<Transaction>> engineGetInclusionList(
+      final Bytes32 parentHash, final UInt64 slot) {
+    return executionEngineClient
+        .getInclusionListV1(parentHash)
+        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
+        .thenApply(
+            response -> {
+              final TransactionSchema transactionSchema =
+                  spec.atSlot(slot)
+                      .getSchemaDefinitions()
+                      .toVersionEip7805()
+                      .orElseThrow()
+                      .getInclusionListSchema()
+                      .getTransactionSchema();
+              return response.transactions.stream().map(transactionSchema::fromBytes).toList();
             });
   }
 }

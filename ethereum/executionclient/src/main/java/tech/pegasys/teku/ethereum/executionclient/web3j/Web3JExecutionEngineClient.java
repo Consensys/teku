@@ -35,6 +35,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetInclusionListV1Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
@@ -55,6 +56,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   private static final Duration EXCHANGE_CAPABILITIES_TIMEOUT = Duration.ofSeconds(1);
   private static final Duration GET_CLIENT_VERSION_TIMEOUT = Duration.ofSeconds(1);
   private static final Duration GET_BLOBS_TIMEOUT = Duration.ofSeconds(1);
+  private static final Duration GET_INCLUSION_LIST_TIMEOUT = Duration.ofSeconds(1);
 
   private final Web3JClient web3JClient;
 
@@ -300,6 +302,18 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     return web3JClient.doRequest(web3jRequest, GET_BLOBS_TIMEOUT);
   }
 
+  @Override
+  public SafeFuture<Response<GetInclusionListV1Response>> getInclusionListV1(
+      final Bytes32 parentHash) {
+    final Request<?, GetnclusionListVersionV1Web3jResponse> web3jRequest =
+        new Request<>(
+            "engine_getInclusionListV1",
+            list(parentHash),
+            web3JClient.getWeb3jService(),
+            GetnclusionListVersionV1Web3jResponse.class);
+    return web3JClient.doRequest(web3jRequest, GET_INCLUSION_LIST_TIMEOUT);
+  }
+
   static class ExecutionPayloadV1Web3jResponse
       extends org.web3j.protocol.core.Response<ExecutionPayloadV1> {}
 
@@ -332,6 +346,9 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   static class GetBlobsVersionV2Web3jResponse
       extends org.web3j.protocol.core.Response<List<BlobAndProofV2>> {}
+
+  static class GetnclusionListVersionV1Web3jResponse
+      extends org.web3j.protocol.core.Response<GetInclusionListV1Response> {}
 
   /**
    * Returns a list that supports null items.

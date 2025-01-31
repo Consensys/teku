@@ -28,6 +28,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetInclusionListV1Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
@@ -72,6 +73,7 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   public static final String GET_CLIENT_VERSION_V1_METHOD = "get_client_versionV1";
   public static final String GET_BLOBS_V1_METHOD = "get_blobs_versionV1";
   public static final String GET_BLOBS_V2_METHOD = "get_blobs_versionV2";
+  public static final String GET_INCLUSION_LIST_V1_METHOD = "get_inclusion_list_versionV1";
 
   private final ExecutionEngineClient delegate;
 
@@ -217,5 +219,12 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   public SafeFuture<Response<List<BlobAndProofV2>>> getBlobsV2(
       final List<VersionedHash> blobVersionedHashes) {
     return countRequest(() -> delegate.getBlobsV2(blobVersionedHashes), GET_BLOBS_V2_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<GetInclusionListV1Response>> getInclusionListV1(
+      final Bytes32 parentHash) {
+    return countRequest(
+        () -> delegate.getInclusionListV1(parentHash), GET_INCLUSION_LIST_V1_METHOD);
   }
 }
