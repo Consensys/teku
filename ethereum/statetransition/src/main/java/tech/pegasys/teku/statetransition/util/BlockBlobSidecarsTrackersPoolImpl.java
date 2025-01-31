@@ -598,6 +598,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     return tracker;
   }
 
+  // EIP-7732 TODO: implement counting
   private BlockBlobSidecarsTracker internalOnNewExecutionPayloadEnvelope(
       final SignedBeaconBlock block,
       final ExecutionPayloadEnvelope executionPayloadEnvelope,
@@ -609,21 +610,17 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             slotAndBlockRoot,
             newTracker -> {
               newTracker.setExecutionPayloadEnvelope(block, executionPayloadEnvelope);
-              countBlock(remoteOrigin);
               onFirstSeen(slotAndBlockRoot, remoteOrigin);
             },
             existingTracker -> {
               if (!existingTracker.setExecutionPayloadEnvelope(block, executionPayloadEnvelope)) {
                 // block and execution envelope were already set
-                countDuplicateBlock(remoteOrigin);
                 return;
               }
 
-              countBlock(remoteOrigin);
-
               if (!existingTracker.isComplete()) {
                 // we missed the opportunity to complete the blob sidecars via local EL and RPC
-                // (since the block is required to be known) Let's try now
+                // (since the execution payload is required to be known) Let's try now
                 asyncRunner
                     .runAsync(
                         () ->
