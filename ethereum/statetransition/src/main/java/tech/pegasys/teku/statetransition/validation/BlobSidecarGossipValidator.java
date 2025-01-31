@@ -68,7 +68,7 @@ public class BlobSidecarGossipValidator {
         spec,
         invalidBlockRoots,
         validationHelper,
-        (slot -> spec.atSlot(slot).miscHelpers().toVersionDeneb().orElseThrow()),
+        slot -> spec.atSlot(slot).miscHelpers().toVersionDeneb().orElseThrow(),
         kzg);
   }
 
