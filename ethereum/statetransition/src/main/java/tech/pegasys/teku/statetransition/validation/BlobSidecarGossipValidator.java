@@ -24,6 +24,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -54,16 +55,30 @@ public class BlobSidecarGossipValidator {
   private final Set<Bytes32> validSignedBlockHeaders;
   private final GossipValidationHelper gossipValidationHelper;
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
-  private final MiscHelpersDeneb miscHelpersDeneb;
+  private final Function<UInt64, MiscHelpersDeneb> miscHelpersDenebProvider;
   private final KZG kzg;
 
   public static BlobSidecarGossipValidator create(
       final Spec spec,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final GossipValidationHelper validationHelper,
-      final MiscHelpersDeneb miscHelpersDeneb,
       final KZG kzg) {
 
+    return create(
+        spec,
+        invalidBlockRoots,
+        validationHelper,
+        (slot -> spec.atSlot(slot).miscHelpers().toVersionDeneb().orElseThrow()),
+        kzg);
+  }
+
+  @VisibleForTesting
+  static BlobSidecarGossipValidator create(
+      final Spec spec,
+      final Map<Bytes32, BlockImportResult> invalidBlockRoots,
+      final GossipValidationHelper validationHelper,
+      final Function<UInt64, MiscHelpersDeneb> miscHelpersDenebProvider,
+      final KZG kzg) {
     final Optional<Integer> maybeMaxBlobsPerBlock = spec.getMaxBlobsPerBlockForHighestMilestone();
 
     final int validInfoSize = VALID_BLOCK_SET_SIZE * maybeMaxBlobsPerBlock.orElse(1);
@@ -75,7 +90,7 @@ public class BlobSidecarGossipValidator {
         spec,
         invalidBlockRoots,
         validationHelper,
-        miscHelpersDeneb,
+        miscHelpersDenebProvider,
         kzg,
         LimitedSet.createSynchronized(validInfoSize),
         LimitedSet.createSynchronized(validSignedBlockHeadersSize));
@@ -90,14 +105,14 @@ public class BlobSidecarGossipValidator {
       final Spec spec,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final GossipValidationHelper gossipValidationHelper,
-      final MiscHelpersDeneb miscHelpersDeneb,
+      final Function<UInt64, MiscHelpersDeneb> miscHelpersDenebProvider,
       final KZG kzg,
       final Set<SlotProposerIndexAndBlobIndex> receivedValidBlobSidecarInfoSet,
       final Set<Bytes32> validSignedBlockHeaders) {
     this.spec = spec;
     this.invalidBlockRoots = invalidBlockRoots;
     this.gossipValidationHelper = gossipValidationHelper;
-    this.miscHelpersDeneb = miscHelpersDeneb;
+    this.miscHelpersDenebProvider = miscHelpersDenebProvider;
     this.kzg = kzg;
     this.receivedValidBlobSidecarInfoSet = receivedValidBlobSidecarInfoSet;
     this.validSignedBlockHeaders = validSignedBlockHeaders;
@@ -210,6 +225,8 @@ public class BlobSidecarGossipValidator {
           reject("BlobSidecar block header does not descend from finalized checkpoint"));
     }
 
+    final MiscHelpersDeneb miscHelpersDeneb = miscHelpersDenebProvider.apply(blockHeader.getSlot());
+
     /*
      * [REJECT] The sidecar's inclusion proof is valid as verified by `verify_blob_sidecar_inclusion_proof(blob_sidecar)`.
      */
@@ -291,6 +308,8 @@ public class BlobSidecarGossipValidator {
       final BlobSidecar blobSidecar, final BeaconBlockHeader blockHeader) {
 
     blobSidecar.markSignatureAsValidated();
+
+    final MiscHelpersDeneb miscHelpersDeneb = miscHelpersDenebProvider.apply(blockHeader.getSlot());
 
     /*
      * [REJECT] The sidecar's inclusion proof is valid as verified by `verify_blob_sidecar_inclusion_proof(blob_sidecar)`.
