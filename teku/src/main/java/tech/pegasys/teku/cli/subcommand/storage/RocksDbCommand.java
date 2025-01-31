@@ -27,7 +27,6 @@ import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbHelper;
 
-
 @Command(
     name = "rocksdb",
     description = "Print RocksDB information",

@@ -33,7 +33,7 @@ import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
 
 @SuppressWarnings("JavaCase")
-//RocksDB subcommand helper methods.
+// RocksDB subcommand helper methods.
 public class RocksDbHelper {
   private static final Logger LOG = LoggerFactory.getLogger(RocksDbHelper.class);
 
