@@ -109,14 +109,6 @@ public class ScheduledExecutorAsyncRunner implements AsyncRunner {
     shutdown.set(true);
     scheduler.shutdownNow();
     workerPool.shutdownNow();
-    // wait for termination to give some time for the current tasks to finish
-    // mainly to avoid long running queries on db to cause a sigsegv
-    try {
-      scheduler.awaitTermination(30, TimeUnit.SECONDS);
-      workerPool.awaitTermination(30, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
   }
 
   private <U> void handleExecutorError(final SafeFuture<U> result, final Throwable t) {
