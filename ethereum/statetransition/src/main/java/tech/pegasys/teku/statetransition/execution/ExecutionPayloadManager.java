@@ -23,6 +23,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -37,16 +39,19 @@ public class ExecutionPayloadManager {
       new ConcurrentHashMap<>();
 
   private final ExecutionPayloadValidator executionPayloadValidator;
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final ForkChoice forkChoice;
   private final RecentChainData recentChainData;
   private final ExecutionLayerChannel executionLayerChannel;
 
   public ExecutionPayloadManager(
       final ExecutionPayloadValidator executionPayloadValidator,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final ForkChoice forkChoice,
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayerChannel) {
     this.executionPayloadValidator = executionPayloadValidator;
+    this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.forkChoice = forkChoice;
     this.recentChainData = recentChainData;
     this.executionLayerChannel = executionLayerChannel;
@@ -67,9 +72,23 @@ public class ExecutionPayloadManager {
                   timestamp ->
                       recentChainData.onExecutionPayload(signedExecutionPayloadEnvelope, timestamp),
                   () -> LOG.error("arrivalTimestamp tracking must be enabled to support Eip7732"));
-              validatedExecutionPayloadEnvelopes.put(
-                  signedExecutionPayloadEnvelope.getMessage().getBeaconBlockRoot(),
-                  signedExecutionPayloadEnvelope);
+              final Bytes32 blockRoot =
+                  signedExecutionPayloadEnvelope.getMessage().getBeaconBlockRoot();
+              validatedExecutionPayloadEnvelopes.put(blockRoot, signedExecutionPayloadEnvelope);
+              recentChainData
+                  .retrieveSignedBlockByRoot(blockRoot)
+                  .finish(
+                      maybeBlock ->
+                          maybeBlock.ifPresent(
+                              block ->
+                                  blockBlobSidecarsTrackersPool.onNewExecutionPayload(
+                                      block,
+                                      signedExecutionPayloadEnvelope,
+                                      Optional.of(RemoteOrigin.GOSSIP))),
+                      err ->
+                          LOG.error(
+                              "Couldn't retrieve a block for execution payload with root {}",
+                              blockRoot));
               forkChoice
                   .onExecutionPayload(signedExecutionPayloadEnvelope, executionLayerChannel)
                   .finish(err -> LOG.error("Failed to process received execution payload.", err));
