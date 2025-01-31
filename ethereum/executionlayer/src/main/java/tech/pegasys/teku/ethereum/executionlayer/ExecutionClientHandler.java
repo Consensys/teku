@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
@@ -52,4 +53,7 @@ public interface ExecutionClientHandler {
       List<VersionedHash> blobVersionedHashes, UInt64 slot);
 
   SafeFuture<List<Transaction>> engineGetInclusionList(Bytes32 parentHash, UInt64 slot);
+
+  SafeFuture<Bytes8> engineUpdatePayloadWithInclusionList(
+      Bytes8 payloadId, List<Transaction> inclusionList, UInt64 slot);
 }
