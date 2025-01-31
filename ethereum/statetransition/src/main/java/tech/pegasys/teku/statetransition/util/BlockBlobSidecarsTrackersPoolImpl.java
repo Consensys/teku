@@ -290,6 +290,10 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
       return;
     }
+    // in ePBS, when importing the block there is no data availability check
+    if (block.getMessage().getBody().toVersionEip7732().isPresent()) {
+      return;
+    }
     if (recentChainData.containsBlock(block.getRoot())) {
       return;
     }
@@ -297,6 +301,24 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       return;
     }
     internalOnNewBlock(block, remoteOrigin);
+  }
+
+  @Override
+  public void onNewExecutionPayload(
+      final SignedBeaconBlock block,
+      final SignedExecutionPayloadEnvelope executionPayload,
+      final Optional<RemoteOrigin> remoteOrigin) {
+    if (block.getMessage().getBody().toVersionEip7732().isEmpty()) {
+      return;
+    }
+    if (recentChainData.containsExecutionPayloadEnvelope(
+        executionPayload.getMessage().getBeaconBlockRoot())) {
+      return;
+    }
+    if (shouldIgnoreItemAtSlot(block.getSlot())) {
+      return;
+    }
+    internalOnNewExecutionPayloadEnvelope(block, executionPayload.getMessage(), remoteOrigin);
   }
 
   @Override
@@ -308,8 +330,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   @Override
   public BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(
       final SignedBeaconBlock block, final ExecutionPayloadEnvelope executionPayloadEnvelope) {
-    return internalOnNewBlockAndExecutionPayloadEnvelope(
-        block, executionPayloadEnvelope, Optional.empty());
+    return internalOnNewExecutionPayloadEnvelope(block, executionPayloadEnvelope, Optional.empty());
   }
 
   @Override
@@ -359,7 +380,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   }
 
   @Override
-  public void onCompletedBlockExecutionPayloadAndBlobSidecars(
+  public void onCompletedExecutionPayloadAndBlobSidecars(
       final SignedBeaconBlock block,
       final SignedExecutionPayloadEnvelope executionPayload,
       final List<BlobSidecar> blobSidecars) {
@@ -371,7 +392,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     final BlockBlobSidecarsTracker blobSidecarsTracker =
         getOrCreateBlobSidecarsTracker(slotAndBlockRoot, __ -> {}, __ -> {});
 
-    blobSidecarsTracker.setBlockAndExecutionPayloadEnvelope(block, executionPayload.getMessage());
+    blobSidecarsTracker.setExecutionPayloadEnvelope(block, executionPayload.getMessage());
 
     long addedBlobs =
         blobSidecars.stream()
@@ -390,8 +411,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
     if (!blobSidecarsTracker.isComplete()) {
       LOG.error(
-          "Tracker for block {} is supposed to be completed but it is not. Missing blob sidecars: {}",
-          block.toLogString(),
+          "Tracker for execution payload with block root {} is supposed to be completed but it is not. Missing blob sidecars: {}",
+          executionPayload.getMessage().getBeaconBlockRoot(),
           blobSidecarsTracker.getMissingBlobSidecars().count());
     }
 
@@ -577,7 +598,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     return tracker;
   }
 
-  private BlockBlobSidecarsTracker internalOnNewBlockAndExecutionPayloadEnvelope(
+  private BlockBlobSidecarsTracker internalOnNewExecutionPayloadEnvelope(
       final SignedBeaconBlock block,
       final ExecutionPayloadEnvelope executionPayloadEnvelope,
       final Optional<RemoteOrigin> remoteOrigin) {
@@ -587,13 +608,12 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
         getOrCreateBlobSidecarsTracker(
             slotAndBlockRoot,
             newTracker -> {
-              newTracker.setBlockAndExecutionPayloadEnvelope(block, executionPayloadEnvelope);
+              newTracker.setExecutionPayloadEnvelope(block, executionPayloadEnvelope);
               countBlock(remoteOrigin);
               onFirstSeen(slotAndBlockRoot, remoteOrigin);
             },
             existingTracker -> {
-              if (!existingTracker.setBlockAndExecutionPayloadEnvelope(
-                  block, executionPayloadEnvelope)) {
+              if (!existingTracker.setExecutionPayloadEnvelope(block, executionPayloadEnvelope)) {
                 // block and execution envelope were already set
                 countDuplicateBlock(remoteOrigin);
                 return;

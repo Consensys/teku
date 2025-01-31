@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -131,7 +132,8 @@ public class ExecutionPayloadProcessorEip7732 extends AbstractExecutionPayloadPr
         .hashTreeRoot()
         .equals(BeaconStateEip7732.required(state).getLatestWithdrawalsRoot())) {
       throw new ExecutionPayloadProcessingException(
-          "Execution payload withdrawals root is not consistent with the state latest withdrawals root");
+          "Execution payload withdrawals root %s is not consistent with the state latest withdrawals root %s",
+          payload.getWithdrawals(), BeaconStateEip7732.required(state).getLatestWithdrawalsRoot());
     }
 
     // Verify the gas limit
@@ -144,32 +146,35 @@ public class ExecutionPayloadProcessorEip7732 extends AbstractExecutionPayloadPr
     // Verify consistency of the parent hash with respect to the previous execution payload
     if (!payload.getParentHash().equals(BeaconStateEip7732.required(state).getLatestBlockHash())) {
       throw new ExecutionPayloadProcessingException(
-          "Execution payload parent hash is not consistent with the latest block hash from state");
+          "Execution payload parent hash %s is not consistent with the latest block hash %s from state",
+          payload.getParentHash(), BeaconStateEip7732.required(state).getLatestBlockHash());
     }
 
     // Verify prev_randao
     // EIP-7732 TODO: fix (doesn't work in local interop)
-    //    if (!payload
-    //        .getPrevRandao()
-    //        .equals(
-    //            beaconStateAccessors.getRandaoMix(
-    //                state, miscHelpers.computeEpochAtSlot(state.getSlot())))) {
+    //    final Bytes32 expectedPrevRandao =
+    //        beaconStateAccessors.getRandaoMix(state,
+    // miscHelpers.computeEpochAtSlot(state.getSlot()));
+    //    if (!payload.getPrevRandao().equals(expectedPrevRandao)) {
     //      throw new ExecutionPayloadProcessingException(
-    //          "Execution payload prev randao is not as expected");
+    //          "Execution payload prev randao %s is not as expected %s",
+    //          payload.getPrevRandao(), expectedPrevRandao);
     //    }
 
     // Verify timestamp
-    if (!payload
-        .getTimestamp()
-        .equals(miscHelpers.computeTimeAtSlot(state.getGenesisTime(), state.getSlot()))) {
+    final UInt64 expectedTimestamp =
+        miscHelpers.computeTimeAtSlot(state.getGenesisTime(), state.getSlot());
+    if (!payload.getTimestamp().equals(expectedTimestamp)) {
       throw new ExecutionPayloadProcessingException(
-          "Execution payload timestamp is not as expected");
+          "Execution payload timestamp %s is not as expected %s",
+          payload.getTimestamp(), expectedTimestamp);
     }
 
     // Verify commitments are under limit
     if (envelope.getBlobKzgCommitments().size() > specConfig.getMaxBlobCommitmentsPerBlock()) {
       throw new ExecutionPayloadProcessingException(
-          "Execution payload blob kzg commitments are over the limit");
+          "Execution payload blob kzg commitments are over the limit %d > %d",
+          envelope.getBlobKzgCommitments().size(), specConfig.getMaxBlobCommitmentsPerBlock());
     }
 
     // Verify the execution payload is valid

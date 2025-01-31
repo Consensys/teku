@@ -19,6 +19,10 @@ public final class ExecutionPayloadProcessingException extends Exception {
     super(message);
   }
 
+  public ExecutionPayloadProcessingException(final String template, Object... args) {
+    super(String.format(template, args));
+  }
+
   public ExecutionPayloadProcessingException(final Exception ex) {
     super(ex);
   }
