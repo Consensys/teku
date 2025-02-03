@@ -30,8 +30,10 @@ import java.net.BindException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
 import java.util.stream.Collectors;
@@ -104,6 +106,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
@@ -868,6 +871,29 @@ public class BeaconChainController extends Service implements BeaconChainControl
           eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
       final BlobSidecarGossipChannel blobSidecarGossipChannel =
           eventChannels.getPublisher(BlobSidecarGossipChannel.class, beaconAsyncRunner);
+
+      // Super node in FULU
+      final boolean isSuperNode;
+      final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher;
+      if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+        final int maxGroups =
+            SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
+                .getNumberOfCustodyGroups();
+        final int totalMyCustodyGroups =
+            beaconConfig
+                .p2pConfig()
+                .getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU));
+        isSuperNode = maxGroups == totalMyCustodyGroups;
+        dataColumnSidecarPublisher =
+            dataColumnSidecars ->
+                eventChannels
+                    .getPublisher(DataColumnSidecarGossipChannel.class)
+                    .publishDataColumnSidecars(dataColumnSidecars);
+      } else {
+        isSuperNode = false;
+        dataColumnSidecarPublisher = __ -> {};
+      }
+
       final BlockBlobSidecarsTrackersPoolImpl pool =
           poolFactory.createPoolForBlockBlobSidecarsTrackers(
               blockImportChannel,
@@ -877,7 +903,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
               recentChainData,
               executionLayer,
               () -> blobSidecarValidator,
-              blobSidecarGossipChannel::publishBlobSidecar);
+              blobSidecarGossipChannel::publishBlobSidecar,
+              isSuperNode,
+              kzg,
+              dataColumnSidecarPublisher);
       eventChannels.subscribe(FinalizedCheckpointChannel.class, pool);
       blockBlobSidecarsTrackersPool = pool;
 
@@ -1224,7 +1253,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel;
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
       dataColumnSidecarGossipChannel =
-          eventChannels.getPublisher(DataColumnSidecarGossipChannel.class);
+          eventChannels.getPublisher(DataColumnSidecarGossipChannel.class, beaconAsyncRunner);
     } else {
       dataColumnSidecarGossipChannel = DataColumnSidecarGossipChannel.NOOP;
     }

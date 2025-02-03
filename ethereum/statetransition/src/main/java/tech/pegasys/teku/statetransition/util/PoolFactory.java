@@ -15,6 +15,8 @@ package tech.pegasys.teku.statetransition.util;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
+import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -26,9 +28,11 @@ import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
@@ -121,7 +125,10 @@ public class PoolFactory {
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
       final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
-      final Function<BlobSidecar, SafeFuture<Void>> blobSidecarGossipPublisher) {
+      final Function<BlobSidecar, SafeFuture<Void>> blobSidecarGossipPublisher,
+      final boolean isSuperNode,
+      final KZG kzg,
+      final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher) {
     return createPoolForBlockBlobSidecarsTrackers(
         blockImportChannel,
         spec,
@@ -133,7 +140,10 @@ public class PoolFactory {
         blobSidecarGossipPublisher,
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
-        DEFAULT_MAX_BLOCKS);
+        DEFAULT_MAX_BLOCKS,
+        isSuperNode,
+        kzg,
+        dataColumnSidecarPublisher);
   }
 
   public BlockBlobSidecarsTrackersPoolImpl createPoolForBlockBlobSidecarsTrackers(
@@ -147,7 +157,10 @@ public class PoolFactory {
       final Function<BlobSidecar, SafeFuture<Void>> blobSidecarGossipPublisher,
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
-      final int maxTrackers) {
+      final int maxTrackers,
+      final boolean isSuperNode,
+      final KZG kzg,
+      final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher) {
     return new BlockBlobSidecarsTrackersPoolImpl(
         blockImportChannel,
         blockBlobSidecarsTrackersPoolSizeGauge,
@@ -161,7 +174,10 @@ public class PoolFactory {
         blobSidecarGossipPublisher,
         historicalBlockTolerance,
         futureBlockTolerance,
-        maxTrackers);
+        maxTrackers,
+        isSuperNode,
+        kzg,
+        dataColumnSidecarPublisher);
   }
 
   @VisibleForTesting
@@ -177,7 +193,10 @@ public class PoolFactory {
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
       final int maxItems,
-      final BlockBlobSidecarsTrackerFactory trackerFactory) {
+      final BlockBlobSidecarsTrackerFactory trackerFactory,
+      final boolean isSuperNode,
+      final KZG kzg,
+      final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher) {
     return new BlockBlobSidecarsTrackersPoolImpl(
         blockImportChannel,
         blockBlobSidecarsTrackersPoolSizeGauge,
@@ -192,6 +211,9 @@ public class PoolFactory {
         historicalBlockTolerance,
         futureBlockTolerance,
         maxItems,
-        trackerFactory);
+        trackerFactory,
+        isSuperNode,
+        kzg,
+        dataColumnSidecarPublisher);
   }
 }

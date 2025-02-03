@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.datacolumns.log.gossip;
 
+import com.google.common.base.Throwables;
+import io.libp2p.pubsub.MessageAlreadySeenException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -110,15 +112,7 @@ public class DasGossipBatchLogger implements DasGossipLogger {
         (maybeErrorClass, errEvents) -> {
           Optional<Throwable> someError = errEvents.getFirst().result();
           someError.ifPresentOrElse(
-              error -> {
-                LOG.info(
-                    "Error publishing {} data columns ({}) by gossip {} for block {}: {}",
-                    errEvents.size(),
-                    columnIndexesString(errEvents),
-                    msAgoString(errEvents),
-                    blockIdString(blockId),
-                    error);
-              },
+              error -> logErrorByType(error, events, blockId),
               () -> {
                 LOG.debug(
                     "Published {} data columns by gossip {} for block {}: {}",
@@ -128,6 +122,28 @@ public class DasGossipBatchLogger implements DasGossipLogger {
                     columnIndexesString(errEvents));
               });
         });
+  }
+
+  private void logErrorByType(
+      final Throwable error, final List<PublishEvent> errEvents, final SlotAndBlockRoot blockId) {
+    final Throwable rootCause = Throwables.getRootCause(error);
+    switch (rootCause) {
+      case MessageAlreadySeenException ignored ->
+          LOG.debug(
+              "Error publishing {} data columns ({}) by gossip {} for block {}: has already been seen",
+              errEvents.size(),
+              columnIndexesString(errEvents),
+              msAgoString(errEvents),
+              blockIdString(blockId));
+      default ->
+          LOG.info(
+              "Error publishing {} data columns ({}) by gossip {} for block {}: {}",
+              errEvents.size(),
+              columnIndexesString(errEvents),
+              msAgoString(errEvents),
+              blockIdString(blockId),
+              error);
+    }
   }
 
   private void logSubscriptionEvents(final List<Event> events) {

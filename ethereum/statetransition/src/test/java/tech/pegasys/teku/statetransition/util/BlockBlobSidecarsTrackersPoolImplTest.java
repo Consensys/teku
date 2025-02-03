@@ -50,6 +50,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -102,7 +103,10 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
               historicalTolerance,
               futureTolerance,
               maxItems,
-              this::trackerFactory);
+              this::trackerFactory,
+              false,
+              KZG.NOOP,
+              __ -> {});
 
   private UInt64 currentSlot = historicalTolerance.times(2);
   private final List<Bytes32> requiredBlockRootEvents = new ArrayList<>();
@@ -289,39 +293,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
 
     assertThat(blockBlobSidecarsTrackersPool.containsBlock(block.getRoot())).isFalse();
-    assertThat(requiredBlockRootEvents).isEmpty();
-    assertThat(requiredBlockRootDroppedEvents).isEmpty();
-    assertThat(requiredBlobSidecarEvents).isEmpty();
-    assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
-
-    assertBlobSidecarsCount(0);
-    assertBlobSidecarsTrackersCount(0);
-  }
-
-  @Test
-  public void onNewBlock_shouldIgnoreFuluBlocks() {
-    final Spec spec = TestSpecFactory.createMinimalFulu();
-    final BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPoolFulu =
-        new PoolFactory(metricsSystem)
-            .createPoolForBlockBlobSidecarsTrackers(
-                blockImportChannel,
-                spec,
-                timeProvider,
-                asyncRunner,
-                recentChainData,
-                executionLayer,
-                () -> blobSidecarGossipValidator,
-                blobSidecarPublisher,
-                historicalTolerance,
-                futureTolerance,
-                maxItems,
-                this::trackerFactory);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
-    blockBlobSidecarsTrackersPoolFulu.onNewBlock(block, Optional.empty());
-
-    assertThat(blockBlobSidecarsTrackersPoolFulu.containsBlock(block.getRoot())).isFalse();
     assertThat(requiredBlockRootEvents).isEmpty();
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarEvents).isEmpty();
