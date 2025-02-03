@@ -74,6 +74,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   private static final Logger LOG = LogManager.getLogger();
 
   static final String COUNTER_BLOCK_TYPE = "block";
+  static final String COUNTER_EXECUTION_PAYLOAD_TYPE = "execution_payload";
   static final String COUNTER_SIDECAR_TYPE = "blob_sidecar";
 
   static final String COUNTER_GOSSIP_SUBTYPE = "gossip";
@@ -198,7 +199,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     sizeGauge.set(0, GAUGE_BLOB_SIDECARS_LABEL);
     sizeGauge.set(0, GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
 
-    Stream.of(COUNTER_BLOCK_TYPE, COUNTER_SIDECAR_TYPE)
+    Stream.of(COUNTER_BLOCK_TYPE, COUNTER_EXECUTION_PAYLOAD_TYPE, COUNTER_SIDECAR_TYPE)
         .forEach(
             type -> {
               poolStatsCounters.labels(type, COUNTER_GOSSIP_SUBTYPE);
@@ -591,7 +592,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     return tracker;
   }
 
-  // EIP-7732 TODO: implement counting
   private BlockBlobSidecarsTracker internalOnNewExecutionPayloadEnvelope(
       final SignedBeaconBlock block,
       final ExecutionPayloadEnvelope executionPayloadEnvelope,
@@ -603,11 +603,13 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             slotAndBlockRoot,
             newTracker -> {
               newTracker.setExecutionPayloadEnvelope(block, executionPayloadEnvelope);
+              countExecutionPayload(remoteOrigin);
               onFirstSeen(slotAndBlockRoot, remoteOrigin);
             },
             existingTracker -> {
               if (!existingTracker.setExecutionPayloadEnvelope(block, executionPayloadEnvelope)) {
                 // block and execution envelope were already set
+                countDuplicateExecutionPayload(remoteOrigin);
                 return;
               }
 
@@ -666,6 +668,47 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             case LOCAL_PROPOSAL ->
                 poolStatsCounters
                     .labels(COUNTER_BLOCK_TYPE, COUNTER_LOCAL_PROPOSAL_DUPLICATE_SUBTYPE)
+                    .inc();
+            case LOCAL_EL -> {} // only possible for blobs
+          }
+        });
+  }
+
+  private void countExecutionPayload(final Optional<RemoteOrigin> maybeRemoteOrigin) {
+    maybeRemoteOrigin.ifPresent(
+        remoteOrigin -> {
+          switch (remoteOrigin) {
+            case RPC ->
+                poolStatsCounters.labels(COUNTER_EXECUTION_PAYLOAD_TYPE, COUNTER_RPC_SUBTYPE).inc();
+            case GOSSIP ->
+                poolStatsCounters
+                    .labels(COUNTER_EXECUTION_PAYLOAD_TYPE, COUNTER_GOSSIP_SUBTYPE)
+                    .inc();
+            case LOCAL_EL -> {} // only possible for blobs
+            case LOCAL_PROPOSAL ->
+                poolStatsCounters
+                    .labels(COUNTER_EXECUTION_PAYLOAD_TYPE, COUNTER_LOCAL_PROPOSAL_SUBTYPE)
+                    .inc();
+          }
+        });
+  }
+
+  private void countDuplicateExecutionPayload(final Optional<RemoteOrigin> maybeRemoteOrigin) {
+    maybeRemoteOrigin.ifPresent(
+        remoteOrigin -> {
+          switch (remoteOrigin) {
+            case RPC ->
+                poolStatsCounters
+                    .labels(COUNTER_EXECUTION_PAYLOAD_TYPE, COUNTER_RPC_DUPLICATE_SUBTYPE)
+                    .inc();
+            case GOSSIP ->
+                poolStatsCounters
+                    .labels(COUNTER_EXECUTION_PAYLOAD_TYPE, COUNTER_GOSSIP_DUPLICATE_SUBTYPE)
+                    .inc();
+            case LOCAL_PROPOSAL ->
+                poolStatsCounters
+                    .labels(
+                        COUNTER_EXECUTION_PAYLOAD_TYPE, COUNTER_LOCAL_PROPOSAL_DUPLICATE_SUBTYPE)
                     .inc();
             case LOCAL_EL -> {} // only possible for blobs
           }
