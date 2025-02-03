@@ -71,6 +71,15 @@ public class RocksDbHelper {
     }
   }
 
+  private static long parseLongOrDefault(final String str) {
+    try {
+      return Long.parseLong(str);
+    } catch (NumberFormatException e) {
+      LOG.debug(String.format("Failed to parse %s as a long", str), e);
+      return 0L;
+    }
+  }
+
   public static void printStatsForColumnFamily(
       final RocksDB rocksdb,
       final ColumnFamilyHandle cfHandle,
@@ -79,8 +88,8 @@ public class RocksDbHelper {
       throws RocksDBException {
     final String size = rocksdb.getProperty(cfHandle, "rocksdb.estimate-live-data-size");
     final String numberOfKeys = rocksdb.getProperty(cfHandle, "rocksdb.estimate-num-keys");
-    final long sizeLong = Long.parseLong(size);
-    final long numberOfKeysLong = Long.parseLong(numberOfKeys);
+    final long sizeLong = parseLongOrDefault(size);
+    final long numberOfKeysLong = parseLongOrDefault(numberOfKeys);
     if (!size.isBlank()
         && !numberOfKeys.isBlank()
         && isPopulatedColumnFamily(sizeLong, numberOfKeysLong)) {

@@ -65,7 +65,7 @@ public class RocksDbCommand implements Runnable {
             columnFamilyUsages.add(
                 RocksDbHelper.getAndPrintUsageForColumnFamily(
                     rocksdb, cfHandle, spec, SUB_COMMAND_LOG));
-          } catch (RocksDBException e) {
+          } catch (final RocksDBException e) {
             throw new RuntimeException(e);
           }
         });
@@ -94,7 +94,7 @@ public class RocksDbCommand implements Runnable {
         (rocksdb, cfHandle, spec) -> {
           try {
             RocksDbHelper.printStatsForColumnFamily(rocksdb, cfHandle, spec, SUB_COMMAND_LOG);
-          } catch (RocksDBException e) {
+          } catch (final RocksDBException e) {
             throw new RuntimeException(e);
           }
         });
