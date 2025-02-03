@@ -318,7 +318,7 @@ public class RocksDbHelper {
   }
 
   private static void printSeparator(final SubCommandLogger out) {
-    printLine(out, "-".repeat(35), "-".repeat(15), "-".repeat(11), "-".repeat(15), "-".repeat(16));
+    printLine(out, "-".repeat(50), "-".repeat(15), "-".repeat(11), "-".repeat(15), "-".repeat(16));
   }
 
   static void printLine(
@@ -328,7 +328,7 @@ public class RocksDbHelper {
       final String totalFilesSize,
       final String sstFilesSize,
       final String blobFilesSize) {
-    final String format = "| %-35s | %-15s | %-11s | %-15s | %-16s |";
+    final String format = "| %-50s | %-15s | %-11s | %-15s | %-16s |";
 
     out.display(String.format(format, cfName, keys, totalFilesSize, sstFilesSize, blobFilesSize));
   }
