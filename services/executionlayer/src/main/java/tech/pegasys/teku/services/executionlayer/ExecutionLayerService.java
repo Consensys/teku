@@ -155,7 +155,8 @@ public class ExecutionLayerService extends Service {
         serviceConfig.getTimeProvider(),
         true,
         terminalBlockHashInTTDMode,
-        builderCircuitBreaker);
+        builderCircuitBreaker,
+        config.getStubNumberOfGeneratedBlobs());
   }
 
   private static ExecutionLayerManager createRealExecutionLayerManager(

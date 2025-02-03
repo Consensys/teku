@@ -120,13 +120,15 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       final Spec spec,
       final TimeProvider timeProvider,
       final boolean enableTransitionEmulation,
-      final Optional<Bytes32> terminalBlockHashInTTDMode) {
+      final Optional<Bytes32> terminalBlockHashInTTDMode,
+      final Optional<Integer> numberOfGeneratedBlobs) {
     this.payloadIdToHeadAndAttrsCache = LRUCache.create(10);
     this.spec = spec;
     this.timeProvider = timeProvider;
     this.transitionEmulationEnabled = enableTransitionEmulation;
     this.terminalBlockHashInTTDMode =
         terminalBlockHashInTTDMode.orElse(Bytes32.fromHexStringLenient("0x01"));
+    this.blobsToGenerate = numberOfGeneratedBlobs;
     final KZG kzg;
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       // trusted setup loading will be handled by the BeaconChainController
@@ -141,7 +143,12 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       final Spec spec,
       final boolean enableTransitionEmulation,
       final Optional<Bytes32> terminalBlockHashInTTDMode) {
-    this(spec, SYSTEM_TIME_PROVIDER, enableTransitionEmulation, terminalBlockHashInTTDMode);
+    this(
+        spec,
+        SYSTEM_TIME_PROVIDER,
+        enableTransitionEmulation,
+        terminalBlockHashInTTDMode,
+        Optional.empty());
   }
 
   public void addPowBlock(final PowBlock block) {

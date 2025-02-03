@@ -40,8 +40,14 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
       final TimeProvider timeProvider,
       final boolean enableTransitionEmulation,
       final Optional<Bytes32> terminalBlockHashInTTDMode,
-      final BuilderCircuitBreaker builderCircuitBreaker) {
-    super(spec, timeProvider, enableTransitionEmulation, terminalBlockHashInTTDMode);
+      final BuilderCircuitBreaker builderCircuitBreaker,
+      final Optional<Integer> numberOfGeneratedBlobs) {
+    super(
+        spec,
+        timeProvider,
+        enableTransitionEmulation,
+        terminalBlockHashInTTDMode,
+        numberOfGeneratedBlobs);
     this.builderCircuitBreaker = builderCircuitBreaker;
   }
 
