@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
@@ -80,6 +81,11 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   @Override
   public void onAttestationsDue(final UInt64 slot) {
     eventThread.execute(() -> internalAttestationsDue(slot));
+  }
+
+  @Override
+  public void onPayloadAttestationsDue(final UInt64 slot) {
+    eventThread.execute(() -> internalPayloadAttestationsDue(slot));
   }
 
   @Override
@@ -257,6 +263,19 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     eventThread.checkOnEventThread();
 
     LOG.debug("internalAttestationsDue slot {}", slot);
+
+    // for ePBS update payload attributes is moved to "internalPayloadAttestationsDue"
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+      return;
+    }
+    // Assume `slot` is empty and check if we need to prepare to propose in the next slot
+    updatePayloadAttributes(slot.plus(1));
+  }
+
+  private void internalPayloadAttestationsDue(final UInt64 slot) {
+    eventThread.checkOnEventThread();
+
+    LOG.debug("internalPayloadAttestationsDue slot {}", slot);
 
     // Assume `slot` is empty and check if we need to prepare to propose in the next slot
     updatePayloadAttributes(slot.plus(1));

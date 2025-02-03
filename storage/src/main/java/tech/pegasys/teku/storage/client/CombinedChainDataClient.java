@@ -48,7 +48,6 @@ import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateEip7732;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -214,7 +213,7 @@ public class CombinedChainDataClient {
     return regenerateStateAndSlotExact(slot);
   }
 
-  // EIP-7732 TODO: FIX implement regenerate
+  // EIP-7732 TODO: FIX implement regenerate similar to getStateAtSlotExact
   public SafeFuture<Optional<BeaconState>> getExecutionPayloadStateAtSlotExact(final UInt64 slot) {
     final Optional<Bytes32> recentBlockRoot = recentChainData.getBlockRootInEffectBySlot(slot);
     if (recentBlockRoot.isPresent()) {
@@ -229,6 +228,7 @@ public class CombinedChainDataClient {
     return completedFuture(Optional.empty());
   }
 
+  // EIP-7732 TODO: hacky way of retrieving the pre state of the block
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExactForBlockProduction(
       final UInt64 slot) {
     if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
@@ -237,11 +237,6 @@ public class CombinedChainDataClient {
               getStateAtSlotExact(slot),
               (executionPayloadState, state) -> {
                 if (executionPayloadState.isPresent()) {
-                  LOG.info(
-                      "Using a state with latest full slot {} and latest block hash {}",
-                      BeaconStateEip7732.required(executionPayloadState.get()).getLatestFullSlot(),
-                      BeaconStateEip7732.required(executionPayloadState.get())
-                          .getLatestBlockHash());
                   return executionPayloadState;
                 }
                 return state;
