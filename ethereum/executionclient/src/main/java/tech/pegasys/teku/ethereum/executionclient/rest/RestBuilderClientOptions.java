@@ -22,7 +22,7 @@ public record RestBuilderClientOptions(
     Duration builderRegisterValidatorTimeout,
     Duration builderProposalDelayTolerance) {
 
-  public static RestBuilderClientOptions DEFAULT =
+  public static final RestBuilderClientOptions DEFAULT =
       new RestBuilderClientOptions(
           Constants.BUILDER_STATUS_TIMEOUT,
           Constants.BUILDER_GET_PAYLOAD_TIMEOUT,
