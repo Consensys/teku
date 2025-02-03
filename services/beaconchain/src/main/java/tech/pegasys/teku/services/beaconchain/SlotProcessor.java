@@ -135,6 +135,9 @@ public class SlotProcessor {
       processSlotStart(epoch);
       performanceRecord.ifPresent(TickProcessingPerformance::startSlotComplete);
     }
+    if (isSlotPayloadAttestationDue(calculatedSlot, currentTimeMillis, nodeSlotStartTimeMillis)) {
+      forkChoiceNotifier.onPayloadAttestationsDue(nodeSlot.getValue());
+    }
     if (isSlotAttestationDue(calculatedSlot, currentTimeMillis, nodeSlotStartTimeMillis)) {
       processSlotAttestation(performanceRecord);
       nodeSlot.inc();
@@ -182,6 +185,18 @@ public class SlotProcessor {
     return isProcessingDueForSlot(calculatedSlot, onTickSlotStart);
   }
 
+  // Payload attestations are due 3/4 in Eip7732 of the way through the slots time period
+  boolean isSlotPayloadAttestationDue(
+      final UInt64 calculatedSlot,
+      final UInt64 currentTimeMillis,
+      final UInt64 nodeSlotStartTimeMillis) {
+    final UInt64 earliestTimeInMillis =
+        nodeSlotStartTimeMillis.plus(payloadAttestationDueMillis(calculatedSlot));
+    final boolean processingDueForSlot =
+        isProcessingDueForSlot(calculatedSlot, onTickSlotAttestation);
+    return processingDueForSlot && isTimeReached(currentTimeMillis, earliestTimeInMillis);
+  }
+
   // Attestations are due 1/3 (1/4 in Eip7732) of the way through the slots time period
   boolean isSlotAttestationDue(
       final UInt64 calculatedSlot,
@@ -218,6 +233,11 @@ public class SlotProcessor {
       return spec.getMillisPerSlot(slot).dividedBy(INTERVALS_PER_SLOT_EIP7732);
     }
     return spec.getMillisPerSlot(slot).dividedBy(INTERVALS_PER_SLOT);
+  }
+
+  private UInt64 payloadAttestationDueMillis(final UInt64 slot) {
+    // 3/4 of the slot in ePBS
+    return spec.getMillisPerSlot(slot).dividedBy(INTERVALS_PER_SLOT_EIP7732).times(3);
   }
 
   boolean isTimeReached(final UInt64 currentTime, final UInt64 earliestTime) {

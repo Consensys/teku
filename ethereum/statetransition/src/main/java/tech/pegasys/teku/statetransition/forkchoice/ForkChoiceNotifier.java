@@ -26,6 +26,8 @@ public interface ForkChoiceNotifier {
 
   void onAttestationsDue(UInt64 slot);
 
+  void onPayloadAttestationsDue(UInt64 slot);
+
   void onSyncingStatusChanged(boolean inSync);
 
   SafeFuture<Optional<ExecutionPayloadContext>> getPayloadId(
