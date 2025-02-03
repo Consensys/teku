@@ -613,6 +613,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                 return;
               }
 
+              countExecutionPayload(remoteOrigin);
+
               if (!existingTracker.isComplete()) {
                 // we missed the opportunity to complete the blob sidecars via local EL and RPC
                 // (since the execution payload is required to be known) Let's try now
