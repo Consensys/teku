@@ -45,7 +45,10 @@ public class BlockBlobSidecarsTracker {
 
   private static final UInt64 CREATION_TIMING_IDX = UInt64.MAX_VALUE;
   private static final UInt64 BLOCK_ARRIVAL_TIMING_IDX = CREATION_TIMING_IDX.decrement();
-  private static final UInt64 RPC_BLOCK_FETCH_TIMING_IDX = BLOCK_ARRIVAL_TIMING_IDX.decrement();
+  private static final UInt64 EXECUTION_PAYLOAD_ARRIVAL_TIMING_IDX =
+      CREATION_TIMING_IDX.decrement();
+  private static final UInt64 RPC_BLOCK_FETCH_TIMING_IDX =
+      EXECUTION_PAYLOAD_ARRIVAL_TIMING_IDX.decrement();
   private static final UInt64 RPC_BLOBS_FETCH_TIMING_IDX = RPC_BLOCK_FETCH_TIMING_IDX.decrement();
   private static final UInt64 LOCAL_EL_BLOBS_FETCH_TIMING_IDX =
       RPC_BLOBS_FETCH_TIMING_IDX.decrement();
@@ -186,7 +189,6 @@ public class BlockBlobSidecarsTracker {
     return true;
   }
 
-  // EIP-7732 TODO: debug timings
   public boolean setExecutionPayloadEnvelope(
       final SignedBeaconBlock block, final ExecutionPayloadEnvelope executionPayloadEnvelope) {
     checkArgument(
@@ -200,6 +202,9 @@ public class BlockBlobSidecarsTracker {
     }
 
     LOG.debug("Execution payload envelope received for {}", slotAndBlockRoot::toLogString);
+    maybeDebugTimings.ifPresent(
+        debugTimings ->
+            debugTimings.put(EXECUTION_PAYLOAD_ARRIVAL_TIMING_IDX, System.currentTimeMillis()));
 
     pruneExcessiveBlobSidecars();
     checkCompletion();
@@ -346,6 +351,15 @@ public class BlockBlobSidecarsTracker {
         .append("Block delay ")
         .append(debugTimings.getOrDefault(BLOCK_ARRIVAL_TIMING_IDX, 0L) - creationTime)
         .append("ms - ");
+
+    // ePBS
+    if (debugTimings.containsKey(EXECUTION_PAYLOAD_ARRIVAL_TIMING_IDX)) {
+      timingsReport
+          .append("Execution payload delay ")
+          .append(
+              debugTimings.getOrDefault(EXECUTION_PAYLOAD_ARRIVAL_TIMING_IDX, 0L) - creationTime)
+          .append("ms - ");
+    }
 
     if (debugTimings.containsKey(LOCAL_EL_BLOBS_FETCH_TIMING_IDX)) {
       timingsReport
