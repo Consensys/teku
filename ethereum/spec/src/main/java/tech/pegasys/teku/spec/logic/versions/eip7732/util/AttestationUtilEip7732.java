@@ -67,7 +67,7 @@ public class AttestationUtilEip7732 extends AttestationUtilElectra {
     return Optional.empty();
   }
 
-  // EIP-7732 TODO: fix (doesn't work in local interop)
+  // EIP-7732 TODO: ignore ptc votes
   /** get_attesting_indices is modified to ignore PTC votes */
   @Override
   public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
