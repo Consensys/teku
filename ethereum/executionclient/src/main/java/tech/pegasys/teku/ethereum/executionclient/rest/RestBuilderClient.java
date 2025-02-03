@@ -14,10 +14,6 @@
 package tech.pegasys.teku.ethereum.executionclient.rest;
 
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
-import static tech.pegasys.teku.spec.config.Constants.BUILDER_GET_PAYLOAD_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.BUILDER_PROPOSAL_DELAY_TOLERANCE;
-import static tech.pegasys.teku.spec.config.Constants.BUILDER_REGISTER_VALIDATOR_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.BUILDER_STATUS_TIMEOUT;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -81,6 +77,7 @@ public class RestBuilderClient implements BuilderClient {
   public static final UInt64 REGISTER_VALIDATOR_SSZ_BACKOFF_TIME_MILLIS =
       UInt64.valueOf(TimeUnit.DAYS.toMillis(1));
 
+  private final RestBuilderClientOptions options;
   private final RestClient restClient;
   private final TimeProvider timeProvider;
   private final Spec spec;
@@ -89,10 +86,12 @@ public class RestBuilderClient implements BuilderClient {
   private UInt64 nextSszRegisterValidatorsTryMillis = UInt64.ZERO;
 
   public RestBuilderClient(
+      final RestBuilderClientOptions options,
       final RestClient restClient,
       final TimeProvider timeProvider,
       final Spec spec,
       final boolean setUserAgentHeader) {
+    this.options = options;
     this.restClient = restClient;
     this.timeProvider = timeProvider;
     this.spec = spec;
@@ -103,7 +102,7 @@ public class RestBuilderClient implements BuilderClient {
   public SafeFuture<Response<Void>> status() {
     return restClient
         .getAsync(BuilderApiMethod.GET_STATUS.getPath())
-        .orTimeout(BUILDER_STATUS_TIMEOUT);
+        .orTimeout(options.builderStatusTimeout());
   }
 
   @Override
@@ -116,7 +115,7 @@ public class RestBuilderClient implements BuilderClient {
 
     if (nextSszRegisterValidatorsTryMillis.isGreaterThan(timeProvider.getTimeInMillis())) {
       return registerValidatorsUsingJson(signedValidatorRegistrations)
-          .orTimeout(BUILDER_REGISTER_VALIDATOR_TIMEOUT);
+          .orTimeout(options.builderRegisterValidatorTimeout());
     }
 
     return registerValidatorsUsingSsz(signedValidatorRegistrations)
@@ -132,11 +131,11 @@ public class RestBuilderClient implements BuilderClient {
                     timeProvider.getTimeInMillis().plus(REGISTER_VALIDATOR_SSZ_BACKOFF_TIME_MILLIS);
 
                 return registerValidatorsUsingJson(signedValidatorRegistrations);
-              } else {
-                return SafeFuture.completedFuture(response);
               }
+
+              return SafeFuture.completedFuture(response);
             })
-        .orTimeout(BUILDER_REGISTER_VALIDATOR_TIMEOUT);
+        .orTimeout(options.builderRegisterValidatorTimeout());
   }
 
   private SafeFuture<Response<Void>> registerValidatorsUsingJson(
@@ -185,7 +184,7 @@ public class RestBuilderClient implements BuilderClient {
                 ? GET_HEADER_HTTP_HEADERS_WITH_USER_AGENT
                 : GET_HEADER_HTTP_HEADERS_WITHOUT_USER_AGENT,
             responseTypeDefinition)
-        .orTimeout(BUILDER_PROPOSAL_DELAY_TOLERANCE)
+        .orTimeout(options.builderProposalDelayTolerance())
         .thenApply(
             response ->
                 response.unwrapVersioned(
@@ -221,7 +220,7 @@ public class RestBuilderClient implements BuilderClient {
             response ->
                 response.unwrapVersioned(
                     this::extractBuilderPayload, milestone, BuilderApiResponse::version, false))
-        .orTimeout(BUILDER_GET_PAYLOAD_TIMEOUT);
+        .orTimeout(options.builderGetPayloadTimeout());
   }
 
   private <T extends BuilderPayload>

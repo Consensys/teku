@@ -15,6 +15,10 @@ package tech.pegasys.teku.ethereum.executionclient.rest;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
@@ -26,11 +30,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import okhttp3.OkHttpClient;
@@ -45,7 +51,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.ethereum.executionclient.BuilderApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.schema.BuilderApiResponse;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequiredFieldException;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -105,6 +113,7 @@ class RestBuilderClientTest {
   private OkHttpRestClient okHttpRestClient;
   private SchemaDefinitionsBellatrix schemaDefinitions;
 
+  private RestBuilderClientOptions restBuilderClientOptions;
   private RestBuilderClient restBuilderClient;
 
   private String signedValidatorRegistrationsRequest;
@@ -155,7 +164,9 @@ class RestBuilderClientTest {
                 "data")
             .orElseThrow();
 
-    restBuilderClient = new RestBuilderClient(okHttpRestClient, timeProvider, spec, true);
+    restBuilderClientOptions = RestBuilderClientOptions.DEFAULT;
+    restBuilderClient =
+        new RestBuilderClient(restBuilderClientOptions, okHttpRestClient, timeProvider, spec, true);
   }
 
   @AfterEach
@@ -320,9 +331,53 @@ class RestBuilderClientTest {
   }
 
   @TestTemplate
+  void registerValidators_shouldNotFallbackWhenTimingOut() {
+    // Creates a RestBuilderClient that always timeout
+    restBuilderClient =
+        new RestBuilderClient(
+            forcedTimeoutRestBuilderClientOptions(), okHttpRestClient, timeProvider, spec, true);
+
+    final SszList<SignedValidatorRegistration> signedValidatorRegistrations =
+        createSignedValidatorRegistrations();
+
+    assertThat(restBuilderClient.registerValidators(SLOT, signedValidatorRegistrations))
+        .failsWithin(WAIT_FOR_CALL_COMPLETION)
+        .withThrowableThat()
+        .withCauseInstanceOf(TimeoutException.class);
+
+    verifyPostRequestSsz("/eth/v1/builder/validators", signedValidatorRegistrations);
+    // Check that we do not fallback into JSON (only 1 request)
+    assertThat(mockWebServer.getRequestCount()).isEqualTo(1);
+  }
+
+  @TestTemplate
+  void registerValidators_shouldNotFallbackWhenFailingForNonHttpReasons() {
+    okHttpRestClient = spy(okHttpRestClient);
+    // Mock asyncPost with ssz to fail
+    doReturn(SafeFuture.failedFuture(new ConnectException()))
+        .when(okHttpRestClient)
+        .postAsync(eq(BuilderApiMethod.REGISTER_VALIDATOR.getPath()), any(), eq(true));
+    restBuilderClient =
+        new RestBuilderClient(restBuilderClientOptions, okHttpRestClient, timeProvider, spec, true);
+
+    final SszList<SignedValidatorRegistration> signedValidatorRegistrations =
+        createSignedValidatorRegistrations();
+
+    assertThat(restBuilderClient.registerValidators(SLOT, signedValidatorRegistrations))
+        .failsWithin(WAIT_FOR_CALL_COMPLETION)
+        .withThrowableThat()
+        .withCauseInstanceOf(ConnectException.class);
+
+    // No requests are made (including no fallback to json)
+    assertThat(mockWebServer.getRequestCount()).isEqualTo(0);
+  }
+
+  @TestTemplate
   void getHeader_success_doesNotSetUserAgentHeader() {
 
-    restBuilderClient = new RestBuilderClient(okHttpRestClient, timeProvider, spec, false);
+    restBuilderClient =
+        new RestBuilderClient(
+            restBuilderClientOptions, okHttpRestClient, timeProvider, spec, false);
 
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(200).setBody(signedBuilderBidResponseJson));
@@ -786,5 +841,10 @@ class RestBuilderClientTest {
   private static String changeResponseVersion(final String json, final SpecMilestone newVersion) {
     return json.replaceFirst(
         "(?<=version\":\\s?\")\\w+", newVersion.toString().toLowerCase(Locale.ROOT));
+  }
+
+  private RestBuilderClientOptions forcedTimeoutRestBuilderClientOptions() {
+    return new RestBuilderClientOptions(
+        Duration.ofSeconds(0), Duration.ofSeconds(0), Duration.ofSeconds(0), Duration.ofSeconds(0));
   }
 }
