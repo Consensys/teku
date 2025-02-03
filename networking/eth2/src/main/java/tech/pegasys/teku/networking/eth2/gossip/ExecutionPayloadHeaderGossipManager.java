@@ -69,4 +69,9 @@ public class ExecutionPayloadHeaderGossipManager
   public void publishExecutionPayloadHeader(final SignedExecutionPayloadHeader message) {
     publishMessage(message);
   }
+
+  @Override
+  public boolean isEnabledDuringOptimisticSync() {
+    return true;
+  }
 }

@@ -170,6 +170,16 @@ public class ForkSchedule {
     return Optional.ofNullable(forkVersionToMilestone.get(forkVersion));
   }
 
+  public UInt64 getForkEpochAtSpecMilestone(final SpecMilestone milestone) {
+    for (Map.Entry<UInt64, SpecMilestone> entry : epochToMilestone.entrySet()) {
+      if (entry.getValue().equals(milestone)) {
+        return entry.getKey();
+      }
+    }
+    throw new IllegalArgumentException(
+        String.format("Milestone %s is not a part of fork schedule", milestone));
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {

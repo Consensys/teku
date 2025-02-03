@@ -167,9 +167,18 @@ public class BlockProcessorEip7732 extends BlockProcessorElectra {
 
     final MutableBeaconStateEip7732 stateEip7732 = MutableBeaconStateEip7732.required(state);
 
-    if (!header.getParentBlockHash().equals(stateEip7732.getLatestBlockHash())
-        || !header.getParentBlockRoot().equals(block.getParentRoot())) {
-      throw new BlockProcessingException("Bid is not for the right parent block");
+    if (!header.getParentBlockHash().equals(stateEip7732.getLatestBlockHash())) {
+      throw new BlockProcessingException(
+          String.format(
+              "Bid parent block hash %s does not match the latest block hash %s in state",
+              header.getParentBlockHash(), stateEip7732.getLatestBlockHash()));
+    }
+
+    if (!header.getParentBlockRoot().equals(block.getParentRoot())) {
+      throw new BlockProcessingException(
+          String.format(
+              "Bid parent block root %s does not match the block parent root %s",
+              header.getParentBlockRoot(), block.getParentRoot()));
     }
 
     beaconStateMutators.decreaseBalance(state, builderIndex, amount);
