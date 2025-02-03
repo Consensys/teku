@@ -66,8 +66,8 @@ public class RocksDbCommand implements Runnable {
       }
       case V6 -> getUsage(beaconNodeDataOptions, eth2NetworkOptions, "db");
       default -> {
-        SUB_COMMAND_LOG.display("LevelDB is not supported in this command");
-        return 2;
+        SUB_COMMAND_LOG.error("LevelDB is not supported in this command");
+        return 1;
       }
     }
     return 0;
@@ -123,8 +123,8 @@ public class RocksDbCommand implements Runnable {
       }
       case V6 -> getStats(beaconNodeDataOptions, eth2NetworkOptions, "db");
       default -> {
-        SUB_COMMAND_LOG.display("LevelDB is not supported in this command");
-        return 2;
+        SUB_COMMAND_LOG.error("LevelDB is not supported in this command");
+        return 1;
       }
     }
     return 0;
