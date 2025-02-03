@@ -169,8 +169,8 @@ public class RocksDbInstanceFactory {
       final KvStoreConfiguration configuration, final Cache cache) {
     return new ColumnFamilyOptions()
         .setCompressionType(configuration.getCompressionType())
-        .setBottommostCompressionType(configuration.getBottomMostCompressionType())
-        .setTtl(0)
+        //        .setBottommostCompressionType(configuration.getBottomMostCompressionType())
+        //        .setTtl(0)
         .setTableFormatConfig(createBlockBasedTableConfig(cache));
   }
 
