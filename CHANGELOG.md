@@ -12,6 +12,7 @@
 ### Additions and Improvements
  - Applied spec change to alter `GOSSIP_MAX_SIZE` to `MAX_PAYLOAD_SIZE`.
  - `MAX_PAYLOAD_SIZE` is now used instead of `MAX_CHUNK_SIZE`.
+ - Updated 3rd party products to latest versions.
  - Add SSZ support to validator registration via Builder API.
 
 ### Bug Fixes
