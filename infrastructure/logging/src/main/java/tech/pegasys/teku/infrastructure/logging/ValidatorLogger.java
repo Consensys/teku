@@ -174,14 +174,16 @@ public class ValidatorLogger {
   public void logPublishedBid(
       final UInt64 slot,
       final UInt64 builderIndex,
+      final Bytes32 blockHash,
+      final Bytes32 parentBlockHash,
       final Bytes32 parentBlockRoot,
       final String ethValue) {
     log.info(
         ColorConsolePrinter.print(
             String.format(
-                "%sPublished bid  Slot: %s, Builder: %s, Parent Block Root: %s, Value: %s ETH",
-                PREFIX, slot, builderIndex, parentBlockRoot, ethValue),
-            Color.CYAN));
+                "%sPublished bid  Slot: %s, Builder: %s, Block Hash: %s, Parent Block Hash: %s, Parent Block Root: %s, Value: %s ETH",
+                PREFIX, slot, builderIndex, blockHash, parentBlockHash, parentBlockRoot, ethValue),
+            Color.PURPLE));
   }
 
   public void logPublishedExecutionPayload(

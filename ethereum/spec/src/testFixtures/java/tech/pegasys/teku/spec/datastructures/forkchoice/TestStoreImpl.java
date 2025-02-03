@@ -169,12 +169,6 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     return blocks.containsKey(blockRoot);
   }
 
-  // EIP-7732 TODO: implement (test)
-  @Override
-  public boolean containsExecutionPayloadEnvelope(final Bytes32 blockRoot) {
-    return false;
-  }
-
   @Override
   public List<Bytes32> getOrderedBlockRoots() {
     return blocks.values().stream()

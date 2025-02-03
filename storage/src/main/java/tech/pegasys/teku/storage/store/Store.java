@@ -605,19 +605,6 @@ class Store extends CacheableStore {
   }
 
   @Override
-  public boolean containsExecutionPayloadEnvelope(final Bytes32 blockRoot) {
-    readLock.lock();
-    try {
-      return forkChoiceStrategy
-          .executionBlockHash(blockRoot)
-          .map(blockHash -> !blockHash.isZero())
-          .orElse(false);
-    } finally {
-      readLock.unlock();
-    }
-  }
-
-  @Override
   public Collection<Bytes32> getOrderedBlockRoots() {
     readLock.lock();
     try {
@@ -765,9 +752,6 @@ class Store extends CacheableStore {
   @Override
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> retrieveExecutionPayloadEnvelope(
       final Bytes32 blockRoot) {
-    if (!containsExecutionPayloadEnvelope(blockRoot)) {
-      return EmptyStoreResults.EMPTY_EXECUTION_PAYLOAD_ENVELOPE_FUTURE;
-    }
     return executionPayloadEnvelopeProvider.getExecutionPayloadEnvelope(blockRoot);
   }
 

@@ -163,6 +163,8 @@ public class BlockProductionDuty implements Duty {
               VALIDATOR_LOGGER.logPublishedBid(
                   bid.getSlot(),
                   bid.getBuilderIndex(),
+                  bid.getBlockHash(),
+                  bid.getParentBlockHash(),
                   bid.getParentBlockRoot(),
                   gweiToEth(bid.getValue()));
             });

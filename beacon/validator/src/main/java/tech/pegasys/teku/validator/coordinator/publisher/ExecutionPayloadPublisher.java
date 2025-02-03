@@ -69,10 +69,6 @@ public class ExecutionPayloadPublisher {
   @SuppressWarnings("FutureReturnValueIgnored")
   private void publishExecutionPayloadAndBlobSidecars(
       final SignedExecutionPayloadEnvelope executionPayload, final List<BlobSidecar> blobSidecars) {
-    LOG.info(
-        "Publishing execution payload and {} blob sidecars for block {}",
-        blobSidecars.size(),
-        executionPayload.getMessage().getBeaconBlockRoot());
     executionPayloadGossipChannel.publishExecutionPayload(executionPayload);
     blobSidecarGossipChannel.publishBlobSidecars(blobSidecars);
   }

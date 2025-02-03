@@ -311,10 +311,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     if (block.getMessage().getBody().toVersionEip7732().isEmpty()) {
       return;
     }
-    if (recentChainData.containsExecutionPayloadEnvelope(
-        executionPayload.getMessage().getBeaconBlockRoot())) {
-      return;
-    }
     if (shouldIgnoreItemAtSlot(block.getSlot())) {
       return;
     }
@@ -384,9 +380,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       final SignedBeaconBlock block,
       final SignedExecutionPayloadEnvelope executionPayload,
       final List<BlobSidecar> blobSidecars) {
-    if (recentChainData.containsExecutionPayloadEnvelope(block.getRoot())) {
-      return;
-    }
     final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
 
     final BlockBlobSidecarsTracker blobSidecarsTracker =

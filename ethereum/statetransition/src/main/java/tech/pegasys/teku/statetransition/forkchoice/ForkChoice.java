@@ -64,7 +64,6 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateEip7732;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.Status;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -225,6 +224,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(block.getSlot(), block.getParentRoot());
     if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+      // EIP-7732 TODO: hacky way of retrieving the pre state of the block
       blockSlotStateFuture =
           recentChainData
               .retrieveExecutionPayloadStateAtSlot(slotAndBlockRoot)
@@ -232,12 +232,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                   recentChainData.retrieveStateAtSlot(slotAndBlockRoot),
                   (executionPayloadState, state) -> {
                     if (executionPayloadState.isPresent()) {
-                      LOG.info(
-                          "Using a state with latest full slot {} and latest block hash {} for fork choice processing",
-                          BeaconStateEip7732.required(executionPayloadState.get())
-                              .getLatestFullSlot(),
-                          BeaconStateEip7732.required(executionPayloadState.get())
-                              .getLatestBlockHash());
                       return executionPayloadState;
                     }
                     return state;
@@ -737,7 +731,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       result = BlockImportResult.optimisticallySuccessful(block);
     }
     updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
-    notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
+
+    // no fCU call required during onBlock for ePBS
+    if (!spec.atSlot(block.getSlot())
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+      notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
+    }
     return result;
   }
 

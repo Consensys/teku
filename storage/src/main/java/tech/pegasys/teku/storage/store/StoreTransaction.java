@@ -352,12 +352,6 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public boolean containsExecutionPayloadEnvelope(final Bytes32 blockRoot) {
-    return executionPayloadEnvelopeData.containsKey(blockRoot)
-        || store.containsExecutionPayloadEnvelope(blockRoot);
-  }
-
-  @Override
   public Collection<Bytes32> getOrderedBlockRoots() {
     if (this.blockData.isEmpty()) {
       return store.getOrderedBlockRoots();
