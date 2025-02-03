@@ -66,7 +66,8 @@ public class InteropOptions {
       hidden = true,
       names = {"--Xinterop-number-of-blobs"},
       paramLabel = "<INTEGER>",
-      description = "Number of blobs generated. If absent then a random number of blobs is generated every slot")
+      description =
+          "Number of blobs generated. If absent then a random number of blobs is generated every slot")
   private Integer interopNumberOfBlobs = null;
 
   @Option(
