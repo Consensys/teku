@@ -233,7 +233,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .reconstructHistoricStatesEnabled(reconstructHistoricStates));
   }
 
-  private DatabaseVersion parseDatabaseVersion() {
+  public DatabaseVersion parseDatabaseVersion() {
     if (createDbVersion == null) {
       if (dataStorageFrequency == 1 && !DatabaseVersion.isLevelDbSupported()) {
         throw new InvalidConfigurationException(

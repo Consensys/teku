@@ -15,11 +15,10 @@ package tech.pegasys.teku.storage.server.rocksdb;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.function.TriConsumer;
 import org.apache.tuweni.bytes.Bytes;
-import org.bouncycastle.util.Arrays;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.Options;
@@ -29,9 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
-import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
 
 @SuppressWarnings("JavaCase")
 // RocksDB subcommand helper methods.
@@ -41,9 +37,9 @@ public class RocksDbHelper {
   public static void forEachColumnFamily(
       final String dbPath,
       final Eth2NetworkConfiguration networkConfig,
-      final TriConsumer<RocksDB, ColumnFamilyHandle, Spec> task) {
+      final BiConsumer<RocksDB, ColumnFamilyHandle> task) {
     RocksDB.loadLibrary();
-    Options options = new Options();
+    final Options options = new Options();
     options.setCreateIfMissing(true);
 
     // Open the RocksDB database with multiple column families
@@ -58,10 +54,9 @@ public class RocksDbHelper {
     for (byte[] cfName : cfNames) {
       cfDescriptors.add(new ColumnFamilyDescriptor(cfName));
     }
-    Spec spec = networkConfig.getSpec();
     try (final RocksDB rocksdb = RocksDB.openReadOnly(dbPath, cfDescriptors, cfHandles)) {
       for (ColumnFamilyHandle cfHandle : cfHandles) {
-        task.accept(rocksdb, cfHandle, spec);
+        task.accept(rocksdb, cfHandle);
       }
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
@@ -84,8 +79,8 @@ public class RocksDbHelper {
   public static void printStatsForColumnFamily(
       final RocksDB rocksdb,
       final ColumnFamilyHandle cfHandle,
-      final Spec spec,
-      final SubCommandLogger out)
+      final SubCommandLogger out,
+      final Function<byte[], String> nameFromIdFn)
       throws RocksDBException {
     final String size = rocksdb.getProperty(cfHandle, "rocksdb.estimate-live-data-size");
     final String numberOfKeys = rocksdb.getProperty(cfHandle, "rocksdb.estimate-num-keys");
@@ -94,7 +89,7 @@ public class RocksDbHelper {
     if (!size.isBlank()
         && !numberOfKeys.isBlank()
         && isPopulatedColumnFamily(sizeLong, numberOfKeysLong)) {
-      final String nameById = getNameById(cfHandle.getName(), spec);
+      final String nameById = nameFromIdFn.apply(cfHandle.getName());
       if (nameById != null) {
         out.display("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
         out.display("Column Family: " + nameById);
@@ -236,8 +231,8 @@ public class RocksDbHelper {
   public static ColumnFamilyUsage getAndPrintUsageForColumnFamily(
       final RocksDB rocksdb,
       final ColumnFamilyHandle cfHandle,
-      final Spec spec,
-      final SubCommandLogger out)
+      final SubCommandLogger out,
+      final Function<byte[], String> nameFromIdFn)
       throws RocksDBException, NumberFormatException {
     final String numberOfKeys = rocksdb.getProperty(cfHandle, "rocksdb.estimate-num-keys");
     if (!numberOfKeys.isBlank()) {
@@ -257,14 +252,14 @@ public class RocksDbHelper {
         if (isPopulatedColumnFamily(0, numberOfKeysLong)) {
           printLine(
               out,
-              getNameById(cfHandle.getName(), spec),
+              nameFromIdFn.apply(cfHandle.getName()),
               rocksdb.getProperty(cfHandle, "rocksdb.estimate-num-keys"),
               formatOutputSize(totalFilesSize),
               formatOutputSize(totalSstFilesSizeLong),
               formatOutputSize(totalBlobFilesSizeLong));
         }
         return new ColumnFamilyUsage(
-            getNameById(cfHandle.getName(), spec),
+            nameFromIdFn.apply(cfHandle.getName()),
             numberOfKeysLong,
             totalFilesSize,
             totalSstFilesSizeLong,
@@ -274,7 +269,7 @@ public class RocksDbHelper {
       }
     }
     // return empty usage on error
-    return new ColumnFamilyUsage(getNameById(cfHandle.getName(), spec), 0, 0, 0, 0);
+    return new ColumnFamilyUsage(nameFromIdFn.apply(cfHandle.getName()), 0, 0, 0, 0);
   }
 
   public static void printTotals(
@@ -314,17 +309,6 @@ public class RocksDbHelper {
     } else {
       return size + " B";
     }
-  }
-
-  private static String getNameById(final byte[] id, final Spec spec) {
-    Map<String, KvStoreColumn<?, ?>> columnMap =
-        V6SchemaCombinedSnapshot.createV6(spec).getColumnMap();
-    for (Map.Entry<String, KvStoreColumn<?, ?>> entry : columnMap.entrySet()) {
-      if (Arrays.areEqual(entry.getValue().getId().toArray(), id)) {
-        return entry.getKey();
-      }
-    }
-    return null; // id not found
   }
 
   public static void printTableHeader(final SubCommandLogger out) {
