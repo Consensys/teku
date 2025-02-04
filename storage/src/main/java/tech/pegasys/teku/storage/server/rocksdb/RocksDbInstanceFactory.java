@@ -36,6 +36,7 @@ import org.rocksdb.Cache;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
+import org.rocksdb.CompressionType;
 import org.rocksdb.DBOptions;
 import org.rocksdb.Env;
 import org.rocksdb.LRUCache;
@@ -150,8 +151,6 @@ public class RocksDbInstanceFactory {
             .setMaxBackgroundJobs(configuration.getMaxBackgroundJobs())
             .setDbWriteBufferSize(configuration.getWriteBufferCapacity())
             .setMaxTotalWalSize(WAL_MAX_TOTAL_SIZE)
-            // .setBytesPerSync(1_048_576L) // 1MB
-            // .setWalBytesPerSync(1_048_576L)
             .setLogFileTimeToRoll(TIME_TO_ROLL_LOG_FILE)
             .setKeepLogFileNum(NUMBER_OF_LOG_FILES_TO_KEEP)
             .setEnv(
@@ -167,11 +166,17 @@ public class RocksDbInstanceFactory {
 
   private static ColumnFamilyOptions createColumnFamilyOptions(
       final KvStoreConfiguration configuration, final Cache cache) {
-    return new ColumnFamilyOptions()
+    final ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions();
+    if (!configuration
+        .getBottomMostCompressionType()
+        .equals(CompressionType.DISABLE_COMPRESSION_OPTION)) {
+      columnFamilyOptions.setBottommostCompressionType(
+          configuration.getBottomMostCompressionType());
+    }
+    columnFamilyOptions
         .setCompressionType(configuration.getCompressionType())
-        //        .setBottommostCompressionType(configuration.getBottomMostCompressionType())
-        //        .setTtl(0)
         .setTableFormatConfig(createBlockBasedTableConfig(cache));
+    return columnFamilyOptions;
   }
 
   private static List<ColumnFamilyDescriptor> createColumnFamilyDescriptors(

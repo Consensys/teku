@@ -99,7 +99,7 @@ public class KvStoreConfiguration {
   private CompressionType compressionType = CompressionType.LZ4_COMPRESSION;
 
   @JsonProperty("bottomMostCompressionType")
-  private CompressionType bottomMostCompressionType = CompressionType.NO_COMPRESSION;
+  private CompressionType bottomMostCompressionType = CompressionType.DISABLE_COMPRESSION_OPTION;
 
   @JsonIgnore private Path databaseDir;
 
