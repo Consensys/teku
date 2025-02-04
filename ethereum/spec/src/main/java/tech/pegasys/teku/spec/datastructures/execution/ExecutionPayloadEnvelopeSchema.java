@@ -73,6 +73,10 @@ public class ExecutionPayloadEnvelopeSchema
         stateRoot);
   }
 
+  public long getBlobKzgCommitmentsGeneralizedIndex() {
+    return getChildGeneralizedIndex(getFieldIndex("blob_kzg_commitments"));
+  }
+
   @Override
   public ExecutionPayloadEnvelope createFromBackingNode(final TreeNode node) {
     return new ExecutionPayloadEnvelope(this, node);
