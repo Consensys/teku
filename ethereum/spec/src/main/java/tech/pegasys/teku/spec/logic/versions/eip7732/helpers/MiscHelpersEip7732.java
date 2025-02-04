@@ -15,12 +15,14 @@ package tech.pegasys.teku.spec.logic.versions.eip7732.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
+import tech.pegasys.teku.infrastructure.ssz.tree.MerkleUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
@@ -99,15 +101,35 @@ public class MiscHelpersEip7732 extends MiscHelpersElectra {
 
   @Override
   public int getBlobSidecarKzgCommitmentGeneralizedIndex(final UInt64 blobSidecarIndex) {
-    final long blobKzgCommitmentsRootGeneralizedIndex =
-        BeaconBlockBodySchemaEip7732.required(beaconBlockBodySchema)
-            .getBlobKzgCommitmentsRootGeneralizedIndex();
+    final long blobKzgCommitmentsGeneralizedIndex =
+        schemaDefinitions
+            .getExecutionPayloadEnvelopeSchema()
+            .getBlobKzgCommitmentsGeneralizedIndex();
     final long commitmentGeneralizedIndex =
         schemaDefinitions
             .getBlobKzgCommitmentsSchema()
             .getChildGeneralizedIndex(blobSidecarIndex.longValue());
     return (int)
-        GIndexUtil.gIdxCompose(blobKzgCommitmentsRootGeneralizedIndex, commitmentGeneralizedIndex);
+        GIndexUtil.gIdxCompose(blobKzgCommitmentsGeneralizedIndex, commitmentGeneralizedIndex);
+  }
+
+  public List<Bytes32> computeKzgCommitmentInclusionProof(
+      final UInt64 blobSidecarIndex,
+      final ExecutionPayloadEnvelope executionPayloadEnvelope,
+      final BeaconBlockBody beaconBlockBody) {
+    final List<Bytes32> proof1 =
+        MerkleUtil.constructMerkleProof(
+            executionPayloadEnvelope.getBackingNode(),
+            getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecarIndex));
+    final List<Bytes32> proof2 =
+        MerkleUtil.constructMerkleProof(
+            beaconBlockBody.getBackingNode(),
+            BeaconBlockBodySchemaEip7732.required(beaconBlockBodySchema)
+                .getBlobKzgCommitmentsRootGeneralizedIndex());
+    final List<Bytes32> inclusionProof = new ArrayList<>();
+    inclusionProof.addAll(proof1);
+    inclusionProof.addAll(proof2);
+    return inclusionProof;
   }
 
   @Override
@@ -134,7 +156,8 @@ public class MiscHelpersEip7732 extends MiscHelpersElectra {
               index, commitmentsCount));
     }
     final List<Bytes32> kzgCommitmentInclusionProof =
-        computeKzgCommitmentInclusionProof(index, beaconBlockBody);
+        computeKzgCommitmentInclusionProof(
+            index, signedExecutionPayloadEnvelope.getMessage(), beaconBlockBody);
     return blobSidecarSchema.create(
         index, blob, commitment, proof, signedBeaconBlock.asHeader(), kzgCommitmentInclusionProof);
   }
