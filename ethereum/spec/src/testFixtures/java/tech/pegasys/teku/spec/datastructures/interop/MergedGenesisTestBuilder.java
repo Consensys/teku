@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.interop;
 
-import org.hyperledger.besu.config.GenesisConfigFile;
+import org.hyperledger.besu.config.GenesisConfig;
 import org.hyperledger.besu.config.GenesisConfigOptions;
 import org.hyperledger.besu.datatypes.Wei;
 import org.hyperledger.besu.ethereum.chain.BadBlockManager;
@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 public class MergedGenesisTestBuilder {
   public static ExecutionPayloadHeader createPayloadForBesuGenesis(
       final SchemaDefinitions schemaDefinitions, final String genesisConfigFile) {
-    final GenesisConfigFile configFile = GenesisConfigFile.fromConfig(genesisConfigFile);
+    final GenesisConfig configFile = GenesisConfig.fromConfig(genesisConfigFile);
     final GenesisConfigOptions genesisConfigOptions = configFile.getConfigOptions();
     final BadBlockManager badBlockManager = new BadBlockManager();
     final ProtocolSchedule protocolSchedule =
