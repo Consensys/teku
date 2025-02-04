@@ -31,6 +31,14 @@ public interface DataColumnSidecarRetriever {
   SafeFuture<DataColumnSidecar> retrieve(DataColumnSlotAndIdentifier columnId);
 
   /**
+   * The {@link #retrieve(DataColumnSlotAndIdentifier)} method may buffer requests and delay
+   * processing them till the next occasion. This method forces all the queued requests to be
+   * processed. However, requests could still be queued in a downstream component if there is a
+   * congestion.
+   */
+  void flush();
+
+  /**
    * The request may complete with this exception when requested column is no more on our local
    * canonical chain
    */

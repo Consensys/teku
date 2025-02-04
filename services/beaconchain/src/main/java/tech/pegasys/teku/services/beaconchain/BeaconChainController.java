@@ -749,9 +749,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
       eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
       eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
 
+      DasLongPollCustody.GossipWaitTimeoutCalculator gossipWaitTimeoutCalculator =
+          slot -> {
+            Duration slotDuration =
+                Duration.ofSeconds(spec.atSlot(slot).getConfig().getSecondsPerSlot());
+            return slotDuration.dividedBy(3);
+          };
+
       DasLongPollCustody dasLongPollCustody =
           new DasLongPollCustody(
-              dataColumnSidecarCustodyImpl, operationPoolAsyncRunner, Duration.ofSeconds(5));
+              dataColumnSidecarCustodyImpl, operationPoolAsyncRunner, gossipWaitTimeoutCalculator);
       eventChannels.subscribe(SlotEventsChannel.class, dasLongPollCustody);
 
       DataColumnSidecarByRootCustodyImpl dataColumnSidecarByRootCustody =

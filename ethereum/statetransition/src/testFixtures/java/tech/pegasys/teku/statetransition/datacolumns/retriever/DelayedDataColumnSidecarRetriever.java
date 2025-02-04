@@ -48,4 +48,7 @@ public class DelayedDataColumnSidecarRetriever implements DataColumnSidecarRetri
   public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
     return delay(() -> delegate.retrieve(columnId));
   }
+
+  @Override
+  public void flush() {}
 }

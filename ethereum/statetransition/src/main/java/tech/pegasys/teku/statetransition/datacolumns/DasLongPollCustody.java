@@ -34,19 +34,24 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 public class DasLongPollCustody implements UpdatableDataColumnSidecarCustody, SlotEventsChannel {
 
+  public interface GossipWaitTimeoutCalculator {
+    /** Returns the duration to wait for a column to be gossiped */
+    Duration getGossipWaitTimeout(UInt64 slot);
+  }
+
   private final UpdatableDataColumnSidecarCustody delegate;
   private final AsyncRunner asyncRunner;
-  private final Duration waitPeriodForCurrentSlot;
+  private final GossipWaitTimeoutCalculator gossipWaitTimeoutCalculator;
 
   @VisibleForTesting final PendingRequests pendingRequests = new PendingRequests();
 
   public DasLongPollCustody(
       final UpdatableDataColumnSidecarCustody delegate,
       final AsyncRunner asyncRunner,
-      final Duration waitPeriodForCurrentSlot) {
+      GossipWaitTimeoutCalculator gossipWaitTimeoutCalculator) {
     this.delegate = delegate;
     this.asyncRunner = asyncRunner;
-    this.waitPeriodForCurrentSlot = waitPeriodForCurrentSlot;
+    this.gossipWaitTimeoutCalculator = gossipWaitTimeoutCalculator;
   }
 
   @Override
@@ -101,6 +106,7 @@ public class DasLongPollCustody implements UpdatableDataColumnSidecarCustody, Sl
 
   @Override
   public void onSlot(final UInt64 slot) {
+    Duration waitPeriodForCurrentSlot = gossipWaitTimeoutCalculator.getGossipWaitTimeout(slot);
     asyncRunner
         .runAfterDelay(
             () -> pendingRequests.setNoWaitSlot(slot.increment()), waitPeriodForCurrentSlot)

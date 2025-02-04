@@ -48,6 +48,7 @@ public class DasPreSampler {
             blocksToSample.stream().map(block -> block.getSlot().intValue()).toList()));
 
     blocksToSample.forEach(this::onNewPreImportBlock);
+    sampler.flush();
   }
 
   private void onNewPreImportBlock(final SignedBeaconBlock block) {

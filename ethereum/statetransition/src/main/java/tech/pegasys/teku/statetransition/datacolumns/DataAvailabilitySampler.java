@@ -37,13 +37,26 @@ public interface DataAvailabilitySampler {
         }
 
         @Override
+        public void flush() {}
+
+        @Override
         public SamplingEligibilityStatus checkSamplingEligibility(BeaconBlock block) {
           return SamplingEligibilityStatus.NOT_REQUIRED_OLD_EPOCH;
         }
       };
 
+  /**
+   * Schedules availability check. To initiate all scheduled availability checks immediately call
+   * the {@link #flush()} method
+   */
   SafeFuture<List<UInt64>> checkDataAvailability(
       UInt64 slot, Bytes32 blockRoot, Bytes32 parentRoot);
+
+  /**
+   * Immediately initiates sampling. When doing batch sampling it would be more effective to invoke
+   * flush after submitting all requests
+   */
+  void flush();
 
   SamplingEligibilityStatus checkSamplingEligibility(BeaconBlock block);
 }

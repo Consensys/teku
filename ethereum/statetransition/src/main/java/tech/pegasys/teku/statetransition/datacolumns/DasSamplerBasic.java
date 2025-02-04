@@ -170,6 +170,11 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
         });
   }
 
+  @Override
+  public void flush() {
+    retriever.flush();
+  }
+
   private boolean hasBlobs(final BeaconBlock block) {
     return !block.getBody().getOptionalBlobKzgCommitments().orElseThrow().isEmpty();
   }

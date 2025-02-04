@@ -94,6 +94,11 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     return promise;
   }
 
+  @Override
+  public void flush() {
+    delegate.flush();
+  }
+
   @VisibleForTesting
   void maybeInitiateRecovery(
       final DataColumnSlotAndIdentifier columnId, final SafeFuture<DataColumnSidecar> promise) {
