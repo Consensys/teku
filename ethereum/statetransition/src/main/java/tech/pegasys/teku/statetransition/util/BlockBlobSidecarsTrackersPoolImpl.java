@@ -47,6 +47,7 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -213,7 +214,12 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   @Override
   public synchronized void onNewBlobSidecar(
       final BlobSidecar blobSidecar, final RemoteOrigin remoteOrigin) {
-    if (recentChainData.containsBlock(blobSidecar.getBlockRoot())) {
+    if (recentChainData.containsBlock(blobSidecar.getBlockRoot())
+        // in ePBS, the data availability check is done after importing the execution payload (after
+        // the block)
+        && !spec.atSlot(blobSidecar.getSlot())
+            .getMilestone()
+            .isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
       return;
     }
     if (shouldIgnoreItemAtSlot(blobSidecar.getSlot())) {
