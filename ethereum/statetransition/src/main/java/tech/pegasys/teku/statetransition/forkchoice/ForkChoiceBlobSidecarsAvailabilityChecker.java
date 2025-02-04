@@ -146,10 +146,13 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
 
   static Duration calculateCompletionTimeout(final Spec spec, final UInt64 slot) {
     final SpecVersion specVersion = spec.atSlot(slot);
-    final int slotInterval =
-        specVersion.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7732)
-            ? INTERVALS_PER_SLOT_EIP7732
-            : INTERVALS_PER_SLOT;
-    return Duration.ofMillis((specVersion.getConfig().getSecondsPerSlot() * 1000L) / slotInterval);
+    final boolean ePBS = specVersion.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7732);
+    final int slotInterval = ePBS ? INTERVALS_PER_SLOT_EIP7732 : INTERVALS_PER_SLOT;
+    final long millisPerSlot = specVersion.getConfig().getSecondsPerSlot() * 1000L;
+    // give time of 3 intervals for ePBS blobs
+    if (ePBS) {
+      return Duration.ofMillis((millisPerSlot / slotInterval) * 3);
+    }
+    return Duration.ofMillis(millisPerSlot / slotInterval);
   }
 }
