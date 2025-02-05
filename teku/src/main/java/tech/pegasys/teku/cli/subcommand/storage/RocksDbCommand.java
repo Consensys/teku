@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.subcommand.storage;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -186,6 +187,11 @@ public class RocksDbCommand implements Runnable {
         if (Arrays.areEqual(entry.getValue().getId().toArray(), id)) {
           return entry.getKey();
         }
+      }
+      try {
+        return new String(id, StandardCharsets.UTF_8);
+      } catch (Throwable e) {
+        SUB_COMMAND_LOG.error("failed to decode column name: " + e.getMessage());
       }
       return null;
     };
