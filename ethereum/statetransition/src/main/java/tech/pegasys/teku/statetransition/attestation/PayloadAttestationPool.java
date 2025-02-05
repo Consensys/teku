@@ -182,7 +182,8 @@ public class PayloadAttestationPool implements SlotEventsChannel {
     dataHashesToRemove.clear();
   }
 
-  /** EIP-7732 TODO */
+  @SuppressWarnings("unused")
+  // EIP-7732 TODO: implement
   public void onPayloadAttestationsIncludedInBlock(
-      final SszList<PayloadAttestation> payloadAttestations) {}
+      final UInt64 slot, final SszList<PayloadAttestation> payloadAttestations) {}
 }
