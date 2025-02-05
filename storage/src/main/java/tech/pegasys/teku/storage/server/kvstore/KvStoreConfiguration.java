@@ -51,7 +51,7 @@ public class KvStoreConfiguration {
 
   public static final int DEFAULT_MAX_BACKGROUND_JOBS = 6;
   public static final int DEFAULT_BACKGROUND_THREAD_COUNT = 6;
-  public static final long DEFAULT_CACHE_CAPACITY = 8 << 20; // 8MB
+  public static final long DEFAULT_CACHE_CAPACITY = 128 << 20; // 8MB
   public static final long DEFAULT_WRITE_BUFFER_CAPACITY = 128 << 20;
   private static final boolean DEFAULT_OPTIMISE_FOR_SMALL_DB = false;
 
@@ -105,7 +105,7 @@ public class KvStoreConfiguration {
   private CompressionType compressionType = CompressionType.LZ4_COMPRESSION;
 
   @JsonProperty("bottomMostCompressionType")
-  private CompressionType bottomMostCompressionType = CompressionType.NO_COMPRESSION;
+  private CompressionType bottomMostCompressionType = CompressionType.DISABLE_COMPRESSION_OPTION;
 
   @JsonIgnore private Path databaseDir;
 
