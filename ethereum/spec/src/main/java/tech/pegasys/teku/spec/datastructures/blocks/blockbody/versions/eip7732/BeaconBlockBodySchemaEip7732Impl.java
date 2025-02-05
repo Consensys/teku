@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema12;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -34,7 +35,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadHeaderSchema;
@@ -231,9 +231,9 @@ public class BeaconBlockBodySchemaEip7732Impl
 
   @Override
   public long getBlobKzgCommitmentsRootGeneralizedIndex() {
-    return getSignedExecutionPayloadHeaderSchema()
-        .getMessageSchema()
-        .getChildGeneralizedIndex(getFieldIndex(ExecutionPayloadFields.BLOB_KZG_COMMITMENTS_ROOT));
+    return GIndexUtil.gIdxCompose(
+        getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.SIGNED_EXECUTION_PAYLOAD_HEADER)),
+        getSignedExecutionPayloadHeaderSchema().getBlobKzgCommitmentsRootGeneralizedIndex());
   }
 
   @Override
