@@ -61,6 +61,10 @@ public class KeyStoreData {
     return pubkey;
   }
 
+  public String getAbbreviatedPubKey() {
+    return pubkey.toUnprefixedHexString().substring(0, 7);
+  }
+
   public String getPath() {
     return path;
   }
