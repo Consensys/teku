@@ -16,11 +16,11 @@ package tech.pegasys.teku.spec.datastructures.execution;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container7;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
@@ -31,8 +31,8 @@ public class ExecutionPayloadEnvelope
         ExecutionRequests,
         SszUInt64,
         SszBytes32,
+        SszUInt64,
         SszList<SszKZGCommitment>,
-        SszBit,
         SszBytes32> {
 
   ExecutionPayloadEnvelope(
@@ -41,8 +41,8 @@ public class ExecutionPayloadEnvelope
       final ExecutionRequests executionRequests,
       final UInt64 builderIndex,
       final Bytes32 beaconBlockRoot,
+      final UInt64 slot,
       final SszList<SszKZGCommitment> blobKzgCommitments,
-      final boolean payloadWithheld,
       final Bytes32 stateRoot) {
     super(
         schema,
@@ -50,8 +50,8 @@ public class ExecutionPayloadEnvelope
         executionRequests,
         SszUInt64.of(builderIndex),
         SszBytes32.of(beaconBlockRoot),
+        SszUInt64.of(slot),
         blobKzgCommitments,
-        SszBit.of(payloadWithheld),
         SszBytes32.of(stateRoot));
   }
 
@@ -75,16 +75,20 @@ public class ExecutionPayloadEnvelope
     return getField3().get();
   }
 
-  public SszList<SszKZGCommitment> getBlobKzgCommitments() {
-    return getField4();
+  public UInt64 getSlot() {
+    return getField4().get();
   }
 
-  public boolean isPayloadWithheld() {
-    return getField5().get();
+  public SszList<SszKZGCommitment> getBlobKzgCommitments() {
+    return getField5();
   }
 
   public Bytes32 getStateRoot() {
     return getField6().get();
+  }
+
+  public SlotAndBlockRoot getSlotAndBlockRoot() {
+    return new SlotAndBlockRoot(getSlot(), getBeaconBlockRoot());
   }
 
   public ExecutionPayloadEnvelope withStateRoot(final Bytes32 stateRoot) {
@@ -94,8 +98,8 @@ public class ExecutionPayloadEnvelope
         getExecutionRequests(),
         getBuilderIndex(),
         getBeaconBlockRoot(),
+        getSlot(),
         getBlobKzgCommitments(),
-        isPayloadWithheld(),
         stateRoot);
   }
 

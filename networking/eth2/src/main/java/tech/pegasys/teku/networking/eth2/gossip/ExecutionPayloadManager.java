@@ -20,7 +20,6 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
@@ -49,10 +48,9 @@ public class ExecutionPayloadManager extends AbstractGossipManager<SignedExecuti
         SchemaDefinitionsEip7732.required(
                 spec.atEpoch(forkInfo.getFork().getEpoch()).getSchemaDefinitions())
             .getSignedExecutionPayloadEnvelopeSchema(),
-        (executionPayloadEnvelope) -> Optional.empty(),
+        (executionPayloadEnvelope) -> Optional.of(executionPayloadEnvelope.getMessage().getSlot()),
         executionPayloadEnvelope ->
-            // EIP-7732 TODO: need a proper way of retrieving the epoch from the envelope
-            spec.getForkSchedule().getForkEpochAtSpecMilestone(SpecMilestone.EIP7732),
+            spec.computeEpochAtSlot(executionPayloadEnvelope.getMessage().getSlot()),
         spec.getNetworkingConfig(),
         GossipFailureLogger.createNonSuppressing(GossipTopicName.EXECUTION_PAYLOAD.toString()),
         debugDataDumper);
