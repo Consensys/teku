@@ -38,7 +38,6 @@ import org.rocksdb.Cache;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
-import org.rocksdb.CompressionType;
 import org.rocksdb.DBOptions;
 import org.rocksdb.Env;
 import org.rocksdb.LRUCache;
@@ -166,17 +165,10 @@ public class RocksDbInstanceFactory {
 
   private static ColumnFamilyOptions createColumnFamilyOptions(
       final KvStoreConfiguration configuration, final Cache cache) {
-    final ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions();
-    if (!configuration
-        .getBottomMostCompressionType()
-        .equals(CompressionType.DISABLE_COMPRESSION_OPTION)) {
-      columnFamilyOptions.setBottommostCompressionType(
-          configuration.getBottomMostCompressionType());
-    }
-    columnFamilyOptions
+    return new ColumnFamilyOptions()
         .setCompressionType(configuration.getCompressionType())
+        .setBottommostCompressionType(configuration.getBottomMostCompressionType())
         .setTableFormatConfig(createBlockBasedTableConfig(cache));
-    return columnFamilyOptions;
   }
 
   private static List<ColumnFamilyDescriptor> createColumnFamilyDescriptors(
