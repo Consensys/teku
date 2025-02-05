@@ -229,15 +229,14 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
         .orElse(0);
   }
 
-  public int getBlobSidecarKzgCommitmentGeneralizedIndex(final UInt64 blobSidecarIndex) {
+  public long getBlobSidecarKzgCommitmentGeneralizedIndex(final UInt64 blobSidecarIndex) {
     final long blobKzgCommitmentsGeneralizedIndex =
         beaconBlockBodySchema.getBlobKzgCommitmentsGeneralizedIndex();
     final long commitmentGeneralizedIndex =
         beaconBlockBodySchema
             .getBlobKzgCommitmentsSchema()
             .getChildGeneralizedIndex(blobSidecarIndex.longValue());
-    return (int)
-        GIndexUtil.gIdxCompose(blobKzgCommitmentsGeneralizedIndex, commitmentGeneralizedIndex);
+    return GIndexUtil.gIdxCompose(blobKzgCommitmentsGeneralizedIndex, commitmentGeneralizedIndex);
   }
 
   public List<Bytes32> computeKzgCommitmentInclusionProof(
@@ -305,7 +304,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
             blobSidecar.getSszKZGCommitment().hashTreeRoot(),
             blobSidecar.getKzgCommitmentInclusionProof(),
             getKzgCommitmentInclusionProofDepth(),
-            getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecar.getIndex()),
+            Math.toIntExact(getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecar.getIndex())),
             blobSidecar.getBlockBodyRoot());
 
     if (result) {
