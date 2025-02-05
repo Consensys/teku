@@ -118,4 +118,13 @@ public class ExecutionPayloadHeaderSchemaEip7732
         SszUInt64.of(UInt64.ZERO),
         SszBytes32.of(Bytes32.ZERO));
   }
+
+  @Override
+  public ExecutionPayloadHeaderSchemaEip7732 toVersionEip7732Required() {
+    return this;
+  }
+
+  public int getBlobKzgCommitmentsRootGeneralizedIndex() {
+    return (int) getChildGeneralizedIndex(getFieldIndex(BLOB_KZG_COMMITMENTS_ROOT));
+  }
 }

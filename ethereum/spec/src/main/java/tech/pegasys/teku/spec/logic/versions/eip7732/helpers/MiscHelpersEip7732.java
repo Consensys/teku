@@ -99,28 +99,20 @@ public class MiscHelpersEip7732 extends MiscHelpersElectra {
             });
   }
 
-  @Override
-  public int getBlobSidecarKzgCommitmentGeneralizedIndex(final UInt64 blobSidecarIndex) {
-    final long blobKzgCommitmentsGeneralizedIndex =
-        schemaDefinitions
-            .getExecutionPayloadEnvelopeSchema()
-            .getBlobKzgCommitmentsGeneralizedIndex();
-    final long commitmentGeneralizedIndex =
-        schemaDefinitions
-            .getBlobKzgCommitmentsSchema()
-            .getChildGeneralizedIndex(blobSidecarIndex.longValue());
-    return (int)
-        GIndexUtil.gIdxCompose(blobKzgCommitmentsGeneralizedIndex, commitmentGeneralizedIndex);
-  }
-
   public List<Bytes32> computeKzgCommitmentInclusionProof(
       final UInt64 blobSidecarIndex,
       final ExecutionPayloadEnvelope executionPayloadEnvelope,
       final BeaconBlockBody beaconBlockBody) {
+
+    final long blobSidecarGIndexInCommitments =
+        schemaDefinitions
+            .getBlobKzgCommitmentsSchema()
+            .getChildGeneralizedIndex(blobSidecarIndex.longValue());
+
     final List<Bytes32> proof1 =
         MerkleUtil.constructMerkleProof(
-            executionPayloadEnvelope.getBackingNode(),
-            getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecarIndex));
+            executionPayloadEnvelope.getBlobKzgCommitments().getBackingNode(),
+            blobSidecarGIndexInCommitments);
     final List<Bytes32> proof2 =
         MerkleUtil.constructMerkleProof(
             beaconBlockBody.getBackingNode(),
@@ -135,6 +127,21 @@ public class MiscHelpersEip7732 extends MiscHelpersElectra {
   @Override
   public int getKzgCommitmentInclusionProofDepth() {
     return SpecConfigEip7732.required(specConfig).getKzgCommitmentInclusionProofDepthEip7732();
+  }
+
+  @Override
+  public long getBlobSidecarKzgCommitmentGeneralizedIndex(final UInt64 blobSidecarIndex) {
+    final long blobSidecarGIndexInCommitments =
+        schemaDefinitions
+            .getBlobKzgCommitmentsSchema()
+            .getChildGeneralizedIndex(blobSidecarIndex.longValue());
+
+    final long blobKzgCommitmentsRootGeneralizedIndex =
+        BeaconBlockBodySchemaEip7732.required(beaconBlockBodySchema)
+            .getBlobKzgCommitmentsRootGeneralizedIndex();
+
+    return GIndexUtil.gIdxCompose(
+        blobKzgCommitmentsRootGeneralizedIndex, blobSidecarGIndexInCommitments);
   }
 
   public BlobSidecar constructBlobSidecar(

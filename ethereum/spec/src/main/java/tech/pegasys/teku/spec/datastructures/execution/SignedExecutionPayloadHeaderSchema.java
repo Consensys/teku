@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.execution;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
@@ -30,6 +31,12 @@ public class SignedExecutionPayloadHeaderSchema
         namedSchema(
             "message", SszSchema.as(ExecutionPayloadHeader.class, executionPayloadHeaderSchema)),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
+  }
+
+  public long getBlobKzgCommitmentsRootGeneralizedIndex() {
+    return GIndexUtil.gIdxCompose(
+        getChildGeneralizedIndex(getFieldIndex("message")),
+        getMessageSchema().toVersionEip7732Required().getBlobKzgCommitmentsRootGeneralizedIndex());
   }
 
   public SignedExecutionPayloadHeader create(
