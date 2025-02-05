@@ -80,8 +80,15 @@ public class BeaconBlocksByRangeMessageHandler
   public Optional<RpcException> validateRequest(
       final String protocolId, final BeaconBlocksByRangeRequestMessage request) {
     final int version = BeaconChainMethodIds.extractBeaconBlocksByRangeVersion(protocolId);
-    final SpecMilestone latestMilestoneRequested =
-        spec.getForkSchedule().getSpecMilestoneAtSlot(request.getMaxSlot());
+    final SpecMilestone latestMilestoneRequested;
+    try {
+      latestMilestoneRequested =
+          spec.getForkSchedule().getSpecMilestoneAtSlot(request.getMaxSlot());
+    } catch (final ArithmeticException __) {
+      return Optional.of(
+          new RpcException(INVALID_REQUEST_CODE, "Requested slot is too far in the future"));
+    }
+
     final boolean isAltairActive =
         latestMilestoneRequested.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR);
 
