@@ -47,6 +47,7 @@ import tech.pegasys.techu.service.serviceutils.layout.SimpleDataDirLayout;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.keystore.KeyStoreLoader;
+import tech.pegasys.teku.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -746,6 +747,37 @@ class ValidatorLoaderTest {
     assertThat(validator).isPresent();
     assertThat(validator.orElseThrow().getSigner()).isInstanceOf(DeletableSigner.class);
     assertThat(validator.get().getGraffitiProvider()).isInstanceOf(UpdatableGraffitiProvider.class);
+  }
+
+  @Test
+  void shouldCheckKeystorePasswordWhenNotAddingValidatorToOwned(@TempDir final Path tempDir)
+      throws Exception {
+    final ValidatorConfig config = ValidatorConfig.builder().build();
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            spec,
+            config,
+            disabledInteropConfig,
+            httpClientFactory,
+            slashingProtector,
+            slashingProtectionLogger,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem,
+            Optional.of(new SimpleDataDirLayout(tempDir)),
+            (publicKey) -> Optional.empty());
+    validatorLoader.loadValidators();
+
+    final String keystoreString =
+        Resources.toString(Resources.getResource("pbkdf2TestVector.json"), StandardCharsets.UTF_8);
+    final KeyStoreData keystoreData = KeyStoreLoader.loadFromString(keystoreString);
+    ValidatorImportResult result =
+        validatorLoader.loadLocalMutableValidator(
+            keystoreData, "incorrectPassword", Optional.empty(), false);
+    assertThat(result.getPostKeyResult().getImportStatus()).isEqualTo(ImportStatus.ERROR);
+    assertThat(result.getPostKeyResult().getMessage())
+        .contains(
+            "Invalid keystore password for public key: " + keystoreData.getAbbreviatedPubKey());
   }
 
   @Test
