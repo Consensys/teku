@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 
 public interface DebugDataDumper {
 
@@ -48,6 +49,11 @@ public interface DebugDataDumper {
         @Override
         public void saveInvalidBlobSidecars(
             final List<BlobSidecar> blobSidecars, final SignedBeaconBlock block) {}
+
+        @Override
+        public void saveInvalidBlobSidecars(
+            final List<BlobSidecar> blobSidecars,
+            final SignedExecutionPayloadEnvelope executionPayloadEnvelope) {}
       };
 
   void saveGossipMessageDecodingError(
@@ -66,4 +72,8 @@ public interface DebugDataDumper {
       SignedBeaconBlock block, String failureReason, Optional<Throwable> failureCause);
 
   void saveInvalidBlobSidecars(List<BlobSidecar> blobSidecars, SignedBeaconBlock block);
+
+  // ePBS
+  void saveInvalidBlobSidecars(
+      List<BlobSidecar> blobSidecars, SignedExecutionPayloadEnvelope executionPayloadEnvelope);
 }

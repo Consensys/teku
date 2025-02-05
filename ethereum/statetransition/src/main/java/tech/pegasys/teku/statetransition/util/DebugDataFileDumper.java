@@ -34,6 +34,8 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 
 public class DebugDataFileDumper implements DebugDataDumper {
 
@@ -153,6 +155,37 @@ public class DebugDataFileDumper implements DebugDataDumper {
         "kzg commitments",
         Path.of(INVALID_BLOB_SIDECARS_DIR).resolve(kzgCommitmentsFileName),
         block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow().sszSerialize());
+    blobSidecars.forEach(
+        blobSidecar -> {
+          final UInt64 slot = blobSidecar.getSlot();
+          final Bytes32 blockRoot = blobSidecar.getBlockRoot();
+          final UInt64 index = blobSidecar.getIndex();
+          final String fileName =
+              String.format("%s_%s_%s.ssz", slot, blockRoot.toUnprefixedHexString(), index);
+          saveBytesToFile(
+              "blob sidecar",
+              Path.of(INVALID_BLOB_SIDECARS_DIR).resolve(fileName),
+              blobSidecar.sszSerialize());
+        });
+  }
+
+  @Override
+  public void saveInvalidBlobSidecars(
+      final List<BlobSidecar> blobSidecars,
+      final SignedExecutionPayloadEnvelope executionPayloadEnvelope) {
+    if (!enabled) {
+      return;
+    }
+    final SlotAndBlockRoot slotAndBlockRoot =
+        executionPayloadEnvelope.getMessage().getSlotAndBlockRoot();
+    final String kzgCommitmentsFileName =
+        String.format(
+            "%s_%s_kzg_commitments.ssz",
+            slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot().toUnprefixedHexString());
+    saveBytesToFile(
+        "kzg commitments",
+        Path.of(INVALID_BLOB_SIDECARS_DIR).resolve(kzgCommitmentsFileName),
+        executionPayloadEnvelope.getMessage().getBlobKzgCommitments().sszSerialize());
     blobSidecars.forEach(
         blobSidecar -> {
           final UInt64 slot = blobSidecar.getSlot();

@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.datastructures.execution;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema7;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
@@ -35,8 +34,8 @@ public class ExecutionPayloadEnvelopeSchema
         ExecutionRequests,
         SszUInt64,
         SszBytes32,
+        SszUInt64,
         SszList<SszKZGCommitment>,
-        SszBit,
         SszBytes32> {
 
   public ExecutionPayloadEnvelopeSchema(
@@ -49,8 +48,8 @@ public class ExecutionPayloadEnvelopeSchema
         namedSchema("execution_requests", executionRequestsSchema),
         namedSchema("builder_index", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("beacon_block_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("blob_kzg_commitments", blobKzgCommitmentsSchema),
-        namedSchema("payload_withheld", SszPrimitiveSchemas.BIT_SCHEMA),
         namedSchema("root", SszPrimitiveSchemas.BYTES32_SCHEMA));
   }
 
@@ -59,8 +58,8 @@ public class ExecutionPayloadEnvelopeSchema
       final ExecutionRequests executionRequests,
       final UInt64 builderIndex,
       final Bytes32 beaconBlockRoot,
+      final UInt64 slot,
       final SszList<SszKZGCommitment> blobKzgCommitments,
-      final boolean payloadWithheld,
       final Bytes32 stateRoot) {
     return new ExecutionPayloadEnvelope(
         this,
@@ -68,8 +67,8 @@ public class ExecutionPayloadEnvelopeSchema
         executionRequests,
         builderIndex,
         beaconBlockRoot,
+        slot,
         blobKzgCommitments,
-        payloadWithheld,
         stateRoot);
   }
 

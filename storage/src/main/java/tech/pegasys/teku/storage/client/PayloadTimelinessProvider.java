@@ -68,9 +68,7 @@ public class PayloadTimelinessProvider {
                       .map(
                           payloadAndArrivalTime ->
                               new PayloadStatusAndBeaconBlockRoot(
-                                  payloadAndArrivalTime.payload.isPayloadWithheld()
-                                      ? PayloadStatus.PAYLOAD_WITHHELD
-                                      : PayloadStatus.PAYLOAD_PRESENT,
+                                  PayloadStatus.PAYLOAD_PRESENT,
                                   payloadAndArrivalTime.payload.getBeaconBlockRoot()))
                       .orElse(
                           new PayloadStatusAndBeaconBlockRoot(

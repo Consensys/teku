@@ -2728,8 +2728,8 @@ public final class DataStructureUtil {
             randomExecutionRequests(),
             randomUInt64(),
             randomBytes32(),
+            randomSlot(),
             randomBlobKzgCommitments(),
-            false,
             randomBytes32());
   }
 

@@ -13,13 +13,10 @@
 
 package tech.pegasys.teku.spec.constants;
 
-import java.util.Arrays;
-
 public enum PayloadStatus {
   PAYLOAD_ABSENT((byte) 0),
   PAYLOAD_PRESENT((byte) 1),
-  PAYLOAD_WITHHELD((byte) 2),
-  PAYLOAD_INVALID_STATUS((byte) 3);
+  PAYLOAD_INVALID_STATUS((byte) 2);
 
   private final byte code;
 
@@ -29,13 +26,5 @@ public enum PayloadStatus {
 
   public byte getCode() {
     return code;
-  }
-
-  public static PayloadStatus forCode(final byte code) {
-    return Arrays.stream(PayloadStatus.values())
-        .filter(status -> status.code == code)
-        .findFirst()
-        .orElseThrow(
-            () -> new IllegalArgumentException("No PayloadStatus available for code " + code));
   }
 }
