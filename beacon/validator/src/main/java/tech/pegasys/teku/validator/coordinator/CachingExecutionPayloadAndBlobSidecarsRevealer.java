@@ -76,8 +76,9 @@ public class CachingExecutionPayloadAndBlobSidecarsRevealer
       logMissingPayload(block);
       return Optional.empty();
     }
+    final UInt64 slot = block.getSlot();
     final SchemaDefinitionsEip7732 schemaDefinitions =
-        SchemaDefinitionsEip7732.required(spec.atSlot(block.getSlot()).getSchemaDefinitions());
+        SchemaDefinitionsEip7732.required(spec.atSlot(slot).getSchemaDefinitions());
     final SszList<SszKZGCommitment> blobKzgCommitments =
         schemaDefinitions
             .getBlobKzgCommitmentsSchema()
@@ -90,13 +91,13 @@ public class CachingExecutionPayloadAndBlobSidecarsRevealer
                 getPayloadResponse.getExecutionRequests().orElseThrow(),
                 committedHeader.getBuilderIndex(),
                 block.getRoot(),
+                slot,
                 blobKzgCommitments,
-                false,
                 state.hashTreeRoot());
     try {
       // Run state transition and set state root
       final BeaconState newState =
-          spec.atSlot(block.getSlot())
+          spec.atSlot(slot)
               .getExecutionPayloadProcessor()
               .orElseThrow()
               .processUnsignedExecutionPayload(state, executionPayload, Optional.empty());

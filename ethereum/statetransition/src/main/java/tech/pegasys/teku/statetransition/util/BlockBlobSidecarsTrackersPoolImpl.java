@@ -70,6 +70,7 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
+// EIP-7732 TODO: this needs a serious refactor
 public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     implements BlockBlobSidecarsTrackersPool {
   private static final Logger LOG = LogManager.getLogger();

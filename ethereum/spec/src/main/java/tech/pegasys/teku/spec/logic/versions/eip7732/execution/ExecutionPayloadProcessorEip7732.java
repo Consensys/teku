@@ -122,10 +122,6 @@ public class ExecutionPayloadProcessorEip7732 extends AbstractExecutionPayloadPr
           "Execution payload is not consistent with the committed header");
     }
 
-    if (envelope.isPayloadWithheld()) {
-      return;
-    }
-
     // Verify the withdrawals root
     if (!payload
         .getWithdrawals()

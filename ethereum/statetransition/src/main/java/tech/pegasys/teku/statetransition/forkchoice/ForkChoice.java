@@ -778,7 +778,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             "Failed to import execution payload because blobs are invalid: {}",
             blobSidecarsAndValidationResult.toLogString());
         debugDataDumper.saveInvalidBlobSidecars(
-            blobSidecarsAndValidationResult.getBlobSidecars(), block);
+            blobSidecarsAndValidationResult.getBlobSidecars(), executionPayloadEnvelope);
         return;
       }
       default -> {}

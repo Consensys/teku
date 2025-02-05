@@ -37,24 +37,34 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class ExecutionPayloadValidator {
 
   private final Spec spec;
+  private final GossipValidationHelper gossipValidationHelper;
   private final RecentChainData recentChainData;
 
   private final Set<BlockRootAndBuilderIndex> receivedValidEnvelopeInfoSet =
       LimitedSet.createSynchronized(VALID_BLOCK_SET_SIZE);
 
-  public ExecutionPayloadValidator(final Spec spec, final RecentChainData recentChainData) {
+  public ExecutionPayloadValidator(
+      final Spec spec,
+      final GossipValidationHelper gossipValidationHelper,
+      final RecentChainData recentChainData) {
     this.spec = spec;
+    this.gossipValidationHelper = gossipValidationHelper;
     this.recentChainData = recentChainData;
   }
 
   public SafeFuture<InternalValidationResult> validate(
       final SignedExecutionPayloadEnvelope signedExecutionPayloadEnvelope) {
     final ExecutionPayloadEnvelope envelope = signedExecutionPayloadEnvelope.getMessage();
+
+    if (gossipValidationHelper.isSlotFromFuture(
+        signedExecutionPayloadEnvelope.getMessage().getSlot())) {
+      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+    }
     /*
      * [IGNORE] The envelope's block root envelope.block_root has been seen (via both gossip and non-gossip sources) (a client MAY queue payload for processing once the block is retrieved).
      */
-    if (!recentChainData.containsBlock(envelope.getBeaconBlockRoot())) {
-      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
+    if (!gossipValidationHelper.isBlockAvailable(envelope.getBeaconBlockRoot())) {
+      return SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
     /*
      * [IGNORE] The node has not seen another valid SignedExecutionPayloadEnvelope for this block root from this builder.
@@ -89,15 +99,6 @@ public class ExecutionPayloadValidator {
                     "Envelope builder index does not match the committed builder index");
               }
 
-              /*
-               * if envelope.payload_withheld == False then
-               * [REJECT] payload.block_hash == header.block_hash
-               */
-              if (envelope.isPayloadWithheld()
-                  && !envelope.getPayload().getBlockHash().equals(header.getBlockHash())) {
-                return InternalValidationResult.reject(
-                    "Payload block hash does not match the committed block hash");
-              }
               /*
                * [REJECT] The builder signature, signed_execution_payload_envelope.signature, is valid with respect to the builder's public key.
                */
