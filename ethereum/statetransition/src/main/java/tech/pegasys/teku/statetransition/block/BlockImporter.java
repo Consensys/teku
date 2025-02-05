@@ -56,8 +56,8 @@ public class BlockImporter {
 
   private final Subscribers<VerifiedBlockAttestationListener> attestationSubscribers =
       Subscribers.create(true);
-  private final Subscribers<VerifiedBlockOperationsListener<PayloadAttestation>>
-      payloadAttestationSubscribers = Subscribers.create(true);
+  private final Subscribers<VerifiedBlockPayloadAttestationListener> payloadAttestationSubscribers =
+      Subscribers.create(true);
   private final Subscribers<VerifiedBlockOperationsListener<AttesterSlashing>>
       attesterSlashingSubscribers = Subscribers.create(true);
   private final Subscribers<VerifiedBlockOperationsListener<ProposerSlashing>>
@@ -219,6 +219,7 @@ public class BlockImporter {
             blsOperations ->
                 blsToExecutionChangeSubscribers.deliver(
                     VerifiedBlockOperationsListener::onOperationsFromBlock, blsOperations));
+    // ePBS
     blockBody
         .getOptionalSignedExecutionPayloadHeader()
         .ifPresent(
@@ -226,6 +227,13 @@ public class BlockImporter {
                 executionPayloadHeaderSubscribers.deliver(
                     VerifiedBlockExecutionPayloadHeaderListener::onOperationFromBlock,
                     signedExecutionPayloadHeader));
+    blockBody
+        .getOptionalPayloadAttestations()
+        .ifPresent(
+            payloadAttestations ->
+                payloadAttestationSubscribers.forEach(
+                    listener ->
+                        listener.onOperationsFromBlock(block.getSlot(), payloadAttestations)));
   }
 
   public void subscribeToVerifiedBlockAttestations(
@@ -234,8 +242,7 @@ public class BlockImporter {
   }
 
   public void subscribeToVerifiedBlockPayloadAttestations(
-      final VerifiedBlockOperationsListener<PayloadAttestation>
-          verifiedBlockPayloadAttestationsListener) {
+      final VerifiedBlockPayloadAttestationListener verifiedBlockPayloadAttestationsListener) {
     payloadAttestationSubscribers.subscribe(verifiedBlockPayloadAttestationsListener);
   }
 
@@ -288,5 +295,9 @@ public class BlockImporter {
 
   public interface VerifiedBlockExecutionPayloadHeaderListener {
     void onOperationFromBlock(SignedExecutionPayloadHeader header);
+  }
+
+  public interface VerifiedBlockPayloadAttestationListener {
+    void onOperationsFromBlock(UInt64 slot, SszList<PayloadAttestation> payloadAttestations);
   }
 }
