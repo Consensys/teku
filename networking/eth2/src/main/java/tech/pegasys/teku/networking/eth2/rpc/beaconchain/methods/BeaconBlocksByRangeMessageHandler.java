@@ -95,10 +95,18 @@ public class BeaconBlocksByRangeMessageHandler
       return Optional.of(new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero"));
     }
 
-    final UInt64 maxRequestBlocks =
-        spec.forMilestone(latestMilestoneRequested).miscHelpers().getMaxRequestBlocks();
+    final int maxRequestBlocks =
+        spec.forMilestone(latestMilestoneRequested).miscHelpers().getMaxRequestBlocks().intValue();
 
-    if (request.getCount().isGreaterThan(maxRequestBlocks)) {
+    int requestedCount;
+    try {
+      requestedCount = request.getCount().intValue();
+    } catch (final ArithmeticException __) {
+      // handle overflows
+      requestedCount = -1;
+    }
+
+    if (requestedCount == -1 || requestedCount > maxRequestBlocks) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(
