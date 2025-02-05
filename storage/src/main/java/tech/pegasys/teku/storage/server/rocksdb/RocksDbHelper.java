@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server.rocksdb;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -80,6 +81,7 @@ public class RocksDbHelper {
       final RocksDB rocksdb,
       final ColumnFamilyHandle cfHandle,
       final SubCommandLogger out,
+      final Optional<String> maybeFilter,
       final Function<byte[], String> nameFromIdFn)
       throws RocksDBException {
     final String size = rocksdb.getProperty(cfHandle, "rocksdb.estimate-live-data-size");
@@ -91,6 +93,9 @@ public class RocksDbHelper {
         && isPopulatedColumnFamily(sizeLong, numberOfKeysLong)) {
       final String nameById = nameFromIdFn.apply(cfHandle.getName());
       if (nameById != null) {
+        if (maybeFilter.isPresent() && !nameById.contains(maybeFilter.get())) {
+          return;
+        }
         out.display("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
         out.display("Column Family: " + nameById);
 
