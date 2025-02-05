@@ -4,6 +4,7 @@
     "operationId" : "getDeposits",
     "summary" : "Get deposits",
     "description" : "Get all deposits currently held for inclusion in future blocks.",
+    "deprecated": true,
     "responses" : {
       "200" : {
         "description" : "Request successful",
