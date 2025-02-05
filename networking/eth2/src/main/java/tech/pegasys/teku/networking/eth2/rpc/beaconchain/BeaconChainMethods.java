@@ -365,7 +365,7 @@ public class BeaconChainMethods {
 
     final RpcContextCodec<Bytes4, SignedExecutionPayloadEnvelope> forkDigestContextCodec =
         RpcContextCodec.forkDigest(
-            spec, recentChainData, ForkDigestPayloadContext.executionPayloadEnvelope(spec));
+            spec, recentChainData, ForkDigestPayloadContext.EXECUTION_PAYLOAD_ENVELOPE);
 
     final ExecutionPayloadEnvelopesByRootMessageHandler
         executionPayloadEnvelopesByRootMessageHandler =
