@@ -587,6 +587,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     } catch (final StateTransitionException e) {
       final ExecutionPayloadImportResult result =
           ExecutionPayloadImportResult.failedStateTransition(e);
+      reportInvalidExecutionPayload(signedEnvelope, result);
       return SafeFuture.completedFuture(result);
     }
     final SafeFuture<BlobSidecarsAndValidationResult> blobSidecarsAvailabilityFuture =
@@ -757,6 +758,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               new IllegalStateException(
                   "Invalid ExecutionPayload: "
                       + payloadResult.getValidationError().orElse("No reason provided")));
+      reportInvalidExecutionPayload(executionPayloadEnvelope, result);
       payloadValidationResult
           .getInvalidTransitionBlockRoot()
           .ifPresentOrElse(
@@ -984,6 +986,17 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         block.getSlot(),
         block.getRoot(),
         block.sszSerialize(),
+        result.getFailureReason().name(),
+        result.getFailureCause());
+  }
+
+  private void reportInvalidExecutionPayload(
+      final SignedExecutionPayloadEnvelope executionPayload,
+      final ExecutionPayloadImportResult result) {
+    P2P_LOG.onInvalidExecutionPayload(
+        executionPayload.getMessage().getSlot(),
+        executionPayload.getMessage().getBeaconBlockRoot(),
+        executionPayload.sszSerialize(),
         result.getFailureReason().name(),
         result.getFailureCause());
   }
