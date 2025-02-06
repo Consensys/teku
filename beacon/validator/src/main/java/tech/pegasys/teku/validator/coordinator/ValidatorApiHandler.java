@@ -811,7 +811,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 final UInt64 slot =
                     ExecutionPayloadHeaderEip7732.required(signedHeader.getMessage()).getSlot();
                 VALIDATOR_LOGGER.producedInvalidBid(
-                    slot, result.getDescription().orElse("Unknown reason"));
+                    slot, result.code().name(), result.getDescription().orElse("Unknown reason"));
               }
             });
   }

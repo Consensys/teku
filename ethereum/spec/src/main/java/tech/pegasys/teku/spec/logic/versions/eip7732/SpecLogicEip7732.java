@@ -210,7 +210,12 @@ public class SpecLogicEip7732 extends AbstractSpecLogic {
             executionRequestsDataCodec);
     final ExecutionPayloadProcessorEip7732 executionPayloadProcessor =
         new ExecutionPayloadProcessorEip7732(
-            config, miscHelpers, beaconStateAccessors, beaconStateMutators, blockProcessorElectra);
+            config,
+            miscHelpers,
+            beaconStateAccessors,
+            beaconStateMutators,
+            blockProcessorElectra,
+            executionRequestsDataCodec);
 
     return new SpecLogicEip7732(
         predicates,

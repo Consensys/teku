@@ -21,6 +21,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -73,9 +74,33 @@ public class GossipValidationHelper {
       final UInt64 parentBlockSlot, final Bytes32 parentBlockRoot, final UInt64 slot) {
     final UInt64 firstSlotInBlockEpoch =
         spec.computeStartSlotAtEpoch(spec.computeEpochAtSlot(slot));
-    return parentBlockSlot.isLessThan(firstSlotInBlockEpoch)
-        ? recentChainData.retrieveStateAtSlot(
-            new SlotAndBlockRoot(firstSlotInBlockEpoch, parentBlockRoot))
+    final boolean parentInPreviousEpoch = parentBlockSlot.isLessThan(firstSlotInBlockEpoch);
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(firstSlotInBlockEpoch, parentBlockRoot);
+    // EIP-7732 TODO: hacky way of retrieving the state of the parent block
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+      return parentInPreviousEpoch
+          ? recentChainData
+              .retrieveExecutionPayloadStateAtSlot(slotAndBlockRoot)
+              .thenCompose(
+                  executionPayloadState -> {
+                    if (executionPayloadState.isEmpty()) {
+                      return recentChainData.retrieveStateAtSlot(slotAndBlockRoot);
+                    }
+                    return SafeFuture.completedFuture(executionPayloadState);
+                  })
+          : recentChainData
+              .retrieveExecutionPayloadState(parentBlockRoot)
+              .thenCompose(
+                  executionPayloadState -> {
+                    if (executionPayloadState.isEmpty()) {
+                      return recentChainData.retrieveBlockState(parentBlockRoot);
+                    }
+                    return SafeFuture.completedFuture(executionPayloadState);
+                  });
+    }
+    return parentInPreviousEpoch
+        ? recentChainData.retrieveStateAtSlot(slotAndBlockRoot)
         : recentChainData.retrieveBlockState(parentBlockRoot);
   }
 
