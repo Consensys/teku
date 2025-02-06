@@ -74,7 +74,9 @@ public class ExecutionPayloadHeaderValidator
      * this slot.
      */
     if (receivedValidExecutionPayloadHeaderInfoSet.contains(slotAndBuilderIndex)) {
-      return completedFuture(InternalValidationResult.IGNORE);
+      return completedFuture(
+          InternalValidationResult.ignore(
+              "Signed bid with a valid signature already seen from this builder for this slot"));
     }
 
     final SlotAndParentBlockHash slotAndParentBlockHash =
@@ -84,8 +86,10 @@ public class ExecutionPayloadHeaderValidator
      */
     final UInt64 currentHighestBidValue =
         highestBidValue.computeIfAbsent(slotAndParentBlockHash, k -> UInt64.ZERO);
-    if (header.getValue().isLessThanOrEqualTo(currentHighestBidValue)) {
-      return completedFuture(InternalValidationResult.IGNORE);
+    if (header.getValue().isGreaterThan(UInt64.ZERO)
+        && header.getValue().isLessThanOrEqualTo(currentHighestBidValue)) {
+      return completedFuture(
+          InternalValidationResult.ignore("This bid is not the highest value bid seen"));
     }
 
     final Optional<UInt64> maybeParentBlockSlot =
@@ -102,9 +106,8 @@ public class ExecutionPayloadHeaderValidator
         .thenApply(
             maybeState -> {
               if (maybeState.isEmpty()) {
-                LOG.trace(
-                    "State wasn't available for parent block root {}", header.getParentBlockRoot());
-                return InternalValidationResult.IGNORE;
+                return InternalValidationResult.ignore(
+                    "State wasn't available for parent block root %s", header.getParentBlockRoot());
               }
               final BeaconState state = maybeState.get();
               /*
