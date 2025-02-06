@@ -130,7 +130,7 @@ public class EthereumTypes {
           new StringBasedHeaderTypeDefinition.Builder<UInt256>()
               .title(HEADER_CONSENSUS_BLOCK_VALUE)
               .description(
-                  "Consensus rewards paid to the proposer for this block, in Wei. Required in response so client can determine relative value of consensus blocks.")
+                  "Consensus rewards for this block in Wei paid to the proposer. The rewards value is the sum of values of the proposer rewards from attestations, sync committees and slashings included in the proposal. Required in response so client can determine relative value of consensus blocks.")
               .formatter(value -> value.toBigInteger().toString(10))
               .parser(value -> UInt256.valueOf(new BigInteger(value, 10)))
               .example("1")
