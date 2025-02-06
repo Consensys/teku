@@ -168,6 +168,7 @@ public class RocksDbInstanceFactory {
     return new ColumnFamilyOptions()
         .setCompressionType(configuration.getCompressionType())
         .setBottommostCompressionType(configuration.getBottomMostCompressionType())
+        .setLevelCompactionDynamicLevelBytes(true)
         .setTableFormatConfig(createBlockBasedTableConfig(cache));
   }
 
@@ -190,7 +191,7 @@ public class RocksDbInstanceFactory {
         .setBlockCache(cache)
         .setFilterPolicy(new BloomFilter(10, false))
         .setPartitionFilters(true)
-        .setCacheIndexAndFilterBlocks(true)
+        .setCacheIndexAndFilterBlocks(false)
         .setBlockSize(ROCKSDB_BLOCK_SIZE);
   }
 }

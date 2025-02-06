@@ -61,13 +61,13 @@ public class KvStoreConfiguration {
   /** RocksDb Time to roll a log file (1 day = 3600 * 24 seconds) */
   public static final long TIME_TO_ROLL_LOG_FILE = 86_400L;
 
-  public static final long ROCKSDB_BLOCK_SIZE = 32_768;
-
   /** Max total size of all WAL file, after which a flush is triggered */
   public static final long WAL_MAX_TOTAL_SIZE = 1_073_741_824L;
 
   /** Expected size of a single WAL file, to determine how many WAL files to keep around */
   public static final long EXPECTED_WAL_FILE_SIZE = 67_108_864L;
+
+  public static final long ROCKSDB_BLOCK_SIZE = 32_768;
 
   /* --------------- Safe to Change Properties ------------ */
 
