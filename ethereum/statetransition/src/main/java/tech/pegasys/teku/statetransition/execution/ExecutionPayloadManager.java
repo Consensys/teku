@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
@@ -191,18 +192,31 @@ public class ExecutionPayloadManager
         .onExecutionPayload(executionPayload, executionLayerChannel)
         .thenAccept(
             result -> {
-              if (!result.isSuccessful()) {
-                LOG.warn(
-                    "Failed to import execution payload for reason {}: {}",
-                    result::getFailureReason,
-                    executionPayload::toLogString);
+              if (result.isSuccessful()) {
+                LOG.trace(
+                    "Successfully imported execution payload {}", executionPayload::toLogString);
+                receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
+                    executionPayload, result.isImportedOptimistically());
                 return;
               }
-              LOG.trace("Successfully imported block {}", executionPayload::toLogString);
-
-              receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
-                  executionPayload, result.isImportedOptimistically());
+              logFailedExecutionPayloadImport(result, executionPayload);
             })
-        .finish(err -> LOG.error("Failed to process received execution payload.", err));
+        .finish(
+            err -> {
+              final String internalErrorMessage =
+                  String.format(
+                      "Internal error while importing execution payload: %s",
+                      executionPayload.toLogString());
+              LOG.error(internalErrorMessage, err);
+            });
+  }
+
+  private void logFailedExecutionPayloadImport(
+      final ExecutionPayloadImportResult result,
+      final SignedExecutionPayloadEnvelope executionPayload) {
+    LOG.warn(
+        "Unable to import execution payload for reason {}: {}",
+        result::getFailureReason,
+        executionPayload::toLogString);
   }
 }
