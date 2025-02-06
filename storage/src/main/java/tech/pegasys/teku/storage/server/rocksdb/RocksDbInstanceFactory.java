@@ -156,7 +156,6 @@ public class RocksDbInstanceFactory {
             .setStatistics(stats)
             .setMaxTotalWalSize(WAL_MAX_TOTAL_SIZE)
             .setRecycleLogFileNum(WAL_MAX_TOTAL_SIZE / EXPECTED_WAL_FILE_SIZE);
-    ;
 
     // Java docs suggests this if db is under 1GB, nearly impossible atm
     if (configuration.optimizeForSmallDb()) {
@@ -170,6 +169,7 @@ public class RocksDbInstanceFactory {
       final KvStoreConfiguration configuration, final Cache cache) {
     return new ColumnFamilyOptions()
         .setCompressionType(configuration.getCompressionType())
+        .setBottommostCompressionType(configuration.getBottomMostCompressionType())
         .setLevelCompactionDynamicLevelBytes(true)
         .setTtl(0)
         .setTableFormatConfig(createBlockBasedTableConfig(cache));
