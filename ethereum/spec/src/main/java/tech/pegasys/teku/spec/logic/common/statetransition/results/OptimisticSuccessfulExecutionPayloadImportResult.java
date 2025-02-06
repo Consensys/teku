@@ -11,31 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.v1;
+package tech.pegasys.teku.spec.logic.common.statetransition.results;
 
-import java.util.List;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 
-@SuppressWarnings("JavaCase")
-public enum EventType {
-  head,
-  block,
-  attestation,
-  voluntary_exit,
-  finalized_checkpoint,
-  chain_reorg,
-  sync_state,
-  contribution_and_proof,
-  bls_to_execution_change,
-  blob_sidecar,
-  attester_slashing,
-  proposer_slashing,
-  payload_attributes,
-  block_gossip,
-  single_attestation,
-  // ePBS
-  execution_payload;
+public class OptimisticSuccessfulExecutionPayloadImportResult
+    extends SuccessfulExecutionPayloadImportResult {
 
-  public static List<EventType> getTopics(final List<String> topics) {
-    return topics.stream().map(EventType::valueOf).toList();
+  public OptimisticSuccessfulExecutionPayloadImportResult(
+      final SignedExecutionPayloadEnvelope executionPayload) {
+    super(executionPayload);
+  }
+
+  @Override
+  public boolean isImportedOptimistically() {
+    return true;
   }
 }

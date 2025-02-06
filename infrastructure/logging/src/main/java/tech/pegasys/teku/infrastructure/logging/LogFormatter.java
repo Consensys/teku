@@ -41,4 +41,14 @@ public class LogFormatter {
         "block %s (%s), index %s, blob %s, commitment %s, proof %s",
         formatAbbreviatedHashRoot(blockRoot), slot, index, blob, kzgCommitment, kzgProof);
   }
+
+  public static String formatExecutionPayload(
+      final UInt64 slot,
+      final Bytes32 blockRoot,
+      final Bytes32 stateRoot,
+      final Bytes32 blockHash) {
+    return String.format(
+        "execution payload %s, block root %s, state root %s, block hash %s",
+        slot, formatHashRoot(blockRoot), formatHashRoot(stateRoot), blockHash);
+  }
 }

@@ -138,6 +138,7 @@ import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.block.ReceivedExecutionPayloadEventsChannel;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadHeaderPool;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -247,6 +248,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile TimeProvider timeProvider;
   protected volatile SlotEventsChannel slotEventsChannelPublisher;
   protected volatile ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher;
+  protected volatile ReceivedExecutionPayloadEventsChannel
+      receivedExecutionPayloadEventsChannelPublisher;
   protected volatile AsyncRunner networkAsyncRunner;
   protected volatile AsyncRunnerFactory asyncRunnerFactory;
   protected volatile AsyncRunner eventAsyncRunner;
@@ -344,6 +347,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
     this.receivedBlockEventsChannelPublisher =
         eventChannels.getPublisher(ReceivedBlockEventsChannel.class);
+    this.receivedExecutionPayloadEventsChannelPublisher =
+        eventChannels.getPublisher(ReceivedExecutionPayloadEventsChannel.class);
     this.forkChoiceExecutor = new AsyncRunnerEventThread("forkchoice", asyncRunnerFactory);
     this.debugDataDumper =
         dataDirLayout.isDebugDataDumpingEnabled()
@@ -1384,6 +1389,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             executionPayloadValidator,
             blockBlobSidecarsTrackersPool,
+            receivedExecutionPayloadEventsChannelPublisher,
             forkChoice,
             recentChainData,
             executionLayer);
