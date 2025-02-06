@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.common.statetransition.results;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 
+@SuppressWarnings("ClassInitializationDeadlock")
 public interface ExecutionPayloadImportResult {
 
   ExecutionPayloadImportResult FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING =
