@@ -250,10 +250,11 @@ public class ValidatorLogger {
             PREFIX + "Produced invalid aggregate for slot " + slot + ": " + reason, Color.RED));
   }
 
-  public void producedInvalidBid(final UInt64 slot, final String reason) {
+  public void producedInvalidBid(final UInt64 slot, final String code, final String reason) {
     log.error(
         ColorConsolePrinter.print(
-            PREFIX + "Produced invalid bid for slot " + slot + ": " + reason, Color.RED));
+            PREFIX + "Produced invalid bid for slot " + slot + ": " + code + " (" + reason + ")",
+            Color.RED));
   }
 
   public void producedInvalidExecutionPayload(final Bytes32 blockRoot, final String reason) {

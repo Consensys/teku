@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnv
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -53,18 +54,21 @@ public class ExecutionPayloadProcessorEip7732 extends AbstractExecutionPayloadPr
   protected final BeaconStateAccessorsEip7732 beaconStateAccessors;
   protected final BeaconStateMutatorsElectra beaconStateMutators;
   protected final BlockProcessorElectra blockProcessorElectra;
+  protected final ExecutionRequestsDataCodec executionRequestsDataCodec;
 
   public ExecutionPayloadProcessorEip7732(
       final SpecConfigEip7732 specConfig,
       final MiscHelpersEip7732 miscHelpers,
       final BeaconStateAccessorsEip7732 beaconStateAccessors,
       final BeaconStateMutatorsElectra beaconStateMutators,
-      final BlockProcessorElectra blockProcessorElectra) {
+      final BlockProcessorElectra blockProcessorElectra,
+      final ExecutionRequestsDataCodec executionRequestsDataCodec) {
     this.specConfig = specConfig;
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
     this.beaconStateMutators = beaconStateMutators;
     this.blockProcessorElectra = blockProcessorElectra;
+    this.executionRequestsDataCodec = executionRequestsDataCodec;
   }
 
   @Override
@@ -201,7 +205,12 @@ public class ExecutionPayloadProcessorEip7732 extends AbstractExecutionPayloadPr
             .map(miscHelpers::kzgCommitmentToVersionedHash)
             .toList();
     final Bytes32 parentBeaconBlockRoot = state.getLatestBlockHeader().getParentRoot();
-    return new NewPayloadRequest(envelope.getPayload(), versionedHashes, parentBeaconBlockRoot);
+    final ExecutionRequests executionRequests = envelope.getExecutionRequests();
+    return new NewPayloadRequest(
+        envelope.getPayload(),
+        versionedHashes,
+        parentBeaconBlockRoot,
+        executionRequestsDataCodec.encode(executionRequests));
   }
 
   @SuppressWarnings("unused")

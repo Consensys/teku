@@ -112,14 +112,13 @@ public class ExecutionPayloadHeaderPool implements SlotEventsChannel {
       final SignedExecutionPayloadHeader signedBid, final boolean fromNetwork) {
     return operationValidator
         .validateForGossip(signedBid)
-        .thenApply(
+        .thenPeek(
             result -> {
               if (result.code().equals(ValidationResultCode.ACCEPT)
                   || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
                 signedBids.add(signedBid);
                 subscribers.forEach(s -> s.onOperationAdded(signedBid, result, fromNetwork));
               }
-              return result;
             });
   }
 }
