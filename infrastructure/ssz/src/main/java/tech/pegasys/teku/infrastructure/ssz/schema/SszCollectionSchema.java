@@ -49,16 +49,34 @@ public interface SszCollectionSchema<
   }
 
   default TreeNode createTreeFromElements(final List<? extends SszElementT> elements) {
-    // TODO: probably suboptimal method implementation:
-    // This is a generic implementation which works for both Vector and List but it potentially
-    // could do better if construct the tree directly in List/Vector subclasses
     checkArgument(elements.size() <= getMaxLength(), "Too many elements for this collection type");
-    SszMutableComposite<SszElementT> writableCopy = getDefault().createWritableCopy();
-    int idx = 0;
-    for (SszElementT element : elements) {
-      writableCopy.set(idx++, element);
+    
+    // Create nodes for all elements
+    TreeNode[] elementNodes = new TreeNode[elements.size()];
+    for (int i = 0; i < elements.size(); i++) {
+      elementNodes[i] = elements.get(i).getBackingNode();
     }
-    return writableCopy.commitChanges().getBackingNode();
+    
+    // Build the binary tree bottom-up
+    int level = 0;
+    while (elementNodes.length > (1 << level)) {
+      int nodesAtLevel = (elementNodes.length + (1 << level) - 1) >> level;
+      TreeNode[] newNodes = new TreeNode[nodesAtLevel];
+      
+      for (int i = 0; i < nodesAtLevel; i += 2) {
+        if (i + 1 < nodesAtLevel) {
+          // Combine pair of nodes
+          newNodes[i/2] = TreeNode.createBinary(elementNodes[i], elementNodes[i+1]);
+        } else {
+          // Handle odd number of nodes
+          newNodes[i/2] = elementNodes[i];
+        }
+      }
+      elementNodes = newNodes;
+      level++;
+    }
+    
+    return elementNodes[0];
   }
 
   default Collector<SszElementT, ?, SszCollectionT> collector() {
