@@ -782,14 +782,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     switch (blobSidecarsAndValidationResult.getValidationResult()) {
       case NOT_AVAILABLE -> {
-        LOG.error("Failed to import execution payload because blobs are not available");
         return ExecutionPayloadImportResult.failedDataAvailabilityCheckNotAvailable(
             blobSidecarsAndValidationResult.getCause());
       }
       case INVALID -> {
-        LOG.error(
-            "Failed to import execution payload because blobs are invalid: {}",
-            blobSidecarsAndValidationResult.toLogString());
         debugDataDumper.saveInvalidBlobSidecars(
             blobSidecarsAndValidationResult.getBlobSidecars(), executionPayloadEnvelope);
         return ExecutionPayloadImportResult.failedDataAvailabilityCheckInvalid(
