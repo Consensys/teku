@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.block.ReceivedExecutionPayloadEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.validation.ExecutionPayloadValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -50,6 +51,8 @@ public class ExecutionPayloadManager
   private final Spec spec;
   private final ExecutionPayloadValidator executionPayloadValidator;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
+  private final ReceivedExecutionPayloadEventsChannel
+      receivedExecutionPayloadEventsChannelPublisher;
   private final ForkChoice forkChoice;
   private final RecentChainData recentChainData;
   private final ExecutionLayerChannel executionLayerChannel;
@@ -58,12 +61,15 @@ public class ExecutionPayloadManager
       final Spec spec,
       final ExecutionPayloadValidator executionPayloadValidator,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final ReceivedExecutionPayloadEventsChannel receivedExecutionPayloadEventsChannelPublisher,
       final ForkChoice forkChoice,
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayerChannel) {
     this.spec = spec;
     this.executionPayloadValidator = executionPayloadValidator;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
+    this.receivedExecutionPayloadEventsChannelPublisher =
+        receivedExecutionPayloadEventsChannelPublisher;
     this.forkChoice = forkChoice;
     this.recentChainData = recentChainData;
     this.executionLayerChannel = executionLayerChannel;
@@ -183,6 +189,20 @@ public class ExecutionPayloadManager
                     slotAndBlockRoot.getBlockRoot()));
     forkChoice
         .onExecutionPayload(executionPayload, executionLayerChannel)
+        .thenAccept(
+            result -> {
+              if (!result.isSuccessful()) {
+                LOG.warn(
+                    "Failed to import execution payload for reason {}: {}",
+                    result::getFailureReason,
+                    executionPayload::toLogString);
+                return;
+              }
+              LOG.trace("Successfully imported block {}", executionPayload::toLogString);
+
+              receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
+                  executionPayload, result.isImportedOptimistically());
+            })
         .finish(err -> LOG.error("Failed to process received execution payload.", err));
   }
 }

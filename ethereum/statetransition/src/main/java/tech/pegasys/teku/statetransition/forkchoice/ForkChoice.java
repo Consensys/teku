@@ -72,6 +72,7 @@ import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayloadImportResult;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
@@ -252,7 +253,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   /** Import an execution payload to the store. */
-  public SafeFuture<Void> onExecutionPayload(
+  public SafeFuture<ExecutionPayloadImportResult> onExecutionPayload(
       final SignedExecutionPayloadEnvelope signedEnvelope,
       final ExecutionLayerChannel executionLayer) {
     final Bytes32 blockRoot = signedEnvelope.getMessage().getBeaconBlockRoot();
@@ -562,7 +563,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             });
   }
 
-  private SafeFuture<Void> onExecutionPayload(
+  private SafeFuture<ExecutionPayloadImportResult> onExecutionPayload(
       final BeaconState blockSlotState,
       final SignedBeaconBlock block,
       final SignedExecutionPayloadEnvelope signedEnvelope,
@@ -583,8 +584,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           spec.getExecutionPayloadProcessor(blockSlotState.getSlot())
               .processAndVerifyExecutionPayload(
                   blockSlotState, signedEnvelope, Optional.of(payloadExecutor));
-    } catch (final StateTransitionException ex) {
-      return SafeFuture.failedFuture(ex);
+    } catch (final StateTransitionException e) {
+      final ExecutionPayloadImportResult result =
+          ExecutionPayloadImportResult.failedStateTransition(e);
+      return SafeFuture.completedFuture(result);
     }
     final SafeFuture<BlobSidecarsAndValidationResult> blobSidecarsAvailabilityFuture =
         blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
@@ -592,17 +595,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         payloadExecutor.getExecutionResult();
     return payloadValidationFuture.thenCombineAsync(
         blobSidecarsAvailabilityFuture,
-        (payloadResult, blobSidecarsAndValidationResult) -> {
-          importExecutionPayloadAndState(
-              signedEnvelope,
-              blockSlotState,
-              block,
-              postState,
-              forkChoiceUtil,
-              payloadResult,
-              blobSidecarsAndValidationResult);
-          return null;
-        },
+        (payloadResult, blobSidecarsAndValidationResult) ->
+            importExecutionPayloadAndState(
+                signedEnvelope,
+                blockSlotState,
+                block,
+                postState,
+                forkChoiceUtil,
+                payloadResult,
+                blobSidecarsAndValidationResult),
         forkChoiceExecutor);
   }
 
@@ -741,7 +742,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return result;
   }
 
-  private void importExecutionPayloadAndState(
+  private ExecutionPayloadImportResult importExecutionPayloadAndState(
       final SignedExecutionPayloadEnvelope executionPayloadEnvelope,
       final BeaconState blockSlotState,
       final SignedBeaconBlock block,
@@ -751,6 +752,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final BlobSidecarsAndValidationResult blobSidecarsAndValidationResult) {
     final PayloadStatus payloadResult = payloadValidationResult.getStatus();
     if (payloadResult.hasInvalidStatus()) {
+      final ExecutionPayloadImportResult result =
+          ExecutionPayloadImportResult.failedStateTransition(
+              new IllegalStateException(
+                  "Invalid ExecutionPayload: "
+                      + payloadResult.getValidationError().orElse("No reason provided")));
       payloadValidationResult
           .getInvalidTransitionBlockRoot()
           .ifPresentOrElse(
@@ -760,10 +766,16 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               () ->
                   getForkChoiceStrategy()
                       .onExecutionPayloadResult(block.getParentRoot(), payloadResult, false));
+      return result;
     }
 
-    if (payloadResult.hasNotValidatedStatus() || payloadResult.hasFailedExecution()) {
-      return;
+    if (payloadResult.hasNotValidatedStatus()) {
+      return ExecutionPayloadImportResult.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING;
+    }
+
+    if (payloadResult.hasFailedExecution()) {
+      return ExecutionPayloadImportResult.failedExecutionPayloadExecution(
+          payloadResult.getFailureCause().orElseThrow());
     }
 
     LOG.debug("blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
@@ -771,7 +783,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     switch (blobSidecarsAndValidationResult.getValidationResult()) {
       case NOT_AVAILABLE -> {
         LOG.error("Failed to import execution payload because blobs are not available");
-        return;
+        return ExecutionPayloadImportResult.failedDataAvailabilityCheckNotAvailable(
+            blobSidecarsAndValidationResult.getCause());
       }
       case INVALID -> {
         LOG.error(
@@ -779,7 +792,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             blobSidecarsAndValidationResult.toLogString());
         debugDataDumper.saveInvalidBlobSidecars(
             blobSidecarsAndValidationResult.getBlobSidecars(), executionPayloadEnvelope);
-        return;
+        return ExecutionPayloadImportResult.failedDataAvailabilityCheckInvalid(
+            blobSidecarsAndValidationResult.getCause());
       }
       default -> {}
     }
@@ -818,7 +832,16 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     transaction.commit().join();
     forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult, true);
 
+    final ExecutionPayloadImportResult result;
+    if (payloadResult.hasValidStatus()) {
+      result = ExecutionPayloadImportResult.successful(executionPayloadEnvelope);
+    } else {
+      result = ExecutionPayloadImportResult.optimisticallySuccessful(executionPayloadEnvelope);
+    }
+
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
+
+    return result;
   }
 
   // from consensus-specs/fork-choice:

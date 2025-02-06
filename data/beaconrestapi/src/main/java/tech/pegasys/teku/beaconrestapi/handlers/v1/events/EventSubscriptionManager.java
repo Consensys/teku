@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -51,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.block.ReceivedExecutionPayloadEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
@@ -58,7 +60,10 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
 
 public class EventSubscriptionManager
-    implements ChainHeadChannel, FinalizedCheckpointChannel, ReceivedBlockEventsChannel {
+    implements ChainHeadChannel,
+        FinalizedCheckpointChannel,
+        ReceivedBlockEventsChannel,
+        ReceivedExecutionPayloadEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -90,6 +95,8 @@ public class EventSubscriptionManager
     eventChannels.subscribe(ChainHeadChannel.class, this);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, this);
     eventChannels.subscribe(ReceivedBlockEventsChannel.class, this);
+    // ePBS
+    eventChannels.subscribe(ReceivedExecutionPayloadEventsChannel.class, this);
     syncDataProvider.subscribeToSyncStateChanges(this::onSyncStateChange);
     nodeDataProvider.subscribeToReceivedBlobSidecar(this::onNewBlobSidecar);
     nodeDataProvider.subscribeToAttesterSlashing(this::onNewAttesterSlashing);
@@ -181,6 +188,12 @@ public class EventSubscriptionManager
     onNewBlock(block, executionOptimistic);
   }
 
+  @Override
+  public void onExecutionPayloadImported(
+      final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
+    onNewExecutionPayload(executionPayload, executionOptimistic);
+  }
+
   protected void onNewVoluntaryExit(
       final SignedVoluntaryExit exit,
       final InternalValidationResult result,
@@ -236,6 +249,13 @@ public class EventSubscriptionManager
   protected void onNewBlobSidecar(final BlobSidecar blobSidecar) {
     final BlobSidecarEvent blobSidecarEvent = BlobSidecarEvent.create(spec, blobSidecar);
     notifySubscribersOfEvent(EventType.blob_sidecar, blobSidecarEvent);
+  }
+
+  protected void onNewExecutionPayload(
+      final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
+    final ExecutionPayloadEvent executionPayloadEvent =
+        new ExecutionPayloadEvent(executionPayload, executionOptimistic);
+    notifySubscribersOfEvent(EventType.execution_payload, executionPayloadEvent);
   }
 
   protected void onNewAttesterSlashing(

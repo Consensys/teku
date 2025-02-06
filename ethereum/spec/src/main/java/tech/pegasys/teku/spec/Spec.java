@@ -488,9 +488,7 @@ public class Spec {
   }
 
   public Bytes computeSigningRoot(final ExecutionPayloadEnvelope envelope, final Bytes32 domain) {
-    return forMilestone(envelope.getPayload().getMilestone())
-        .miscHelpers()
-        .computeSigningRoot(envelope, domain);
+    return atSlot(envelope.getSlot()).miscHelpers().computeSigningRoot(envelope, domain);
   }
 
   public Bytes computeSigningRoot(
