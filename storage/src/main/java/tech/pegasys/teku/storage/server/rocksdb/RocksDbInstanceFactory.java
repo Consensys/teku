@@ -147,8 +147,6 @@ public class RocksDbInstanceFactory {
             .setMaxBackgroundJobs(configuration.getMaxBackgroundJobs())
             .setDbWriteBufferSize(configuration.getWriteBufferCapacity())
             .setMaxOpenFiles(configuration.getMaxOpenFiles())
-            .setBytesPerSync(1_048_576L) // 1MB
-            .setWalBytesPerSync(1_048_576L)
             .setCreateMissingColumnFamilies(true)
             .setLogFileTimeToRoll(TIME_TO_ROLL_LOG_FILE)
             .setKeepLogFileNum(NUMBER_OF_LOG_FILES_TO_KEEP)
@@ -171,7 +169,6 @@ public class RocksDbInstanceFactory {
         .setCompressionType(configuration.getCompressionType())
         .setBottommostCompressionType(configuration.getBottomMostCompressionType())
         .setLevelCompactionDynamicLevelBytes(true)
-        .setTtl(0)
         .setTableFormatConfig(createBlockBasedTableConfig(cache));
   }
 

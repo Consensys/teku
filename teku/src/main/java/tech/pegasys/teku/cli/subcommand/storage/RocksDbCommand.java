@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.cli.subcommand.storage;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import org.bouncycastle.util.Arrays;
 import org.rocksdb.RocksDBException;
@@ -113,15 +115,20 @@ public class RocksDbCommand implements Runnable {
       versionProvider = PicoCliVersionProvider.class)
   public int stats(
       @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
-      @Mixin final Eth2NetworkOptions eth2NetworkOptions) {
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions,
+      @CommandLine.Option(
+              names = {"--filter"},
+              description = "Only count the columns that contain the specified filter.")
+          final String filter) {
 
+    final Optional<String> maybeFilter = Optional.ofNullable(filter);
     final DatabaseVersion dbVersion = beaconNodeDataOptions.parseDatabaseVersion();
     switch (dbVersion) {
       case V4, V5 -> {
-        getStats(beaconNodeDataOptions, eth2NetworkOptions, "archive");
-        getStats(beaconNodeDataOptions, eth2NetworkOptions, "db");
+        getStats(beaconNodeDataOptions, eth2NetworkOptions, maybeFilter, "archive");
+        getStats(beaconNodeDataOptions, eth2NetworkOptions, maybeFilter, "db");
       }
-      case V6 -> getStats(beaconNodeDataOptions, eth2NetworkOptions, "db");
+      case V6 -> getStats(beaconNodeDataOptions, eth2NetworkOptions, maybeFilter, "db");
       default -> {
         SUB_COMMAND_LOG.error("LevelDB is not supported in this command");
         return 1;
@@ -133,6 +140,7 @@ public class RocksDbCommand implements Runnable {
   private void getStats(
       final BeaconNodeDataOptions beaconNodeDataOptions,
       final Eth2NetworkOptions eth2NetworkOptions,
+      final Optional<String> maybeFilter,
       final String folder) {
     final DatabaseVersion dbVersion = beaconNodeDataOptions.parseDatabaseVersion();
     final String dbPath =
@@ -152,6 +160,7 @@ public class RocksDbCommand implements Runnable {
                 rocksdb,
                 cfHandle,
                 SUB_COMMAND_LOG,
+                maybeFilter,
                 findColumnNameInDatabaseColumns(folder, dbVersion, spec));
           } catch (final RocksDBException e) {
             throw new RuntimeException(e);
@@ -178,6 +187,11 @@ public class RocksDbCommand implements Runnable {
         if (Arrays.areEqual(entry.getValue().getId().toArray(), id)) {
           return entry.getKey();
         }
+      }
+      try {
+        return new String(id, StandardCharsets.UTF_8);
+      } catch (Throwable e) {
+        SUB_COMMAND_LOG.error("failed to decode column name: " + e.getMessage());
       }
       return null;
     };
