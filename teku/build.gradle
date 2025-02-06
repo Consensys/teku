@@ -59,6 +59,7 @@ dependencies {
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.xerial.snappy:snappy-java'
   implementation 'com.github.oshi:oshi-core'
+  implementation 'org.rocksdb:rocksdbjni'
 
   integrationTestImplementation 'org.mock-server:mockserver-junit-jupiter'
 

@@ -28,6 +28,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.keystore.KeyStore;
 import tech.pegasys.teku.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.data.SlashingProtectionImporter;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -134,11 +135,22 @@ public class ValidatorLoader {
     if (addToOwnedValidators) {
       return addValidator(keyStoreData, password, publicKey);
     } else {
-      return new LocalValidatorImportResult.Builder(PostKeyResult.success(), password)
-          .publicKey(Optional.of(publicKey))
-          .keyStoreData(Optional.of(keyStoreData))
-          .build();
+      return checkKeystorePassword(keyStoreData, password, publicKey);
     }
+  }
+
+  private LocalValidatorImportResult checkKeystorePassword(
+      final KeyStoreData keyStoreData, final String password, final BLSPublicKey publicKey) {
+    final boolean isCorrectKeystorePassword = KeyStore.validatePassword(password, keyStoreData);
+    final PostKeyResult result =
+        isCorrectKeystorePassword
+            ? PostKeyResult.success()
+            : PostKeyResult.error(
+                "Invalid keystore password for public key: " + keyStoreData.getAbbreviatedPubKey());
+    return new LocalValidatorImportResult.Builder(result, password)
+        .publicKey(Optional.of(publicKey))
+        .keyStoreData(Optional.of(keyStoreData))
+        .build();
   }
 
   public LocalValidatorImportResult addValidator(

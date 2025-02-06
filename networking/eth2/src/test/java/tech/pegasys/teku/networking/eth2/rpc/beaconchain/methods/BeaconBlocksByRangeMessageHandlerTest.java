@@ -193,6 +193,41 @@ class BeaconBlocksByRangeMessageHandlerTest {
   }
 
   @Test
+  public void validateRequest_shouldRejectRequestWhenCountIsTooBigDueToIntOverflow() {
+    final int startBlock = 15;
+    final int skip = 1;
+
+    final Optional<RpcException> result =
+        handler.validateRequest(
+            protocolId,
+            new BeaconBlocksByRangeRequestMessage(
+                UInt64.valueOf(startBlock),
+                UInt64.valueOf(((long) Integer.MAX_VALUE) + 1),
+                UInt64.valueOf(skip)));
+
+    assertThat(result)
+        .hasValue(
+            new RpcException(
+                INVALID_REQUEST_CODE,
+                "Only a maximum of 1024 blocks can be requested per request"));
+  }
+
+  @Test
+  public void validateRequest_shouldRejectRequestWhenGetMaxSlotOverflows() {
+    final int skip = 1;
+
+    final Optional<RpcException> result =
+        handler.validateRequest(
+            protocolId,
+            new BeaconBlocksByRangeRequestMessage(
+                UInt64.MAX_VALUE, UInt64.valueOf(10), UInt64.valueOf(skip)));
+
+    assertThat(result)
+        .hasValue(
+            new RpcException(INVALID_REQUEST_CODE, "Requested slot is too far in the future"));
+  }
+
+  @Test
   public void validateRequest_shouldRejectRequestWhenCountIsTooBigForDeneb() {
     final int startBlock = 15;
     final int skip = 1;
