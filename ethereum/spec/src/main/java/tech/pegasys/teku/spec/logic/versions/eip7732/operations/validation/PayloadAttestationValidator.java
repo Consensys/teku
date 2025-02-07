@@ -44,8 +44,9 @@ public class PayloadAttestationValidator
             .equals(state.getLatestBlockHeader().getParentRoot()),
         () ->
             String.format(
-                "Attestation with block root %s is not for the parent block",
-                payloadAttestation.getBeaconBlockRoot()));
+                "Attestation with block root %s is not for the parent block %s",
+                payloadAttestation.getBeaconBlockRoot(),
+                state.getLatestBlockHeader().getParentRoot()));
   }
 
   private Optional<OperationInvalidReason> verifyAttestationIsForThePreviousSlot(
