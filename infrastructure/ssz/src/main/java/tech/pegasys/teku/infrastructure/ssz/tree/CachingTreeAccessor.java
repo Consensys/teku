@@ -24,7 +24,7 @@ package tech.pegasys.teku.infrastructure.ssz.tree;
  */
 public final class CachingTreeAccessor {
 
-  private static final CachedTreeNode NA_CACHED_NODE = new CachedTreeNode(-1, null);
+  private static final CachedTreeNode NA_CACHED_NODE = new CachedTreeNode(-1, null, new TreeNode[0]);
 
   @FunctionalInterface
   public interface GeneralizedIndexCalculator {
@@ -48,21 +48,61 @@ public final class CachingTreeAccessor {
       return cached.getNode();
     } else {
       long generalizedIndex = generalizedIndexCalculator.toGeneralizedIndex(index);
+      long cachedGeneralizedIndex = generalizedIndexCalculator.toGeneralizedIndex(cached.getNodeIndex());
+      
+      // Find the common ancestor level
+      int commonLevel = findCommonAncestorLevel(generalizedIndex, cachedGeneralizedIndex);
+      TreeNode startNode;
+      if (commonLevel >= 0 && cached.getNodeIndex() >= 0) {
+        // Start from the common ancestor in the cached path
+        startNode = cached.getPath()[commonLevel];
+      } else {
+        startNode = root;
+      }
 
-      TreeNode node = root.get(generalizedIndex);
-      cachedTreeNode = new CachedTreeNode(index, node);
-      return node;
+      // Calculate path to the target node
+      TreeNode[] path = calculatePath(startNode, generalizedIndex);
+      TreeNode targetNode = path[path.length - 1];
+      
+      cachedTreeNode = new CachedTreeNode(index, targetNode, path);
+      return targetNode;
     }
+  }
+
+  private int findCommonAncestorLevel(long index1, long index2) {
+    if (index1 <= 0 || index2 <= 0) return -1;
+    int level = 0;
+    while (index1 != index2) {
+      index1 = index1 >> 1;
+      index2 = index2 >> 1;
+      if (index1 == 0 || index2 == 0) return -1;
+      level++;
+    }
+    return level;
+  }
+
+  private TreeNode[] calculatePath(TreeNode startNode, long generalizedIndex) {
+    int depth = Long.SIZE - Long.numberOfLeadingZeros(generalizedIndex);
+    TreeNode[] path = new TreeNode[depth];
+    TreeNode currentNode = startNode;
+    for (int i = 0; i < depth; i++) {
+      path[i] = currentNode;
+      boolean right = ((generalizedIndex >> (depth - i - 1)) & 1) == 1;
+      currentNode = right ? currentNode.right() : currentNode.left();
+    }
+    return path;
   }
 
   private static class CachedTreeNode {
 
     private final long nodeIndex;
     private final TreeNode node;
+    private final TreeNode[] path;
 
-    public CachedTreeNode(final long nodeIndex, final TreeNode node) {
+    public CachedTreeNode(final long nodeIndex, final TreeNode node, final TreeNode[] path) {
       this.nodeIndex = nodeIndex;
       this.node = node;
+      this.path = path;
     }
 
     public long getNodeIndex() {
@@ -71,6 +111,10 @@ public final class CachingTreeAccessor {
 
     public TreeNode getNode() {
       return node;
+    }
+
+    public TreeNode[] getPath() {
+      return path;
     }
   }
 }
