@@ -100,7 +100,7 @@ public class PayloadAttestationManager implements SlotEventsChannel, ReceivedBlo
                   LOG.trace(
                       "Processed payload attestation {} successfully",
                       payloadAttestationMessage::hashTreeRoot);
-                  payloadAttestationPool.add(payloadAttestationMessage);
+                  payloadAttestationPool.addAsync(payloadAttestationMessage);
                   break;
                 case UNKNOWN_BLOCK:
                   LOG.trace(
@@ -112,7 +112,7 @@ public class PayloadAttestationManager implements SlotEventsChannel, ReceivedBlo
                   LOG.trace(
                       "Deferring payload attestation {} until a future slot",
                       payloadAttestationMessage::hashTreeRoot);
-                  payloadAttestationPool.add(payloadAttestationMessage);
+                  payloadAttestationPool.addAsync(payloadAttestationMessage);
                   futurePayloadAttestations.add(payloadAttestationMessage);
                   break;
                 case DEFER_FORK_CHOICE_PROCESSING, INVALID:
