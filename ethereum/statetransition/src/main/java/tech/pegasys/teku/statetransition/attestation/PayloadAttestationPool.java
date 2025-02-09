@@ -80,21 +80,27 @@ public class PayloadAttestationPool implements SlotEventsChannel {
     this.maximumPayloadAttestationCount = maximumPayloadAttestationCount;
   }
 
-  public synchronized void add(final PayloadAttestationMessage payloadAttestationMessage) {
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public void addAsync(final PayloadAttestationMessage payloadAttestationMessage) {
+    final UInt64 slot = payloadAttestationMessage.getData().getSlot();
+    recentChainData
+        .retrieveStateInEffectAtSlot(slot)
+        .finish(
+            maybeState -> maybeState.ifPresent(state -> add(payloadAttestationMessage, state)),
+            throwable -> LOG.error("Couldn't retrieve state at slot " + slot, throwable));
+  }
+
+  private synchronized void add(
+      final PayloadAttestationMessage payloadAttestationMessage, final BeaconState state) {
     final UInt64 slot = payloadAttestationMessage.getData().getSlot();
     final SpecVersion specVersion = spec.atSlot(slot);
     final PayloadAttestationSchema payloadAttestationSchema =
         SchemaDefinitionsEip7732.required(specVersion.getSchemaDefinitions())
             .getPayloadAttestationSchema();
-    // EIP-7732 TODO: avoid this join
-    final Optional<BeaconState> state = recentChainData.retrieveStateInEffectAtSlot(slot).join();
-    if (state.isEmpty()) {
-      return;
-    }
     getOrCreatePayloadAttestationGroup(payloadAttestationMessage)
         .ifPresent(
             attestationGroup -> {
-              final IntList ptc = spec.getPtc(state.get(), slot);
+              final IntList ptc = spec.getPtc(state, slot);
               final int ptcRelativePosition =
                   ptc.indexOf(payloadAttestationMessage.getValidatorIndex().intValue());
               if (ptcRelativePosition == -1) {
@@ -151,6 +157,8 @@ public class PayloadAttestationPool implements SlotEventsChannel {
     return size.get();
   }
 
+  // EIP-7732 TODO: we seem to be producing invalid payload attestations or filter/validation is
+  // implemented wrong
   public synchronized SszList<PayloadAttestation> getPayloadAttestationsForBlock(
       final BeaconState stateAtBlockSlot) {
     final SchemaDefinitions schemaDefinitions =
