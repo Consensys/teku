@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
@@ -511,6 +512,12 @@ public class CombinedChainDataClient {
               }
               return historicalChainData.getBlockByBlockRoot(blockRoot);
             });
+  }
+
+  // EIP-7732 TODO: implement historical execution payload retrieval
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayloadByBlockRoot(
+      final Bytes32 blockRoot) {
+    return recentChainData.retrieveExecutionPayloadEnvelopeByBlockRoot(blockRoot);
   }
 
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarSlot() {

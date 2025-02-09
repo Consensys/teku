@@ -57,6 +57,8 @@ public class RestApiConstants {
   public static final String TAG_REWARDS = "Rewards";
   public static final String TAG_DEBUG = "Debug";
   public static final String TAG_TEKU = "Teku";
+  public static final String TAG_DRAFT = "Draft";
+  public static final String TAG_EIP_7732 = "EIP-7732";
 
   // Preferred tags order in Swagger UI
   public static final List<String> PREFERRED_DISPLAY_TAGS_ORDER =

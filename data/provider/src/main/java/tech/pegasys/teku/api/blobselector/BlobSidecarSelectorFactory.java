@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.BlobSidecarsAndMetaData;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
+// EIP-7732 TODO: fix for ePBS
 public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSidecarSelector> {
 
   private final Spec spec;
