@@ -82,4 +82,4 @@ public interface SszCollectionSchema<
   default Collector<SszElementT, ?, SszCollectionT> collector() {
     return Collectors.collectingAndThen(Collectors.<SszElementT>toList(), this::createFromElements);
   }
-} 
+}
