@@ -31,9 +31,9 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.BeaconStateAccessorsEip7732;
+import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.MiscHelpersEip7732;
+import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.PredicatesEip7732;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 
 public class Eip7732StateUpgrade implements StateUpgrade<BeaconStateElectra> {
@@ -58,10 +58,10 @@ public class Eip7732StateUpgrade implements StateUpgrade<BeaconStateElectra> {
   public BeaconStateEip7732 upgrade(final BeaconState preState) {
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
     final BeaconStateElectra preStateElectra = BeaconStateElectra.required(preState);
-    final PredicatesElectra predicatesElectra = new PredicatesElectra(specConfig);
-    final MiscHelpersElectra miscHelpersElectra =
-        new MiscHelpersElectra(specConfig, predicatesElectra, schemaDefinitions);
-    final UInt64 activationExitEpoch = miscHelpersElectra.computeActivationExitEpoch(epoch);
+    final PredicatesEip7732 predicatesEip7732 = new PredicatesEip7732(specConfig);
+    final MiscHelpersEip7732 miscHelpersEip7732 =
+        new MiscHelpersEip7732(specConfig, predicatesEip7732, schemaDefinitions);
+    final UInt64 activationExitEpoch = miscHelpersEip7732.computeActivationExitEpoch(epoch);
     return BeaconStateEip7732.required(schemaDefinitions.getBeaconStateSchema().createEmpty())
         .updatedEip7732(
             state -> {
@@ -133,7 +133,7 @@ public class Eip7732StateUpgrade implements StateUpgrade<BeaconStateElectra> {
               IntStream.range(0, validators.size())
                   .forEach(
                       index -> {
-                        if (predicatesElectra.hasCompoundingWithdrawalCredential(
+                        if (predicatesEip7732.hasCompoundingWithdrawalCredential(
                             validators.get(index))) {
                           beaconStateMutators.queueExcessActiveBalance(state, index);
                         }
@@ -147,12 +147,13 @@ public class Eip7732StateUpgrade implements StateUpgrade<BeaconStateElectra> {
             });
   }
 
-  private UInt64 findEarliestExitEpoch(final BeaconState state, final UInt64 currentEpoch) {
-    return state.getValidators().stream()
-        .map(Validator::getExitEpoch)
-        .filter(exitEpoch -> !exitEpoch.equals(FAR_FUTURE_EPOCH))
-        .max(UInt64::compareTo)
-        .orElse(currentEpoch)
-        .increment();
+  private UInt64 findEarliestExitEpoch(final BeaconState state, final UInt64 activationExitEpoch) {
+    final UInt64 maxExitEpochFromValidatorSet =
+        state.getValidators().stream()
+            .map(Validator::getExitEpoch)
+            .filter(exitEpoch -> !exitEpoch.equals(FAR_FUTURE_EPOCH))
+            .max(UInt64::compareTo)
+            .orElse(UInt64.ZERO);
+    return maxExitEpochFromValidatorSet.max(activationExitEpoch).increment();
   }
 }
