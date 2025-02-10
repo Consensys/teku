@@ -46,41 +46,58 @@ public final class CachingTreeAccessor {
     CachedTreeNode cached = cachedTreeNode;
     if (cached.getNodeIndex() == index) {
       return cached.getNode();
-    } else {
-      long generalizedIndex = generalizedIndexCalculator.toGeneralizedIndex(index);
-      long cachedGeneralizedIndex = generalizedIndexCalculator.toGeneralizedIndex(cached.getNodeIndex());
-      
-      // Find the common ancestor level
-      int commonLevel = findCommonAncestorLevel(generalizedIndex, cachedGeneralizedIndex);
-      TreeNode startNode;
-      if (commonLevel >= 0 && cached.getNodeIndex() >= 0) {
-        // Start from the common ancestor in the cached path
-        startNode = cached.getPath()[commonLevel];
-      } else {
-        startNode = root;
-      }
-
-      // Calculate path to the target node
-      TreeNode[] path = calculatePath(startNode, generalizedIndex);
-      TreeNode targetNode = path[path.length - 1];
-      
-      cachedTreeNode = new CachedTreeNode(index, targetNode, path);
-      return targetNode;
     }
+    long generalizedIndex = generalizedIndexCalculator.toGeneralizedIndex(index);
+    long cachedGeneralizedIndex = generalizedIndexCalculator.toGeneralizedIndex(cached.getNodeIndex());
+    
+    // Find the common ancestor level
+    int commonLevel = findCommonAncestorLevel(generalizedIndex, cachedGeneralizedIndex);
+    TreeNode startNode;
+    if (commonLevel >= 0 && cached.getNodeIndex() >= 0) {
+      // Start from the common ancestor in the cached path
+      startNode = cached.getPath()[commonLevel];
+    } else {
+      startNode = root;
+    }
+
+    // Calculate path to the target node
+    TreeNode[] path = calculatePath(startNode, generalizedIndex);
+    TreeNode targetNode = path[path.length - 1];
+    
+    cachedTreeNode = new CachedTreeNode(index, targetNode, path);
+    return targetNode;
   }
 
+  /**
+   * Finds the level of the common ancestor between two nodes in the tree.
+   *
+   * @param index1 The generalized index of the first node
+   * @param index2 The generalized index of the second node
+   * @return The level of the common ancestor, or -1 if no common ancestor exists or indices are invalid
+   */
   private int findCommonAncestorLevel(long index1, long index2) {
-    if (index1 <= 0 || index2 <= 0) return -1;
+    if (index1 <= 0 || index2 <= 0) {
+      return -1;
+    }
     int level = 0;
     while (index1 != index2) {
       index1 = index1 >> 1;
       index2 = index2 >> 1;
-      if (index1 == 0 || index2 == 0) return -1;
+      if (index1 == 0 || index2 == 0) {
+        return -1;
+      }
       level++;
     }
     return level;
   }
 
+  /**
+   * Calculates the path from the start node to the target node specified by the generalized index.
+   *
+   * @param startNode The node to start path calculation from
+   * @param generalizedIndex The generalized index of the target node
+   * @return Array of nodes representing the path from start node to target node
+   */
   private TreeNode[] calculatePath(TreeNode startNode, long generalizedIndex) {
     int depth = Long.SIZE - Long.numberOfLeadingZeros(generalizedIndex);
     TreeNode[] path = new TreeNode[depth];
@@ -93,6 +110,9 @@ public final class CachingTreeAccessor {
     return path;
   }
 
+  /**
+   * Represents a cached tree node with its vector index and the full path from root.
+   */
   private static class CachedTreeNode {
 
     private final long nodeIndex;
