@@ -341,6 +341,18 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public Optional<SignedExecutionPayloadEnvelope> getFinalizedExecutionPayload(final Bytes32 root) {
+    return db.get(schema.getColumnSlotsByFinalizedRoot(), root)
+        .flatMap(this::getFinalizedExecutionPayloadAtSlot);
+  }
+
+  @Override
+  public Optional<SignedExecutionPayloadEnvelope> getFinalizedExecutionPayloadAtSlot(
+      final UInt64 slot) {
+    return db.get(schema.getColumnFinalizedExecutionPayloadsBySlot(), slot);
+  }
+
+  @Override
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(
       final Bytes32 stateRoot) {
     Optional<UInt64> maybeSlot = db.get(schema.getColumnSlotsByFinalizedStateRoot(), stateRoot);

@@ -43,7 +43,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 
 public class GetExecutionPayload extends RestApiEndpoint {
-  public static final String ROUTE = "/eth/v2/beacon/execution_payload/{block_id}";
+  public static final String ROUTE = "/eth/v1/beacon/execution_payload/{block_id}";
   private final ChainDataProvider chainDataProvider;
 
   public GetExecutionPayload(

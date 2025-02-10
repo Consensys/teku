@@ -514,10 +514,17 @@ public class CombinedChainDataClient {
             });
   }
 
-  // EIP-7732 TODO: implement historical execution payload retrieval
   public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayloadByBlockRoot(
       final Bytes32 blockRoot) {
-    return recentChainData.retrieveExecutionPayloadEnvelopeByBlockRoot(blockRoot);
+    return recentChainData
+        .retrieveExecutionPayloadEnvelopeByBlockRoot(blockRoot)
+        .thenCompose(
+            maybeExecutionPayload -> {
+              if (maybeExecutionPayload.isPresent()) {
+                return SafeFuture.completedFuture(maybeExecutionPayload);
+              }
+              return historicalChainData.getExecutionPayloadByBlockRoot(blockRoot);
+            });
   }
 
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarSlot() {

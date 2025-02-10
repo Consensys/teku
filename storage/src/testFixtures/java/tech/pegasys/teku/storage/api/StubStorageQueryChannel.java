@@ -71,6 +71,12 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayloadByBlockRoot(
+      final Bytes32 blockRoot) {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
   public SafeFuture<Optional<SignedBlockAndState>> getHotBlockAndStateByBlockRoot(
       final Bytes32 blockRoot) {
     return SafeFuture.completedFuture(Optional.empty());
