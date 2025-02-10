@@ -51,29 +51,34 @@ public interface SszCollectionSchema<
   default TreeNode createTreeFromElements(final List<? extends SszElementT> elements) {
     checkArgument(elements.size() <= getMaxLength(), "Too many elements for this collection type");
 
+    if (elements.isEmpty()) {
+      return TreeNode.ZERO_TREE_NODE;
+    }
+
     // Create nodes for all elements
     TreeNode[] elementNodes = new TreeNode[elements.size()];
     for (int i = 0; i < elements.size(); i++) {
       elementNodes[i] = elements.get(i).getBackingNode();
     }
 
+    // Calculate number of levels needed
+    int totalLevels = 32 - Integer.numberOfLeadingZeros(Math.max(1, elementNodes.length - 1));
+
     // Build the binary tree bottom-up
-    int level = 0;
-    while (elementNodes.length > (1 << level)) {
+    for (int level = 0; level < totalLevels; level++) {
       int nodesAtLevel = (elementNodes.length + (1 << level) - 1) >> level;
-      TreeNode[] newNodes = new TreeNode[nodesAtLevel];
+      TreeNode[] newNodes = new TreeNode[(nodesAtLevel + 1) / 2];
 
       for (int i = 0; i < nodesAtLevel; i += 2) {
         if (i + 1 < nodesAtLevel) {
           // Combine pair of nodes
           newNodes[i / 2] = BranchNode.create(elementNodes[i], elementNodes[i + 1]);
         } else {
-          // Handle odd number of nodes
+          // Handle odd number of nodes - promote single node
           newNodes[i / 2] = elementNodes[i];
         }
       }
       elementNodes = newNodes;
-      level++;
     }
 
     return elementNodes[0];
