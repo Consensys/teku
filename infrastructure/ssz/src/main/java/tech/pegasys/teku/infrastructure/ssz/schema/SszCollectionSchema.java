@@ -20,10 +20,9 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.ssz.SszCollection;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
-import tech.pegasys.teku.infrastructure.ssz.SszMutableComposite;
+import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
-import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
 
 public interface SszCollectionSchema<
         SszElementT extends SszData, SszCollectionT extends SszCollection<SszElementT>>
