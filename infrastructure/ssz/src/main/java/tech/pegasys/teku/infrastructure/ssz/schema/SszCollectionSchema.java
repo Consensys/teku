@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableComposite;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
+import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
 
 public interface SszCollectionSchema<
         SszElementT extends SszData, SszCollectionT extends SszCollection<SszElementT>>
@@ -66,7 +67,7 @@ public interface SszCollectionSchema<
       for (int i = 0; i < nodesAtLevel; i += 2) {
         if (i + 1 < nodesAtLevel) {
           // Combine pair of nodes
-          newNodes[i / 2] = TreeNode.create(elementNodes[i], elementNodes[i + 1]);
+          newNodes[i / 2] = BranchNode.create(elementNodes[i], elementNodes[i + 1]);
         } else {
           // Handle odd number of nodes
           newNodes[i / 2] = elementNodes[i];
