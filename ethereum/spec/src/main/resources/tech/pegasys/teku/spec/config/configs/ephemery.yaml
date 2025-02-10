@@ -38,7 +38,7 @@ DENEB_FORK_EPOCH: 0
 
 # Electra
 ELECTRA_FORK_VERSION: 0x6000101b
-ELECTRA_FORK_EPOCH: 18446744073709551615
+ELECTRA_FORK_EPOCH: 10
 
 # Time parameters
 # ---------------------------------------------------------------
