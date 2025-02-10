@@ -11,7 +11,7 @@ How To Run
 ----------
 
 * Make sure Kurtosis is [installed](https://docs.kurtosis.com/install/).
-* Run `kurtosis run --enclave test-network github.com/kurtosis-tech/ethereum-package --args-file network_params.yaml`
+* Run `kurtosis run --enclave test-network github.com/ethpandaops/ethereum-package --args-file network_params.yaml`
 
 If you would like to use a locally built Teku image, first run `./gradlew distDocker` in the root
 directory and then use `cl_image: consensys/teku:develop` in the `network_params.yaml` file.
