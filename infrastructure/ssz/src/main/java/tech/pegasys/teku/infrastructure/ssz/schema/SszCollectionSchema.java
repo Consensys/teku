@@ -50,19 +50,19 @@ public interface SszCollectionSchema<
 
   default TreeNode createTreeFromElements(final List<? extends SszElementT> elements) {
     checkArgument(elements.size() <= getMaxLength(), "Too many elements for this collection type");
-    
+
     // Create nodes for all elements
     TreeNode[] elementNodes = new TreeNode[elements.size()];
     for (int i = 0; i < elements.size(); i++) {
       elementNodes[i] = elements.get(i).getBackingNode();
     }
-    
+
     // Build the binary tree bottom-up
     int level = 0;
     while (elementNodes.length > (1 << level)) {
       int nodesAtLevel = (elementNodes.length + (1 << level) - 1) >> level;
       TreeNode[] newNodes = new TreeNode[nodesAtLevel];
-      
+
       for (int i = 0; i < nodesAtLevel; i += 2) {
         if (i + 1 < nodesAtLevel) {
           // Combine pair of nodes
@@ -75,11 +75,11 @@ public interface SszCollectionSchema<
       elementNodes = newNodes;
       level++;
     }
-    
+
     return elementNodes[0];
   }
 
   default Collector<SszElementT, ?, SszCollectionT> collector() {
     return Collectors.collectingAndThen(Collectors.<SszElementT>toList(), this::createFromElements);
   }
-}
+} 
