@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip7732.forktransition;
 
-
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
@@ -25,8 +24,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.BeaconStateAccessorsEip7732;
-import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.MiscHelpersEip7732;
-import tech.pegasys.teku.spec.logic.versions.eip7732.helpers.PredicatesEip7732;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7732;
 
@@ -52,10 +49,6 @@ public class Eip7732StateUpgrade implements StateUpgrade<BeaconStateElectra> {
   public BeaconStateEip7732 upgrade(final BeaconState preState) {
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
     final BeaconStateElectra preStateElectra = BeaconStateElectra.required(preState);
-    final PredicatesEip7732 predicatesEip7732 = new PredicatesEip7732(specConfig);
-    final MiscHelpersEip7732 miscHelpersEip7732 =
-        new MiscHelpersEip7732(specConfig, predicatesEip7732, schemaDefinitions);
-    final UInt64 activationExitEpoch = miscHelpersEip7732.computeActivationExitEpoch(epoch);
     return BeaconStateEip7732.required(schemaDefinitions.getBeaconStateSchema().createEmpty())
         .updatedEip7732(
             state -> {
