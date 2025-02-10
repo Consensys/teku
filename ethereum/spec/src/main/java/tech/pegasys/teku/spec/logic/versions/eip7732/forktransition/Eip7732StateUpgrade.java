@@ -15,13 +15,9 @@ package tech.pegasys.teku.spec.logic.versions.eip7732.forktransition;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
-import java.util.Comparator;
-import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -103,41 +99,13 @@ public class Eip7732StateUpgrade implements StateUpgrade<BeaconStateElectra> {
                   preStateElectra.getNextWithdrawalValidatorIndex());
               state.setNextWithdrawalIndex(preStateElectra.getNextWithdrawalIndex());
               state.setHistoricalSummaries(preStateElectra.getHistoricalSummaries());
-              state.setDepositRequestsStartIndex(
-                  SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX);
-              state.setDepositBalanceToConsume(UInt64.ZERO);
-              state.setExitBalanceToConsume(
-                  beaconStateAccessors.getActivationExitChurnLimit(state));
-              state.setEarliestExitEpoch(findEarliestExitEpoch(state, activationExitEpoch));
+              state.setDepositRequestsStartIndex(preStateElectra.getDepositRequestsStartIndex());
+              state.setDepositBalanceToConsume(preStateElectra.getDepositBalanceToConsume());
+              state.setExitBalanceToConsume(preStateElectra.getExitBalanceToConsume());
+              state.setEarliestExitEpoch(preStateElectra.getEarliestExitEpoch());
               state.setConsolidationBalanceToConsume(
-                  beaconStateAccessors.getConsolidationChurnLimit(state));
-              state.setEarliestConsolidationEpoch(activationExitEpoch);
-
-              final SszMutableList<Validator> validators = state.getValidators();
-
-              // Add validators that are not yet active to pending balance deposits
-              IntStream.range(0, validators.size())
-                  .filter(
-                      index -> validators.get(index).getActivationEpoch().equals(FAR_FUTURE_EPOCH))
-                  .boxed()
-                  .sorted(
-                      Comparator.comparing(
-                              (Integer index) ->
-                                  validators.get(index).getActivationEligibilityEpoch())
-                          .thenComparing(index -> index))
-                  .forEach(
-                      index ->
-                          beaconStateMutators.queueEntireBalanceAndResetValidator(state, index));
-
-              // Ensure early adopters of compounding credentials go through the activation churn
-              IntStream.range(0, validators.size())
-                  .forEach(
-                      index -> {
-                        if (predicatesEip7732.hasCompoundingWithdrawalCredential(
-                            validators.get(index))) {
-                          beaconStateMutators.queueExcessActiveBalance(state, index);
-                        }
-                      });
+                  preStateElectra.getConsolidationBalanceToConsume());
+              state.setEarliestConsolidationEpoch(preStateElectra.getEarliestConsolidationEpoch());
 
               // ePBS
               state.setLatestBlockHash(
