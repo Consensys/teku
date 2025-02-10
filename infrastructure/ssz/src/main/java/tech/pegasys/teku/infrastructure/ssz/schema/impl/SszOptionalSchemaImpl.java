@@ -231,7 +231,8 @@ public class SszOptionalSchemaImpl<ElementDataT extends SszData>
     try {
       final CompressedBranchInfo branchData = nodeSource.loadBranchNode(rootHash, rootGIndex);
       checkState(
-          branchData.getChildren().length == 2, "Optional root node must have exactly two children");
+          branchData.getChildren().length == 2,
+          "Optional root node must have exactly two children");
       checkState(branchData.getDepth() == 1, "Optional root node must have depth of 1");
       final Bytes32 valueHash = branchData.getChildren()[0];
       final Bytes32 optionalHash = branchData.getChildren()[1];
@@ -251,7 +252,8 @@ public class SszOptionalSchemaImpl<ElementDataT extends SszData>
       }
 
       final TreeNode valueNode =
-          childSchema.loadBackingNodes(nodeSource, valueHash, GIndexUtil.gIdxLeftGIndex(rootGIndex));
+          childSchema.loadBackingNodes(
+              nodeSource, valueHash, GIndexUtil.gIdxLeftGIndex(rootGIndex));
       return createTreeNode(valueNode, true);
     } catch (Exception e) {
       // If loading fails, return default tree
