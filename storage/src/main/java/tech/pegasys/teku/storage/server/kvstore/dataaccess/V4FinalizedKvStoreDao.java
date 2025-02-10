@@ -65,6 +65,12 @@ public class V4FinalizedKvStoreDao {
     return db.get(schema.getColumnFinalizedBlocksBySlot(), slot);
   }
 
+  // ePBS
+  public Optional<SignedExecutionPayloadEnvelope> getFinalizedExecutionPayloadAtSlot(
+      final UInt64 slot) {
+    return db.get(schema.getColumnFinalizedExecutionPayloadsBySlot(), slot);
+  }
+
   public Optional<UInt64> getEarliestFinalizedBlockSlot() {
     return db.get(schema.getVariableEarliestBlockSlot())
         .or(
@@ -213,6 +219,12 @@ public class V4FinalizedKvStoreDao {
   public Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root) {
     return db.get(schema.getColumnSlotsByFinalizedRoot(), root)
         .flatMap(this::getFinalizedBlockAtSlot);
+  }
+
+  // ePBS
+  public Optional<SignedExecutionPayloadEnvelope> getFinalizedExecutionPayload(final Bytes32 root) {
+    return db.get(schema.getColumnSlotsByFinalizedRoot(), root)
+        .flatMap(this::getFinalizedExecutionPayloadAtSlot);
   }
 
   @MustBeClosed

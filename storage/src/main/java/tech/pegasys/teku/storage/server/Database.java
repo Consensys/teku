@@ -155,6 +155,9 @@ public interface Database extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getSignedBlock(Bytes32 root);
 
+  // ePBS
+  Optional<SignedExecutionPayloadEnvelope> getSignedExecutionPayloadEnvelope(Bytes32 root);
+
   Optional<BeaconState> getHotState(Bytes32 root);
 
   Optional<UInt64> getGenesisTime();

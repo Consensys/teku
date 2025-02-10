@@ -246,6 +246,13 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public Optional<SignedExecutionPayloadEnvelope> getSignedExecutionPayloadEnvelope(
+      final Bytes32 root) {
+    return dao.getHotExecutionPayloadEnvelope(root)
+        .or(() -> dao.getFinalizedExecutionPayload(root));
+  }
+
+  @Override
   public Map<Bytes32, SignedBeaconBlock> getHotBlocks(final Set<Bytes32> blockRoots) {
     return blockRoots.stream()
         .flatMap(root -> dao.getHotBlock(root).stream())

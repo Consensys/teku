@@ -140,6 +140,12 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Optional<SignedExecutionPayloadEnvelope> getSignedExecutionPayloadEnvelope(
+      final Bytes32 root) {
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<BeaconState> getHotState(final Bytes32 root) {
     return Optional.empty();
   }

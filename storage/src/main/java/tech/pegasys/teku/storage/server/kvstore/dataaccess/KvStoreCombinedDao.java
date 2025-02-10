@@ -65,7 +65,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Stream<Map.Entry<Bytes, Bytes>> streamHotBlocksAsSsz();
 
-  Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root);
+  Optional<SignedBeaconBlock> getFinalizedBlock(Bytes32 root);
 
   Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(UInt64 slot);
 
@@ -85,6 +85,11 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   Optional<UInt64> getSlotForFinalizedBlockRoot(Bytes32 blockRoot);
 
   Optional<UInt64> getSlotForFinalizedStateRoot(Bytes32 stateRoot);
+
+  // ePBS
+  Optional<SignedExecutionPayloadEnvelope> getFinalizedExecutionPayload(Bytes32 root);
+
+  Optional<SignedExecutionPayloadEnvelope> getFinalizedExecutionPayloadAtSlot(UInt64 slot);
 
   Optional<Bytes32> getLatestCanonicalBlockRoot();
 
