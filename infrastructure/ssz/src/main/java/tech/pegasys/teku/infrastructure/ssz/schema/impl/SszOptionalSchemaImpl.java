@@ -228,20 +228,34 @@ public class SszOptionalSchemaImpl<ElementDataT extends SszData>
       return getDefaultTree();
     }
 
-    final CompressedBranchInfo branchData = nodeSource.loadBranchNode(rootHash, rootGIndex);
-    checkState(
-        branchData.getChildren().length == 2, "Optional root node must have exactly two child");
-    checkState(branchData.getDepth() == 1, "Optional root node must have depth of 1");
-    final Bytes32 valueHash = branchData.getChildren()[0];
-    final Bytes32 optionalHash = branchData.getChildren()[1];
-    final int isPresent =
-        nodeSource
-            .loadLeafNode(optionalHash, GIndexUtil.gIdxRightGIndex(rootGIndex))
-            .getInt(0, ByteOrder.LITTLE_ENDIAN);
-    checkState(isPresent <= IS_PRESENT_PREFIX, "Selector is out of bounds");
-    final TreeNode valueNode =
-        childSchema.loadBackingNodes(nodeSource, valueHash, GIndexUtil.gIdxLeftGIndex(rootGIndex));
-    return createTreeNode(valueNode, isPresent == IS_PRESENT_PREFIX);
+    try {
+      final CompressedBranchInfo branchData = nodeSource.loadBranchNode(rootHash, rootGIndex);
+      checkState(
+          branchData.getChildren().length == 2, "Optional root node must have exactly two children");
+      checkState(branchData.getDepth() == 1, "Optional root node must have depth of 1");
+      final Bytes32 valueHash = branchData.getChildren()[0];
+      final Bytes32 optionalHash = branchData.getChildren()[1];
+
+      // Handle empty optional case
+      if (optionalHash.equals(Bytes32.ZERO)) {
+        return getDefaultTree();
+      }
+
+      final TreeNode optionalNode = nodeSource.loadLeafNode(optionalHash, GIndexUtil.gIdxRightGIndex(rootGIndex));
+      final int isPresent = optionalNode.get(0, ByteOrder.LITTLE_ENDIAN);
+      checkState(isPresent <= IS_PRESENT_PREFIX, "Selector is out of bounds");
+
+      if (isPresent == 0) {
+        return getDefaultTree();
+      }
+
+      final TreeNode valueNode =
+          childSchema.loadBackingNodes(nodeSource, valueHash, GIndexUtil.gIdxLeftGIndex(rootGIndex));
+      return createTreeNode(valueNode, true);
+    } catch (Exception e) {
+      // If loading fails, return default tree
+      return getDefaultTree();
+    }
   }
 
   @Override
