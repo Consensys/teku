@@ -18,7 +18,6 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
@@ -65,6 +64,4 @@ public interface ExecutionPayload extends ExecutionPayloadSummary, SszContainer,
   default Optional<BlobsBundle> getOptionalBlobsBundle() {
     return Optional.empty();
   }
-
-  SpecMilestone getMilestone();
 }

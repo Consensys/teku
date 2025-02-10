@@ -25,12 +25,6 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 
 public interface ExecutionPayloadSchema<T extends ExecutionPayload>
     extends SszContainerSchema<T>, BuilderPayloadSchema<T> {
@@ -43,21 +37,6 @@ public interface ExecutionPayloadSchema<T extends ExecutionPayload>
   SszListSchema<Withdrawal, ? extends SszList<Withdrawal>> getWithdrawalsSchemaRequired();
 
   WithdrawalSchema getWithdrawalSchemaRequired();
-
-  SszListSchema<DepositRequest, ? extends SszList<DepositRequest>>
-      getDepositRequestsSchemaRequired();
-
-  DepositRequestSchema getDepositRequestSchemaRequired();
-
-  SszListSchema<WithdrawalRequest, ? extends SszList<WithdrawalRequest>>
-      getWithdrawalRequestsSchemaRequired();
-
-  WithdrawalRequestSchema getWithdrawalRequestSchemaRequired();
-
-  ConsolidationRequestSchema getConsolidationRequestSchemaRequired();
-
-  SszListSchema<ConsolidationRequest, ? extends SszList<ConsolidationRequest>>
-      getConsolidationRequestsSchemaRequired();
 
   LongList getBlindedNodeGeneralizedIndices();
 
