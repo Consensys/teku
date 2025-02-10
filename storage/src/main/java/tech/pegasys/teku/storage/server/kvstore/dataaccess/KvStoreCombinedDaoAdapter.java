@@ -223,6 +223,17 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public Optional<SignedExecutionPayloadEnvelope> getFinalizedExecutionPayload(final Bytes32 root) {
+    return finalizedDao.getFinalizedExecutionPayload(root);
+  }
+
+  @Override
+  public Optional<SignedExecutionPayloadEnvelope> getFinalizedExecutionPayloadAtSlot(
+      final UInt64 slot) {
+    return finalizedDao.getFinalizedExecutionPayloadAtSlot(slot);
+  }
+
+  @Override
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(
       final Bytes32 stateRoot) {
     return finalizedDao.getSlotAndBlockRootForFinalizedStateRoot(stateRoot);

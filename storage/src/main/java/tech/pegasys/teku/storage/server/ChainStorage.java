@@ -182,6 +182,12 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayloadByBlockRoot(
+      final Bytes32 blockRoot) {
+    return SafeFuture.of(() -> database.getSignedExecutionPayloadEnvelope(blockRoot));
+  }
+
+  @Override
   public SafeFuture<Optional<SignedBlockAndState>> getHotBlockAndStateByBlockRoot(
       final Bytes32 blockRoot) {
     return SafeFuture.of(
