@@ -66,10 +66,10 @@ public interface SszCollectionSchema<
       for (int i = 0; i < nodesAtLevel; i += 2) {
         if (i + 1 < nodesAtLevel) {
           // Combine pair of nodes
-          newNodes[i/2] = TreeNode.create(elementNodes[i], elementNodes[i+1]);
+          newNodes[i / 2] = TreeNode.create(elementNodes[i], elementNodes[i + 1]);
         } else {
           // Handle odd number of nodes
-          newNodes[i/2] = elementNodes[i];
+          newNodes[i / 2] = elementNodes[i];
         }
       }
       elementNodes = newNodes;
