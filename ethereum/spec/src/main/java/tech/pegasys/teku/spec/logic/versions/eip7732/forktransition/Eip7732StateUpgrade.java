@@ -13,14 +13,12 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip7732.forktransition;
 
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.BeaconStateEip7732;
@@ -113,15 +111,5 @@ public class Eip7732StateUpgrade implements StateUpgrade<BeaconStateElectra> {
               state.setLatestFullSlot(preState.getSlot());
               state.setLatestWithdrawalsRoot(Bytes32.ZERO);
             });
-  }
-
-  private UInt64 findEarliestExitEpoch(final BeaconState state, final UInt64 activationExitEpoch) {
-    final UInt64 maxExitEpochFromValidatorSet =
-        state.getValidators().stream()
-            .map(Validator::getExitEpoch)
-            .filter(exitEpoch -> !exitEpoch.equals(FAR_FUTURE_EPOCH))
-            .max(UInt64::compareTo)
-            .orElse(UInt64.ZERO);
-    return maxExitEpochFromValidatorSet.max(activationExitEpoch).increment();
   }
 }
