@@ -241,9 +241,9 @@ public class SszOptionalSchemaImpl<ElementDataT extends SszData>
         return getDefaultTree();
       }
 
-      final TreeNode optionalNode =
+      final Bytes optionalData =
           nodeSource.loadLeafNode(optionalHash, GIndexUtil.gIdxRightGIndex(rootGIndex));
-      final int isPresent = optionalNode.getData().get(0) & 0xFF;
+      final int isPresent = optionalData.get(0) & 0xFF;
       checkState(isPresent <= IS_PRESENT_PREFIX, "Selector is out of bounds");
 
       if (isPresent == 0) {
