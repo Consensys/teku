@@ -62,6 +62,8 @@ public class ProtoNode {
 
   private ProtoNodeValidationStatus validationStatus;
 
+  private boolean onInclusionList;
+
   ProtoNode(
       final UInt64 blockSlot,
       final Bytes32 stateRoot,
@@ -214,6 +216,14 @@ public class ProtoNode {
         validationStatus,
         checkpoints,
         weight);
+  }
+
+  public boolean isOnInclusionList() {
+    return onInclusionList;
+  }
+
+  public void setOnInclusionList(boolean onInclusionList) {
+    this.onInclusionList = onInclusionList;
   }
 
   @Override
