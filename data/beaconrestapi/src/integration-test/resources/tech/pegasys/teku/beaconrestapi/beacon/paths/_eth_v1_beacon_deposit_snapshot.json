@@ -4,6 +4,7 @@
     "operationId" : "getDepositSnapshot",
     "summary" : "Get finalized DepositTreeSnapshot",
     "description" : "Latest finalized DepositTreeSnapshot that could be used to reconstruct Deposit merkle tree. See EIP-4881 for details.",
+    "deprecated" : true,
     "responses" : {
       "200" : {
         "description" : "Request successful",

@@ -94,7 +94,7 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
         .withAltairEpoch(UInt64.ZERO)
         .withBellatrixEpoch(UInt64.ZERO)
         .withCapellaEpoch(UInt64.ONE)
-        .withTotalTerminalDifficulty(0)
+        .withTerminalBlockHash(DEFAULT_EL_GENESIS_HASH, 0)
         .withGenesisTime(genesisTime)
         .withExecutionEngine(besuNode)
         .withJwtSecretFile(JWT_FILE)

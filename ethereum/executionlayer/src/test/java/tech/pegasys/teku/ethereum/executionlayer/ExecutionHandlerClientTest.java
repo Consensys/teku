@@ -52,10 +52,7 @@ public abstract class ExecutionHandlerClientTest {
 
   private PowBlock createPowBlock(final Bytes32 blockHash) {
     return new PowBlock(
-        blockHash,
-        dataStructureUtil.randomBytes32(),
-        dataStructureUtil.randomUInt256(),
-        dataStructureUtil.randomUInt64());
+        blockHash, dataStructureUtil.randomBytes32(), dataStructureUtil.randomUInt64());
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")

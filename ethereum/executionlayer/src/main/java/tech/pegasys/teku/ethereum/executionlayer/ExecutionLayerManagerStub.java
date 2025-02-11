@@ -16,7 +16,6 @@ package tech.pegasys.teku.ethereum.executionlayer;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -39,9 +38,8 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
       final Spec spec,
       final TimeProvider timeProvider,
       final boolean enableTransitionEmulation,
-      final Optional<Bytes32> terminalBlockHashInTTDMode,
       final BuilderCircuitBreaker builderCircuitBreaker) {
-    super(spec, timeProvider, enableTransitionEmulation, terminalBlockHashInTTDMode);
+    super(spec, timeProvider, enableTransitionEmulation);
     this.builderCircuitBreaker = builderCircuitBreaker;
   }
 

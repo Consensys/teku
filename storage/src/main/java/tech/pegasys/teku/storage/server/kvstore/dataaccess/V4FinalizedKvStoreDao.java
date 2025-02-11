@@ -252,7 +252,6 @@ public class V4FinalizedKvStoreDao {
                 columnCounts.put(k, db.size(v));
               }
             });
-    schema.getColumnMap().forEach((k, v) -> columnCounts.put(k, db.size(v)));
     return columnCounts;
   }
 

@@ -14,17 +14,16 @@
 package tech.pegasys.teku.ethereum.executionclient.rest;
 
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
-import static tech.pegasys.teku.spec.config.Constants.BUILDER_GET_PAYLOAD_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.BUILDER_PROPOSAL_DELAY_TOLERANCE;
-import static tech.pegasys.teku.spec.config.Constants.BUILDER_REGISTER_VALIDATOR_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.BUILDER_STATUS_TIMEOUT;
 
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.BuilderApiMethod;
@@ -35,6 +34,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.spec.Spec;
@@ -49,6 +49,8 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class RestBuilderClient implements BuilderClient {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private static final Map.Entry<String, String> USER_AGENT_HEADER =
       Map.entry(
@@ -72,13 +74,26 @@ public class RestBuilderClient implements BuilderClient {
   private final Map<SpecMilestone, ResponseSchemaAndDeserializableTypeDefinition<SignedBuilderBid>>
       cachedBuilderApiSignedBuilderBidResponseType = new ConcurrentHashMap<>();
 
+  public static final UInt64 REGISTER_VALIDATOR_SSZ_BACKOFF_TIME_MILLIS =
+      UInt64.valueOf(TimeUnit.DAYS.toMillis(1));
+
+  private final RestBuilderClientOptions options;
   private final RestClient restClient;
+  private final TimeProvider timeProvider;
   private final Spec spec;
   private final boolean setUserAgentHeader;
 
+  private UInt64 nextSszRegisterValidatorsTryMillis = UInt64.ZERO;
+
   public RestBuilderClient(
-      final RestClient restClient, final Spec spec, final boolean setUserAgentHeader) {
+      final RestBuilderClientOptions options,
+      final RestClient restClient,
+      final TimeProvider timeProvider,
+      final Spec spec,
+      final boolean setUserAgentHeader) {
+    this.options = options;
     this.restClient = restClient;
+    this.timeProvider = timeProvider;
     this.spec = spec;
     this.setUserAgentHeader = setUserAgentHeader;
   }
@@ -87,7 +102,7 @@ public class RestBuilderClient implements BuilderClient {
   public SafeFuture<Response<Void>> status() {
     return restClient
         .getAsync(BuilderApiMethod.GET_STATUS.getPath())
-        .orTimeout(BUILDER_STATUS_TIMEOUT);
+        .orTimeout(options.builderStatusTimeout());
   }
 
   @Override
@@ -98,10 +113,41 @@ public class RestBuilderClient implements BuilderClient {
       return SafeFuture.completedFuture(Response.fromNullPayload());
     }
 
-    return restClient
-        .postAsync(
-            BuilderApiMethod.REGISTER_VALIDATOR.getPath(), signedValidatorRegistrations, false)
-        .orTimeout(BUILDER_REGISTER_VALIDATOR_TIMEOUT);
+    if (nextSszRegisterValidatorsTryMillis.isGreaterThan(timeProvider.getTimeInMillis())) {
+      return registerValidatorsUsingJson(signedValidatorRegistrations)
+          .orTimeout(options.builderRegisterValidatorTimeout());
+    }
+
+    return registerValidatorsUsingSsz(signedValidatorRegistrations)
+        .thenCompose(
+            response -> {
+              // Any failure will trigger a retry, not only Unsupported Media Type (415)
+              if (response.isFailure()) {
+                LOG.debug(
+                    "Failed to register validator using SSZ. Will retry using JSON (error: {})",
+                    response.errorMessage());
+
+                nextSszRegisterValidatorsTryMillis =
+                    timeProvider.getTimeInMillis().plus(REGISTER_VALIDATOR_SSZ_BACKOFF_TIME_MILLIS);
+
+                return registerValidatorsUsingJson(signedValidatorRegistrations);
+              }
+
+              return SafeFuture.completedFuture(response);
+            })
+        .orTimeout(options.builderRegisterValidatorTimeout());
+  }
+
+  private SafeFuture<Response<Void>> registerValidatorsUsingJson(
+      final SszList<SignedValidatorRegistration> signedValidatorRegistrations) {
+    return restClient.postAsync(
+        BuilderApiMethod.REGISTER_VALIDATOR.getPath(), signedValidatorRegistrations, false);
+  }
+
+  private SafeFuture<Response<Void>> registerValidatorsUsingSsz(
+      final SszList<SignedValidatorRegistration> signedValidatorRegistrations) {
+    return restClient.postAsync(
+        BuilderApiMethod.REGISTER_VALIDATOR.getPath(), signedValidatorRegistrations, true);
   }
 
   @Override
@@ -138,7 +184,7 @@ public class RestBuilderClient implements BuilderClient {
                 ? GET_HEADER_HTTP_HEADERS_WITH_USER_AGENT
                 : GET_HEADER_HTTP_HEADERS_WITHOUT_USER_AGENT,
             responseTypeDefinition)
-        .orTimeout(BUILDER_PROPOSAL_DELAY_TOLERANCE)
+        .orTimeout(options.builderProposalDelayTolerance())
         .thenApply(
             response ->
                 response.unwrapVersioned(
@@ -174,7 +220,7 @@ public class RestBuilderClient implements BuilderClient {
             response ->
                 response.unwrapVersioned(
                     this::extractBuilderPayload, milestone, BuilderApiResponse::version, false))
-        .orTimeout(BUILDER_GET_PAYLOAD_TIMEOUT);
+        .orTimeout(options.builderGetPayloadTimeout());
   }
 
   private <T extends BuilderPayload>

@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
@@ -91,7 +90,6 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         : new PowBlock(
             Bytes32.fromHexStringStrict(eth1Block.getHash()),
             Bytes32.fromHexStringStrict(eth1Block.getParentHash()),
-            UInt256.valueOf(eth1Block.getTotalDifficulty()),
             UInt64.valueOf(eth1Block.getTimestamp()));
   }
 

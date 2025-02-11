@@ -90,7 +90,7 @@
             }
           },
           "Eth-Consensus-Block-Value": {
-            "description": "Consensus rewards paid to the proposer for this block, in Wei. Required in response so client can determine relative value of consensus blocks.",
+            "description": "Consensus rewards for this block in Wei paid to the proposer. The rewards value is the sum of values of the proposer rewards from attestations, sync committees and slashings included in the proposal. Required in response so client can determine relative value of consensus blocks.",
             "required": true,
             "schema": {
               "type": "string",

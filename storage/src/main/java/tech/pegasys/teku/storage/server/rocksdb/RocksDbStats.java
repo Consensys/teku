@@ -196,25 +196,27 @@ public class RocksDbStats implements AutoCloseable {
                 + "_"
                 + histogram.name().toLowerCase(Locale.ROOT),
             "RocksDB histogram for " + histogram.name(),
-            () -> provideExternalSummary(stats, histogram));
+            () -> provideExternalSummary(histogram));
       }
     }
   }
 
-  private static ExternalSummary provideExternalSummary(
-      final Statistics stats, final HistogramType histogramType) {
+  private ExternalSummary provideExternalSummary(final HistogramType histogramType) {
+    return ifOpen(
+        () -> {
+          final HistogramData data = stats.getHistogramData(histogramType);
 
-    final HistogramData data = stats.getHistogramData(histogramType);
-
-    return new ExternalSummary(
-        data.getCount(),
-        data.getSum(),
-        List.of(
-            new ExternalSummary.Quantile(0.0, data.getMin()),
-            new ExternalSummary.Quantile(0.5, data.getMedian()),
-            new ExternalSummary.Quantile(0.95, data.getPercentile95()),
-            new ExternalSummary.Quantile(0.99, data.getPercentile99()),
-            new ExternalSummary.Quantile(1.0, data.getMax())));
+          return new ExternalSummary(
+              data.getCount(),
+              data.getSum(),
+              List.of(
+                  new ExternalSummary.Quantile(0.0, data.getMin()),
+                  new ExternalSummary.Quantile(0.5, data.getMedian()),
+                  new ExternalSummary.Quantile(0.95, data.getPercentile95()),
+                  new ExternalSummary.Quantile(0.99, data.getPercentile99()),
+                  new ExternalSummary.Quantile(1.0, data.getMax())));
+        },
+        null);
   }
 
   private long getLongProperty(final RocksDB database, final String name) {
