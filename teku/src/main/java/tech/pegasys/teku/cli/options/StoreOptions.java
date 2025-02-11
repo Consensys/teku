@@ -40,6 +40,14 @@ public class StoreOptions {
 
   @Option(
       hidden = true,
+      names = {"--Xstore-inclusion-list-cache-size"},
+      paramLabel = "<INTEGER>",
+      description = "Number of inclusion lists to cache in memory",
+      arity = "1")
+  private int inclusionListCacheSize = StoreConfig.DEFAULT_INCLUSION_LIST_CACHE_SIZE;
+
+  @Option(
+      hidden = true,
       names = {"--Xstore-state-cache-size"},
       paramLabel = "<INTEGER>",
       description = "Number of states to cache in memory",
@@ -85,6 +93,7 @@ public class StoreOptions {
         b ->
             b.hotStatePersistenceFrequencyInEpochs(hotStatePersistenceFrequencyInEpochs)
                 .blockCacheSize(blockCacheSize)
+                .inclusionListCacheSize(inclusionListCacheSize)
                 .stateCacheSize(stateCacheSize)
                 .epochStateCacheSize(epochStateCacheSize)
                 .earliestAvailableBlockSlotFrequency(earliestAvailableBlockSlotQueryFrequency)
