@@ -685,6 +685,15 @@ class Store extends CacheableStore {
     }
   }
 
+  @Override
+  public Optional<Bytes32> getInclusionListAttesterHead(final Bytes32 headRoot) {
+    if (!satisfiesInclusionList(headRoot)) {
+      return getBlockIfAvailable(headRoot).map(SignedBeaconBlock::getParentRoot);
+    } else {
+      return Optional.of(headRoot);
+    }
+  }
+
   private Optional<ProtoNodeData> getBlockDataFromForkChoiceStrategy(final Bytes32 root) {
     readLock.lock();
     try {

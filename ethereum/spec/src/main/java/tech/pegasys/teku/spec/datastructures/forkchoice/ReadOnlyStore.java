@@ -144,4 +144,6 @@ public interface ReadOnlyStore extends TimeProvider {
   boolean satisfiesInclusionList(Bytes32 blockRoot);
 
   Optional<List<InclusionList>> getInclusionList(SlotAndBlockRoot slotAndBlockRoot);
+
+  Optional<Bytes32> getInclusionListAttesterHead(Bytes32 headRoot);
 }
