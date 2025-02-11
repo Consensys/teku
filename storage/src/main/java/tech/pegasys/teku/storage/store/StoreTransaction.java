@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -476,6 +477,16 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public Optional<Boolean> isFfgCompetitive(final Bytes32 headRoot, final Bytes32 parentRoot) {
     return store.isFfgCompetitive(headRoot, parentRoot);
+  }
+
+  @Override
+  public boolean satisfiesInclusionList(final Bytes32 blockRoot) {
+    return store.satisfiesInclusionList(blockRoot);
+  }
+
+  @Override
+  public Optional<List<InclusionList>> getInclusionList(final SlotAndBlockRoot slotAndBlockRoot) {
+    return store.getInclusionList(slotAndBlockRoot);
   }
 
   @Override
