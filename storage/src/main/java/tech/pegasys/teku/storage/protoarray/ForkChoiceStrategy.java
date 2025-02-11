@@ -585,4 +585,23 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       protoArrayLock.writeLock().unlock();
     }
   }
+
+  public void onInclusionList(final Bytes32 blockRoot, final boolean isOnList) {
+    protoArrayLock.writeLock().lock();
+    try {
+      protoArray.onInclusionList(blockRoot, isOnList);
+    } finally {
+      protoArrayLock.writeLock().unlock();
+    }
+  }
+
+  @Override
+  public boolean isOnInclusionList(final Bytes32 blockRoot) {
+    protoArrayLock.readLock().lock();
+    try {
+      return getProtoNode(blockRoot).map(ProtoNode::isOnInclusionList).orElse(false);
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
 }
