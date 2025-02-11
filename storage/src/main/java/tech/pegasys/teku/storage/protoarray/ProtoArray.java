@@ -621,8 +621,8 @@ public class ProtoArray {
     // A node is viable for the head if:
     // 1. It is on the inclusion list OR
     // 2. It satisfies the original viability conditions (valid and leads to viable head)
-    return node.isOnInclusionList() || 
-           (node.getValidationStatus() == VALID && nodeLeadsToViableHead(node));
+    return node.isOnInclusionList()
+        || (node.getValidationStatus() == VALID && nodeLeadsToViableHead(node));
   }
 
   private boolean isFinalizedRootOrDescendant(final ProtoNode node) {
@@ -754,13 +754,13 @@ public class ProtoArray {
     if (nodeIndex.isPresent()) {
       final ProtoNode node = nodes.get(nodeIndex.get());
       node.setOnInclusionList(isOnList);
-      
+
       // Update best child and descendant for all ancestors
       int currentIndex = nodeIndex.get();
       while (currentIndex >= 0) {
         final ProtoNode currentNode = nodes.get(currentIndex);
         maybeUpdateBestChildAndDescendant(currentIndex, currentIndex);
-        
+
         final Optional<Integer> parentIndex = getIndexByRoot(currentNode.getParentRoot());
         if (parentIndex.isEmpty()) {
           break;
