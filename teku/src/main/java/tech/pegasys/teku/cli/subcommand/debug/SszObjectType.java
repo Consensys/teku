@@ -139,7 +139,7 @@ public enum SszObjectType {
   }
 
   private static Function<SpecVersion, SszSchema<?>> electraSchemas(
-          final Function<SchemaDefinitionsElectra, SszSchema<?>> getter) {
+      final Function<SchemaDefinitionsElectra, SszSchema<?>> getter) {
     return spec -> getter.apply(SchemaDefinitionsElectra.required(spec.getSchemaDefinitions()));
   }
 
