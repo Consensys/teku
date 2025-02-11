@@ -622,7 +622,7 @@ public class ProtoArray {
     // 1. It is on the inclusion list OR
     // 2. It satisfies the original viability conditions (valid and leads to viable head)
     return node.isOnInclusionList()
-        || (node.getValidationStatus() == VALID && nodeLeadsToViableHead(node));
+        || (node.isFullyValidated() && nodeLeadsToViableHead(node));
   }
 
   private boolean isFinalizedRootOrDescendant(final ProtoNode node) {
