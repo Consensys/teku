@@ -54,4 +54,14 @@ public interface ReadOnlyForkChoiceStrategy {
   Optional<ProtoNodeData> getBlockData(Bytes32 blockRoot);
 
   Optional<UInt64> getWeight(Bytes32 blockRoot);
+
+  /**
+   * Check if a block is on the inclusion list
+   *
+   * @param blockRoot The root of the block to check
+   * @return true if the block is on the inclusion list, false otherwise
+   */
+  default boolean isOnInclusionList(final Bytes32 blockRoot) {
+    return false;
+  }
 }
