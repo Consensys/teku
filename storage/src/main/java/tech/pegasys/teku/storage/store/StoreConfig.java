@@ -25,6 +25,7 @@ public class StoreConfig {
 
   public static final int DEFAULT_EPOCH_STATE_CACHE_SIZE = 6;
   public static final int DEFAULT_BLOCK_CACHE_SIZE = 32;
+  public static final int DEFAULT_INCLUSION_LIST_CACHE_SIZE = 32;
   public static final int DEFAULT_CHECKPOINT_STATE_CACHE_SIZE = 20;
   public static final int DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS = 2;
 
@@ -34,6 +35,7 @@ public class StoreConfig {
 
   private final int epochStateCacheSize;
   private final int blockCacheSize;
+  private final int inclusionListCacheSize;
   private final int checkpointStateCacheSize;
   private final int hotStatePersistenceFrequencyInEpochs;
   private final int earliestAvailableBlockSlotFrequency;
@@ -41,12 +43,14 @@ public class StoreConfig {
   private StoreConfig(
       final int stateCacheSize,
       final int blockCacheSize,
+      final int inclusionListCacheSize,
       final int checkpointStateCacheSize,
       final int hotStatePersistenceFrequencyInEpochs,
       final int earliestAvailableBlockSlotFrequency,
       final int epochStateCacheSize) {
     this.stateCacheSize = stateCacheSize;
     this.blockCacheSize = blockCacheSize;
+    this.inclusionListCacheSize = inclusionListCacheSize;
     this.checkpointStateCacheSize = checkpointStateCacheSize;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
     this.earliestAvailableBlockSlotFrequency = earliestAvailableBlockSlotFrequency;
@@ -71,6 +75,10 @@ public class StoreConfig {
 
   public int getBlockCacheSize() {
     return blockCacheSize;
+  }
+
+  public int getInclusionListCacheSize() {
+    return inclusionListCacheSize;
   }
 
   public int getCheckpointStateCacheSize() {
@@ -116,6 +124,7 @@ public class StoreConfig {
 
     private int epochStateCacheSize = DEFAULT_EPOCH_STATE_CACHE_SIZE;
     private int blockCacheSize = DEFAULT_BLOCK_CACHE_SIZE;
+    private int inclusionListCacheSize = DEFAULT_BLOCK_CACHE_SIZE;
     private int checkpointStateCacheSize = DEFAULT_CHECKPOINT_STATE_CACHE_SIZE;
     private int hotStatePersistenceFrequencyInEpochs =
         DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS;
@@ -127,6 +136,7 @@ public class StoreConfig {
       return new StoreConfig(
           stateCacheSize,
           blockCacheSize,
+          inclusionListCacheSize,
           checkpointStateCacheSize,
           hotStatePersistenceFrequencyInEpochs,
           earliestAvailableBlockSlotFrequency,
@@ -148,6 +158,12 @@ public class StoreConfig {
     public Builder blockCacheSize(final int blockCacheSize) {
       validateCacheSize(blockCacheSize);
       this.blockCacheSize = blockCacheSize;
+      return this;
+    }
+
+    public Builder inclusionListCacheSize(final int inclusionListCacheSize) {
+      validateCacheSize(inclusionListCacheSize);
+      this.inclusionListCacheSize = inclusionListCacheSize;
       return this;
     }
 
