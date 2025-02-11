@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 
 public interface SszCollectionSchema<
         SszElementT extends SszData, SszCollectionT extends SszCollection<SszElementT>>
@@ -52,7 +53,7 @@ public interface SszCollectionSchema<
     checkArgument(elements.size() <= getMaxLength(), "Too many elements for this collection type");
 
     if (elements.isEmpty()) {
-      return TreeNode.ZERO_TREE_NODE;
+      return TreeUtil.ZERO_TREES[0];
     }
 
     // Create nodes for all elements
