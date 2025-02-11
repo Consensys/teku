@@ -223,26 +223,29 @@ public class SszOptionalSchemaImpl<ElementDataT extends SszData>
   @Override
   public TreeNode loadBackingNodes(
       final TreeNodeSource nodeSource, final Bytes32 rootHash, final long rootGIndex) {
-    if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(rootHash) || rootHash.equals(Bytes32.ZERO)) {
+    if (rootHash == null || TreeUtil.ZERO_TREES_BY_ROOT.containsKey(rootHash) || rootHash.equals(Bytes32.ZERO)) {
       return getDefaultTree();
     }
 
     try {
       final CompressedBranchInfo branchData = nodeSource.loadBranchNode(rootHash, rootGIndex);
-      checkState(
-          branchData.getChildren().length == 2,
-          "Optional root node must have exactly two children");
+      if (branchData == null || branchData.getChildren() == null || branchData.getChildren().length != 2) {
+        return getDefaultTree();
+      }
       checkState(branchData.getDepth() == 1, "Optional root node must have depth of 1");
       final Bytes32 valueHash = branchData.getChildren()[0];
       final Bytes32 optionalHash = branchData.getChildren()[1];
 
       // Handle empty optional case
-      if (optionalHash.equals(Bytes32.ZERO)) {
+      if (optionalHash == null || optionalHash.equals(Bytes32.ZERO)) {
         return getDefaultTree();
       }
 
-      final Bytes optionalData =
-          nodeSource.loadLeafNode(optionalHash, GIndexUtil.gIdxRightGIndex(rootGIndex));
+      final Bytes optionalData = nodeSource.loadLeafNode(optionalHash, GIndexUtil.gIdxRightGIndex(rootGIndex));
+      if (optionalData == null || optionalData.isEmpty()) {
+        return getDefaultTree();
+      }
+
       final int isPresent = optionalData.get(0) & 0xFF;
       checkState(isPresent <= IS_PRESENT_PREFIX, "Selector is out of bounds");
 
