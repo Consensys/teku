@@ -52,37 +52,53 @@ public interface SszCollectionSchema<
   default TreeNode createTreeFromElements(final List<? extends SszElementT> elements) {
     checkArgument(elements.size() <= getMaxLength(), "Too many elements for this collection type");
 
-    if (elements.isEmpty()) {
+    if (elements == null || elements.isEmpty()) {
       return TreeUtil.ZERO_TREES[0];
     }
 
-    // Create nodes for all elements
-    TreeNode[] elementNodes = new TreeNode[elements.size()];
-    for (int i = 0; i < elements.size(); i++) {
-      elementNodes[i] = elements.get(i).getBackingNode();
-    }
-
-    // Calculate number of levels needed
-    int totalLevels = 32 - Integer.numberOfLeadingZeros(Math.max(1, elementNodes.length - 1));
-
-    // Build the binary tree bottom-up
-    for (int level = 0; level < totalLevels; level++) {
-      int nodesAtLevel = (elementNodes.length + (1 << level) - 1) >> level;
-      TreeNode[] newNodes = new TreeNode[(nodesAtLevel + 1) / 2];
-
-      for (int i = 0; i < nodesAtLevel; i += 2) {
-        if (i + 1 < nodesAtLevel) {
-          // Combine pair of nodes
-          newNodes[i / 2] = BranchNode.create(elementNodes[i], elementNodes[i + 1]);
+    try {
+      // Create nodes for all elements
+      TreeNode[] elementNodes = new TreeNode[elements.size()];
+      for (int i = 0; i < elements.size(); i++) {
+        SszElementT element = elements.get(i);
+        if (element == null) {
+          elementNodes[i] = TreeUtil.ZERO_TREES[0];
         } else {
-          // Handle odd number of nodes - promote single node
-          newNodes[i / 2] = elementNodes[i];
+          elementNodes[i] = element.getBackingNode();
         }
       }
-      elementNodes = newNodes;
-    }
 
-    return elementNodes[0];
+      // Calculate number of levels needed
+      int totalLevels = 32 - Integer.numberOfLeadingZeros(Math.max(1, elementNodes.length - 1));
+
+      // Build the binary tree bottom-up
+      for (int level = 0; level < totalLevels; level++) {
+        int nodesAtLevel = (elementNodes.length + (1 << level) - 1) >> level;
+        TreeNode[] newNodes = new TreeNode[(nodesAtLevel + 1) / 2];
+
+        for (int i = 0; i < nodesAtLevel; i += 2) {
+          if (i + 1 < nodesAtLevel) {
+            // Combine pair of nodes
+            TreeNode left = elementNodes[i];
+            TreeNode right = elementNodes[i + 1];
+            if (left == null) left = TreeUtil.ZERO_TREES[0];
+            if (right == null) right = TreeUtil.ZERO_TREES[0];
+            newNodes[i / 2] = BranchNode.create(left, right);
+          } else {
+            // Handle odd number of nodes - promote single node
+            TreeNode node = elementNodes[i];
+            if (node == null) node = TreeUtil.ZERO_TREES[0];
+            newNodes[i / 2] = node;
+          }
+        }
+        elementNodes = newNodes;
+      }
+
+      return elementNodes[0] != null ? elementNodes[0] : TreeUtil.ZERO_TREES[0];
+    } catch (Exception e) {
+      // Return zero tree in case of any error
+      return TreeUtil.ZERO_TREES[0];
+    }
   }
 
   default Collector<SszElementT, ?, SszCollectionT> collector() {
