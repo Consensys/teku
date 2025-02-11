@@ -56,7 +56,7 @@ public class SszOptionalSchemaImpl<ElementDataT extends SszData>
   private static final LeafNode EMPTY_OPTIONAL_LEAF = LeafNode.create(Bytes.of(0));
   private static final LeafNode PRESENT_OPTIONAL_LEAF =
       LeafNode.create(Bytes.of(IS_PRESENT_PREFIX));
-  private static final TreeNode DEFAULT_TREE = createTreeNode(LeafNode.EMPTY_LEAF, false);
+  private static final TreeNode DEFAULT_TREE = createTreeNode(TreeUtil.ZERO_TREES[0], false);
 
   private static LeafNode createOptionalNode(final boolean isPresent) {
     return isPresent ? PRESENT_OPTIONAL_LEAF : EMPTY_OPTIONAL_LEAF;
@@ -244,7 +244,7 @@ public class SszOptionalSchemaImpl<ElementDataT extends SszData>
 
       final TreeNode optionalNode =
           nodeSource.loadLeafNode(optionalHash, GIndexUtil.gIdxRightGIndex(rootGIndex));
-      final int isPresent = optionalNode.get(0, ByteOrder.LITTLE_ENDIAN);
+      final int isPresent = optionalNode.getData().get(0) & 0xFF;
       checkState(isPresent <= IS_PRESENT_PREFIX, "Selector is out of bounds");
 
       if (isPresent == 0) {
