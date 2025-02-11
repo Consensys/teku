@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Suppliers;
-import java.nio.ByteOrder;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
