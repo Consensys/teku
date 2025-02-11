@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.inclusionlist;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -47,18 +49,19 @@ public class InclusionListManager implements SlotEventsChannel {
   public void add(final SignedInclusionList signedInclusionList) {
     final UInt64 validatorIndex = signedInclusionList.getMessage().getValidatorIndex();
     final UInt64 slot = signedInclusionList.getMessage().getSlot();
-    if (slotToInclusionListsByValidatorIndex.containsKey(slot)) {
-      if (slotToInclusionListsByValidatorIndex.get(slot).containsKey(validatorIndex)) {
-        slotToInclusionListsByValidatorIndex.get(slot).get(validatorIndex).add(signedInclusionList);
-      } else {
-        slotToInclusionListsByValidatorIndex
-            .get(slot)
-            .put(validatorIndex, List.of(signedInclusionList));
-      }
-    } else {
-      slotToInclusionListsByValidatorIndex.put(
-          slot, Map.of(validatorIndex, List.of(signedInclusionList)));
-    }
+    slotToInclusionListsByValidatorIndex
+        .computeIfAbsent(slot, index -> new HashMap<>())
+        .compute(
+            validatorIndex,
+            (index, inclusionLists) -> {
+              if (inclusionLists == null) {
+                return List.of(signedInclusionList);
+              } else {
+                List<SignedInclusionList> updatedList = new ArrayList<>(inclusionLists);
+                updatedList.add(signedInclusionList);
+                return updatedList;
+              }
+            });
   }
 
   public SafeFuture<InternalValidationResult> addSignedInclusionList(
