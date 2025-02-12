@@ -18,6 +18,8 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONS
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
+import java.util.List;
+
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.Version;
@@ -25,28 +27,30 @@ import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStatePendingDeposits;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 
 public class GetPendingDepositsIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   @Test
   public void shouldGetElectraDepositsJson() throws Exception {
     startRestAPIAtGenesis(SpecMilestone.ELECTRA);
-    createBlocksAtSlots(10);
+    final List<SignedBlockAndState> data = createBlocksAtSlots(10);
     final Response response = get("head");
 
     final String responseText = response.body().string();
     final JsonNode node = JsonTestUtil.parseAsJsonNode(responseText);
+    final BeaconStateElectra stateElectra = data.getLast().getState().toVersionElectra().orElseThrow();
     assertThat(node.get("version").asText()).isEqualTo("electra");
     assertThat(node.get("execution_optimistic").asBoolean()).isFalse();
     assertThat(node.get("finalized").asBoolean()).isFalse();
     assertThat(node.get("data").size()).isEqualTo(2);
     assertThat(node.get("data").get(0).get("slot").asInt()).isEqualTo(10);
     assertThat(node.get("data").get(0).get("pubkey").asText())
-        .isEqualTo(
-            "0x903e979f8c9074fcfb34eb5c7c2574fe6a87c76e528ebc6019bc063e0640ae6dc66581d08c48ff8fe22e2cc1ca2075cd");
+        .isEqualTo(stateElectra.getPendingDeposits().get(0).getPublicKey().toHexString());
     assertThat(node.get("data").get(1).get("slot").asInt()).isEqualTo(10);
-    assertThat(node.get("data").get(0).get("pubkey").asText())
+    assertThat(node.get("data").get(1).get("pubkey").asText())
         .isEqualTo(
-            "0xb8313bd8b0064c24bbb6a9db2462a2a13b7c0dafa0aaf940adad9ad81eda2b094bec0e05cab6ddafe0490b4b14a53a8a");
+                stateElectra.getPendingDeposits().get(1).getPublicKey().toHexString());
     assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.electra.name());
   }
 
