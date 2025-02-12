@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
@@ -60,8 +61,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   static final long ATTESTATION_RETENTION_SLOTS = 64;
 
   static final Comparator<Attestation> ATTESTATION_INCLUSION_COMPARATOR =
-      Comparator.<Attestation, UInt64>comparing(attestation -> attestation.getData().getSlot())
-          .thenComparingInt(attestation -> attestation.getAggregationBits().getBitCount())
+      Comparator.<Attestation>comparingInt(
+              attestation -> attestation.getAggregationBits().getBitCount())
           .reversed();
 
   /**
@@ -250,12 +251,12 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         // We can immediately skip any attestations from the block slot or later
         .headMap(stateAtBlockSlot.getSlot(), false)
         .descendingMap()
-        .values()
+        .entrySet()
         .stream()
         .flatMap(
-            attestationDataHashesForSlot ->
-                streamAggregatesForAttestationDataHashesBySlot(
-                    attestationDataHashesForSlot,
+            slotAndDataHashSet ->
+                streamAggregatesForDataHashesBySlot(
+                    slotAndDataHashSet,
                     stateAtBlockSlot,
                     forkChecker,
                     blockRequiresAttestationsWithCommitteeBits))
@@ -272,13 +273,13 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .collect(attestationsSchema.collector());
   }
 
-  private Stream<Attestation> streamAggregatesForAttestationDataHashesBySlot(
-      final Set<Bytes> dataHashesForSlot,
+  private Stream<Attestation> streamAggregatesForDataHashesBySlot(
+      final Entry<UInt64, Set<Bytes>> slotAndDataHashSet,
       final BeaconState stateAtBlockSlot,
       final AttestationForkChecker forkChecker,
       final boolean blockRequiresAttestationsWithCommitteeBits) {
 
-    return dataHashesForSlot.stream()
+    return slotAndDataHashSet.getValue().stream()
         .map(attestationGroupByDataHash::get)
         .filter(Objects::nonNull)
         .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
