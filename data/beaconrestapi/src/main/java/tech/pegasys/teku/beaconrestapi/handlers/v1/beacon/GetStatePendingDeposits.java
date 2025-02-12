@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
@@ -79,7 +80,7 @@ public class GetStatePendingDeposits extends RestApiEndpoint {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
 
-    SafeFuture<Optional<ObjectAndMetaData<List<PendingDeposit>>>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<SszList<PendingDeposit>>>> future =
         chainDataProvider.getStatePendingDeposits(request.getPathParameter(PARAMETER_STATE_ID));
 
     request.respondAsync(

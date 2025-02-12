@@ -53,6 +53,7 @@ import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -748,7 +749,7 @@ public class ChainDataProvider {
         .thenApply(maybeState -> maybeState.map(BeaconState::getSlot));
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<List<PendingDeposit>>>> getStatePendingDeposits(
+  public SafeFuture<Optional<ObjectAndMetaData<SszList<PendingDeposit>>>> getStatePendingDeposits(
       final String stateIdParam) {
     return stateSelectorFactory
         .createSelectorForStateId(stateIdParam)
@@ -756,7 +757,7 @@ public class ChainDataProvider {
         .thenApply(this::getPendingDeposits);
   }
 
-  private Optional<ObjectAndMetaData<List<PendingDeposit>>> getPendingDeposits(
+  private Optional<ObjectAndMetaData<SszList<PendingDeposit>>> getPendingDeposits(
       final Optional<StateAndMetaData> maybeStateAndMetadata) {
     if (maybeStateAndMetadata.isPresent()) {
       if (!maybeStateAndMetadata
@@ -768,13 +769,9 @@ public class ChainDataProvider {
       }
       return maybeStateAndMetadata.map(
           stateAndMetaData -> {
-            final List<PendingDeposit> deposits =
-                stateAndMetaData
-                    .getData()
-                    .toVersionElectra()
-                    .orElseThrow()
-                    .getPendingDeposits()
-                    .asList();
+            final SszList<PendingDeposit> deposits =
+                stateAndMetaData.getData().toVersionElectra().orElseThrow().getPendingDeposits();
+            ;
             return new ObjectAndMetaData<>(
                 deposits,
                 stateAndMetaData.getMilestone(),
