@@ -1,6 +1,6 @@
 {
   "get" : {
-    "tags" : [ "Beacon", "Experimental" ],
+    "tags" : [ "Beacon" ],
     "operationId" : "getPendingDeposits",
     "summary" : "Get pending deposits from state",
     "description" : "Returns pending deposits for state with given 'stateId'. Should return 400 if requested before electra.",

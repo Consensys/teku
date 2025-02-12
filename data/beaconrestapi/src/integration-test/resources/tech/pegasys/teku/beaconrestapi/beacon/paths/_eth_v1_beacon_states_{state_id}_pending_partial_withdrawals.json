@@ -1,6 +1,6 @@
 {
   "get" : {
-    "tags" : [ "Beacon", "Experimental" ],
+    "tags" : [ "Beacon" ],
     "operationId" : "getPendingPartialWithdrawals",
     "summary" : "Get pending partial withdrawals from state",
     "description" : "Returns pending partial withdrawals for state with given 'stateId'. Should return 400 if requested before electra.",

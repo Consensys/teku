@@ -22,7 +22,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_O
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
@@ -63,7 +62,7 @@ public class GetStatePendingDeposits extends RestApiEndpoint {
             .description(
                 "Returns pending deposits for state with given 'stateId'. Should return 400 if requested before electra.")
             .pathParam(PARAMETER_STATE_ID)
-            .tags(TAG_BEACON, TAG_EXPERIMENTAL)
+            .tags(TAG_BEACON)
             .response(
                 SC_OK,
                 "Request successful",
