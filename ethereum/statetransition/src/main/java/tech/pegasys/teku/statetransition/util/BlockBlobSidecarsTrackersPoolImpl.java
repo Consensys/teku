@@ -795,6 +795,11 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     if (blockBlobSidecarsTracker == null || blockBlobSidecarsTracker.isComplete()) {
       return;
     }
+    if (spec.atSlot(slotAndBlockRoot.getSlot())
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      return;
+    }
 
     if (blockBlobSidecarsTracker.getBlock().isEmpty()) {
 

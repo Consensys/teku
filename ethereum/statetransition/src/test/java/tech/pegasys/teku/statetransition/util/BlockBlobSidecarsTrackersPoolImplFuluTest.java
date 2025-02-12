@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -49,6 +50,8 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
@@ -208,5 +211,57 @@ public class BlockBlobSidecarsTrackersPoolImplFuluTest {
         .isTrue();
     verifyNoInteractions(dataColumnSidecarPublisher);
     verifyNoInteractions(blobSidecarPublisher);
+  }
+
+  @Test
+  void shouldNotFetchMissingBlobSidecarsViaRPCWhenELLookupFails() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
+    final List<BlobIdentifier> requiredBlobSidecarEvents = new ArrayList<>();
+    blockBlobSidecarsTrackersPool.subscribeRequiredBlobSidecar(requiredBlobSidecarEvents::add);
+
+    final Set<BlobIdentifier> missingBlobs =
+        Set.of(
+            new BlobIdentifier(block.getRoot(), UInt64.ONE),
+            new BlobIdentifier(block.getRoot(), UInt64.ZERO));
+
+    final Function<SlotAndBlockRoot, BlockBlobSidecarsTracker> mockedTrackersFactory =
+        (slotAndRoot) -> {
+          BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
+          when(tracker.getMissingBlobSidecars()).thenAnswer(__ -> missingBlobs.stream());
+          when(tracker.getBlock()).thenReturn(Optional.of(block));
+          return tracker;
+        };
+    final BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPoolCustom =
+        new PoolFactory(metricsSystem)
+            .createPoolForBlockBlobSidecarsTrackers(
+                blockImportChannel,
+                spec,
+                timeProvider,
+                asyncRunner,
+                recentChainData,
+                executionLayer,
+                () -> blobSidecarGossipValidator,
+                blobSidecarPublisher,
+                historicalTolerance,
+                futureTolerance,
+                maxItems,
+                mockedTrackersFactory::apply,
+                true,
+                kzg,
+                dataColumnSidecarPublisher);
+    blockBlobSidecarsTrackersPoolCustom.onSlot(currentSlot);
+
+    // prepare failure from EL
+    when(executionLayer.engineGetBlobs(any(), any()))
+        .thenReturn(SafeFuture.failedFuture(new RuntimeException("oops")));
+
+    blockBlobSidecarsTrackersPoolCustom.onNewBlock(block, Optional.empty());
+
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+
+    asyncRunner.executeQueuedActions();
+
+    verify(executionLayer).engineGetBlobs(any(), any());
+    assertThat(requiredBlobSidecarEvents).isEmpty();
   }
 }
