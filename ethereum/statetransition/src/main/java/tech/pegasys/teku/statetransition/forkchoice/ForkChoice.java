@@ -438,7 +438,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         blobSidecarManager.createAvailabilityChecker(block);
 
     blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
-    final SlotAndBlockRoot blockAndSlot = new SlotAndBlockRoot(block.getSlot(), block.hashTreeRoot());
+    final SlotAndBlockRoot blockAndSlot =
+        new SlotAndBlockRoot(block.getSlot(), block.hashTreeRoot());
     final Optional<List<InclusionList>> inclusionLists = store.getInclusionList(blockAndSlot);
 
     final BeaconState postState;
@@ -450,8 +451,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                   blockSlotState.get(),
                   indexedAttestationCache,
                   Optional.of(payloadExecutor),
-                  inclusionLists
-                  );
+                  inclusionLists);
     } catch (final StateTransitionException e) {
       final BlockImportResult result = BlockImportResult.failedStateTransition(e);
       reportInvalidBlock(block, result);
