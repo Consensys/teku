@@ -18,7 +18,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONS
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
-import java.util.List;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.Version;
@@ -26,13 +25,12 @@ import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStatePendingDeposits;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 
 public class GetPendingDepositsIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   @Test
   public void shouldGetElectraDepositsJson() throws Exception {
     startRestAPIAtGenesis(SpecMilestone.ELECTRA);
-    final List<SignedBlockAndState> created = createBlocksAtSlots(10);
+    createBlocksAtSlots(10);
     final Response response = get("head");
 
     final String responseText = response.body().string();
