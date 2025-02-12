@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7732.MutableBeaconStateEip7732;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -314,7 +315,12 @@ public class BlockProcessorEip7732 extends BlockProcessorElectra {
       final MutableBeaconState genericState, final ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException {
     // return early if the parent block was empty
-    if (!predicatesEip7732.isParentBlockFull(genericState)) {
+    if (!predicatesEip7732.isParentBlockFull(genericState)
+        // extra check
+        && !BeaconStateBellatrix.required(genericState)
+            .getLatestExecutionPayloadHeader()
+            .getBlockHash()
+            .isZero()) {
       return;
     }
     super.processWithdrawals(genericState, payloadSummary);

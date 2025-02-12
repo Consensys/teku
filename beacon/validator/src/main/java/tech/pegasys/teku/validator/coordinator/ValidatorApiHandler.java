@@ -670,16 +670,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public SafeFuture<Optional<ExecutionPayloadEnvelope>> getExecutionPayloadEnvelope(
       final UInt64 slot, final BLSPublicKey builderPublicKey) {
     return combinedChainDataClient
-        .getBlockAtSlotExact(slot)
-        .thenCombine(
-            combinedChainDataClient.getStateAtSlotExact(slot),
-            (maybeBlock, maybeState) -> {
-              if (maybeBlock.isEmpty() || maybeState.isEmpty()) {
-                return Optional.empty();
-              }
-              return executionPayloadAndBlobSidecarsRevealer.revealExecutionPayload(
-                  maybeBlock.get(), maybeState.get());
-            });
+        .getSignedBlockAndStateInEffectAtSlot(slot)
+        .thenApply(
+            maybeBlockAndState ->
+                maybeBlockAndState.flatMap(
+                    blockAndState ->
+                        executionPayloadAndBlobSidecarsRevealer.revealExecutionPayload(
+                            blockAndState.getBlock(), blockAndState.getState())));
   }
 
   @Override

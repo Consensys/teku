@@ -153,8 +153,7 @@ public class ExecutionPayloadProcessorEip7732 extends AbstractExecutionPayloadPr
     // Verify prev_randao
     // EIP-7732 TODO: fix (doesn't work in local interop)
     //    final Bytes32 expectedPrevRandao =
-    //        beaconStateAccessors.getRandaoMix(state,
-    // miscHelpers.computeEpochAtSlot(state.getSlot()));
+    //        beaconStateAccessors.getRandaoMix(state, beaconStateAccessors.getCurrentEpoch(state));
     //    if (!payload.getPrevRandao().equals(expectedPrevRandao)) {
     //      throw new ExecutionPayloadProcessingException(
     //          "Execution payload prev randao %s is not as expected %s",
