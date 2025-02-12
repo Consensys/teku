@@ -19,6 +19,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfigElectra.FULL_EXIT_REQUEST_AMOUNT;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -550,7 +551,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
         getExecutionRequestsDataCodec().encode(blockBody.getExecutionRequests());
 
     final NewPayloadRequest newPayloadRequest =
-        spec.getBlockProcessor(UInt64.ONE).computeNewPayloadRequest(preState, blockBody);
+        spec.getBlockProcessor(UInt64.ONE).computeNewPayloadRequest(preState, blockBody, __-> Optional.empty());
 
     assertThat(newPayloadRequest.getExecutionPayload())
         .isEqualTo(blockBody.getOptionalExecutionPayload().orElseThrow());

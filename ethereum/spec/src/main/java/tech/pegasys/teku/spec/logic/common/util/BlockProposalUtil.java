@@ -92,7 +92,8 @@ public class BlockProposalUtil {
                       block,
                       IndexedAttestationCache.NOOP,
                       BLSSignatureVerifier.NO_OP,
-                      Optional.empty());
+                      Optional.empty(),
+                          __ -> Optional.empty());
 
               blockProductionPerformance.stateTransition();
 

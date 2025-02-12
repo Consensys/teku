@@ -25,6 +25,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltairTest;
 
+import java.util.Optional;
+
 public class BlockProcessorBellatrixTest extends BlockProcessorAltairTest {
 
   @Override
@@ -38,7 +40,7 @@ public class BlockProcessorBellatrixTest extends BlockProcessorAltairTest {
     final BeaconBlockBody blockBody = dataStructureUtil.randomBeaconBlockBody();
 
     final NewPayloadRequest newPayloadRequest =
-        spec.getBlockProcessor(UInt64.ONE).computeNewPayloadRequest(preState, blockBody);
+        spec.getBlockProcessor(UInt64.ONE).computeNewPayloadRequest(preState, blockBody, __-> Optional.empty());
 
     assertThat(newPayloadRequest.getExecutionPayload())
         .isEqualTo(blockBody.getOptionalExecutionPayload().orElseThrow());
