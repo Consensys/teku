@@ -103,13 +103,13 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       final MutableBeaconState genericState,
       final BeaconBlockBody beaconBlockBody,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     final ExecutionPayloadHeader executionPayloadHeader =
         extractExecutionPayloadHeader(beaconBlockBody);
     processWithdrawals(genericState, executionPayloadHeader);
     super.executionProcessing(
-        genericState, beaconBlockBody, payloadExecutor, inclusionListSupplier);
+        genericState, beaconBlockBody, payloadExecutor, inclusionLists);
   }
 
   @Override

@@ -119,10 +119,10 @@ public class DefaultOperationProcessor implements OperationProcessor {
       final MutableBeaconState state,
       final BeaconBlockBody beaconBlockBody,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     spec.getBlockProcessor(state.getSlot())
-        .processExecutionPayload(state, beaconBlockBody, payloadExecutor, inclusionListSupplier);
+        .processExecutionPayload(state, beaconBlockBody, payloadExecutor, inclusionLists);
   }
 
   @Override

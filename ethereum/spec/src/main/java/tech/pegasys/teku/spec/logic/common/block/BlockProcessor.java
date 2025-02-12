@@ -60,32 +60,33 @@ public interface BlockProcessor {
   Optional<OperationInvalidReason> validateAttestation(BeaconState state, AttestationData data);
 
   BeaconState processAndValidateBlock(
-      SignedBeaconBlock signedBlock,
-      BeaconState blockSlotState,
-      IndexedAttestationCache indexedAttestationCache,
-      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+          SignedBeaconBlock signedBlock,
+          BeaconState blockSlotState,
+          IndexedAttestationCache indexedAttestationCache,
+          Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
+          Optional<List<InclusionList>> inclusionList)
       throws StateTransitionException;
 
   /**
    * Processes the given block on top of {@code blockSlotState} and optionally validates the block
    *
-   * @param signedBlock The block to be processed
-   * @param blockSlotState The preState on which this block should be processed, this preState must
-   *     already be advanced to the block's slot
+   * @param signedBlock             The block to be processed
+   * @param blockSlotState          The preState on which this block should be processed, this preState must
+   *                                already be advanced to the block's slot
    * @param indexedAttestationCache A cache of indexed attestations
-   * @param signatureVerifier The signature verifier to use
-   * @param payloadExecutor the optimistic payload executor to begin execution with
+   * @param signatureVerifier       The signature verifier to use
+   * @param payloadExecutor         the optimistic payload executor to begin execution with
+   * @param inclusionLists          The inclusion lists for the block
    * @return The post state after processing the block on top of {@code blockSlotState}
    * @throws StateTransitionException If the block is invalid or cannot be processed
    */
   BeaconState processAndValidateBlock(
-      SignedBeaconBlock signedBlock,
-      BeaconState blockSlotState,
-      IndexedAttestationCache indexedAttestationCache,
-      BLSSignatureVerifier signatureVerifier,
-      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+          SignedBeaconBlock signedBlock,
+          BeaconState blockSlotState,
+          IndexedAttestationCache indexedAttestationCache,
+          BLSSignatureVerifier signatureVerifier,
+          Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
+          Optional<List<InclusionList>> inclusionLists)
       throws StateTransitionException;
 
   BeaconState processUnsignedBlock(
@@ -94,7 +95,7 @@ public interface BlockProcessor {
       IndexedAttestationCache indexedAttestationCache,
       BLSSignatureVerifier signatureVerifier,
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException;
 
   void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
@@ -151,20 +152,20 @@ public interface BlockProcessor {
       MutableBeaconState state,
       BeaconBlockBody beaconBlockBody,
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException;
 
   void validateExecutionPayload(
       BeaconState state,
       BeaconBlockBody beaconBlockBody,
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException;
 
   NewPayloadRequest computeNewPayloadRequest(
       BeaconState state,
       BeaconBlockBody beaconBlockBody,
-      Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException;
 
   void validateExecutionPayloadHeader(

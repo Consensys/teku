@@ -61,7 +61,7 @@ public interface OperationProcessor {
       MutableBeaconState state,
       BeaconBlockBody beaconBlockBody,
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException;
 
   void processBlsToExecutionChange(

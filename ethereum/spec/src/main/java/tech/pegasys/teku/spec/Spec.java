@@ -795,7 +795,7 @@ public class Spec {
       final SignedBeaconBlock block,
       final BLSSignatureVerifier signatureVerifier,
       final Optional<OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionLists)
       throws StateTransitionException {
     try {
       final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
@@ -806,7 +806,7 @@ public class Spec {
               IndexedAttestationCache.NOOP,
               signatureVerifier,
               payloadExecutor,
-              inclusionListSupplier);
+              inclusionLists);
     } catch (SlotProcessingException | EpochProcessingException e) {
       throw new StateTransitionException(e);
     }
@@ -823,7 +823,7 @@ public class Spec {
               IndexedAttestationCache.NOOP,
               BLSSignatureVerifier.NO_OP,
               Optional.empty(),
-              __ -> Optional.empty());
+              Optional.empty());
     } catch (SlotProcessingException | EpochProcessingException | BlockProcessingException e) {
       throw new StateTransitionException(e);
     }

@@ -102,7 +102,7 @@ public class TransitionTestExecutor implements TestExecutor {
             metadata.blsSetting == 2 ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
         result =
             spec.processBlock(
-                result, block, signatureVerifier, Optional.empty(), __ -> Optional.empty());
+                result, block, signatureVerifier, Optional.empty(), Optional.empty());
       } catch (final StateTransitionException e) {
         Assertions.fail(
             "Failed to process block " + i + " at slot " + block.getSlot() + ": " + e.getMessage(),

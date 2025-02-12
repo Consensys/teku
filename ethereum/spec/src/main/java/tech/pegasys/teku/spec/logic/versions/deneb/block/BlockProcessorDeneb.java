@@ -78,7 +78,7 @@ public class BlockProcessorDeneb extends BlockProcessorCapella {
       final BeaconState genericState,
       final BeaconBlockBody beaconBlockBody,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     final int maxBlobsPerBlock = SpecConfigDeneb.required(specConfig).getMaxBlobsPerBlock();
     final SszList<SszKZGCommitment> blobKzgCommitments = extractBlobKzgCommitments(beaconBlockBody);
@@ -87,14 +87,14 @@ public class BlockProcessorDeneb extends BlockProcessorCapella {
           "Number of kzg commitments in block exceeds max blobs per block");
     }
     super.validateExecutionPayload(
-        genericState, beaconBlockBody, payloadExecutor, inclusionListSupplier);
+        genericState, beaconBlockBody, payloadExecutor, inclusionLists);
   }
 
   @Override
   public NewPayloadRequest computeNewPayloadRequest(
       final BeaconState state,
       final BeaconBlockBody beaconBlockBody,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     final ExecutionPayload executionPayload = extractExecutionPayload(beaconBlockBody);
     final SszList<SszKZGCommitment> blobKzgCommitments = extractBlobKzgCommitments(beaconBlockBody);

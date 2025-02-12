@@ -83,7 +83,7 @@ public class BlockProcessorEip7805 extends BlockProcessorElectra {
   public NewPayloadRequest computeNewPayloadRequest(
       final BeaconState state,
       final BeaconBlockBody beaconBlockBody,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     final ExecutionPayload executionPayload = extractExecutionPayload(beaconBlockBody);
     final SszList<SszKZGCommitment> blobKzgCommitments = extractBlobKzgCommitments(beaconBlockBody);
@@ -98,8 +98,6 @@ public class BlockProcessorEip7805 extends BlockProcessorElectra {
             .getOptionalExecutionRequests()
             .orElseThrow(() -> new BlockProcessingException("Execution requests expected"));
 
-    final Optional<List<InclusionList>> inclusionLists =
-        inclusionListSupplier.apply(new SlotAndBlockRoot(state.getSlot(), parentBeaconBlockRoot));
     List<Transaction> inclusionList = List.of();
     if (inclusionLists.isPresent()) {
       inclusionList =
