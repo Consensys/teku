@@ -72,6 +72,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
@@ -747,6 +748,40 @@ public class ChainDataProvider {
     return combinedChainDataClient
         .getLatestAvailableFinalizedState(beforeSlot)
         .thenApply(maybeState -> maybeState.map(BeaconState::getSlot));
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<SszList<PendingDeposit>>>> getStatePendingDeposits(
+      final String stateIdParam) {
+    return stateSelectorFactory
+        .createSelectorForStateId(stateIdParam)
+        .getState()
+        .thenApply(this::getPendingDeposits);
+  }
+
+  private Optional<ObjectAndMetaData<SszList<PendingDeposit>>> getPendingDeposits(
+      final Optional<StateAndMetaData> maybeStateAndMetadata) {
+    if (maybeStateAndMetadata.isPresent()) {
+      if (!maybeStateAndMetadata
+          .get()
+          .getMilestone()
+          .isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+        throw new BadRequestException(
+            "The state was successfully retrieved, but was prior to electra and does not contain pending deposits.");
+      }
+      return maybeStateAndMetadata.map(
+          stateAndMetaData -> {
+            final SszList<PendingDeposit> deposits =
+                stateAndMetaData.getData().toVersionElectra().orElseThrow().getPendingDeposits();
+            ;
+            return new ObjectAndMetaData<>(
+                deposits,
+                stateAndMetaData.getMilestone(),
+                stateAndMetaData.isExecutionOptimistic(),
+                stateAndMetaData.isCanonical(),
+                stateAndMetaData.isFinalized());
+          });
+    }
+    return Optional.empty();
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<SszList<PendingPartialWithdrawal>>>>
