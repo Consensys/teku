@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
@@ -251,7 +250,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         // We can immediately skip any attestations from the block slot or later
         .headMap(stateAtBlockSlot.getSlot(), false)
         .descendingMap()
-        .entrySet()
+        .values()
         .stream()
         .flatMap(
             slotAndDataHashSet ->
@@ -274,12 +273,12 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   private Stream<Attestation> streamAggregatesForDataHashesBySlot(
-      final Entry<UInt64, Set<Bytes>> slotAndDataHashSet,
+      final Set<Bytes> dataHashSetForSlot,
       final BeaconState stateAtBlockSlot,
       final AttestationForkChecker forkChecker,
       final boolean blockRequiresAttestationsWithCommitteeBits) {
 
-    return slotAndDataHashSet.getValue().stream()
+    return dataHashSetForSlot.stream()
         .map(attestationGroupByDataHash::get)
         .filter(Objects::nonNull)
         .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
