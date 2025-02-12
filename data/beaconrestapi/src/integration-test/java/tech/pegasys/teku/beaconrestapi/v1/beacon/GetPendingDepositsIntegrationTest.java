@@ -19,7 +19,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONS
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.List;
-
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.Version;
@@ -39,7 +38,8 @@ public class GetPendingDepositsIntegrationTest extends AbstractDataBackedRestAPI
 
     final String responseText = response.body().string();
     final JsonNode node = JsonTestUtil.parseAsJsonNode(responseText);
-    final BeaconStateElectra stateElectra = data.getLast().getState().toVersionElectra().orElseThrow();
+    final BeaconStateElectra stateElectra =
+        data.getLast().getState().toVersionElectra().orElseThrow();
     assertThat(node.get("version").asText()).isEqualTo("electra");
     assertThat(node.get("execution_optimistic").asBoolean()).isFalse();
     assertThat(node.get("finalized").asBoolean()).isFalse();
@@ -49,8 +49,7 @@ public class GetPendingDepositsIntegrationTest extends AbstractDataBackedRestAPI
         .isEqualTo(stateElectra.getPendingDeposits().get(0).getPublicKey().toHexString());
     assertThat(node.get("data").get(1).get("slot").asInt()).isEqualTo(10);
     assertThat(node.get("data").get(1).get("pubkey").asText())
-        .isEqualTo(
-                stateElectra.getPendingDeposits().get(1).getPublicKey().toHexString());
+        .isEqualTo(stateElectra.getPendingDeposits().get(1).getPublicKey().toHexString());
     assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.electra.name());
   }
 
