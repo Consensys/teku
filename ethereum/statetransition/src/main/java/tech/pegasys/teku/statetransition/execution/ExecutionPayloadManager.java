@@ -94,10 +94,19 @@ public class ExecutionPayloadManager
               importExecutionPayload(executionPayload);
             }
             case SAVE_FOR_FUTURE -> {
+              LOG.info(
+                  "Saving execution payload for slot {} and block root {} for future processing",
+                  executionPayload.getMessage().getSlot(),
+                  executionPayload.getMessage().getBeaconBlockRoot());
               recordArrivalTimestamp(executionPayload, arrivalTimestamp);
               savedForFutureExecutionPayloadEnvelopes.put(slotAndBlockRoot, executionPayload);
             }
-            case IGNORE, REJECT -> {}
+            case IGNORE, REJECT ->
+                LOG.warn(
+                    "Execution payload for slot {} and block root {} didn't pass gossip validation: {}",
+                    executionPayload.getMessage().getSlot(),
+                    executionPayload.getMessage().getBeaconBlockRoot(),
+                    result);
           }
         });
     return validationResult;
@@ -193,8 +202,7 @@ public class ExecutionPayloadManager
         .thenAccept(
             result -> {
               if (result.isSuccessful()) {
-                LOG.trace(
-                    "Successfully imported execution payload {}", executionPayload::toLogString);
+                LOG.info("Successfully imported {}", executionPayload::toLogString);
                 receivedExecutionPayloadEventsChannelPublisher.onExecutionPayloadImported(
                     executionPayload, result.isImportedOptimistically());
                 return;
@@ -205,8 +213,7 @@ public class ExecutionPayloadManager
             err -> {
               final String internalErrorMessage =
                   String.format(
-                      "Internal error while importing execution payload: %s",
-                      executionPayload.toLogString());
+                      "Internal error while importing %s", executionPayload.toLogString());
               LOG.error(internalErrorMessage, err);
             });
   }
@@ -215,8 +222,8 @@ public class ExecutionPayloadManager
       final ExecutionPayloadImportResult result,
       final SignedExecutionPayloadEnvelope executionPayload) {
     LOG.warn(
-        "Unable to import execution payload for reason {}: {}",
-        result::getFailureReason,
-        executionPayload::toLogString);
+        "Unable to import {} for reason {}",
+        executionPayload::toLogString,
+        result::getFailureReason);
   }
 }

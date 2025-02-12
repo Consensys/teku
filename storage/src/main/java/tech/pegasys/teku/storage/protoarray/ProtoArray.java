@@ -37,6 +37,7 @@ import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
@@ -140,6 +141,18 @@ public class ProtoArray {
 
     int nodeIndex = getTotalTrackedNodeCount();
 
+    // EIP-7732 TODO: hack approach
+    Optional<UInt64> modifiedExecutionBlockNumber = Optional.empty();
+    if (executionBlockNumber.equals(ProtoNode.NO_EXECUTION_BLOCK_NUMBER)
+        && spec.atSlot(blockSlot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+      final Optional<Integer> maybeParentNodeIndex = indices.get(parentRoot);
+      if (maybeParentNodeIndex.isEmpty()) {
+        return;
+      }
+      modifiedExecutionBlockNumber =
+          Optional.of(nodes.get(maybeParentNodeIndex.get()).getExecutionBlockNumber());
+    }
+
     ProtoNode node =
         new ProtoNode(
             blockSlot,
@@ -148,7 +161,7 @@ public class ProtoArray {
             parentRoot,
             indices.get(parentRoot),
             checkpoints,
-            executionBlockNumber,
+            modifiedExecutionBlockNumber.orElse(executionBlockNumber),
             executionBlockHash,
             UInt64.ZERO,
             Optional.empty(),
@@ -204,6 +217,7 @@ public class ProtoArray {
       return;
     }
     final int trackedIndex = indices.get(blockRoot).orElseThrow();
+    final ProtoNode trackedNode = nodes.get(trackedIndex);
 
     final ProtoNode node =
         new ProtoNode(
@@ -215,9 +229,9 @@ public class ProtoArray {
             checkpoints,
             executionBlockNumber,
             executionBlockHash,
-            UInt64.ZERO,
-            Optional.empty(),
-            Optional.empty(),
+            trackedNode.getWeight(),
+            trackedNode.getBestChildIndex(),
+            trackedNode.getBestDescendantIndex(),
             optimisticallyProcessed && !executionBlockHash.isZero() ? OPTIMISTIC : VALID);
 
     nodes.set(trackedIndex, node);
