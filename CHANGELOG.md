@@ -17,5 +17,6 @@
  - Deprecated beacon-api `/eth/v1/config/deposit_contract` - will be removed after electra, in the fulu timeframe.
  - Deprecated beacon-api `/teku/v1/beacon/pool/deposits` - will be removed after electra, in the fulu timeframe.
  - Deprecated beacon-api `/eth/v1/builder/states/{state_id}/expected_withdrawals` - will be removed after electra, in the fulu timeframe.
+ - Added beacon-api `/eth/v1/beacon/states/{state_id}/pending_deposits` endpoint for use post-electra.
 
 ### Bug Fixes
