@@ -16,7 +16,6 @@ package tech.pegasys.teku.reference.common.operations;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -62,7 +61,7 @@ public interface OperationProcessor {
       MutableBeaconState state,
       BeaconBlockBody beaconBlockBody,
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      Function<SlotAndBlockRoot, Optional<List<InclusionList>>>inclusionListSupplier)
+      Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
       throws BlockProcessingException;
 
   void processBlsToExecutionChange(

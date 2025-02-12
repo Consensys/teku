@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip7805.block;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
@@ -40,11 +43,6 @@ import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 public class BlockProcessorEip7805 extends BlockProcessorElectra {
 
@@ -83,31 +81,38 @@ public class BlockProcessorEip7805 extends BlockProcessorElectra {
 
   @Override
   public NewPayloadRequest computeNewPayloadRequest(
-          final BeaconState state, final BeaconBlockBody beaconBlockBody, final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
-          throws BlockProcessingException {
+      final BeaconState state,
+      final BeaconBlockBody beaconBlockBody,
+      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      throws BlockProcessingException {
     final ExecutionPayload executionPayload = extractExecutionPayload(beaconBlockBody);
     final SszList<SszKZGCommitment> blobKzgCommitments = extractBlobKzgCommitments(beaconBlockBody);
     final List<VersionedHash> versionedHashes =
-            blobKzgCommitments.stream()
-                    .map(SszKZGCommitment::getKZGCommitment)
-                    .map(miscHelpers::kzgCommitmentToVersionedHash)
-                    .toList();
+        blobKzgCommitments.stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .map(miscHelpers::kzgCommitmentToVersionedHash)
+            .toList();
     final Bytes32 parentBeaconBlockRoot = state.getLatestBlockHeader().getParentRoot();
     final ExecutionRequests executionRequests =
-            beaconBlockBody
-                    .getOptionalExecutionRequests()
-                    .orElseThrow(() -> new BlockProcessingException("Execution requests expected"));
-    final Optional<List<InclusionList>> inclusionLists = inclusionListSupplier.apply(new SlotAndBlockRoot(state.getSlot(), parentBeaconBlockRoot));
+        beaconBlockBody
+            .getOptionalExecutionRequests()
+            .orElseThrow(() -> new BlockProcessingException("Execution requests expected"));
+    final Optional<List<InclusionList>> inclusionLists =
+        inclusionListSupplier.apply(new SlotAndBlockRoot(state.getSlot(), parentBeaconBlockRoot));
     List<Transaction> inclusionList = List.of();
-    if(inclusionLists.isPresent()){
-      inclusionList = inclusionLists.get().stream().map(InclusionList::getTransactions).flatMap(List::stream).toList();
+    if (inclusionLists.isPresent()) {
+      inclusionList =
+          inclusionLists.get().stream()
+              .map(InclusionList::getTransactions)
+              .flatMap(List::stream)
+              .toList();
     }
 
     return new NewPayloadRequest(
-            executionPayload,
-            versionedHashes,
-            parentBeaconBlockRoot,
-            executionRequestsDataCodec7805.encode(executionRequests),
-            inclusionList);
+        executionPayload,
+        versionedHashes,
+        parentBeaconBlockRoot,
+        executionRequestsDataCodec7805.encode(executionRequests),
+        inclusionList);
   }
 }

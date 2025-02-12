@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.logic.versions.bellatrix.block;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -103,7 +102,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
 
     processBlockHeader(state, block);
     if (miscHelpersBellatrix.isExecutionEnabled(genericState, block)) {
-      executionProcessing(genericState, block.getBody(), payloadExecutor,inclusionListSupplier);
+      executionProcessing(genericState, block.getBody(), payloadExecutor, inclusionListSupplier);
     }
     processRandaoNoValidation(state, block.getBody());
     processEth1Data(state, block.getBody());
@@ -212,7 +211,9 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
 
   @Override
   public NewPayloadRequest computeNewPayloadRequest(
-      final BeaconState state, final BeaconBlockBody beaconBlockBody, final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final BeaconState state,
+      final BeaconBlockBody beaconBlockBody,
+      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
       throws BlockProcessingException {
     final ExecutionPayload executionPayload = extractExecutionPayload(beaconBlockBody);
     return new NewPayloadRequest(executionPayload);

@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -130,7 +129,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final BeaconBlockBodyAltair blockBody = BeaconBlockBodyAltair.required(block.getBody());
 
-    super.processBlock(state, block, indexedAttestationCache, signatureVerifier, payloadExecutor);
+    super.processBlock(state, block, indexedAttestationCache, signatureVerifier, payloadExecutor,inclusionListSupplier);
     processSyncAggregate(state, blockBody.getSyncAggregate(), signatureVerifier);
   }
 
@@ -317,7 +316,9 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
   @Override
   public NewPayloadRequest computeNewPayloadRequest(
-      final BeaconState state, final BeaconBlockBody beaconBlockBody, final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final BeaconState state,
+      final BeaconBlockBody beaconBlockBody,
+      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No NewPayloadRequest in Altair");
   }

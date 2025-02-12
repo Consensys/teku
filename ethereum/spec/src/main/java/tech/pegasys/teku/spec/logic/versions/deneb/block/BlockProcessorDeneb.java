@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.logic.versions.deneb.block;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
@@ -87,12 +86,15 @@ public class BlockProcessorDeneb extends BlockProcessorCapella {
       throw new BlockProcessingException(
           "Number of kzg commitments in block exceeds max blobs per block");
     }
-    super.validateExecutionPayload(genericState, beaconBlockBody, payloadExecutor, inclusionListSupplier);
+    super.validateExecutionPayload(
+        genericState, beaconBlockBody, payloadExecutor, inclusionListSupplier);
   }
 
   @Override
   public NewPayloadRequest computeNewPayloadRequest(
-      final BeaconState state, final BeaconBlockBody beaconBlockBody, final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final BeaconState state,
+      final BeaconBlockBody beaconBlockBody,
+      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
       throws BlockProcessingException {
     final ExecutionPayload executionPayload = extractExecutionPayload(beaconBlockBody);
     final SszList<SszKZGCommitment> blobKzgCommitments = extractBlobKzgCommitments(beaconBlockBody);

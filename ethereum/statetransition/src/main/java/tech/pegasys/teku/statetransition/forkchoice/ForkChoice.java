@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.bouncycastle.util.Store;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -425,8 +424,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final ForkChoiceUtil forkChoiceUtil = specVersion.getForkChoiceUtil();
     final UpdatableStore store = recentChainData.getStore();
     final BlockImportResult preconditionCheckResult =
-        forkChoiceUtil.checkOnBlockConditions(
-            block, blockSlotState.get(), store);
+        forkChoiceUtil.checkOnBlockConditions(block, blockSlotState.get(), store);
     if (!preconditionCheckResult.isSuccessful()) {
       reportInvalidBlock(block, preconditionCheckResult);
       return SafeFuture.completedFuture(preconditionCheckResult);
@@ -439,8 +437,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         blobSidecarManager.createAvailabilityChecker(block);
 
     blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
-
-
 
     final BeaconState postState;
     try {

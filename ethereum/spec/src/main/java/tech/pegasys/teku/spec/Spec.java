@@ -823,7 +823,7 @@ public class Spec {
               IndexedAttestationCache.NOOP,
               BLSSignatureVerifier.NO_OP,
               Optional.empty(),
-                  __-> Optional.empty());
+              __ -> Optional.empty());
     } catch (SlotProcessingException | EpochProcessingException | BlockProcessingException e) {
       throw new StateTransitionException(e);
     }

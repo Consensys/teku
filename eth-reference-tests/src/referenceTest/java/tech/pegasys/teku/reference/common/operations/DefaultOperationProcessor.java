@@ -122,7 +122,7 @@ public class DefaultOperationProcessor implements OperationProcessor {
       final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
       throws BlockProcessingException {
     spec.getBlockProcessor(state.getSlot())
-        .processExecutionPayload(state, beaconBlockBody, payloadExecutor,inclusionListSupplier);
+        .processExecutionPayload(state, beaconBlockBody, payloadExecutor, inclusionListSupplier);
   }
 
   @Override

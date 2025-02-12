@@ -90,7 +90,7 @@ public class TransitionCommand implements Runnable {
             blocks.sort(SLOT_COMPARATOR);
             for (SignedBeaconBlock block : blocks) {
               state =
-                  spec.processBlock(state, block, BLSSignatureVerifier.SIMPLE, Optional.empty());
+                  spec.processBlock(state, block, BLSSignatureVerifier.SIMPLE, Optional.empty(), __ -> Optional.empty());
             }
           }
           return state;

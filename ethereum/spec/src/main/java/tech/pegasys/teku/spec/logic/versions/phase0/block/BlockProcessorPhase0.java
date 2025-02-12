@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.logic.versions.phase0.block;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -137,7 +136,9 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
 
   @Override
   public NewPayloadRequest computeNewPayloadRequest(
-      final BeaconState state, final BeaconBlockBody beaconBlockBody, final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final BeaconState state,
+      final BeaconBlockBody beaconBlockBody,
+      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No NewPayloadRequest in phase0");
   }

@@ -332,7 +332,13 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       throws BlockProcessingException {
     return preState.updated(
         state -> {
-          processBlock(state, block, indexedAttestationCache, signatureVerifier, payloadExecutor, inclusionListSupplier);
+          processBlock(
+              state,
+              block,
+              indexedAttestationCache,
+              signatureVerifier,
+              payloadExecutor,
+              inclusionListSupplier);
           BeaconStateCache.getSlotCaches(state).onBlockProcessed();
         });
   }

@@ -108,7 +108,8 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
     final ExecutionPayloadHeader executionPayloadHeader =
         extractExecutionPayloadHeader(beaconBlockBody);
     processWithdrawals(genericState, executionPayloadHeader);
-    super.executionProcessing(genericState, beaconBlockBody, payloadExecutor, inclusionListSupplier);
+    super.executionProcessing(
+        genericState, beaconBlockBody, payloadExecutor, inclusionListSupplier);
   }
 
   @Override

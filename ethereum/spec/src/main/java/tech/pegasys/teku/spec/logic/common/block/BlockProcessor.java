@@ -80,12 +80,12 @@ public interface BlockProcessor {
    * @throws StateTransitionException If the block is invalid or cannot be processed
    */
   BeaconState processAndValidateBlock(
-          SignedBeaconBlock signedBlock,
-          BeaconState blockSlotState,
-          IndexedAttestationCache indexedAttestationCache,
-          BLSSignatureVerifier signatureVerifier,
-          Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-          Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      SignedBeaconBlock signedBlock,
+      BeaconState blockSlotState,
+      IndexedAttestationCache indexedAttestationCache,
+      BLSSignatureVerifier signatureVerifier,
+      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
+      Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
       throws StateTransitionException;
 
   BeaconState processUnsignedBlock(
@@ -161,7 +161,10 @@ public interface BlockProcessor {
       Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
       throws BlockProcessingException;
 
-  NewPayloadRequest computeNewPayloadRequest(BeaconState state, BeaconBlockBody beaconBlockBody, Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+  NewPayloadRequest computeNewPayloadRequest(
+      BeaconState state,
+      BeaconBlockBody beaconBlockBody,
+      Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
       throws BlockProcessingException;
 
   void validateExecutionPayloadHeader(

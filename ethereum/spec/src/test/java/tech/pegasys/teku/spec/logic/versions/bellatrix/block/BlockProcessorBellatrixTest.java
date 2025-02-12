@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.bellatrix.block;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -24,8 +25,6 @@ import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltairTest;
-
-import java.util.Optional;
 
 public class BlockProcessorBellatrixTest extends BlockProcessorAltairTest {
 
@@ -40,7 +39,8 @@ public class BlockProcessorBellatrixTest extends BlockProcessorAltairTest {
     final BeaconBlockBody blockBody = dataStructureUtil.randomBeaconBlockBody();
 
     final NewPayloadRequest newPayloadRequest =
-        spec.getBlockProcessor(UInt64.ONE).computeNewPayloadRequest(preState, blockBody, __-> Optional.empty());
+        spec.getBlockProcessor(UInt64.ONE)
+            .computeNewPayloadRequest(preState, blockBody, __ -> Optional.empty());
 
     assertThat(newPayloadRequest.getExecutionPayload())
         .isEqualTo(blockBody.getOptionalExecutionPayload().orElseThrow());
