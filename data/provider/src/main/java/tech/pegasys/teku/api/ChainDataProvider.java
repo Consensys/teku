@@ -71,6 +71,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -745,5 +746,50 @@ public class ChainDataProvider {
     return combinedChainDataClient
         .getLatestAvailableFinalizedState(beforeSlot)
         .thenApply(maybeState -> maybeState.map(BeaconState::getSlot));
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<List<PendingPartialWithdrawal>>>>
+      getPendingPartialWithdrawals(final String stateIdParam) {
+    return stateSelectorFactory
+        .createSelectorForStateId(stateIdParam)
+        .getState()
+        .thenApply(this::getPendingPartialWithdrawals);
+  }
+
+  private Optional<ObjectAndMetaData<List<PendingPartialWithdrawal>>> getPendingPartialWithdrawals(
+      final Optional<StateAndMetaData> maybeStateAndMetadata) {
+    checkMinimumMilestone(maybeStateAndMetadata, SpecMilestone.ELECTRA);
+
+    return maybeStateAndMetadata.map(
+        stateAndMetaData -> {
+          final List<PendingPartialWithdrawal> withdrawals =
+              stateAndMetaData
+                  .getData()
+                  .toVersionElectra()
+                  .orElseThrow()
+                  .getPendingPartialWithdrawals()
+                  .asList();
+          return new ObjectAndMetaData<>(
+              withdrawals,
+              stateAndMetaData.getMilestone(),
+              stateAndMetaData.isExecutionOptimistic(),
+              stateAndMetaData.isCanonical(),
+              stateAndMetaData.isFinalized());
+        });
+  }
+
+  private void checkMinimumMilestone(
+      final Optional<StateAndMetaData> maybeStateAndMetadata,
+      final SpecMilestone minimumMilestone) {
+    if (maybeStateAndMetadata.isPresent()
+        && maybeStateAndMetadata
+            .get()
+            .getMilestone()
+            .isLessThanOrEqualTo(minimumMilestone.getPreviousMilestone())) {
+      throw new BadRequestException(
+          String.format(
+              "The state was successfully retrieved, but was prior to %s and does not contain pending deposits.",
+              minimumMilestone.name()));
+    }
   }
 }
