@@ -19,17 +19,21 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseSszFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public class GetStatePendingPartialWithdrawalsTest
@@ -80,5 +84,19 @@ public class GetStatePendingPartialWithdrawalsTest
             withdrawal.getAmount(),
             withdrawal.getWithdrawableEpoch());
     assertThat(data).isEqualTo(expected);
+  }
+
+  @Test
+  void metadata_shouldHandle200OctetStream() throws IOException {
+    final BeaconStateElectra state =
+        dataStructureUtil.randomBeaconState().toVersionElectra().orElseThrow();
+    final PendingPartialWithdrawal pendingPartialWithdrawal =
+        dataStructureUtil.randomPendingPartialWithdrawal();
+    final SszList<PendingPartialWithdrawal> deposits =
+        state.getPendingPartialWithdrawals().getSchema().of(pendingPartialWithdrawal);
+    final ObjectAndMetaData<SszList<PendingPartialWithdrawal>> responseData =
+        new ObjectAndMetaData<>(deposits, SpecMilestone.ELECTRA, false, true, false);
+    final byte[] data = getResponseSszFromMetadata(handler, SC_OK, responseData);
+    assertThat(Bytes.of(data)).isEqualTo(deposits.sszSerialize());
   }
 }

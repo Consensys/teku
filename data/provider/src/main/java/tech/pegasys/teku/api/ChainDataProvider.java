@@ -53,6 +53,7 @@ import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -748,7 +749,7 @@ public class ChainDataProvider {
         .thenApply(maybeState -> maybeState.map(BeaconState::getSlot));
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<List<PendingPartialWithdrawal>>>>
+  public SafeFuture<Optional<ObjectAndMetaData<SszList<PendingPartialWithdrawal>>>>
       getPendingPartialWithdrawals(final String stateIdParam) {
     return stateSelectorFactory
         .createSelectorForStateId(stateIdParam)
@@ -756,19 +757,18 @@ public class ChainDataProvider {
         .thenApply(this::getPendingPartialWithdrawals);
   }
 
-  private Optional<ObjectAndMetaData<List<PendingPartialWithdrawal>>> getPendingPartialWithdrawals(
-      final Optional<StateAndMetaData> maybeStateAndMetadata) {
+  private Optional<ObjectAndMetaData<SszList<PendingPartialWithdrawal>>>
+      getPendingPartialWithdrawals(final Optional<StateAndMetaData> maybeStateAndMetadata) {
     checkMinimumMilestone(maybeStateAndMetadata, SpecMilestone.ELECTRA);
 
     return maybeStateAndMetadata.map(
         stateAndMetaData -> {
-          final List<PendingPartialWithdrawal> withdrawals =
+          final SszList<PendingPartialWithdrawal> withdrawals =
               stateAndMetaData
                   .getData()
                   .toVersionElectra()
                   .orElseThrow()
-                  .getPendingPartialWithdrawals()
-                  .asList();
+                  .getPendingPartialWithdrawals();
           return new ObjectAndMetaData<>(
               withdrawals,
               stateAndMetaData.getMilestone(),

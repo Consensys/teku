@@ -38,10 +38,12 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class GetStatePendingPartialWithdrawals extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/pending_partial_withdrawals";
@@ -79,7 +81,7 @@ public class GetStatePendingPartialWithdrawals extends RestApiEndpoint {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
 
-    SafeFuture<Optional<ObjectAndMetaData<List<PendingPartialWithdrawal>>>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<SszList<PendingPartialWithdrawal>>>> future =
         chainDataProvider.getPendingPartialWithdrawals(
             request.getPathParameter(PARAMETER_STATE_ID));
 
@@ -99,14 +101,14 @@ public class GetStatePendingPartialWithdrawals extends RestApiEndpoint {
 
   private static SerializableTypeDefinition<ObjectAndMetaData<List<PendingPartialWithdrawal>>>
       getResponseType(final SchemaDefinitionCache schemaDefinitionCache) {
-
-    final SerializableTypeDefinition<PendingPartialWithdrawal> pendingPartialWithdrawalType =
+    final SchemaDefinitionsElectra schemaDefinitionsElectra =
         schemaDefinitionCache
             .getSchemaDefinition(SpecMilestone.ELECTRA)
             .toVersionElectra()
-            .orElseThrow()
-            .getPendingPartialWithdrawalSchema()
-            .getJsonTypeDefinition();
+            .orElseThrow();
+
+    final SerializableTypeDefinition<PendingPartialWithdrawal> pendingPartialWithdrawalType =
+        schemaDefinitionsElectra.getPendingPartialWithdrawalSchema().getJsonTypeDefinition();
 
     return SerializableTypeDefinition.<ObjectAndMetaData<List<PendingPartialWithdrawal>>>object()
         .name("GetPendingPartialWithdrawalsResponse")
