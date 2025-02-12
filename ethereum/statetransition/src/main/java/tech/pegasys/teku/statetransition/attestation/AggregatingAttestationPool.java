@@ -253,9 +253,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .values()
         .stream()
         .flatMap(
-            slotAndDataHashSet ->
+            dataHashSetForSlot ->
                 streamAggregatesForDataHashesBySlot(
-                    slotAndDataHashSet,
+                    dataHashSetForSlot,
                     stateAtBlockSlot,
                     forkChecker,
                     blockRequiresAttestationsWithCommitteeBits))
