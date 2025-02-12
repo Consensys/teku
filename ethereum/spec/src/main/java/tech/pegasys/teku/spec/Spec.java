@@ -795,7 +795,7 @@ public class Spec {
       final SignedBeaconBlock block,
       final BLSSignatureVerifier signatureVerifier,
       final Optional<OptimisticExecutionPayloadExecutor> payloadExecutor,
-      Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
       throws StateTransitionException {
     try {
       final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());

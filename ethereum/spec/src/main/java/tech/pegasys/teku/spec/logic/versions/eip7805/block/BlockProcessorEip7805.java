@@ -97,6 +97,7 @@ public class BlockProcessorEip7805 extends BlockProcessorElectra {
         beaconBlockBody
             .getOptionalExecutionRequests()
             .orElseThrow(() -> new BlockProcessingException("Execution requests expected"));
+
     final Optional<List<InclusionList>> inclusionLists =
         inclusionListSupplier.apply(new SlotAndBlockRoot(state.getSlot(), parentBeaconBlockRoot));
     List<Transaction> inclusionList = List.of();
