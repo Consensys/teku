@@ -776,6 +776,11 @@ public class EndpointMetadata {
       return this;
     }
 
+    public EndpointMetaDataBuilder withUnsupportedMediaTypeResponse() {
+      response(SC_UNSUPPORTED_MEDIA_TYPE, "Unsupported media type", HTTP_ERROR_RESPONSE_TYPE);
+      return this;
+    }
+
     public EndpointMetaDataBuilder withNotImplementedResponse() {
       response(SC_NOT_IMPLEMENTED, "Not implemented", HTTP_ERROR_RESPONSE_TYPE);
       return this;

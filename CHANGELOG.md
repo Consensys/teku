@@ -9,5 +9,6 @@
 ### Breaking Changes
 
 ### Additions and Improvements
+ - Added beacon-api `/eth/v1/beacon/states/{state_id}/pending_deposits` endpoint for use post-electra.
 
 ### Bug Fixes
