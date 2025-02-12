@@ -129,7 +129,13 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final BeaconBlockBodyAltair blockBody = BeaconBlockBodyAltair.required(block.getBody());
 
-    super.processBlock(state, block, indexedAttestationCache, signatureVerifier, payloadExecutor,inclusionListSupplier);
+    super.processBlock(
+        state,
+        block,
+        indexedAttestationCache,
+        signatureVerifier,
+        payloadExecutor,
+        inclusionListSupplier);
     processSyncAggregate(state, blockBody.getSyncAggregate(), signatureVerifier);
   }
 
