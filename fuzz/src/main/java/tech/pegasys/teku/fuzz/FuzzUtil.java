@@ -168,6 +168,7 @@ public class FuzzUtil {
               structuredInput.getState(),
               structuredInput.getSignedBlock(),
               signatureVerifier,
+              Optional.empty(),
               Optional.empty());
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
@@ -326,7 +327,8 @@ public class FuzzUtil {
               .updated(
                   state ->
                       spec.getBlockProcessor(state.getSlot())
-                          .processExecutionPayload(state, beaconBlockBody, Optional.empty()));
+                          .processExecutionPayload(
+                              state, beaconBlockBody, Optional.empty(), Optional.empty()));
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {

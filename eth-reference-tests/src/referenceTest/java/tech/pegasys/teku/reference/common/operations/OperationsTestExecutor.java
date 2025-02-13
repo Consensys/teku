@@ -314,7 +314,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
             state,
             beaconBlockBody,
             Optional.of(
-                (latestExecutionPayloadHeader, payloadToExecute) -> executionMeta.executionValid));
+                (latestExecutionPayloadHeader, payloadToExecute) -> executionMeta.executionValid),
+            Optional.empty());
       }
       case BLS_TO_EXECUTION_CHANGE -> processBlsToExecutionChange(testDefinition, state, processor);
       case WITHDRAWAL -> processWithdrawal(testDefinition, state, processor);
