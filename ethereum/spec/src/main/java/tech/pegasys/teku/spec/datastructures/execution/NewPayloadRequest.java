@@ -27,7 +27,7 @@ public class NewPayloadRequest {
   private final Optional<List<VersionedHash>> versionedHashes;
   private final Optional<Bytes32> parentBeaconBlockRoot;
   private final Optional<List<Bytes>> executionRequests;
-  private final Optional<List<Bytes>> inclusionList;
+  private final Optional<List<Transaction>> inclusionList;
 
   public NewPayloadRequest(final ExecutionPayload executionPayload) {
     this.executionPayload = executionPayload;
@@ -65,7 +65,7 @@ public class NewPayloadRequest {
       final List<VersionedHash> versionedHashes,
       final Bytes32 parentBeaconBlockRoot,
       final List<Bytes> executionRequests,
-      final List<Bytes> inclusionList) {
+      final List<Transaction> inclusionList) {
     this.executionPayload = executionPayload;
     this.versionedHashes = Optional.of(versionedHashes);
     this.parentBeaconBlockRoot = Optional.of(parentBeaconBlockRoot);
@@ -89,7 +89,7 @@ public class NewPayloadRequest {
     return executionRequests;
   }
 
-  public Optional<List<Bytes>> getInclusionList() {
+  public Optional<List<Transaction>> getInclusionList() {
     return inclusionList;
   }
 

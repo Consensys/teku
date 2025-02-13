@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Withdraw
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -57,7 +58,8 @@ public interface OperationProcessor {
   void processExecutionPayload(
       MutableBeaconState state,
       BeaconBlockBody beaconBlockBody,
-      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
+      Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException;
 
   void processBlsToExecutionChange(
