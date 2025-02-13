@@ -128,8 +128,7 @@ public class BlockProcessorEip7805 extends BlockProcessorElectra {
       throw new BlockProcessingException(
           "Number of transaction in the inclusion list in block exceeds max transaction per inclusion list");
     }
-    super.validateExecutionPayload(
-        genericState, beaconBlockBody, payloadExecutor, inclusionLists);
+    super.validateExecutionPayload(genericState, beaconBlockBody, payloadExecutor, inclusionLists);
   }
 
   private List<Transaction> getInclusionListTransactions(final List<InclusionList> inclusionLists) {
