@@ -123,9 +123,12 @@ public class BlockOperationSelectorFactory {
     return bodyBuilder -> {
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
+      final long start = System.nanoTime();
       final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
               blockSlotState, new AttestationForkChecker(spec, blockSlotState));
+      System.out.println("getAttestationsForBlock: " + (System.nanoTime() - start) / 1_000_000 + "ms");
+
 
       // Collect slashings to include
       final Set<UInt64> exitedValidators = new HashSet<>();
