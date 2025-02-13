@@ -40,27 +40,28 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
-public class GetStatePendingDeposits extends RestApiEndpoint {
-  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/pending_deposits";
+public class GetStatePendingPartialWithdrawals extends RestApiEndpoint {
+  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/pending_partial_withdrawals";
 
   private final ChainDataProvider chainDataProvider;
 
-  public GetStatePendingDeposits(
+  public GetStatePendingPartialWithdrawals(
       final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
     this(dataProvider.getChainDataProvider(), schemaDefinitionCache);
   }
 
-  GetStatePendingDeposits(
+  GetStatePendingPartialWithdrawals(
       final ChainDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getPendingDeposits")
-            .summary("Get pending deposits from state")
+            .operationId("getPendingPartialWithdrawals")
+            .summary("Get pending partial withdrawals from state")
             .description(
-                "Returns pending deposits for state with given 'stateId'. Should return 400 if requested before electra.")
+                "Returns pending partial withdrawals for state with given 'stateId'. Should return 400 if requested before electra.")
             .pathParam(PARAMETER_STATE_ID)
             .tags(TAG_BEACON)
             .response(
@@ -79,8 +80,9 @@ public class GetStatePendingDeposits extends RestApiEndpoint {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
 
-    final SafeFuture<Optional<ObjectAndMetaData<SszList<PendingDeposit>>>> future =
-        chainDataProvider.getStatePendingDeposits(request.getPathParameter(PARAMETER_STATE_ID));
+    final SafeFuture<Optional<ObjectAndMetaData<SszList<PendingPartialWithdrawal>>>> future =
+        chainDataProvider.getPendingPartialWithdrawals(
+            request.getPathParameter(PARAMETER_STATE_ID));
 
     request.respondAsync(
         future.thenApply(
@@ -96,23 +98,23 @@ public class GetStatePendingDeposits extends RestApiEndpoint {
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
-  private static SerializableTypeDefinition<ObjectAndMetaData<List<PendingDeposit>>>
+  private static SerializableTypeDefinition<ObjectAndMetaData<List<PendingPartialWithdrawal>>>
       getResponseType(final SchemaDefinitionCache schemaDefinitionCache) {
-
-    final SerializableTypeDefinition<PendingDeposit> pendingDepositType =
+    final SchemaDefinitionsElectra schemaDefinitionsElectra =
         schemaDefinitionCache
             .getSchemaDefinition(SpecMilestone.ELECTRA)
             .toVersionElectra()
-            .orElseThrow()
-            .getPendingDepositSchema()
-            .getJsonTypeDefinition();
+            .orElseThrow();
 
-    return SerializableTypeDefinition.<ObjectAndMetaData<List<PendingDeposit>>>object()
-        .name("GetPendingDepositsResponse")
+    final SerializableTypeDefinition<PendingPartialWithdrawal> pendingPartialWithdrawalType =
+        schemaDefinitionsElectra.getPendingPartialWithdrawalSchema().getJsonTypeDefinition();
+
+    return SerializableTypeDefinition.<ObjectAndMetaData<List<PendingPartialWithdrawal>>>object()
+        .name("GetPendingPartialWithdrawalsResponse")
         .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
         .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
         .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
-        .withField("data", listOf(pendingDepositType), ObjectAndMetaData::getData)
+        .withField("data", listOf(pendingPartialWithdrawalType), ObjectAndMetaData::getData)
         .build();
   }
 }

@@ -55,6 +55,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateCommittees;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFinalityCheckpoints;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStatePendingDeposits;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStatePendingPartialWithdrawals;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRandao;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateSyncCommittees;
@@ -253,6 +254,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new PostSyncCommittees(dataProvider))
             .endpoint(new PostValidatorLiveness(dataProvider))
             .endpoint(new GetStatePendingDeposits(dataProvider, schemaCache))
+            .endpoint(new GetStatePendingPartialWithdrawals(dataProvider, schemaCache))
             .endpoint(new GetDepositSnapshot(eth1DataProvider))
             // Event Handler
             .endpoint(

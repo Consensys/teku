@@ -1,9 +1,9 @@
 {
   "get" : {
     "tags" : [ "Beacon" ],
-    "operationId" : "getPendingDeposits",
-    "summary" : "Get pending deposits from state",
-    "description" : "Returns pending deposits for state with given 'stateId'. Should return 400 if requested before electra.",
+    "operationId" : "getPendingPartialWithdrawals",
+    "summary" : "Get pending partial withdrawals from state",
+    "description" : "Returns pending partial withdrawals for state with given 'stateId'. Should return 400 if requested before electra.",
     "parameters" : [ {
       "name" : "state_id",
       "required" : true,
@@ -31,7 +31,7 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetPendingDepositsResponse"
+              "$ref" : "#/components/schemas/GetPendingPartialWithdrawalsResponse"
             }
           },
           "application/octet-stream" : {

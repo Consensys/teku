@@ -2642,7 +2642,7 @@ public final class DataStructureUtil {
     return getElectraSchemaDefinitions(randomSlot())
         .getPendingPartialWithdrawalSchema()
         .create(
-            SszUInt64.of(randomUInt64()),
+            SszUInt64.of(randomValidatorIndex()),
             SszUInt64.of(randomUInt64()),
             SszUInt64.of(randomUInt64()));
   }

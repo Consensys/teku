@@ -15,8 +15,19 @@ package tech.pegasys.teku.spec;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
+import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
+import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
+import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
+import java.util.stream.Stream;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -57,170 +68,227 @@ public class SpecMilestoneTest {
   private final SpecConfig phase0SpecConfig =
       SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()).specConfig();
 
-  @Test
-  public void isGreaterThanOrEqualTo() {
-    assertThat(SpecMilestone.PHASE0.isGreaterThanOrEqualTo(SpecMilestone.PHASE0)).isTrue();
-    assertThat(SpecMilestone.PHASE0.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)).isFalse();
+  public static Stream<Arguments> isLessThanPermutations() {
+    return Stream.of(
+        Arguments.of(PHASE0, PHASE0, false),
+        Arguments.of(PHASE0, ALTAIR, true),
+        Arguments.of(PHASE0, BELLATRIX, true),
+        Arguments.of(PHASE0, CAPELLA, true),
+        Arguments.of(PHASE0, DENEB, true),
+        Arguments.of(PHASE0, ELECTRA, true),
+        Arguments.of(ALTAIR, PHASE0, false),
+        Arguments.of(ALTAIR, ALTAIR, false),
+        Arguments.of(ALTAIR, BELLATRIX, true),
+        Arguments.of(ALTAIR, CAPELLA, true),
+        Arguments.of(ALTAIR, DENEB, true),
+        Arguments.of(ALTAIR, ELECTRA, true),
+        Arguments.of(BELLATRIX, PHASE0, false),
+        Arguments.of(BELLATRIX, ALTAIR, false),
+        Arguments.of(BELLATRIX, BELLATRIX, false),
+        Arguments.of(BELLATRIX, CAPELLA, true),
+        Arguments.of(BELLATRIX, DENEB, true),
+        Arguments.of(BELLATRIX, ELECTRA, true),
+        Arguments.of(CAPELLA, PHASE0, false),
+        Arguments.of(CAPELLA, ALTAIR, false),
+        Arguments.of(CAPELLA, BELLATRIX, false),
+        Arguments.of(CAPELLA, CAPELLA, false),
+        Arguments.of(CAPELLA, DENEB, true),
+        Arguments.of(CAPELLA, ELECTRA, true),
+        Arguments.of(DENEB, PHASE0, false),
+        Arguments.of(DENEB, ALTAIR, false),
+        Arguments.of(DENEB, BELLATRIX, false),
+        Arguments.of(DENEB, CAPELLA, false),
+        Arguments.of(DENEB, DENEB, false),
+        Arguments.of(DENEB, ELECTRA, true),
+        Arguments.of(ELECTRA, PHASE0, false),
+        Arguments.of(ELECTRA, ALTAIR, false),
+        Arguments.of(ELECTRA, BELLATRIX, false),
+        Arguments.of(ELECTRA, CAPELLA, false),
+        Arguments.of(ELECTRA, DENEB, false),
+        Arguments.of(ELECTRA, ELECTRA, false));
+  }
 
-    assertThat(SpecMilestone.ALTAIR.isGreaterThanOrEqualTo(SpecMilestone.PHASE0)).isTrue();
-    assertThat(SpecMilestone.ALTAIR.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)).isTrue();
-    assertThat(SpecMilestone.ALTAIR.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)).isFalse();
+  public static Stream<Arguments> isGreaterThanOrEqualToPermutations() {
+    return Stream.of(
+        Arguments.of(PHASE0, PHASE0, true),
+        Arguments.of(PHASE0, ALTAIR, false),
+        Arguments.of(PHASE0, BELLATRIX, false),
+        Arguments.of(PHASE0, CAPELLA, false),
+        Arguments.of(PHASE0, DENEB, false),
+        Arguments.of(PHASE0, ELECTRA, false),
+        Arguments.of(ALTAIR, PHASE0, true),
+        Arguments.of(ALTAIR, ALTAIR, true),
+        Arguments.of(ALTAIR, BELLATRIX, false),
+        Arguments.of(ALTAIR, CAPELLA, false),
+        Arguments.of(ALTAIR, DENEB, false),
+        Arguments.of(ALTAIR, ELECTRA, false),
+        Arguments.of(BELLATRIX, PHASE0, true),
+        Arguments.of(BELLATRIX, ALTAIR, true),
+        Arguments.of(BELLATRIX, BELLATRIX, true),
+        Arguments.of(BELLATRIX, CAPELLA, false),
+        Arguments.of(BELLATRIX, DENEB, false),
+        Arguments.of(BELLATRIX, ELECTRA, false),
+        Arguments.of(CAPELLA, PHASE0, true),
+        Arguments.of(CAPELLA, ALTAIR, true),
+        Arguments.of(CAPELLA, BELLATRIX, true),
+        Arguments.of(CAPELLA, CAPELLA, true),
+        Arguments.of(CAPELLA, DENEB, false),
+        Arguments.of(CAPELLA, ELECTRA, false),
+        Arguments.of(DENEB, PHASE0, true),
+        Arguments.of(DENEB, ALTAIR, true),
+        Arguments.of(DENEB, BELLATRIX, true),
+        Arguments.of(DENEB, CAPELLA, true),
+        Arguments.of(DENEB, DENEB, true),
+        Arguments.of(DENEB, ELECTRA, false),
+        Arguments.of(ELECTRA, PHASE0, true),
+        Arguments.of(ELECTRA, ALTAIR, true),
+        Arguments.of(ELECTRA, BELLATRIX, true),
+        Arguments.of(ELECTRA, CAPELLA, true),
+        Arguments.of(ELECTRA, DENEB, true),
+        Arguments.of(ELECTRA, ELECTRA, true));
+  }
 
-    assertThat(SpecMilestone.BELLATRIX.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)).isTrue();
-    assertThat(SpecMilestone.BELLATRIX.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)).isTrue();
+  public static Stream<Arguments> getPreviousPermutations() {
+    return Stream.of(
+        Arguments.of(ALTAIR, PHASE0),
+        Arguments.of(BELLATRIX, ALTAIR),
+        Arguments.of(CAPELLA, BELLATRIX),
+        Arguments.of(DENEB, CAPELLA),
+        Arguments.of(ELECTRA, DENEB));
+  }
 
-    assertThat(SpecMilestone.CAPELLA.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)).isTrue();
-    assertThat(SpecMilestone.CAPELLA.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)).isTrue();
-    assertThat(SpecMilestone.CAPELLA.isGreaterThanOrEqualTo(SpecMilestone.DENEB)).isFalse();
+  @ParameterizedTest
+  @MethodSource("isGreaterThanOrEqualToPermutations")
+  public void isGreaterThanOrEqualTo(
+      final SpecMilestone a, final SpecMilestone b, final boolean comparisonResult) {
+    assertThat(a.isGreaterThanOrEqualTo(b)).isEqualTo(comparisonResult);
+  }
 
-    assertThat(SpecMilestone.DENEB.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)).isTrue();
-    assertThat(SpecMilestone.DENEB.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)).isTrue();
-    assertThat(SpecMilestone.DENEB.isGreaterThanOrEqualTo(SpecMilestone.DENEB)).isTrue();
-    assertThat(SpecMilestone.DENEB.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)).isFalse();
+  @ParameterizedTest
+  @MethodSource("isLessThanPermutations")
+  public void isLessThan(
+      final SpecMilestone a, final SpecMilestone b, final boolean comparisonResult) {
+    AssertionsForClassTypes.assertThat(a.isLessThan(b)).isEqualTo(comparisonResult);
+  }
 
-    assertThat(SpecMilestone.ELECTRA.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)).isTrue();
-    assertThat(SpecMilestone.ELECTRA.isGreaterThanOrEqualTo(SpecMilestone.DENEB)).isTrue();
-    assertThat(SpecMilestone.ELECTRA.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)).isTrue();
+  @ParameterizedTest
+  @MethodSource("getPreviousPermutations")
+  public void getPreviousMilestone(final SpecMilestone current, final SpecMilestone previous) {
+    assertThat(current.getPreviousMilestone()).isEqualTo(previous);
   }
 
   @Test
-  public void getPreviousMilestone() {
-    assertThrows(IllegalArgumentException.class, SpecMilestone.PHASE0::getPreviousMilestone);
-    assertThat(SpecMilestone.ALTAIR.getPreviousMilestone()).isEqualTo(SpecMilestone.PHASE0);
-    assertThat(SpecMilestone.BELLATRIX.getPreviousMilestone()).isEqualTo(SpecMilestone.ALTAIR);
-    assertThat(SpecMilestone.CAPELLA.getPreviousMilestone()).isEqualTo(SpecMilestone.BELLATRIX);
-    assertThat(SpecMilestone.DENEB.getPreviousMilestone()).isEqualTo(SpecMilestone.CAPELLA);
-    assertThat(SpecMilestone.ELECTRA.getPreviousMilestone()).isEqualTo(SpecMilestone.DENEB);
+  void getPreviousMilestone_throws() {
+    assertThrows(IllegalArgumentException.class, PHASE0::getPreviousMilestone);
+  }
+
+  @Test
+  void getPreviousMilestoneIfPresent() {
+    assertThat(PHASE0.getPreviousMilestoneIfExists()).isEmpty();
+    assertThat(ALTAIR.getPreviousMilestoneIfExists()).contains(PHASE0);
+    assertThat(BELLATRIX.getPreviousMilestoneIfExists()).contains(ALTAIR);
+    assertThat(CAPELLA.getPreviousMilestoneIfExists()).contains(BELLATRIX);
   }
 
   @Test
   public void getAllPriorMilestones_phase0() {
-    assertThat(SpecMilestone.getAllPriorMilestones(SpecMilestone.PHASE0)).isEmpty();
+    assertThat(SpecMilestone.getAllPriorMilestones(PHASE0)).isEmpty();
   }
 
   @Test
   public void getAllPriorMilestones_altair() {
-    assertThat(SpecMilestone.getAllPriorMilestones(SpecMilestone.ALTAIR))
-        .contains(SpecMilestone.PHASE0);
+    assertThat(SpecMilestone.getAllPriorMilestones(SpecMilestone.ALTAIR)).contains(PHASE0);
   }
 
   @Test
   public void getAllPriorMilestones_bellatrix() {
     assertThat(SpecMilestone.getAllPriorMilestones(SpecMilestone.BELLATRIX))
-        .contains(SpecMilestone.PHASE0, SpecMilestone.ALTAIR);
+        .contains(PHASE0, SpecMilestone.ALTAIR);
   }
 
   @Test
   public void getAllPriorMilestones_capella() {
-    assertThat(SpecMilestone.getAllPriorMilestones(SpecMilestone.CAPELLA))
-        .contains(SpecMilestone.PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX);
+    assertThat(SpecMilestone.getAllPriorMilestones(CAPELLA))
+        .contains(PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX);
   }
 
   @Test
   public void getAllPriorMilestones_deneb() {
-    assertThat(SpecMilestone.getAllPriorMilestones(SpecMilestone.DENEB))
-        .contains(
-            SpecMilestone.PHASE0,
-            SpecMilestone.ALTAIR,
-            SpecMilestone.BELLATRIX,
-            SpecMilestone.CAPELLA);
+    assertThat(SpecMilestone.getAllPriorMilestones(DENEB))
+        .contains(PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX, CAPELLA);
   }
 
   @Test
   public void getAllPriorMilestones_electra() {
     assertThat(SpecMilestone.getAllPriorMilestones(SpecMilestone.ELECTRA))
-        .contains(
-            SpecMilestone.PHASE0,
-            SpecMilestone.ALTAIR,
-            SpecMilestone.BELLATRIX,
-            SpecMilestone.CAPELLA,
-            SpecMilestone.DENEB);
+        .contains(PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX, CAPELLA, DENEB);
   }
 
   @Test
   public void getMilestonesUpTo_phase0() {
-    assertThat(SpecMilestone.getMilestonesUpTo(SpecMilestone.PHASE0))
-        .contains(SpecMilestone.PHASE0);
+    assertThat(SpecMilestone.getMilestonesUpTo(PHASE0)).contains(PHASE0);
   }
 
   @Test
   public void getMilestonesUpTo_altair() {
     assertThat(SpecMilestone.getMilestonesUpTo(SpecMilestone.ALTAIR))
-        .contains(SpecMilestone.PHASE0, SpecMilestone.ALTAIR);
+        .contains(PHASE0, SpecMilestone.ALTAIR);
   }
 
   @Test
   public void getMilestonesUpTo_bellatrix() {
     assertThat(SpecMilestone.getMilestonesUpTo(SpecMilestone.BELLATRIX))
-        .contains(SpecMilestone.PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX);
+        .contains(PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX);
   }
 
   @Test
   public void getMilestonesUpTo_capella() {
-    assertThat(SpecMilestone.getMilestonesUpTo(SpecMilestone.CAPELLA))
-        .contains(SpecMilestone.PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX);
+    assertThat(SpecMilestone.getMilestonesUpTo(CAPELLA))
+        .contains(PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX);
   }
 
   @Test
   public void getMilestonesUpTo_deneb() {
-    assertThat(SpecMilestone.getMilestonesUpTo(SpecMilestone.DENEB))
-        .contains(
-            SpecMilestone.PHASE0,
-            SpecMilestone.ALTAIR,
-            SpecMilestone.BELLATRIX,
-            SpecMilestone.CAPELLA);
+    assertThat(SpecMilestone.getMilestonesUpTo(DENEB))
+        .contains(PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX, CAPELLA);
   }
 
   @Test
   public void getMilestonesUpTo_electra() {
     assertThat(SpecMilestone.getMilestonesUpTo(SpecMilestone.ELECTRA))
-        .contains(
-            SpecMilestone.PHASE0,
-            SpecMilestone.ALTAIR,
-            SpecMilestone.BELLATRIX,
-            SpecMilestone.CAPELLA,
-            SpecMilestone.DENEB);
+        .contains(PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX, CAPELLA, DENEB);
   }
 
   @Test
   public void areMilestonesInOrder() {
-    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.PHASE0, SpecMilestone.ALTAIR))
-        .isTrue();
-    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.PHASE0)).isTrue();
+    assertThat(SpecMilestone.areMilestonesInOrder(PHASE0, SpecMilestone.ALTAIR)).isTrue();
+    assertThat(SpecMilestone.areMilestonesInOrder(PHASE0)).isTrue();
     assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.ALTAIR)).isTrue();
-    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.ALTAIR, SpecMilestone.PHASE0))
+    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.ALTAIR, PHASE0)).isFalse();
+    assertThat(
+            SpecMilestone.areMilestonesInOrder(
+                PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX))
+        .isTrue();
+    assertThat(
+            SpecMilestone.areMilestonesInOrder(
+                SpecMilestone.ALTAIR, PHASE0, SpecMilestone.BELLATRIX))
         .isFalse();
     assertThat(
             SpecMilestone.areMilestonesInOrder(
-                SpecMilestone.PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX))
-        .isTrue();
-    assertThat(
-            SpecMilestone.areMilestonesInOrder(
-                SpecMilestone.ALTAIR, SpecMilestone.PHASE0, SpecMilestone.BELLATRIX))
+                PHASE0, SpecMilestone.BELLATRIX, SpecMilestone.ALTAIR))
         .isFalse();
-    assertThat(
-            SpecMilestone.areMilestonesInOrder(
-                SpecMilestone.PHASE0, SpecMilestone.BELLATRIX, SpecMilestone.ALTAIR))
-        .isFalse();
-    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.BELLATRIX, SpecMilestone.CAPELLA))
-        .isTrue();
-    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.CAPELLA, SpecMilestone.BELLATRIX))
-        .isFalse();
-    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.CAPELLA, SpecMilestone.DENEB))
-        .isTrue();
-    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.DENEB, SpecMilestone.CAPELLA))
-        .isFalse();
-    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.DENEB, SpecMilestone.ELECTRA))
-        .isTrue();
-    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.ELECTRA, SpecMilestone.DENEB))
-        .isFalse();
+    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.BELLATRIX, CAPELLA)).isTrue();
+    assertThat(SpecMilestone.areMilestonesInOrder(CAPELLA, SpecMilestone.BELLATRIX)).isFalse();
+    assertThat(SpecMilestone.areMilestonesInOrder(CAPELLA, DENEB)).isTrue();
+    assertThat(SpecMilestone.areMilestonesInOrder(DENEB, CAPELLA)).isFalse();
+    assertThat(SpecMilestone.areMilestonesInOrder(DENEB, SpecMilestone.ELECTRA)).isTrue();
+    assertThat(SpecMilestone.areMilestonesInOrder(SpecMilestone.ELECTRA, DENEB)).isFalse();
   }
 
   @Test
   public void getForkVersion_phase0() {
     final Bytes4 expected = altairSpecConfig.getGenesisForkVersion();
-    assertThat(SpecMilestone.getForkVersion(altairSpecConfig, SpecMilestone.PHASE0))
-        .contains(expected);
+    assertThat(SpecMilestone.getForkVersion(altairSpecConfig, PHASE0)).contains(expected);
   }
 
   @Test
@@ -240,15 +308,13 @@ public class SpecMilestoneTest {
   @Test
   public void getForkVersion_capella() {
     final Bytes4 expected = capellaSpecConfig.getCapellaForkVersion();
-    assertThat(SpecMilestone.getForkVersion(capellaSpecConfig, SpecMilestone.CAPELLA))
-        .contains(expected);
+    assertThat(SpecMilestone.getForkVersion(capellaSpecConfig, CAPELLA)).contains(expected);
   }
 
   @Test
   public void getForkVersion_deneb() {
     final Bytes4 expected = denebSpecConfig.getDenebForkVersion();
-    assertThat(SpecMilestone.getForkVersion(denebSpecConfig, SpecMilestone.DENEB))
-        .contains(expected);
+    assertThat(SpecMilestone.getForkVersion(denebSpecConfig, DENEB)).contains(expected);
   }
 
   @Test
@@ -261,8 +327,7 @@ public class SpecMilestoneTest {
   @Test
   public void getForkEpoch_phase0() {
     final UInt64 expected = UInt64.ZERO;
-    assertThat(SpecMilestone.getForkEpoch(altairSpecConfig, SpecMilestone.PHASE0))
-        .contains(expected);
+    assertThat(SpecMilestone.getForkEpoch(altairSpecConfig, PHASE0)).contains(expected);
   }
 
   @Test
@@ -282,14 +347,13 @@ public class SpecMilestoneTest {
   @Test
   public void getForkEpoch_capella() {
     final UInt64 expected = capellaSpecConfig.getCapellaForkEpoch();
-    assertThat(SpecMilestone.getForkEpoch(capellaSpecConfig, SpecMilestone.CAPELLA))
-        .contains(expected);
+    assertThat(SpecMilestone.getForkEpoch(capellaSpecConfig, CAPELLA)).contains(expected);
   }
 
   @Test
   public void getForkEpoch_deneb() {
     final UInt64 expected = denebSpecConfig.getDenebForkEpoch();
-    assertThat(SpecMilestone.getForkEpoch(denebSpecConfig, SpecMilestone.DENEB)).contains(expected);
+    assertThat(SpecMilestone.getForkEpoch(denebSpecConfig, DENEB)).contains(expected);
   }
 
   @Test
@@ -313,14 +377,12 @@ public class SpecMilestoneTest {
 
   @Test
   public void getForkEpoch_capellaNotScheduled() {
-    assertThat(SpecMilestone.getForkEpoch(bellatrixSpecConfig, SpecMilestone.CAPELLA))
-        .contains(UInt64.MAX_VALUE);
+    assertThat(SpecMilestone.getForkEpoch(bellatrixSpecConfig, CAPELLA)).contains(UInt64.MAX_VALUE);
   }
 
   @Test
   public void getForkEpoch_denebNotScheduled() {
-    assertThat(SpecMilestone.getForkEpoch(capellaSpecConfig, SpecMilestone.DENEB))
-        .contains(UInt64.MAX_VALUE);
+    assertThat(SpecMilestone.getForkEpoch(capellaSpecConfig, DENEB)).contains(UInt64.MAX_VALUE);
   }
 
   @Test
