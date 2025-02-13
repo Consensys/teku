@@ -140,12 +140,12 @@ dependencyManagement {
 
     dependency 'io.prometheus:prometheus-metrics-bom:1.3.5'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '25.1.0') {
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '25.2.0') {
       entry('metrics-core')
       entry('core')
       entry('config')
     }
-    dependencySet(group: 'org.hyperledger.besu', version: '25.1.0') {
+    dependencySet(group: 'org.hyperledger.besu', version: '25.2.0') {
       entry('besu-datatypes')
       entry('evm')
       entry('plugin-api')
