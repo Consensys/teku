@@ -2517,7 +2517,7 @@ public final class DataStructureUtil {
         .create(randomSlot(), randomValidatorIndex(), randomBytes32(), transactions);
   }
 
-  public InclusionList randomInclusionList(int numberOfTransactionPerInclusionList) {
+  public InclusionList randomInclusionList(final int numberOfTransactionPerInclusionList) {
 
     final List<Transaction> transactions = new ArrayList<>();
     for (int i = 0; i < numberOfTransactionPerInclusionList; i++) {
