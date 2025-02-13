@@ -100,6 +100,43 @@ public class BlockProcessorEip7805 extends BlockProcessorElectra {
 
     List<Transaction> inclusionList = List.of();
     if (inclusionLists.isPresent()) {
+      inclusionList =
+          inclusionLists.get().stream()
+              .map(InclusionList::getTransactions)
+              .flatMap(List::stream)
+              .toList();
+    }
+
+    return new NewPayloadRequest(
+        executionPayload,
+        versionedHashes,
+        parentBeaconBlockRoot,
+        executionRequestsDataCodec7805.encode(executionRequests),
+        inclusionList);
+    this.executionRequestsDataCodec7805 = executionRequestsDataCodec;
+  }
+
+  @Override
+  public NewPayloadRequest computeNewPayloadRequest(
+      final BeaconState state,
+      final BeaconBlockBody beaconBlockBody,
+      final Optional<List<InclusionList>> inclusionLists)
+      throws BlockProcessingException {
+    final ExecutionPayload executionPayload = extractExecutionPayload(beaconBlockBody);
+    final SszList<SszKZGCommitment> blobKzgCommitments = extractBlobKzgCommitments(beaconBlockBody);
+    final List<VersionedHash> versionedHashes =
+        blobKzgCommitments.stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .map(miscHelpers::kzgCommitmentToVersionedHash)
+            .toList();
+    final Bytes32 parentBeaconBlockRoot = state.getLatestBlockHeader().getParentRoot();
+    final ExecutionRequests executionRequests =
+        beaconBlockBody
+            .getOptionalExecutionRequests()
+            .orElseThrow(() -> new BlockProcessingException("Execution requests expected"));
+
+    List<Transaction> inclusionList = List.of();
+    if (inclusionLists.isPresent()) {
       inclusionList = getInclusionListTransactions(inclusionLists.get());
     }
 
