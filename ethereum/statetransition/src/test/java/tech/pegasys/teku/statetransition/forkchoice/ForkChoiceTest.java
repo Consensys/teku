@@ -306,7 +306,7 @@ class ForkChoiceTest {
     final BlockProcessor blockProcessor = mock(BlockProcessor.class);
     when(spec.getBlockProcessor(blockAndState.getSlot())).thenReturn(blockProcessor);
     final Exception blockException = new StateTransitionException("error!");
-    when(blockProcessor.processAndValidateBlock(any(), any(), any(), any()))
+    when(blockProcessor.processAndValidateBlock(any(), any(), any(), any(), any()))
         .thenThrow(blockException);
 
     importBlockAndAssertFailure(blockAndState, FailureReason.FAILED_STATE_TRANSITION);

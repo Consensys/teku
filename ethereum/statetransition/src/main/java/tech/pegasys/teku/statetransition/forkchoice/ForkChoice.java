@@ -57,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -434,9 +435,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final ForkChoicePayloadExecutor payloadExecutor =
         ForkChoicePayloadExecutor.create(spec, recentChainData, block, executionLayer);
     final ForkChoiceUtil forkChoiceUtil = specVersion.getForkChoiceUtil();
+    final UpdatableStore store = recentChainData.getStore();
     final BlockImportResult preconditionCheckResult =
-        forkChoiceUtil.checkOnBlockConditions(
-            block, blockSlotState.get(), recentChainData.getStore());
+        forkChoiceUtil.checkOnBlockConditions(block, blockSlotState.get(), store);
     if (!preconditionCheckResult.isSuccessful()) {
       reportInvalidBlock(block, preconditionCheckResult);
       return SafeFuture.completedFuture(preconditionCheckResult);
@@ -449,6 +450,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         blobSidecarManager.createAvailabilityChecker(block);
 
     blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
+    final SlotAndBlockRoot blockAndSlot =
+        new SlotAndBlockRoot(block.getSlot(), block.hashTreeRoot());
+    final Optional<List<InclusionList>> inclusionLists = store.getInclusionList(blockAndSlot);
 
     final BeaconState postState;
     try {
@@ -458,7 +462,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                   block,
                   blockSlotState.get(),
                   indexedAttestationCache,
-                  Optional.of(payloadExecutor));
+                  Optional.of(payloadExecutor),
+                  inclusionLists);
     } catch (final StateTransitionException e) {
       final BlockImportResult result = BlockImportResult.failedStateTransition(e);
       reportInvalidBlock(block, result);
