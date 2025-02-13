@@ -238,6 +238,10 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         schemaDefinitions.getAttestationSchema().requiresCommitteeBits();
 
     final AtomicInteger prevEpochCount = new AtomicInteger(0);
+
+    dataHashBySlot.descendingMap().forEach(
+        (slot, dataHashes) -> System.out.println("slot: " + slot + ", dataHashes: " + dataHashes.size()));
+
     return dataHashBySlot
         // We can immediately skip any attestations from the block slot or later
         .headMap(stateAtBlockSlot.getSlot(), false)
