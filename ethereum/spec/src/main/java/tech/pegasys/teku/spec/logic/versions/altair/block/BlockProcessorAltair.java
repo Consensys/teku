@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
@@ -120,12 +121,14 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final BeaconBlockBodyAltair blockBody = BeaconBlockBodyAltair.required(block.getBody());
 
-    super.processBlock(state, block, indexedAttestationCache, signatureVerifier, payloadExecutor);
+    super.processBlock(
+        state, block, indexedAttestationCache, signatureVerifier, payloadExecutor, inclusionLists);
     processSyncAggregate(state, blockBody.getSyncAggregate(), signatureVerifier);
   }
 
@@ -287,7 +290,8 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   public void processExecutionPayload(
       final MutableBeaconState state,
       final BeaconBlockBody beaconBlockBody,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No ExecutionPayload in Altair");
   }
@@ -296,7 +300,8 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   public void validateExecutionPayload(
       final BeaconState state,
       final BeaconBlockBody beaconBlockBody,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No ExecutionPayload in Altair");
   }
@@ -310,7 +315,9 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
   @Override
   public NewPayloadRequest computeNewPayloadRequest(
-      final BeaconState state, final BeaconBlockBody beaconBlockBody)
+      final BeaconState state,
+      final BeaconBlockBody beaconBlockBody,
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No NewPayloadRequest in Altair");
   }
