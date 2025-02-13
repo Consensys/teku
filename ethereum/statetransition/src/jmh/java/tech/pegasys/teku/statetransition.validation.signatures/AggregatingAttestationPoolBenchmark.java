@@ -25,9 +25,11 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -44,6 +46,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 @Warmup(iterations = 5, time = 2000, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 2000, timeUnit = TimeUnit.MILLISECONDS)
+@BenchmarkMode(Mode.AverageTime)
 @Fork(1)
 @State(Scope.Thread)
 public class AggregatingAttestationPoolBenchmark {
