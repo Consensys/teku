@@ -14,12 +14,8 @@
 package tech.pegasys.teku.statetransition.attestation;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
-
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -178,8 +174,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   @Override
   public synchronized void onSlot(final UInt64 slot) {
-    System.out.println("slot: "+slot);
-    if(getSize() > 100_000) {
+    System.out.println("slot: " + slot);
+    if (getSize() > 100_000) {
       System.out.println("dumping");
       getAttestations(Optional.empty(), Optional.empty());
     }
@@ -290,29 +286,27 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     final boolean requiresCommitteeBits =
         schemaDefinitions.getAttestationSchema().requiresCommitteeBits();
 
+    try (FileWriter fos =
+        new FileWriter("/tmp/attestations_" + dataHashBySlot.firstKey() + ".multi_ssz")) {
+      dataHashBySlot.descendingMap().values().stream()
+          .flatMap(Collection::stream)
+          .map(attestationGroupByDataHash::get)
+          .filter(Objects::nonNull)
+          .flatMap(MatchingDataAttestationGroup::streamAttestations)
+          .forEach(
+              attestation -> {
+                try {
+                  fos.write(attestation.sszSerialize().toHexString());
+                  fos.write("\n");
+                } catch (IOException e) {
+                  throw new RuntimeException(e);
+                }
+              });
+    } catch (IOException e) {
+      System.out.println("An error occurred.");
+    }
 
-
-      try(FileWriter fos = new FileWriter("/tmp/attestations_"+dataHashBySlot.firstKey()+".multi_ssz")) {
-        dataHashBySlot.descendingMap()
-                .values()
-                .stream()
-                .flatMap(Collection::stream)
-                .map(attestationGroupByDataHash::get)
-                .filter(Objects::nonNull)
-                .flatMap(MatchingDataAttestationGroup::streamAttestations)
-                .forEach(attestation -> {
-                    try {
-                      fos.write(attestation.sszSerialize().toHexString());
-                      fos.write("\n");
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-      } catch (IOException e) {
-          System.out.println("An error occurred.");
-      }
-
-      return dataHashBySlot.descendingMap().entrySet().stream()
+    return dataHashBySlot.descendingMap().entrySet().stream()
         .filter(filterForSlot)
         .map(Map.Entry::getValue)
         .flatMap(Collection::stream)

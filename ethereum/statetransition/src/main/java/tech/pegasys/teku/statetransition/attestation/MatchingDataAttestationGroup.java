@@ -27,7 +27,6 @@ import java.util.TreeMap;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.tuweni.bytes.Bytes32;
-import org.checkerframework.checker.units.qual.A;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -119,7 +118,9 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
   }
 
   public Stream<Attestation> streamAttestations() {
-    return attestationsByValidatorCount.values().stream().flatMap(Set::stream).map(ValidatableAttestation::getUnconvertedAttestation);
+    return attestationsByValidatorCount.values().stream()
+        .flatMap(Set::stream)
+        .map(ValidatableAttestation::getUnconvertedAttestation);
   }
 
   /**
