@@ -899,7 +899,8 @@ public class Spec {
   public Optional<UInt64> getInclusionCommitteeAssignment(
       final BeaconState state, final UInt64 epoch, final int validatorIndex) {
     return atEpoch(epoch)
-        .getValidatorsUtil()
+        .getInclusionListUtil()
+        .orElseThrow()
         .getInclusionCommitteeAssignment(state, epoch, validatorIndex);
   }
 
@@ -908,6 +909,14 @@ public class Spec {
     return atEpoch(epoch)
         .getValidatorsUtil()
         .getValidatorIndexToCommitteeAssignmentMap(state, epoch);
+  }
+
+  public Int2ObjectMap<UInt64> getValidatorIndexInclusionListAssignmentSlotMap(
+      final BeaconState state, final UInt64 epoch) {
+    return atEpoch(epoch)
+        .getInclusionListUtil()
+        .orElseThrow()
+        .getValidatorIndexToSlotAssignmentMap(state, epoch);
   }
 
   // Attestation helpers

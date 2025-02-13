@@ -13,9 +13,13 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
@@ -114,5 +118,46 @@ public class InclusionListUtil {
     final IntList inclusionListCommittee =
         beaconStateAccessors.getInclusionListCommittee(state, slot);
     return inclusionListCommittee.contains(validatorIndex.intValue());
+  }
+
+  public Int2ObjectMap<UInt64> getValidatorIndexToSlotAssignmentMap(
+      final BeaconState state, final UInt64 epoch) {
+    final Int2ObjectMap<UInt64> assignmentMap = new Int2ObjectOpenHashMap<>();
+    final int slotsPerEpoch = specConfig.getSlotsPerEpoch();
+    final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
+
+    for (int slotOffset = 0; slotOffset < slotsPerEpoch; slotOffset++) {
+      final UInt64 slot = startSlot.plus(slotOffset);
+      final IntList committee = beaconStateAccessors.getInclusionListCommittee(state, slot);
+      committee.forEach(validatorIndex -> assignmentMap.put(validatorIndex, slot));
+    }
+    return assignmentMap;
+  }
+
+  /**
+   * Returns the slot during the requested epoch in which the validator with index
+   * ``validator_index`` is a member of the ILC. Returns None if no assignment is found.
+   *
+   * @param state the BeaconState.
+   * @param epoch either on or between previous or current epoch.
+   * @param validatorIndex the validator that is calling this function.
+   * @return Optional containing the slot if any, empty otherwise
+   */
+  public Optional<UInt64> getInclusionCommitteeAssignment(
+      final BeaconState state, final UInt64 epoch, final int validatorIndex) {
+    final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(UInt64.ONE);
+    checkArgument(
+        epoch.compareTo(nextEpoch) <= 0,
+        "get_inclusion_committee_assignment: Epoch number too high");
+    final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
+    for (UInt64 slot = startSlot;
+        slot.isLessThan(startSlot.plus(specConfig.getSlotsPerEpoch()));
+        slot = slot.plus(UInt64.ONE)) {
+      final IntList committee = beaconStateAccessors.getInclusionListCommittee(state, slot);
+      if (committee.contains(validatorIndex)) {
+        return Optional.of(slot);
+      }
+    }
+    return Optional.empty();
   }
 }

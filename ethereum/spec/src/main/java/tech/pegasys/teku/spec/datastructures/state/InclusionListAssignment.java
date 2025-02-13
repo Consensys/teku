@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,21 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.metrics.Validator;
+package tech.pegasys.teku.spec.datastructures.state;
 
-public enum DutyType {
-  ATTESTATION_AGGREGATION("attestation_aggregation"),
-  ATTESTATION_PRODUCTION("attestation_production"),
-  BLOCK_PRODUCTION("block_production"),
-  INCLUSION_LIST_PRODUCTION("inclusion_list_production");
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-  private final String name;
-
-  DutyType(final String type) {
-    this.name = type;
-  }
-
-  public String getName() {
-    return name;
-  }
-}
+public record InclusionListAssignment(UInt64 committeeIndex, UInt64 slot) {}

@@ -27,6 +27,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.InclusionListDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
@@ -83,6 +84,12 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
         @Override
         public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
+        public SafeFuture<Optional<InclusionListDuties>> getInclusionListDuties(
+            final UInt64 epoch, final IntCollection validatorIndices) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
@@ -216,6 +223,9 @@ public interface ValidatorApiChannel extends ChannelInterface {
       UInt64 epoch, IntCollection validatorIndices);
 
   SafeFuture<Optional<ProposerDuties>> getProposerDuties(UInt64 epoch);
+
+  SafeFuture<Optional<InclusionListDuties>> getInclusionListDuties(
+      UInt64 epoch, IntCollection validatorIndices);
 
   SafeFuture<Optional<PeerCount>> getPeerCount();
 
