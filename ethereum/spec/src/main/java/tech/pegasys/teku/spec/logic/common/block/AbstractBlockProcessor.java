@@ -21,7 +21,6 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
@@ -45,7 +44,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
@@ -138,7 +136,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BeaconState blockSlotState,
       final IndexedAttestationCache indexedAttestationCache,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionList)
       throws StateTransitionException {
     final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
     final BeaconState result =
@@ -148,7 +146,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             indexedAttestationCache,
             signatureVerifier,
             payloadExecutor,
-            inclusionListSupplier);
+            inclusionList);
     if (!signatureVerifier.batchVerify()) {
       throw new StateTransitionException(
           "Batch signature verification failed for block " + signedBlock.toLogString());
@@ -163,7 +161,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionList)
       throws StateTransitionException {
     try {
       final BlockValidationResult preValidationResult =
@@ -180,7 +178,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
               indexedAttestationCache,
               signatureVerifier,
               payloadExecutor,
-              inclusionListSupplier);
+              inclusionList);
 
       BlockValidationResult blockValidationResult =
           validateBlockPostProcessing(
@@ -328,7 +326,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     return preState.updated(
         state -> {
@@ -338,7 +336,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
               indexedAttestationCache,
               signatureVerifier,
               payloadExecutor,
-              inclusionListSupplier);
+              inclusionLists);
           BeaconStateCache.getSlotCaches(state).onBlockProcessed();
         });
   }
@@ -349,7 +347,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     processBlockHeader(state, block);
     processRandaoNoValidation(state, block.getBody());

@@ -117,7 +117,7 @@ public class SanityBlocksTestExecutor implements TestExecutor {
                     ? BLSSignatureVerifier.NO_OP
                     : BLSSignatureVerifier.SIMPLE,
                 Optional.empty(),
-                __ -> Optional.empty());
+                Optional.empty());
       }
       return result;
     } catch (StateTransitionException e) {

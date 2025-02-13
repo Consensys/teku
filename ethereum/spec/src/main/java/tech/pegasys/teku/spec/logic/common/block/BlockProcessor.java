@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.logic.common.block;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -27,7 +26,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -64,7 +62,7 @@ public interface BlockProcessor {
       BeaconState blockSlotState,
       IndexedAttestationCache indexedAttestationCache,
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      Optional<List<InclusionList>> inclusionList)
       throws StateTransitionException;
 
   /**
@@ -76,6 +74,7 @@ public interface BlockProcessor {
    * @param indexedAttestationCache A cache of indexed attestations
    * @param signatureVerifier The signature verifier to use
    * @param payloadExecutor the optimistic payload executor to begin execution with
+   * @param inclusionLists The inclusion lists for the block
    * @return The post state after processing the block on top of {@code blockSlotState}
    * @throws StateTransitionException If the block is invalid or cannot be processed
    */
@@ -85,7 +84,7 @@ public interface BlockProcessor {
       IndexedAttestationCache indexedAttestationCache,
       BLSSignatureVerifier signatureVerifier,
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      Optional<List<InclusionList>> inclusionLists)
       throws StateTransitionException;
 
   BeaconState processUnsignedBlock(
@@ -94,7 +93,7 @@ public interface BlockProcessor {
       IndexedAttestationCache indexedAttestationCache,
       BLSSignatureVerifier signatureVerifier,
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException;
 
   void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
@@ -151,20 +150,20 @@ public interface BlockProcessor {
       MutableBeaconState state,
       BeaconBlockBody beaconBlockBody,
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException;
 
   void validateExecutionPayload(
       BeaconState state,
       BeaconBlockBody beaconBlockBody,
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException;
 
   NewPayloadRequest computeNewPayloadRequest(
       BeaconState state,
       BeaconBlockBody beaconBlockBody,
-      Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException;
 
   void validateExecutionPayloadHeader(

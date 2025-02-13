@@ -22,7 +22,6 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
@@ -41,7 +40,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
@@ -134,7 +132,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   public NewPayloadRequest computeNewPayloadRequest(
       final BeaconState state,
       final BeaconBlockBody beaconBlockBody,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     final ExecutionPayload executionPayload = extractExecutionPayload(beaconBlockBody);
     final SszList<SszKZGCommitment> blobKzgCommitments = extractBlobKzgCommitments(beaconBlockBody);

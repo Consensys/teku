@@ -552,7 +552,7 @@ class BlockProcessorElectraTest extends BlockProcessorDenebTest {
 
     final NewPayloadRequest newPayloadRequest =
         spec.getBlockProcessor(UInt64.ONE)
-            .computeNewPayloadRequest(preState, blockBody, __ -> Optional.empty());
+            .computeNewPayloadRequest(preState, blockBody, Optional.empty());
 
     assertThat(newPayloadRequest.getExecutionPayload())
         .isEqualTo(blockBody.getOptionalExecutionPayload().orElseThrow());

@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes;
@@ -32,7 +31,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
@@ -103,13 +101,12 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       final MutableBeaconState genericState,
       final BeaconBlockBody beaconBlockBody,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     final ExecutionPayloadHeader executionPayloadHeader =
         extractExecutionPayloadHeader(beaconBlockBody);
     processWithdrawals(genericState, executionPayloadHeader);
-    super.executionProcessing(
-        genericState, beaconBlockBody, payloadExecutor, inclusionListSupplier);
+    super.executionProcessing(genericState, beaconBlockBody, payloadExecutor, inclusionLists);
   }
 
   @Override

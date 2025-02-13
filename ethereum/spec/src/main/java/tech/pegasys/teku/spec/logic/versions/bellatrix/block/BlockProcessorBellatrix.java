@@ -15,13 +15,11 @@ package tech.pegasys.teku.spec.logic.versions.bellatrix.block;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
@@ -89,7 +87,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     final MutableBeaconStateBellatrix state = MutableBeaconStateBellatrix.required(genericState);
     final BeaconBlockBody blockBody = block.getBody();
@@ -102,7 +100,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
 
     processBlockHeader(state, block);
     if (miscHelpersBellatrix.isExecutionEnabled(genericState, block)) {
-      executionProcessing(genericState, block.getBody(), payloadExecutor, inclusionListSupplier);
+      executionProcessing(genericState, block.getBody(), payloadExecutor, inclusionLists);
     }
     processRandaoNoValidation(state, block.getBody());
     processEth1Data(state, block.getBody());
@@ -116,9 +114,9 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
       final MutableBeaconState genericState,
       final BeaconBlockBody beaconBlockBody,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
-    processExecutionPayload(genericState, beaconBlockBody, payloadExecutor, inclusionListSupplier);
+    processExecutionPayload(genericState, beaconBlockBody, payloadExecutor, inclusionLists);
   }
 
   @Override
@@ -126,10 +124,10 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
       final MutableBeaconState genericState,
       final BeaconBlockBody beaconBlockBody,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
 
-    validateExecutionPayload(genericState, beaconBlockBody, payloadExecutor, inclusionListSupplier);
+    validateExecutionPayload(genericState, beaconBlockBody, payloadExecutor, inclusionLists);
 
     final MutableBeaconStateBellatrix state = MutableBeaconStateBellatrix.required(genericState);
     final ExecutionPayloadHeader executionPayloadHeader =
@@ -161,7 +159,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
       final BeaconState genericState,
       final BeaconBlockBody beaconBlockBody,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     final BeaconStateBellatrix state = BeaconStateBellatrix.required(genericState);
     final ExecutionPayloadHeader executionPayloadHeader =
@@ -170,7 +168,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
 
     if (payloadExecutor.isPresent()) {
       final NewPayloadRequest payloadToExecute =
-          computeNewPayloadRequest(genericState, beaconBlockBody, inclusionListSupplier);
+          computeNewPayloadRequest(genericState, beaconBlockBody, inclusionLists);
       final boolean optimisticallyAccept =
           payloadExecutor
               .get()
@@ -213,7 +211,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
   public NewPayloadRequest computeNewPayloadRequest(
       final BeaconState state,
       final BeaconBlockBody beaconBlockBody,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     final ExecutionPayload executionPayload = extractExecutionPayload(beaconBlockBody);
     return new NewPayloadRequest(executionPayload);

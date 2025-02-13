@@ -52,7 +52,7 @@ public class BlockProcessorDenebTest extends BlockProcessorCapellaTest {
             () ->
                 spec.getBlockProcessor(slot)
                     .validateExecutionPayload(
-                        preState, blockBody, Optional.empty(), __ -> Optional.empty()))
+                        preState, blockBody, Optional.empty(), Optional.empty()))
         .isInstanceOf(BlockProcessingException.class)
         .hasMessage("Number of kzg commitments in block exceeds max blobs per block");
   }
@@ -71,7 +71,7 @@ public class BlockProcessorDenebTest extends BlockProcessorCapellaTest {
 
     final NewPayloadRequest newPayloadRequest =
         spec.getBlockProcessor(UInt64.ONE)
-            .computeNewPayloadRequest(preState, blockBody, __ -> Optional.empty());
+            .computeNewPayloadRequest(preState, blockBody, Optional.empty());
 
     assertThat(newPayloadRequest.getExecutionPayload())
         .isEqualTo(blockBody.getOptionalExecutionPayload().orElseThrow());

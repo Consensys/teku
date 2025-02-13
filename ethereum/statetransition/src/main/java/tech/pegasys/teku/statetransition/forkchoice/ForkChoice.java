@@ -57,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -437,6 +438,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         blobSidecarManager.createAvailabilityChecker(block);
 
     blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
+    final SlotAndBlockRoot blockAndSlot =
+        new SlotAndBlockRoot(block.getSlot(), block.hashTreeRoot());
+    final Optional<List<InclusionList>> inclusionLists = store.getInclusionList(blockAndSlot);
 
     final BeaconState postState;
     try {
@@ -447,7 +451,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                   blockSlotState.get(),
                   indexedAttestationCache,
                   Optional.of(payloadExecutor),
-                  store::getInclusionList);
+                  inclusionLists);
     } catch (final StateTransitionException e) {
       final BlockImportResult result = BlockImportResult.failedStateTransition(e);
       reportInvalidBlock(block, result);

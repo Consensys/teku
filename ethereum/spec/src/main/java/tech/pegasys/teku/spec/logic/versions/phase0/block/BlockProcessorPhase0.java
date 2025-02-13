@@ -15,12 +15,10 @@ package tech.pegasys.teku.spec.logic.versions.phase0.block;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -119,7 +117,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
       final MutableBeaconState state,
       final BeaconBlockBody beaconBlockBody,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No ExecutionPayload in phase0");
   }
@@ -129,7 +127,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
       final BeaconState state,
       final BeaconBlockBody beaconBlockBody,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No ExecutionPayload in phase0");
   }
@@ -138,7 +136,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   public NewPayloadRequest computeNewPayloadRequest(
       final BeaconState state,
       final BeaconBlockBody beaconBlockBody,
-      final Function<SlotAndBlockRoot, Optional<List<InclusionList>>> inclusionListSupplier)
+      final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No NewPayloadRequest in phase0");
   }

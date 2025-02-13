@@ -95,7 +95,7 @@ public class TransitionCommand implements Runnable {
                       block,
                       BLSSignatureVerifier.SIMPLE,
                       Optional.empty(),
-                      __ -> Optional.empty());
+                      Optional.empty());
             }
           }
           return state;

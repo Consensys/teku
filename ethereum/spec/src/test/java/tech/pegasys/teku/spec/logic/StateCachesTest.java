@@ -114,7 +114,7 @@ public class StateCachesTest {
                 IndexedAttestationCache.NOOP,
                 BLSSignatureVerifier.NO_OP,
                 Optional.empty(),
-                __ -> Optional.empty());
+                Optional.empty());
 
     final UInt64 expectedRewards =
         UInt64.valueOf(
