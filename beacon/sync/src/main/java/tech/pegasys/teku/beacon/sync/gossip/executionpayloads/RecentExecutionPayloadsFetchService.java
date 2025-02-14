@@ -112,9 +112,14 @@ public class RecentExecutionPayloadsFetchService
   @Override
   public void processFetchedResult(
       final FetchExecutionPayloadTask task,
-      final Optional<SignedExecutionPayloadEnvelope> executionPayload) {
-    executionPayload.ifPresent(
-        payload -> executionPayloadSubscribers.forEach(s -> s.onExecutionPayload(payload)));
+      final Optional<SignedExecutionPayloadEnvelope> maybeExecutionPayload) {
+    maybeExecutionPayload.ifPresentOrElse(
+        executionPayload ->
+            executionPayloadSubscribers.forEach(s -> s.onExecutionPayload(executionPayload)),
+        () ->
+            LOG.debug(
+                "No execution payload has been retrieved from RPC for block root {}. It is possible that it has never been published by the builder.",
+                task.getKey()));
     // After retrieved execution payload has been processed, stop tracking it
     removeTask(task);
   }
