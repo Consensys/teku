@@ -202,8 +202,7 @@ public class ProposersDataManager implements SlotEventsChannel {
             eventThread);
   }
 
-  public boolean areWeProposingOnSlot(final UInt64 blockSlot, final BeaconState state) {
-
+  public boolean proposingOnSlot(final UInt64 blockSlot, final BeaconState state) {
     final UInt64 proposerIndex = UInt64.valueOf(spec.getBeaconProposerIndex(state, blockSlot));
     return preparedProposerInfoByValidatorIndex.containsKey(proposerIndex);
   }

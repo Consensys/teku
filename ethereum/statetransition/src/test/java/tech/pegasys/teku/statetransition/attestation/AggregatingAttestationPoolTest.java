@@ -78,7 +78,6 @@ class AggregatingAttestationPoolTest {
           mockRecentChainData,
           new NoOpMetricsSystem(),
           DEFAULT_MAXIMUM_ATTESTATION_COUNT,
-          null,
           null);
 
   private final AttestationForkChecker forkChecker = mock(AttestationForkChecker.class);
@@ -414,7 +413,7 @@ class AggregatingAttestationPoolTest {
   void shouldRemoveOldSlotsWhenMaximumNumberOfAttestationsReached() {
     aggregatingPool =
         new AggregatingAttestationPool(
-            mockSpec, mockRecentChainData, new NoOpMetricsSystem(), 5, null, null);
+            mockSpec, mockRecentChainData, new NoOpMetricsSystem(), 5, null);
     final AttestationData attestationData0 = dataStructureUtil.randomAttestationData(ZERO);
     final AttestationData attestationData1 = dataStructureUtil.randomAttestationData(ONE);
     final AttestationData attestationData2 =
@@ -440,7 +439,7 @@ class AggregatingAttestationPoolTest {
   void shouldNotRemoveLastSlotEvenWhenMaximumNumberOfAttestationsReached() {
     aggregatingPool =
         new AggregatingAttestationPool(
-            mockSpec, mockRecentChainData, new NoOpMetricsSystem(), 5, null, null);
+            mockSpec, mockRecentChainData, new NoOpMetricsSystem(), 5, null);
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
     addAttestationFromValidators(attestationData, 1);
     addAttestationFromValidators(attestationData, 2);
@@ -500,7 +499,6 @@ class AggregatingAttestationPoolTest {
             mockRecentChainData,
             new NoOpMetricsSystem(),
             DEFAULT_MAXIMUM_ATTESTATION_COUNT,
-            null,
             null);
     // Adding a phase0 attestation to the aggregation pool
     final Spec phase0Spec = TestSpecFactory.createMinimalPhase0();

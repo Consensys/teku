@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Collection;
 import java.util.HashMap;
@@ -32,8 +34,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -44,9 +44,6 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.StateTransition;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -96,19 +93,15 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   private final AtomicInteger size = new AtomicInteger(0);
 
-  private final StateTransition stateTransition;
-  private final AsyncRunner asyncRunner;
-
-  private SafeFuture<SszList<Attestation>> attestationsForBlockFuture;
-  private UInt64 attestationsForBlockSlot = UInt64.ZERO;
+  private List<Attestation> precomputedAttestationsForBlock;
+  private UInt64 precomputedAttestationsForBlockSlot = UInt64.ZERO;
 
   public AggregatingAttestationPool(
       final Spec spec,
       final RecentChainData recentChainData,
       final MetricsSystem metricsSystem,
       final int maximumAttestationCount,
-      final ProposersDataManager proposersDataManager,
-      final AsyncRunner asyncRunner) {
+      final ProposersDataManager proposersDataManager) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.sizeGauge =
@@ -119,8 +112,6 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
             "The number of attestations available to be included in proposed blocks");
     this.maximumAttestationCount = maximumAttestationCount;
     this.proposersDataManager = proposersDataManager;
-    this.stateTransition = new StateTransition(spec::atSlot);
-    this.asyncRunner = asyncRunner;
   }
 
   public synchronized void add(final ValidatableAttestation attestation) {
@@ -191,7 +182,6 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
   public synchronized void onSlot(final UInt64 slot) {
-    System.out.println("onSlot " + slot);
     if (slot.isGreaterThan(ATTESTATION_RETENTION_SLOTS)) {
       final UInt64 firstValidAttestationSlot = slot.minus(ATTESTATION_RETENTION_SLOTS);
       removeAttestationsPriorToSlot(firstValidAttestationSlot);
@@ -200,47 +190,51 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     recentChainData
         .getBestState()
         .ifPresent(
-            stateSafeFuture ->
-                stateSafeFuture
-                    .thenAccept(
-                        state -> {
-                          if (proposersDataManager.areWeProposingOnSlot(slot, state)) {
-                            System.out.println("proposing at slot " + slot);
-                            try {
-                              final BeaconState blockSlotState =
-                                  stateTransition.processSlots(state, slot);
-                              System.out.println(
-                                  "precompute attestations for block at slot " + slot);
-                              getInFlightAttestationsForBlock(
-                                  blockSlotState, new AttestationForkChecker(spec, blockSlotState));
-                            } catch (SlotProcessingException | EpochProcessingException e) {
-                              throw new RuntimeException(e);
-                            }
-                          } else {
-                            System.out.println("not proposing at slot " + slot);
-                          }
-                        })
-                    .ifExceptionGetsHereRaiseABug());
+            futureState -> {
+              // we want to synchronous here,
+              // so we will precompute aggregated only state is immediately available
+              if (!futureState.isCompletedNormally()) {
+                LOG.debug("State immediately available");
+                return;
+              }
+
+              if (proposersDataManager.proposingOnSlot(slot, futureState.join())) {
+                getOrCacheAggregatedAttestations(slot);
+              }
+            });
+
+    if (slot.isGreaterThan(precomputedAttestationsForBlockSlot)) {
+      precomputedAttestationsForBlock = null;
+    }
   }
 
-  public synchronized SafeFuture<SszList<Attestation>> getInFlightAttestationsForBlock(
-      final BeaconState stateAtBlockSlot, final AttestationForkChecker forkChecker) {
-    if (attestationsForBlockSlot.equals(stateAtBlockSlot.getSlot())) {
-      LOG.info("returning inflight attestations for block at slot {}", stateAtBlockSlot.getSlot());
-      return attestationsForBlockFuture;
+  public synchronized List<Attestation> getOrCacheAggregatedAttestations(final UInt64 slot) {
+
+    if (precomputedAttestationsForBlockSlot.equals(slot)) {
+      checkNotNull(
+          precomputedAttestationsForBlock,
+          "cachedAttestationsForBlock should have been cached for slot %s",
+          slot);
+      LOG.debug("returning precomputed attestations for block at slot {}", slot);
+      return precomputedAttestationsForBlock;
     }
-    attestationsForBlockSlot = stateAtBlockSlot.getSlot();
-    attestationsForBlockFuture = new SafeFuture<>();
+    precomputedAttestationsForBlockSlot = slot;
 
-    LOG.info(
-        "starting an async task to compute attestations for block at slot {}",
-        stateAtBlockSlot.getSlot());
+    LOG.debug("Precomputing attestations for block at slot {}", slot);
 
-    asyncRunner
-        .runAsync(() -> getAttestationsForBlock(stateAtBlockSlot, forkChecker))
-        .propagateTo(attestationsForBlockFuture);
-
-    return attestationsForBlockFuture;
+    return precomputedAttestationsForBlock =
+        dataHashBySlot
+            // We can immediately skip any attestations from the block slot or later
+            .headMap(slot, false)
+            .descendingMap()
+            .values()
+            .stream()
+            .flatMap(Collection::stream)
+            .map(attestationGroupByDataHash::get)
+            .filter(Objects::nonNull)
+            .flatMap(MatchingDataAttestationGroup::stream)
+            .map(ValidatableAttestation::getAttestation)
+            .toList();
   }
 
   private void removeAttestationsPriorToSlot(final UInt64 firstValidAttestationSlot) {
@@ -302,19 +296,12 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         schemaDefinitions.getAttestationSchema().requiresCommitteeBits();
 
     final AtomicInteger prevEpochCount = new AtomicInteger(0);
-    return dataHashBySlot
-        // We can immediately skip any attestations from the block slot or later
-        .headMap(stateAtBlockSlot.getSlot(), false)
-        .descendingMap()
-        .values()
-        .stream()
-        .flatMap(Collection::stream)
-        .map(attestationGroupByDataHash::get)
-        .filter(Objects::nonNull)
-        .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
-        .filter(forkChecker::areAttestationsFromCorrectFork)
-        .flatMap(MatchingDataAttestationGroup::stream)
-        .map(ValidatableAttestation::getAttestation)
+    return getOrCacheAggregatedAttestations(stateAtBlockSlot.getSlot()).stream()
+        .filter(attestation -> isValid(stateAtBlockSlot, attestation.getData()))
+        .filter(
+            attestation ->
+                forkChecker.areAttestationsFromCorrectFork(
+                    attestationGroupByDataHash.get(attestation.getData().hashTreeRoot())))
         .filter(
             attestation ->
                 attestation.requiresCommitteeBits() == blockRequiresAttestationsWithCommitteeBits)

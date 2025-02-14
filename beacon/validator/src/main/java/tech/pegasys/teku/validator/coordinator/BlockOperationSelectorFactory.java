@@ -123,8 +123,8 @@ public class BlockOperationSelectorFactory {
     return bodyBuilder -> {
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
-      final SafeFuture<SszList<Attestation>> attestations =
-          attestationPool.getInFlightAttestationsForBlock(
+      final SszList<Attestation> attestations =
+          attestationPool.getAttestationsForBlock(
               blockSlotState, new AttestationForkChecker(spec, blockSlotState));
 
       // Collect slashings to include
@@ -154,7 +154,7 @@ public class BlockOperationSelectorFactory {
           .randaoReveal(randaoReveal)
           .eth1Data(eth1Data)
           .graffiti(graffitiBuilder.buildGraffiti(optionalGraffiti))
-          .attestations(attestations.join())
+          .attestations(attestations)
           .proposerSlashings(proposerSlashings)
           .attesterSlashings(attesterSlashings)
           .deposits(depositProvider.getDeposits(blockSlotState, eth1Data))

@@ -1194,8 +1194,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentChainData,
             metricsSystem,
             DEFAULT_MAXIMUM_ATTESTATION_COUNT,
-            proposersDataManager,
-            beaconAsyncRunner);
+            proposersDataManager);
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
     blockImporter.subscribeToVerifiedBlockAttestations(
         attestationPool::onAttestationsIncludedInBlock);
