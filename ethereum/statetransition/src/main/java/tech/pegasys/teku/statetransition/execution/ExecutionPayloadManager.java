@@ -59,7 +59,7 @@ public class ExecutionPayloadManager
   private final Subscribers<RequiredExecutionPayloadSubscriber>
       requiredExecutionPayloadSubscribers = Subscribers.create(true);
 
-  private static final UInt64 FETCH_DELAY_MILLIS_AFTER_PAYLOAD_REVEAL_TIME = UInt64.valueOf(500);
+  private static final UInt64 FETCH_DELAY_MILLIS_AFTER_PAYLOAD_PROPAGATION_TIME = UInt64.valueOf(1000);
 
   private final Spec spec;
   private final ExecutionPayloadValidator executionPayloadValidator;
@@ -238,7 +238,7 @@ public class ExecutionPayloadManager
         spec.getMillisPerSlot(slotAndBlockRoot.getSlot())
             .dividedBy(INTERVALS_PER_SLOT_EIP7732)
             .times(2)
-            .plus(FETCH_DELAY_MILLIS_AFTER_PAYLOAD_REVEAL_TIME);
+            .plus(FETCH_DELAY_MILLIS_AFTER_PAYLOAD_PROPAGATION_TIME);
 
     // fetch required execution payload
     final int fetchDelay = millisInSlotToFetchExecutionPayload.minusMinZero(timeInSlot).intValue();
