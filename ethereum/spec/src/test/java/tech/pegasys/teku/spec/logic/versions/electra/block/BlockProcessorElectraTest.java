@@ -57,7 +57,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
-class BlockProcessorElectraTest extends BlockProcessorDenebTest {
+public class BlockProcessorElectraTest extends BlockProcessorDenebTest {
 
   @Override
   protected Spec createSpec() {
