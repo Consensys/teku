@@ -28,6 +28,7 @@ import tech.pegasys.teku.beacon.sync.forward.multipeer.MultipeerSyncService;
 import tech.pegasys.teku.beacon.sync.forward.singlepeer.SinglePeerSyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarsFetcher;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetchService;
+import tech.pegasys.teku.beacon.sync.gossip.executionpayloads.RecentExecutionPayloadsFetcher;
 import tech.pegasys.teku.beacon.sync.historical.HistoricalBlockSyncService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -70,6 +72,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final PendingPool<ValidatableAttestation> pendingAttestations;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
+  private final ExecutionPayloadManager executionPayloadManager;
   private final int getStartupTargetPeerCount;
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final Duration startupTimeout;
@@ -91,6 +94,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final PendingPool<ValidatableAttestation> pendingAttestations,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final ExecutionPayloadManager executionPayloadManager,
       final int getStartupTargetPeerCount,
       final SignatureVerificationService signatureVerifier,
       final Duration startupTimeout,
@@ -110,6 +114,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     this.pendingBlocks = pendingBlocks;
     this.pendingAttestations = pendingAttestations;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
+    this.executionPayloadManager = executionPayloadManager;
     this.getStartupTargetPeerCount = getStartupTargetPeerCount;
     this.signatureVerifier = signatureVerifier;
     this.startupTimeout = startupTimeout;
@@ -138,6 +143,10 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
         RecentBlobSidecarsFetcher.create(
             spec, asyncRunner, blockBlobSidecarsTrackersPool, forwardSyncService, fetchTaskFactory);
 
+    final RecentExecutionPayloadsFetcher recentExecutionPayloadsFetcher =
+        RecentExecutionPayloadsFetcher.create(
+            spec, asyncRunner, executionPayloadManager, forwardSyncService, fetchTaskFactory);
+
     final SyncStateTracker syncStateTracker = createSyncStateTracker(forwardSyncService);
 
     final HistoricalBlockSyncService historicalBlockSyncService =
@@ -147,6 +156,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
         forwardSyncService,
         recentBlocksFetchService,
         recentBlobSidecarsFetcher,
+        recentExecutionPayloadsFetcher,
         syncStateTracker,
         historicalBlockSyncService);
   }

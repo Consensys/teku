@@ -48,7 +48,10 @@ public class LogFormatter {
       final Bytes32 stateRoot,
       final Bytes32 blockHash) {
     return String.format(
-        "execution payload %s, block root %s, state root %s, block hash %s",
-        slot, formatHashRoot(blockRoot), formatHashRoot(stateRoot), blockHash);
+        "execution payload slot %s, block root %s, state root %s, block hash %s",
+        slot,
+        formatAbbreviatedHashRoot(blockRoot),
+        formatAbbreviatedHashRoot(stateRoot),
+        formatAbbreviatedHashRoot(blockHash));
   }
 }
