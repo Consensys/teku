@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.MiscHelpersEip7805;
 import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra;
@@ -98,11 +100,7 @@ public class BlockProcessorEip7805 extends BlockProcessorElectra {
 
     List<Transaction> inclusionList = List.of();
     if (inclusionLists.isPresent()) {
-      inclusionList =
-          inclusionLists.get().stream()
-              .map(InclusionList::getTransactions)
-              .flatMap(List::stream)
-              .toList();
+      inclusionList = getInclusionListTransactions(inclusionLists.get());
     }
 
     return new NewPayloadRequest(
@@ -111,5 +109,34 @@ public class BlockProcessorEip7805 extends BlockProcessorElectra {
         parentBeaconBlockRoot,
         executionRequestsDataCodec7805.encode(executionRequests),
         inclusionList);
+  }
+
+  @Override
+  public void validateExecutionPayload(
+      final BeaconState genericState,
+      final BeaconBlockBody beaconBlockBody,
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
+      final Optional<List<InclusionList>> inclusionLists)
+      throws BlockProcessingException {
+
+    final List<Transaction> inclusionListTransactions;
+    if (inclusionLists.isPresent()) {
+      final int maxTransactionPerInclusionList =
+          SpecConfigEip7805.required(specConfig).getMaxTransactionsPerInclusionList();
+      inclusionListTransactions = getInclusionListTransactions(inclusionLists.get());
+
+      if (inclusionListTransactions.size() > maxTransactionPerInclusionList) {
+        throw new BlockProcessingException(
+            "Number of transaction in the inclusion list in block exceeds max transaction per inclusion list");
+      }
+    }
+    super.validateExecutionPayload(genericState, beaconBlockBody, payloadExecutor, inclusionLists);
+  }
+
+  private List<Transaction> getInclusionListTransactions(final List<InclusionList> inclusionLists) {
+    return inclusionLists.stream()
+        .map(InclusionList::getTransactions)
+        .flatMap(List::stream)
+        .toList();
   }
 }

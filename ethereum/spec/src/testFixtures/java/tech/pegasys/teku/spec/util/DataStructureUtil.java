@@ -81,6 +81,7 @@ import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
@@ -195,6 +196,7 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -2509,6 +2511,29 @@ public final class DataStructureUtil {
     }
 
     return spec.getGenesisSchemaDefinitions()
+        .toVersionEip7805()
+        .orElseThrow()
+        .getInclusionListSchema()
+        .create(randomSlot(), randomValidatorIndex(), randomBytes32(), transactions);
+  }
+
+  public InclusionList randomInclusionList(final int numberOfTransactionPerInclusionList) {
+
+    final List<Transaction> transactions = new ArrayList<>();
+    for (int i = 0; i < numberOfTransactionPerInclusionList; i++) {
+      transactions.add(randomExecutionPayloadTransaction());
+    }
+
+    final Spec specAdapted =
+        TestSpecFactory.create(
+            SpecMilestone.EIP7805,
+            Eth2Network.MAINNET,
+            f ->
+                f.eip7805Builder(
+                    b -> b.maxTransactionsPerInclusionList(numberOfTransactionPerInclusionList)));
+
+    return specAdapted
+        .getGenesisSchemaDefinitions()
         .toVersionEip7805()
         .orElseThrow()
         .getInclusionListSchema()
