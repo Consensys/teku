@@ -24,7 +24,7 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 
 public class FetchExecutionPayloadTask
-    extends AbstractFetchTask<Bytes32, SignedExecutionPayloadEnvelope> {
+    extends AbstractFetchTask<Bytes32, Optional<SignedExecutionPayloadEnvelope>> {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -44,13 +44,16 @@ public class FetchExecutionPayloadTask
   }
 
   @Override
-  SafeFuture<FetchResult<SignedExecutionPayloadEnvelope>> fetch(final Eth2Peer peer) {
+  SafeFuture<FetchResult<Optional<SignedExecutionPayloadEnvelope>>> fetch(final Eth2Peer peer) {
     return peer.requestExecutionPayloadEnvelopeByRoot(blockRoot)
         .thenApply(
             maybeExecutionPayload ->
                 maybeExecutionPayload
-                    .map(executionPayload -> FetchResult.createSuccessful(peer, executionPayload))
-                    .orElseGet(() -> FetchResult.createFailed(peer, Status.FETCH_FAILED)))
+                    .map(
+                        executionPayload ->
+                            FetchResult.createSuccessful(peer, Optional.of(executionPayload)))
+                    // missing execution payload
+                    .orElseGet(() -> FetchResult.createSuccessful(peer, Optional.empty())))
         .exceptionally(
             err -> {
               LOG.warn(

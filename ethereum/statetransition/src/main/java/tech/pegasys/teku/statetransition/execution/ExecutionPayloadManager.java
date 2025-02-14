@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.execution;
 
+import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT_EIP7732;
+
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -27,7 +29,6 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
@@ -113,16 +114,16 @@ public class ExecutionPayloadManager
             case SAVE_FOR_FUTURE -> {
               LOG.info(
                   "Saving execution payload for slot {} and block root {} for future processing",
-                  executionPayload.getMessage().getSlot(),
-                  executionPayload.getMessage().getBeaconBlockRoot());
+                  slotAndBlockRoot.getSlot(),
+                  slotAndBlockRoot.getBlockRoot());
               recordArrivalTimestamp(executionPayload, arrivalTimestamp);
               savedForFutureExecutionPayloadEnvelopes.put(slotAndBlockRoot, executionPayload);
             }
             case IGNORE, REJECT ->
                 LOG.warn(
                     "Execution payload for slot {} and block root {} didn't pass gossip validation: {}",
-                    executionPayload.getMessage().getSlot(),
-                    executionPayload.getMessage().getBeaconBlockRoot(),
+                    slotAndBlockRoot.getSlot(),
+                    slotAndBlockRoot.getBlockRoot(),
                     result);
           }
         });
@@ -235,7 +236,7 @@ public class ExecutionPayloadManager
     // delay fetching after the 2nd interval of the slot
     final UInt64 millisInSlotToFetchExecutionPayload =
         spec.getMillisPerSlot(slotAndBlockRoot.getSlot())
-            .dividedBy(NetworkConstants.INTERVALS_PER_SLOT_EIP7732)
+            .dividedBy(INTERVALS_PER_SLOT_EIP7732)
             .times(2)
             .plus(FETCH_DELAY_MILLIS_AFTER_PAYLOAD_REVEAL_TIME);
 
@@ -251,7 +252,8 @@ public class ExecutionPayloadManager
           requiredExecutionPayloadSubscribers.forEach(
               s -> {
                 LOG.info(
-                    "Fetching missing execution payload for block root {}",
+                    "Fetching missing execution payload for slot {} and block root {}",
+                    slotAndBlockRoot.getSlot(),
                     slotAndBlockRoot.getBlockRoot());
                 s.onRequiredExecutionPayload(block.getRoot());
               });
