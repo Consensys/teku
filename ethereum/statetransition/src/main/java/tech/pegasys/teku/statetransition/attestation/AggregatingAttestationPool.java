@@ -32,6 +32,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -42,7 +44,11 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.StateTransition;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 /**
@@ -84,16 +90,25 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   private final Spec spec;
   private final RecentChainData recentChainData;
+  private final ProposersDataManager proposersDataManager;
   private final SettableGauge sizeGauge;
   private final int maximumAttestationCount;
 
   private final AtomicInteger size = new AtomicInteger(0);
 
+  private final StateTransition stateTransition;
+  private final AsyncRunner asyncRunner;
+
+  private SafeFuture<SszList<Attestation>> attestationsForBlockFuture;
+  private UInt64 attestationsForBlockSlot = UInt64.ZERO;
+
   public AggregatingAttestationPool(
       final Spec spec,
       final RecentChainData recentChainData,
       final MetricsSystem metricsSystem,
-      final int maximumAttestationCount) {
+      final int maximumAttestationCount,
+      final ProposersDataManager proposersDataManager,
+      final AsyncRunner asyncRunner) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.sizeGauge =
@@ -103,6 +118,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
             "attestation_pool_size",
             "The number of attestations available to be included in proposed blocks");
     this.maximumAttestationCount = maximumAttestationCount;
+    this.proposersDataManager = proposersDataManager;
+    this.stateTransition = new StateTransition(spec::atSlot);
+    this.asyncRunner = asyncRunner;
   }
 
   public synchronized void add(final ValidatableAttestation attestation) {
@@ -171,12 +189,49 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public synchronized void onSlot(final UInt64 slot) {
-    if (slot.compareTo(ATTESTATION_RETENTION_SLOTS) <= 0) {
-      return;
+    System.out.println("onSlot " + slot);
+    if (slot.isGreaterThan(ATTESTATION_RETENTION_SLOTS)) {
+      final UInt64 firstValidAttestationSlot = slot.minus(ATTESTATION_RETENTION_SLOTS);
+      removeAttestationsPriorToSlot(firstValidAttestationSlot);
     }
-    final UInt64 firstValidAttestationSlot = slot.minus(ATTESTATION_RETENTION_SLOTS);
-    removeAttestationsPriorToSlot(firstValidAttestationSlot);
+
+    recentChainData.getBestState().ifPresent(stateSafeFuture -> stateSafeFuture.thenAccept(state -> {
+                      if(proposersDataManager.areWeProposingOnSlot(slot, state)) {
+                        System.out.println("proposing at slot " + slot);
+                        try {
+                          final BeaconState blockSlotState = stateTransition.processSlots(state, slot);
+                          System.out.println("precompute attestations for block at slot " + slot);
+                          getInFlightAttestationsForBlock(
+                                  blockSlotState, new AttestationForkChecker(spec, blockSlotState));
+                        } catch (SlotProcessingException | EpochProcessingException e) {
+                          throw new RuntimeException(e);
+                        }
+                      } else {
+                        System.out.println("not proposing at slot " + slot);
+                      }
+
+                    }
+            ).ifExceptionGetsHereRaiseABug()
+    );
+  }
+
+  public synchronized SafeFuture<SszList<Attestation>> getInFlightAttestationsForBlock(
+          final BeaconState stateAtBlockSlot, final AttestationForkChecker forkChecker) {
+    if (attestationsForBlockSlot.equals(stateAtBlockSlot.getSlot())) {
+      LOG.info("returning inflight attestations for block at slot {}", stateAtBlockSlot.getSlot());
+      return attestationsForBlockFuture;
+    }
+    attestationsForBlockSlot = stateAtBlockSlot.getSlot();
+    attestationsForBlockFuture = new SafeFuture<>();
+
+    LOG.info("starting an async task to compute attestations for block at slot {}", stateAtBlockSlot.getSlot());
+
+    asyncRunner.runAsync(() -> getAttestationsForBlock(stateAtBlockSlot, forkChecker))
+            .propagateTo(attestationsForBlockFuture);
+
+    return attestationsForBlockFuture;
   }
 
   private void removeAttestationsPriorToSlot(final UInt64 firstValidAttestationSlot) {

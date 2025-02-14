@@ -202,6 +202,12 @@ public class ProposersDataManager implements SlotEventsChannel {
             eventThread);
   }
 
+  public boolean areWeProposingOnSlot(final UInt64 blockSlot, final BeaconState state) {
+
+              final UInt64 proposerIndex = UInt64.valueOf(spec.getBeaconProposerIndex(state, blockSlot));
+              return preparedProposerInfoByValidatorIndex.containsKey(proposerIndex);
+  }
+
   /**
    * Calculate {@link PayloadBuildingAttributes} to be sent to EL if one of our configured
    * validators is due to propose a block or forkChoiceUpdatedAlwaysSendPayloadAttribute is set to
