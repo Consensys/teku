@@ -60,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
@@ -283,6 +284,13 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
         () ->
             typeDefClient.createSyncCommitteeContribution(
                 slot, subcommitteeIndex, beaconBlockRoot));
+  }
+
+  // TODO EIP7805 implement beacon FOCIL APIs
+  @Override
+  public SafeFuture<Optional<InclusionList>> createInclusionList(
+      final UInt64 slot, final UInt64 validatorIndex) {
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override

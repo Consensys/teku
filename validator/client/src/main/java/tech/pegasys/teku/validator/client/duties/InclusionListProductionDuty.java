@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.duties;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -21,22 +22,21 @@ import tech.pegasys.teku.infrastructure.metrics.Validator.DutyType;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
-public class InclusionListDuty implements Duty {
+public class InclusionListProductionDuty implements Duty {
 
   private static final Logger LOG = LogManager.getLogger();
 
   private final UInt64 slot;
+
   @SuppressWarnings("unused")
-  private final Int2ObjectMap<UInt64> assignments;
+  private final Int2ObjectMap<UInt64> assignments = new Int2ObjectOpenHashMap<>();
+
   @SuppressWarnings("unused")
   private final ValidatorApiChannel validatorApiChannel;
 
-  public InclusionListDuty(
-      final UInt64 slot,
-      final Int2ObjectMap<UInt64> assignments,
-      final ValidatorApiChannel validatorApiChannel) {
+  public InclusionListProductionDuty(
+      final UInt64 slot, final ValidatorApiChannel validatorApiChannel) {
     this.slot = slot;
-    this.assignments = assignments;
     this.validatorApiChannel = validatorApiChannel;
   }
 

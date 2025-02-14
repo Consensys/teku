@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
@@ -146,6 +147,15 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
     return attestationPublisherChannel
         .orElse(dutiesProviderChannel)
         .createSyncCommitteeContribution(slot, subcommitteeIndex, beaconBlockRoot);
+  }
+
+  @Override
+  public SafeFuture<Optional<InclusionList>> createInclusionList(
+      final UInt64 slot, final UInt64 validatorIndex) {
+    // TODO EIP7805 add a separate sentry node channel for ILs
+    return attestationPublisherChannel
+        .orElse(dutiesProviderChannel)
+        .createInclusionList(slot, validatorIndex);
   }
 
   @Override

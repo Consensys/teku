@@ -29,6 +29,7 @@ public class BeaconNodeRequestLabels {
   public static final String CREATE_AGGREGATE_METHOD = "create_aggregate";
   public static final String CREATE_SYNC_COMMITTEE_CONTRIBUTION_METHOD =
       "create_sync_committee_contribution";
+  public static final String CREATE_INCLUSION_LIST_METHOD = "create_inclusion_list_contribution";
   public static final String BEACON_COMMITTEE_SUBSCRIPTION_METHOD = "beacon_committee_subscription";
   public static final String SYNC_COMMITTEE_SUBNET_SUBSCRIPTION_METHOD =
       "sync_committee_subnet_subscription";

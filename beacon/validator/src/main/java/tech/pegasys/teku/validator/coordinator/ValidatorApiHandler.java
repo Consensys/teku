@@ -79,6 +79,7 @@ import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
@@ -146,6 +147,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final AttesterDutiesGenerator attesterDutiesGenerator;
   private final InclusionListDutiesGenerator inclusionListDutiesGenerator;
 
+  private final InclusionListFactory inclusionListFactory;
+
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
       final NodeDataProvider nodeDataProvider,
@@ -167,7 +170,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
       final BlockProductionAndPublishingPerformanceFactory
           blockProductionAndPublishingPerformanceFactory,
-      final BlockPublisher blockPublisher) {
+      final BlockPublisher blockPublisher,
+      final InclusionListFactory inclusionListFactory) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
@@ -189,6 +193,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
     this.proposersDataManager = proposersDataManager;
     this.blockPublisher = blockPublisher;
+    this.inclusionListFactory = inclusionListFactory;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
     this.inclusionListDutiesGenerator = new InclusionListDutiesGenerator(spec);
   }
@@ -558,6 +563,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     }
     return SafeFuture.completedFuture(
         syncCommitteeMessagePool.createContribution(slot, beaconBlockRoot, subcommitteeIndex));
+  }
+
+  @Override
+  public SafeFuture<Optional<InclusionList>> createInclusionList(
+      final UInt64 slot, final UInt64 validatorIndex) {
+    return inclusionListFactory.createInclusionList(slot, validatorIndex);
   }
 
   @Override

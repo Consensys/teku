@@ -96,6 +96,11 @@ public class InclusionListUtil {
   // TODO EIP7805 this IntList to SszList conversion to get the HTR could be improved
   public boolean hasCorrectCommitteeRoot(
       final BeaconState state, final UInt64 slot, final Bytes32 committeeRoot) {
+    final Bytes32 inclusionCommitteeRoot = getInclusionListCommitteeRoot(state, slot);
+    return committeeRoot.equals(inclusionCommitteeRoot);
+  }
+
+  public Bytes32 getInclusionListCommitteeRoot(final BeaconState state, final UInt64 slot) {
     final IntList inclusionListCommittee =
         beaconStateAccessors.getInclusionListCommittee(state, slot);
     final int committeeSize = inclusionListCommittee.size();
@@ -108,7 +113,7 @@ public class InclusionListUtil {
         SszListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, committeeSize)
             .of(inclusionListCommitteeConverted);
     final Bytes32 inclusionCommitteeRoot = inclusionCommitteeSszList.hashTreeRoot();
-    return committeeRoot.equals(inclusionCommitteeRoot);
+    return inclusionCommitteeRoot;
   }
 
   // TODO EIP7805 should we make sure the committee didn't change after checking the root
