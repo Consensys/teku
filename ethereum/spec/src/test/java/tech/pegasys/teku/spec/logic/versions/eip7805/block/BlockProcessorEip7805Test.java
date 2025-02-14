@@ -32,10 +32,10 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.spec.logic.versions.deneb.block.BlockProcessorDenebTest;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
+import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectraTest;
 
-public class BlockProcessorEip7805Test extends BlockProcessorDenebTest {
+public class BlockProcessorEip7805Test extends BlockProcessorElectraTest {
 
   @Override
   protected Spec createSpec() {

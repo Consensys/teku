@@ -118,15 +118,17 @@ public class BlockProcessorEip7805 extends BlockProcessorElectra {
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
       final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
-    final int maxTransactionPerInclusionList =
-        SpecConfigEip7805.required(specConfig).getMaxTransactionsPerInclusionList();
-    List<Transaction> inclusionListTransactions = List.of();
+
+    final List<Transaction> inclusionListTransactions;
     if (inclusionLists.isPresent()) {
+      final int maxTransactionPerInclusionList =
+              SpecConfigEip7805.required(specConfig).getMaxTransactionsPerInclusionList();
       inclusionListTransactions = getInclusionListTransactions(inclusionLists.get());
-    }
-    if (inclusionListTransactions.size() > maxTransactionPerInclusionList) {
-      throw new BlockProcessingException(
-          "Number of transaction in the inclusion list in block exceeds max transaction per inclusion list");
+
+      if (inclusionListTransactions.size() > maxTransactionPerInclusionList) {
+        throw new BlockProcessingException(
+                "Number of transaction in the inclusion list in block exceeds max transaction per inclusion list");
+      }
     }
     super.validateExecutionPayload(genericState, beaconBlockBody, payloadExecutor, inclusionLists);
   }
