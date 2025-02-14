@@ -102,7 +102,9 @@ public abstract class BlockProcessorTest {
         postState.getBalances().size(),
         originalValidatorBalancesSize + 1,
         "No balance was added to the validator balances.");
-    if (spec.atSlot(postState.getSlot()).getMilestone().equals(SpecMilestone.ELECTRA)) {
+    if (spec.atSlot(postState.getSlot())
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
       assertEquals(
           makeValidator(pubkey, withdrawalCredentials).withEffectiveBalance(UInt64.ZERO),
           postState.getValidators().get(originalValidatorRegistrySize));
