@@ -1190,8 +1190,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initAttestationPool()");
     attestationPool =
         new AggregatingAttestationPool(
-            spec, recentChainData, metricsSystem, DEFAULT_MAXIMUM_ATTESTATION_COUNT, proposersDataManager,
-                beaconAsyncRunner);
+            spec,
+            recentChainData,
+            metricsSystem,
+            DEFAULT_MAXIMUM_ATTESTATION_COUNT,
+            proposersDataManager,
+            beaconAsyncRunner);
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
     blockImporter.subscribeToVerifiedBlockAttestations(
         attestationPool::onAttestationsIncludedInBlock);

@@ -78,8 +78,8 @@ class AggregatingAttestationPoolTest {
           mockRecentChainData,
           new NoOpMetricsSystem(),
           DEFAULT_MAXIMUM_ATTESTATION_COUNT,
-              null,
-              null);
+          null,
+          null);
 
   private final AttestationForkChecker forkChecker = mock(AttestationForkChecker.class);
 
@@ -413,8 +413,8 @@ class AggregatingAttestationPoolTest {
   @TestTemplate
   void shouldRemoveOldSlotsWhenMaximumNumberOfAttestationsReached() {
     aggregatingPool =
-        new AggregatingAttestationPool(mockSpec, mockRecentChainData, new NoOpMetricsSystem(), 5,null,
-                null);
+        new AggregatingAttestationPool(
+            mockSpec, mockRecentChainData, new NoOpMetricsSystem(), 5, null, null);
     final AttestationData attestationData0 = dataStructureUtil.randomAttestationData(ZERO);
     final AttestationData attestationData1 = dataStructureUtil.randomAttestationData(ONE);
     final AttestationData attestationData2 =
@@ -439,8 +439,8 @@ class AggregatingAttestationPoolTest {
   @TestTemplate
   void shouldNotRemoveLastSlotEvenWhenMaximumNumberOfAttestationsReached() {
     aggregatingPool =
-        new AggregatingAttestationPool(mockSpec, mockRecentChainData, new NoOpMetricsSystem(), 5, null,
-            null);
+        new AggregatingAttestationPool(
+            mockSpec, mockRecentChainData, new NoOpMetricsSystem(), 5, null, null);
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
     addAttestationFromValidators(attestationData, 1);
     addAttestationFromValidators(attestationData, 2);
@@ -500,8 +500,8 @@ class AggregatingAttestationPoolTest {
             mockRecentChainData,
             new NoOpMetricsSystem(),
             DEFAULT_MAXIMUM_ATTESTATION_COUNT,
-                null,
-        null);
+            null,
+            null);
     // Adding a phase0 attestation to the aggregation pool
     final Spec phase0Spec = TestSpecFactory.createMinimalPhase0();
     when(mockedSpec.atSlot(any())).thenReturn(phase0Spec.getGenesisSpec());

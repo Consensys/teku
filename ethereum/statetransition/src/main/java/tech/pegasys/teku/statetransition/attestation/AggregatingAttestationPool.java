@@ -197,28 +197,34 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
       removeAttestationsPriorToSlot(firstValidAttestationSlot);
     }
 
-    recentChainData.getBestState().ifPresent(stateSafeFuture -> stateSafeFuture.thenAccept(state -> {
-                      if(proposersDataManager.areWeProposingOnSlot(slot, state)) {
-                        System.out.println("proposing at slot " + slot);
-                        try {
-                          final BeaconState blockSlotState = stateTransition.processSlots(state, slot);
-                          System.out.println("precompute attestations for block at slot " + slot);
-                          getInFlightAttestationsForBlock(
+    recentChainData
+        .getBestState()
+        .ifPresent(
+            stateSafeFuture ->
+                stateSafeFuture
+                    .thenAccept(
+                        state -> {
+                          if (proposersDataManager.areWeProposingOnSlot(slot, state)) {
+                            System.out.println("proposing at slot " + slot);
+                            try {
+                              final BeaconState blockSlotState =
+                                  stateTransition.processSlots(state, slot);
+                              System.out.println(
+                                  "precompute attestations for block at slot " + slot);
+                              getInFlightAttestationsForBlock(
                                   blockSlotState, new AttestationForkChecker(spec, blockSlotState));
-                        } catch (SlotProcessingException | EpochProcessingException e) {
-                          throw new RuntimeException(e);
-                        }
-                      } else {
-                        System.out.println("not proposing at slot " + slot);
-                      }
-
-                    }
-            ).ifExceptionGetsHereRaiseABug()
-    );
+                            } catch (SlotProcessingException | EpochProcessingException e) {
+                              throw new RuntimeException(e);
+                            }
+                          } else {
+                            System.out.println("not proposing at slot " + slot);
+                          }
+                        })
+                    .ifExceptionGetsHereRaiseABug());
   }
 
   public synchronized SafeFuture<SszList<Attestation>> getInFlightAttestationsForBlock(
-          final BeaconState stateAtBlockSlot, final AttestationForkChecker forkChecker) {
+      final BeaconState stateAtBlockSlot, final AttestationForkChecker forkChecker) {
     if (attestationsForBlockSlot.equals(stateAtBlockSlot.getSlot())) {
       LOG.info("returning inflight attestations for block at slot {}", stateAtBlockSlot.getSlot());
       return attestationsForBlockFuture;
@@ -226,10 +232,13 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     attestationsForBlockSlot = stateAtBlockSlot.getSlot();
     attestationsForBlockFuture = new SafeFuture<>();
 
-    LOG.info("starting an async task to compute attestations for block at slot {}", stateAtBlockSlot.getSlot());
+    LOG.info(
+        "starting an async task to compute attestations for block at slot {}",
+        stateAtBlockSlot.getSlot());
 
-    asyncRunner.runAsync(() -> getAttestationsForBlock(stateAtBlockSlot, forkChecker))
-            .propagateTo(attestationsForBlockFuture);
+    asyncRunner
+        .runAsync(() -> getAttestationsForBlock(stateAtBlockSlot, forkChecker))
+        .propagateTo(attestationsForBlockFuture);
 
     return attestationsForBlockFuture;
   }
