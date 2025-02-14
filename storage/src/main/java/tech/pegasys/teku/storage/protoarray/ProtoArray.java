@@ -141,7 +141,7 @@ public class ProtoArray {
 
     int nodeIndex = getTotalTrackedNodeCount();
 
-    // EIP-7732 TODO: hack approach
+    // EIP-7732 TODO: a hack approach
     Optional<UInt64> modifiedExecutionBlockNumber = Optional.empty();
     if (executionBlockNumber.equals(ProtoNode.NO_EXECUTION_BLOCK_NUMBER)
         && spec.atSlot(blockSlot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
