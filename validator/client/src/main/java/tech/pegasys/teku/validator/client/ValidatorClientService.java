@@ -466,8 +466,7 @@ public class ValidatorClientService extends Service {
         new InclusionListDutyFactory(validatorApiChannel);
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
-    final InclusionListCommitteeSubscriptions inclusionListCommitteeSubscriptions =
-        new InclusionListCommitteeSubscriptions();
+
     final boolean dvtSelectionsEndpointEnabled =
         config.getValidatorConfig().isDvtSelectionsEndpointEnabled();
     final DutyLoader<?> attestationDutyLoader =
@@ -498,24 +497,9 @@ public class ValidatorClientService extends Service {
                         validatorDutyMetrics::performDutyWithMetrics),
                 validators,
                 validatorIndexProvider));
-    final DutyLoader<?> inclusionListDutyLoader =
-        new RetryingDutyLoader<>(
-            asyncRunner,
-            new InclusionListDutyLoader(
-                validatorApiChannel,
-                dependentRoot ->
-                    new SlotBasedScheduledDuties<>(
-                        inclusionListDutyFactory,
-                        dependentRoot,
-                        validatorDutyMetrics::performDutyWithMetrics),
-                validators,
-                validatorIndexProvider,
-                inclusionListCommitteeSubscriptions));
     validatorTimingChannels.add(new BlockDutyScheduler(metricsSystem, blockDutyLoader, spec));
     validatorTimingChannels.add(
         new AttestationDutyScheduler(metricsSystem, attestationDutyLoader, spec));
-    validatorTimingChannels.add(
-        new InclusionListDutyScheduler(metricsSystem, inclusionListDutyLoader, spec));
     validatorTimingChannels.add(validatorLoader.getSlashingProtectionLogger());
 
     if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
@@ -546,6 +530,27 @@ public class ValidatorClientService extends Service {
           });
       validatorRegistrator.ifPresent(validatorTimingChannels::add);
     }
+
+    if (spec.isMilestoneSupported(SpecMilestone.EIP7805)) {
+      final InclusionListCommitteeSubscriptions inclusionListCommitteeSubscriptions =
+          new InclusionListCommitteeSubscriptions();
+      final DutyLoader<?> inclusionListDutyLoader =
+          new RetryingDutyLoader<>(
+              asyncRunner,
+              new InclusionListDutyLoader(
+                  validatorApiChannel,
+                  dependentRoot ->
+                      new SlotBasedScheduledDuties<>(
+                          inclusionListDutyFactory,
+                          dependentRoot,
+                          validatorDutyMetrics::performDutyWithMetrics),
+                  validators,
+                  validatorIndexProvider,
+                  inclusionListCommitteeSubscriptions));
+      validatorTimingChannels.add(
+          new InclusionListDutyScheduler(metricsSystem, inclusionListDutyLoader, spec));
+    }
+
     addValidatorCountMetric(metricsSystem, validators);
     final ValidatorStatusLogger validatorStatusLogger = new ValidatorStatusLogger(validators);
     validatorStatusProvider.subscribeValidatorStatusesUpdates(
