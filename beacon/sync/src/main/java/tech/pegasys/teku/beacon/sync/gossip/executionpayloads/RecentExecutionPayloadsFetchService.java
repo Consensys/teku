@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync.gossip.executionpayloads;
 
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,7 +28,8 @@ import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnv
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 
 public class RecentExecutionPayloadsFetchService
-    extends AbstractFetchService<Bytes32, FetchExecutionPayloadTask, SignedExecutionPayloadEnvelope>
+    extends AbstractFetchService<
+        Bytes32, FetchExecutionPayloadTask, Optional<SignedExecutionPayloadEnvelope>>
     implements RecentExecutionPayloadsFetcher {
 
   private static final Logger LOG = LogManager.getLogger();
@@ -109,9 +111,10 @@ public class RecentExecutionPayloadsFetchService
 
   @Override
   public void processFetchedResult(
-      final FetchExecutionPayloadTask task, final SignedExecutionPayloadEnvelope executionPayload) {
-    LOG.trace("Successfully fetched executionPayload: {}", executionPayload);
-    executionPayloadSubscribers.forEach(s -> s.onExecutionPayload(executionPayload));
+      final FetchExecutionPayloadTask task,
+      final Optional<SignedExecutionPayloadEnvelope> executionPayload) {
+    executionPayload.ifPresent(
+        payload -> executionPayloadSubscribers.forEach(s -> s.onExecutionPayload(payload)));
     // After retrieved execution payload has been processed, stop tracking it
     removeTask(task);
   }
