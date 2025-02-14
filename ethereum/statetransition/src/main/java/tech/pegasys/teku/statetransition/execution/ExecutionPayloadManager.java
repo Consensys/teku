@@ -13,15 +13,21 @@
 
 package tech.pegasys.teku.statetransition.execution;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
@@ -49,9 +55,16 @@ public class ExecutionPayloadManager
   private final Map<SlotAndBlockRoot, SignedExecutionPayloadEnvelope>
       savedForFutureExecutionPayloadEnvelopes = new ConcurrentHashMap<>();
 
+  private final Subscribers<RequiredExecutionPayloadSubscriber>
+      requiredExecutionPayloadSubscribers = Subscribers.create(true);
+
+  private static final UInt64 FETCH_DELAY_MILLIS_AFTER_PAYLOAD_REVEAL_TIME = UInt64.valueOf(500);
+
   private final Spec spec;
   private final ExecutionPayloadValidator executionPayloadValidator;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
+  private final TimeProvider timeProvider;
+  private final AsyncRunner asyncRunner;
   private final ReceivedExecutionPayloadEventsChannel
       receivedExecutionPayloadEventsChannelPublisher;
   private final ForkChoice forkChoice;
@@ -62,6 +75,8 @@ public class ExecutionPayloadManager
       final Spec spec,
       final ExecutionPayloadValidator executionPayloadValidator,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final TimeProvider timeProvider,
+      final AsyncRunner asyncRunner,
       final ReceivedExecutionPayloadEventsChannel receivedExecutionPayloadEventsChannelPublisher,
       final ForkChoice forkChoice,
       final RecentChainData recentChainData,
@@ -69,6 +84,8 @@ public class ExecutionPayloadManager
     this.spec = spec;
     this.executionPayloadValidator = executionPayloadValidator;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
+    this.timeProvider = timeProvider;
+    this.asyncRunner = asyncRunner;
     this.receivedExecutionPayloadEventsChannelPublisher =
         receivedExecutionPayloadEventsChannelPublisher;
     this.forkChoice = forkChoice;
@@ -112,68 +129,7 @@ public class ExecutionPayloadManager
     return validationResult;
   }
 
-  public Optional<SignedExecutionPayloadEnvelope> getValidatedExecutionPayloadEnvelope(
-      final Bytes32 blockRoot) {
-    for (final Map.Entry<SlotAndBlockRoot, SignedExecutionPayloadEnvelope> entry :
-        validatedExecutionPayloadEnvelopes.entrySet()) {
-      if (entry.getKey().getBlockRoot().equals(blockRoot)) {
-        return Optional.of(entry.getValue());
-      }
-    }
-    return Optional.empty();
-  }
-
-  @Override
-  public void onBlockValidated(final SignedBeaconBlock block) {
-    // NO-OP
-  }
-
-  @SuppressWarnings("FutureReturnValueIgnored")
-  @Override
-  public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
-    final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
-    final SignedExecutionPayloadEnvelope executionPayloadDueProcessing =
-        savedForFutureExecutionPayloadEnvelopes.remove(slotAndBlockRoot);
-
-    if (executionPayloadDueProcessing == null) {
-      return;
-    }
-
-    // block has been imported, so can apply the execution payload
-    executionPayloadValidator
-        .validate(executionPayloadDueProcessing)
-        .thenAccept(
-            result -> {
-              if (result.code() == ValidationResultCode.ACCEPT) {
-                importExecutionPayload(executionPayloadDueProcessing);
-              } else {
-                LOG.warn(
-                    "Execution payload which was saved for future processing for slot {} and block root {} didn't pass gossip validation: {}",
-                    slotAndBlockRoot.getSlot(),
-                    slotAndBlockRoot.getBlockRoot(),
-                    result);
-              }
-            });
-  }
-
-  @Override
-  public void onNewFinalizedCheckpoint(
-      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
-    validatedExecutionPayloadEnvelopes
-        .keySet()
-        .removeIf(slotAndBlockRoot -> shouldPrune(slotAndBlockRoot, checkpoint));
-    savedForFutureExecutionPayloadEnvelopes
-        .keySet()
-        .removeIf(slotAndBlockRoot -> shouldPrune(slotAndBlockRoot, checkpoint));
-  }
-
-  private boolean shouldPrune(
-      final SlotAndBlockRoot slotAndBlockRoot, final Checkpoint finalizedCheckpoint) {
-    return spec.computeEpochAtSlot(slotAndBlockRoot.getSlot())
-        .isLessThanOrEqualTo(finalizedCheckpoint.getEpoch());
-  }
-
-  private void recordArrivalTimestamp(
+  public void recordArrivalTimestamp(
       final SignedExecutionPayloadEnvelope executionPayload,
       final Optional<UInt64> arrivalTimestamp) {
     arrivalTimestamp.ifPresentOrElse(
@@ -182,7 +138,7 @@ public class ExecutionPayloadManager
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
-  private void importExecutionPayload(final SignedExecutionPayloadEnvelope executionPayload) {
+  public void importExecutionPayload(final SignedExecutionPayloadEnvelope executionPayload) {
     final SlotAndBlockRoot slotAndBlockRoot = executionPayload.getMessage().getSlotAndBlockRoot();
     recentChainData
         .retrieveSignedBlockByRoot(slotAndBlockRoot.getBlockRoot())
@@ -218,6 +174,108 @@ public class ExecutionPayloadManager
             });
   }
 
+  public Optional<SignedExecutionPayloadEnvelope> getValidatedExecutionPayloadEnvelope(
+      final Bytes32 blockRoot) {
+    for (final Map.Entry<SlotAndBlockRoot, SignedExecutionPayloadEnvelope> entry :
+        validatedExecutionPayloadEnvelopes.entrySet()) {
+      if (entry.getKey().getBlockRoot().equals(blockRoot)) {
+        return Optional.of(entry.getValue());
+      }
+    }
+    return Optional.empty();
+  }
+
+  public void subscribeRequiredExecutionPayload(
+      final RequiredExecutionPayloadSubscriber requiredExecutionPayloadSubscriber) {
+    requiredExecutionPayloadSubscribers.subscribe(requiredExecutionPayloadSubscriber);
+  }
+
+  @Override
+  public void onBlockValidated(final SignedBeaconBlock block) {
+    // NO-OP
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  @Override
+  public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
+    if (!spec.atSlot(block.getSlot())
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+      return;
+    }
+    final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
+    final SignedExecutionPayloadEnvelope executionPayloadDueProcessing =
+        savedForFutureExecutionPayloadEnvelopes.remove(slotAndBlockRoot);
+
+    if (executionPayloadDueProcessing != null) {
+      // block has been imported, so can apply the execution payload
+      executionPayloadValidator
+          .validate(executionPayloadDueProcessing)
+          .thenAccept(
+              result -> {
+                if (result.code() == ValidationResultCode.ACCEPT) {
+                  importExecutionPayload(executionPayloadDueProcessing);
+                } else {
+                  LOG.warn(
+                      "Execution payload which was saved for future processing for slot {} and block root {} didn't pass gossip validation: {}",
+                      slotAndBlockRoot.getSlot(),
+                      slotAndBlockRoot.getBlockRoot(),
+                      result);
+                }
+              });
+      return;
+    }
+
+    final UInt64 currentTime = timeProvider.getTimeInMillis();
+    final UInt64 slotStartTime =
+        spec.getSlotStartTimeMillis(
+            slotAndBlockRoot.getSlot(), recentChainData.getGenesisTimeMillis());
+    final UInt64 timeInSlot = currentTime.minusMinZero(slotStartTime);
+
+    // delay fetching after the 2nd interval of the slot
+    final UInt64 millisInSlotToFetchExecutionPayload =
+        spec.getMillisPerSlot(slotAndBlockRoot.getSlot())
+            .dividedBy(NetworkConstants.INTERVALS_PER_SLOT_EIP7732)
+            .times(2)
+            .plus(FETCH_DELAY_MILLIS_AFTER_PAYLOAD_REVEAL_TIME);
+
+    // fetch required execution payload
+    final int fetchDelay = millisInSlotToFetchExecutionPayload.minusMinZero(timeInSlot).intValue();
+
+    asyncRunner.runAfterDelay(
+        () -> {
+          // already received and imported
+          if (validatedExecutionPayloadEnvelopes.containsKey(slotAndBlockRoot)) {
+            return;
+          }
+          requiredExecutionPayloadSubscribers.forEach(
+              s -> {
+                LOG.info(
+                    "Fetching missing execution payload for block root {}",
+                    slotAndBlockRoot.getBlockRoot());
+                s.onRequiredExecutionPayload(block.getRoot());
+              });
+        },
+        Duration.ofMillis(fetchDelay));
+  }
+
+  @Override
+  public void onNewFinalizedCheckpoint(
+      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
+    validatedExecutionPayloadEnvelopes
+        .keySet()
+        .removeIf(slotAndBlockRoot -> shouldPrune(slotAndBlockRoot, checkpoint));
+    savedForFutureExecutionPayloadEnvelopes
+        .keySet()
+        .removeIf(slotAndBlockRoot -> shouldPrune(slotAndBlockRoot, checkpoint));
+  }
+
+  private boolean shouldPrune(
+      final SlotAndBlockRoot slotAndBlockRoot, final Checkpoint finalizedCheckpoint) {
+    return spec.computeEpochAtSlot(slotAndBlockRoot.getSlot())
+        .isLessThanOrEqualTo(finalizedCheckpoint.getEpoch());
+  }
+
   private void logFailedExecutionPayloadImport(
       final ExecutionPayloadImportResult result,
       final SignedExecutionPayloadEnvelope executionPayload) {
@@ -225,5 +283,9 @@ public class ExecutionPayloadManager
         "Unable to import {} for reason {}",
         executionPayload::toLogString,
         result::getFailureReason);
+  }
+
+  public interface RequiredExecutionPayloadSubscriber {
+    void onRequiredExecutionPayload(Bytes32 blockRoot);
   }
 }

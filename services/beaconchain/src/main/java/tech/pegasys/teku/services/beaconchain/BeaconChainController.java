@@ -51,6 +51,7 @@ import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.events.CoalescingChainHeadChannel;
 import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarsFetcher;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetcher;
+import tech.pegasys.teku.beacon.sync.gossip.executionpayloads.RecentExecutionPayloadsFetcher;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.beaconrestapi.JsonTypeDefinitionBeaconRestApi;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
@@ -392,6 +393,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
         blobSidecar ->
             recentBlobSidecarsFetcher.cancelRecentBlobSidecarRequest(
                 new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex())));
+    final RecentExecutionPayloadsFetcher recentExecutionPayloadsFetcher =
+        syncService.getRecentExecutionPayloadsFetcher();
+    recentExecutionPayloadsFetcher.subscribeExecutionPayloadFetched(
+        executionPayload -> {
+          executionPayloadManager.recordArrivalTimestamp(
+              executionPayload, Optional.of(timeProvider.getTimeInMillis()));
+          executionPayloadManager.importExecutionPayload(executionPayload);
+        });
 
     final Optional<Eth2Network> network = beaconConfig.eth2NetworkConfig().getEth2Network();
     if (network.isPresent() && network.get() == Eth2Network.EPHEMERY) {
@@ -1377,6 +1386,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         pendingBlocks,
         pendingAttestations,
         blockBlobSidecarsTrackersPool,
+        executionPayloadManager,
         beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),
         signatureVerificationService,
         Duration.ofSeconds(beaconConfig.eth2NetworkConfig().getStartupTimeoutSeconds()),
@@ -1392,6 +1402,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             executionPayloadValidator,
             blockBlobSidecarsTrackersPool,
+            timeProvider,
+            beaconAsyncRunner,
             receivedExecutionPayloadEventsChannelPublisher,
             forkChoice,
             recentChainData,

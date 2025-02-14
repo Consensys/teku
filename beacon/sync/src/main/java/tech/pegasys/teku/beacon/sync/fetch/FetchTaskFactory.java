@@ -32,4 +32,11 @@ public interface FetchTaskFactory {
 
   FetchBlobSidecarTask createFetchBlobSidecarTask(
       BlobIdentifier blobIdentifier, Optional<Eth2Peer> preferredPeer);
+
+  default FetchExecutionPayloadTask createFetchExecutionPayloadTask(final Bytes32 blockRoot) {
+    return createFetchExecutionPayloadTask(blockRoot, Optional.empty());
+  }
+
+  FetchExecutionPayloadTask createFetchExecutionPayloadTask(
+      Bytes32 blockRoot, Optional<Eth2Peer> preferredPeer);
 }

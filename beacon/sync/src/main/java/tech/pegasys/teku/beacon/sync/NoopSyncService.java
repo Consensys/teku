@@ -23,8 +23,11 @@ import tech.pegasys.teku.beacon.sync.gossip.blobs.BlobSidecarSubscriber;
 import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarsFetcher;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.BlockSubscriber;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetcher;
+import tech.pegasys.teku.beacon.sync.gossip.executionpayloads.ExecutionPayloadSubscriber;
+import tech.pegasys.teku.beacon.sync.gossip.executionpayloads.RecentExecutionPayloadsFetcher;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 
@@ -32,6 +35,7 @@ public class NoopSyncService
     implements ForwardSync,
         RecentBlocksFetcher,
         RecentBlobSidecarsFetcher,
+        RecentExecutionPayloadsFetcher,
         SyncService,
         OptimisticHeadSubscriber {
 
@@ -57,6 +61,11 @@ public class NoopSyncService
 
   @Override
   public RecentBlobSidecarsFetcher getRecentBlobSidecarsFetcher() {
+    return this;
+  }
+
+  @Override
+  public RecentExecutionPayloadsFetcher getRecentExecutionPayloadsFetcher() {
     return this;
   }
 
@@ -152,6 +161,27 @@ public class NoopSyncService
 
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
+    // No-op
+  }
+
+  @Override
+  public void subscribeExecutionPayloadFetched(final ExecutionPayloadSubscriber subscriber) {
+    // No-op
+  }
+
+  @Override
+  public void requestRecentExecutionPayload(final Bytes32 blockRoot) {
+    // No-op
+  }
+
+  @Override
+  public void cancelRecentExecutionPayloadRequest(final Bytes32 blockRoot) {
+    // No-op
+  }
+
+  @Override
+  public void onExecutionPayloadImported(
+      final SignedExecutionPayloadEnvelope executionPayload, final boolean executionOptimistic) {
     // No-op
   }
 }
