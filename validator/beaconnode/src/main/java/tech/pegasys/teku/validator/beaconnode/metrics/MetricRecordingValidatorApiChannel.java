@@ -35,6 +35,7 @@ import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.InclusionListDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
@@ -50,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
@@ -129,6 +131,14 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Optional<InclusionListDuties>> getInclusionListDuties(
+      final UInt64 epoch, final IntCollection validatorIndices) {
+    return countOptionalDataRequest(
+        delegate.getInclusionListDuties(epoch, validatorIndices),
+        BeaconNodeRequestLabels.GET_INCLUSION_LIST_DUTIES_REQUESTS_METHOD);
+  }
+
+  @Override
   public SafeFuture<Optional<PeerCount>> getPeerCount() {
     return countOptionalDataRequest(
         delegate.getPeerCount(), BeaconNodeRequestLabels.GET_PEER_COUNT_METHOD);
@@ -169,6 +179,14 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
     return countOptionalDataRequest(
         delegate.createSyncCommitteeContribution(slot, subcommitteeIndex, beaconBlockRoot),
         BeaconNodeRequestLabels.CREATE_SYNC_COMMITTEE_CONTRIBUTION_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Optional<InclusionList>> createInclusionList(
+      final UInt64 slot, final UInt64 validatorIndex) {
+    return countOptionalDataRequest(
+        delegate.createInclusionList(slot, validatorIndex),
+        BeaconNodeRequestLabels.CREATE_INCLUSION_LIST_METHOD);
   }
 
   @Override

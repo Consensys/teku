@@ -11,21 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.metrics.Validator;
+package tech.pegasys.teku.validator.client.duties;
 
-public enum DutyType {
-  ATTESTATION_AGGREGATION("attestation_aggregation"),
-  ATTESTATION_PRODUCTION("attestation_production"),
-  BLOCK_PRODUCTION("block_production"),
-  INCLUSION_LIST_PRODUCTION("inclusion_list_production");
+public class InclusionListCommitteeSubscriptions {
 
-  private final String name;
-
-  DutyType(final String type) {
-    this.name = type;
-  }
-
-  public String getName() {
-    return name;
-  }
+  // TODO EIP7805 implement ILs topic subscription
+  public void sendRequests() {}
 }
