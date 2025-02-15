@@ -134,6 +134,7 @@ class ValidatorApiHandlerTest {
       mock(AttestationTopicSubscriber.class);
   private final ActiveValidatorTracker activeValidatorTracker = mock(ActiveValidatorTracker.class);
   private final BlockPublisher blockPublisher = mock(BlockPublisher.class);
+  private final InclusionListFactory inclusionListFactory = mock(InclusionListFactory.class);
   private final DefaultPerformanceTracker performanceTracker =
       mock(DefaultPerformanceTracker.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
@@ -189,7 +190,8 @@ class ValidatorApiHandlerTest {
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
             blockProductionPerformanceFactory,
-            blockPublisher);
+            blockPublisher,
+            inclusionListFactory);
 
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(forkChoiceTrigger.prepareForBlockProduction(any(), any())).thenReturn(SafeFuture.COMPLETE);
@@ -441,7 +443,8 @@ class ValidatorApiHandlerTest {
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
             blockProductionPerformanceFactory,
-            blockPublisher);
+            blockPublisher,
+            inclusionListFactory);
     // Best state is still in Phase0
     final BeaconState state =
         dataStructureUtil.stateBuilderPhase0().slot(previousEpochStartSlot.minus(1)).build();
@@ -843,7 +846,8 @@ class ValidatorApiHandlerTest {
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
             blockProductionPerformanceFactory,
-            blockPublisher);
+            blockPublisher,
+            inclusionListFactory);
 
     final Attestation attestation = dataStructureUtil.randomSingleAttestation();
     final Attestation convertedAttestation = dataStructureUtil.randomAttestation();

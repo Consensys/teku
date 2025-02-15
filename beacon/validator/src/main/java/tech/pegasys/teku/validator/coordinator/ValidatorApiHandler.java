@@ -52,6 +52,7 @@ import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.InclusionListDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
@@ -78,6 +79,7 @@ import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
@@ -102,6 +104,7 @@ import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.coordinator.duties.AttesterDutiesGenerator;
+import tech.pegasys.teku.validator.coordinator.duties.InclusionListDutiesGenerator;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 
@@ -142,6 +145,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final BlockPublisher blockPublisher;
 
   private final AttesterDutiesGenerator attesterDutiesGenerator;
+  private final InclusionListDutiesGenerator inclusionListDutiesGenerator;
+
+  private final InclusionListFactory inclusionListFactory;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -164,7 +170,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
       final BlockProductionAndPublishingPerformanceFactory
           blockProductionAndPublishingPerformanceFactory,
-      final BlockPublisher blockPublisher) {
+      final BlockPublisher blockPublisher,
+      final InclusionListFactory inclusionListFactory) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
@@ -186,7 +193,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
     this.proposersDataManager = proposersDataManager;
     this.blockPublisher = blockPublisher;
+    this.inclusionListFactory = inclusionListFactory;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
+    this.inclusionListDutiesGenerator = new InclusionListDutiesGenerator(spec);
   }
 
   @Override
@@ -284,6 +293,39 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .thenApply(
             optionalState ->
                 optionalState.map(state -> getProposerDutiesFromIndicesAndState(state, epoch)));
+  }
+
+  @Override
+  public SafeFuture<Optional<InclusionListDuties>> getInclusionListDuties(
+      final UInt64 epoch, final IntCollection validatorIndices) {
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
+
+    if (epoch.isGreaterThan(
+        combinedChainDataClient
+            .getCurrentEpoch()
+            .plus(spec.getSpecConfig(epoch).getMinSeedLookahead() + DUTY_EPOCH_TOLERANCE))) {
+      return SafeFuture.failedFuture(
+          new IllegalArgumentException(
+              String.format(
+                  "Inclusion List duties were requested %s epochs ahead, only 1 epoch in future is supported.",
+                  epoch.minus(combinedChainDataClient.getCurrentEpoch()).toString())));
+    }
+
+    final UInt64 slot = spec.getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(epoch);
+
+    return combinedChainDataClient
+        .getStateAtSlotExact(slot)
+        .thenApply(
+            optionalState ->
+                optionalState.map(
+                    state ->
+                        inclusionListDutiesGenerator.getInclusionListDutiesFromIndicesAndState(
+                            state,
+                            epoch,
+                            validatorIndices,
+                            combinedChainDataClient.isChainHeadOptimistic())));
   }
 
   @Override
@@ -521,6 +563,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     }
     return SafeFuture.completedFuture(
         syncCommitteeMessagePool.createContribution(slot, beaconBlockRoot, subcommitteeIndex));
+  }
+
+  @Override
+  public SafeFuture<Optional<InclusionList>> createInclusionList(
+      final UInt64 slot, final UInt64 validatorIndex) {
+    return inclusionListFactory.createInclusionList(slot, validatorIndex);
   }
 
   @Override

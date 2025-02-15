@@ -41,6 +41,7 @@ import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.InclusionListDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
@@ -59,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
@@ -207,6 +209,13 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
     return sendRequest(() -> typeDefClient.getProposerDuties(epoch));
   }
 
+  // TODO EIP7805 implement beacon FOCIL APIs
+  @Override
+  public SafeFuture<Optional<InclusionListDuties>> getInclusionListDuties(
+      final UInt64 epoch, final IntCollection validatorIndices) {
+    throw new UnsupportedOperationException("Not yet implemented");
+  }
+
   @Override
   public SafeFuture<Optional<PeerCount>> getPeerCount() {
     return sendRequest(typeDefClient::getPeerCount);
@@ -275,6 +284,13 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
         () ->
             typeDefClient.createSyncCommitteeContribution(
                 slot, subcommitteeIndex, beaconBlockRoot));
+  }
+
+  // TODO EIP7805 implement beacon FOCIL APIs
+  @Override
+  public SafeFuture<Optional<InclusionList>> createInclusionList(
+      final UInt64 slot, final UInt64 validatorIndex) {
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override

@@ -58,6 +58,8 @@ import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
+import tech.pegasys.teku.validator.client.duties.InclusionListCommitteeSubscriptions;
+import tech.pegasys.teku.validator.client.duties.InclusionListDutyFactory;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics;
 import tech.pegasys.teku.validator.client.duties.attestations.AttestationDutyFactory;
@@ -460,8 +462,11 @@ public class ValidatorClientService extends Service {
             forkProvider, validatorApiChannel, blockContainerSigner, spec, validatorDutyMetrics);
     final AttestationDutyFactory attestationDutyFactory =
         new AttestationDutyFactory(spec, forkProvider, validatorApiChannel, validatorDutyMetrics);
+    final InclusionListDutyFactory inclusionListDutyFactory =
+        new InclusionListDutyFactory(validatorApiChannel);
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
+
     final boolean dvtSelectionsEndpointEnabled =
         config.getValidatorConfig().isDvtSelectionsEndpointEnabled();
     final DutyLoader<?> attestationDutyLoader =
@@ -525,6 +530,27 @@ public class ValidatorClientService extends Service {
           });
       validatorRegistrator.ifPresent(validatorTimingChannels::add);
     }
+
+    if (spec.isMilestoneSupported(SpecMilestone.EIP7805)) {
+      final InclusionListCommitteeSubscriptions inclusionListCommitteeSubscriptions =
+          new InclusionListCommitteeSubscriptions();
+      final DutyLoader<?> inclusionListDutyLoader =
+          new RetryingDutyLoader<>(
+              asyncRunner,
+              new InclusionListDutyLoader(
+                  validatorApiChannel,
+                  dependentRoot ->
+                      new SlotBasedScheduledDuties<>(
+                          inclusionListDutyFactory,
+                          dependentRoot,
+                          validatorDutyMetrics::performDutyWithMetrics),
+                  validators,
+                  validatorIndexProvider,
+                  inclusionListCommitteeSubscriptions));
+      validatorTimingChannels.add(
+          new InclusionListDutyScheduler(metricsSystem, inclusionListDutyLoader, spec));
+    }
+
     addValidatorCountMetric(metricsSystem, validators);
     final ValidatorStatusLogger validatorStatusLogger = new ValidatorStatusLogger(validators);
     validatorStatusProvider.subscribeValidatorStatusesUpdates(

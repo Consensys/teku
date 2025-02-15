@@ -122,6 +122,8 @@ public class ValidatorApiHandlerIntegrationTest {
 
   private final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
 
+  private final InclusionListFactory inclusionListFactory = mock(InclusionListFactory.class);
+
   private ValidatorApiHandler handler;
 
   @BeforeEach
@@ -199,7 +201,8 @@ public class ValidatorApiHandlerIntegrationTest {
                 blockBlobSidecarsTrackersPool,
                 blobSidecarGossipChannel,
                 dutyMetrics,
-                P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED));
+                P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED),
+            inclusionListFactory);
   }
 
   @TestTemplate
