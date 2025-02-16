@@ -24,8 +24,6 @@ dependencies {
   implementation project(':infrastructure:serviceutils')
   implementation project(':storage')
   implementation project(':storage:api')
-  
-  implementation project(':networking:eth2')
 
   implementation 'io.tmio:tuweni-units'
 

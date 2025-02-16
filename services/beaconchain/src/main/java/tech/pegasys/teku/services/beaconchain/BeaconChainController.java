@@ -142,6 +142,7 @@ import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.block.ReceivedExecutionPayloadEventsChannel;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadHeaderPool;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager.ExecutionPayloadBroadcaster;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
@@ -1411,7 +1412,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             executionPayloadValidator,
             blockBlobSidecarsTrackersPool,
-            eventChannels.getPublisher(ExecutionPayloadGossipChannel.class),
+            eventChannels.getPublisher(ExecutionPayloadBroadcaster.class),
             timeProvider,
             beaconAsyncRunner,
             receivedExecutionPayloadEventsChannelPublisher,

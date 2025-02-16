@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager.ExecutionPayloadBroadcaster;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -134,6 +135,9 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     eventChannels.subscribe(BlobSidecarGossipChannel.class, gossipForkManager::publishBlobSidecar);
     eventChannels.subscribe(
         ExecutionPayloadGossipChannel.class,
+        gossipForkManager::publishSignedExecutionPayloadEnvelope);
+    eventChannels.subscribe(
+        ExecutionPayloadBroadcaster.class,
         gossipForkManager::publishSignedExecutionPayloadEnvelope);
     if (recentChainData.isCloseToInSync()) {
       startGossip();
