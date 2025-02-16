@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -59,11 +60,13 @@ public class ExecutionPayloadManager
   private final Subscribers<RequiredExecutionPayloadSubscriber>
       requiredExecutionPayloadSubscribers = Subscribers.create(true);
 
-  private static final UInt64 FETCH_DELAY_MILLIS_AFTER_PAYLOAD_PROPAGATION_TIME = UInt64.valueOf(1000);
+  private static final UInt64 FETCH_DELAY_MILLIS_AFTER_PAYLOAD_PROPAGATION_TIME =
+      UInt64.valueOf(1000);
 
   private final Spec spec;
   private final ExecutionPayloadValidator executionPayloadValidator;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
+  private final ExecutionPayloadGossipChannel executionPayloadGossipChannel;
   private final TimeProvider timeProvider;
   private final AsyncRunner asyncRunner;
   private final ReceivedExecutionPayloadEventsChannel
@@ -76,6 +79,7 @@ public class ExecutionPayloadManager
       final Spec spec,
       final ExecutionPayloadValidator executionPayloadValidator,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final ExecutionPayloadGossipChannel executionPayloadGossipChannel,
       final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,
       final ReceivedExecutionPayloadEventsChannel receivedExecutionPayloadEventsChannelPublisher,
@@ -85,6 +89,7 @@ public class ExecutionPayloadManager
     this.spec = spec;
     this.executionPayloadValidator = executionPayloadValidator;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
+    this.executionPayloadGossipChannel = executionPayloadGossipChannel;
     this.timeProvider = timeProvider;
     this.asyncRunner = asyncRunner;
     this.receivedExecutionPayloadEventsChannelPublisher =
@@ -215,6 +220,9 @@ public class ExecutionPayloadManager
           .thenAccept(
               result -> {
                 if (result.code() == ValidationResultCode.ACCEPT) {
+                  // broadcast the payload which was due processing
+                  executionPayloadGossipChannel.publishExecutionPayload(
+                      executionPayloadDueProcessing);
                   importExecutionPayload(executionPayloadDueProcessing);
                 } else {
                   LOG.warn(
