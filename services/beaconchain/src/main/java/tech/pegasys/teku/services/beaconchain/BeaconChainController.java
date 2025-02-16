@@ -792,6 +792,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initExecutionPayloadHeaderPool() {
+    if (!spec.isMilestoneSupported(SpecMilestone.EIP7732)) {
+      return;
+    }
     LOG.debug("BeaconChainController.initExecutionPayloadHeaderPool()");
 
     final ExecutionPayloadHeaderValidator validator =
@@ -1281,6 +1284,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   public void initPayloadAttestationPool() {
+    if (!spec.isMilestoneSupported(SpecMilestone.EIP7732)) {
+      return;
+    }
     LOG.debug("BeaconChainController.initPayloadAttestationPool()");
     payloadAttestationPool =
         new PayloadAttestationPool(
@@ -1394,6 +1400,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   public void initExecutionPayloadManager() {
+    if (!spec.isMilestoneSupported(SpecMilestone.EIP7732)) {
+      return;
+    }
     LOG.debug("BeaconChainController.initExecutionPayloadManager()");
     final ExecutionPayloadValidator executionPayloadValidator =
         new ExecutionPayloadValidator(spec, gossipValidationHelper, recentChainData);
@@ -1402,6 +1411,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             executionPayloadValidator,
             blockBlobSidecarsTrackersPool,
+            eventChannels.getPublisher(ExecutionPayloadGossipChannel.class),
             timeProvider,
             beaconAsyncRunner,
             receivedExecutionPayloadEventsChannelPublisher,
@@ -1414,6 +1424,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   public void initPayloadAttestationManager() {
+    if (!spec.isMilestoneSupported(SpecMilestone.EIP7732)) {
+      return;
+    }
     LOG.debug("BeaconChainController.initPayloadAttestationManager()");
     final PayloadAttestationValidator payloadAttestationValidator =
         new PayloadAttestationValidator(spec, recentChainData);
