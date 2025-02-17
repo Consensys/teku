@@ -55,6 +55,10 @@ public enum SpecMilestone {
     return compareTo(other) <= 0;
   }
 
+  public boolean isLessThan(final SpecMilestone other) {
+    return compareTo(other) < 0;
+  }
+
   /** Returns the milestone prior to this milestone */
   @SuppressWarnings("EnumOrdinal")
   public SpecMilestone getPreviousMilestone() {
