@@ -165,24 +165,24 @@ public class RocksDbInstanceFactory {
     final ColumnFamilyOptions cfOptions;
     try {
       final LRUCache cache =
-              column
-                      .getIsLargerCacheAvalilable()
-                      .map(
-                              isLarger -> {
-                                if (isLarger) {
-                                  return new LRUCache(configuration.getLargerCacheCapacity());
-                                } else {
-                                  return new LRUCache(configuration.getCacheCapacity());
-                                }
-                              })
-                      .orElse(new LRUCache(configuration.getCacheCapacity()));
-      cfOptions =  new ColumnFamilyOptions()
+          column
+              .getIsLargerCacheAvalilable()
+              .map(
+                  isLarger -> {
+                    if (isLarger) {
+                      return new LRUCache(configuration.getLargerCacheCapacity());
+                    } else {
+                      return new LRUCache(configuration.getCacheCapacity());
+                    }
+                  })
+              .orElse(new LRUCache(configuration.getCacheCapacity()));
+      cfOptions =
+          new ColumnFamilyOptions()
               .setCompressionType(configuration.getCompressionType())
               .setBottommostCompressionType(configuration.getBottomMostCompressionType())
               .setLevelCompactionDynamicLevelBytes(true)
               .setTableFormatConfig(createBlockBasedTableConfig(cache));
-    }
-    catch (Exception e) {
+    } catch (Exception e) {
       throw new RuntimeException("Error creating column family options", e);
     }
     return cfOptions;
@@ -192,14 +192,14 @@ public class RocksDbInstanceFactory {
       final KvStoreConfiguration configuration) {
     final ColumnFamilyOptions cfOptions;
     try {
-    final LRUCache cache = new LRUCache(configuration.getCacheCapacity());
-    cfOptions = new ColumnFamilyOptions()
-        .setCompressionType(configuration.getCompressionType())
-        .setBottommostCompressionType(configuration.getBottomMostCompressionType())
-        .setLevelCompactionDynamicLevelBytes(true)
-        .setTableFormatConfig(createBlockBasedTableConfig(cache));
-    }
-    catch (Exception e) {
+      final LRUCache cache = new LRUCache(configuration.getCacheCapacity());
+      cfOptions =
+          new ColumnFamilyOptions()
+              .setCompressionType(configuration.getCompressionType())
+              .setBottommostCompressionType(configuration.getBottomMostCompressionType())
+              .setLevelCompactionDynamicLevelBytes(true)
+              .setTableFormatConfig(createBlockBasedTableConfig(cache));
+    } catch (Exception e) {
       throw new RuntimeException("Error creating column family options", e);
     }
     return cfOptions;
