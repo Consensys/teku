@@ -131,6 +131,15 @@ public class ValidatorLogger {
     log.trace(errorString, error);
   }
 
+  public void logFailedExecutionPayloadDuty(
+      final UInt64 slot, final String validatorKey, final Throwable error) {
+    final String errorString =
+        String.format(
+            "%sFailed to produce execution payload  Slot: %s Validator: %s",
+            PREFIX, slot, validatorKey);
+    log.error(ColorConsolePrinter.print(errorString, Color.RED), error);
+  }
+
   public void signerNoLongerActive(
       final String producedType, final UInt64 slot, final Set<String> maybeKey) {
     final String errorString =
