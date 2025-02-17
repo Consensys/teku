@@ -51,7 +51,8 @@ public class KvStoreConfiguration {
 
   public static final int DEFAULT_MAX_BACKGROUND_JOBS = 6;
   public static final int DEFAULT_BACKGROUND_THREAD_COUNT = 6;
-  public static final long DEFAULT_CACHE_CAPACITY = 128 << 20; // 128MB
+  public static final long DEFAULT_CACHE_CAPACITY = 8 << 20;
+  public static final long LARGER_CACHE_CAPACITY = 128 << 20; // 128MB
   public static final long DEFAULT_WRITE_BUFFER_CAPACITY = 128 << 20;
   private static final boolean DEFAULT_OPTIMISE_FOR_SMALL_DB = false;
 
@@ -162,6 +163,10 @@ public class KvStoreConfiguration {
 
   public long getCacheCapacity() {
     return cacheCapacity;
+  }
+
+  public long getLargerCacheCapacity() {
+    return LARGER_CACHE_CAPACITY;
   }
 
   public long getWriteBufferCapacity() {
