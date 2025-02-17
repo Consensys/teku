@@ -28,7 +28,8 @@ public enum SignType {
   VALIDATOR_REGISTRATION("validator_registration"),
   CONTRIBUTION_AND_PROOF("contribution_and_proof"),
   BEACON_BLOCK("beacon_block"),
-  BLOB_SIDECAR("blob_sidecar");
+  BLOB_SIDECAR("blob_sidecar"),
+  INCLUSION_LIST("inclusion_list");
 
   private final String name;
 
