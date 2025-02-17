@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
@@ -120,6 +121,12 @@ public class LocalSigner implements Signer {
   public SafeFuture<BLSSignature> signValidatorRegistration(
       final ValidatorRegistration validatorRegistration) {
     return sign(signingRootUtil.signingRootForValidatorRegistration(validatorRegistration));
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signInclusionList(
+      final InclusionList inclusionList, final ForkInfo forkInfo) {
+    return sign(signingRootUtil.signingRootForInclusionList(inclusionList, forkInfo));
   }
 
   private SafeFuture<Bytes> signingRootFromSyncCommitteeUtils(
