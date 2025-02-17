@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip7732.ExecutionPayloadHeaderEip7732;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -90,6 +91,7 @@ public class BlockProductionDuty implements Duty {
 
   // EIP-7732 TODO: "naive" ePBS block production, need to think about a proper builder flow duty
   // abstraction
+  @SuppressWarnings("FutureReturnValueIgnored")
   private SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {
     final SpecMilestone milestone = spec.atSlot(slot).getMilestone();
 
@@ -120,17 +122,37 @@ public class BlockProductionDuty implements Duty {
                     () -> sendBlock(signedBlockContainer, milestone),
                     this,
                     ValidatorDutyMetricsSteps.SEND))
-        .thenCompose(
-            dutyResult -> {
-              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+        .exceptionally(error -> DutyResult.forError(validator.getPublicKey(), error))
+        // ePBS (execution payload flow)
+        .whenComplete(
+            (dutyResult, __) -> {
+              if (!milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP7732)) {
+                return;
+              }
+              if (dutyResult.getFailureCount() == 0) {
                 final SchemaDefinitionsEip7732 schemaDefinitions =
                     SchemaDefinitionsEip7732.required(spec.atSlot(slot).getSchemaDefinitions());
-                return processExecutionPayloadEnvelope(dutyResult, schemaDefinitions, forkInfo);
+                processExecutionPayloadEnvelope(schemaDefinitions, forkInfo)
+                    .finish(
+                        signedEnvelope -> {
+                          final ExecutionPayloadEnvelope envelope = signedEnvelope.getMessage();
+                          VALIDATOR_LOGGER.logPublishedExecutionPayload(
+                              slot,
+                              envelope.getBuilderIndex(),
+                              envelope.getBeaconBlockRoot(),
+                              envelope.getBlobKzgCommitments().size(),
+                              getExecutionSummaryString(envelope.getPayload()));
+                        },
+                        err ->
+                            VALIDATOR_LOGGER.logFailedExecutionPayloadDuty(
+                                slot, validator.getPublicKey().toAbbreviatedString(), err));
               } else {
-                return SafeFuture.completedFuture(dutyResult);
+                LOG.warn(
+                    "There was a failure producing a block for slot {} and validator {}. Execution payload will NOT be produced.",
+                    slot,
+                    validator.getPublicKey().toAbbreviatedString());
               }
-            })
-        .exceptionally(error -> DutyResult.forError(validator.getPublicKey(), error));
+            });
   }
 
   private SafeFuture<Void> processExecutionPayloadHeader(
@@ -232,10 +254,8 @@ public class BlockProductionDuty implements Duty {
             });
   }
 
-  private SafeFuture<DutyResult> processExecutionPayloadEnvelope(
-      final DutyResult blockProductionDutyResult,
-      final SchemaDefinitionsEip7732 schemaDefinitions,
-      final ForkInfo forkInfo) {
+  private SafeFuture<SignedExecutionPayloadEnvelope> processExecutionPayloadEnvelope(
+      final SchemaDefinitionsEip7732 schemaDefinitions, final ForkInfo forkInfo) {
     return validatorApiChannel
         .getExecutionPayloadEnvelope(slot, validator.getPublicKey())
         .thenCompose(
@@ -258,17 +278,6 @@ public class BlockProductionDuty implements Duty {
                           validatorApiChannel
                               .sendSignedExecutionPayloadEnvelope(signedEnvelope)
                               .thenApply(__ -> signedEnvelope));
-            })
-        .thenApply(
-            signedEnvelope -> {
-              final ExecutionPayloadEnvelope envelope = signedEnvelope.getMessage();
-              VALIDATOR_LOGGER.logPublishedExecutionPayload(
-                  slot,
-                  envelope.getBuilderIndex(),
-                  envelope.getBeaconBlockRoot(),
-                  envelope.getBlobKzgCommitments().size(),
-                  getExecutionSummaryString(envelope.getPayload()));
-              return blockProductionDutyResult;
             });
   }
 
