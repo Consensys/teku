@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
@@ -55,6 +56,8 @@ public interface Signer {
       ContributionAndProof contributionAndProof, ForkInfo forkInfo);
 
   SafeFuture<BLSSignature> signValidatorRegistration(ValidatorRegistration validatorRegistration);
+
+  SafeFuture<BLSSignature> signInclusionList(InclusionList inclusionList, ForkInfo forkInfo);
 
   default boolean isLocal() {
     return getSigningServiceUrl().isEmpty();
