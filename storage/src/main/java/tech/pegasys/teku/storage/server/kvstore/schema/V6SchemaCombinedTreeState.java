@@ -72,7 +72,8 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         KvStoreColumn.create(
             V6_FINALIZED_OFFSET + 7,
             UINT64_SERIALIZER,
-            KvStoreSerializer.createSignedBlockSerializer(spec));
+            KvStoreSerializer.createSignedBlockSerializer(spec),
+            true);
     nonCanonicalBlocksByRoot =
         KvStoreColumn.create(
             V6_FINALIZED_OFFSET + 8,
@@ -82,7 +83,8 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         KvStoreColumn.create(
             finalizedOffset + 14,
             SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER,
-            BYTES_SERIALIZER);
+            BYTES_SERIALIZER,
+            true);
     nonCanonicalBlobSidecarBySlotRootBlobIndex =
         KvStoreColumn.create(
             finalizedOffset + 15,
