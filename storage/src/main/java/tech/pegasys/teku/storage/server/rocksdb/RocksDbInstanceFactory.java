@@ -79,12 +79,12 @@ public class RocksDbInstanceFactory {
     final List<AutoCloseable> resources =
         new ArrayList<>(List.of(txOptions, dbOptions, rocksDbStats));
 
-    List<ColumnFamilyDescriptor> columnDescriptors =
-        createColumnFamilyDescriptors(columns, deletedColumns, configuration);
     Map<Bytes, KvStoreColumn<?, ?>> columnsById =
         columns.stream().collect(Collectors.toMap(KvStoreColumn::getId, Function.identity()));
 
     try {
+      final List<ColumnFamilyDescriptor> columnDescriptors =
+          createColumnFamilyDescriptors(columns, deletedColumns, configuration);
       // columnHandles will be filled when the db is opened
       final List<ColumnFamilyHandle> columnHandles = new ArrayList<>(columnDescriptors.size());
       final TransactionDB db =
@@ -162,33 +162,47 @@ public class RocksDbInstanceFactory {
 
   private static ColumnFamilyOptions createColumnFamilyOptions(
       final KvStoreConfiguration configuration, final KvStoreColumn<?, ?> column) {
-    final LRUCache cache =
-        column
-            .getIsLargerCacheAvalilable()
-            .map(
-                isLarger -> {
-                  if (isLarger) {
-                    return new LRUCache(configuration.getLargerCacheCapacity());
-                  } else {
-                    return new LRUCache(configuration.getCacheCapacity());
-                  }
-                })
-            .orElse(new LRUCache(configuration.getCacheCapacity()));
-    return new ColumnFamilyOptions()
-        .setCompressionType(configuration.getCompressionType())
-        .setBottommostCompressionType(configuration.getBottomMostCompressionType())
-        .setLevelCompactionDynamicLevelBytes(true)
-        .setTableFormatConfig(createBlockBasedTableConfig(cache));
+    final ColumnFamilyOptions cfOptions;
+    try {
+      final LRUCache cache =
+              column
+                      .getIsLargerCacheAvalilable()
+                      .map(
+                              isLarger -> {
+                                if (isLarger) {
+                                  return new LRUCache(configuration.getLargerCacheCapacity());
+                                } else {
+                                  return new LRUCache(configuration.getCacheCapacity());
+                                }
+                              })
+                      .orElse(new LRUCache(configuration.getCacheCapacity()));
+      cfOptions =  new ColumnFamilyOptions()
+              .setCompressionType(configuration.getCompressionType())
+              .setBottommostCompressionType(configuration.getBottomMostCompressionType())
+              .setLevelCompactionDynamicLevelBytes(true)
+              .setTableFormatConfig(createBlockBasedTableConfig(cache));
+    }
+    catch (Exception e) {
+      throw new RuntimeException("Error creating column family options", e);
+    }
+    return cfOptions;
   }
 
   private static ColumnFamilyOptions createColumnFamilyOptions(
       final KvStoreConfiguration configuration) {
+    final ColumnFamilyOptions cfOptions;
+    try {
     final LRUCache cache = new LRUCache(configuration.getCacheCapacity());
-    return new ColumnFamilyOptions()
+    cfOptions = new ColumnFamilyOptions()
         .setCompressionType(configuration.getCompressionType())
         .setBottommostCompressionType(configuration.getBottomMostCompressionType())
         .setLevelCompactionDynamicLevelBytes(true)
         .setTableFormatConfig(createBlockBasedTableConfig(cache));
+    }
+    catch (Exception e) {
+      throw new RuntimeException("Error creating column family options", e);
+    }
+    return cfOptions;
   }
 
   private static List<ColumnFamilyDescriptor> createColumnFamilyDescriptors(
