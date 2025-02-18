@@ -49,11 +49,17 @@ public class SnappyBlockCompressor {
     }
   }
 
-  public Bytes compress(final Bytes data) {
+  public Bytes compress(final Bytes data) throws EncodingException {
     try {
       return Bytes.wrap(Snappy.compress(data.toArrayUnsafe()));
     } catch (IOException e) {
-      throw new RuntimeException("Unable to compress data", e);
+      throw new EncodingException("Unable to compress data", e);
     }
+  }
+}
+
+class EncodingException extends Exception {
+  public EncodingException(String message, Throwable cause) {
+    super(message, cause);
   }
 }
