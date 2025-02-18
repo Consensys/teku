@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.validator.client;
 
-import java.util.Map;
+import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -25,8 +26,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 public class InclusionListDutyScheduler extends AbstractDutyScheduler {
   private static final Logger LOG = LogManager.getLogger();
@@ -47,10 +46,10 @@ public class InclusionListDutyScheduler extends AbstractDutyScheduler {
       final UInt64 headEpoch,
       final UInt64 dutyEpoch) {
     checkArgument(
-            dutyEpoch.isGreaterThanOrEqualTo(headEpoch),
-            "Attempting to calculate dependent root for duty epoch %s that is before the updated head epoch %s",
-            dutyEpoch,
-            headEpoch);
+        dutyEpoch.isGreaterThanOrEqualTo(headEpoch),
+        "Attempting to calculate dependent root for duty epoch %s that is before the updated head epoch %s",
+        dutyEpoch,
+        headEpoch);
     if (headEpoch.equals(dutyEpoch)) {
       LOG.debug("headEpoch {} - returning previousDutyDependentRoot", () -> headEpoch);
       return previousDutyDependentRoot;
@@ -59,7 +58,7 @@ public class InclusionListDutyScheduler extends AbstractDutyScheduler {
       return currentDutyDependentRoot;
     } else {
       LOG.debug(
-              "headBlockRoot returned - dutyEpoch {}, headEpoch {}", () -> dutyEpoch, () -> headEpoch);
+          "headBlockRoot returned - dutyEpoch {}, headEpoch {}", () -> dutyEpoch, () -> headEpoch);
       return headBlockRoot;
     }
   }
