@@ -364,6 +364,8 @@ class LateBlockReorgLogicTest {
     getProposerHeadPassSecondGate();
     when(store.isHeadWeak(any())).thenReturn(false);
     when(store.isParentStrong(any())).thenReturn(true);
+    when(store.satisfiesInclusionList(any())).thenReturn(true);
+
     assertThat(reorgLogicInstrumented.getProposerHead(blockRoot, UInt64.valueOf(2)))
         .isEqualTo(blockRoot);
   }
@@ -373,6 +375,7 @@ class LateBlockReorgLogicTest {
     getProposerHeadPassSecondGate();
     when(store.isHeadWeak(any())).thenReturn(true);
     when(store.isParentStrong(any())).thenReturn(false);
+    when(store.satisfiesInclusionList(any())).thenReturn(true);
     assertThat(reorgLogicInstrumented.getProposerHead(blockRoot, UInt64.valueOf(2)))
         .isEqualTo(blockRoot);
   }
