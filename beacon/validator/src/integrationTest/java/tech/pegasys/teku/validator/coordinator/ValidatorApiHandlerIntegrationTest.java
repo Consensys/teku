@@ -69,6 +69,7 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -123,6 +124,7 @@ public class ValidatorApiHandlerIntegrationTest {
   private final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
 
   private final InclusionListFactory inclusionListFactory = mock(InclusionListFactory.class);
+  private final InclusionListManager inclusionListManager = mock(InclusionListManager.class);
 
   private ValidatorApiHandler handler;
 
@@ -190,6 +192,7 @@ public class ValidatorApiHandlerIntegrationTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
+            inclusionListManager,
             new BlockProductionAndPublishingPerformanceFactory(
                 new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0),
             new MilestoneBasedBlockPublisher(

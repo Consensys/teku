@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
@@ -184,6 +185,12 @@ public interface ValidatorApiChannel extends ChannelInterface {
         }
 
         @Override
+        public SafeFuture<List<SubmitDataError>> sendSignedInclusionLists(
+            final List<SignedInclusionList> signedInclusionLists) {
+          return SafeFuture.completedFuture(List.of());
+        }
+
+        @Override
         public SafeFuture<Void> prepareBeaconProposer(
             final Collection<BeaconPreparableProposer> beaconPreparableProposers) {
           return SafeFuture.COMPLETE;
@@ -272,6 +279,9 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Void> sendSignedContributionAndProofs(
       Collection<SignedContributionAndProof> signedContributionAndProofs);
+
+  SafeFuture<List<SubmitDataError>> sendSignedInclusionLists(
+      List<SignedInclusionList> signedInclusionLists);
 
   SafeFuture<Void> prepareBeaconProposer(
       Collection<BeaconPreparableProposer> beaconPreparableProposers);

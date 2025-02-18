@@ -81,6 +81,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
@@ -94,6 +95,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
+import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -132,6 +134,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
   private final AttestationManager attestationManager;
+  private final InclusionListManager inclusionListManager;
   private final AttestationTopicSubscriber attestationTopicSubscriber;
   private final ActiveValidatorTracker activeValidatorTracker;
   private final DutyMetrics dutyMetrics;
@@ -168,6 +171,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncCommitteeMessagePool syncCommitteeMessagePool,
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
+      final InclusionListManager inclusionListManager,
       final BlockProductionAndPublishingPerformanceFactory
           blockProductionAndPublishingPerformanceFactory,
       final BlockPublisher blockPublisher,
@@ -193,6 +197,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
     this.proposersDataManager = proposersDataManager;
     this.blockPublisher = blockPublisher;
+    this.inclusionListManager = inclusionListManager;
     this.inclusionListFactory = inclusionListFactory;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
     this.inclusionListDutiesGenerator = new InclusionListDutiesGenerator(spec);
@@ -630,7 +635,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
     return SafeFuture.collectAll(attestations.stream().map(this::processAttestation))
-        .thenApply(this::convertAttestationProcessingResultsToErrorList);
+        .thenApply(this::convertProcessingResultsToErrorList);
   }
 
   private SafeFuture<InternalValidationResult> processAttestation(final Attestation attestation) {
@@ -669,7 +674,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             });
   }
 
-  private List<SubmitDataError> convertAttestationProcessingResultsToErrorList(
+  private List<SubmitDataError> convertProcessingResultsToErrorList(
       final List<InternalValidationResult> results) {
     final List<SubmitDataError> errorList = new ArrayList<>();
     for (int index = 0; index < results.size(); index++) {
@@ -687,7 +692,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
       final List<SignedAggregateAndProof> aggregateAndProofs) {
     return SafeFuture.collectAll(aggregateAndProofs.stream().map(this::processAggregateAndProof))
-        .thenApply(this::convertAttestationProcessingResultsToErrorList);
+        .thenApply(this::convertProcessingResultsToErrorList);
   }
 
   private SafeFuture<InternalValidationResult> processAggregateAndProof(
@@ -781,6 +786,27 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               if (!errorMessages.isEmpty()) {
                 throw new IllegalArgumentException(
                     "Invalid contribution and proofs: ;" + String.join(";", errorMessages));
+              }
+            });
+  }
+
+  @Override
+  public SafeFuture<List<SubmitDataError>> sendSignedInclusionLists(
+      final List<SignedInclusionList> signedInclusionLists) {
+    return SafeFuture.collectAll(signedInclusionLists.stream().map(this::processInclusionList))
+        .thenApply(this::convertProcessingResultsToErrorList);
+  }
+
+  private SafeFuture<InternalValidationResult> processInclusionList(
+      final SignedInclusionList signedInclusionList) {
+    return inclusionListManager
+        .addSignedInclusionList(signedInclusionList, Optional.empty())
+        .thenPeek(
+            result -> {
+              if (result.isReject()) {
+                VALIDATOR_LOGGER.producedInvalidInclusionList(
+                    signedInclusionList.getMessage().getSlot(),
+                    result.getDescription().orElse("Unknown reason"));
               }
             });
   }

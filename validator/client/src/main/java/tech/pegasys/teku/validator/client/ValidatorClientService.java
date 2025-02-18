@@ -463,7 +463,7 @@ public class ValidatorClientService extends Service {
     final AttestationDutyFactory attestationDutyFactory =
         new AttestationDutyFactory(spec, forkProvider, validatorApiChannel, validatorDutyMetrics);
     final InclusionListDutyFactory inclusionListDutyFactory =
-        new InclusionListDutyFactory(validatorApiChannel);
+        new InclusionListDutyFactory(spec, forkProvider, validatorApiChannel, validatorDutyMetrics);
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
 
