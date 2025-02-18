@@ -673,9 +673,12 @@ class RestBuilderClientTest {
               verifyBuilderPayloadResponse(builderPayload);
             });
     final Consumer<RecordedRequest> containsConsensusVersionHeader =
-        req ->
-            assertThat(req.getHeader("Eth-Consensus-Version"))
-                .isEqualTo(milestone.name().toLowerCase(Locale.ROOT));
+        req -> {
+          assertThat(req.getHeader("Eth-Consensus-Version"))
+              .isEqualTo(milestone.name().toLowerCase(Locale.ROOT));
+          assertThat(req.getHeader("Accept"))
+              .isEqualTo("application/octet-stream;q=1.0,application/json;q=0.9");
+        };
     verifyRequest(
         "POST",
         "/eth/v1/builder/blinded_blocks",
