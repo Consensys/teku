@@ -149,6 +149,16 @@ public class LoggingOptions {
       arity = "1")
   private int dbOpAlertThresholdMillis = LoggingConfig.DEFAULT_DB_OP_ALERT_THRESHOLD_MILLIS;
 
+  @Option(
+      names = {"--Xlog-peers-gossip-scores-enabled"},
+      hidden = true,
+      showDefaultValue = Visibility.ALWAYS,
+      paramLabel = "<BOOLEAN>",
+      description = "Whether or not to log gossip scores for every peer on every slot",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean logPeersGossipScoresEnabled = false;
+
   private boolean containsPath(final String file) {
     return file.contains(LINUX_SEP) || file.contains(WINDOWS_SEP);
   }
@@ -188,6 +198,7 @@ public class LoggingOptions {
         .includeEventsEnabled(logIncludeEventsEnabled)
         .includeValidatorDutiesEnabled(logIncludeValidatorDutiesEnabled)
         .includeP2pWarningsEnabled(logIncludeP2pWarningsEnabled)
+        .logPeersGossipScoresEnabled(logPeersGossipScoresEnabled)
         .destination(logDestination);
     return loggingBuilder.build();
   }
