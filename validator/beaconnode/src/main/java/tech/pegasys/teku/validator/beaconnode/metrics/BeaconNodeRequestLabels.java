@@ -38,6 +38,7 @@ public class BeaconNodeRequestLabels {
   public static final String PUBLISH_ATTESTATION_METHOD = "publish_attestation";
   public static final String PUBLISH_AGGREGATE_AND_PROOFS_METHOD = "publish_aggregate_and_proofs";
   public static final String PUBLISH_BLOCK_METHOD = "publish_block";
+  public static final String PUBLISH_INCLUSION_LIST_METHOD = "publish_inclusion_list";
   public static final String SEND_SYNC_COMMITTEE_MESSAGES_METHOD = "send_sync_committee_messages";
   public static final String SEND_CONTRIBUTIONS_AND_PROOFS_METHOD = "send_contributions_and_proofs";
   public static final String PREPARE_BEACON_PROPOSERS_METHOD = "prepare_beacon_proposers";
