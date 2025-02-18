@@ -57,16 +57,20 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class AggregatingAttestationPoolBenchmark {
   private static final Spec SPEC = TestSpecFactory.createMainnetDeneb();
 
-  // file can be obtained here
+  // pool dump can be created via something similar to
+  // https://github.com/tbenr/teku/commit/bd37ec8f5c6ce02edb3e375a1561e1d934b7d191
+  // state and actual block can be obtained the usual ways
+
+  // a reference file can be obtained here
   // https://drive.google.com/file/d/139bA7r88riFODZ7S0FpvtO7hmWmdC_XC/view?usp=drive_link
   private static final String STATE_PATH =
       "/tmp/BeaconStateDeneb_3630479_03664f196162fb81a4406c508674dd1ede09b883d37d0f3d0f076897f68741d2.ssz";
 
-  // file can be obtained here
+  // a reference file can be obtained here
   // https://drive.google.com/file/d/1I5vXK-x8ZH9wh40wNf1oACXeF_U3to8J/view?usp=drive_link
   private static final String POOL_DUMP_PATH = "/tmp/attestations_3630479.multi_ssz";
 
-  // file can be obtained here
+  // a reference file can be obtained here
   // https://drive.google.com/file/d/1PN0OToyNOV0SyjeQaS7oF3J4cKbmy1nX/view?usp=drive_link
   private static final String ACTUAL_BLOCK_PATH =
       "/tmp/block-3630480-e652bd51c7e4e528fea0728a3ad96f86ceb92e9daa227f315e96a9884ceb187b.ssz";
