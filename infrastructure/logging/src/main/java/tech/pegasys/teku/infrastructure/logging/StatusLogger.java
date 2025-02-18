@@ -517,6 +517,7 @@ public class StatusLogger {
     final String separator = "-------------------- ----------";
 
     final StringBuilder table = new StringBuilder();
+    table.append("Total peers: ").append(scoresByPeerId.size());
     table.append("\n").append(header).append("\n");
     table.append(separator).append("\n");
 
