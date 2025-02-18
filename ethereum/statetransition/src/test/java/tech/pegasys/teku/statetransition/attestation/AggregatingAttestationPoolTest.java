@@ -63,7 +63,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 class AggregatingAttestationPoolTest {
 
   public static final UInt64 SLOT = UInt64.valueOf(1234);
-  private static final int COMMITTEE_SIZE = 20;
+  private static final int COMMITTEE_SIZE = 130;
 
   private Spec spec;
   private SpecMilestone specMilestone;
@@ -260,15 +260,61 @@ class AggregatingAttestationPoolTest {
 
   @TestTemplate
   public void getAttestationsForBlock_shouldNotAddMoreAttestationsThanAllowedInBlock() {
-    final BeaconState state = dataStructureUtil.randomBeaconState(ONE);
-    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
-    final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 2, 3, 4);
-    final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 5);
-    // Won't be included because of the 2 attestation limit.
-    addAttestationFromValidators(attestationData, 2);
+    final int allowed =
+        Math.toIntExact(
+            spec.atSlot(ONE)
+                .getSchemaDefinitions()
+                .getBeaconBlockBodySchema()
+                .getAttestationsSchema()
+                .getMaxLength());
 
-    assertThat(aggregatingPool.getAttestationsForBlock(state, forkChecker))
-        .containsExactly(attestation1, attestation2);
+    final int validatorCount = allowed + 1;
+    final BeaconState state = dataStructureUtil.randomBeaconState(validatorCount, 100, ONE);
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
+
+    final int lastValidatorIndex = validatorCount - 1;
+
+    // add non aggregatable attestations, more than allowed in block
+    for (int i = 0; i < validatorCount; i++) {
+      addAttestationFromValidators(attestationData, i, lastValidatorIndex);
+    }
+
+    assertThat(aggregatingPool.getAttestationsForBlock(state, forkChecker)).hasSize(allowed);
+  }
+
+  @TestTemplate
+  public void getAttestationsForBlock_shouldGivePriorityToBestAggregationForEachSlot() {
+    // let's test this on electra only, which has only 8 attestations for block
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(ELECTRA);
+    assertThat(
+            spec.atSlot(ONE)
+                .getSchemaDefinitions()
+                .getBeaconBlockBodySchema()
+                .getAttestationsSchema()
+                .getMaxLength())
+        .isEqualTo(8);
+
+    final BeaconState state = dataStructureUtil.randomBeaconState(ONE);
+
+    // let's prepare 2 different attestationData for the same slot
+    final AttestationData attestationData0 = dataStructureUtil.randomAttestationData(ZERO);
+    final AttestationData attestationData1 = dataStructureUtil.randomAttestationData(ZERO);
+
+    // let's fill up the pool with non-aggregatable attestationsData0
+    addAttestationFromValidators(attestationData0, 1, 2);
+    addAttestationFromValidators(attestationData0, 1, 3);
+    addAttestationFromValidators(attestationData0, 1, 4);
+    addAttestationFromValidators(attestationData0, 1, 5);
+    addAttestationFromValidators(attestationData0, 1, 6);
+    addAttestationFromValidators(attestationData0, 1, 7);
+    addAttestationFromValidators(attestationData0, 1, 8);
+    addAttestationFromValidators(attestationData0, 1, 9);
+
+    // let's add a better aggregation for attestationData1
+    final Attestation bestAttestation = addAttestationFromValidators(attestationData1, 11, 14, 15);
+
+    assertThat(aggregatingPool.getAttestationsForBlock(state, forkChecker).get(0))
+        .isEqualTo(bestAttestation);
   }
 
   @TestTemplate
