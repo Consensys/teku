@@ -14,6 +14,9 @@
 package tech.pegasys.teku.validator.client;
 
 import java.util.Map;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
@@ -23,7 +26,10 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 public class InclusionListDutyScheduler extends AbstractDutyScheduler {
+  private static final Logger LOG = LogManager.getLogger();
   static final int LOOKAHEAD_EPOCHS = 1;
 
   protected InclusionListDutyScheduler(
@@ -40,7 +46,22 @@ public class InclusionListDutyScheduler extends AbstractDutyScheduler {
       final Bytes32 currentDutyDependentRoot,
       final UInt64 headEpoch,
       final UInt64 dutyEpoch) {
-    return null;
+    checkArgument(
+            dutyEpoch.isGreaterThanOrEqualTo(headEpoch),
+            "Attempting to calculate dependent root for duty epoch %s that is before the updated head epoch %s",
+            dutyEpoch,
+            headEpoch);
+    if (headEpoch.equals(dutyEpoch)) {
+      LOG.debug("headEpoch {} - returning previousDutyDependentRoot", () -> headEpoch);
+      return previousDutyDependentRoot;
+    } else if (headEpoch.increment().equals(dutyEpoch)) {
+      LOG.debug("dutyEpoch (next epoch) {} - returning currentDutyDependentRoot", () -> dutyEpoch);
+      return currentDutyDependentRoot;
+    } else {
+      LOG.debug(
+              "headBlockRoot returned - dutyEpoch {}, headEpoch {}", () -> dutyEpoch, () -> headEpoch);
+      return headBlockRoot;
+    }
   }
 
   @Override
