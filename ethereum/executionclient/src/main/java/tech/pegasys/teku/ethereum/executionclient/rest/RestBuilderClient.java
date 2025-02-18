@@ -212,7 +212,9 @@ public class RestBuilderClient implements BuilderClient {
     return restClient
         .postAsync(
             BuilderApiMethod.GET_PAYLOAD.getPath(),
-            Map.of(HEADER_CONSENSUS_VERSION, milestone.name().toLowerCase(Locale.ROOT)),
+            Map.ofEntries(
+                Map.entry(HEADER_CONSENSUS_VERSION, milestone.name().toLowerCase(Locale.ROOT)),
+                ACCEPT_HEADER),
             signedBlindedBeaconBlock,
             LAST_RECEIVED_HEADER_WAS_IN_SSZ.get(),
             responseTypeDefinition)
