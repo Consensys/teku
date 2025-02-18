@@ -67,10 +67,6 @@ gradle.startParameter.taskNames = expandedTaskList.flatten() as Iterable<String>
 
 def userHome = System.getProperty("user.home")
 
-def cloudsmithUser = project.hasProperty('cloudsmithUser') ? project.property('cloudsmithUser') : System.getenv('CLOUDSMITH_USER')
-def cloudsmithKey = project.hasProperty('cloudsmithApiKey') ? project.property('cloudsmithApiKey') : System.getenv('CLOUDSMITH_API_KEY')
-
-
 var baseInfrastructureProjects = [
     ':infrastructure:bytes',
     ':infrastructure:collections',
@@ -842,13 +838,16 @@ subprojects {
 
     publishing {
       repositories {
-        maven {
-          name = "cloudsmith"
-          url = "https://api-g.cloudsmith.io/maven/consensys/teku/"
-          credentials {
-            username = cloudsmithUser
-            password = cloudsmithKey
-          }
+        // maven {
+        //   name = "cloudsmith"
+        //   url = "https://api-g.cloudsmith.io/maven/consensys/teku/"
+        //   credentials {
+        //     username = cloudsmithUser
+        //     password = cloudsmithKey
+        //   }
+        sonatype {
+          username = project.hasProperty('sonatypeUser') ? project.property('sonatypeUser') : System.getenv('SONATYPE_USER')
+          password = project.hasProperty('sonatypeToken') ? project.property('sonatypeToken') : System.getenv('SONATYPE_TOKEN')
         }
       }
       publications {
