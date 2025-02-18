@@ -182,6 +182,10 @@ public class LateBlockReorgLogic {
       LOG.debug("getProposerHead - return parentRoot - isHeadWeak true && isParentStrong true");
       return head.getParentRoot();
     }
+    if (!getStore().satisfiesInclusionList(headRoot)) {
+      LOG.debug("getProposerHead - return parentRoot - does not satisfies InclusionList");
+      return head.getParentRoot();
+    }
 
     LOG.debug("getProposerHead - return headRoot");
     return headRoot;
