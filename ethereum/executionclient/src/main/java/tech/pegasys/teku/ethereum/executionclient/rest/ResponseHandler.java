@@ -85,7 +85,8 @@ public class ResponseHandler<TResp extends SszData> extends AbstractResponseHand
         return;
       }
 
-      if (!responseMediaType.is(MediaType.JSON_UTF_8)) {
+      if (!responseMediaType.type().equals(MediaType.JSON_UTF_8.type())
+          || !responseMediaType.subtype().equals(MediaType.JSON_UTF_8.subtype())) {
         LOG.warn(
             "Response contains an incorrect Content-Type header: {}, attempting to parse as {} [{}]",
             responseMediaType,
