@@ -62,7 +62,9 @@ public class BeaconStateAccessorsEip7805 extends BeaconStateAccessorsElectra {
     final UInt64 end = start.plus(specConfigEip7805.getInclusionListCommitteeSize());
     final IntList inclusionListCommitteeIndices = new IntArrayList();
     for (int index = start.intValue(); index < end.intValue(); index++) {
-      final int shuffledIndex = miscHelpers.computeShuffledIndex(index, activeValidatorCount, seed);
+      final int shuffledIndex =
+          miscHelpers.computeShuffledIndex(
+              index % activeValidatorCount, activeValidatorCount, seed);
       inclusionListCommitteeIndices.add(indices.getInt(shuffledIndex));
     }
     return inclusionListCommitteeIndices;
