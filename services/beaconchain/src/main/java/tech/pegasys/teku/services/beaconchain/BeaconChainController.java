@@ -1458,6 +1458,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
+            inclusionListManager,
             blockProductionPerformanceFactory,
             blockPublisher,
             inclusionListFactory);
@@ -1726,7 +1727,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initInclusionListPool()");
     final SignedInclusionListValidator signedInclusionListValidator =
         new SignedInclusionListValidator(spec, recentChainData);
-    inclusionListManager = new InclusionListManager(signedInclusionListValidator);
+    inclusionListManager = new InclusionListManager(signedInclusionListValidator, forkChoice);
     eventChannels.subscribe(SlotEventsChannel.class, inclusionListManager);
   }
 

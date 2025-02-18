@@ -484,7 +484,7 @@ public class ValidatorClientService extends Service {
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
     final InclusionListDutyFactory inclusionListDutyFactory =
-        new InclusionListDutyFactory(validatorApiChannel);
+        new InclusionListDutyFactory(spec, forkProvider, validatorApiChannel, validatorDutyMetrics);
     final Function<Bytes32, SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty>>
         scheduledAttestationDutiesFactory =
             dependentRoot ->
