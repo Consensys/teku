@@ -167,7 +167,7 @@ public class BuilderBidValidatorTest {
   @Test
   void shouldNotLogEventIfGasLimitDecreases() throws BuilderBidValidationException {
     // 1023001 is as high as it can move in 1 shot
-    prepareGasLimit(UInt64.valueOf(1024_000), UInt64.valueOf(1022_000), UInt64.valueOf(1023_001));
+    prepareGasLimit(UInt64.valueOf(1024_000), UInt64.valueOf(1023_001), UInt64.valueOf(1022_000));
 
     builderBidValidatorWithMockSpec.validateBuilderBid(
         signedBuilderBid, validatorRegistration, state, Optional.empty());
@@ -178,7 +178,7 @@ public class BuilderBidValidatorTest {
   @Test
   void shouldNotLogEventIfGasLimitIncreases() throws BuilderBidValidationException {
     // 1024999 is as high as it can move in 1 shot
-    prepareGasLimit(UInt64.valueOf(1024_000), UInt64.valueOf(1025_000), UInt64.valueOf(1024_999));
+    prepareGasLimit(UInt64.valueOf(1024_000), UInt64.valueOf(1024_999), UInt64.valueOf(1025_000));
 
     builderBidValidatorWithMockSpec.validateBuilderBid(
         signedBuilderBid, validatorRegistration, state, Optional.empty());
