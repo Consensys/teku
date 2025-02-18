@@ -123,7 +123,7 @@ public class BuilderBidValidatorImpl implements BuilderBidValidator {
     final UInt64 proposedGasLimit = executionPayloadHeader.getGasLimit();
 
     final UInt64 expectedGasLimit = expectedGasLimit(parentGasLimit, preferredGasLimit);
-    if (!expectedGasLimit.equals(preferredGasLimit)) {
+    if (!expectedGasLimit.equals(proposedGasLimit)) {
       eventLogger.builderBidNotHonouringGasLimit(
           parentGasLimit, proposedGasLimit, expectedGasLimit, preferredGasLimit);
     }
