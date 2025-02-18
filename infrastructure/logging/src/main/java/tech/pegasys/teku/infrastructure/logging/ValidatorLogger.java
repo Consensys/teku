@@ -210,6 +210,13 @@ public class ValidatorLogger {
             PREFIX + "Produced invalid aggregate for slot " + slot + ": " + reason, Color.RED));
   }
 
+  public void producedInvalidInclusionList(final UInt64 slot, final String reason) {
+    log.error(
+        ColorConsolePrinter.print(
+            PREFIX + "Produced invalid inclusion list for slot " + slot + ": " + reason,
+            Color.RED));
+  }
+
   public void preparedBeaconProposersExpiration(
       final UInt64 slot, final int numberOfExpiredProposers) {
     log.warn(
