@@ -56,12 +56,18 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 @State(Scope.Thread)
 public class AggregatingAttestationPoolBenchmark {
   private static final Spec SPEC = TestSpecFactory.createMainnetDeneb();
+
+  // file can be obtained here https://drive.google.com/file/d/139bA7r88riFODZ7S0FpvtO7hmWmdC_XC/view?usp=drive_link
   private static final String STATE_PATH =
-      "/Users/tbenr/Downloads/att pool test/BeaconStateDeneb_3630479_03664f196162fb81a4406c508674dd1ede09b883d37d0f3d0f076897f68741d2.ssz";
+      "/tmp/BeaconStateDeneb_3630479_03664f196162fb81a4406c508674dd1ede09b883d37d0f3d0f076897f68741d2.ssz";
+
+  // file can be obtained here https://drive.google.com/file/d/1I5vXK-x8ZH9wh40wNf1oACXeF_U3to8J/view?usp=drive_link
   private static final String POOL_DUMP_PATH =
-      "/Users/tbenr/Downloads/att pool test/attestations_3630479.multi_ssz";
+      "/tmp/attestations_3630479.multi_ssz";
+
+  // file can be obtained here https://drive.google.com/file/d/1PN0OToyNOV0SyjeQaS7oF3J4cKbmy1nX/view?usp=drive_link
   private static final String ACTUAL_BLOCK_PATH =
-      "/Users/tbenr/Downloads/att pool test/block-3630480-e652bd51c7e4e528fea0728a3ad96f86ceb92e9daa227f315e96a9884ceb187b.ssz";
+      "/tmp/block-3630480-e652bd51c7e4e528fea0728a3ad96f86ceb92e9daa227f315e96a9884ceb187b.ssz";
 
   private BeaconState state;
   private BeaconState newBlockState;
@@ -156,7 +162,7 @@ public class AggregatingAttestationPoolBenchmark {
         new Blackhole(
             "Today's password is swordfish. I understand instantiating Blackholes directly is dangerous.");
 
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 100; i++) {
       benchmark.getAttestationsForBlock(bh);
     }
   }
