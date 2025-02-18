@@ -20,25 +20,34 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
+import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.SignedInclusionListValidator;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
 public class InclusionListManager implements SlotEventsChannel {
 
+  private static final Logger LOG = LogManager.getLogger();
+
   private static final UInt64 SLOTS_TO_RETAIN = UInt64.valueOf(4);
-
   private final SignedInclusionListValidator signedInclusionListValidator;
-
+  private final ForkChoice forkChoice;
   private final NavigableMap<UInt64, Map<UInt64, List<SignedInclusionList>>>
       slotToInclusionListsByValidatorIndex = new TreeMap<>();
 
-  public InclusionListManager(final SignedInclusionListValidator signedInclusionListValidator) {
+  public InclusionListManager(
+      final SignedInclusionListValidator signedInclusionListValidator,
+      final ForkChoice forkChoice) {
     this.signedInclusionListValidator = signedInclusionListValidator;
+    this.forkChoice = forkChoice;
   }
 
   @Override
@@ -57,7 +66,7 @@ public class InclusionListManager implements SlotEventsChannel {
               if (inclusionLists == null) {
                 return List.of(signedInclusionList);
               } else {
-                List<SignedInclusionList> updatedList = new ArrayList<>(inclusionLists);
+                final List<SignedInclusionList> updatedList = new ArrayList<>(inclusionLists);
                 updatedList.add(signedInclusionList);
                 return updatedList;
               }
@@ -69,13 +78,60 @@ public class InclusionListManager implements SlotEventsChannel {
     final SafeFuture<InternalValidationResult> validationResult =
         signedInclusionListValidator.validate(
             signedInclusionList, slotToInclusionListsByValidatorIndex);
-    return validationResult.thenApply(
-        result -> {
-          if (result.isAccept()) {
-            add(signedInclusionList);
+    processInternallyInclusionList(validationResult, signedInclusionList);
+    return validationResult;
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private void processInternallyInclusionList(
+      final SafeFuture<InternalValidationResult> validationResult,
+      final SignedInclusionList signedInclusionList) {
+    validationResult.thenAccept(
+        internalValidationResult -> {
+          if (internalValidationResult.code().equals(ValidationResultCode.ACCEPT)
+              || internalValidationResult.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
+            onInclusionList(signedInclusionList)
+                .finish(
+                    result ->
+                        result.ifInvalid(
+                            reason -> LOG.debug("Rejected received inclusion list: " + reason)),
+                    err -> LOG.error("Failed to process received inclusion list.", err));
           }
-          return result;
         });
+  }
+
+  // EIP7805 TODO we could use different inclusion list pools (pending, future)
+  public SafeFuture<AttestationProcessingResult> onInclusionList(
+      final SignedInclusionList signedInclusionList) {
+    return forkChoice
+        .onInclusionList(signedInclusionList)
+        .thenApply(
+            result -> {
+              switch (result.getStatus()) {
+                case SUCCESSFUL:
+                  LOG.trace(
+                      "Processed inclusion list {} successfully",
+                      signedInclusionList::hashTreeRoot);
+                  add(signedInclusionList);
+                  break;
+                case UNKNOWN_BLOCK:
+                  LOG.trace(
+                      "Ignoring inclusion list {} as required block is not yet present",
+                      signedInclusionList::hashTreeRoot);
+                  break;
+                case SAVED_FOR_FUTURE:
+                  LOG.trace(
+                      "Ignoring inclusion list {} for future slot",
+                      signedInclusionList::hashTreeRoot);
+                  break;
+                case DEFER_FORK_CHOICE_PROCESSING, INVALID:
+                  break;
+                default:
+                  throw new UnsupportedOperationException(
+                      "AttestationProcessingResult is unrecognizable");
+              }
+              return result;
+            });
   }
 
   public List<SignedInclusionList> getInclusionLists(

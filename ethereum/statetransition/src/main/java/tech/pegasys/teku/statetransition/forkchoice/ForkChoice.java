@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
@@ -265,6 +266,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               }
               return SafeFuture.failedFuture(error);
             });
+  }
+
+  // TODO EIP7805 implement
+  @SuppressWarnings("unused")
+  public SafeFuture<AttestationProcessingResult> onInclusionList(
+      final SignedInclusionList signedInclusionList) {
+    return SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL);
   }
 
   public void applyIndexedAttestations(final List<ValidatableAttestation> attestations) {

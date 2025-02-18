@@ -16,8 +16,6 @@ package tech.pegasys.teku.validator.client;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.Optional;
 import java.util.function.Function;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.json.types.validator.InclusionListDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.InclusionListDuty;
@@ -33,12 +31,11 @@ import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 public class InclusionListDutyLoader
     extends AbstractDutyLoader<InclusionListDuties, SlotBasedScheduledDuties<?, ?>> {
 
-  @SuppressWarnings("unused")
-  private static final Logger LOG = LogManager.getLogger();
-
   private final ValidatorApiChannel validatorApiChannel;
   private final Function<Bytes32, SlotBasedScheduledDuties<InclusionListProductionDuty, Duty>>
       scheduledDutiesFactory;
+
+  @SuppressWarnings("unused")
   private final InclusionListCommitteeSubscriptions inclusionListCommitteeSubscriptions;
 
   protected InclusionListDutyLoader(
@@ -63,24 +60,31 @@ public class InclusionListDutyLoader
     return validatorApiChannel.getInclusionListDuties(epoch, validatorIndices);
   }
 
-  // TODO EIP7805 implement duties scheduling
   @Override
   protected SafeFuture<SlotBasedScheduledDuties<?, ?>> scheduleAllDuties(
       final UInt64 epoch, final InclusionListDuties duties) {
+
     final SlotBasedScheduledDuties<InclusionListProductionDuty, Duty> scheduledDuties =
         scheduledDutiesFactory.apply(duties.dependentRoot());
-    return SafeFuture.allOf(
-            duties.duties().stream()
-                .map(duty -> scheduleDuties(scheduledDuties, duty))
-                .toArray(SafeFuture[]::new))
-        .<SlotBasedScheduledDuties<?, ?>>thenApply(__ -> scheduledDuties)
-        .alwaysRun(inclusionListCommitteeSubscriptions::sendRequests);
+
+    duties.duties().forEach(duty -> scheduleDuty(scheduledDuties, duty));
+
+    return SafeFuture.completedFuture(scheduledDuties);
   }
 
-  @SuppressWarnings("unused")
-  private SafeFuture<Void> scheduleDuties(
+  private void scheduleDuty(
       final SlotBasedScheduledDuties<InclusionListProductionDuty, Duty> scheduledDuties,
       final InclusionListDuty duty) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    validators
+        .getValidator(duty.publicKey())
+        .ifPresent(
+            validator ->
+                scheduledDuties.scheduleProduction(
+                    duty.slot(),
+                    validator,
+                    d -> {
+                      d.addValidator(validator, duty.validatorIndex());
+                      return null;
+                    }));
   }
 }
