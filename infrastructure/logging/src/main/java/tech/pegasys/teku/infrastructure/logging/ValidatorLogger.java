@@ -135,7 +135,7 @@ public class ValidatorLogger {
       final UInt64 slot, final String validatorKey, final Throwable error) {
     final String errorString =
         String.format(
-            "%sFailed to produce execution payload  Slot: %s Validator: %s",
+            "%sFailed to produce or publish execution payload  Slot: %s Validator: %s",
             PREFIX, slot, validatorKey);
     log.error(ColorConsolePrinter.print(errorString, Color.RED), error);
   }

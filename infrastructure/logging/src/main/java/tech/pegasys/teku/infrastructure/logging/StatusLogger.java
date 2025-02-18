@@ -423,18 +423,6 @@ public class StatusLogger {
     }
   }
 
-  public void adjustingP2pLowerBoundToUpperBound(final int p2pUpperBound) {
-    log.info(
-        "Adjusting target number of peers lower bound to equal upper bound, which is {}",
-        p2pUpperBound);
-  }
-
-  public void adjustingP2pUpperBoundToLowerBound(final int p2pLowerBound) {
-    log.warn(
-        "Target number of peers upper bound cannot be set below the peers lower bound.  Increasing target to {}.",
-        p2pLowerBound);
-  }
-
   public void performance(final String performance) {
     log.info(performance);
   }
@@ -524,11 +512,21 @@ public class StatusLogger {
         executionBlockHash);
   }
 
-  public void warnFlagDeprecation(final String oldFlag, final String newFlag) {
-    logWithColorIfLevelGreaterThanInfo(
-        Level.WARN,
-        String.format("Flag `%s` is deprecated, use `%s` instead", oldFlag, newFlag),
-        Color.YELLOW);
+  public void peersGossipScores(final Map<String, Double> scoresByPeerId) {
+    final String header = String.format("%-20s %-20s", "Peer ID", "Score");
+    final String separator = "-------------------- ----------";
+
+    final StringBuilder table = new StringBuilder();
+    table.append("\n").append(header).append("\n");
+    table.append(separator).append("\n");
+
+    for (final Map.Entry<String, Double> entry : scoresByPeerId.entrySet()) {
+      final String peerId = entry.getKey().substring(0, 17) + "...";
+      final String row = String.format("%-20s %-10.2f", peerId, entry.getValue());
+      table.append(row).append("\n");
+    }
+
+    log.info(ColorConsolePrinter.print(table.toString(), Color.CYAN));
   }
 
   public void warnIgnoringWeakSubjectivityPeriod() {

@@ -88,6 +88,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeBasedStableSubnetSub
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
+import tech.pegasys.teku.networking.eth2.peers.PeersStatusLogger;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.networks.StateBoostrapConfig;
@@ -1240,6 +1241,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .recordMessageArrival(true)
             .p2pDebugDataDumper(debugDataDumper)
             .build();
+
+    final PeersStatusLogger peersStatusLogger = new PeersStatusLogger(p2pNetwork);
+    eventChannels.subscribe(SlotEventsChannel.class, peersStatusLogger);
 
     syncCommitteeMessagePool.subscribeOperationAdded(
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishSyncCommitteeMessage));
