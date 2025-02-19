@@ -38,6 +38,7 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostRegisterValidator;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -56,11 +57,17 @@ public class PostRegisterValidatorTest extends AbstractDataBackedRestAPIIntegrat
         .thenAnswer(
             args -> {
               final Collection<BLSPublicKey> publicKeys = args.getArgument(0);
-              final Map<BLSPublicKey, ValidatorStatus> validatorStatuses =
+              final Map<BLSPublicKey, StateValidatorData> validatorStatuses =
                   publicKeys.stream()
                       .collect(
                           Collectors.toMap(
-                              Function.identity(), __ -> ValidatorStatus.active_ongoing));
+                              Function.identity(),
+                              __ ->
+                                  new StateValidatorData(
+                                      dataStructureUtil.randomValidatorIndex(),
+                                      dataStructureUtil.randomUInt64(),
+                                      ValidatorStatus.active_ongoing,
+                                      dataStructureUtil.randomValidator())));
               return SafeFuture.completedFuture(Optional.of(validatorStatuses));
             });
   }
