@@ -29,6 +29,9 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
@@ -55,6 +58,8 @@ public class RocksDbInstanceFactory {
   static {
     RocksDbUtil.loadNativeLibrary();
   }
+
+  private static final Logger LOG = LogManager.getLogger();
 
   public static KvStoreAccessor create(
       final MetricsSystem metricsSystem,
@@ -170,6 +175,7 @@ public class RocksDbInstanceFactory {
               .map(
                   isLarger -> {
                     if (isLarger) {
+                      LOG.info("Using larger cache for column {}", column.getId().toHexString());
                       return new LRUCache(configuration.getLargerCacheCapacity());
                     } else {
                       return new LRUCache(configuration.getCacheCapacity());
