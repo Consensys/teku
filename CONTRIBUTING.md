@@ -33,7 +33,19 @@ Start by looking through the 'good first issue' and 'help wanted' issues:
 * [Good First Issue][search-label-good-first-issue] - issues which should only require a few lines of code, and a test or two.
 * [Help wanted issues][search-label-help-wanted] - issues that are a bit more involved than `good first issue` issues.
 
-Please keep in mind that we do not accept non-code contributions like fixing comments, typos or some other trivial fixes. Although we appreciate the extra help, managing lots of these small contributions is unfeasible, and puts extra pressure in our continuous delivery systems (running all tests, etc). Feel free to open an issue pointing any of those errors and we will batch them into a single change.
+Please reach out in discord if you're looking to help out, and we can assist you in finding a good candidate ticket to work on, or discuss the idea you have. 
+
+We have a [Teku](https://discord.com/channels/697535391594446898/697539289042649190) channel, and also a [Teku Contributors](https://discord.com/channels/697535391594446898/1050616638497640548) channel.
+
+Due to the prevalence of 'airdrop farming' type practices, this unfortunately puts heightened scrutiny on first time contributors, but if you're genuinely looking to help out, we'd really love to assist you in any way we can.
+This does mean however that we will generally reject 'random' fixes such as 'TODO' fixes, typos, and generally things that add no value that we haven't identified as something we need. These are likely to be rejected with 'due to contribution guidelines' type responses.
+This includes but is not limited to
+* code replacement of TODO's that are not well tested or justified by performance and regression tests to prove their worth.
+* typos, even if valid, will be worked into other PRs or just ignored completely if they're from first time contributors with no substantative value.
+* things like replacing RuntimeException with a new exception type that's not well tested and adding value.
+* rewording of comments
+
+Minimal discussion will be given in PR's due to the volume we're needing to deal with currently of this type of PR, which is taking away from actual development time, so please don't be offended if you're genuinely trying to help out; and we say 'see contribution guidelines'.
 
 ### Local Development
 The codebase is maintained using the "*contributor workflow*" where everyone without exception contributes patch proposals using "*pull-requests*". This facilitates social contribution, easy testing and peer review.
