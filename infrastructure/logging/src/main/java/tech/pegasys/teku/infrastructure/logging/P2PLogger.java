@@ -13,11 +13,14 @@
 
 package tech.pegasys.teku.infrastructure.logging;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.Color;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class P2PLogger {
@@ -86,5 +89,61 @@ public class P2PLogger {
           executionPayloadSsz,
           failureCause.orElse(null));
     }
+  }
+
+  public record Peer(String peerId, String clientType) {}
+
+  public void peersGossipScores(final Map<Peer, Double> scoresByPeerId) {
+    final String header = String.format("%-54s %-11s %-10s", "Peer ID", "Client Type", "Score");
+    final String separator =
+        "------------------------------------------------------ ----------- ----------";
+
+    final StringBuilder table = new StringBuilder();
+    table
+        .append("Total peers: ")
+        .append(scoresByPeerId.size())
+        .append(", Average score: ")
+        .append(
+            String.format(
+                "%.2f", scoresByPeerId.values().stream().mapToDouble(i -> i).average().orElse(0)));
+    table.append("\n").append(header).append("\n");
+    table.append(separator).append("\n");
+
+    for (final Map.Entry<Peer, Double> entry : scoresByPeerId.entrySet()) {
+      final Peer peer = entry.getKey();
+      final String row =
+          String.format("%-54s %-11s %-10.2f", peer.peerId, peer.clientType, entry.getValue());
+      table.append(row).append("\n");
+    }
+
+    log.info(ColorConsolePrinter.print(table.toString(), Color.PURPLE));
+  }
+
+  public void peersTopicSubscriptions(final Map<String, List<String>> topicSubscriptionsByPeerId) {
+    final String header = String.format("%-71s %-54s", "Topic", "Peer ID(s)");
+    final String separator =
+        "----------------------------------------------------------------------- ------------------------------------------------------";
+
+    final StringBuilder table = new StringBuilder();
+    table.append("Total topics peers subscribed to: ").append(topicSubscriptionsByPeerId.size());
+    table.append("\n").append(header).append("\n");
+    table.append(separator).append("\n");
+
+    for (final Map.Entry<String, List<String>> entry : topicSubscriptionsByPeerId.entrySet()) {
+      final List<String> peerIds = entry.getValue();
+      if (peerIds.isEmpty()) {
+        final String row = String.format("%-71s %-54s", entry.getKey(), "");
+        table.append(row).append("\n");
+        continue;
+      }
+      final String firstRow = String.format("%-71s %-54s", entry.getKey(), peerIds.getFirst());
+      table.append(firstRow).append("\n");
+      for (int i = 1; i < peerIds.size(); i++) {
+        final String row = String.format("%-71s %-54s", "", peerIds.get(i));
+        table.append(row).append("\n");
+      }
+    }
+
+    log.info(ColorConsolePrinter.print(table.toString(), Color.PURPLE));
   }
 }
