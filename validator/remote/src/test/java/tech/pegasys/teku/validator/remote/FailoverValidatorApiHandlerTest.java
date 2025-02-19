@@ -48,6 +48,7 @@ import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
@@ -666,7 +667,9 @@ class FailoverValidatorApiHandlerTest {
             "getValidatorStatuses",
             apiChannel -> apiChannel.getValidatorStatuses(List.of(publicKey)),
             BeaconNodeRequestLabels.GET_VALIDATOR_STATUSES_METHOD,
-            Optional.of(Map.of(publicKey, ValidatorStatus.active_ongoing))),
+            Optional.of(Map.of(publicKey,
+                new StateValidatorData(UInt64.ONE, UInt64.THIRTY_TWO_ETH, ValidatorStatus.active_ongoing,
+                    DATA_STRUCTURE_UTIL.randomValidator())))),
         getArguments(
             "getAttestationDuties",
             apiChannel -> apiChannel.getAttestationDuties(epoch, validatorIndices),
