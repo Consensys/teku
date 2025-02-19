@@ -28,6 +28,7 @@ plugins {
   id 'net.ltgt.errorprone' version '4.1.0' apply false
   id 'de.undercouch.download' version '5.6.0'
   id 'org.ajoberstar.grgit' version '5.3.0'
+  id 'org.jreleaser' version '1.16.0'
 }
 
 rootProject.version = calculatePublishVersion()
@@ -66,10 +67,7 @@ gradle.startParameter.taskNames.each {
 gradle.startParameter.taskNames = expandedTaskList.flatten() as Iterable<String>
 
 def userHome = System.getProperty("user.home")
-
-def cloudsmithUser = project.hasProperty('cloudsmithUser') ? project.property('cloudsmithUser') : System.getenv('CLOUDSMITH_USER')
-def cloudsmithKey = project.hasProperty('cloudsmithApiKey') ? project.property('cloudsmithApiKey') : System.getenv('CLOUDSMITH_API_KEY')
-
+def group = "tech.pegasys.teku"
 
 var baseInfrastructureProjects = [
     ':infrastructure:bytes',
@@ -843,12 +841,8 @@ subprojects {
     publishing {
       repositories {
         maven {
-          name = "cloudsmith"
-          url = "https://api-g.cloudsmith.io/maven/consensys/teku/"
-          credentials {
-            username = cloudsmithUser
-            password = cloudsmithKey
-          }
+          name = "local"
+          url = rootProject.layout.buildDirectory.dir("jreleaser")
         }
       }
       publications {
@@ -1106,6 +1100,7 @@ def calculatePublishVersion() {
     return isReleaseBranch ? "${specificVersion.substring(0, specificVersion.indexOf('+'))}+develop" : "develop"
   }
   return specificVersion
+  // return "25.3.0-SNAPSHOT"
 }
 
 // Calculate the version that teku --version will report (among other places)
@@ -1126,6 +1121,7 @@ def calculateVersion() {
     return "${matcher.group("lastVersion")}+${matcher.group("devVersion")}"
   }
   return version
+  // return "25.3.0-SNAPSHOT"
 }
 
 task printVersion() {
@@ -1150,3 +1146,41 @@ task cloudsmithUpload {
   }
 }
 
+// see line 844
+jreleaser {
+  project {
+    description.set("Teku is a full Ethereum 2.0 client built to meet institutional needs and security requirements.")
+    license.set("(Apache-2.0)")
+    inceptionYear.set("2024")
+    copyright.set("Consensys Software Inc., 2022")
+    links {
+      homepage.set("https://github.com/usmansaleem/besu-pkcs11-plugin")
+      documentation.set("https://github.com/usmansaleem/besu-pkcs11-plugin")
+    }
+  }
+  dependsOnAssemble.set(true)
+  gitRootSearch = true
+  release {
+    github {
+      commitAuthor {
+        name = 'Protocols Team'
+        email = 'devops@consensys.net'
+      }
+    }
+  }
+  signing {
+    active = 'ALWAYS'
+    armored = true
+  }
+  deploy {
+    maven {
+      mavenCentral {
+        sonatype {
+          active = 'ALWAYS'
+          url = 'https://central.sonatype.com/api/v1/publisher'
+          stagingRepository('build/jreleaser')
+        }
+      }
+    }
+  }
+}
