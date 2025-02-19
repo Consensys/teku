@@ -60,7 +60,8 @@ public class InclusionListUtil {
 
   public boolean isInclusionListForCurrentOrPreviousSlot(
       final UInt64 inclusionListSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
-    final UInt64 currentSlot = miscHelpers.computeSlotAtTime(genesisTime, currentTimeMillis);
+    final UInt64 currentSlot =
+        miscHelpers.computeSlotAtTime(genesisTime, millisToSeconds(currentTimeMillis));
     return inclusionListSlot.equals(currentSlot) || inclusionListSlot.equals(currentSlot.minus(1));
   }
 
