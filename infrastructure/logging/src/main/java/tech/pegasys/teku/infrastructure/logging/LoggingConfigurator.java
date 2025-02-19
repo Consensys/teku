@@ -78,7 +78,7 @@ public class LoggingConfigurator {
   private static int dbOpAlertThresholdMillis;
 
   @SuppressWarnings("NonFinalStaticField")
-  private static boolean logPeersGossipScoresEnabled;
+  private static boolean logPeersDetailedLoggingEnabled;
 
   public static boolean isColorEnabled() {
     return COLOR.get();
@@ -92,8 +92,8 @@ public class LoggingConfigurator {
     return dbOpAlertThresholdMillis;
   }
 
-  public static boolean isLogPeersGossipScoresEnabled() {
-    return logPeersGossipScoresEnabled;
+  public static boolean isLogPeersDetailedLoggingEnabled() {
+    return logPeersDetailedLoggingEnabled;
   }
 
   public static synchronized void setColorEnabled(final boolean isEnabled) {
@@ -129,7 +129,7 @@ public class LoggingConfigurator {
     file = configuration.getLogFile();
     filePattern = configuration.getLogFileNamePattern();
     dbOpAlertThresholdMillis = configuration.getDbOpAlertThresholdMillis();
-    logPeersGossipScoresEnabled = configuration.isLogPeersGossipScoresEnabled();
+    logPeersDetailedLoggingEnabled = configuration.isLogPeersDetailedLoggingEnabled();
 
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
     addLoggers((AbstractConfiguration) ctx.getConfiguration());
