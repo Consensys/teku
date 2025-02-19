@@ -513,21 +513,27 @@ public class StatusLogger {
   }
 
   public void peersGossipScores(final Map<String, Double> scoresByPeerId) {
-    final String header = String.format("%-20s %-20s", "Peer ID", "Score");
-    final String separator = "-------------------- ----------";
+    final String header = String.format("%-58s %-10s", "Peer ID", "Score");
+    final String separator =
+        "---------------------------------------------------------- ----------";
 
     final StringBuilder table = new StringBuilder();
-    table.append("Total peers: ").append(scoresByPeerId.size());
+    table
+        .append("Total peers: ")
+        .append(scoresByPeerId.size())
+        .append(", Average score: ")
+        .append(
+            String.format(
+                "%.2f", scoresByPeerId.values().stream().mapToDouble(i -> i).average().orElse(0)));
     table.append("\n").append(header).append("\n");
     table.append(separator).append("\n");
 
     for (final Map.Entry<String, Double> entry : scoresByPeerId.entrySet()) {
-      final String peerId = entry.getKey().substring(0, 17) + "...";
-      final String row = String.format("%-20s %-10.2f", peerId, entry.getValue());
+      final String row = String.format("%-58s %-10.2f", entry.getKey(), entry.getValue());
       table.append(row).append("\n");
     }
 
-    log.info(ColorConsolePrinter.print(table.toString(), Color.CYAN));
+    log.info(ColorConsolePrinter.print(table.toString(), Color.PURPLE));
   }
 
   public void warnIgnoringWeakSubjectivityPeriod() {
