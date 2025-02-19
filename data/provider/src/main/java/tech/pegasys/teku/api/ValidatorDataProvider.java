@@ -259,7 +259,7 @@ public class ValidatorDataProvider {
                                       maybeValidatorStatuses
                                           .get()
                                           .get(registration.getMessage().getPublicKey()))
-                                  .map(status -> !status.hasExited())
+                                  .map(status -> !status.getStatus().hasExited())
                                   .orElse(false))
                       .toList();
 

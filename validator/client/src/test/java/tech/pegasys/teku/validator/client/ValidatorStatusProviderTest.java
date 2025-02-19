@@ -39,6 +39,7 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubLabelledGauge;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
@@ -60,6 +62,7 @@ public class ValidatorStatusProviderTest {
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   final ValidatorStatusSubscriber validatorStatusSubscriber = mock(ValidatorStatusSubscriber.class);
   private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private OwnedValidators ownedValidators;
 
   private ValidatorStatusProvider provider;
@@ -103,7 +106,10 @@ public class ValidatorStatusProviderTest {
     when(validatorApiChannel.getValidatorStatuses(validatorKeys))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(Map.of(validatorKey, ValidatorStatus.pending_initialized))));
+                Optional.of(
+                    Map.of(
+                        validatorKey,
+                        validatorDataWithStatus(ValidatorStatus.pending_initialized)))));
 
     assertThat(provider.start()).isCompleted();
 
@@ -124,11 +130,16 @@ public class ValidatorStatusProviderTest {
         // 2nd call - pending status
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(Map.of(validatorKey, ValidatorStatus.pending_initialized))))
+                Optional.of(
+                    Map.of(
+                        validatorKey,
+                        validatorDataWithStatus(ValidatorStatus.pending_initialized)))))
         // 3rd call - active status
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(Map.of(validatorKey, ValidatorStatus.active_ongoing))));
+                Optional.of(
+                    Map.of(
+                        validatorKey, validatorDataWithStatus(ValidatorStatus.active_ongoing)))));
 
     // Epoch 0
     assertThat(provider.start()).isCompleted();
@@ -193,7 +204,9 @@ public class ValidatorStatusProviderTest {
     when(validatorApiChannel.getValidatorStatuses(validatorKeys))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(Map.of(validatorKey, ValidatorStatus.active_ongoing))));
+                Optional.of(
+                    Map.of(
+                        validatorKey, validatorDataWithStatus(ValidatorStatus.active_ongoing)))));
 
     // Epoch 0 - no owned validators
     assertThat(provider.start()).isCompleted();
@@ -218,7 +231,9 @@ public class ValidatorStatusProviderTest {
     when(validatorApiChannel.getValidatorStatuses(validatorKeys))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(Map.of(validatorKey, ValidatorStatus.active_ongoing))));
+                Optional.of(
+                    Map.of(
+                        validatorKey, validatorDataWithStatus(ValidatorStatus.active_ongoing)))));
 
     assertThat(provider.start()).isCompleted();
     @SuppressWarnings("unchecked")
@@ -236,7 +251,9 @@ public class ValidatorStatusProviderTest {
     when(validatorApiChannel.getValidatorStatuses(Set.of(validatorKey2)))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(Map.of(validatorKey2, ValidatorStatus.active_ongoing))));
+                Optional.of(
+                    Map.of(
+                        validatorKey2, validatorDataWithStatus(ValidatorStatus.active_ongoing)))));
     ownedValidators.addValidator(validator2);
 
     provider.onValidatorsAdded();
@@ -252,7 +269,9 @@ public class ValidatorStatusProviderTest {
     when(validatorApiChannel.getValidatorStatuses(validatorKeys))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(Map.of(validatorKey, ValidatorStatus.active_ongoing))));
+                Optional.of(
+                    Map.of(
+                        validatorKey, validatorDataWithStatus(ValidatorStatus.active_ongoing)))));
 
     assertThat(provider.start()).isCompleted();
     verify(validatorApiChannel).getValidatorStatuses(anyCollection());
@@ -262,5 +281,15 @@ public class ValidatorStatusProviderTest {
     provider.onPossibleMissedEvents();
     verifyNoMoreInteractions(validatorApiChannel);
     verify(validatorStatusSubscriber).onValidatorStatuses(anyMap(), eq(true));
+  }
+
+  private StateValidatorData validatorDataWithStatus(final ValidatorStatus status) {
+    final tech.pegasys.teku.spec.datastructures.state.Validator validator =
+        dataStructureUtil.randomValidator();
+    return new StateValidatorData(
+        dataStructureUtil.randomValidatorIndex(),
+        validator.getEffectiveBalance(),
+        status,
+        validator);
   }
 }
