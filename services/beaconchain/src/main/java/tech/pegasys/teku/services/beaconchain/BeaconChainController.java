@@ -69,6 +69,7 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -88,7 +89,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeBasedStableSubnetSub
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
-import tech.pegasys.teku.networking.eth2.peers.PeersStatusLogger;
+import tech.pegasys.teku.networking.eth2.peers.PeersDetailedLogger;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.networks.StateBoostrapConfig;
@@ -1242,8 +1243,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .p2pDebugDataDumper(debugDataDumper)
             .build();
 
-    final PeersStatusLogger peersStatusLogger = new PeersStatusLogger(p2pNetwork);
-    eventChannels.subscribe(SlotEventsChannel.class, peersStatusLogger);
+    if (LoggingConfigurator.isLogPeersDetailedLoggingEnabled()) {
+      final PeersDetailedLogger peersDetailedLogger = new PeersDetailedLogger(spec, p2pNetwork);
+      eventChannels.subscribe(SlotEventsChannel.class, peersDetailedLogger);
+    }
 
     syncCommitteeMessagePool.subscribeOperationAdded(
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishSyncCommitteeMessage));

@@ -35,7 +35,7 @@ public class LoggingConfig {
   private final String logFile;
   private final String logFileNamePattern;
   private final int dbOpAlertThresholdMillis;
-  private final boolean logPeersGossipScoresEnabled;
+  private final boolean logPeersDetailedLoggingEnabled;
 
   private LoggingConfig(
       final Optional<Level> logLevel,
@@ -47,7 +47,7 @@ public class LoggingConfig {
       final String logFile,
       final String logFileNamePattern,
       final int dbOpAlertThresholdMillis,
-      final boolean logPeersGossipScoresEnabled) {
+      final boolean logPeersDetailedLoggingEnabled) {
     this.logLevel = logLevel;
     this.colorEnabled = colorEnabled;
     this.includeEventsEnabled = includeEventsEnabled;
@@ -57,7 +57,7 @@ public class LoggingConfig {
     this.logFile = logFile;
     this.logFileNamePattern = logFileNamePattern;
     this.dbOpAlertThresholdMillis = dbOpAlertThresholdMillis;
-    this.logPeersGossipScoresEnabled = logPeersGossipScoresEnabled;
+    this.logPeersDetailedLoggingEnabled = logPeersDetailedLoggingEnabled;
   }
 
   public static LoggingConfigBuilder builder() {
@@ -100,8 +100,8 @@ public class LoggingConfig {
     return dbOpAlertThresholdMillis;
   }
 
-  public boolean isLogPeersGossipScoresEnabled() {
-    return logPeersGossipScoresEnabled;
+  public boolean isLogPeersDetailedLoggingEnabled() {
+    return logPeersDetailedLoggingEnabled;
   }
 
   @Override
@@ -118,7 +118,7 @@ public class LoggingConfig {
         && includeValidatorDutiesEnabled == that.includeValidatorDutiesEnabled
         && includeP2pWarningsEnabled == that.includeP2pWarningsEnabled
         && dbOpAlertThresholdMillis == that.dbOpAlertThresholdMillis
-        && logPeersGossipScoresEnabled == that.logPeersGossipScoresEnabled
+        && logPeersDetailedLoggingEnabled == that.logPeersDetailedLoggingEnabled
         && Objects.equals(logLevel, that.logLevel)
         && destination == that.destination
         && Objects.equals(logFile, that.logFile)
@@ -137,7 +137,7 @@ public class LoggingConfig {
         logFile,
         logFileNamePattern,
         dbOpAlertThresholdMillis,
-        logPeersGossipScoresEnabled);
+        logPeersDetailedLoggingEnabled);
   }
 
   public static final class LoggingConfigBuilder {
@@ -148,7 +148,7 @@ public class LoggingConfig {
     private boolean includeEventsEnabled = true;
     private boolean includeValidatorDutiesEnabled = true;
     private boolean includeP2pWarningsEnabled = false;
-    private boolean logPeersGossipScoresEnabled = false;
+    private boolean logPeersDetailedLoggingEnabled = false;
     private LoggingDestination destination = LoggingDestination.DEFAULT_BOTH;
 
     private String logFileNamePrefix = DEFAULT_LOG_FILE_NAME_PREFIX;
@@ -223,9 +223,9 @@ public class LoggingConfig {
       return this;
     }
 
-    public LoggingConfigBuilder logPeersGossipScoresEnabled(
-        final boolean logPeersGossipScoresEnabled) {
-      this.logPeersGossipScoresEnabled = logPeersGossipScoresEnabled;
+    public LoggingConfigBuilder logPeersDetailedLoggingEnabled(
+        final boolean logPeersDetailedLoggingEnabled) {
+      this.logPeersDetailedLoggingEnabled = logPeersDetailedLoggingEnabled;
       return this;
     }
 
@@ -287,7 +287,7 @@ public class LoggingConfig {
           logPath,
           logPathPattern,
           dbOpAlertThresholdMillis,
-          logPeersGossipScoresEnabled);
+          logPeersDetailedLoggingEnabled);
     }
   }
 }

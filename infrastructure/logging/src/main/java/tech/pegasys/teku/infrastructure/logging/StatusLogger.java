@@ -512,33 +512,6 @@ public class StatusLogger {
         executionBlockHash);
   }
 
-  public record Peer(String peerId, String clientType) {}
-
-  public void peersGossipScores(final Map<Peer, Double> scoresByPeerId) {
-    final String header = String.format("%-54s %-11s %-10s", "Peer ID", "Client Type", "Score");
-    final String separator = "------------------------------------------------------ ----------- ----------";
-
-    final StringBuilder table = new StringBuilder();
-    table
-        .append("Total peers: ")
-        .append(scoresByPeerId.size())
-        .append(", Average score: ")
-        .append(
-            String.format(
-                "%.2f", scoresByPeerId.values().stream().mapToDouble(i -> i).average().orElse(0)));
-    table.append("\n").append(header).append("\n");
-    table.append(separator).append("\n");
-
-    for (final Map.Entry<Peer, Double> entry : scoresByPeerId.entrySet()) {
-      final Peer peer = entry.getKey();
-      final String row =
-          String.format("%-54s %-11s %-10.2f", peer.peerId, peer.clientType, entry.getValue());
-      table.append(row).append("\n");
-    }
-
-    log.info(ColorConsolePrinter.print(table.toString(), Color.PURPLE));
-  }
-
   public void warnIgnoringWeakSubjectivityPeriod() {
     log.warn(
         print(
