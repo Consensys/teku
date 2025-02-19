@@ -134,6 +134,9 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
   public void onAttestationAggregationDue(final UInt64 slot) {}
 
   @Override
+  public void onInclusionListDue(final UInt64 slot) {}
+
+  @Override
   public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
 
   @Override
