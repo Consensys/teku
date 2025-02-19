@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -50,6 +51,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
@@ -74,6 +76,7 @@ import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsBuilderElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
@@ -434,8 +437,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   @Override
   public SafeFuture<List<Transaction>> engineGetInclusionList(
       final Bytes32 parentHash, final UInt64 slot) {
-    // TODO EIP7805 generate transactions
-    return SafeFuture.completedFuture(Collections.emptyList());
+    return SafeFuture.completedFuture(generateInclusionListTransactions(slot));
   }
 
   @Override
@@ -707,6 +709,23 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         .orElseThrow(
             () ->
                 new RuntimeException(String.format("payloadId %s not found in cache", payloadId)));
+  }
+
+  public List<Transaction> generateInclusionListTransactions(final UInt64 slot) {
+    final SpecConfigEip7805 specConfigEip7805 =
+        spec.atSlot(slot).getConfig().toVersionEip7805().orElseThrow();
+    final TransactionSchema transactionSchema =
+        spec.atSlot(slot)
+            .getSchemaDefinitions()
+            .toVersionEip7805()
+            .orElseThrow()
+            .getExecutionPayloadSchema()
+            .getTransactionSchema();
+    Bytes.random(specConfigEip7805.getMaxBytesPerInclusionList() - 200);
+    return IntStream.range(0, specConfigEip7805.getMaxTransactionsPerInclusionList())
+        .mapToObj(__ -> Bytes.random(specConfigEip7805.getMaxBytesPerInclusionList() - 200))
+        .map(transactionSchema::fromBytes)
+        .toList();
   }
 
   private List<Bytes> generateTransactions(

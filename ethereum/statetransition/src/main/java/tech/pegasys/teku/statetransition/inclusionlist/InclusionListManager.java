@@ -108,27 +108,24 @@ public class InclusionListManager implements SlotEventsChannel {
         .thenApply(
             result -> {
               switch (result.getStatus()) {
-                case SUCCESSFUL:
+                case SUCCESSFUL -> {
                   LOG.trace(
                       "Processed inclusion list {} successfully",
                       signedInclusionList::hashTreeRoot);
                   add(signedInclusionList);
-                  break;
-                case UNKNOWN_BLOCK:
-                  LOG.trace(
-                      "Ignoring inclusion list {} as required block is not yet present",
-                      signedInclusionList::hashTreeRoot);
-                  break;
-                case SAVED_FOR_FUTURE:
-                  LOG.trace(
-                      "Ignoring inclusion list {} for future slot",
-                      signedInclusionList::hashTreeRoot);
-                  break;
-                case DEFER_FORK_CHOICE_PROCESSING, INVALID:
-                  break;
-                default:
-                  throw new UnsupportedOperationException(
-                      "AttestationProcessingResult is unrecognizable");
+                }
+                case UNKNOWN_BLOCK ->
+                    LOG.trace(
+                        "Ignoring inclusion list {} as required block is not yet present",
+                        signedInclusionList::hashTreeRoot);
+                case SAVED_FOR_FUTURE ->
+                    LOG.trace(
+                        "Ignoring inclusion list {} for future slot",
+                        signedInclusionList::hashTreeRoot);
+                case DEFER_FORK_CHOICE_PROCESSING, INVALID -> {}
+                default ->
+                    throw new UnsupportedOperationException(
+                        "AttestationProcessingResult is unrecognizable");
               }
               return result;
             });

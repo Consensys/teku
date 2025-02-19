@@ -96,7 +96,6 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
-import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -110,6 +109,7 @@ import tech.pegasys.teku.validator.coordinator.duties.AttesterDutiesGenerator;
 import tech.pegasys.teku.validator.coordinator.duties.InclusionListDutiesGenerator;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
+import tech.pegasys.teku.validator.coordinator.publisher.SignedInclusionListPublisher;
 
 public class ValidatorApiHandler implements ValidatorApiChannel {
 
@@ -135,7 +135,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
   private final AttestationManager attestationManager;
-  private final InclusionListManager inclusionListManager;
   private final AttestationTopicSubscriber attestationTopicSubscriber;
   private final ActiveValidatorTracker activeValidatorTracker;
   private final DutyMetrics dutyMetrics;
@@ -147,6 +146,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final ProposersDataManager proposersDataManager;
   private final BlockPublisher blockPublisher;
+  private final SignedInclusionListPublisher signedInclusionListPublisher;
 
   private final AttesterDutiesGenerator attesterDutiesGenerator;
   private final InclusionListDutiesGenerator inclusionListDutiesGenerator;
@@ -172,10 +172,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncCommitteeMessagePool syncCommitteeMessagePool,
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
-      final InclusionListManager inclusionListManager,
       final BlockProductionAndPublishingPerformanceFactory
           blockProductionAndPublishingPerformanceFactory,
       final BlockPublisher blockPublisher,
+      final SignedInclusionListPublisher signedInclusionListPublisher,
       final InclusionListFactory inclusionListFactory) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
@@ -198,7 +198,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
     this.proposersDataManager = proposersDataManager;
     this.blockPublisher = blockPublisher;
-    this.inclusionListManager = inclusionListManager;
+    this.signedInclusionListPublisher = signedInclusionListPublisher;
     this.inclusionListFactory = inclusionListFactory;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
     this.inclusionListDutiesGenerator = new InclusionListDutiesGenerator(spec);
@@ -801,8 +801,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private SafeFuture<InternalValidationResult> processInclusionList(
       final SignedInclusionList signedInclusionList) {
-    return inclusionListManager
-        .addSignedInclusionList(signedInclusionList, Optional.empty())
+    return signedInclusionListPublisher
+        .sendExecutionPayload(signedInclusionList)
         .thenPeek(
             result -> {
               if (result.isReject()) {

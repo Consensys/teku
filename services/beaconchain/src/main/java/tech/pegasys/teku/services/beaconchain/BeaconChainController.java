@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EX
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
+import static tech.pegasys.teku.infrastructure.time.SystemTimeProvider.SYSTEM_TIME_PROVIDER;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -86,6 +87,7 @@ import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.SignedInclusionListGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
@@ -276,6 +278,7 @@ import tech.pegasys.teku.validator.coordinator.performance.SyncCommitteePerforma
 import tech.pegasys.teku.validator.coordinator.performance.ValidatorPerformanceMetrics;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
+import tech.pegasys.teku.validator.coordinator.publisher.SignedInclusionListPublisher;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
@@ -1398,6 +1401,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
       dataColumnSidecarGossipChannel = DataColumnSidecarGossipChannel.NOOP;
     }
 
+    final SignedInclusionListGossipChannel signedInclusionListGossipChannel;
+    if (spec.isMilestoneSupported(SpecMilestone.EIP7805)) {
+      signedInclusionListGossipChannel =
+          eventChannels.getPublisher(SignedInclusionListGossipChannel.class);
+    } else {
+      signedInclusionListGossipChannel = SignedInclusionListGossipChannel.NOOP;
+    }
+
     final Optional<BlockProductionMetrics> blockProductionMetrics =
         beaconConfig.getMetricsConfig().isBlockProductionPerformanceEnabled()
             ? Optional.of(BlockProductionMetrics.create(metricsSystem))
@@ -1433,6 +1444,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final InclusionListFactory inclusionListFactory =
         new InclusionListFactory(executionLayer, combinedChainDataClient, spec);
 
+    final SignedInclusionListPublisher signedInclusionListPublisher =
+        new SignedInclusionListPublisher(
+            inclusionListManager, signedInclusionListGossipChannel, SYSTEM_TIME_PROVIDER);
+
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             new ChainDataProvider(
@@ -1458,9 +1473,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
-            inclusionListManager,
             blockProductionPerformanceFactory,
             blockPublisher,
+            signedInclusionListPublisher,
             inclusionListFactory);
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)

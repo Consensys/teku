@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
@@ -240,6 +241,14 @@ public class GossipForkManager {
         message,
         "signed bls to execution change",
         GossipForkSubscriptions::publishSignedBlsToExecutionChangeMessage);
+  }
+
+  public void publishInclusionList(final SignedInclusionList signedInclusionList) {
+    publishMessage(
+        signedInclusionList.getMessage().getSlot(),
+        signedInclusionList,
+        "attestation",
+        GossipForkSubscriptions::publishSignedInclusionList);
   }
 
   private synchronized <T> void publishMessage(

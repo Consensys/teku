@@ -70,7 +70,6 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
-import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -81,6 +80,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
+import tech.pegasys.teku.validator.coordinator.publisher.SignedInclusionListPublisher;
 
 @TestSpecContext(milestone = {SpecMilestone.PHASE0, SpecMilestone.DENEB})
 public class ValidatorApiHandlerIntegrationTest {
@@ -124,10 +124,11 @@ public class ValidatorApiHandlerIntegrationTest {
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
       mock(SyncCommitteeSubscriptionManager.class);
 
+  private final SignedInclusionListPublisher signedInclusionListPublisher =
+      mock(SignedInclusionListPublisher.class);
   private final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
 
   private final InclusionListFactory inclusionListFactory = mock(InclusionListFactory.class);
-  private final InclusionListManager inclusionListManager = mock(InclusionListManager.class);
 
   private ValidatorApiHandler handler;
 
@@ -195,7 +196,6 @@ public class ValidatorApiHandlerIntegrationTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
-            inclusionListManager,
             new BlockProductionAndPublishingPerformanceFactory(
                 new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0, Optional.empty()),
             new MilestoneBasedBlockPublisher(
@@ -209,6 +209,7 @@ public class ValidatorApiHandlerIntegrationTest {
                 dataColumnSidecarGossipChannel,
                 dutyMetrics,
                 P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED),
+            signedInclusionListPublisher,
             inclusionListFactory);
   }
 

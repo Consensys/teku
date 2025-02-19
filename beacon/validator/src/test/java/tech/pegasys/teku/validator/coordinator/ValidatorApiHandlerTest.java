@@ -108,7 +108,6 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
-import tech.pegasys.teku.statetransition.inclusionlist.InclusionListManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -120,6 +119,7 @@ import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
+import tech.pegasys.teku.validator.coordinator.publisher.SignedInclusionListPublisher;
 
 class ValidatorApiHandlerTest {
 
@@ -135,8 +135,9 @@ class ValidatorApiHandlerTest {
       mock(AttestationTopicSubscriber.class);
   private final ActiveValidatorTracker activeValidatorTracker = mock(ActiveValidatorTracker.class);
   private final BlockPublisher blockPublisher = mock(BlockPublisher.class);
+  private final SignedInclusionListPublisher signedInclusionListPublisher =
+      mock(SignedInclusionListPublisher.class);
   private final InclusionListFactory inclusionListFactory = mock(InclusionListFactory.class);
-  private final InclusionListManager inclusionListManager = mock(InclusionListManager.class);
   private final DefaultPerformanceTracker performanceTracker =
       mock(DefaultPerformanceTracker.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
@@ -191,9 +192,9 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
-            inclusionListManager,
             blockProductionPerformanceFactory,
             blockPublisher,
+            signedInclusionListPublisher,
             inclusionListFactory);
 
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
@@ -445,9 +446,9 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
-            inclusionListManager,
             blockProductionPerformanceFactory,
             blockPublisher,
+            signedInclusionListPublisher,
             inclusionListFactory);
     // Best state is still in Phase0
     final BeaconState state =
@@ -849,9 +850,9 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
-            inclusionListManager,
             blockProductionPerformanceFactory,
             blockPublisher,
+            signedInclusionListPublisher,
             inclusionListFactory);
 
     final Attestation attestation = dataStructureUtil.randomSingleAttestation();
