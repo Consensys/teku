@@ -512,10 +512,11 @@ public class StatusLogger {
         executionBlockHash);
   }
 
-  public void peersGossipScores(final Map<String, Double> scoresByPeerId) {
-    final String header = String.format("%-58s %-10s", "Peer ID", "Score");
-    final String separator =
-        "---------------------------------------------------------- ----------";
+  public record Peer(String peerId, String clientType) {}
+
+  public void peersGossipScores(final Map<Peer, Double> scoresByPeerId) {
+    final String header = String.format("%-54s %-11s %-10s", "Peer ID", "Client Type", "Score");
+    final String separator = "------------------------------------------------------ ----------- ----------";
 
     final StringBuilder table = new StringBuilder();
     table
@@ -528,8 +529,10 @@ public class StatusLogger {
     table.append("\n").append(header).append("\n");
     table.append(separator).append("\n");
 
-    for (final Map.Entry<String, Double> entry : scoresByPeerId.entrySet()) {
-      final String row = String.format("%-58s %-10.2f", entry.getKey(), entry.getValue());
+    for (final Map.Entry<Peer, Double> entry : scoresByPeerId.entrySet()) {
+      final Peer peer = entry.getKey();
+      final String row =
+          String.format("%-54s %-11s %-10.2f", peer.peerId, peer.clientType, entry.getValue());
       table.append(row).append("\n");
     }
 

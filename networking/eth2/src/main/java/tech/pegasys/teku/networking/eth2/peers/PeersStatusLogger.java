@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
@@ -26,20 +27,23 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 public class PeersStatusLogger implements SlotEventsChannel {
 
   private final Eth2P2PNetwork network;
-  private final boolean isLogPeersGossipScoresEnabled;
 
   public PeersStatusLogger(final Eth2P2PNetwork network) {
     this.network = network;
-    this.isLogPeersGossipScoresEnabled = LoggingConfigurator.isLogPeersGossipScoresEnabled();
   }
 
   @Override
   public void onSlot(final UInt64 slot) {
-    if (isLogPeersGossipScoresEnabled) {
-      final Map<String, Double> peersScores =
+    if (LoggingConfigurator.isLogPeersGossipScoresEnabled()) {
+      final Map<StatusLogger.Peer, Double> peersScores =
           network
               .streamPeers()
-              .collect(Collectors.toMap(peer -> peer.getId().toBase58(), Peer::getGossipScore));
+              .collect(
+                  Collectors.toMap(
+                      peer ->
+                          new StatusLogger.Peer(
+                              peer.getId().toBase58(), peer.getPeerClientType().getDisplayName()),
+                      Peer::getGossipScore));
       if (!peersScores.isEmpty()) {
         STATUS_LOG.peersGossipScores(peersScores);
       }
