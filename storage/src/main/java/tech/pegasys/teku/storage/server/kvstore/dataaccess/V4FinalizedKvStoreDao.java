@@ -38,7 +38,9 @@ import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.FinalizedUpdater;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreChunkedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreUnchunkedVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotStateAdapter;
 
@@ -195,7 +197,11 @@ public class V4FinalizedKvStoreDao {
     return db.get(schema.getVariableEarliestBlobSidecarSlot());
   }
 
-  public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
+  public <T> Optional<Bytes> getRawVariable(final KvStoreUnchunkedVariable<T> var) {
+    return db.getRaw(var);
+  }
+
+  public <T> Optional<List<Bytes>> getRawVariable(final KvStoreChunkedVariable<T> var) {
     return db.getRaw(var);
   }
 

@@ -98,15 +98,15 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return delegate.getColumnNonCanonicalRootsBySlot();
   }
 
-  public KvStoreVariable<UInt64> getOptimisticTransitionBlockSlot() {
+  public KvStoreUnchunkedVariable<UInt64> getOptimisticTransitionBlockSlot() {
     return delegate.getOptimisticTransitionBlockSlot();
   }
 
-  public KvStoreVariable<UInt64> getVariableEarliestBlobSidecarSlot() {
+  public KvStoreUnchunkedVariable<UInt64> getVariableEarliestBlobSidecarSlot() {
     return delegate.getVariableEarliestBlobSidecarSlot();
   }
 
-  public KvStoreVariable<UInt64> getVariableEarliestBlockSlot() {
+  public KvStoreUnchunkedVariable<UInt64> getVariableEarliestBlockSlot() {
     return delegate.getVariableEarliestBlockSlot();
   }
 

@@ -70,39 +70,39 @@ public class SchemaHotAdapter implements Schema {
     return delegate.getColumnBlobSidecarBySlotRootBlobIndex();
   }
 
-  public KvStoreVariable<UInt64> getVariableGenesisTime() {
+  public KvStoreUnchunkedVariable<UInt64> getVariableGenesisTime() {
     return delegate.getVariableGenesisTime();
   }
 
-  public KvStoreVariable<Checkpoint> getVariableJustifiedCheckpoint() {
+  public KvStoreUnchunkedVariable<Checkpoint> getVariableJustifiedCheckpoint() {
     return delegate.getVariableJustifiedCheckpoint();
   }
 
-  public KvStoreVariable<Checkpoint> getVariableBestJustifiedCheckpoint() {
+  public KvStoreUnchunkedVariable<Checkpoint> getVariableBestJustifiedCheckpoint() {
     return delegate.getVariableBestJustifiedCheckpoint();
   }
 
-  public KvStoreVariable<Checkpoint> getVariableFinalizedCheckpoint() {
+  public KvStoreUnchunkedVariable<Checkpoint> getVariableFinalizedCheckpoint() {
     return delegate.getVariableFinalizedCheckpoint();
   }
 
-  public KvStoreVariable<BeaconState> getVariableLatestFinalizedState() {
+  public KvStoreChunkedVariable<BeaconState> getVariableLatestFinalizedState() {
     return delegate.getVariableLatestFinalizedState();
   }
 
-  public KvStoreVariable<MinGenesisTimeBlockEvent> getVariableMinGenesisTimeBlock() {
+  public KvStoreUnchunkedVariable<MinGenesisTimeBlockEvent> getVariableMinGenesisTimeBlock() {
     return delegate.getVariableMinGenesisTimeBlock();
   }
 
-  public KvStoreVariable<Checkpoint> getVariableWeakSubjectivityCheckpoint() {
+  public KvStoreUnchunkedVariable<Checkpoint> getVariableWeakSubjectivityCheckpoint() {
     return delegate.getVariableWeakSubjectivityCheckpoint();
   }
 
-  public KvStoreVariable<Checkpoint> getVariableAnchorCheckpoint() {
+  public KvStoreUnchunkedVariable<Checkpoint> getVariableAnchorCheckpoint() {
     return delegate.getVariableAnchorCheckpoint();
   }
 
-  public KvStoreVariable<DepositTreeSnapshot> getVariableFinalizedDepositSnapshot() {
+  public KvStoreUnchunkedVariable<DepositTreeSnapshot> getVariableFinalizedDepositSnapshot() {
     return delegate.getVariableFinalizedDepositSnapshot();
   }
 
