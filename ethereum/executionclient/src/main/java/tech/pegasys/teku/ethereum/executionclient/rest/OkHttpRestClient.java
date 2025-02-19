@@ -123,7 +123,7 @@ public class OkHttpRestClient implements RestClient {
       @Override
       public void writeTo(final BufferedSink bufferedSink) throws IOException {
         try {
-        requestBodyObject.sszSerialize(bufferedSink.outputStream());
+          requestBodyObject.sszSerialize(bufferedSink.outputStream());
         } catch (final UncheckedIOException e) {
           throw e.getCause();
         }
