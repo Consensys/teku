@@ -364,6 +364,8 @@ class LateBlockReorgLogicTest {
     getProposerHeadPassSecondGate();
     when(store.isHeadWeak(any())).thenReturn(false);
     when(store.isParentStrong(any())).thenReturn(true);
+    when(store.satisfiesInclusionList(any())).thenReturn(true);
+
     assertThat(reorgLogicInstrumented.getProposerHead(blockRoot, UInt64.valueOf(2)))
         .isEqualTo(blockRoot);
   }
@@ -373,8 +375,25 @@ class LateBlockReorgLogicTest {
     getProposerHeadPassSecondGate();
     when(store.isHeadWeak(any())).thenReturn(true);
     when(store.isParentStrong(any())).thenReturn(false);
+    when(store.satisfiesInclusionList(any())).thenReturn(true);
     assertThat(reorgLogicInstrumented.getProposerHead(blockRoot, UInt64.valueOf(2)))
         .isEqualTo(blockRoot);
+  }
+
+  @Test
+  void getProposerHead_isInclusionListSatisfied() {
+    getProposerHeadPassThirdGate();
+    when(store.satisfiesInclusionList(any())).thenReturn(true);
+    assertThat(reorgLogicInstrumented.getProposerHead(blockRoot, UInt64.valueOf(2)))
+        .isEqualTo(blockRoot);
+  }
+
+  @Test
+  void getProposerHead_InclusionListIsNotSatisfied() {
+    getProposerHeadPassThirdGate();
+    when(store.satisfiesInclusionList(any())).thenReturn(false);
+    assertThat(reorgLogicInstrumented.getProposerHead(blockRoot, UInt64.valueOf(2)))
+        .isEqualTo(signedBlockAndState.getBlock().getParentRoot());
   }
 
   @Test
@@ -457,6 +476,11 @@ class LateBlockReorgLogicTest {
     getProposerHeadPassFirstGate();
     withFfgIsCompetetive();
     withParentSlot(Optional.of(UInt64.ZERO));
+  }
+
+  private void getProposerHeadPassThirdGate() {
+    getProposerHeadPassSecondGate();
+    when(store.isHeadWeak(any())).thenReturn(true);
   }
 
   private UInt64 computeTime(final UInt64 slot, final long timeIntoSlot) {
