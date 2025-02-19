@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionclient.rest;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Map;
 import java.util.Optional;
@@ -120,8 +121,12 @@ public class OkHttpRestClient implements RestClient {
     return new RequestBody() {
 
       @Override
-      public void writeTo(final BufferedSink bufferedSink) {
+      public void writeTo(final BufferedSink bufferedSink) throws IOException {
+        try {
         requestBodyObject.sszSerialize(bufferedSink.outputStream());
+        } catch (final UncheckedIOException e) {
+          throw e.getCause();
+        }
       }
 
       @Override
