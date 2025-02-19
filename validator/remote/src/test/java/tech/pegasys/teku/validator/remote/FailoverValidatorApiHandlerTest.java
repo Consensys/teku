@@ -667,9 +667,14 @@ class FailoverValidatorApiHandlerTest {
             "getValidatorStatuses",
             apiChannel -> apiChannel.getValidatorStatuses(List.of(publicKey)),
             BeaconNodeRequestLabels.GET_VALIDATOR_STATUSES_METHOD,
-            Optional.of(Map.of(publicKey,
-                new StateValidatorData(UInt64.ONE, UInt64.THIRTY_TWO_ETH, ValidatorStatus.active_ongoing,
-                    DATA_STRUCTURE_UTIL.randomValidator())))),
+            Optional.of(
+                Map.of(
+                    publicKey,
+                    new StateValidatorData(
+                        UInt64.ONE,
+                        UInt64.THIRTY_TWO_ETH,
+                        ValidatorStatus.active_ongoing,
+                        DATA_STRUCTURE_UTIL.randomValidator())))),
         getArguments(
             "getAttestationDuties",
             apiChannel -> apiChannel.getAttestationDuties(epoch, validatorIndices),
