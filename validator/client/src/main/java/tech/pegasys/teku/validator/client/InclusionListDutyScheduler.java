@@ -64,6 +64,11 @@ public class InclusionListDutyScheduler extends AbstractDutyScheduler {
   }
 
   @Override
+  public void onInclusionListDue(final UInt64 slot) {
+    onProductionDue(slot);
+  }
+
+  @Override
   public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
 
   @Override
