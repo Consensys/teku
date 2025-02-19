@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
@@ -39,27 +40,39 @@ public class SpecFactory {
   }
 
   public static Spec create(final String configName, final Consumer<SpecConfigBuilder> modifier) {
-    final SpecConfig config = SpecConfigLoader.loadConfig(configName, modifier);
+    final SpecConfigAndParent<? extends SpecConfig> config =
+        SpecConfigLoader.loadConfig(configName, modifier);
     return create(config);
   }
 
-  public static Spec create(final SpecConfig config) {
+  public static Spec create(final SpecConfigAndParent<? extends SpecConfig> config) {
     final UInt64 altairForkEpoch =
-        config.toVersionAltair().map(SpecConfigAltair::getAltairForkEpoch).orElse(FAR_FUTURE_EPOCH);
+        config
+            .specConfig()
+            .toVersionAltair()
+            .map(SpecConfigAltair::getAltairForkEpoch)
+            .orElse(FAR_FUTURE_EPOCH);
     final UInt64 bellatrixForkEpoch =
         config
+            .specConfig()
             .toVersionBellatrix()
             .map(SpecConfigBellatrix::getBellatrixForkEpoch)
             .orElse(FAR_FUTURE_EPOCH);
     final UInt64 capellaForkEpoch =
         config
+            .specConfig()
             .toVersionCapella()
             .map(SpecConfigCapella::getCapellaForkEpoch)
             .orElse(FAR_FUTURE_EPOCH);
     final UInt64 denebForkEpoch =
-        config.toVersionDeneb().map(SpecConfigDeneb::getDenebForkEpoch).orElse(FAR_FUTURE_EPOCH);
+        config
+            .specConfig()
+            .toVersionDeneb()
+            .map(SpecConfigDeneb::getDenebForkEpoch)
+            .orElse(FAR_FUTURE_EPOCH);
     final UInt64 electraForkEpoch =
         config
+            .specConfig()
             .toVersionElectra()
             .map(SpecConfigElectra::getElectraForkEpoch)
             .orElse(FAR_FUTURE_EPOCH);

@@ -114,8 +114,7 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
   }
 
   private void updateLocalSubmissions() {
-    final UInt64 staleTime =
-        timeProvider.getTimeInSeconds().minus(Duration.ofHours(2).getSeconds());
+    final UInt64 staleTime = timeProvider.getTimeInSeconds().minus(Duration.ofHours(2).toSeconds());
     final List<OperationPoolEntry<T>> staleLocalOperations =
         operations.values().stream()
             .filter(OperationPoolEntry::isLocal)

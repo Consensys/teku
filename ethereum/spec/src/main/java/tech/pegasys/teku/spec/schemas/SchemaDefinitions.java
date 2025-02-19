@@ -31,12 +31,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public interface SchemaDefinitions {
 
@@ -74,7 +76,7 @@ public interface SchemaDefinitions {
 
   AggregateAndProofSchema getAggregateAndProofSchema();
 
-  AttestationSchema<?> getAttestationSchema();
+  AttestationSchema<Attestation> getAttestationSchema();
 
   IndexedAttestationSchema getIndexedAttestationSchema();
 
@@ -85,6 +87,9 @@ public interface SchemaDefinitions {
 
   @NonSchema
   BeaconBlockBodyBuilder createBeaconBlockBodyBuilder();
+
+  @NonSchema
+  SchemaRegistry getSchemaRegistry();
 
   @NonSchema
   default Optional<SchemaDefinitionsAltair> toVersionAltair() {

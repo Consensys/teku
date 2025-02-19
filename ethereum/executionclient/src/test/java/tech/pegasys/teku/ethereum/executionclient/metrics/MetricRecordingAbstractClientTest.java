@@ -42,7 +42,7 @@ public class MetricRecordingAbstractClientTest {
 
   @Test
   public void shouldCountSuccessfulRequest() {
-    final Response<String> response = new Response<>("value");
+    final Response<String> response = Response.fromPayloadReceivedAsJson("value");
     setupResponse(SafeFuture.completedFuture(response));
     final SafeFuture<Response<String>> result = clientTest.testMethod("test");
 
@@ -68,7 +68,7 @@ public class MetricRecordingAbstractClientTest {
 
   @Test
   public void shouldCountRequestWithResponseFailure() {
-    final Response<String> response = Response.withErrorMessage("error");
+    final Response<String> response = Response.fromErrorMessage("error");
     setupResponse(SafeFuture.completedFuture(response));
     final SafeFuture<Response<String>> result = clientTest.testMethod("test");
 
@@ -99,7 +99,7 @@ public class MetricRecordingAbstractClientTest {
     when(delegatedTestClient.testMethod(any()))
         .thenAnswer(
             __ -> {
-              stubTimeProvider.advanceTimeByMillis(RESPONSE_DELAY.longValue());
+              stubTimeProvider.advanceTimeByMillis(RESPONSE_DELAY);
               return response;
             });
   }

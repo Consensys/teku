@@ -53,7 +53,7 @@ public class DepositProcessingControllerTest {
   private DepositProcessingController depositProcessingController;
 
   private void createDepositProcessingController(final Consumer<SpecConfigBuilder> configModifier) {
-    final SpecConfig config = SpecConfigLoader.loadConfig("minimal", configModifier);
+    final SpecConfig config = SpecConfigLoader.loadConfig("minimal", configModifier).specConfig();
     depositProcessingController =
         new DepositProcessingController(
             config,

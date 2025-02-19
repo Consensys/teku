@@ -128,11 +128,19 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void setPeerRateLimit() {
+  public void setPeerBlocksRateLimit() {
     TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--Xpeer-rate-limit", "10");
+        getTekuConfigurationFromArguments("--Xpeer-blocks-rate-limit", "10");
     final P2PConfig config = tekuConfiguration.beaconChain().p2pConfig();
-    assertThat(config.getPeerRateLimit()).isEqualTo(10);
+    assertThat(config.getPeerBlocksRateLimit()).isEqualTo(10);
+  }
+
+  @Test
+  public void setPeerBlobSidecarsRateLimit() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xpeer-blob-sidecars-rate-limit", "10");
+    final P2PConfig config = tekuConfiguration.beaconChain().p2pConfig();
+    assertThat(config.getPeerBlobSidecarsRateLimit()).isEqualTo(10);
   }
 
   @Test

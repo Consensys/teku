@@ -24,9 +24,8 @@ dependencies {
   referenceTestImplementation 'org.hyperledger.besu:plugin-api'
   referenceTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
   referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  referenceTestImplementation 'org.apache.tuweni:tuweni-bytes'
-  referenceTestImplementation 'org.apache.tuweni:tuweni-junit'
-  referenceTestImplementation 'org.apache.tuweni:tuweni-ssz'
+  referenceTestImplementation 'io.tmio:tuweni-bytes'
+  referenceTestImplementation 'io.tmio:tuweni-ssz'
   referenceTestImplementation 'org.xerial.snappy:snappy-java'
 }
 

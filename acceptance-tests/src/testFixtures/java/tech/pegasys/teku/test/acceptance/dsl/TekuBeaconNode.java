@@ -72,6 +72,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -225,6 +226,7 @@ public class TekuBeaconNode extends TekuNode {
         randomSignedBeaconBlockHeader(slot, index, secretKey, signingRootUtil, forkInfo);
     final SignedBeaconBlockHeader header2 =
         randomSignedBeaconBlockHeader(slot, index, secretKey, signingRootUtil, forkInfo);
+    LOG.debug("Inserting proposer slashing for index {} at slot {}", index, slot);
     final String body =
         JsonUtil.serialize(
             new ProposerSlashing(header1, header2),
@@ -255,6 +257,7 @@ public class TekuBeaconNode extends TekuNode {
         spec.getGenesisSchemaDefinitions()
             .getAttesterSlashingSchema()
             .create(indexedAttestation1, indexedAttestation2);
+    LOG.debug("Inserting attester slashing for index {} at slot {}", slashedIndex, slashingSlot);
     final String body =
         JsonUtil.serialize(
             attesterSlashing,
@@ -281,7 +284,7 @@ public class TekuBeaconNode extends TekuNode {
             secretKey,
             signingRootUtil.signingRootForSignAttestationData(attestationData, forkInfo));
 
-    final IndexedAttestation.IndexedAttestationSchema schema =
+    final IndexedAttestationSchema schema =
         spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
     return schema.create(
         Stream.of(index).collect(schema.getAttestingIndicesSchema().collectorUnboxed()),

@@ -32,20 +32,20 @@
       }, {
         "$ref" : "#/components/schemas/BeaconBlockBellatrix"
       }, {
-        "$ref" : "#/components/schemas/BlindedBlockBellatrix"
+        "$ref" : "#/components/schemas/BlindedBeaconBlockBellatrix"
       }, {
         "$ref" : "#/components/schemas/BeaconBlockCapella"
       }, {
-        "$ref" : "#/components/schemas/BlindedBlockCapella"
+        "$ref" : "#/components/schemas/BlindedBeaconBlockCapella"
       }, {
         "$ref" : "#/components/schemas/BlockContentsDeneb"
       }, {
-        "$ref" : "#/components/schemas/BlindedBlockDeneb"
+        "$ref" : "#/components/schemas/BlindedBeaconBlockDeneb"
       }, {
         "$ref" : "#/components/schemas/BlockContentsElectra"
       }, {
-        "$ref" : "#/components/schemas/BlindedBlockElectra"
-      }  ]
+        "$ref" : "#/components/schemas/BlindedBeaconBlockElectra"
+      } ]
     }
   }
 }

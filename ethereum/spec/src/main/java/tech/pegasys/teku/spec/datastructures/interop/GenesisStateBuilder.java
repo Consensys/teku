@@ -163,12 +163,8 @@ public class GenesisStateBuilder {
               // Capella
               b.withdrawalsRoot(() -> Bytes32.ZERO);
               // Deneb
-              b.excessBlobGas(() -> UInt64.ZERO);
               b.blobGasUsed(() -> UInt64.ZERO);
-              // Electra
-              b.depositRequestsRoot(() -> Bytes32.ZERO);
-              b.withdrawalRequestsRoot(() -> Bytes32.ZERO);
-              b.consolidationRequestsRoot(() -> Bytes32.ZERO);
+              b.excessBlobGas(() -> UInt64.ZERO);
             });
   }
 }

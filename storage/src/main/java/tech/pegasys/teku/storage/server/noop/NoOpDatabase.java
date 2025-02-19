@@ -43,6 +43,7 @@ import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
+import tech.pegasys.teku.storage.archive.DataArchiveWriter;
 import tech.pegasys.teku.storage.server.Database;
 
 public class NoOpDatabase implements Database {
@@ -225,7 +226,8 @@ public class NoOpDatabase implements Database {
   public void setFinalizedDepositSnapshot(final DepositTreeSnapshot finalizedDepositSnapshot) {}
 
   @Override
-  public UInt64 pruneFinalizedBlocks(final UInt64 lastSlotToPrune, final int pruneLimit) {
+  public UInt64 pruneFinalizedBlocks(
+      final UInt64 lastSlotToPrune, final int pruneLimit, final UInt64 checkpointInitialSlot) {
     return lastSlotToPrune;
   }
 
@@ -255,6 +257,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Map<String, Optional<String>> getVariables() {
+    return new HashMap<>();
+  }
+
+  @Override
   public long getBlobSidecarColumnCount() {
     return 0L;
   }
@@ -263,9 +270,6 @@ public class NoOpDatabase implements Database {
   public long getNonCanonicalBlobSidecarColumnCount() {
     return 0L;
   }
-
-  @Override
-  public void migrate() {}
 
   @Override
   public Optional<Checkpoint> getAnchor() {
@@ -325,13 +329,18 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public boolean pruneOldestBlobSidecars(final UInt64 lastSlotToPrune, final int pruneLimit) {
+  public boolean pruneOldestBlobSidecars(
+      final UInt64 lastSlotToPrune,
+      final int pruneLimit,
+      final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
     return false;
   }
 
   @Override
   public boolean pruneOldestNonCanonicalBlobSidecars(
-      final UInt64 lastSlotToPrune, final int pruneLimit) {
+      final UInt64 lastSlotToPrune,
+      final int pruneLimit,
+      final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
     return false;
   }
 

@@ -36,6 +36,8 @@ import tech.pegasys.teku.benchmarks.gen.KeyFileGenerator;
 import tech.pegasys.teku.benchmarks.util.CustomRunner;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
@@ -72,6 +74,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 @Threads(1)
 @Fork(1)
 public class EpochTransitionBenchmark {
+  AsyncRunner asyncRunner;
   Spec spec;
   WeakSubjectivityValidator wsValidator;
   RecentChainData recentChainData;
@@ -100,6 +103,7 @@ public class EpochTransitionBenchmark {
     AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
 
     spec = TestSpecFactory.createMainnetAltair();
+    asyncRunner = DelayedExecutorAsyncRunner.create();
     String blocksFile =
         "/blocks/blocks_epoch_"
             + spec.getSlotsPerEpoch(UInt64.ZERO)
@@ -116,7 +120,7 @@ public class EpochTransitionBenchmark {
 
     recentChainData = MemoryOnlyRecentChainData.create(spec);
     final MergeTransitionBlockValidator transitionBlockValidator =
-        new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
+        new MergeTransitionBlockValidator(spec, recentChainData);
     ForkChoice forkChoice =
         new ForkChoice(
             spec,
@@ -131,6 +135,7 @@ public class EpochTransitionBenchmark {
 
     blockImporter =
         new BlockImporter(
+            asyncRunner,
             spec,
             receivedBlockEventsChannelPublisher,
             recentChainData,

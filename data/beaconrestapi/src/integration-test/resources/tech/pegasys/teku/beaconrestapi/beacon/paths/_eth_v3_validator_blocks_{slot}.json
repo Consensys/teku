@@ -42,7 +42,7 @@
         "example" : "1",
         "format" : "uint64"
       }
-    },{
+    }, {
       "name" : "skip_randao_verification",
       "allowEmptyValue" : true,
       "in" : "query",
@@ -56,6 +56,47 @@
     "responses" : {
       "200" : {
         "description" : "Request successful",
+        "headers": {
+          "Eth-Consensus-Version": {
+            "description": "Required in response so client can deserialize returned json or ssz data more effectively.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "phase0",
+                "altair",
+                "bellatrix",
+                "capella",
+                "deneb",
+                "electra"
+              ],
+              "example": "phase0"
+            }
+          },
+          "Eth-Execution-Payload-Blinded": {
+            "description": "Required in response so client can deserialize returned json or ssz data to the correct object.",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          "Eth-Execution-Payload-Value": {
+            "description": "Execution payload value in Wei. Required in response so client can determine relative value of execution payloads.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "1"
+            }
+          },
+          "Eth-Consensus-Block-Value": {
+            "description": "Consensus rewards for this block in Wei paid to the proposer. The rewards value is the sum of values of the proposer rewards from attestations, sync committees and slashings included in the proposal. Required in response so client can determine relative value of consensus blocks.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "1"
+            }
+          }
+        },
         "content" : {
           "application/json" : {
             "schema" : {
@@ -69,6 +110,20 @@
             }
           }
         }
+      },
+      "503" : {
+        "description" : "Service unavailable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
       },
       "400" : {
         "description" : "The request could not be processed, check the response for more information.",

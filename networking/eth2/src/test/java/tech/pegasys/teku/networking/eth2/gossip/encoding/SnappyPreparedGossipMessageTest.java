@@ -15,6 +15,12 @@ package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.HashSet;
 import java.util.List;
@@ -51,9 +57,9 @@ public class SnappyPreparedGossipMessageTest {
           Map.of(phase0ForkDigest, SpecMilestone.PHASE0, altairForkDigest, SpecMilestone.ALTAIR));
 
   final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-  final Uncompressor validUncompressor = (bytes, __) -> bytes;
+  final Uncompressor validUncompressor = (bytes, bounds, maxLength) -> bytes;
   final Uncompressor invalidUncompressor =
-      (bytes, __) -> {
+      (bytes, bounds, maxLength) -> {
         throw new DecodingException("testing");
       };
 
@@ -154,6 +160,22 @@ public class SnappyPreparedGossipMessageTest {
     }
 
     assertThat(messageIds).hasSize(preparedMessages.size());
+  }
+
+  @Test
+  public void getDecodedMessage_ShouldPassGossipMaxSizeToUncompressor() throws DecodingException {
+    final long gossipMaxSize = spec.getNetworkingConfig().getMaxPayloadSize();
+    final Uncompressor uncompressor = mock(Uncompressor.class);
+    when(uncompressor.uncompress(any(), any(), anyLong())).thenReturn(Bytes.random(1000));
+
+    final String altairTopic = GossipTopics.getTopic(altairForkDigest, "test", gossipEncoding);
+    final SnappyPreparedGossipMessage message =
+        getAltairMessage(messageBytes, altairTopic, uncompressor);
+
+    message.getDecodedMessage();
+
+    verify(uncompressor)
+        .uncompress(eq(messageBytes), eq(schema.getSszLengthBounds()), eq(gossipMaxSize));
   }
 
   private SnappyPreparedGossipMessage getPhase0Message(

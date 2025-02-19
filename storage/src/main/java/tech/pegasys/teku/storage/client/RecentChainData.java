@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.client;
 
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
@@ -58,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -192,6 +195,27 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public UInt64 computeTimeAtSlot(final UInt64 slot) {
     return genesisTime.plus(slot.times(spec.getSecondsPerSlot(slot)));
+  }
+
+  @VisibleForTesting
+  boolean isCloseToInSync(final UInt64 currentTimeSeconds) {
+    final SpecVersion specVersion = spec.getGenesisSpec();
+    final MiscHelpers miscHelpers = specVersion.miscHelpers();
+    final SpecConfig specConfig = specVersion.getConfig();
+    final UInt64 networkSlot = miscHelpers.computeSlotAtTime(getGenesisTime(), currentTimeSeconds);
+
+    final int maxLookaheadEpochs = specConfig.getMaxSeedLookahead();
+    final int slotsPerEpoch = specVersion.getSlotsPerEpoch();
+    final int maxLookaheadSlots = slotsPerEpoch * maxLookaheadEpochs;
+
+    return networkSlot.minusMinZero(getHeadSlot()).isLessThanOrEqualTo(maxLookaheadSlots);
+  }
+
+  public boolean isCloseToInSync() {
+    if (store == null) {
+      return false;
+    }
+    return isCloseToInSync(store.getTimeInSeconds());
   }
 
   public Optional<GenesisData> getGenesisData() {

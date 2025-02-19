@@ -267,7 +267,10 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   public Optional<UInt64> getEarliestFinalizedBlockSlot() {
-    return db.getFirstEntry(schema.getColumnFinalizedBlocksBySlot()).map(ColumnEntry::getKey);
+    return db.get(schema.getVariableEarliestBlockSlot())
+        .or(
+            () ->
+                db.getFirstEntry(schema.getColumnFinalizedBlocksBySlot()).map(ColumnEntry::getKey));
   }
 
   @Override
@@ -427,6 +430,37 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
               }
             });
     return columnCounts;
+  }
+
+  @Override
+  public Map<String, Optional<String>> getVariables() {
+    Map<String, Optional<String>> variables = new LinkedHashMap<>();
+    variables.put("GENESIS_TIME", getGenesisTime().map(UInt64::toString));
+    variables.put("JUSTIFIED_CHECKPOINT", getJustifiedCheckpoint().map(Checkpoint::toString));
+    variables.put(
+        "BEST_JUSTIFIED_CHECKPOINT", getBestJustifiedCheckpoint().map(Checkpoint::toString));
+    variables.put("FINALIZED_CHECKPOINT", getFinalizedCheckpoint().map(Checkpoint::toString));
+    variables.put(
+        "WEAK_SUBJECTIVITY_CHECKPOINT", getWeakSubjectivityCheckpoint().map(Checkpoint::toString));
+    variables.put("ANCHOR_CHECKPOINT", getAnchor().map(Checkpoint::toString));
+    variables.put(
+        "FINALIZED_DEPOSIT_SNAPSHOT",
+        getFinalizedDepositSnapshot().map(DepositTreeSnapshot::toString));
+    try {
+      variables.put(
+          "LATEST_FINALIZED_STATE",
+          getLatestFinalizedState()
+              .map(
+                  state ->
+                      "BeaconState{slot="
+                          + state.getSlot()
+                          + ", root="
+                          + state.hashTreeRoot().toHexString()
+                          + "}"));
+    } catch (final Exception e) {
+      variables.put("FINALIZED_STATE", Optional.of(e.toString()));
+    }
+    return variables;
   }
 
   @Override
@@ -647,6 +681,16 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void setEarliestBlobSidecarSlot(final UInt64 slot) {
       transaction.put(schema.getVariableEarliestBlobSidecarSlot(), slot);
+    }
+
+    @Override
+    public void setEarliestBlockSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableEarliestBlockSlot(), slot);
+    }
+
+    @Override
+    public void deleteEarliestBlockSlot() {
+      transaction.delete(schema.getVariableEarliestBlockSlot());
     }
 
     @Override

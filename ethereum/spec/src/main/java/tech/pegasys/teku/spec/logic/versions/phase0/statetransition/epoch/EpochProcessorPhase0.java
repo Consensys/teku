@@ -19,6 +19,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -86,8 +87,17 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
   }
 
   @Override
-  public void processPendingBalanceDeposits(final MutableBeaconState state) {}
+  public void applyPendingDeposits(final MutableBeaconState state, final PendingDeposit deposit) {
+    // Nothing to do
+  }
 
   @Override
-  public void processPendingConsolidations(final MutableBeaconState state) {}
+  public void processPendingDeposits(final MutableBeaconState state) {
+    // Nothing to do
+  }
+
+  @Override
+  public void processPendingConsolidations(final MutableBeaconState state) {
+    // Nothing to do
+  }
 }

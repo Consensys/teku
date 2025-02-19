@@ -28,7 +28,10 @@ import org.apache.tuweni.bytes.Bytes;
 final class CKZG4844 implements KZG {
 
   private static final Logger LOG = LogManager.getLogger();
+  // used for FK20 proof computations (PeerDAS) so can default to 0 for now
+  private static final int PRECOMPUTE_DEFAULT = 0;
 
+  @SuppressWarnings("NonFinalStaticField")
   private static CKZG4844 instance;
 
   static synchronized CKZG4844 getInstance() {
@@ -67,13 +70,14 @@ final class CKZG4844 implements KZG {
             freeTrustedSetup();
           });
       final TrustedSetup trustedSetup = CKZG4844Utils.parseTrustedSetupFile(trustedSetupFile);
-      final List<Bytes> g1Points = trustedSetup.g1Points();
-      final List<Bytes> g2Points = trustedSetup.g2Points();
+      final List<Bytes> g1PointsLagrange = trustedSetup.g1Lagrange();
+      final List<Bytes> g2PointsMonomial = trustedSetup.g2Monomial();
+      final List<Bytes> g1PointsMonomial = trustedSetup.g1Monomial();
       CKZG4844JNI.loadTrustedSetup(
-          CKZG4844Utils.flattenG1Points(g1Points),
-          g1Points.size(),
-          CKZG4844Utils.flattenG2Points(g2Points),
-          g2Points.size());
+          CKZG4844Utils.flattenG1Points(g1PointsMonomial),
+          CKZG4844Utils.flattenG1Points(g1PointsLagrange),
+          CKZG4844Utils.flattenG2Points(g2PointsMonomial),
+          PRECOMPUTE_DEFAULT);
       LOG.debug("Loaded trusted setup from {}", trustedSetupFile);
       loadedTrustedSetupFile = Optional.of(trustedSetupFile);
     } catch (final Exception ex) {

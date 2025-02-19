@@ -20,8 +20,8 @@ dependencies {
   implementation 'io.libp2p:jvm-libp2p'
   implementation 'io.netty:netty-handler'
   implementation 'io.projectreactor:reactor-core'
-  implementation 'org.apache.tuweni:tuweni-units'
-  implementation 'org.apache.tuweni:tuweni-crypto'
+  implementation 'io.tmio:tuweni-units'
+  implementation 'io.tmio:tuweni-crypto'
   implementation 'tech.pegasys.discovery:discovery'
 
   testImplementation testFixtures(project(':ethereum:statetransition'))
@@ -32,7 +32,7 @@ dependencies {
 
   testImplementation 'org.hyperledger.besu.internal:metrics-core'
 
-  testFixturesApi 'org.apache.tuweni:tuweni-bytes'
+  testFixturesApi 'io.tmio:tuweni-bytes'
 
   testFixturesCompileOnly 'org.jetbrains.kotlin:kotlin-stdlib'
 

@@ -67,6 +67,7 @@ public class GetLightClientBootstrap extends RestApiEndpoint {
             .withNotFoundResponse()
             .withNotAcceptedResponse()
             .withNotImplementedResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }

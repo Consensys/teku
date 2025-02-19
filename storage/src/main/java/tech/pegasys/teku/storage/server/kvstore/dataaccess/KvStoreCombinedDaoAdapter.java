@@ -229,6 +229,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public Map<String, Optional<String>> getVariables() {
+    return Map.of();
+  }
+
+  @Override
   public long getBlobSidecarColumnCount() {
     return finalizedDao.getBlobSidecarColumnCount();
   }
@@ -586,6 +591,16 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void setEarliestBlobSidecarSlot(final UInt64 slot) {
       finalizedUpdater.setEarliestBlobSidecarSlot(slot);
+    }
+
+    @Override
+    public void setEarliestBlockSlot(final UInt64 slot) {
+      finalizedUpdater.setEarliestBlockSlot(slot);
+    }
+
+    @Override
+    public void deleteEarliestBlockSlot() {
+      finalizedUpdater.deleteEarliestBlockSlot();
     }
 
     @Override

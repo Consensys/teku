@@ -8,14 +8,14 @@ dependencies {
 
   implementation 'it.unimi.dsi:fastutil'
   implementation 'org.apache.commons:commons-lang3'
-  implementation 'org.apache.tuweni:tuweni-units'
+  implementation 'io.tmio:tuweni-units'
 
   testImplementation testFixtures(project(':infrastructure:collections'))
   testImplementation testFixtures(project(':infrastructure:json'))
   testImplementation testFixtures(project(':infrastructure:serviceutils'))
 
-  testFixturesApi 'org.apache.tuweni:tuweni-bytes'
-  testFixturesApi 'org.apache.tuweni:tuweni-units'
+  testFixturesApi 'io.tmio:tuweni-bytes'
+  testFixturesApi 'io.tmio:tuweni-units'
   testFixturesApi project(':infrastructure:unsigned')
   testFixturesImplementation project(':infrastructure:bytes')
   testFixturesImplementation 'it.unimi.dsi:fastutil'

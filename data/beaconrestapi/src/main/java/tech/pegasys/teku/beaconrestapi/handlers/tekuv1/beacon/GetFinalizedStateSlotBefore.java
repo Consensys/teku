@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
@@ -53,6 +54,8 @@ public class GetFinalizedStateSlotBefore extends RestApiEndpoint {
             .tags(TAG_TEKU)
             .pathParam(SLOT_PARAMETER.withDescription("At or before the specified slot"))
             .response(SC_OK, "Request successful", UINT64_RESPONSE)
+            .response(
+                SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
             .withServiceUnavailableResponse()
             .withNotFoundResponse()
             .build());

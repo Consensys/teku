@@ -35,9 +35,11 @@ public class Eth2PeerFactory {
   private final CombinedChainDataClient chainDataClient;
   private final TimeProvider timeProvider;
   private final Optional<Checkpoint> requiredCheckpoint;
-  private final int peerRateLimit;
+  private final int peerBlocksRateLimit;
+  private final int peerBlobSidecarsRateLimit;
   private final int peerRequestLimit;
   private final KZG kzg;
+  private final DiscoveryNodeIdExtractor discoveryNodeIdExtractor;
 
   public Eth2PeerFactory(
       final Spec spec,
@@ -47,9 +49,11 @@ public class Eth2PeerFactory {
       final MetadataMessagesFactory metadataMessagesFactory,
       final TimeProvider timeProvider,
       final Optional<Checkpoint> requiredCheckpoint,
-      final int peerRateLimit,
+      final int peerBlocksRateLimit,
+      final int peerBlobSidecarsRateLimit,
       final int peerRequestLimit,
-      final KZG kzg) {
+      final KZG kzg,
+      final DiscoveryNodeIdExtractor discoveryNodeIdExtractor) {
     this.spec = spec;
     this.metricsSystem = metricsSystem;
     this.chainDataClient = chainDataClient;
@@ -57,22 +61,24 @@ public class Eth2PeerFactory {
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
     this.requiredCheckpoint = requiredCheckpoint;
-    this.peerRateLimit = peerRateLimit;
+    this.peerBlocksRateLimit = peerBlocksRateLimit;
+    this.peerBlobSidecarsRateLimit = peerBlobSidecarsRateLimit;
     this.peerRequestLimit = peerRequestLimit;
     this.kzg = kzg;
+    this.discoveryNodeIdExtractor = discoveryNodeIdExtractor;
   }
 
   public Eth2Peer create(final Peer peer, final BeaconChainMethods rpcMethods) {
     return Eth2Peer.create(
         spec,
         peer,
+        discoveryNodeIdExtractor.calculateDiscoveryNodeId(peer),
         rpcMethods,
         statusMessageFactory,
         metadataMessagesFactory,
         PeerChainValidator.create(spec, metricsSystem, chainDataClient, requiredCheckpoint),
-        RateTracker.create(peerRateLimit, TIME_OUT, timeProvider),
-        RateTracker.create(
-            peerRateLimit * spec.getMaxBlobsPerBlock().orElse(1), TIME_OUT, timeProvider),
+        RateTracker.create(peerBlocksRateLimit, TIME_OUT, timeProvider),
+        RateTracker.create(peerBlobSidecarsRateLimit, TIME_OUT, timeProvider),
         RateTracker.create(peerRequestLimit, TIME_OUT, timeProvider),
         kzg);
   }

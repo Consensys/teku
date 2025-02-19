@@ -23,26 +23,32 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.InvalidRemoteResponseException;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class EngineGetPayloadV4Test {
@@ -50,6 +56,11 @@ class EngineGetPayloadV4Test {
   private final Spec spec = TestSpecFactory.createMinimalElectra();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ExecutionEngineClient executionEngineClient = mock(ExecutionEngineClient.class);
+  private final ExecutionRequestsDataCodec executionRequestsDataCodec =
+      new ExecutionRequestsDataCodec(
+          SchemaDefinitionsElectra.required(
+                  spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+              .getExecutionRequestsSchema());
   private EngineGetPayloadV4 jsonRpcMethod;
 
   @BeforeEach
@@ -117,10 +128,15 @@ class EngineGetPayloadV4Test {
     final UInt256 blockValue = UInt256.MAX_VALUE;
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
     final ExecutionPayload executionPayloadElectra = dataStructureUtil.randomExecutionPayload();
-    assertThat(executionPayloadElectra).isInstanceOf(ExecutionPayloadElectra.class);
+    final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests();
+    final List<Bytes> encodedExecutionRequests =
+        executionRequestsDataCodec.encode(executionRequests);
+    assertThat(executionPayloadElectra).isInstanceOf(ExecutionPayloadDeneb.class);
 
     when(executionEngineClient.getPayloadV4(eq(executionPayloadContext.getPayloadId())))
-        .thenReturn(dummySuccessfulResponse(executionPayloadElectra, blockValue, blobsBundle));
+        .thenReturn(
+            dummySuccessfulResponse(
+                executionPayloadElectra, blockValue, blobsBundle, encodedExecutionRequests));
 
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
@@ -128,7 +144,8 @@ class EngineGetPayloadV4Test {
     jsonRpcMethod = new EngineGetPayloadV4(executionEngineClient, spec);
 
     final GetPayloadResponse expectedGetPayloadResponse =
-        new GetPayloadResponse(executionPayloadElectra, blockValue, blobsBundle, false);
+        new GetPayloadResponse(
+            executionPayloadElectra, blockValue, blobsBundle, false, executionRequests);
     assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedGetPayloadResponse);
 
     verify(executionEngineClient).getPayloadV4(eq(executionPayloadContext.getPayloadId()));
@@ -138,18 +155,20 @@ class EngineGetPayloadV4Test {
   private SafeFuture<Response<GetPayloadV4Response>> dummySuccessfulResponse(
       final ExecutionPayload executionPayload,
       final UInt256 blockValue,
-      final BlobsBundle blobsBundle) {
+      final BlobsBundle blobsBundle,
+      final List<Bytes> encodedExecutionRequests) {
     return SafeFuture.completedFuture(
-        new Response<>(
+        Response.fromPayloadReceivedAsJson(
             new GetPayloadV4Response(
-                ExecutionPayloadV4.fromInternalExecutionPayload(executionPayload),
+                ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload),
                 blockValue,
                 BlobsBundleV1.fromInternalBlobsBundle(blobsBundle),
-                false)));
+                false,
+                encodedExecutionRequests)));
   }
 
   private SafeFuture<Response<GetPayloadV4Response>> dummyFailedResponse(
       final String errorMessage) {
-    return SafeFuture.completedFuture(Response.withErrorMessage(errorMessage));
+    return SafeFuture.completedFuture(Response.fromErrorMessage(errorMessage));
   }
 }

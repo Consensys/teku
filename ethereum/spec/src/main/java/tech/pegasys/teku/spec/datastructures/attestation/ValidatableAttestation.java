@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.attestation;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
@@ -24,6 +26,7 @@ import java.util.OptionalInt;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
@@ -35,12 +38,16 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ValidatableAttestation {
   private final Spec spec;
-  private final Attestation attestation;
   private final Optional<SignedAggregateAndProof> maybeAggregate;
   private final Supplier<Bytes32> hashTreeRoot;
   private final AtomicBoolean gossiped = new AtomicBoolean(false);
   private final boolean producedLocally;
   private final OptionalInt receivedSubnetId;
+
+  private final Attestation unconvertedAttestation;
+
+  @NotNull // will help us not forget to initialize if a new constructor is added
+  private volatile Attestation attestation;
 
   private volatile boolean isValidIndexedAttestation = false;
   private volatile boolean acceptedAsGossip = false;
@@ -48,6 +55,14 @@ public class ValidatableAttestation {
   private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
   private volatile Optional<Bytes32> committeeShufflingSeed = Optional.empty();
   private volatile Optional<Int2IntMap> committeesSize = Optional.empty();
+
+  public void convertToAggregatedFormatFromSingleAttestation(
+      final Attestation aggregatedFormatFromSingleAttestation) {
+    checkState(
+        attestation.isSingleAttestation(),
+        "Attestation must be a single attestation to convert to aggregated format");
+    this.attestation = aggregatedFormatFromSingleAttestation;
+  }
 
   public static ValidatableAttestation from(final Spec spec, final Attestation attestation) {
     return new ValidatableAttestation(
@@ -113,6 +128,7 @@ public class ValidatableAttestation {
     this.spec = spec;
     this.maybeAggregate = aggregateAndProof;
     this.attestation = attestation;
+    this.unconvertedAttestation = attestation;
     this.receivedSubnetId = receivedSubnetId;
     this.hashTreeRoot = Suppliers.memoize(attestation::hashTreeRoot);
     this.producedLocally = producedLocally;
@@ -128,6 +144,7 @@ public class ValidatableAttestation {
     this.spec = spec;
     this.maybeAggregate = aggregateAndProof;
     this.attestation = attestation;
+    this.unconvertedAttestation = attestation;
     this.receivedSubnetId = receivedSubnetId;
     this.hashTreeRoot = Suppliers.memoize(attestation::hashTreeRoot);
     this.producedLocally = producedLocally;
@@ -178,7 +195,7 @@ public class ValidatableAttestation {
     saveCommitteeShufflingSeed(state);
     // The committees size is only required when the committee_bits field is present in the
     // Attestation
-    if (attestation.requiresCommitteeBits()) {
+    if (attestation.isSingleAttestation() || attestation.requiresCommitteeBits()) {
       saveCommitteesSize(state);
     }
   }
@@ -216,13 +233,18 @@ public class ValidatableAttestation {
     return maybeAggregate.isPresent();
   }
 
+  @NotNull
   public Attestation getAttestation() {
     return attestation;
   }
 
+  public Attestation getUnconvertedAttestation() {
+    return unconvertedAttestation;
+  }
+
   public SignedAggregateAndProof getSignedAggregateAndProof() {
     return maybeAggregate.orElseThrow(
-        () -> new UnsupportedOperationException("ValidateableAttestation is not an aggregate."));
+        () -> new UnsupportedOperationException("ValidatableAttestation is not an aggregate."));
   }
 
   public AttestationData getData() {
@@ -246,10 +268,9 @@ public class ValidatableAttestation {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof ValidatableAttestation)) {
+    if (!(o instanceof ValidatableAttestation that)) {
       return false;
     }
-    ValidatableAttestation that = (ValidatableAttestation) o;
     return Objects.equal(getAttestation(), that.getAttestation())
         && Objects.equal(maybeAggregate, that.maybeAggregate);
   }
@@ -273,6 +294,7 @@ public class ValidatableAttestation {
         .add("committeeShufflingSeed", committeeShufflingSeed)
         .add("committeesSize", committeesSize)
         .add("receivedSubnetId", receivedSubnetId)
+        .add("unconvertedAttestation", unconvertedAttestation)
         .toString();
   }
 }

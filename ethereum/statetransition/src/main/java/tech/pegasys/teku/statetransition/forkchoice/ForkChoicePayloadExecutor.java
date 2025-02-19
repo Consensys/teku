@@ -50,9 +50,7 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
       final SignedBeaconBlock block,
       final ExecutionLayerChannel executionLayer) {
     return new ForkChoicePayloadExecutor(
-        block,
-        executionLayer,
-        new MergeTransitionBlockValidator(spec, recentChainData, executionLayer));
+        block, executionLayer, new MergeTransitionBlockValidator(spec, recentChainData));
   }
 
   public SafeFuture<PayloadValidationResult> getExecutionResult() {
@@ -71,11 +69,10 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
       // because it checks the parentRoot matches
       return true;
     }
-
     result =
         Optional.of(
             executionLayer
-                .engineNewPayload(payloadToExecute)
+                .engineNewPayload(payloadToExecute, block.getSlot())
                 .thenCompose(
                     result -> {
                       if (result.hasValidStatus()) {

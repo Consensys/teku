@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra;
 
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_BALANCE_DEPOSITS;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_CONSOLIDATIONS;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_DEPOSITS;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS;
 
 import java.util.Optional;
@@ -25,8 +25,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.MutableBeaconStateDeneb;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public interface MutableBeaconStateElectra extends MutableBeaconStateDeneb, BeaconStateElectra {
@@ -80,15 +80,14 @@ public interface MutableBeaconStateElectra extends MutableBeaconStateDeneb, Beac
     set(fieldIndex, SszUInt64.of(earliestConsolidationEpoch));
   }
 
-  default void setPendingBalanceDeposits(
-      final SszList<PendingBalanceDeposit> pendingBalanceDeposits) {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PENDING_BALANCE_DEPOSITS);
-    set(fieldIndex, pendingBalanceDeposits);
+  default void setPendingDeposits(final SszList<PendingDeposit> pendingDeposits) {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PENDING_DEPOSITS);
+    set(fieldIndex, pendingDeposits);
   }
 
   @Override
-  default SszMutableList<PendingBalanceDeposit> getPendingBalanceDeposits() {
-    final int index = getSchema().getFieldIndex(PENDING_BALANCE_DEPOSITS);
+  default SszMutableList<PendingDeposit> getPendingDeposits() {
+    final int index = getSchema().getFieldIndex(PENDING_DEPOSITS);
     return getAnyByRef(index);
   }
 

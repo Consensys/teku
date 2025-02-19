@@ -15,15 +15,21 @@ package tech.pegasys.teku.spec;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.common.io.Resources;
+import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
@@ -32,12 +38,13 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 
 public class ForkSchedule {
+  private static final Logger LOG = LogManager.getLogger();
   private final NavigableMap<UInt64, SpecMilestone> epochToMilestone;
   private final NavigableMap<UInt64, SpecMilestone> slotToMilestone;
   private final NavigableMap<UInt64, SpecMilestone> genesisOffsetToMilestone;
   private final Map<Bytes4, SpecMilestone> forkVersionToMilestone;
-  private final Map<SpecMilestone, Fork> milestoneToFork;
-  private final NavigableMap<SpecMilestone, Fork> fullMilestoneToForkMap;
+  private final EnumMap<SpecMilestone, Fork> milestoneToFork;
+  private final EnumMap<SpecMilestone, Fork> fullMilestoneToForkMap;
   private final Fork genesisFork;
 
   private ForkSchedule(
@@ -46,8 +53,8 @@ public class ForkSchedule {
       final NavigableMap<UInt64, SpecMilestone> slotToMilestone,
       final NavigableMap<UInt64, SpecMilestone> genesisOffsetToMilestone,
       final Map<Bytes4, SpecMilestone> forkVersionToMilestone,
-      final Map<SpecMilestone, Fork> milestoneToFork,
-      final NavigableMap<SpecMilestone, Fork> fullMilestoneToForkMap) {
+      final EnumMap<SpecMilestone, Fork> milestoneToFork,
+      final EnumMap<SpecMilestone, Fork> fullMilestoneToForkMap) {
     this.genesisFork = genesisFork;
     this.epochToMilestone = epochToMilestone;
     this.slotToMilestone = slotToMilestone;
@@ -134,7 +141,16 @@ public class ForkSchedule {
     if (activatingMilestone == null) {
       return;
     }
-    EventLogger.EVENT_LOG.networkUpgradeActivated(epoch, activatingMilestone.name());
+
+    final String resourceName = activatingMilestone.name().toLowerCase(Locale.ROOT) + ".txt";
+    String banner = "";
+    try {
+      banner =
+          Resources.toString(this.getClass().getResource(resourceName), StandardCharsets.UTF_8);
+    } catch (Exception ex) {
+      LOG.debug("failed to read resource file", ex);
+    }
+    EventLogger.EVENT_LOG.networkUpgradeActivated(epoch, activatingMilestone.name(), banner);
   }
 
   public SpecMilestone getSpecMilestoneAtEpoch(final UInt64 epoch) {
@@ -180,8 +196,9 @@ public class ForkSchedule {
     private final NavigableMap<UInt64, SpecMilestone> slotToMilestone = new TreeMap<>();
     private final NavigableMap<UInt64, SpecMilestone> genesisOffsetToMilestone = new TreeMap<>();
     private final Map<Bytes4, SpecMilestone> forkVersionToMilestone = new HashMap<>();
-    private final Map<SpecMilestone, Fork> milestoneToFork = new HashMap<>();
-    private final NavigableMap<SpecMilestone, Fork> fullMilestoneToForkMap = new TreeMap<>();
+    private final EnumMap<SpecMilestone, Fork> milestoneToFork = new EnumMap<>(SpecMilestone.class);
+    private final EnumMap<SpecMilestone, Fork> fullMilestoneToForkMap =
+        new EnumMap<>(SpecMilestone.class);
 
     // Track info on the last processed milestone
     private Optional<Bytes4> prevForkVersion = Optional.empty();

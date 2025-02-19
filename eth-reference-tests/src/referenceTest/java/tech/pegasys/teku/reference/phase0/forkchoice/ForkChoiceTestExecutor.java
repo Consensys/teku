@@ -20,7 +20,6 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMilli
 
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +31,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
-import org.apache.tuweni.units.bigints.UInt256;
 import org.assertj.core.api.Condition;
 import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -59,7 +57,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -87,11 +84,12 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("fork_choice/ex_ante", new ForkChoiceTestExecutor())
           .put("fork_choice/reorg", new ForkChoiceTestExecutor())
           .put("fork_choice/on_block", new ForkChoiceTestExecutor())
-          .put("fork_choice/on_merge_block", new ForkChoiceTestExecutor())
+          .put("fork_choice/on_merge_block", IGNORE_TESTS) // TTD Logic is deprecated
           .put("fork_choice/withholding", new ForkChoiceTestExecutor())
           .put("sync/optimistic", new ForkChoiceTestExecutor())
           .put("fork_choice/should_override_forkchoice_update", new ForkChoiceTestExecutor())
           .put("fork_choice/get_proposer_head", new ForkChoiceTestExecutor("basic_is_parent_root"))
+          .put("fork_choice/deposit_with_reorg", new ForkChoiceTestExecutor())
           .build();
 
   private final List<?> testsToSkip;
@@ -123,7 +121,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         spec.getSlotStartTime(anchorBlock.getSlot(), anchorState.getGenesisTime()));
 
     final MergeTransitionBlockValidator transitionBlockValidator =
-        new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
+        new MergeTransitionBlockValidator(spec, recentChainData);
     final InlineEventThread eventThread = new InlineEventThread();
     final KZG kzg = KzgRetriever.getKzgWithLoadedTrustedSetup(spec, testDefinition.getConfigName());
     final StubBlobSidecarManager blobSidecarManager = new StubBlobSidecarManager(kzg);
@@ -142,8 +140,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             true,
             DebugDataDumper.NOOP,
             storageSystem.getMetricsSystem());
-    final ExecutionLayerChannelStub executionLayer =
-        new ExecutionLayerChannelStub(spec, false, Optional.empty());
+    final ExecutionLayerChannelStub executionLayer = new ExecutionLayerChannelStub(spec, false);
 
     try {
       runSteps(
@@ -244,14 +241,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         reader -> {
           final Bytes32 blockHash = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           final Bytes32 parentHash = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
-          final UInt256 totalDifficulty =
-              UInt256.valueOf(
-                  reader
-                      .readFixedBytes(Bytes32.SIZE)
-                      .toUnsignedBigInteger(ByteOrder.LITTLE_ENDIAN));
           // We don't get a timestamp but as long as it's in the past that's fine
           final UInt64 timestamp = UInt64.ZERO;
-          return new PowBlock(blockHash, parentHash, totalDifficulty, timestamp);
+          return new PowBlock(blockHash, parentHash, timestamp);
         });
   }
 

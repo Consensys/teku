@@ -16,6 +16,7 @@ package tech.pegasys.teku.test.acceptance;
 import com.google.common.io.Resources;
 import java.net.URL;
 import java.util.Map;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
@@ -37,10 +38,11 @@ public class ExecutionLayerTriggeredExitAcceptanceTest extends AcceptanceTestBas
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
+  @Disabled("Won't work until we update Engine API for Electra")
   void triggerValidatorExitWithFullWithdrawal() throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
-        currentTime.intValue() + 10; // genesis in 10 seconds to give node time to start
+        currentTime.intValue() + 30; // genesis in 30 seconds to give node time to start
 
     final BesuNode besuNode = createBesuNode(genesisTime);
     besuNode.start();
@@ -76,9 +78,9 @@ public class ExecutionLayerTriggeredExitAcceptanceTest extends AcceptanceTestBas
     tekuNode.waitForNewFinalization();
 
     final ValidatorKeys validator = validatorKeys.getValidatorKeys().get(0);
-    final BLSPublicKey validatorPublicKey = validator.getValidatorKey().getPublicKey();
+    final BLSPublicKey validatorPubkey = validator.getValidatorKey().getPublicKey();
 
-    besuNode.createWithdrawalRequest(eth1PrivateKey, validatorPublicKey, UInt64.ZERO);
+    besuNode.createWithdrawalRequest(eth1PrivateKey, validatorPubkey, UInt64.ZERO);
 
     // Wait for validator exit confirmation
     tekuNode.waitForLogMessageContaining(
@@ -89,8 +91,7 @@ public class ExecutionLayerTriggeredExitAcceptanceTest extends AcceptanceTestBas
     final Map<String, String> genesisOverrides = Map.of("pragueTime", String.valueOf(genesisTime));
 
     return createBesuNode(
-        // "Waiting for Besu 24.9.0 release (https://github.com/Consensys/teku/issues/8535)"
-        BesuDockerVersion.DEVELOP,
+        BesuDockerVersion.STABLE,
         config ->
             config
                 .withMergeSupport()

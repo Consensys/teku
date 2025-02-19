@@ -60,12 +60,11 @@ public class ValidatorProposerOptions {
       ValidatorConfig.DEFAULT_BUILDER_REGISTRATION_DEFAULT_ENABLED;
 
   @Option(
-      names = {"--Xvalidators-builder-registration-default-gas-limit"},
+      names = {"--validators-builder-registration-default-gas-limit"},
       paramLabel = "<uint64>",
       showDefaultValue = Visibility.ALWAYS,
       description = "Change the default gas limit used for the validators registration.",
       arity = "1",
-      hidden = true,
       converter = UInt64Converter.class)
   private UInt64 builderRegistrationDefaultGasLimit =
       ValidatorConfig.DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT;

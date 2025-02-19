@@ -21,6 +21,9 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexDeserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexSerializer;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 
 public class GetPayloadV3Response {
   public final ExecutionPayloadV3 executionPayload;
@@ -45,5 +48,14 @@ public class GetPayloadV3Response {
     this.blockValue = blockValue;
     this.blobsBundle = blobsBundle;
     this.shouldOverrideBuilder = shouldOverrideBuilder;
+  }
+
+  public GetPayloadResponse asInternalGetPayloadResponse(
+      final ExecutionPayloadSchema<?> executionPayloadSchema, final BlobSchema blobSchema) {
+    return new GetPayloadResponse(
+        executionPayload.asInternalExecutionPayload(executionPayloadSchema),
+        blockValue,
+        blobsBundle.asInternalBlobsBundle(blobSchema),
+        shouldOverrideBuilder);
   }
 }

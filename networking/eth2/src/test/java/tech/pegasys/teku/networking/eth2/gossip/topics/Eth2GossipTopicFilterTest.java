@@ -14,73 +14,101 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.spy;
 import static tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.SSZ_SNAPPY;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getAttestationSubnetTopicName;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getBlobSidecarSubnetTopicName;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getSyncCommitteeSubnetTopicName;
+import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
 import java.util.List;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
+@TestSpecContext(milestone = {DENEB, ELECTRA})
 class Eth2GossipTopicFilterTest {
-
-  private final UInt64 denebForkEpoch = UInt64.valueOf(10);
-  private final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
-  private final List<Fork> forks = spec.getForkSchedule().getForks();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final Bytes32 genesisValidatorsRoot = dataStructureUtil.randomBytes32();
-  private final ForkInfo forkInfo = new ForkInfo(forks.get(0), genesisValidatorsRoot);
-  private final Fork nextFork = forks.get(1);
-  private final RecentChainData recentChainData = mock(RecentChainData.class);
-  private final Bytes4 nextForkDigest =
-      spec.atEpoch(nextFork.getEpoch())
-          .miscHelpers()
-          .computeForkDigest(nextFork.getCurrentVersion(), genesisValidatorsRoot);
-
-  private final Eth2GossipTopicFilter filter =
-      new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec);
+  private final UInt64 nextMilestoneForkEpoch = UInt64.valueOf(10);
+  private RecentChainData recentChainData;
+  private Spec spec;
+  private SpecMilestone currentSpecMilestone;
+  private SpecMilestone nextSpecMilestone;
+  private ForkInfo currentForkInfo;
+  private Eth2GossipTopicFilter filter;
+  private Bytes4 nextForkDigest;
 
   @BeforeEach
-  void setUp() {
-    when(recentChainData.getCurrentForkInfo()).thenReturn(Optional.of(forkInfo));
-    when(recentChainData.getNextFork(forkInfo.getFork())).thenReturn(Optional.of(nextFork));
+  void setUp(final SpecContext specContext) {
+    // we set up a spec that will be transitioning to specContext.getSpecMilestone() in
+    // currentForkEpoch epochs
+    // current milestone is actually the previous milestone
+    currentSpecMilestone = specContext.getSpecMilestone().getPreviousMilestone();
+    nextSpecMilestone = specContext.getSpecMilestone();
+    spec =
+        switch (nextSpecMilestone) {
+          case PHASE0 -> throw new IllegalArgumentException("Phase0 is an unsupported milestone");
+          case ALTAIR -> throw new IllegalArgumentException("Altair is an unsupported milestone");
+          case BELLATRIX ->
+              throw new IllegalArgumentException("Bellatrix is an unsupported milestone");
+          case CAPELLA -> throw new IllegalArgumentException("Capella is an unsupported milestone");
+          case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(nextMilestoneForkEpoch);
+          case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(nextMilestoneForkEpoch);
+        };
+
+    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    storageSystem.chainUpdater().initializeGenesis();
+
+    recentChainData = spy(storageSystem.recentChainData());
+    filter = new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec);
+
+    final List<Fork> forks = spec.getForkSchedule().getForks();
+    currentForkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
+
+    final Fork nextFork = forks.get(1);
+    nextForkDigest =
+        spec.atEpoch(nextFork.getEpoch())
+            .miscHelpers()
+            .computeForkDigest(
+                nextFork.getCurrentVersion(),
+                recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot());
   }
 
-  @Test
+  @TestTemplate
   void shouldNotAllowIrrelevantTopics() {
     assertThat(filter.isRelevantTopic("abc")).isFalse();
   }
 
-  @Test
+  @TestTemplate
   void shouldNotRequireNextForkToBePresent() {
-    when(recentChainData.getNextFork(any())).thenReturn(Optional.empty());
+    doAnswer(invocation -> Optional.empty()).when(recentChainData).getNextFork(any());
     assertThat(filter.isRelevantTopic(getTopicName(GossipTopicName.BEACON_BLOCK))).isTrue();
   }
 
-  @Test
+  @TestTemplate
   void shouldConsiderTopicsForNextForkRelevant() {
     assertThat(filter.isRelevantTopic(getNextForkTopicName(GossipTopicName.BEACON_BLOCK))).isTrue();
   }
 
-  @Test
+  @TestTemplate
   void shouldConsiderTopicsForSignedContributionAndProofRelevant() {
     assertThat(
             filter.isRelevantTopic(
@@ -88,7 +116,7 @@ class Eth2GossipTopicFilterTest {
         .isTrue();
   }
 
-  @Test
+  @TestTemplate
   void shouldConsiderAllAttestationSubnetsRelevant() {
     for (int i = 0; i < spec.getNetworkingConfig().getAttestationSubnetCount(); i++) {
       assertThat(filter.isRelevantTopic(getTopicName(getAttestationSubnetTopicName(i)))).isTrue();
@@ -97,40 +125,54 @@ class Eth2GossipTopicFilterTest {
     }
   }
 
-  @Test
+  @TestTemplate
   void shouldConsiderAllSyncCommitteeSubnetsRelevant() {
     for (int i = 0; i < SYNC_COMMITTEE_SUBNET_COUNT; i++) {
       assertThat(filter.isRelevantTopic(getTopicName(getSyncCommitteeSubnetTopicName(i)))).isTrue();
     }
   }
 
-  @Test
-  void shouldConsiderAllBlobSidecarSubnetsRelevant() {
-    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
+  @TestTemplate
+  void shouldConsiderAllBlobSidecarSubnetsRelevantForCurrentMilestone() {
+    final SpecConfig config = spec.forMilestone(currentSpecMilestone).getConfig();
+    assumeThat(config.toVersionDeneb()).isPresent();
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     for (int i = 0; i < specConfigDeneb.getBlobSidecarSubnetCount(); i++) {
       assertThat(filter.isRelevantTopic(getTopicName(getBlobSidecarSubnetTopicName(i)))).isTrue();
     }
   }
 
-  @Test
-  void shouldNotConsiderBlobSidecarWithIncorrectSubnetIdRelevant() {
-    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
+  @TestTemplate
+  void shouldConsiderAllBlobSidecarSubnetsRelevantForNextMilestone() {
+    final SpecConfig config = spec.forMilestone(nextSpecMilestone).getConfig();
+    assumeThat(config.toVersionDeneb()).isPresent();
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
+    for (int i = 0; i < specConfigDeneb.getBlobSidecarSubnetCount(); i++) {
+      assertThat(filter.isRelevantTopic(getNextForkTopicName(getBlobSidecarSubnetTopicName(i))))
+          .isTrue();
+    }
+  }
+
+  @TestTemplate
+  void shouldNotConsiderBlobSidecarWithIncorrectSubnetIdRelevant() {
+    final int blobSidecarSubnetCount =
+        spec.forMilestone(nextSpecMilestone)
+            .getConfig()
+            .toVersionDeneb()
+            .orElseThrow()
+            .getBlobSidecarSubnetCount();
     assertThat(
             filter.isRelevantTopic(
-                getTopicName(
-                    getBlobSidecarSubnetTopicName(
-                        specConfigDeneb.getBlobSidecarSubnetCount() + 1))))
+                getTopicName(getBlobSidecarSubnetTopicName(blobSidecarSubnetCount + 1))))
         .isFalse();
   }
 
-  @Test
+  @TestTemplate
   void shouldNotConsiderBlobSidecarWithoutIndexTopicRelevant() {
     assertThat(filter.isRelevantTopic(getTopicName("blob_sidecar"))).isFalse();
   }
 
-  @Test
+  @TestTemplate
   void shouldNotAllowTopicsWithUnknownForkDigest() {
     final String irrelevantTopic =
         GossipTopics.getTopic(
@@ -139,11 +181,11 @@ class Eth2GossipTopicFilterTest {
   }
 
   private String getTopicName(final GossipTopicName name) {
-    return GossipTopics.getTopic(forkInfo.getForkDigest(spec), name, SSZ_SNAPPY);
+    return GossipTopics.getTopic(currentForkInfo.getForkDigest(spec), name, SSZ_SNAPPY);
   }
 
   private String getTopicName(final String name) {
-    return GossipTopics.getTopic(forkInfo.getForkDigest(spec), name, SSZ_SNAPPY);
+    return GossipTopics.getTopic(currentForkInfo.getForkDigest(spec), name, SSZ_SNAPPY);
   }
 
   private String getNextForkTopicName(final GossipTopicName name) {

@@ -15,6 +15,9 @@ package tech.pegasys.teku.api;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.api.peer.Eth2PeerWithEnr;
 import tech.pegasys.teku.api.response.v1.node.Direction;
 import tech.pegasys.teku.api.response.v1.node.Peer;
 import tech.pegasys.teku.api.response.v1.node.State;
@@ -23,14 +26,28 @@ import tech.pegasys.teku.ethereum.json.types.node.PeerCountBuilder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 
 public class NetworkDataProvider {
+  final Function<Optional<UInt256>, Optional<String>> enrLookupFunction;
+
   private final Eth2P2PNetwork network;
 
   public NetworkDataProvider(final Eth2P2PNetwork network) {
     this.network = network;
+    this.enrLookupFunction =
+        maybeNodeId -> {
+          if (maybeNodeId.isEmpty()) {
+            return Optional.empty();
+          }
+          final Optional<DiscoveryService> maybeDiscoveryService =
+              network.getDiscoveryNetwork().map(DiscoveryNetwork::getDiscoveryService);
+          return maybeDiscoveryService.flatMap(
+              discoveryService -> discoveryService.lookupEnr(maybeNodeId.get()));
+        };
   }
 
   /**
@@ -80,6 +97,16 @@ public class NetworkDataProvider {
     return network.streamPeers().toList();
   }
 
+  public List<Eth2PeerWithEnr> getEth2PeersWithEnr() {
+    return network
+        .streamPeers()
+        .map(
+            eth2Peer ->
+                new Eth2PeerWithEnr(
+                    eth2Peer, enrLookupFunction.apply(eth2Peer.getDiscoveryNodeId())))
+        .toList();
+  }
+
   public PeerCount getPeerCount() {
     long disconnected = 0;
     long connected = 0;
@@ -102,9 +129,14 @@ public class NetworkDataProvider {
     return network.streamPeers().toList();
   }
 
-  public Optional<Eth2Peer> getEth2PeerById(final String peerId) {
+  public Optional<Eth2PeerWithEnr> getEth2PeerById(final String peerId) {
     final NodeId nodeId = network.parseNodeId(peerId);
-    return network.getPeer(nodeId);
+    return network
+        .getPeer(nodeId)
+        .map(
+            eth2Peer ->
+                new Eth2PeerWithEnr(
+                    eth2Peer, enrLookupFunction.apply(eth2Peer.getDiscoveryNodeId())));
   }
 
   private Peer toPeer(final Eth2Peer eth2Peer) {

@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -44,12 +45,13 @@ public class OpenApiTestUtil<TObject> {
   private final String path;
 
   public OpenApiTestUtil(final Class<TObject> clazz) {
-    this.mapper = new ObjectMapper();
-    mapper
-        .configure(SerializationFeature.INDENT_OUTPUT, true)
-        .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
-        .configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true)
-        .configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, true);
+    this.mapper =
+        JsonMapper.builder()
+            .configure(SerializationFeature.INDENT_OUTPUT, true)
+            .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+            .configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true)
+            .configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, true)
+            .build();
     this.clazz = clazz;
     this.path = clazz.getPackageName().replaceAll("\\.", "/");
   }

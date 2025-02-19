@@ -71,6 +71,7 @@ class Eth2PeerTest {
       Eth2Peer.create(
           spec,
           delegate,
+          Optional.empty(),
           rpcMethods,
           statusMessageFactory,
           metadataMessagesFactory,

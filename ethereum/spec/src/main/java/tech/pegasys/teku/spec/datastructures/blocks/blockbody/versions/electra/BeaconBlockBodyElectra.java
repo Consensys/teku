@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 
 public interface BeaconBlockBodyElectra extends BeaconBlockBodyDeneb {
   static BeaconBlockBodyElectra required(final BeaconBlockBody body) {
@@ -30,8 +30,12 @@ public interface BeaconBlockBodyElectra extends BeaconBlockBodyDeneb {
   @Override
   BeaconBlockBodySchemaElectra<?> getSchema();
 
+  ExecutionRequests getExecutionRequests();
+
   @Override
-  ExecutionPayloadElectra getExecutionPayload();
+  default Optional<ExecutionRequests> getOptionalExecutionRequests() {
+    return Optional.of(getExecutionRequests());
+  }
 
   @Override
   default Optional<BeaconBlockBodyElectra> toVersionElectra() {

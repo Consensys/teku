@@ -137,6 +137,6 @@ public class OneOfTest {
         .containsOnly(
             "#/components/schemas/BeaconBlockPhase0",
             "#/components/schemas/BeaconBlockAltair",
-            "#/components/schemas/BlindedBlockBellatrix");
+            "#/components/schemas/BlindedBeaconBlockBellatrix");
   }
 }

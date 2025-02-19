@@ -12,4 +12,7 @@ dependencies {
   implementation project(':infrastructure:events')
 
   implementation 'org.hyperledger.besu:plugin-api'
+
+  testImplementation testFixtures(project(':infrastructure:async'))
+  testImplementation testFixtures(project(':ethereum:execution-types'))
  }

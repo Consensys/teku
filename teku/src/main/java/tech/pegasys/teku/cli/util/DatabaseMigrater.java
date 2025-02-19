@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.commons.io.FileUtils;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -189,7 +190,8 @@ public class DatabaseMigrater {
                 .storeNonCanonicalBlocks(true)
                 .eth1DepositContract(config.getEth1DepositContractAddress())
                 .dataStorageCreateDbVersion(databaseVersion)
-                .build());
+                .build(),
+            Optional.empty());
     final Database database = databaseFactory.createDatabase();
     if (!(database instanceof KvStoreDatabase)) {
       throw new DatabaseMigraterError(

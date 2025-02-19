@@ -164,4 +164,9 @@ public class ExecutionPayloadHeaderSchemaDeneb
         SszUInt64.of(executionPayload.getBlobGasUsed()),
         SszUInt64.of(executionPayload.getExcessBlobGas()));
   }
+
+  @Override
+  public ExecutionPayloadHeaderSchemaDeneb toVersionDenebRequired() {
+    return this;
+  }
 }

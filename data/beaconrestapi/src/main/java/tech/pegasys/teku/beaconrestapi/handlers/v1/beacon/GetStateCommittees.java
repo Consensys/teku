@@ -84,6 +84,7 @@ public class GetStateCommittees extends RestApiEndpoint {
             .tags(TAG_BEACON)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }

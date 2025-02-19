@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.COMMITTEE_INDEX_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getMultipleSchemaDefinitionFromMilestone;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_CONSENSUS_HEADER_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
@@ -67,7 +68,11 @@ public class GetAttestationsV2 extends RestApiEndpoint {
             .tags(TAG_BEACON)
             .queryParam(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION))
             .queryParam(COMMITTEE_INDEX_PARAMETER)
-            .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
+            .response(
+                SC_OK,
+                "Request successful",
+                getResponseType(schemaDefinitionCache),
+                ETH_CONSENSUS_HEADER_TYPE)
             .build());
     this.nodeDataProvider = nodeDataProvider;
   }

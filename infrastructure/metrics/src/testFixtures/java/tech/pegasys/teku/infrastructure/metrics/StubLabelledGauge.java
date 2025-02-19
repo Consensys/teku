@@ -18,10 +18,10 @@ import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.DoubleSupplier;
-import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
+import org.hyperledger.besu.plugin.services.metrics.LabelledSuppliedMetric;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
-public class StubLabelledGauge extends StubMetric implements LabelledGauge {
+public class StubLabelledGauge extends StubMetric implements LabelledSuppliedMetric {
 
   private final Map<List<String>, DoubleSupplier> suppliers = new ConcurrentHashMap<>();
 

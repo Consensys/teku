@@ -13,17 +13,19 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_SCHEMA;
+
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.AttestationPhase0;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class AggregateAndProof
     extends Container3<AggregateAndProof, SszUInt64, Attestation, SszSignature> {
@@ -32,18 +34,16 @@ public class AggregateAndProof
       extends ContainerSchema3<AggregateAndProof, SszUInt64, Attestation, SszSignature> {
 
     public AggregateAndProofSchema(
-        final AttestationSchema<? extends Attestation> attestationSchema) {
+        final String containerName, final SchemaRegistry schemaRegistry) {
       super(
-          attestationSchema.requiresCommitteeBits()
-              ? "AggregateAndProofElectra"
-              : "AggregateAndProofPhase0",
+          containerName,
           namedSchema("aggregator_index", SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedSchema("aggregate", SszSchema.as(Attestation.class, attestationSchema)),
+          namedSchema("aggregate", schemaRegistry.get(ATTESTATION_SCHEMA)),
           namedSchema("selection_proof", SszSignatureSchema.INSTANCE));
     }
 
-    public AttestationSchema<? extends Attestation> getAttestationSchema() {
-      return (AttestationSchema<? extends Attestation>) getFieldSchema1();
+    public AttestationSchema<Attestation> getAttestationSchema() {
+      return (AttestationSchema<Attestation>) getFieldSchema1();
     }
 
     @Override

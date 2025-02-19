@@ -41,7 +41,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -75,7 +74,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrate
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
@@ -154,7 +153,7 @@ class ForkChoiceTest {
     this.chainBuilder = storageSystem.chainBuilder();
     this.genesis = chainBuilder.generateGenesis();
     this.recentChainData = storageSystem.recentChainData();
-    this.executionLayer = new ExecutionLayerChannelStub(spec, false, Optional.empty());
+    this.executionLayer = new ExecutionLayerChannelStub(spec, false);
     this.forkChoice =
         new ForkChoice(
             spec,
@@ -248,31 +247,6 @@ class ForkChoiceTest {
   }
 
   @Test
-  void onBlock_shouldFailIfBlobsAreInvalid() {
-    setupWithSpec(TestSpecFactory.createMinimalDeneb());
-    final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
-    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
-    final List<BlobSidecar> blobSidecars =
-        storageSystem
-            .chainStorage()
-            .getBlobSidecarsBySlotAndBlockRoot(blockAndState.getSlotAndBlockRoot())
-            .join();
-
-    when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
-        .thenReturn(
-            SafeFuture.completedFuture(
-                BlobSidecarsAndValidationResult.invalidResult(blobSidecars)));
-
-    importBlockAndAssertFailure(
-        blockAndState, FailureReason.FAILED_DATA_AVAILABILITY_CHECK_INVALID);
-
-    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
-    verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
-    verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
-    verify(debugDataDumper).saveInvalidBlobSidecars(blobSidecars, blockAndState.getBlock());
-  }
-
-  @Test
   void onBlock_consensusValidationShouldNotResolveWhenDataAvailabilityFails() {
     setupWithSpec(TestSpecFactory.createMinimalDeneb());
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
@@ -358,7 +332,7 @@ class ForkChoiceTest {
     // let's prepare a mocked EL with lazy newPayload
     executionLayer = mock(ExecutionLayerChannelStub.class);
     final SafeFuture<PayloadStatus> payloadStatusSafeFuture = new SafeFuture<>();
-    when(executionLayer.engineNewPayload(any())).thenReturn(payloadStatusSafeFuture);
+    when(executionLayer.engineNewPayload(any(), any())).thenReturn(payloadStatusSafeFuture);
 
     // let's import a valid consensus block
     final SafeFuture<BlockImportResult> importResult =
@@ -1249,19 +1223,11 @@ class ForkChoiceTest {
   }
 
   private SignedBlockAndState generateMergeBlock() {
-    final UInt256 terminalTotalDifficulty =
-        spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalTotalDifficulty();
     final Bytes32 terminalBlockHash = dataStructureUtil.randomBytes32();
     final Bytes32 terminalBlockParentHash = dataStructureUtil.randomBytes32();
-    final PowBlock terminalBlock =
-        new PowBlock(
-            terminalBlockHash, terminalBlockParentHash, terminalTotalDifficulty.plus(1), ZERO);
+    final PowBlock terminalBlock = new PowBlock(terminalBlockHash, terminalBlockParentHash, ZERO);
     final PowBlock terminalParentBlock =
-        new PowBlock(
-            terminalBlockParentHash,
-            dataStructureUtil.randomBytes32(),
-            terminalTotalDifficulty.subtract(1),
-            ZERO);
+        new PowBlock(terminalBlockParentHash, dataStructureUtil.randomBytes32(), ZERO);
     executionLayer.addPowBlock(terminalBlock);
     executionLayer.addPowBlock(terminalParentBlock);
     return chainBuilder.generateBlockAtSlot(

@@ -60,6 +60,7 @@ public class PostAggregateAndProofs extends RestApiEndpoint {
                         .getSignedAggregateAndProofSchema()
                         .getJsonTypeDefinition()))
             .response(SC_OK, "Successfully published aggregate.")
+            .withChainDataResponses()
             .build());
     this.provider = provider;
   }

@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -211,8 +212,15 @@ public class EventSubscriptionManager
   }
 
   protected void onNewAttestation(final ValidatableAttestation attestation) {
-    final AttestationEvent attestationEvent = new AttestationEvent(attestation.getAttestation());
-    notifySubscribersOfEvent(EventType.attestation, attestationEvent);
+    final Attestation actualAttestation = attestation.getUnconvertedAttestation();
+    if (!actualAttestation.isSingleAttestation()) {
+      final AttestationEvent attestationEvent = new AttestationEvent(actualAttestation);
+      notifySubscribersOfEvent(EventType.attestation, attestationEvent);
+    } else {
+      final SingleAttestationEvent attestationEvent =
+          new SingleAttestationEvent(actualAttestation.toSingleAttestationRequired());
+      notifySubscribersOfEvent(EventType.single_attestation, attestationEvent);
+    }
   }
 
   protected void onNewBlock(final SignedBeaconBlock block, final boolean executionOptimistic) {

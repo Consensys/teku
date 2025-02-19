@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 
 public interface BlindedBeaconBlockBodyElectra extends BlindedBeaconBlockBodyDeneb {
   static BlindedBeaconBlockBodyElectra required(final BeaconBlockBody body) {
@@ -25,6 +26,13 @@ public interface BlindedBeaconBlockBodyElectra extends BlindedBeaconBlockBodyDen
                 new IllegalArgumentException(
                     "Expected an Electra blinded block body but got: "
                         + body.getClass().getSimpleName()));
+  }
+
+  ExecutionRequests getExecutionRequests();
+
+  @Override
+  default Optional<ExecutionRequests> getOptionalExecutionRequests() {
+    return Optional.of(getExecutionRequests());
   }
 
   @Override

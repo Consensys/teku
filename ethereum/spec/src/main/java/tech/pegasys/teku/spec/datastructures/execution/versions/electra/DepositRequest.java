@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -24,9 +25,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
+// https://eips.ethereum.org/EIPS/eip-6110
 public class DepositRequest
     extends Container5<
         DepositRequest, SszPublicKey, SszBytes32, SszUInt64, SszSignature, SszUInt64> {
+
+  public static final byte REQUEST_TYPE = 0x0;
+  public static final Bytes REQUEST_TYPE_PREFIX = Bytes.of(REQUEST_TYPE);
 
   DepositRequest(
       final DepositRequestSchema schema,
@@ -43,8 +48,6 @@ public class DepositRequest
         new SszSignature(signature),
         SszUInt64.of(index));
   }
-
-  public static final DepositRequestSchema SSZ_SCHEMA = new DepositRequestSchema();
 
   DepositRequest(final DepositRequestSchema type, final TreeNode backingNode) {
     super(type, backingNode);

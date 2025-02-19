@@ -23,6 +23,7 @@ import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigDenebImpl;
@@ -46,21 +47,24 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
   DenebBuilder() {}
 
   @Override
-  public SpecConfigDeneb build(final SpecConfigCapella specConfig) {
-    return new SpecConfigDenebImpl(
-        specConfig,
-        denebForkVersion,
-        denebForkEpoch,
-        maxPerEpochActivationChurnLimit,
-        fieldElementsPerBlob,
-        maxBlobCommitmentsPerBlock,
-        maxBlobsPerBlock,
-        kzgCommitmentInclusionProofDepth,
-        maxRequestBlocksDeneb,
-        maxRequestBlobSidecars,
-        minEpochsForBlobSidecarsRequests,
-        blobSidecarSubnetCount,
-        epochsStoreBlobs);
+  public SpecConfigAndParent<SpecConfigDeneb> build(
+      final SpecConfigAndParent<SpecConfigCapella> specConfigAndParent) {
+    return SpecConfigAndParent.of(
+        new SpecConfigDenebImpl(
+            specConfigAndParent.specConfig(),
+            denebForkVersion,
+            denebForkEpoch,
+            maxPerEpochActivationChurnLimit,
+            fieldElementsPerBlob,
+            maxBlobCommitmentsPerBlock,
+            maxBlobsPerBlock,
+            kzgCommitmentInclusionProofDepth,
+            maxRequestBlocksDeneb,
+            maxRequestBlobSidecars,
+            minEpochsForBlobSidecarsRequests,
+            blobSidecarSubnetCount,
+            epochsStoreBlobs),
+        specConfigAndParent);
   }
 
   public DenebBuilder denebForkEpoch(final UInt64 denebForkEpoch) {

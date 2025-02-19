@@ -15,10 +15,16 @@ package tech.pegasys.teku.spec.logic.common.statetransition.epoch.status;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.List;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -28,6 +34,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public abstract class AbstractValidatorStatusFactoryTest {
@@ -247,6 +255,67 @@ public abstract class AbstractValidatorStatusFactoryTest {
     assertThat(balances.getPreviousEpochSourceAttesters()).isEqualTo(effectiveBalanceInc);
     assertThat(balances.getPreviousEpochTargetAttesters()).isEqualTo(effectiveBalanceInc);
     assertThat(balances.getPreviousEpochHeadAttesters()).isEqualTo(effectiveBalanceInc);
+  }
+
+  @Test
+  public void recreateValidatorStatusesShouldAppendNewValidatorsAndKeepOrder()
+      throws IllegalAccessException {
+    final BeaconState state =
+        dataStructureUtil
+            .stateBuilder(spec.getGenesisSpec().getMilestone(), 3, 1)
+            .setSlotToStartOfEpoch(UInt64.ONE)
+            .build();
+    // Magic to get around requiring a full state with valid previous and current epoch attestations
+    // (only on Phase0)
+    final ValidatorStatusFactory factory = createFactory();
+    FieldUtils.writeField(factory, "attestationUtil", mock(AttestationUtil.class), true);
+
+    final ValidatorStatuses validatorStatuses = factory.createValidatorStatuses(state);
+
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(state.getSlot());
+    final Validator newValidator = dataStructureUtil.validatorBuilder().slashed(true).build();
+    final ValidatorStatus newValidatorStatus =
+        factory.createValidatorStatus(newValidator, currentEpoch.minusMinZero(1), currentEpoch);
+
+    final ValidatorStatuses updatedValidatorStatuses =
+        factory.recreateValidatorStatuses(validatorStatuses, List.of(newValidatorStatus));
+
+    final ValidatorStatus[] expectedStatuses =
+        Stream.concat(validatorStatuses.getStatuses().stream(), Stream.of(newValidatorStatus))
+            .toArray(ValidatorStatus[]::new);
+
+    assertThat(updatedValidatorStatuses.getStatuses()).containsExactly(expectedStatuses);
+  }
+
+  @Test
+  public void shouldNotRecalculateValidatorStatusForPreviousExistingValidators()
+      throws IllegalAccessException {
+    final ValidatorStatusFactory factory = spy(createFactory());
+    // Magic to get around requiring a full state with valid previous and current epoch attestations
+    // (only on Phase0)
+    FieldUtils.writeField(factory, "attestationUtil", mock(AttestationUtil.class), true);
+
+    final int validatorCount = 10;
+    final BeaconState state =
+        dataStructureUtil
+            .stateBuilder(spec.getGenesisSpec().getMilestone(), validatorCount, 1)
+            .build();
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(state.getSlot());
+    final ValidatorStatuses validatorStatuses = factory.createValidatorStatuses(state);
+
+    // Created ValidatorStatus for all validators in state
+    verify(factory, times(validatorCount)).createValidatorStatus(any(), any(), any());
+
+    final Validator newValidator = dataStructureUtil.validatorBuilder().slashed(true).build();
+    final ValidatorStatus newValidatorStatus =
+        factory.createValidatorStatus(newValidator, currentEpoch.minusMinZero(1), currentEpoch);
+    // Created ValidatorStatus for the new validator
+    verify(factory, times(validatorCount + 1)).createValidatorStatus(any(), any(), any());
+
+    factory.recreateValidatorStatuses(validatorStatuses, List.of(newValidatorStatus));
+
+    // Verifying that recreateValidatorStatuses does not trigger any ValidatorStatus creation
+    verify(factory, times(validatorCount + 1)).createValidatorStatus(any(), any(), any());
   }
 
   private ValidatorStatus createValidator(final int effectiveBalance) {

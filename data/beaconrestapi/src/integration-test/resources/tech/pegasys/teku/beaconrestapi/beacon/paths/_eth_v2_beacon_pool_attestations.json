@@ -26,6 +26,24 @@
     "responses" : {
       "200" : {
         "description" : "Request successful",
+        "headers" : {
+          "Eth-Consensus-Version": {
+            "description": "Required in response so client can deserialize returned json or ssz data more effectively.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "phase0",
+                "altair",
+                "bellatrix",
+                "capella",
+                "deneb",
+                "electra"
+              ],
+              "example": "phase0"
+            }
+          }
+        },
         "content" : {
           "application/json" : {
             "schema" : {
@@ -82,7 +100,7 @@
               "oneOf" : [ {
                 "$ref" : "#/components/schemas/AttestationPhase0"
               }, {
-                "$ref" : "#/components/schemas/AttestationElectra"
+                "$ref" : "#/components/schemas/SingleAttestation"
               } ]
             }
           }
@@ -103,6 +121,20 @@
             }
           }
         }
+      },
+      "503" : {
+        "description" : "Service unavailable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
       },
       "500" : {
         "description" : "Internal server error",

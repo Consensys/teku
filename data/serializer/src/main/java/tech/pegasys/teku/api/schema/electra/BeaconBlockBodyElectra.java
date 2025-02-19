@@ -30,23 +30,28 @@ import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.api.schema.altair.SyncAggregate;
 import tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange;
+import tech.pegasys.teku.api.schema.deneb.ExecutionPayloadDeneb;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
 
   @JsonProperty("execution_payload")
-  public final ExecutionPayloadElectra executionPayload;
+  public final ExecutionPayloadDeneb executionPayload;
 
   @JsonProperty("bls_to_execution_changes")
   public final List<SignedBlsToExecutionChange> blsToExecutionChanges;
 
   @JsonProperty("blob_kzg_commitments")
   public final List<KZGCommitment> blobKZGCommitments;
+
+  @JsonProperty("execution_requests")
+  public final ExecutionRequests executionRequests;
 
   @JsonCreator
   public BeaconBlockBodyElectra(
@@ -59,10 +64,11 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
       @JsonProperty("deposits") final List<Deposit> deposits,
       @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntaryExits,
       @JsonProperty("sync_aggregate") final SyncAggregate syncAggregate,
-      @JsonProperty("execution_payload") final ExecutionPayloadElectra executionPayload,
+      @JsonProperty("execution_payload") final ExecutionPayloadDeneb executionPayload,
       @JsonProperty("bls_to_execution_changes")
           final List<SignedBlsToExecutionChange> blsToExecutionChanges,
-      @JsonProperty("blob_kzg_commitments") final List<KZGCommitment> blobKZGCommitments) {
+      @JsonProperty("blob_kzg_commitments") final List<KZGCommitment> blobKZGCommitments,
+      @JsonProperty("execution_requests") final ExecutionRequests executionRequests) {
     super(
         randaoReveal,
         eth1Data,
@@ -73,12 +79,14 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
         deposits,
         voluntaryExits,
         syncAggregate);
-    checkNotNull(executionPayload, "Execution Payload is required for Electra blocks");
+    checkNotNull(executionPayload, "ExecutionPayload is required for Electra blocks");
     this.executionPayload = executionPayload;
     checkNotNull(blsToExecutionChanges, "BlsToExecutionChanges is required for Electra blocks");
     this.blsToExecutionChanges = blsToExecutionChanges;
-    checkNotNull(blobKZGCommitments, "blobKZGCommitments is required for Electra blocks");
+    checkNotNull(blobKZGCommitments, "BlobKZGCommitments is required for Electra blocks");
     this.blobKZGCommitments = blobKZGCommitments;
+    checkNotNull(executionRequests, "ExecutionRequests is required for Electra blocks");
+    this.executionRequests = executionRequests;
   }
 
   public BeaconBlockBodyElectra(
@@ -86,20 +94,22 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
               .BeaconBlockBodyElectra
           message) {
     super(message);
-    checkNotNull(message.getExecutionPayload(), "Execution Payload is required for Electra blocks");
-    this.executionPayload = new ExecutionPayloadElectra(message.getExecutionPayload());
+    checkNotNull(message.getExecutionPayload(), "ExecutionPayload is required for Electra blocks");
+    this.executionPayload = new ExecutionPayloadDeneb(message.getExecutionPayload());
     checkNotNull(
-        message.getBlsToExecutionChanges(),
-        "BlsToExecutionChanges are required for Electra blocks");
+        message.getBlsToExecutionChanges(), "BlsToExecutionChanges is required for Electra blocks");
     this.blsToExecutionChanges =
         message.getBlsToExecutionChanges().stream().map(SignedBlsToExecutionChange::new).toList();
     checkNotNull(
-        message.getBlobKzgCommitments(), "BlobKzgCommitments are required for Electra blocks");
+        message.getBlobKzgCommitments(), "BlobKzgCommitments is required for Electra blocks");
     this.blobKZGCommitments =
         message.getBlobKzgCommitments().stream()
             .map(SszKZGCommitment::getKZGCommitment)
             .map(KZGCommitment::new)
             .toList();
+    checkNotNull(
+        message.getExecutionRequests(), "ExecutionRequests is required for Electra blocks");
+    this.executionRequests = new ExecutionRequests(message.getExecutionRequests());
   }
 
   @Override
@@ -128,6 +138,11 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
                   .map(KZGCommitment::asInternalKZGCommitment)
                   .map(SszKZGCommitment::new)
                   .collect(blobKZGCommitmentsSchema.collector()));
+          builder.executionRequests(
+              this.executionRequests.asInternalConsolidationRequest(
+                  SchemaDefinitionsElectra.required(spec.getSchemaDefinitions())
+                      .getExecutionRequestsSchema()));
+
           return SafeFuture.COMPLETE;
         });
   }

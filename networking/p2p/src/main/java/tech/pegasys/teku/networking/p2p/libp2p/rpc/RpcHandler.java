@@ -56,11 +56,12 @@ public class RpcHandler<
         TRequest,
         TRespHandler extends RpcResponseHandler<?>>
     implements ProtocolBinding<Controller<TOutgoingHandler>> {
-  private static final Duration TIMEOUT = Duration.ofSeconds(5);
   private static final Logger LOG = LogManager.getLogger();
 
-  private final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod;
+  private static final Duration STREAM_INITIALIZE_TIMEOUT = Duration.ofSeconds(5);
+
   private final AsyncRunner asyncRunner;
+  private final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod;
 
   public RpcHandler(
       final AsyncRunner asyncRunner,
@@ -75,7 +76,6 @@ public class RpcHandler<
 
   public SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
       final Connection connection, final TRequest request, final TRespHandler responseHandler) {
-
     final Bytes initialPayload;
     try {
       initialPayload = rpcMethod.encodeRequest(request);
@@ -83,11 +83,11 @@ public class RpcHandler<
       return SafeFuture.failedFuture(e);
     }
 
-    Interruptor closeInterruptor =
+    final Interruptor closeInterruptor =
         SafeFuture.createInterruptor(connection.closeFuture(), PeerDisconnectedException::new);
-    Interruptor timeoutInterruptor =
+    final Interruptor timeoutInterruptor =
         SafeFuture.createInterruptor(
-            asyncRunner.getDelayedFuture(TIMEOUT),
+            asyncRunner.getDelayedFuture(STREAM_INITIALIZE_TIMEOUT),
             () ->
                 new StreamTimeoutException(
                     "Timed out waiting to initialize stream for protocol(s): "

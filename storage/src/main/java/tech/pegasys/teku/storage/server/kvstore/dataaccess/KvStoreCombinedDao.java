@@ -154,6 +154,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Map<String, Long> getColumnCounts(final Optional<String> maybeColumnFilter);
 
+  Map<String, Optional<String>> getVariables();
+
   long getBlobSidecarColumnCount();
 
   long getNonCanonicalBlobSidecarColumnCount();
@@ -259,6 +261,10 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void removeNonCanonicalBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
     void setEarliestBlobSidecarSlot(UInt64 slot);
+
+    void setEarliestBlockSlot(UInt64 slot);
+
+    void deleteEarliestBlockSlot();
 
     void commit();
 

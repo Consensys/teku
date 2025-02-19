@@ -79,6 +79,8 @@ public interface BlobSidecarManager {
 
   enum RemoteOrigin {
     RPC,
-    GOSSIP
+    GOSSIP,
+    LOCAL_EL,
+    LOCAL_PROPOSAL
   }
 }

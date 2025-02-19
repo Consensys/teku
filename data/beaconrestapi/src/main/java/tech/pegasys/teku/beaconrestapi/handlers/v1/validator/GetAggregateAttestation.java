@@ -62,6 +62,7 @@ public class GetAggregateAttestation extends RestApiEndpoint {
             .queryParamRequired(SLOT_PARAM)
             .response(HttpStatusCodes.SC_OK, "Request successful", getResponseType(spec))
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.provider = provider;
   }

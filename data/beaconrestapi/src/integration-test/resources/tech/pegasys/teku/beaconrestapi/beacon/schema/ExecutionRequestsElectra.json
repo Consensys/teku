@@ -1,0 +1,25 @@
+{
+  "title" : "ExecutionRequestsElectra",
+  "type" : "object",
+  "required" : [ "deposits", "withdrawals", "consolidations" ],
+  "properties" : {
+    "deposits" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/DepositRequest"
+      }
+    },
+    "withdrawals" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/WithdrawalRequest"
+      }
+    },
+    "consolidations" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/ConsolidationRequest"
+      }
+    }
+  }
+}

@@ -51,7 +51,9 @@ public class BeaconStateBuilderDeneb
 
   @Override
   protected BeaconStateDeneb getEmptyState() {
-    return BeaconStateSchemaDeneb.create(spec.getConfig()).createEmpty();
+    return BeaconStateSchemaDeneb.create(
+            spec.getConfig(), spec.getSchemaDefinitions().getSchemaRegistry())
+        .createEmpty();
   }
 
   @Override

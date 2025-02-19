@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -288,6 +289,33 @@ class CombinedChainDataClientTest {
         SafeFutureAssert.safeJoin(
             client.getBlobSidecarByBlockRootAndIndex(blockRoot, sidecar.getIndex()));
     assertThat(incorrectResult).isEmpty();
+  }
+
+  @Test
+  void getBestFinalizedState_fetchesFinalizedState()
+      throws ExecutionException, InterruptedException {
+    final Checkpoint finalized = dataStructureUtil.randomCheckpoint(1024);
+    when(recentChainData.getStore()).thenReturn(store);
+    final UInt64 slot = spec.computeStartSlotAtEpoch(UInt64.valueOf(1024));
+    final BeaconState state = dataStructureUtil.randomBeaconState(slot);
+    when(store.getFinalizedCheckpoint()).thenReturn(finalized);
+    when(recentChainData.getBlockRootInEffectBySlot(any()))
+        .thenReturn(Optional.of(state.getLatestBlockHeader().getBodyRoot()));
+    when(store.retrieveStateAtSlot(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
+
+    final SafeFuture<Optional<BeaconState>> maybeFinalizedState = client.getBestFinalizedState();
+    // don't care about result, checking we called the right function with the right slot
+
+    assertThat(maybeFinalizedState.get().orElseThrow().getSlot()).isEqualTo(slot);
+    verify(recentChainData, times(1)).getBlockRootInEffectBySlot(slot);
+  }
+
+  @Test
+  void getBestFinalizedState_gracefulIfNotReady() throws ExecutionException, InterruptedException {
+    when(recentChainData.getStore()).thenReturn(null);
+    final SafeFuture<Optional<BeaconState>> maybeFinalizedState = client.getBestFinalizedState();
+    assertThat(maybeFinalizedState.get()).isEmpty();
   }
 
   private void setupGetBlobSidecar(

@@ -39,10 +39,10 @@ public class CapellaRemoteSignerAcceptanceTest extends AcceptanceTestBase {
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
-  void denebWithRemoteSigner() throws Exception {
+  void capellaWithRemoteSigner() throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
-        currentTime.intValue() + 10; // genesis in 10 seconds to give node time to start
+        currentTime.intValue() + 30; // genesis needs added time for nodes to startup
 
     final Web3SignerNode web3SignerNode =
         createWeb3SignerNode(
@@ -95,7 +95,7 @@ public class CapellaRemoteSignerAcceptanceTest extends AcceptanceTestBase {
     final Map<String, String> genesisOverrides = Map.of("shanghaiTime", String.valueOf(shanghai));
 
     return createBesuNode(
-        BesuDockerVersion.DEVELOP,
+        BesuDockerVersion.STABLE,
         config ->
             config
                 .withMergeSupport()

@@ -32,10 +32,10 @@ public class AttestationPhase0Schema
     extends ContainerSchema3<AttestationPhase0, SszBitlist, AttestationData, SszSignature>
     implements AttestationSchema<AttestationPhase0> {
 
-  public AttestationPhase0Schema(final long maxValidatorPerAttestation) {
+  public AttestationPhase0Schema(final long maxValidatorsPerAttestation) {
     super(
         "AttestationPhase0",
-        namedSchema("aggregation_bits", SszBitlistSchema.create(maxValidatorPerAttestation)),
+        namedSchema("aggregation_bits", SszBitlistSchema.create(maxValidatorsPerAttestation)),
         namedSchema("data", AttestationData.SSZ_SCHEMA),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
   }

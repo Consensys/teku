@@ -60,9 +60,7 @@ public class AltairStateUpgrade implements StateUpgrade<BeaconStateAltair> {
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
     final int validatorCount = preState.getValidators().size();
 
-    return schemaDefinitions
-        .getBeaconStateSchema()
-        .createEmpty()
+    return BeaconStateAltair.required(schemaDefinitions.getBeaconStateSchema().createEmpty())
         .updatedAltair(
             state -> {
               BeaconStateFields.copyCommonFieldsFromSource(state, preState);

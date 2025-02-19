@@ -14,6 +14,7 @@
 package tech.pegasys.teku.test.acceptance.dsl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.DATA_PATH;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.JWT_SECRET_FILE_PATH;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.METRICS_PORT;
@@ -176,15 +177,19 @@ public class TekuNodeConfigBuilder {
     LOG.debug("Xtrusted-setup={}", TRUSTED_SETUP_FILE);
     configMap.put("Xtrusted-setup", TRUSTED_SETUP_FILE);
     final URL trustedSetupResource = Eth2NetworkConfiguration.class.getResource(trustedSetup);
-    assert trustedSetupResource != null;
+    assertThat(trustedSetupResource).isNotNull();
     configFileMap.put(copyToTmpFile(trustedSetupResource), TRUSTED_SETUP_FILE);
     return this;
   }
 
   public TekuNodeConfigBuilder withExecutionEngine(final BesuNode node) {
     mustBe(NodeType.BEACON_NODE);
-    LOG.debug("ee-endpoint={}", node.getInternalEngineJsonRpcUrl());
-    configMap.put("ee-endpoint", node.getInternalEngineJsonRpcUrl());
+    return withExecutionEngineEndpoint(node.getInternalEngineJsonRpcUrl());
+  }
+
+  public TekuNodeConfigBuilder withExecutionEngineEndpoint(final String engineEndpointUrl) {
+    LOG.debug("ee-endpoint={}", engineEndpointUrl);
+    configMap.put("ee-endpoint", engineEndpointUrl);
     return this;
   }
 
@@ -196,19 +201,24 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
-  public TekuNodeConfigBuilder withTerminalBlockHash(final String terminalBlockHash) {
+  public TekuNodeConfigBuilder withTerminalBlockHash(
+      final String terminalBlockHash, final long terminalBlockHashEpoch) {
     mustBe(NodeType.BEACON_NODE);
 
     LOG.debug("Xnetwork-terminal-block-hash-override={}", terminalBlockHash);
+    LOG.debug("Xnetwork-terminal-block-hash-epoch-override={}", terminalBlockHashEpoch);
     configMap.put("Xnetwork-terminal-block-hash-override", terminalBlockHash);
+    configMap.put("Xnetwork-terminal-block-hash-epoch-override", terminalBlockHashEpoch);
 
     specConfigModifier =
         specConfigModifier.andThen(
             specConfigBuilder ->
                 specConfigBuilder.bellatrixBuilder(
                     bellatrixBuilder ->
-                        bellatrixBuilder.terminalBlockHash(
-                            Bytes32.fromHexString(terminalBlockHash))));
+                        bellatrixBuilder
+                            .terminalBlockHash(Bytes32.fromHexString(terminalBlockHash))
+                            .terminalBlockHashActivationEpoch(
+                                UInt64.valueOf(terminalBlockHashEpoch))));
     return this;
   }
 
@@ -417,6 +427,12 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withSubscribeAllSubnetsEnabled() {
+    LOG.debug("p2p-subscribe-all-subnets-enabled=true");
+    configMap.put("p2p-subscribe-all-subnets-enabled", true);
+    return this;
+  }
+
   public TekuNodeConfigBuilder withDepositsFrom(final BesuNode eth1Node) {
     mustBe(NodeType.BEACON_NODE);
     configMap.put("Xinterop-enabled", false);
@@ -521,6 +537,12 @@ public class TekuNodeConfigBuilder {
     LOG.debug("validators-proposer-default-fee-recipient={}", validatorProposerDefaultFeeRecipient);
     configMap.put(
         "validators-proposer-default-fee-recipient", validatorProposerDefaultFeeRecipient);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withBeaconNodeSszBlocksEnabled(final boolean enabled) {
+    LOG.debug("beacon-node-ssz-blocks-enabled={}", enabled);
+    configMap.put("beacon-node-ssz-blocks-enabled", enabled);
     return this;
   }
 

@@ -295,6 +295,7 @@ class DiscoveryNetworkTest {
         schemaDefinitions.getSyncnetsENRFieldSchema().getDefault();
     return new DiscoveryPeer(
         BLSPublicKey.empty().toSSZBytes(),
+        Bytes32.ZERO,
         InetSocketAddress.createUnresolved("yo", 9999),
         maybeForkId,
         SszBitvectorSchema.create(spec.getNetworkingConfig().getAttestationSubnetCount())

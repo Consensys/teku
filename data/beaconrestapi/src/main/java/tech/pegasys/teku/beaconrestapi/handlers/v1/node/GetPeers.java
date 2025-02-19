@@ -23,10 +23,10 @@ import static tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength.NO_
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
+import tech.pegasys.teku.api.peer.Eth2PeerWithEnr;
 import tech.pegasys.teku.api.response.v1.node.Direction;
 import tech.pegasys.teku.api.response.v1.node.State;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -34,7 +34,6 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
 public class GetPeers extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/node/peers";
@@ -45,8 +44,8 @@ public class GetPeers extends RestApiEndpoint {
   private static final DeserializableTypeDefinition<Direction> DIRECTION_TYPE =
       DeserializableTypeDefinition.enumOf(Direction.class);
 
-  static final SerializableTypeDefinition<Eth2Peer> PEER_DATA_TYPE =
-      SerializableTypeDefinition.object(Eth2Peer.class)
+  static final SerializableTypeDefinition<Eth2PeerWithEnr> PEER_DATA_TYPE =
+      SerializableTypeDefinition.object(Eth2PeerWithEnr.class)
           .name("Peer")
           .withField(
               "peer_id",
@@ -54,32 +53,33 @@ public class GetPeers extends RestApiEndpoint {
                   "Cryptographic hash of a peer’s public key. "
                       + "'[Read more](https://docs.libp2p.io/concepts/peer-id/)",
                   "QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N"),
-              eth2Peer -> eth2Peer.getId().toBase58())
+              eth2Peer -> eth2Peer.peer().getId().toBase58())
           .withOptionalField(
               "enr",
               string(
-                  "Ethereum node record. Not currently populated. "
-                      + "[Read more](https://eips.ethereum.org/EIPS/eip-778)",
+                  "Ethereum node record. " + "[Read more](https://eips.ethereum.org/EIPS/eip-778)",
                   "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrk"
                       + "Tfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYp"
                       + "Ma2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8"),
-              eth2Peer -> Optional.empty())
+              Eth2PeerWithEnr::enr)
           .withField(
               "last_seen_p2p_address",
               string(
                   "Multiaddr used in last peer connection. "
                       + "[Read more](https://docs.libp2p.io/reference/glossary/#multiaddr)",
                   "/ip4/7.7.7.7/tcp/4242/p2p/QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N"),
-              eth2Peer -> eth2Peer.getAddress().toExternalForm())
+              eth2Peer -> eth2Peer.peer().getAddress().toExternalForm())
           .withField(
               "state",
               STATE_TYPE,
-              eth2Peer -> eth2Peer.isConnected() ? State.connected : State.disconnected)
+              eth2Peer -> eth2Peer.peer().isConnected() ? State.connected : State.disconnected)
           .withField(
               "direction",
               DIRECTION_TYPE,
               eth2Peer ->
-                  eth2Peer.connectionInitiatedLocally() ? Direction.outbound : Direction.inbound)
+                  eth2Peer.peer().connectionInitiatedLocally()
+                      ? Direction.outbound
+                      : Direction.inbound)
           .build();
 
   private static final SerializableTypeDefinition<Integer> PEERS_META_TYPE =
@@ -119,19 +119,19 @@ public class GetPeers extends RestApiEndpoint {
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    request.respondOk(new PeersData(network.getEth2Peers()), NO_CACHE);
+    request.respondOk(new PeersData(network.getEth2PeersWithEnr()), NO_CACHE);
   }
 
   static class PeersData {
-    private final List<Eth2Peer> peers;
+    private final List<Eth2PeerWithEnr> peers;
     private final Integer count;
 
-    PeersData(final List<Eth2Peer> peers) {
+    PeersData(final List<Eth2PeerWithEnr> peers) {
       this.peers = peers;
       this.count = peers.size();
     }
 
-    public List<Eth2Peer> getPeers() {
+    public List<Eth2PeerWithEnr> getPeers() {
       return peers;
     }
 

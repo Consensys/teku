@@ -38,7 +38,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
@@ -47,7 +46,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -55,7 +53,9 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
@@ -137,8 +137,10 @@ class AttestationProductionDutyTest {
   public void shouldPublishProducedAttestationsWhenSomeUnsignedAttestationsCanNotBeCreated() {
     final Validator validator1 = createValidator();
     final Validator validator2 = createValidator();
+    final int validator1Index = 10;
     final int validator1CommitteeIndex = 0;
     final int validator1CommitteePosition = 5;
+    final int validator2Index = 20;
     final int validator2CommitteeIndex = 1;
     final int validator2CommitteePosition = 3;
     final int validator2CommitteeSize = 8;
@@ -148,6 +150,7 @@ class AttestationProductionDutyTest {
     final Attestation expectedAttestation =
         expectSignAttestation(
             validator2,
+            validator2Index,
             validator2CommitteeIndex,
             validator2CommitteePosition,
             validator2CommitteeSize,
@@ -155,13 +158,13 @@ class AttestationProductionDutyTest {
 
     final SafeFuture<Optional<AttestationData>> attestationResult1 =
         duty.addValidator(
-            validator1, validator1CommitteeIndex, validator1CommitteePosition, 10, 11);
+            validator1, validator1CommitteeIndex, validator1CommitteePosition, validator1Index, 11);
     final SafeFuture<Optional<AttestationData>> attestationResult2 =
         duty.addValidator(
             validator2,
             validator2CommitteeIndex,
             validator2CommitteePosition,
-            10,
+            validator2Index,
             validator2CommitteeSize);
 
     performAndReportDuty();
@@ -190,8 +193,10 @@ class AttestationProductionDutyTest {
   public void shouldPublishProducedAttestationsWhenSomeUnsignedAttestationsFail() {
     final Validator validator1 = createValidator();
     final Validator validator2 = createValidator();
+    final int validator1Index = 10;
     final int validator1CommitteeIndex = 0;
     final int validator1CommitteePosition = 5;
+    final int validator2Index = 20;
     final int validator2CommitteeIndex = 1;
     final int validator2CommitteePosition = 3;
     final int validator2CommitteeSize = 12;
@@ -202,6 +207,7 @@ class AttestationProductionDutyTest {
     final Attestation expectedAttestation =
         expectSignAttestation(
             validator2,
+            validator2Index,
             validator2CommitteeIndex,
             validator2CommitteePosition,
             validator2CommitteeSize,
@@ -209,13 +215,13 @@ class AttestationProductionDutyTest {
 
     final SafeFuture<Optional<AttestationData>> attestationResult1 =
         duty.addValidator(
-            validator1, validator1CommitteeIndex, validator1CommitteePosition, 10, 11);
+            validator1, validator1CommitteeIndex, validator1CommitteePosition, validator1Index, 11);
     final SafeFuture<Optional<AttestationData>> attestationResult2 =
         duty.addValidator(
             validator2,
             validator2CommitteeIndex,
             validator2CommitteePosition,
-            10,
+            validator2Index,
             validator2CommitteeSize);
 
     performAndReportDuty();
@@ -243,8 +249,10 @@ class AttestationProductionDutyTest {
     final Validator validator1 = createValidator();
     final Validator validator2 = createValidator();
     final int committeeIndex = 0;
+    final int validator1Index = 10;
     final int validator1CommitteePosition = 5;
     final int validator2CommitteePosition = 3;
+    final int validator2Index = 20;
     final int validator1CommitteeSize = 23;
     final int validator2CommitteeSize = 39;
     final AttestationData attestationData = expectCreateAttestationData(committeeIndex);
@@ -254,6 +262,7 @@ class AttestationProductionDutyTest {
     final Attestation expectedAttestation =
         expectSignAttestation(
             validator2,
+            validator2Index,
             committeeIndex,
             validator2CommitteePosition,
             validator2CommitteeSize,
@@ -261,10 +270,18 @@ class AttestationProductionDutyTest {
 
     final SafeFuture<Optional<AttestationData>> attestationResult1 =
         duty.addValidator(
-            validator1, committeeIndex, validator1CommitteePosition, 10, validator1CommitteeSize);
+            validator1,
+            committeeIndex,
+            validator1CommitteePosition,
+            validator1Index,
+            validator1CommitteeSize);
     final SafeFuture<Optional<AttestationData>> attestationResult2 =
         duty.addValidator(
-            validator2, committeeIndex, validator2CommitteePosition, 10, validator2CommitteeSize);
+            validator2,
+            committeeIndex,
+            validator2CommitteePosition,
+            validator2Index,
+            validator2CommitteeSize);
 
     performAndReportDuty();
     assertThat(attestationResult1).isCompletedWithValue(Optional.of(attestationData));
@@ -288,6 +305,7 @@ class AttestationProductionDutyTest {
 
   @TestTemplate
   public void shouldCreateAttestationForSingleValidator() {
+    final int validatorIndex = 10;
     final int committeeIndex = 3;
     final int committeePosition = 6;
     final int committeeSize = 22;
@@ -296,10 +314,16 @@ class AttestationProductionDutyTest {
     final AttestationData attestationData = expectCreateAttestationData(committeeIndex);
     final Attestation expectedAttestation =
         expectSignAttestation(
-            validator, committeeIndex, committeePosition, committeeSize, attestationData);
+            validator,
+            validatorIndex,
+            committeeIndex,
+            committeePosition,
+            committeeSize,
+            attestationData);
 
     final SafeFuture<Optional<AttestationData>> attestationResult =
-        duty.addValidator(validator, committeeIndex, committeePosition, 10, committeeSize);
+        duty.addValidator(
+            validator, committeeIndex, committeePosition, validatorIndex, committeeSize);
     performAndReportDuty();
     assertThat(attestationResult).isCompletedWithValue(Optional.of(attestationData));
 
@@ -316,6 +340,7 @@ class AttestationProductionDutyTest {
 
   @TestTemplate
   void shouldReportFailureWhenAttestationIsInvalid() {
+    final int validatorIndex = 10;
     final int committeeIndex = 3;
     final int committeePosition = 6;
     final int committeeSize = 22;
@@ -324,7 +349,7 @@ class AttestationProductionDutyTest {
     final AttestationData attestationData = expectCreateAttestationData(committeeIndex);
     final Attestation expectedAttestation =
         expectSignAttestation(
-            validator, committeeIndex, committeePosition, committeeSize, attestationData);
+            validator, 10, committeeIndex, committeePosition, committeeSize, attestationData);
 
     when(validatorApiChannel.sendSignedAttestations(List.of(expectedAttestation)))
         .thenReturn(
@@ -332,7 +357,8 @@ class AttestationProductionDutyTest {
                 List.of(new SubmitDataError(UInt64.ZERO, "Naughty attestation"))));
 
     final SafeFuture<Optional<AttestationData>> attestationResult =
-        duty.addValidator(validator, committeeIndex, committeePosition, 10, committeeSize);
+        duty.addValidator(
+            validator, committeeIndex, committeePosition, validatorIndex, committeeSize);
     performAndReportDuty();
     assertThat(attestationResult).isCompletedWithValue(Optional.of(attestationData));
 
@@ -358,6 +384,9 @@ class AttestationProductionDutyTest {
   public void shouldCreateAttestationForMultipleValidatorsInSameCommittee() {
     final int committeeIndex = 3;
     final int committeeSize = 33;
+    final int validator1Index = 10;
+    final int validator2Index = 20;
+    final int validator3Index = 30;
     final int validator1CommitteePosition = 6;
     final int validator2CommitteePosition = 2;
     final int validator3CommitteePosition = 5;
@@ -369,6 +398,7 @@ class AttestationProductionDutyTest {
     final Attestation expectedAttestation1 =
         expectSignAttestation(
             validator1,
+            validator1Index,
             committeeIndex,
             validator1CommitteePosition,
             committeeSize,
@@ -376,6 +406,7 @@ class AttestationProductionDutyTest {
     final Attestation expectedAttestation2 =
         expectSignAttestation(
             validator2,
+            validator2Index,
             committeeIndex,
             validator2CommitteePosition,
             committeeSize,
@@ -383,6 +414,7 @@ class AttestationProductionDutyTest {
     final Attestation expectedAttestation3 =
         expectSignAttestation(
             validator3,
+            validator3Index,
             committeeIndex,
             validator3CommitteePosition,
             committeeSize,
@@ -390,13 +422,25 @@ class AttestationProductionDutyTest {
 
     final SafeFuture<Optional<AttestationData>> attestationResult1 =
         duty.addValidator(
-            validator1, committeeIndex, validator1CommitteePosition, 10, committeeSize);
+            validator1,
+            committeeIndex,
+            validator1CommitteePosition,
+            validator1Index,
+            committeeSize);
     final SafeFuture<Optional<AttestationData>> attestationResult2 =
         duty.addValidator(
-            validator2, committeeIndex, validator2CommitteePosition, 10, committeeSize);
+            validator2,
+            committeeIndex,
+            validator2CommitteePosition,
+            validator2Index,
+            committeeSize);
     final SafeFuture<Optional<AttestationData>> attestationResult3 =
         duty.addValidator(
-            validator3, committeeIndex, validator3CommitteePosition, 10, committeeSize);
+            validator3,
+            committeeIndex,
+            validator3CommitteePosition,
+            validator3Index,
+            committeeSize);
     performAndReportDuty();
     assertThat(attestationResult1).isCompletedWithValue(Optional.of(attestationData));
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(attestationData));
@@ -428,6 +472,9 @@ class AttestationProductionDutyTest {
     final int committeeIndex2 = 1;
     final int committeeSize1 = 15;
     final int committeeSize2 = 20;
+    final int validator1Index = 10;
+    final int validator2Index = 20;
+    final int validator3Index = 30;
     final int validator1CommitteePosition = 6;
     final int validator2CommitteePosition = 2;
     final int validator3CommitteePosition = 5;
@@ -440,6 +487,7 @@ class AttestationProductionDutyTest {
     final Attestation expectedAttestation1 =
         expectSignAttestation(
             validator1,
+            validator1Index,
             committeeIndex1,
             validator1CommitteePosition,
             committeeSize1,
@@ -447,6 +495,7 @@ class AttestationProductionDutyTest {
     final Attestation expectedAttestation2 =
         expectSignAttestation(
             validator2,
+            validator2Index,
             committeeIndex2,
             validator2CommitteePosition,
             committeeSize2,
@@ -454,6 +503,7 @@ class AttestationProductionDutyTest {
     final Attestation expectedAttestation3 =
         expectSignAttestation(
             validator3,
+            validator3Index,
             committeeIndex1,
             validator3CommitteePosition,
             committeeSize1,
@@ -461,13 +511,25 @@ class AttestationProductionDutyTest {
 
     final SafeFuture<Optional<AttestationData>> attestationResult1 =
         duty.addValidator(
-            validator1, committeeIndex1, validator1CommitteePosition, 10, committeeSize1);
+            validator1,
+            committeeIndex1,
+            validator1CommitteePosition,
+            validator1Index,
+            committeeSize1);
     final SafeFuture<Optional<AttestationData>> attestationResult2 =
         duty.addValidator(
-            validator2, committeeIndex2, validator2CommitteePosition, 10, committeeSize2);
+            validator2,
+            committeeIndex2,
+            validator2CommitteePosition,
+            validator2Index,
+            committeeSize2);
     final SafeFuture<Optional<AttestationData>> attestationResult3 =
         duty.addValidator(
-            validator3, committeeIndex1, validator3CommitteePosition, 10, committeeSize1);
+            validator3,
+            committeeIndex1,
+            validator3CommitteePosition,
+            validator3Index,
+            committeeSize1);
 
     performAndReportDuty();
     assertThat(attestationResult1).isCompletedWithValue(Optional.of(unsignedAttestation1));
@@ -507,6 +569,7 @@ class AttestationProductionDutyTest {
 
   private Attestation expectSignAttestation(
       final Validator validator,
+      final int validatorIndex,
       final int committeeIndex,
       final int committeePosition,
       final int committeeSize,
@@ -516,7 +579,12 @@ class AttestationProductionDutyTest {
         .thenReturn(completedFuture(signature));
 
     return createExpectedAttestation(
-        attestationData, committeeIndex, committeePosition, committeeSize, signature);
+        attestationData,
+        validatorIndex,
+        committeeIndex,
+        committeePosition,
+        committeeSize,
+        signature);
   }
 
   private AttestationData expectCreateAttestationData(final int committeeIndex) {
@@ -528,26 +596,34 @@ class AttestationProductionDutyTest {
 
   private Attestation createExpectedAttestation(
       final AttestationData attestationData,
+      final int validatorIndex,
       final int committeeIndex,
       final int committeePosition,
       final int committeeSize,
       final BLSSignature signature) {
+    final SchemaDefinitions schemaDefinitions =
+        spec.atSlot(attestationData.getSlot()).getSchemaDefinitions();
+
+    if (schemaDefinitions.toVersionElectra().isPresent()) {
+      final SingleAttestationSchema attestationSchema =
+          schemaDefinitions.toVersionElectra().orElseThrow().getSingleAttestationSchema();
+
+      return attestationSchema.create(
+          UInt64.valueOf(committeeIndex),
+          UInt64.valueOf(validatorIndex),
+          attestationData,
+          signature);
+    }
+
+    // Phase 0
+
     final AttestationSchema<?> attestationSchema =
         spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema();
     final SszBitlist expectedAggregationBits =
         attestationSchema.getAggregationBitsSchema().ofBits(committeeSize, committeePosition);
 
-    final Supplier<SszBitvector> committeeBits;
-
-    if (spec.atSlot(attestationData.getSlot()).getMilestone().isGreaterThanOrEqualTo(ELECTRA)) {
-      committeeBits =
-          () -> attestationSchema.getCommitteeBitsSchema().orElseThrow().ofBits(committeeIndex);
-    } else {
-      committeeBits = () -> null;
-    }
-
     return attestationSchema.create(
-        expectedAggregationBits, attestationData, signature, committeeBits);
+        expectedAggregationBits, attestationData, signature, () -> null);
   }
 
   private void performAndReportDuty() {

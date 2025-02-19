@@ -62,11 +62,8 @@ public class GetSyncCommitteeRewardsIntegrationTest
 
   @Test
   public void handleEmptyRequestBodyList() throws IOException {
-    final List<String> requestBody = List.of();
     final Response response1 =
-        post(
-            GetSyncCommitteeRewards.ROUTE.replace("{block_id}", "head"),
-            jsonProvider.objectToJSON(requestBody));
+        post(GetSyncCommitteeRewards.ROUTE.replace("{block_id}", "head"), "[]");
 
     final SyncCommitteeRewardData data = new SyncCommitteeRewardData(false, false);
     data.increaseReward(0, 11180L);
@@ -99,10 +96,10 @@ public class GetSyncCommitteeRewardsIntegrationTest
   @Test
   public void shouldReturnBadRequestWhenOutOfValidatorRange() throws IOException {
     final List<String> requestBody = List.of("9a");
-    Response response =
+    final Response response =
         post(
             GetSyncCommitteeRewards.ROUTE.replace("{block_id}", "head"),
-            jsonProvider.objectToJSON(requestBody));
+            OBJECT_MAPPER.writeValueAsString(requestBody));
 
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.body().string())
@@ -113,10 +110,10 @@ public class GetSyncCommitteeRewardsIntegrationTest
   @SuppressWarnings("unchecked")
   public void shouldReturnValueOnlyForValidatorsInCommittee() throws Exception {
     final List<String> requestBody = List.of("1", "6", "0");
-    Response response =
+    final Response response =
         post(
             GetSyncCommitteeRewards.ROUTE.replace("{block_id}", "head"),
-            jsonProvider.objectToJSON(requestBody));
+            OBJECT_MAPPER.writeValueAsString(requestBody));
 
     final Map<String, Object> body = JsonTestUtil.parse(response.body().string());
     final ArrayList<HashMap<String, String>> data =
@@ -133,10 +130,10 @@ public class GetSyncCommitteeRewardsIntegrationTest
   @Test
   public void shouldReturnValueOnlyForValidatorsPublicKeysInCommittee() throws IOException {
     final List<String> requestBody = getPubKeysRequestBody(0, 6);
-    Response response =
+    final Response response =
         post(
             GetSyncCommitteeRewards.ROUTE.replace("{block_id}", "head"),
-            jsonProvider.objectToJSON(requestBody));
+            OBJECT_MAPPER.writeValueAsString(requestBody));
 
     final SyncCommitteeRewardData data = new SyncCommitteeRewardData(false, false);
     data.increaseReward(3, 11180L);

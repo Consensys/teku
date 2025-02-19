@@ -151,7 +151,7 @@ public class SlotProcessor {
   }
 
   private void processSlotWhileSyncing(final SyncState currentSyncState) {
-    UInt64 slot = nodeSlot.getValue();
+    final UInt64 slot = nodeSlot.getValue();
     this.forkChoiceTrigger.onSlotStartedWhileSyncing(slot);
     if (currentSyncState == SyncState.AWAITING_EL) {
       eventLog.syncEventAwaitingEL(slot, recentChainData.getHeadSlot(), p2pNetwork.getPeerCount());

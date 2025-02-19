@@ -51,16 +51,31 @@ public class LoggingConfigurator {
   private static final String FILE_MESSAGE_FORMAT =
       "%d{yyyy-MM-dd HH:mm:ss.SSSZZZ} | %t | %-5level | %c{1} | %msg%n";
   private static final AtomicBoolean COLOR = new AtomicBoolean();
-
-  private static LoggingDestination destination;
-  private static boolean includeEvents;
-  private static boolean includeValidatorDuties;
-  private static boolean includeP2pWarnings;
-  private static String file;
-  private static String filePattern;
-  private static Level rootLogLevel = Level.INFO;
-  private static int dbOpAlertThresholdMillis;
   private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
+
+  @SuppressWarnings("NonFinalStaticField")
+  private static LoggingDestination destination;
+
+  @SuppressWarnings("NonFinalStaticField")
+  private static boolean includeEvents;
+
+  @SuppressWarnings("NonFinalStaticField")
+  private static boolean includeValidatorDuties;
+
+  @SuppressWarnings("NonFinalStaticField")
+  private static boolean includeP2pWarnings;
+
+  @SuppressWarnings("NonFinalStaticField")
+  private static String file;
+
+  @SuppressWarnings("NonFinalStaticField")
+  private static String filePattern;
+
+  @SuppressWarnings("NonFinalStaticField")
+  private static Level rootLogLevel = Level.INFO;
+
+  @SuppressWarnings("NonFinalStaticField")
+  private static int dbOpAlertThresholdMillis;
 
   public static boolean isColorEnabled() {
     return COLOR.get();

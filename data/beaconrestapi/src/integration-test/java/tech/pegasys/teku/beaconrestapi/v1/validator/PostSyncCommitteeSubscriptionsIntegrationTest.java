@@ -18,14 +18,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.io.IOException;
-import java.util.List;
 import okhttp3.Response;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncCommitteeSubscriptions;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -37,19 +33,18 @@ public class PostSyncCommitteeSubscriptionsIntegrationTest
   @Test
   public void shouldReturnBadRequestWhenRequestBodyIsEmpty() throws Exception {
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
-    Response response = post(PostSyncCommitteeSubscriptions.ROUTE, jsonProvider.objectToJSON(""));
-    Assertions.assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+    checkEmptyBodyToRoute(PostSyncCommitteeSubscriptions.ROUTE, SC_BAD_REQUEST);
   }
 
   @Test
   void shouldPostSubscriptions() throws IOException {
     when(validatorApiChannel.subscribeToSyncCommitteeSubnets(any()))
         .thenReturn(SafeFuture.COMPLETE);
-    final List<SyncCommitteeSubnetSubscription> validators =
-        List.of(new SyncCommitteeSubnetSubscription(ONE, List.of(ONE), ONE));
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
-    Response response =
-        post(PostSyncCommitteeSubscriptions.ROUTE, jsonProvider.objectToJSON(validators));
+    final Response response =
+        post(
+            PostSyncCommitteeSubscriptions.ROUTE,
+            "[{\"validator_index\":\"1\",\"sync_committee_indices\":[\"1\"],\"until_epoch\":\"1\"}]");
     assertThat(response.code()).isEqualTo(SC_OK);
   }
 }

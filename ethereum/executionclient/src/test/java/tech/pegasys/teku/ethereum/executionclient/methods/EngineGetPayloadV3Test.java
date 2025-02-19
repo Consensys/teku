@@ -140,7 +140,7 @@ class EngineGetPayloadV3Test {
       final UInt256 blockValue,
       final BlobsBundle blobsBundle) {
     return SafeFuture.completedFuture(
-        new Response<>(
+        Response.fromPayloadReceivedAsJson(
             new GetPayloadV3Response(
                 ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload),
                 blockValue,
@@ -150,6 +150,6 @@ class EngineGetPayloadV3Test {
 
   private SafeFuture<Response<GetPayloadV3Response>> dummyFailedResponse(
       final String errorMessage) {
-    return SafeFuture.completedFuture(Response.withErrorMessage(errorMessage));
+    return SafeFuture.completedFuture(Response.fromErrorMessage(errorMessage));
   }
 }

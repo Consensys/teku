@@ -19,13 +19,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
+import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.infrastructure.metrics.StubCounter;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -35,7 +38,9 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -45,52 +50,66 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
+@TestSpecContext(milestone = {PHASE0, ELECTRA})
 public class AttestationGossipManagerTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private Spec spec;
+  private SpecMilestone specMilestone;
+  private DataStructureUtil dataStructureUtil;
+  private RecentChainData recentChainData;
+  private ForkInfo forkInfo;
+  private AttestationGossipManager attestationGossipManager;
 
   @SuppressWarnings("unchecked")
   private final OperationProcessor<ValidatableAttestation> gossipedAttestationProcessor =
       mock(OperationProcessor.class);
 
-  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-  private AttestationGossipManager attestationGossipManager;
+
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  private final ForkInfo forkInfo =
-      new ForkInfo(spec.fork(UInt64.ZERO), dataStructureUtil.randomBytes32());
-  private final AttestationSubnetSubscriptions attestationSubnetSubscriptions =
-      new AttestationSubnetSubscriptions(
-          spec,
-          asyncRunner,
-          gossipNetwork,
-          gossipEncoding,
-          recentChainData,
-          gossipedAttestationProcessor,
-          forkInfo,
-          DebugDataDumper.NOOP);
+
+  private final Int2IntMap committeeSizes = new Int2IntOpenHashMap();
 
   @BeforeEach
-  public void setup() {
+  public void setup(final SpecContext specContext) {
+    spec = specContext.getSpec();
+    specMilestone = specContext.getSpecMilestone();
+    dataStructureUtil = specContext.getDataStructureUtil();
+    recentChainData = MemoryOnlyRecentChainData.create(spec);
+    forkInfo = new ForkInfo(spec.fork(UInt64.ZERO), dataStructureUtil.randomBytes32());
+
+    final AttestationSubnetSubscriptions attestationSubnetSubscriptions =
+        new AttestationSubnetSubscriptions(
+            spec,
+            asyncRunner,
+            gossipNetwork,
+            gossipEncoding,
+            recentChainData,
+            gossipedAttestationProcessor,
+            forkInfo,
+            DebugDataDumper.NOOP);
+
     BeaconChainUtil.create(spec, 0, recentChainData).initializeStorage();
+
     attestationGossipManager =
         new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);
   }
 
-  @Test
-  public void onNewAttestation_afterMatchingAssignment() {
+  @TestTemplate
+  public void onNewAttestation_afterMatchingAssignment(final SpecContext specContext) {
+    specContext.assumeIsOneOf(PHASE0);
     // Create a new DataStructureUtil so that generated attestations are not subject to change
     // when access to the global DataStructureUtil changes
-    DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final Attestation attestation = dataStructureUtil.randomAttestation(3);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final UInt64 slot = UInt64.valueOf(3);
+    final Attestation attestation = dataStructureUtil.randomAttestation(slot);
     final Attestation attestation2 =
         spec.getGenesisSchemaDefinitions()
             .getAttestationSchema()
             .create(
-                dataStructureUtil.randomBitlist(),
+                dataStructureUtil.randomBitlist(slot),
                 dataStructureUtil.randomAttestationData(UInt64.valueOf(13)),
                 dataStructureUtil.randomSignature());
     final int subnetId = computeSubnetId(attestation);
@@ -112,23 +131,30 @@ public class AttestationGossipManagerTest {
     verify(gossipNetwork).gossip(getSubnetTopic(subnetId), serialized2);
   }
 
-  @Test
+  @TestTemplate
   public void onNewAttestation_noMatchingAssignment() {
-    final Attestation attestation = dataStructureUtil.randomAttestation(2);
+    final ValidatableAttestation validatableAttestation = createAttestation(2);
+    final Attestation attestation =
+        getExpectedAttestationFromValidatableAttestation(validatableAttestation);
+
     final int subnetId = computeSubnetId(attestation);
     // Subscribed to different subnet
     attestationGossipManager.subscribeToSubnetId(subnetId + 1);
 
     // Post new attestation
-    attestationGossipManager.onNewAttestation(ValidatableAttestation.from(spec, attestation));
+    attestationGossipManager.onNewAttestation(validatableAttestation);
 
     verify(gossipNetwork).gossip(getSubnetTopic(subnetId), gossipEncoding.encode(attestation));
   }
 
-  @Test
+  @TestTemplate
   public void onNewAttestation_afterDismissal() {
-    final Attestation attestation = dataStructureUtil.randomAttestation(1);
-    final Attestation attestation2 = dataStructureUtil.randomAttestation(1);
+    final ValidatableAttestation validatableAttestation = createAttestation(1);
+    final ValidatableAttestation validatableAttestation2 = createAttestation(1);
+    final Attestation attestation =
+        getExpectedAttestationFromValidatableAttestation(validatableAttestation);
+    final Attestation attestation2 =
+        getExpectedAttestationFromValidatableAttestation(validatableAttestation2);
     // Setup committee assignment
     final int subnetId = computeSubnetId(attestation2);
     final int dismissedSubnetId = computeSubnetId(attestation);
@@ -139,52 +165,80 @@ public class AttestationGossipManagerTest {
 
     // Attestation for dismissed assignment should be ignored
     final Bytes serialized = gossipEncoding.encode(attestation);
-    attestationGossipManager.onNewAttestation(ValidatableAttestation.from(spec, attestation));
+    attestationGossipManager.onNewAttestation(validatableAttestation);
 
     verify(gossipNetwork).gossip(getSubnetTopic(dismissedSubnetId), serialized);
 
     // Attestation for remaining assignment should be processed
     final Bytes serialized2 = gossipEncoding.encode(attestation2);
-    attestationGossipManager.onNewAttestation(ValidatableAttestation.from(spec, attestation2));
+    attestationGossipManager.onNewAttestation(validatableAttestation2);
 
     verify(gossipNetwork).gossip(getSubnetTopic(subnetId), serialized2);
   }
 
-  @Test
+  @TestTemplate
   void onNewAttestation_incrementSuccessCount() {
-    final Attestation attestation = dataStructureUtil.randomAttestation(3);
+    final ValidatableAttestation validatableAttestation = createAttestation(3);
+
     when(gossipNetwork.gossip(any(), any())).thenReturn(SafeFuture.completedFuture(null));
 
     // Attestation for dismissed assignment should be ignored
-    attestationGossipManager.onNewAttestation(ValidatableAttestation.from(spec, attestation));
+    attestationGossipManager.onNewAttestation(validatableAttestation);
 
     assertThat(getPublishSuccessCounterValue()).isEqualTo(1);
     assertThat(getPublishFailureCounterValue()).isZero();
   }
 
-  @Test
+  @TestTemplate
   void onNewAttestation_incrementFailureCount() {
-    final Attestation attestation = dataStructureUtil.randomAttestation();
+    final ValidatableAttestation validatableAttestation = createAttestation(3);
     when(gossipNetwork.gossip(any(), any()))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("Ooops")));
 
     // Attestation for dismissed assignment should be ignored
-    attestationGossipManager.onNewAttestation(ValidatableAttestation.from(spec, attestation));
+    attestationGossipManager.onNewAttestation(validatableAttestation);
 
     assertThat(getPublishSuccessCounterValue()).isZero();
     assertThat(getPublishFailureCounterValue()).isEqualTo(1);
   }
 
+  private ValidatableAttestation createAttestation(final int slot) {
+    final Attestation attestationFromValidators;
+
+    if (specMilestone.isGreaterThanOrEqualTo(ELECTRA)) {
+      attestationFromValidators = dataStructureUtil.randomSingleAttestation(UInt64.valueOf(slot));
+    } else {
+      attestationFromValidators = dataStructureUtil.randomAttestation(slot);
+    }
+
+    final ValidatableAttestation validatableAttestation =
+        ValidatableAttestation.from(spec, attestationFromValidators, committeeSizes);
+
+    if (attestationFromValidators.isSingleAttestation()) {
+      validatableAttestation.convertToAggregatedFormatFromSingleAttestation(
+          dataStructureUtil.randomAttestation(slot));
+    }
+
+    return validatableAttestation;
+  }
+
+  private Attestation getExpectedAttestationFromValidatableAttestation(
+      final ValidatableAttestation validatableAttestation) {
+    if (specMilestone.isGreaterThanOrEqualTo(ELECTRA)) {
+      return validatableAttestation.getUnconvertedAttestation();
+    } else {
+      return validatableAttestation.getAttestation();
+    }
+  }
+
   private long getPublishSuccessCounterValue() {
-    return getPublishCounter().getValue("success");
+    return metricsSystem.getCounterValue(
+        TekuMetricCategory.BEACON, "published_attestation_total", "success");
   }
 
   private long getPublishFailureCounterValue() {
-    return getPublishCounter().getValue("failure");
-  }
-
-  private StubCounter getPublishCounter() {
-    return metricsSystem.getCounter(TekuMetricCategory.BEACON, "published_attestation_total");
+    return metricsSystem.getCounterValue(
+        TekuMetricCategory.BEACON, "published_attestation_total", "failure");
   }
 
   private Integer computeSubnetId(final Attestation attestation) {

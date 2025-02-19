@@ -23,9 +23,7 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.infrastructure.ssz.SszTestUtils;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
@@ -40,7 +38,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@ExtendWith(BouncyCastleExtension.class)
 public abstract class AbstractBeaconStateSchemaTest<
     T extends BeaconState, TMutable extends MutableBeaconState> {
 
@@ -70,18 +67,19 @@ public abstract class AbstractBeaconStateSchemaTest<
 
   @Test
   public void changeSpecConfigTest() {
-    final Spec standardSpec = TestSpecFactory.createMinimalPhase0();
+    final Spec standardSpec = TestSpecFactory.createMinimal(genesisConfig.getMilestone());
     final SpecConfig modifiedConfig =
         SpecConfigLoader.loadConfig(
-            "minimal",
-            b ->
-                b.slotsPerHistoricalRoot(123)
-                    .historicalRootsLimit(123)
-                    .epochsPerEth1VotingPeriod(123)
-                    .validatorRegistryLimit(123L)
-                    .epochsPerHistoricalVector(123)
-                    .epochsPerSlashingsVector(123)
-                    .maxAttestations(123));
+                "minimal",
+                b ->
+                    b.slotsPerHistoricalRoot(123)
+                        .historicalRootsLimit(123)
+                        .epochsPerEth1VotingPeriod(123)
+                        .validatorRegistryLimit(123L)
+                        .epochsPerHistoricalVector(123)
+                        .epochsPerSlashingsVector(123)
+                        .maxAttestations(123))
+            .specConfig();
 
     BeaconState s1 = getSchema(modifiedConfig).createEmpty();
     BeaconState s2 = getSchema(standardSpec.getGenesisSpecConfig()).createEmpty();
@@ -99,7 +97,6 @@ public abstract class AbstractBeaconStateSchemaTest<
 
   @Test
   void roundTripViaSsz() {
-    // TODO - generate random version-specific state
     BeaconState beaconState = randomState();
     Bytes bytes = beaconState.sszSerialize();
     BeaconState state = schema.sszDeserialize(bytes);
@@ -109,9 +106,11 @@ public abstract class AbstractBeaconStateSchemaTest<
   @Test
   public void create_compareDifferentSpecs() {
     final BeaconStateSchema<T, TMutable> minimalState =
-        getSchema(TestSpecFactory.createMinimalPhase0().getGenesisSpecConfig());
+        getSchema(
+            TestSpecFactory.createMinimal(genesisConfig.getMilestone()).getGenesisSpecConfig());
     final BeaconStateSchema<T, TMutable> mainnetState =
-        getSchema(TestSpecFactory.createMainnetPhase0().getGenesisSpecConfig());
+        getSchema(
+            TestSpecFactory.createMainnet(genesisConfig.getMilestone()).getGenesisSpecConfig());
 
     assertThat(minimalState).isNotEqualTo(mainnetState);
   }

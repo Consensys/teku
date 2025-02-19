@@ -241,11 +241,20 @@ public class EventLogger {
     info(reorgEventLog, Color.YELLOW);
   }
 
-  public void networkUpgradeActivated(final UInt64 nodeEpoch, final String upgradeName) {
-    info(
-        String.format(
-            "Milestone   *** Epoch: %s, Activating network upgrade: %s", nodeEpoch, upgradeName),
-        Color.GREEN);
+  public void networkUpgradeActivated(
+      final UInt64 nodeEpoch, final String upgradeName, final String banner) {
+    if (banner.isEmpty()) {
+      info(
+          String.format(
+              "Milestone   *** Epoch: %s, Activating network upgrade: %s", nodeEpoch, upgradeName),
+          Color.GREEN);
+    } else {
+      info(
+          String.format(
+              "Milestone   *** Epoch: %s, Activating network upgrade: %s\n%s",
+              nodeEpoch, upgradeName, banner),
+          Color.GREEN);
+    }
   }
 
   public void terminalPowBlockDetected(final Bytes32 terminalBlockHash) {
@@ -325,11 +334,14 @@ public class EventLogger {
   }
 
   public void builderBidNotHonouringGasLimit(
-      final UInt64 parentGasLimit, final UInt64 proposedGasLimit, final UInt64 preferredGasLimit) {
+      final UInt64 parentGasLimit,
+      final UInt64 proposedGasLimit,
+      final UInt64 expectedGasLimit,
+      final UInt64 preferredGasLimit) {
     String reorgEventLog =
         String.format(
-            "Builder proposed a bid not honouring the validator gas limit preference. Parent: %s - Proposed: %s - Preferred: %s",
-            parentGasLimit, proposedGasLimit, preferredGasLimit);
+            "Builder proposed a bid not honouring the validator gas limit preference. Parent: %s - Proposed: %s - Expected %s - Target: %s",
+            parentGasLimit, proposedGasLimit, expectedGasLimit, preferredGasLimit);
     warn(reorgEventLog, Color.YELLOW);
   }
 

@@ -68,7 +68,7 @@ public class SpecConfigReaderTest {
               processFileAsInputStream(
                   getInvalidConfigPath("unknownField"),
                   source -> reader.readAndApply(source, true));
-              assertAllAltairFieldsSet(reader.build());
+              assertAllAltairFieldsSet(reader.build().specConfig());
             })
         .doesNotThrowAnyException();
   }

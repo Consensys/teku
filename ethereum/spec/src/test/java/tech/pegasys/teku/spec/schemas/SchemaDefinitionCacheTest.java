@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions.NonSchema;
@@ -51,7 +52,8 @@ public class SchemaDefinitionCacheTest {
   @MethodSource("allNetworksWithAllMilestones")
   void shouldGetSchemasForAllMilestonesOnAllNetworks(
       final Eth2Network network, final SpecMilestone specMilestone) {
-    final SpecConfig specConfig = SpecConfigLoader.loadConfigStrict(network.configName());
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
+        SpecConfigLoader.loadConfigStrict(network.configName());
     final Spec spec = SpecFactory.create(specConfig);
     final SchemaDefinitionCache cache = new SchemaDefinitionCache(spec);
     assertThat(cache.getSchemaDefinition(specMilestone)).isNotNull();

@@ -34,15 +34,14 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
   @Test
   void shouldUpgradeToCapella() throws Exception {
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
-    final int genesisTime = currentTime.plus(30).intValue(); // magic node startup time
+    final int genesisTime = currentTime.plus(60).intValue(); // magic node startup time
     final int shanghaiTime = genesisTime + 4 * 2; // 4 slots, 2 seconds each
     final Map<String, String> genesisOverrides =
         Map.of("shanghaiTime", String.valueOf(shanghaiTime));
 
     BesuNode primaryEL =
         createBesuNode(
-            // "Waiting for Besu 24.9.0 release (https://github.com/Consensys/teku/issues/8535)"
-            BesuDockerVersion.DEVELOP,
+            BesuDockerVersion.STABLE,
             config ->
                 config
                     .withMergeSupport()
@@ -52,10 +51,18 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
             genesisOverrides);
     primaryEL.start();
 
+    TekuBeaconNode primaryNode =
+        createTekuBeaconNode(
+            beaconNodeConfigWithForks(genesisTime, primaryEL)
+                .withStartupTargetPeerCount(0)
+                .build());
+
+    primaryNode.start();
+    primaryNode.waitForMilestone(SpecMilestone.CAPELLA);
+
     BesuNode secondaryEL =
         createBesuNode(
-            // "Waiting for Besu 24.9.0 release (https://github.com/Consensys/teku/issues/8535)"
-            BesuDockerVersion.DEVELOP,
+            BesuDockerVersion.STABLE,
             config ->
                 config
                     .withMergeSupport()
@@ -65,15 +72,6 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
             genesisOverrides);
     secondaryEL.start();
     secondaryEL.addPeer(primaryEL);
-
-    TekuBeaconNode primaryNode =
-        createTekuBeaconNode(
-            beaconNodeConfigWithForks(genesisTime, primaryEL)
-                .withStartupTargetPeerCount(0)
-                .build());
-
-    primaryNode.start();
-    primaryNode.waitForMilestone(SpecMilestone.CAPELLA);
 
     final int primaryNodeGenesisTime = primaryNode.getGenesisTime().intValue();
 
@@ -96,7 +94,7 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
         .withAltairEpoch(UInt64.ZERO)
         .withBellatrixEpoch(UInt64.ZERO)
         .withCapellaEpoch(UInt64.ONE)
-        .withTotalTerminalDifficulty(0)
+        .withTerminalBlockHash(DEFAULT_EL_GENESIS_HASH, 0)
         .withGenesisTime(genesisTime)
         .withExecutionEngine(besuNode)
         .withJwtSecretFile(JWT_FILE)

@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
@@ -78,11 +78,14 @@ class ElectraStateUpgradeTest {
     // = (64 *10^9) - (64 *10^9) MOD 10^9
     // = (64 *10^9) - 0
     assertThat(post.getExitBalanceToConsume()).isEqualTo(UInt64.valueOf(64_000_000_000L));
-    assertThat(post.getEarliestExitEpoch()).isEqualTo(slot.dividedBy(8).increment());
+    assertThat(post.getEarliestExitEpoch())
+        .isEqualTo(
+            miscHelpersElectra.computeActivationExitEpoch(
+                spec.computeEpochAtSlot(slot).increment()));
     assertThat(post.getConsolidationBalanceToConsume()).isEqualTo(UInt64.ZERO);
     // 80_000/8 (slots -> epochs) + max_seed_lookahead + 1
     assertThat(post.getEarliestConsolidationEpoch()).isEqualTo(UInt64.valueOf(10005));
-    assertThat(post.getPendingBalanceDeposits()).isEmpty();
+    assertThat(post.getPendingDeposits()).isEmpty();
     assertThat(post.getPendingConsolidations()).isEmpty();
     assertThat(post.getPendingPartialWithdrawals()).isEmpty();
   }
@@ -131,16 +134,19 @@ class ElectraStateUpgradeTest {
 
     final BeaconStateElectra postState = upgrade.upgrade(preState);
 
-    final SszList<PendingBalanceDeposit> pendingBalanceDeposits =
-        postState.getPendingBalanceDeposits();
-    assertThat(pendingBalanceDeposits.size()).isEqualTo(3);
-    assertPendingBalanceDeposit(pendingBalanceDeposits.get(0), 0, maxEffectiveBalance);
+    final SszList<PendingDeposit> pendingDeposits = postState.getPendingDeposits();
+    assertThat(pendingDeposits.size()).isEqualTo(3);
+
+    assertPendingDeposit(
+        pendingDeposits.get(0), postState.getValidators().get(0), maxEffectiveBalance);
     // During Electra fork upgrade, pending balance deposits must be ordered by activation
     // eligibility epoch.
     // Because Validator3 (index = 2) activation eligibility epoch is lower than validator2,
     // Validator3's pending balance deposit must come before Validator2 (index = 1)
-    assertPendingBalanceDeposit(pendingBalanceDeposits.get(1), 2, maxEffectiveBalance);
-    assertPendingBalanceDeposit(pendingBalanceDeposits.get(2), 1, maxEffectiveBalance);
+    assertPendingDeposit(
+        pendingDeposits.get(1), postState.getValidators().get(2), maxEffectiveBalance);
+    assertPendingDeposit(
+        pendingDeposits.get(2), postState.getValidators().get(1), maxEffectiveBalance);
   }
 
   @Test
@@ -185,20 +191,17 @@ class ElectraStateUpgradeTest {
 
     final BeaconStateElectra postState = upgrade.upgrade(preState);
 
-    final SszList<PendingBalanceDeposit> pendingBalanceDeposits =
-        postState.getPendingBalanceDeposits();
-    assertThat(pendingBalanceDeposits.size()).isEqualTo(2);
+    final SszList<PendingDeposit> pendingDeposits = postState.getPendingDeposits();
+    assertThat(pendingDeposits.size()).isEqualTo(2);
     // Compounding validator will have a pending balance deposit only of the excess, in their index
     // order
-    assertPendingBalanceDeposit(pendingBalanceDeposits.get(0), 0, excessBalance);
-    assertPendingBalanceDeposit(pendingBalanceDeposits.get(1), 1, excessBalance);
+    assertPendingDeposit(pendingDeposits.get(0), postState.getValidators().get(0), excessBalance);
+    assertPendingDeposit(pendingDeposits.get(1), postState.getValidators().get(1), excessBalance);
   }
 
-  private void assertPendingBalanceDeposit(
-      final PendingBalanceDeposit pendingBalanceDeposit,
-      final int expectedValidatorIndex,
-      final UInt64 expectedAmount) {
-    assertThat(pendingBalanceDeposit.getIndex()).isEqualTo(expectedValidatorIndex);
-    assertThat(pendingBalanceDeposit.getAmount()).isEqualTo(expectedAmount);
+  private void assertPendingDeposit(
+      final PendingDeposit pendingDeposit, final Validator validator, final UInt64 expectedAmount) {
+    assertThat(pendingDeposit.getPublicKey()).isEqualTo(validator.getPublicKey());
+    assertThat(pendingDeposit.getAmount()).isEqualTo(expectedAmount);
   }
 }

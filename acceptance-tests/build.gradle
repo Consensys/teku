@@ -1,4 +1,6 @@
 dependencies {
+  testImplementation 'io.tmio:tuweni-units'
+
   acceptanceTestImplementation project(":infrastructure:bls")
   acceptanceTestImplementation project(':infrastructure:time')
   acceptanceTestImplementation project(':data:serializer')
@@ -28,7 +30,7 @@ dependencies {
   testFixturesImplementation 'io.libp2p:jvm-libp2p'
   testFixturesImplementation 'org.apache.commons:commons-lang3'
   testFixturesImplementation 'commons-io:commons-io'
-  testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
+  testFixturesImplementation 'io.tmio:tuweni-bytes'
   testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'
   testFixturesImplementation 'org.testcontainers:testcontainers'
   testFixturesImplementation 'org.testcontainers:junit-jupiter'

@@ -122,20 +122,21 @@ public class BuilderBidValidatorImpl implements BuilderBidValidator {
     final UInt64 preferredGasLimit = validatorRegistration.getGasLimit();
     final UInt64 proposedGasLimit = executionPayloadHeader.getGasLimit();
 
-    if (parentGasLimit.equals(preferredGasLimit) && proposedGasLimit.equals(parentGasLimit)) {
-      return;
+    final UInt64 expectedGasLimit = expectedGasLimit(parentGasLimit, preferredGasLimit);
+    if (!expectedGasLimit.equals(proposedGasLimit)) {
+      eventLogger.builderBidNotHonouringGasLimit(
+          parentGasLimit, proposedGasLimit, expectedGasLimit, preferredGasLimit);
     }
+  }
 
-    if (preferredGasLimit.isGreaterThan(parentGasLimit)
-        && proposedGasLimit.isGreaterThan(parentGasLimit)) {
-      return;
+  static UInt64 expectedGasLimit(final UInt64 parentGasLimit, final UInt64 targetGasLimit) {
+    final UInt64 maxGasLimitDifference = parentGasLimit.dividedBy(1024L).minusMinZero(1);
+    if (targetGasLimit.isGreaterThan(parentGasLimit)) {
+      final UInt64 gasDiff = targetGasLimit.minusMinZero(parentGasLimit);
+      return parentGasLimit.plus(maxGasLimitDifference.min(gasDiff));
+    } else {
+      final UInt64 gasDiff = parentGasLimit.minusMinZero(targetGasLimit);
+      return parentGasLimit.minusMinZero(maxGasLimitDifference.min(gasDiff));
     }
-
-    if (preferredGasLimit.isLessThan(parentGasLimit)
-        && proposedGasLimit.isLessThan(parentGasLimit)) {
-      return;
-    }
-
-    eventLogger.builderBidNotHonouringGasLimit(parentGasLimit, proposedGasLimit, preferredGasLimit);
   }
 }

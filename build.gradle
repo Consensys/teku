@@ -1,4 +1,5 @@
 import com.github.jk1.license.filter.LicenseBundleNormalizer
+import groovy.json.JsonSlurper
 import tech.pegasys.internal.license.reporter.GroupedLicenseHtmlRenderer
 import tech.pegasys.teku.depcheck.DepCheckPlugin
 
@@ -20,13 +21,13 @@ buildscript {
 }
 
 plugins {
-  id 'com.diffplug.spotless' version '6.25.0'
-  id 'com.github.ben-manes.versions' version '0.51.0'
+  id 'com.diffplug.spotless' version '7.0.2'
+  id 'com.github.ben-manes.versions' version '0.52.0'
   id 'com.github.jk1.dependency-license-report' version '2.9'
-  id 'io.spring.dependency-management' version '1.1.6'
-  id 'net.ltgt.errorprone' version '4.0.1' apply false
+  id 'io.spring.dependency-management' version '1.1.7'
+  id 'net.ltgt.errorprone' version '4.1.0' apply false
   id 'de.undercouch.download' version '5.6.0'
-  id 'org.ajoberstar.grgit' version '5.2.2'
+  id 'org.ajoberstar.grgit' version '5.3.0'
 }
 
 rootProject.version = calculatePublishVersion()
@@ -249,20 +250,24 @@ allprojects {
       check('ExperimentalCliOptionMustBeCorrectlyDisplayed', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
       // These are experimental checks that we want enabled
-      check('MissingBraces', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('InsecureCryptoUsage', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('WildcardImport', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('ClassName', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('DeduplicateConstants', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('FieldCanBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('InitializeInline', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('InsecureCryptoUsage', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('InterfaceWithOnlyStatics', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('MissingBraces', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('NonFinalStaticField', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('PackageLocation', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('RedundantOverride', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('RedundantThrows', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('StringFormatWithLiteral', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('TruthContainsExactlyElementsInUsage', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('UnnecessarilyFullyQualified', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('InitializeInline', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('ClassName', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('InterfaceWithOnlyStatics', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('PackageLocation', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-      check('FieldCanBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-
+      check('UnnecessaryTestMethodPrefix', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('UseCorrectAssertInTests', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('WildcardImport', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
     }
     options.encoding = 'UTF-8'
 
@@ -318,7 +323,8 @@ allprojects {
   }
 }
 
-def refTestVersion = 'v1.5.0-alpha.5'
+def nightly = System.getenv("NIGHTLY") != null
+def refTestVersion = nightly ? "nightly" : "v1.5.0-beta.1"
 def blsRefTestVersion = 'v0.1.2'
 def slashingProtectionInterchangeRefTestVersion = 'v5.3.0'
 def refTestBaseUrl = 'https://github.com/ethereum/consensus-spec-tests/releases/download'
@@ -329,7 +335,87 @@ def blsRefTestDownloadDir = "${buildDir}/blsRefTests/${blsRefTestVersion}"
 def slashingProtectionInterchangeRefTestDownloadDir = "${buildDir}/slashingProtectionInterchangeRefTests/${slashingProtectionInterchangeRefTestVersion}"
 def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/"
 
-task downloadEthRefTests(type: Download) {
+def downloadFile(String url, String token, File outputFile) {
+  println "Download ${outputFile.getName()} (${url})"
+  def connection = new URL(url).openConnection()
+  connection.setRequestProperty("Authorization", "token ${token}")
+  connection.getInputStream().withCloseable { inputStream ->
+    outputFile.withOutputStream { outputStream ->
+      outputStream << inputStream
+    }
+  }
+}
+
+def downloadArtifacts(String repo, Long runId, String token, String downloadDir) {
+  def artifactsApiUrl = "https://api.github.com/repos/${repo}/actions/runs/${runId}/artifacts"
+  def connection = new URL(artifactsApiUrl).openConnection()
+  connection.setRequestProperty("Authorization", "token ${token}")
+  connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
+
+  def response = new JsonSlurper().parse(connection.getInputStream())
+  if (response.artifacts && response.artifacts.size() > 0) {
+    response.artifacts.each { artifact ->
+      // We can skip the log file
+      if (artifact.name.contains("consensustestgen.log")) {
+        return
+      }
+
+      def fileOutput = new File(downloadDir, "${artifact.name}.zip")
+      downloadFile(artifact.archive_download_url, token, fileOutput)
+      ant.unzip(src: fileOutput, dest: downloadDir)
+      fileOutput.delete()
+    }
+    return true
+  }
+  return false
+}
+
+static def getLatestRunId(String repo, String workflow, String branch, String token) {
+  def apiUrl = "https://api.github.com/repos/${repo}/actions/workflows/${workflow}/runs?branch=${branch}&status=success&per_page=1"
+  def connection = new URL(apiUrl).openConnection()
+  connection.setRequestProperty("Authorization", "token ${token}")
+  connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
+
+  // Query & parse the ID out of the response
+  def response = new JsonSlurper().parse(connection.getInputStream())
+  if (response.workflow_runs && response.workflow_runs.size() > 0) {
+    return response.workflow_runs[0].id
+  }
+  return null
+}
+
+task downloadEthRefTestsNightly {
+  doLast {
+    def repo = "ethereum/consensus-specs"
+    def workflowFileName = "generate_vectors.yml"
+    def branch = "dev"
+
+    // We need a GitHub API token to download the artifacts
+    def githubToken = System.getenv("GITHUB_TOKEN")
+    if (!githubToken) {
+      println "Error: GITHUB_TOKEN environment variable is not set"
+      return
+    }
+
+    // Get the latest workflow run ID
+    def runId = getLatestRunId(repo, workflowFileName, branch, githubToken)
+    if (!runId) {
+      println "Error: Failed to get latest run ID"
+      return
+    }
+
+    // Create the download directory
+    file(refTestDownloadDir).mkdirs()
+
+    // Download artifacts for the run
+    def success = downloadArtifacts(repo, runId, githubToken, refTestDownloadDir)
+    if (!success) {
+      println "Error: Failed to download artifacts"
+    }
+  }
+}
+
+task downloadEthRefTestsStable(type: Download) {
   src([
       "${refTestBaseUrl}/${refTestVersion}/general.tar.gz",
       "${refTestBaseUrl}/${refTestVersion}/minimal.tar.gz",
@@ -337,6 +423,14 @@ task downloadEthRefTests(type: Download) {
   ])
   dest "${refTestDownloadDir}"
   overwrite false
+}
+
+task downloadEthRefTests {
+  if (nightly) {
+    dependsOn tasks.findByName("downloadEthRefTestsNightly")
+  } else {
+    dependsOn tasks.findByName("downloadEthRefTestsStable")
+  }
 }
 
 task downloadBlsRefTests(type: Download) {
@@ -479,11 +573,11 @@ task autocomplete(type: JavaExec) {
 }
 
 installDist {
-  dependsOn checkLicense, autocomplete
+  dependsOn checkLicense, startScripts, autocomplete
 }
 
 distTar {
-  dependsOn checkLicense, autocomplete
+  dependsOn checkLicense, startScripts, autocomplete
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.tar.gz')
   }
@@ -496,7 +590,7 @@ distTar {
 }
 
 distZip {
-  dependsOn checkLicense, autocomplete
+  dependsOn checkLicense, startScripts, autocomplete
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.zip')
   }
@@ -507,6 +601,8 @@ distZip {
 }
 
 startScripts {
+
+  unixStartScriptGenerator.template = resources.text.fromFile("${projectDir}/teku/src/main/scripts/unixStartScript.txt")
 
   def shortenWindowsClasspath = { line ->
     line = line.replaceAll(/^set CLASSPATH=.*$/, "set CLASSPATH=%APP_HOME%/lib/*")
@@ -844,6 +940,11 @@ subprojects {
     propertyTestRuntimeOnly.extendsFrom testRuntimeOnly
     referenceTestRuntimeOnly.extendsFrom testRuntimeOnly
 
+    // exclude until Besu dependencies start using io.consensys.protocols:jc-kzg-4844
+    implementation {
+      exclude(group: "tech.pegasys", module: "jc-kzg-4844")
+    }
+
     // Details at https://github.com/Hakky54/log-captor#using-log-captor-alongside-with-other-logging-libraries
     testImplementation {
       exclude(group: "org.apache.logging.log4j", module: "log4j-slf4j-impl")
@@ -882,7 +983,6 @@ subprojects {
     runtimeOnly 'org.apache.logging.log4j:log4j-core'
     runtimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl'
 
-    testImplementation 'org.apache.tuweni:tuweni-junit'
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.mockito:mockito-core'
     testImplementation 'org.junit.jupiter:junit-jupiter-api'

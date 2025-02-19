@@ -203,7 +203,7 @@ public class StatusLogger {
     }
   }
 
-  public void doppelgangerCheck(final long epoch, final Set<String> publicKeys) {
+  public void doppelgangerCheck(final UInt64 epoch, final Set<String> publicKeys) {
     log.info(
         "Performing doppelganger check. Epoch {}, Public keys {}",
         epoch,
@@ -278,6 +278,10 @@ public class StatusLogger {
     log.info("Storage initialization complete");
   }
 
+  public void emptyChainData() {
+    log.info("Empty storage. Initialization complete.");
+  }
+
   public void recordedFinalizedBlocks(final int numberRecorded, final int totalToRecord) {
     log.info("Recorded {} of {} finalized blocks", numberRecorded, totalToRecord);
   }
@@ -325,12 +329,15 @@ public class StatusLogger {
     }
   }
 
-  public void errorIncompatibleInitialState(final UInt64 epoch) {
-    log.error(
-        "Cannot start with provided initial state for the epoch {}, "
-            + "checkpoint occurred on the empty slot, which is not yet supported.\n"
-            + "If you are using remote checkpoint source, "
-            + "please wait for the next epoch to finalize and retry.",
+  public void warningUnexpectedInitialState(
+      final UInt64 epoch, final UInt64 stateSlot, final UInt64 blockSlot) {
+    log.warn(
+        "Starting from state at slot {}, with block slot {}, which is not an anchor state. "
+            + "Ensure that slots from {} - {} are empty. At epoch {}.",
+        stateSlot,
+        blockSlot,
+        stateSlot,
+        blockSlot,
         epoch);
   }
 
@@ -388,7 +395,7 @@ public class StatusLogger {
     log.info("Storing validator data in: {}", dataPath.toAbsolutePath());
   }
 
-  public void eth1ServiceDown(final long interval) {
+  public void eth1ServiceDown(final UInt64 interval) {
     log.warn("Eth1 service down or still syncing for {}s, retrying", interval);
   }
 

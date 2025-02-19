@@ -41,7 +41,6 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -50,6 +49,8 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private static final Logger LOG = LogManager.getLogger();
+
+  private static final Duration STATUS_RECEIVED_TIMEOUT = Duration.ofSeconds(10);
 
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
@@ -66,7 +67,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private final int eth2RpcOutstandingPingThreshold;
 
   private final Duration eth2StatusUpdateInterval;
-  private final SpecConfig specConfig;
 
   Eth2PeerManager(
       final Spec spec,
@@ -99,7 +99,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     this.eth2RpcPingInterval = eth2RpcPingInterval;
     this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
     this.eth2StatusUpdateInterval = eth2StatusUpdateInterval;
-    this.specConfig = spec.getGenesisSpecConfig();
   }
 
   public static Eth2PeerManager create(
@@ -115,10 +114,12 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final int eth2RpcOutstandingPingThreshold,
       final Duration eth2StatusUpdateInterval,
       final TimeProvider timeProvider,
-      final int peerRateLimit,
+      final int peerBlocksRateLimit,
+      final int peerBlobSidecarsRateLimit,
       final int peerRequestLimit,
       final Spec spec,
-      final KZG kzg) {
+      final KZG kzg,
+      final DiscoveryNodeIdExtractor discoveryNodeIdExtractor) {
 
     final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
     attestationSubnetService.subscribeToUpdates(
@@ -140,9 +141,11 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             metadataMessagesFactory,
             timeProvider,
             requiredCheckpoint,
-            peerRateLimit,
+            peerBlocksRateLimit,
+            peerBlobSidecarsRateLimit,
             peerRequestLimit,
-            kzg),
+            kzg,
+            discoveryNodeIdExtractor),
         statusMessageFactory,
         metadataMessagesFactory,
         rpcEncoding,
@@ -235,7 +238,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                     .ifExceptionGetsHereRaiseABug();
               }
             },
-            Duration.ofSeconds(specConfig.getRespTimeout()))
+            STATUS_RECEIVED_TIMEOUT)
         .finish(
             () -> {},
             error -> {

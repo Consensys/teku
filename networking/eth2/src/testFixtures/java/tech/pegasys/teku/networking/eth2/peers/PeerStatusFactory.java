@@ -44,17 +44,17 @@ public class PeerStatusFactory {
     return new PeerStatus(fork, finalizedRoot, finalizedEpoch, headRoot, headSlot);
   }
 
-  private final UInt64 randomLong(final long min, final long max) {
+  private UInt64 randomLong(final long min, final long max) {
     final int range = Math.toIntExact(max - min);
     final long randomLong = random.nextInt(range) + min;
     return UInt64.valueOf(randomLong);
   }
 
-  private final Bytes32 randomBytes32() {
+  private Bytes32 randomBytes32() {
     return Bytes32.wrap(randomBytes(32));
   }
 
-  private final byte[] randomBytes(final int numBytes) {
+  private byte[] randomBytes(final int numBytes) {
     final byte[] bytes = new byte[numBytes];
     random.nextBytes(bytes);
     return bytes;

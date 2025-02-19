@@ -61,9 +61,12 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
+import java.util.EnumSet;
 import java.util.Locale;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StatusParameter;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
@@ -208,8 +211,12 @@ public class BeaconRestApiTypes {
           TOPICS,
           CoreTypes.string(
               "Event types to subscribe to."
-                  + " Available values include: [`head`, `finalized_checkpoint`, `chain_reorg`, `block`, "
-                  + "`attestation`, `voluntary_exit`, `contribution_and_proof`, `blob_sidecar`]\n\n",
+                  + " Supported event types: ["
+                  + EnumSet.allOf(EventType.class).stream()
+                      .map(val -> "`" + val.toString() + "`")
+                      .sorted()
+                      .collect(Collectors.joining(", "))
+                  + "]",
               "head"));
 
   public static final SerializableTypeDefinition<Bytes32> ROOT_TYPE =
@@ -247,24 +254,20 @@ public class BeaconRestApiTypes {
   public static final ParameterMetadata<SpecMilestone> ETH_CONSENSUS_VERSION_TYPE =
       new ParameterMetadata<>(HEADER_CONSENSUS_VERSION, MILESTONE_TYPE);
 
-  @SuppressWarnings("unchecked")
   public static DeserializableTypeDefinition<Attestation> electraAttestationTypeDef(
       final SchemaDefinitionCache schemaDefinitionCache) {
-    return (DeserializableTypeDefinition<Attestation>)
-        schemaDefinitionCache
-            .getSchemaDefinition(SpecMilestone.ELECTRA)
-            .getAttestationSchema()
-            .getJsonTypeDefinition();
+    return schemaDefinitionCache
+        .getSchemaDefinition(SpecMilestone.ELECTRA)
+        .getAttestationSchema()
+        .getJsonTypeDefinition();
   }
 
-  @SuppressWarnings("unchecked")
   public static DeserializableTypeDefinition<Attestation> phase0AttestationTypeDef(
       final SchemaDefinitionCache schemaDefinitionCache) {
-    return (DeserializableTypeDefinition<Attestation>)
-        schemaDefinitionCache
-            .getSchemaDefinition(SpecMilestone.PHASE0)
-            .getAttestationSchema()
-            .getJsonTypeDefinition();
+    return schemaDefinitionCache
+        .getSchemaDefinition(SpecMilestone.PHASE0)
+        .getAttestationSchema()
+        .getJsonTypeDefinition();
   }
 
   @SuppressWarnings("JavaCase")

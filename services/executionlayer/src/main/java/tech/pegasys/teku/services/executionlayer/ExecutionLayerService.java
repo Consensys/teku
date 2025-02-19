@@ -17,13 +17,11 @@ import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.spec.config.Constants.BUILDER_CALL_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.EL_ENGINE_BLOCK_EXECUTION_TIMEOUT;
-import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_ENDPOINT_PREFIX;
 
 import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -136,26 +134,9 @@ public class ExecutionLayerService extends Service {
       final ExecutionLayerConfiguration config,
       final BuilderCircuitBreaker builderCircuitBreaker) {
     EVENT_LOG.executionLayerStubEnabled();
-    Optional<Bytes32> terminalBlockHashInTTDMode = Optional.empty();
-    if (config.getEngineEndpoint().startsWith(STUB_ENDPOINT_PREFIX + ":0x")) {
-      try {
-        terminalBlockHashInTTDMode =
-            Optional.of(
-                Bytes32.fromHexStringStrict(
-                    config
-                        .getEngineEndpoint()
-                        .substring(STUB_ENDPOINT_PREFIX.length() + ":0x".length())));
-      } catch (Exception ex) {
-        LOG.warn("Unable to parse terminal block hash from stub endpoint.", ex);
-      }
-    }
 
     return new ExecutionLayerManagerStub(
-        config.getSpec(),
-        serviceConfig.getTimeProvider(),
-        true,
-        terminalBlockHashInTTDMode,
-        builderCircuitBreaker);
+        config.getSpec(), serviceConfig.getTimeProvider(), true, builderCircuitBreaker);
   }
 
   private static ExecutionLayerManager createRealExecutionLayerManager(
@@ -201,7 +182,6 @@ public class ExecutionLayerService extends Service {
         EVENT_LOG,
         executionClientHandler,
         builderClient,
-        config.getSpec(),
         metricsSystem,
         new BuilderBidValidatorImpl(config.getSpec(), EVENT_LOG),
         builderCircuitBreaker,

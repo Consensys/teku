@@ -13,10 +13,13 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
+
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
 
 public class ForkInfo {
@@ -61,6 +64,13 @@ public class ForkInfo {
     final ForkInfo forkInfo = (ForkInfo) o;
     return Objects.equals(fork, forkInfo.fork)
         && Objects.equals(genesisValidatorsRoot, forkInfo.genesisValidatorsRoot);
+  }
+
+  public static SerializableTypeDefinition<ForkInfo> getJsonTypeDefinition() {
+    return SerializableTypeDefinition.object(ForkInfo.class)
+        .withField("fork", Fork.SSZ_SCHEMA.getJsonTypeDefinition(), ForkInfo::getFork)
+        .withField("genesis_validators_root", BYTES32_TYPE, ForkInfo::getGenesisValidatorsRoot)
+        .build();
   }
 
   @Override

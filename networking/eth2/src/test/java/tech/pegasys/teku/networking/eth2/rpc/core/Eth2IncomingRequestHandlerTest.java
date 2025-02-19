@@ -113,6 +113,6 @@ public class Eth2IncomingRequestHandlerTest
   @Override
   protected RpcEncoding getRpcEncoding() {
     return RpcEncoding.createSszSnappyEncoding(
-        TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
+        TestSpecFactory.createDefault().getNetworkingConfig().getMaxPayloadSize());
   }
 }

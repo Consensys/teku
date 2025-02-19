@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -72,6 +73,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
+  private final Optional<UInt256> discoveryNodeId;
   private final BeaconChainMethods rpcMethods;
   private final StatusMessageFactory statusMessageFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
@@ -90,11 +92,11 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final Supplier<UInt64> firstSlotSupportingBlobSidecarsByRange;
   private final Supplier<BlobSidecarsByRootRequestMessageSchema>
       blobSidecarsByRootRequestMessageSchema;
-  private final Supplier<Integer> maxBlobsPerBlock;
 
   DefaultEth2Peer(
       final Spec spec,
       final Peer peer,
+      final Optional<UInt256> discoveryNodeId,
       final BeaconChainMethods rpcMethods,
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
@@ -105,6 +107,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final KZG kzg) {
     super(peer);
     this.spec = spec;
+    this.discoveryNodeId = discoveryNodeId;
     this.rpcMethods = rpcMethods;
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
@@ -125,7 +128,11 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                 SchemaDefinitionsDeneb.required(
                         spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
                     .getBlobSidecarsByRootRequestMessageSchema());
-    this.maxBlobsPerBlock = Suppliers.memoize(() -> getSpecConfigDeneb().getMaxBlobsPerBlock());
+  }
+
+  @Override
+  public Optional<UInt256> getDiscoveryNodeId() {
+    return discoveryNodeId;
   }
 
   @Override
@@ -321,6 +328,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
             method -> {
               final UInt64 firstSupportedSlot = firstSlotSupportingBlobSidecarsByRange.get();
               final BlobSidecarsByRangeRequestMessage request;
+              final int maxBlobsPerBlock = calculateMaxBlobsPerBlock(startSlot.plus(count));
 
               if (startSlot.isLessThan(firstSupportedSlot)) {
                 LOG.debug(
@@ -334,10 +342,9 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                 }
                 request =
                     new BlobSidecarsByRangeRequestMessage(
-                        firstSupportedSlot, updatedCount, maxBlobsPerBlock.get());
+                        firstSupportedSlot, updatedCount, maxBlobsPerBlock);
               } else {
-                request =
-                    new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock.get());
+                request = new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
               }
               return requestStream(
                   method,
@@ -346,12 +353,16 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                       spec,
                       this,
                       listener,
-                      maxBlobsPerBlock.get(),
+                      maxBlobsPerBlock,
                       kzg,
                       request.getStartSlot(),
                       request.getCount()));
             })
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRange"));
+  }
+
+  private int calculateMaxBlobsPerBlock(final UInt64 endSlot) {
+    return SpecConfigDeneb.required(spec.atSlot(endSlot).getConfig()).getMaxBlobsPerBlock();
   }
 
   @Override

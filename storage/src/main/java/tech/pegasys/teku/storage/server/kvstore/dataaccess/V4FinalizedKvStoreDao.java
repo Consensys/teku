@@ -65,7 +65,10 @@ public class V4FinalizedKvStoreDao {
   }
 
   public Optional<UInt64> getEarliestFinalizedBlockSlot() {
-    return db.getFirstEntry(schema.getColumnFinalizedBlocksBySlot()).map(ColumnEntry::getKey);
+    return db.get(schema.getVariableEarliestBlockSlot())
+        .or(
+            () ->
+                db.getFirstEntry(schema.getColumnFinalizedBlocksBySlot()).map(ColumnEntry::getKey));
   }
 
   public Optional<UInt64> getEarliestFinalizedStateSlot() {
@@ -249,7 +252,6 @@ public class V4FinalizedKvStoreDao {
                 columnCounts.put(k, db.size(v));
               }
             });
-    schema.getColumnMap().forEach((k, v) -> columnCounts.put(k, db.size(v)));
     return columnCounts;
   }
 
@@ -410,6 +412,16 @@ public class V4FinalizedKvStoreDao {
     @Override
     public void setEarliestBlobSidecarSlot(final UInt64 slot) {
       transaction.put(schema.getVariableEarliestBlobSidecarSlot(), slot);
+    }
+
+    @Override
+    public void setEarliestBlockSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableEarliestBlockSlot(), slot);
+    }
+
+    @Override
+    public void deleteEarliestBlockSlot() {
+      transaction.delete(schema.getVariableEarliestBlockSlot());
     }
 
     @Override

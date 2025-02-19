@@ -13,15 +13,21 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyBuilderDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectraImpl;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderElectraImpl;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDenebImpl;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderDenebImpl;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderElectra extends BeaconBlockBodyBuilderDeneb {
+
+  private ExecutionRequests executionRequests;
 
   public BeaconBlockBodyBuilderElectra(
       final BeaconBlockBodySchema<? extends BeaconBlockBodyElectra> schema,
@@ -32,6 +38,18 @@ public class BeaconBlockBodyBuilderElectra extends BeaconBlockBodyBuilderDeneb {
   @Override
   protected void validate() {
     super.validate();
+    checkNotNull(executionRequests, "execution_requests must be specified");
+  }
+
+  @Override
+  public boolean supportsExecutionRequests() {
+    return true;
+  }
+
+  @Override
+  public BeaconBlockBodyBuilder executionRequests(final ExecutionRequests executionRequests) {
+    this.executionRequests = executionRequests;
+    return this;
   }
 
   @Override
@@ -51,10 +69,10 @@ public class BeaconBlockBodyBuilderElectra extends BeaconBlockBodyBuilderDeneb {
           deposits,
           voluntaryExits,
           syncAggregate,
-          (ExecutionPayloadHeaderElectraImpl)
-              executionPayloadHeader.toVersionElectra().orElseThrow(),
+          (ExecutionPayloadHeaderDenebImpl) executionPayloadHeader.toVersionDeneb().orElseThrow(),
           getBlsToExecutionChanges(),
-          getBlobKzgCommitments());
+          getBlobKzgCommitments(),
+          executionRequests);
     }
 
     final BeaconBlockBodySchemaElectraImpl schema =
@@ -70,8 +88,9 @@ public class BeaconBlockBodyBuilderElectra extends BeaconBlockBodyBuilderDeneb {
         deposits,
         voluntaryExits,
         syncAggregate,
-        (ExecutionPayloadElectraImpl) executionPayload.toVersionElectra().orElseThrow(),
+        (ExecutionPayloadDenebImpl) executionPayload.toVersionDeneb().orElseThrow(),
         getBlsToExecutionChanges(),
-        getBlobKzgCommitments());
+        getBlobKzgCommitments(),
+        executionRequests);
   }
 }

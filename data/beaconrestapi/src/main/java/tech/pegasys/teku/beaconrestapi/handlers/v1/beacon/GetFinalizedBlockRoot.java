@@ -59,6 +59,7 @@ public class GetFinalizedBlockRoot extends RestApiEndpoint {
             .pathParam(SLOT_PARAMETER)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }

@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
 public class ValidatorRegistration
     extends Container4<ValidatorRegistration, SszByteVector, SszUInt64, SszUInt64, SszPublicKey> {
+  public static final ValidatorRegistrationSchema SSZ_SCHEMA = new ValidatorRegistrationSchema();
 
   protected ValidatorRegistration(
       final ValidatorRegistrationSchema schema, final TreeNode backingNode) {

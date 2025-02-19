@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.reference.common.operations;
 
+import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -66,13 +67,13 @@ public interface OperationProcessor {
   void processWithdrawals(MutableBeaconState state, ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException;
 
-  void processDepositRequest(MutableBeaconState state, DepositRequest depositRequest)
+  void processDepositRequest(MutableBeaconState state, List<DepositRequest> depositRequest)
       throws BlockProcessingException;
 
-  void processWithdrawalRequest(MutableBeaconState state, WithdrawalRequest withdrawalRequest)
+  void processWithdrawalRequest(MutableBeaconState state, List<WithdrawalRequest> withdrawalRequest)
       throws BlockProcessingException;
 
-  void processConsolidationRequest(
-      MutableBeaconState state, ConsolidationRequest consolidationRequest)
+  void processConsolidationRequests(
+      MutableBeaconState state, List<ConsolidationRequest> consolidationRequest)
       throws BlockProcessingException;
 }

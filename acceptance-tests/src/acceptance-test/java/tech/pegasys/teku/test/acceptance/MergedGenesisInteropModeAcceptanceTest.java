@@ -34,7 +34,7 @@ public class MergedGenesisInteropModeAcceptanceTest extends AcceptanceTestBase {
       final TekuNodeConfig config =
           createTekuNodeBuilderForMilestone(specMilestone)
               .withTerminalBlockHash(
-                  "0x00000000000000000000000000000000000000000000000000000000000000aa")
+                  "0x00000000000000000000000000000000000000000000000000000000000000aa", 0)
               .withStubExecutionEngine()
               .build();
 
@@ -70,7 +70,7 @@ public class MergedGenesisInteropModeAcceptanceTest extends AcceptanceTestBase {
             .withNetwork("minimal")
             .withAltairEpoch(UInt64.ZERO)
             .withBellatrixEpoch(UInt64.ZERO)
-            .withTotalTerminalDifficulty(0)
+            .withTerminalBlockHash(DEFAULT_EL_GENESIS_HASH, 0)
             .withStartupTargetPeerCount(0)
             .withInteropNumberOfValidators(64)
             .withValidatorProposerDefaultFeeRecipient("0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73");

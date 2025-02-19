@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -31,7 +32,8 @@ public class AttestationGossipManager implements GossipManager {
   private final Counter attestationPublishSuccessCounter;
   private final Counter attestationPublishFailureCounter;
 
-  private final GossipFailureLogger gossipFailureLogger = new GossipFailureLogger("attestation");
+  private final GossipFailureLogger gossipFailureLogger =
+      GossipFailureLogger.createSuppressing("attestation");
 
   public AttestationGossipManager(
       final MetricsSystem metricsSystem,
@@ -51,7 +53,7 @@ public class AttestationGossipManager implements GossipManager {
     if (validatableAttestation.isAggregate() || !validatableAttestation.markGossiped()) {
       return;
     }
-    final Attestation attestation = validatableAttestation.getAttestation();
+    final Attestation attestation = validatableAttestation.getUnconvertedAttestation();
     subnetSubscriptions
         .gossip(attestation)
         .finish(
@@ -62,18 +64,18 @@ public class AttestationGossipManager implements GossipManager {
               attestationPublishSuccessCounter.inc();
             },
             error -> {
-              gossipFailureLogger.logWithSuppression(error, attestation.getData().getSlot());
+              gossipFailureLogger.log(error, Optional.of(attestation.getData().getSlot()));
               attestationPublishFailureCounter.inc();
             });
   }
 
   public void subscribeToSubnetId(final int subnetId) {
-    LOG.trace("Subscribing to subnet ID {}", subnetId);
+    LOG.trace("Subscribing to attestation subnet {}", subnetId);
     subnetSubscriptions.subscribeToSubnetId(subnetId);
   }
 
   public void unsubscribeFromSubnetId(final int subnetId) {
-    LOG.trace("Unsubscribing to subnet ID {}", subnetId);
+    LOG.trace("Unsubscribing to attestation subnet {}", subnetId);
     subnetSubscriptions.unsubscribeFromSubnetId(subnetId);
   }
 

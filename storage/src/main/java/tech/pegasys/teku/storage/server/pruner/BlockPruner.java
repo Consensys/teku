@@ -97,6 +97,7 @@ public class BlockPruner extends Service {
     final UInt64 earliestEpochToKeep =
         finalizedEpoch.minusMinZero(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
     final UInt64 earliestSlotToKeep = spec.computeStartSlotAtEpoch(earliestEpochToKeep);
+    final UInt64 checkpointEarliestSlot = spec.computeStartSlotAtEpoch(finalizedEpoch);
     if (earliestSlotToKeep.isZero()) {
       LOG.debug("Pruning is not performed as the epochs to retain include the genesis epoch.");
       return;
@@ -104,7 +105,8 @@ public class BlockPruner extends Service {
     LOG.debug("Initiating pruning of finalized blocks prior to slot {}.", earliestSlotToKeep);
     try {
       final UInt64 lastPrunedSlot =
-          database.pruneFinalizedBlocks(earliestSlotToKeep.decrement(), pruneLimit);
+          database.pruneFinalizedBlocks(
+              earliestSlotToKeep.decrement(), pruneLimit, checkpointEarliestSlot);
       LOG.debug(
           "Pruned {} finalized blocks prior to slot {}, last pruned slot was {}.",
           pruneLimit,

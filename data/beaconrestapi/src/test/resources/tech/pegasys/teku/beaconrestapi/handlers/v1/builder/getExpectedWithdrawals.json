@@ -1,1 +1,12 @@
-{"execution_optimistic":false,"finalized":false,"data":[{"index":"4864971916622804241","validator_index":"2164897","address":"0x09988f43d11dcf2aa7811c9997eb4119e8f153ce","amount":"4866624404134455665"}]}
+{
+  "execution_optimistic": false,
+  "finalized": false,
+  "data": [
+    {
+      "index": "4503077933255190248",
+      "validator_index": "2357271",
+      "address": "0x42fb7d43b1006df9874a521b12867f80fbfa5084",
+      "amount": "4868276887351139793"
+    }
+  ]
+}

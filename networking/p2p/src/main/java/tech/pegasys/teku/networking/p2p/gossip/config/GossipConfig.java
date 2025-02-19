@@ -36,6 +36,7 @@ public class GossipConfig {
   // After EIP-7045, attestations are valid for up to 2 full epochs, so TTL is 65
   // slots 1115 * HEARTBEAT = 1115 * 0.7 / 12 = 65.125
   static final Duration DEFAULT_SEEN_TTL = DEFAULT_HEARTBEAT_INTERVAL.multipliedBy(1115);
+  public static final int DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD = 1 << 14; // 16KiB
 
   private final int d;
   private final int dLow;
@@ -46,6 +47,7 @@ public class GossipConfig {
   private final int history;
   private final Duration heartbeatInterval;
   private final Duration seenTTL;
+  private final int floodPublishMaxMessageSizeThreshold;
   private final GossipScoringConfig scoringConfig;
 
   private GossipConfig(
@@ -58,6 +60,7 @@ public class GossipConfig {
       final int history,
       final Duration heartbeatInterval,
       final Duration seenTTL,
+      final int floodPublishMaxMessageSizeThreshold,
       final GossipScoringConfig scoringConfig) {
     this.d = d;
     this.dLow = dLow;
@@ -68,6 +71,7 @@ public class GossipConfig {
     this.history = history;
     this.heartbeatInterval = heartbeatInterval;
     this.seenTTL = seenTTL;
+    this.floodPublishMaxMessageSizeThreshold = floodPublishMaxMessageSizeThreshold;
     this.scoringConfig = scoringConfig;
   }
 
@@ -115,6 +119,10 @@ public class GossipConfig {
     return seenTTL;
   }
 
+  public int getFloodPublishMaxMessageSizeThreshold() {
+    return floodPublishMaxMessageSizeThreshold;
+  }
+
   public GossipScoringConfig getScoringConfig() {
     return scoringConfig;
   }
@@ -131,6 +139,8 @@ public class GossipConfig {
     private Integer history = DEFAULT_HISTORY;
     private Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
     private Duration seenTTL = DEFAULT_SEEN_TTL;
+    private int floodPublishMaxMessageSizeThreshold =
+        DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
 
     private Builder() {}
 
@@ -145,6 +155,7 @@ public class GossipConfig {
           history,
           heartbeatInterval,
           seenTTL,
+          floodPublishMaxMessageSizeThreshold,
           scoringConfigBuilder.build());
     }
 
@@ -214,6 +225,12 @@ public class GossipConfig {
         throw new InvalidConfigurationException(String.format("Invalid seenTTL: %s", seenTTL));
       }
       this.seenTTL = seenTTL;
+      return this;
+    }
+
+    public Builder floodPublishMaxMessageSizeThreshold(
+        final int floodPublishMaxMessageSizeThreshold) {
+      this.floodPublishMaxMessageSizeThreshold = floodPublishMaxMessageSizeThreshold;
       return this;
     }
 

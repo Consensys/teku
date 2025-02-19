@@ -36,13 +36,13 @@ public class AttestationElectraSchema
     implements AttestationSchema<AttestationElectra> {
 
   public AttestationElectraSchema(
-      final long maxValidatorsPerAttestation, final long maxCommitteePerSlot) {
+      final long maxValidatorsPerAttestation, final long maxCommitteesPerSlot) {
     super(
         "AttestationElectra",
         namedSchema("aggregation_bits", SszBitlistSchema.create(maxValidatorsPerAttestation)),
         namedSchema("data", AttestationData.SSZ_SCHEMA),
         namedSchema("signature", SszSignatureSchema.INSTANCE),
-        namedSchema("committee_bits", SszBitvectorSchema.create(maxCommitteePerSlot)));
+        namedSchema("committee_bits", SszBitvectorSchema.create(maxCommitteesPerSlot)));
   }
 
   @Override

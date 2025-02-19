@@ -19,35 +19,35 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class BeaconBlockBodyFuzzInput
-    extends Container2<BeaconBlockBodyFuzzInput, BeaconState, BeaconBlockBodyCapella> {
+    extends Container2<BeaconBlockBodyFuzzInput, BeaconState, BeaconBlockBodyElectra> {
 
-  public static ContainerSchema2<BeaconBlockBodyFuzzInput, BeaconState, BeaconBlockBodyCapella>
+  public static ContainerSchema2<BeaconBlockBodyFuzzInput, BeaconState, BeaconBlockBodyElectra>
       createSchema(final SpecVersion spec) {
-    BeaconBlockBodySchemaCapella<?> beaconBlockBodySchema =
-        spec.getSchemaDefinitions().getBeaconBlockBodySchema().toVersionCapella().orElseThrow();
+    BeaconBlockBodySchemaElectra<?> beaconBlockBodySchema =
+        spec.getSchemaDefinitions().getBeaconBlockBodySchema().toVersionElectra().orElseThrow();
     return ContainerSchema2.create(
         SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
-        SszSchema.as(BeaconBlockBodyCapella.class, beaconBlockBodySchema),
+        SszSchema.as(BeaconBlockBodyElectra.class, beaconBlockBodySchema),
         BeaconBlockBodyFuzzInput::new);
   }
 
   public BeaconBlockBodyFuzzInput(
-      final ContainerSchema2<BeaconBlockBodyFuzzInput, BeaconState, BeaconBlockBodyCapella> type,
+      final ContainerSchema2<BeaconBlockBodyFuzzInput, BeaconState, BeaconBlockBodyElectra> type,
       final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public BeaconBlockBodyFuzzInput(
-      final Spec spec, final BeaconState state, final BeaconBlockBodyCapella beaconBlockBody) {
+      final Spec spec, final BeaconState state, final BeaconBlockBodyElectra beaconBlockBody) {
     super(createSchema(spec.atSlot(state.getSlot())), state, beaconBlockBody);
   }
 
-  public BeaconBlockBodyCapella getBeaconBlockBody() {
+  public BeaconBlockBodyElectra getBeaconBlockBody() {
     return getField1();
   }
 

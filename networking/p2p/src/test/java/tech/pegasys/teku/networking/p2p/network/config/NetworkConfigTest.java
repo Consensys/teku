@@ -117,8 +117,8 @@ class NetworkConfigTest {
 
     final DirectPeerManager manager = optionalDirectPeerManager.get();
 
-    assert manager.isDirectPeer(peerId1);
-    assert !manager.isDirectPeer(peerId2);
+    assertThat(manager.isDirectPeer(peerId1)).isTrue();
+    assertThat(manager.isDirectPeer(peerId2)).isFalse();
   }
 
   @Test

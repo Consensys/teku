@@ -33,7 +33,4 @@ public class Domain {
 
   // Capella
   public static final Bytes4 DOMAIN_BLS_TO_EXECUTION_CHANGE = Bytes4.fromHexString("0x0A000000");
-
-  // Electra
-  public static final Bytes4 DOMAIN_CONSOLIDATION = Bytes4.fromHexString("0x0B000000");
 }

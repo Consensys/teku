@@ -40,12 +40,15 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 
 public class BlockBlobSidecarsTracker {
   private static final Logger LOG = LogManager.getLogger();
+
   private static final UInt64 CREATION_TIMING_IDX = UInt64.MAX_VALUE;
   private static final UInt64 BLOCK_ARRIVAL_TIMING_IDX = CREATION_TIMING_IDX.decrement();
-  private static final UInt64 FETCH_TIMING_IDX = BLOCK_ARRIVAL_TIMING_IDX.decrement();
+  private static final UInt64 RPC_BLOCK_FETCH_TIMING_IDX = BLOCK_ARRIVAL_TIMING_IDX.decrement();
+  private static final UInt64 RPC_BLOBS_FETCH_TIMING_IDX = RPC_BLOCK_FETCH_TIMING_IDX.decrement();
+  private static final UInt64 LOCAL_EL_BLOBS_FETCH_TIMING_IDX =
+      RPC_BLOBS_FETCH_TIMING_IDX.decrement();
 
   private final SlotAndBlockRoot slotAndBlockRoot;
-  private final UInt64 maxBlobsPerBlock;
 
   private final AtomicReference<Optional<SignedBeaconBlock>> block =
       new AtomicReference<>(Optional.empty());
@@ -55,7 +58,9 @@ public class BlockBlobSidecarsTracker {
   private final NavigableMap<UInt64, BlobSidecar> blobSidecars = new ConcurrentSkipListMap<>();
   private final SafeFuture<Void> blobSidecarsComplete = new SafeFuture<>();
 
-  private volatile boolean fetchTriggered = false;
+  private volatile boolean localElBlobsFetchTriggered = false;
+  private volatile boolean rpcBlockFetchTriggered = false;
+  private volatile boolean rpcBlobsFetchTriggered = false;
 
   private final Optional<Map<UInt64, Long>> maybeDebugTimings;
 
@@ -67,12 +72,9 @@ public class BlockBlobSidecarsTracker {
    * tracker instance will be used, so no synchronization is required
    *
    * @param slotAndBlockRoot slot and block root to create tracker for
-   * @param maxBlobsPerBlock max number of blobs per block for the slot
    */
-  public BlockBlobSidecarsTracker(
-      final SlotAndBlockRoot slotAndBlockRoot, final UInt64 maxBlobsPerBlock) {
+  public BlockBlobSidecarsTracker(final SlotAndBlockRoot slotAndBlockRoot) {
     this.slotAndBlockRoot = slotAndBlockRoot;
-    this.maxBlobsPerBlock = maxBlobsPerBlock;
     if (LOG.isDebugEnabled()) {
       // don't need a concurrent hashmap since we'll interact with it from synchronized BlobSidecar
       // pool methods
@@ -110,28 +112,10 @@ public class BlockBlobSidecarsTracker {
 
   public Stream<BlobIdentifier> getMissingBlobSidecars() {
     final Optional<Integer> blockCommitmentsCount = getBlockKzgCommitmentsCount();
-    if (blockCommitmentsCount.isPresent()) {
-      return UInt64.range(UInt64.ZERO, UInt64.valueOf(blockCommitmentsCount.get()))
-          .filter(blobIndex -> !blobSidecars.containsKey(blobIndex))
-          .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex));
-    }
+    checkState(blockCommitmentsCount.isPresent(), "Block must be known to call this method");
 
-    if (blobSidecars.isEmpty()) {
-      return Stream.of();
-    }
-
-    // We may return maxBlobsPerBlock because we don't know the block
-    return UInt64.range(UInt64.ZERO, maxBlobsPerBlock)
+    return UInt64.range(UInt64.ZERO, UInt64.valueOf(blockCommitmentsCount.get()))
         .filter(blobIndex -> !blobSidecars.containsKey(blobIndex))
-        .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex));
-  }
-
-  public Stream<BlobIdentifier> getUnusedBlobSidecarsForBlock() {
-    final Optional<Integer> blockCommitmentsCount = getBlockKzgCommitmentsCount();
-    checkState(blockCommitmentsCount.isPresent(), "Block must me known to call this method");
-
-    final UInt64 firstUnusedIndex = UInt64.valueOf(blockCommitmentsCount.get());
-    return UInt64.range(firstUnusedIndex, maxBlobsPerBlock)
         .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex));
   }
 
@@ -241,18 +225,39 @@ public class BlockBlobSidecarsTracker {
         .orElse(false);
   }
 
-  public boolean isCompleted() {
+  public boolean isComplete() {
     return blobSidecarsComplete.isDone();
   }
 
-  public boolean isFetchTriggered() {
-    return fetchTriggered;
+  public boolean isLocalElBlobsFetchTriggered() {
+    return localElBlobsFetchTriggered;
   }
 
-  public void setFetchTriggered() {
-    this.fetchTriggered = true;
+  public void setLocalElBlobsFetchTriggered() {
+    this.localElBlobsFetchTriggered = true;
     maybeDebugTimings.ifPresent(
-        debugTimings -> debugTimings.put(FETCH_TIMING_IDX, System.currentTimeMillis()));
+        debugTimings ->
+            debugTimings.put(LOCAL_EL_BLOBS_FETCH_TIMING_IDX, System.currentTimeMillis()));
+  }
+
+  public boolean isRpcBlockFetchTriggered() {
+    return rpcBlockFetchTriggered;
+  }
+
+  public void setRpcBlockFetchTriggered() {
+    this.rpcBlockFetchTriggered = true;
+    maybeDebugTimings.ifPresent(
+        debugTimings -> debugTimings.put(RPC_BLOCK_FETCH_TIMING_IDX, System.currentTimeMillis()));
+  }
+
+  public boolean isRpcBlobsFetchTriggered() {
+    return rpcBlobsFetchTriggered;
+  }
+
+  public void setRpcBlobsFetchTriggered() {
+    this.rpcBlobsFetchTriggered = true;
+    maybeDebugTimings.ifPresent(
+        debugTimings -> debugTimings.put(RPC_BLOBS_FETCH_TIMING_IDX, System.currentTimeMillis()));
   }
 
   private boolean areBlobsComplete() {
@@ -303,13 +308,31 @@ public class BlockBlobSidecarsTracker {
         .append(debugTimings.getOrDefault(BLOCK_ARRIVAL_TIMING_IDX, 0L) - creationTime)
         .append("ms - ");
 
-    if (debugTimings.containsKey(FETCH_TIMING_IDX)) {
+    if (debugTimings.containsKey(LOCAL_EL_BLOBS_FETCH_TIMING_IDX)) {
       timingsReport
-          .append("Fetch delay ")
-          .append(debugTimings.get(FETCH_TIMING_IDX) - creationTime)
+          .append("Local EL blobs fetch delay ")
+          .append(debugTimings.get(LOCAL_EL_BLOBS_FETCH_TIMING_IDX) - creationTime)
+          .append("ms - ");
+    } else {
+      timingsReport.append("Local EL blobs fetch wasn't required - ");
+    }
+
+    if (debugTimings.containsKey(RPC_BLOCK_FETCH_TIMING_IDX)) {
+      timingsReport
+          .append("RPC block fetch delay ")
+          .append(debugTimings.get(RPC_BLOCK_FETCH_TIMING_IDX) - creationTime)
+          .append("ms - ");
+    } else {
+      timingsReport.append("RPC block fetch wasn't required - ");
+    }
+
+    if (debugTimings.containsKey(RPC_BLOBS_FETCH_TIMING_IDX)) {
+      timingsReport
+          .append("RPC blobs fetch delay ")
+          .append(debugTimings.get(RPC_BLOBS_FETCH_TIMING_IDX) - creationTime)
           .append("ms");
     } else {
-      timingsReport.append("Fetch wasn't required");
+      timingsReport.append("RPC blobs fetch wasn't required");
     }
 
     LOG.debug(timingsReport.toString());
@@ -320,8 +343,10 @@ public class BlockBlobSidecarsTracker {
     return MoreObjects.toStringHelper(this)
         .add("slotAndBlockRoot", slotAndBlockRoot)
         .add("isBlockPresent", block.get().isPresent())
-        .add("isCompleted", isCompleted())
-        .add("fetchTriggered", fetchTriggered)
+        .add("isComplete", isComplete())
+        .add("localElBlobsFetchTriggered", localElBlobsFetchTriggered)
+        .add("rpcBlockFetchTriggered", rpcBlockFetchTriggered)
+        .add("rpcBlobsFetchTriggered", rpcBlobsFetchTriggered)
         .add("blockImportOnCompletionEnabled", blockImportOnCompletionEnabled.get())
         .add(
             "blobSidecars",

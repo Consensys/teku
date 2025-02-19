@@ -46,11 +46,13 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator.AttestationInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -61,7 +63,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 class AggregatingAttestationPoolTest {
 
   public static final UInt64 SLOT = UInt64.valueOf(1234);
-  private static final int COMMITTEE_SIZE = 20;
+  private static final int COMMITTEE_SIZE = 130;
 
   private Spec spec;
   private SpecMilestone specMilestone;
@@ -82,7 +84,7 @@ class AggregatingAttestationPoolTest {
   private Int2IntMap committeeSizes;
 
   @BeforeEach
-  public void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
+  public void setUp(final SpecContext specContext) {
     spec = specContext.getSpec();
     specMilestone = specContext.getSpecMilestone();
     dataStructureUtil = specContext.getDataStructureUtil();
@@ -258,15 +260,61 @@ class AggregatingAttestationPoolTest {
 
   @TestTemplate
   public void getAttestationsForBlock_shouldNotAddMoreAttestationsThanAllowedInBlock() {
-    final BeaconState state = dataStructureUtil.randomBeaconState(ONE);
-    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
-    final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 2, 3, 4);
-    final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 5);
-    // Won't be included because of the 2 attestation limit.
-    addAttestationFromValidators(attestationData, 2);
+    final int allowed =
+        Math.toIntExact(
+            spec.atSlot(ONE)
+                .getSchemaDefinitions()
+                .getBeaconBlockBodySchema()
+                .getAttestationsSchema()
+                .getMaxLength());
 
-    assertThat(aggregatingPool.getAttestationsForBlock(state, forkChecker))
-        .containsExactly(attestation1, attestation2);
+    final int validatorCount = allowed + 1;
+    final BeaconState state = dataStructureUtil.randomBeaconState(validatorCount, 100, ONE);
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
+
+    final int lastValidatorIndex = validatorCount - 1;
+
+    // add non aggregatable attestations, more than allowed in block
+    for (int i = 0; i < validatorCount; i++) {
+      addAttestationFromValidators(attestationData, i, lastValidatorIndex);
+    }
+
+    assertThat(aggregatingPool.getAttestationsForBlock(state, forkChecker)).hasSize(allowed);
+  }
+
+  @TestTemplate
+  public void getAttestationsForBlock_shouldGivePriorityToBestAggregationForEachSlot() {
+    // let's test this on electra only, which has only 8 attestations for block
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(ELECTRA);
+    assertThat(
+            spec.atSlot(ONE)
+                .getSchemaDefinitions()
+                .getBeaconBlockBodySchema()
+                .getAttestationsSchema()
+                .getMaxLength())
+        .isEqualTo(8);
+
+    final BeaconState state = dataStructureUtil.randomBeaconState(ONE);
+
+    // let's prepare 2 different attestationData for the same slot
+    final AttestationData attestationData0 = dataStructureUtil.randomAttestationData(ZERO);
+    final AttestationData attestationData1 = dataStructureUtil.randomAttestationData(ZERO);
+
+    // let's fill up the pool with non-aggregatable attestationsData0
+    addAttestationFromValidators(attestationData0, 1, 2);
+    addAttestationFromValidators(attestationData0, 1, 3);
+    addAttestationFromValidators(attestationData0, 1, 4);
+    addAttestationFromValidators(attestationData0, 1, 5);
+    addAttestationFromValidators(attestationData0, 1, 6);
+    addAttestationFromValidators(attestationData0, 1, 7);
+    addAttestationFromValidators(attestationData0, 1, 8);
+    addAttestationFromValidators(attestationData0, 1, 9);
+
+    // let's add a better aggregation for attestationData1
+    final Attestation bestAttestation = addAttestationFromValidators(attestationData1, 11, 14, 15);
+
+    assertThat(aggregatingPool.getAttestationsForBlock(state, forkChecker).get(0))
+        .isEqualTo(bestAttestation);
   }
 
   @TestTemplate
@@ -630,9 +678,24 @@ class AggregatingAttestationPoolTest {
       final AttestationData data,
       final Spec spec,
       final int... validators) {
-    final Attestation attestation = createAttestation(data, spec, validators);
-    ValidatableAttestation validatableAttestation =
-        ValidatableAttestation.from(spec, attestation, committeeSizes);
+    final Attestation attestationFromValidators;
+    final Attestation attestation;
+    if (specMilestone.isGreaterThanOrEqualTo(ELECTRA) && validators.length == 1) {
+      attestationFromValidators = createSingleAttestation(data, validators[0]);
+    } else {
+      attestationFromValidators = createAttestation(data, spec, validators);
+    }
+
+    final ValidatableAttestation validatableAttestation =
+        ValidatableAttestation.from(spec, attestationFromValidators, committeeSizes);
+
+    if (attestationFromValidators.isSingleAttestation()) {
+      attestation = createAttestation(data, spec, validators);
+      validatableAttestation.convertToAggregatedFormatFromSingleAttestation(attestation);
+    } else {
+      attestation = attestationFromValidators;
+    }
+
     validatableAttestation.saveCommitteeShufflingSeedAndCommitteesSize(
         dataStructureUtil.randomBeaconState(100, 15, data.getSlot()));
     aggregatingAttestationPool.add(validatableAttestation);
@@ -641,6 +704,21 @@ class AggregatingAttestationPoolTest {
 
   private Attestation createAttestation(final AttestationData data, final int... validators) {
     return createAttestation(data, spec, validators);
+  }
+
+  private SingleAttestation createSingleAttestation(
+      final AttestationData data, final int validatorIndex) {
+    final SingleAttestationSchema attestationSchema =
+        spec.getGenesisSchemaDefinitions()
+            .toVersionElectra()
+            .orElseThrow()
+            .getSingleAttestationSchema();
+
+    return attestationSchema.create(
+        committeeIndex.orElseThrow(),
+        UInt64.valueOf(validatorIndex),
+        data,
+        dataStructureUtil.randomSignature());
   }
 
   private Attestation createAttestation(

@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix.LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARIES_SCHEMA;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -27,59 +27,46 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSche
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateSchemaCapella
     extends AbstractBeaconStateSchema<BeaconStateCapella, MutableBeaconStateCapella> {
-  public static final int NEXT_WITHDRAWAL_INDEX = 25;
-  public static final int NEXT_WITHDRAWAL_VALIDATOR_INDEX = 26;
-  public static final int HISTORICAL_SUMMARIES_INDEX = 27;
+  public static final int NEXT_WITHDRAWAL_INDEX_FIELD_INDEX = 25;
+  public static final int NEXT_WITHDRAWAL_VALIDATOR_INDEX_FIELD_INDEX = 26;
+  public static final int HISTORICAL_SUMMARIES_FIELD_INDEX = 27;
 
   @VisibleForTesting
-  BeaconStateSchemaCapella(final SpecConfig specConfig) {
-    super("BeaconStateCapella", getUniqueFields(specConfig), specConfig);
+  BeaconStateSchemaCapella(final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    super("BeaconStateCapella", getUniqueFields(specConfig, schemaRegistry), specConfig);
   }
 
-  private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
-    final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema =
-        new HistoricalSummary.HistoricalSummarySchema();
-    final SszField latestExecutionPayloadHeaderField =
-        new SszField(
-            LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
-            BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
-            () -> new ExecutionPayloadHeaderSchemaCapella(SpecConfigCapella.required(specConfig)));
-    final SszField nextWithdrawalIndexField =
-        new SszField(
-            NEXT_WITHDRAWAL_INDEX,
-            BeaconStateFields.NEXT_WITHDRAWAL_INDEX,
-            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
-    final SszField nextWithdrawalValidatorIndexField =
-        new SszField(
-            NEXT_WITHDRAWAL_VALIDATOR_INDEX,
-            BeaconStateFields.NEXT_WITHDRAWAL_VALIDATOR_INDEX,
-            () -> SszPrimitiveSchemas.UINT64_SCHEMA);
+  public static List<SszField> getUniqueFields(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    final List<SszField> newFields =
+        List.of(
+            new SszField(
+                NEXT_WITHDRAWAL_INDEX_FIELD_INDEX,
+                BeaconStateFields.NEXT_WITHDRAWAL_INDEX,
+                () -> SszPrimitiveSchemas.UINT64_SCHEMA),
+            new SszField(
+                NEXT_WITHDRAWAL_VALIDATOR_INDEX_FIELD_INDEX,
+                BeaconStateFields.NEXT_WITHDRAWAL_VALIDATOR_INDEX,
+                () -> SszPrimitiveSchemas.UINT64_SCHEMA),
+            new SszField(
+                HISTORICAL_SUMMARIES_FIELD_INDEX,
+                BeaconStateFields.HISTORICAL_SUMMARIES,
+                () -> schemaRegistry.get(HISTORICAL_SUMMARIES_SCHEMA)));
 
-    final SszField historicalSummariesField =
-        new SszField(
-            HISTORICAL_SUMMARIES_INDEX,
-            BeaconStateFields.HISTORICAL_SUMMARIES,
-            () ->
-                SszListSchema.create(
-                    historicalSummarySchema, specConfig.getHistoricalRootsLimit()));
     return Stream.concat(
-            BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
-            Stream.of(
-                latestExecutionPayloadHeaderField,
-                nextWithdrawalIndexField,
-                nextWithdrawalValidatorIndexField,
-                historicalSummariesField))
+            BeaconStateSchemaBellatrix.getUniqueFields(specConfig, schemaRegistry).stream(),
+            newFields.stream())
         .toList();
   }
 
@@ -121,8 +108,9 @@ public class BeaconStateSchemaCapella
     return new MutableBeaconStateCapellaImpl(createEmptyBeaconStateImpl(), true);
   }
 
-  public static BeaconStateSchemaCapella create(final SpecConfig specConfig) {
-    return new BeaconStateSchemaCapella(specConfig);
+  public static BeaconStateSchemaCapella create(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    return new BeaconStateSchemaCapella(specConfig, schemaRegistry);
   }
 
   public static BeaconStateSchemaCapella required(final BeaconStateSchema<?, ?> schema) {

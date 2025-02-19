@@ -29,8 +29,8 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public class BeaconStateBuilderElectra
@@ -55,7 +55,7 @@ public class BeaconStateBuilderElectra
 
   private UInt64 earliestConsolidationEpoch;
 
-  private SszList<PendingBalanceDeposit> pendingBalanceDeposits;
+  private SszList<PendingDeposit> pendingDeposits;
   private SszList<PendingPartialWithdrawal> pendingPartialWithdrawals;
   private SszList<PendingConsolidation> pendingConsolidations;
 
@@ -69,7 +69,9 @@ public class BeaconStateBuilderElectra
 
   @Override
   protected BeaconStateElectra getEmptyState() {
-    return BeaconStateSchemaElectra.create(spec.getConfig()).createEmpty();
+    return BeaconStateSchemaElectra.create(
+            spec.getConfig(), spec.getSchemaDefinitions().getSchemaRegistry())
+        .createEmpty();
   }
 
   @Override
@@ -88,7 +90,7 @@ public class BeaconStateBuilderElectra
     state.setEarliestExitEpoch(earliestExitEpoch);
     state.setConsolidationBalanceToConsume(consolidationBalanceToConsume);
     state.setEarliestConsolidationEpoch(earliestConsolidationEpoch);
-    state.setPendingBalanceDeposits(pendingBalanceDeposits);
+    state.setPendingDeposits(pendingDeposits);
     state.setPendingPartialWithdrawals(pendingPartialWithdrawals);
     state.setPendingConsolidations(pendingConsolidations);
   }
@@ -172,8 +174,7 @@ public class BeaconStateBuilderElectra
     this.earliestExitEpoch = UInt64.ZERO;
     this.consolidationBalanceToConsume = UInt64.ZERO;
     this.earliestConsolidationEpoch = UInt64.ZERO;
-    this.pendingBalanceDeposits =
-        schema.getPendingBalanceDepositsSchema().createFromElements(List.of());
+    this.pendingDeposits = schema.getPendingDepositsSchema().createFromElements(List.of());
     this.pendingPartialWithdrawals =
         schema.getPendingPartialWithdrawalsSchema().createFromElements(List.of());
     this.pendingConsolidations =

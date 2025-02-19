@@ -30,6 +30,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStat
 
 public class BeaconStateSchemaPhase0
     extends AbstractBeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> {
+  public static final int PREVIOUS_EPOCH_PARTICIPATION_FIELD_INDEX = 15;
+  public static final int CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX = 16;
 
   @VisibleForTesting
   BeaconStateSchemaPhase0(final SpecConfig specConfig) {
@@ -48,12 +50,13 @@ public class BeaconStateSchemaPhase0
     return (BeaconStateSchemaPhase0) schema;
   }
 
-  private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
+  public static List<SszField> getUniqueFields(final SpecConfig specConfig) {
     final PendingAttestationSchema pendingAttestationSchema =
         new PendingAttestationSchema(specConfig);
+
     final SszField previousEpochAttestationsField =
         new SszField(
-            15,
+            PREVIOUS_EPOCH_PARTICIPATION_FIELD_INDEX,
             BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS,
             () ->
                 SszListSchema.create(
@@ -61,7 +64,7 @@ public class BeaconStateSchemaPhase0
                     (long) specConfig.getMaxAttestations() * specConfig.getSlotsPerEpoch()));
     final SszField currentEpochAttestationsField =
         new SszField(
-            16,
+            CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX,
             BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS,
             () ->
                 SszListSchema.create(

@@ -31,7 +31,7 @@ public class RpcResponseEncoderDecoderTest extends RpcDecoderTestBase {
       RpcContextCodec.noop(RpcErrorMessage.SSZ_SCHEMA);
   private final RpcEncoding rpcEncoding =
       RpcEncoding.createSszSnappyEncoding(
-          TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
+          TestSpecFactory.createDefault().getNetworkingConfig().getMaxPayloadSize());
   private final RpcResponseEncoder<RpcErrorMessage, ?> errorMessageResponseEncoder =
       new RpcResponseEncoder<>(rpcEncoding, contextCodec);
   private final RpcResponseDecoder<RpcErrorMessage, ?> errorMessageResponseDecoder =

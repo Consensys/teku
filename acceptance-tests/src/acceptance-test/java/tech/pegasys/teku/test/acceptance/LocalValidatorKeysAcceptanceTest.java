@@ -58,6 +58,7 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
                 .withInitialState(genesis)
                 .withAltairEpoch(UInt64.ZERO)
                 .withBellatrixEpoch(UInt64.ZERO)
+                .withTerminalBlockHash(DEFAULT_EL_GENESIS_HASH, 0)
                 .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
                 .build());
     final TekuValidatorNode validatorClient =
@@ -83,7 +84,7 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     api.assertLocalValidatorListing(validatorKeystores.getPublicKeys());
 
     api.assertValidatorGasLimit(
-        validatorKeystores.getPublicKeys().get(1), UInt64.valueOf(30000000));
+        validatorKeystores.getPublicKeys().get(1), UInt64.valueOf(36_000_000));
 
     // generate voluntary exit
     api.generateVoluntaryExitAndCheckValidatorIndex(validatorKeystores.getPublicKeys().get(1), 1);

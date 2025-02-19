@@ -19,6 +19,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.constants.WithdrawalPrefixes;
 import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
@@ -101,8 +102,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final Eth1Address depositContractAddress;
 
   // Networking
-  private final int gossipMaxSize;
-  private final int maxChunkSize;
+  private final int maxPayloadSize;
   private final int maxRequestBlocks;
   private final int epochsPerSubnetSubscription;
   private final int minEpochsForBlockRequests;
@@ -173,8 +173,7 @@ public class SpecConfigPhase0 implements SpecConfig {
       final long depositChainId,
       final long depositNetworkId,
       final Eth1Address depositContractAddress,
-      final int gossipMaxSize,
-      final int maxChunkSize,
+      final int maxPayloadSize,
       final int maxRequestBlocks,
       final int epochsPerSubnetSubscription,
       final int minEpochsForBlockRequests,
@@ -243,8 +242,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.depositNetworkId = depositNetworkId;
     this.depositContractAddress = depositContractAddress;
     this.squareRootSlotsPerEpoch = MathHelpers.integerSquareRoot(slotsPerEpoch);
-    this.gossipMaxSize = gossipMaxSize;
-    this.maxChunkSize = maxChunkSize;
+    this.maxPayloadSize = maxPayloadSize;
     this.maxRequestBlocks = maxRequestBlocks;
     this.epochsPerSubnetSubscription = epochsPerSubnetSubscription;
     this.minEpochsForBlockRequests = minEpochsForBlockRequests;
@@ -560,13 +558,8 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public int getGossipMaxSize() {
-    return gossipMaxSize;
-  }
-
-  @Override
-  public int getMaxChunkSize() {
-    return maxChunkSize;
+  public int getMaxPayloadSize() {
+    return maxPayloadSize;
   }
 
   @Override
@@ -635,6 +628,11 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
+  public SpecMilestone getMilestone() {
+    return SpecMilestone.PHASE0;
+  }
+
+  @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;
@@ -677,8 +675,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         && proposerScoreBoost == that.proposerScoreBoost
         && depositChainId == that.depositChainId
         && depositNetworkId == that.depositNetworkId
-        && gossipMaxSize == that.gossipMaxSize
-        && maxChunkSize == that.maxChunkSize
+        && maxPayloadSize == that.maxPayloadSize
         && maxRequestBlocks == that.maxRequestBlocks
         && epochsPerSubnetSubscription == that.epochsPerSubnetSubscription
         && subnetsPerNode == that.subnetsPerNode
@@ -762,8 +759,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         depositChainId,
         depositNetworkId,
         depositContractAddress,
-        gossipMaxSize,
-        maxChunkSize,
+        maxPayloadSize,
         maxRequestBlocks,
         epochsPerSubnetSubscription,
         ttfbTimeout,

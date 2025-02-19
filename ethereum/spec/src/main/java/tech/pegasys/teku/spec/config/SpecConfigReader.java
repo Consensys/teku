@@ -70,7 +70,8 @@ public class SpecConfigReader {
           "TRANSITION_TOTAL_DIFFICULTY",
           // Deprecated fields
           "GOSSIP_MAX_SIZE_BELLATRIX",
-          "MAX_CHUNK_SIZE_BELLATRIX");
+          "MAX_CHUNK_SIZE_BELLATRIX",
+          "MAX_CHUNK_SIZE");
   private static final ImmutableSet<String> CONSTANT_KEYS =
       ImmutableSet.of(
           // Phase0 constants which may exist in legacy config files, but should now be ignored
@@ -110,11 +111,12 @@ public class SpecConfigReader {
 
   final SpecConfigBuilder configBuilder = SpecConfig.builder();
 
-  public SpecConfig build() {
+  public SpecConfigAndParent<? extends SpecConfig> build() {
     return configBuilder.build();
   }
 
-  public SpecConfig build(final Consumer<SpecConfigBuilder> modifier) {
+  public SpecConfigAndParent<? extends SpecConfig> build(
+      final Consumer<SpecConfigBuilder> modifier) {
     modifier.accept(configBuilder);
     return build();
   }

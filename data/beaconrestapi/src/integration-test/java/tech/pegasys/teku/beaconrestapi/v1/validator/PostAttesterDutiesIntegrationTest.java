@@ -52,9 +52,7 @@ public class PostAttesterDutiesIntegrationTest extends AbstractDataBackedRestAPI
 
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
-    Response response =
-        post(
-            PostAttesterDuties.ROUTE.replace("{epoch}", "1"), jsonProvider.objectToJSON(List.of()));
+    Response response = post(PostAttesterDuties.ROUTE.replace("{epoch}", "1"), "[]");
 
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.body().string())
@@ -71,10 +69,7 @@ public class PostAttesterDutiesIntegrationTest extends AbstractDataBackedRestAPI
             SafeFuture.completedFuture(
                 Optional.of(new AttesterDuties(false, Bytes32.ZERO, List.of()))));
 
-    Response response =
-        post(
-            PostAttesterDuties.ROUTE.replace("{epoch}", "1"),
-            jsonProvider.objectToJSON(List.of(1)));
+    final Response response = post(PostAttesterDuties.ROUTE.replace("{epoch}", "1"), "[1]");
 
     assertThat(response.code()).isEqualTo(SC_OK);
     assertThat(response.body().string())

@@ -57,6 +57,7 @@ public class PostRegisterValidator extends RestApiEndpoint {
             .withBadRequestResponse(
                 Optional.of(
                     "The request could not be processed, check the response for more information."))
+            .withChainDataResponses()
             .build());
 
     this.validatorDataProvider = validatorDataProvider;

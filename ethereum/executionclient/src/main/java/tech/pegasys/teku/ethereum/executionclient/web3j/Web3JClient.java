@@ -15,7 +15,6 @@ package tech.pegasys.teku.ethereum.executionclient.web3j;
 
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 
-import java.io.IOException;
 import java.net.ConnectException;
 import java.time.Duration;
 import java.util.Collection;
@@ -86,19 +85,39 @@ public abstract class Web3JClient {
             (response, exception) -> {
               final boolean isCriticalRequest = isCriticalRequest(web3jRequest);
               if (exception != null) {
-                final boolean couldBeAuthError = isAuthenticationException(exception);
-                handleError(isCriticalRequest, exception, couldBeAuthError);
-                return Response.withErrorMessage(getMessageOrSimpleName(exception));
+                return handleException(exception, isCriticalRequest);
               } else if (response.hasError()) {
-                final String errorMessage =
-                    response.getError().getCode() + ": " + response.getError().getMessage();
-                handleError(isCriticalRequest, new IOException(errorMessage), false);
-                return Response.withErrorMessage(errorMessage);
+                return handleJsonRpcError(response.getError(), isCriticalRequest);
               } else {
                 handleSuccess(isCriticalRequest);
-                return new Response<>(response.getResult());
+                return Response.fromPayloadReceivedAsJson(response.getResult());
               }
             });
+  }
+
+  private <T> Response<T> handleException(
+      final Throwable exception, final boolean isCriticalRequest) {
+    final boolean couldBeAuthError = isAuthenticationException(exception);
+    handleError(isCriticalRequest, exception, couldBeAuthError);
+    return Response.fromErrorMessage(getMessageOrSimpleName(exception));
+  }
+
+  private <T> Response<T> handleJsonRpcError(
+      final org.web3j.protocol.core.Response.Error error, final boolean isCriticalRequest) {
+    final int errorCode = error.getCode();
+    final String errorType = JsonRpcErrorCodes.getDescription(errorCode);
+    final String formattedError =
+        String.format("JSON-RPC error: %s (%d): %s", errorType, errorCode, error.getMessage());
+
+    if (isCriticalRequest) {
+      logError(formattedError);
+    }
+
+    return Response.fromErrorMessage(formattedError);
+  }
+
+  private void logError(final String errorMessage) {
+    eventLog.executionClientRequestFailed(new Exception(errorMessage), false);
   }
 
   private boolean isCriticalRequest(final Request<?, ?> request) {

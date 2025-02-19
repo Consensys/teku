@@ -65,10 +65,7 @@ public class SendSignedAttestationsRequestTest extends AbstractTypeDefRequestTes
         JsonUtil.parse(
             recordedRequest.getBody().readUtf8(),
             DeserializableTypeDefinition.listOf(
-                spec.getGenesisSchemaDefinitions()
-                    .getAttestationSchema()
-                    .castTypeToAttestationSchema()
-                    .getJsonTypeDefinition()));
+                spec.getGenesisSchemaDefinitions().getAttestationSchema().getJsonTypeDefinition()));
     assertThat(data).isEqualTo(attestations);
     assertThat(recordedRequest.getMethod()).isEqualTo("POST");
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
@@ -120,5 +117,7 @@ public class SendSignedAttestationsRequestTest extends AbstractTypeDefRequestTes
     assertThat(recordedRequest.getMethod()).isEqualTo("POST");
     assertThat(recordedRequest.getPath())
         .contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION_V2.getPath(emptyMap()));
+    assertThat(recordedRequest.getHeader(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
   }
 }

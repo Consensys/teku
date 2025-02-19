@@ -26,9 +26,9 @@ public class SpecConfigBellatrixTest {
   @Test
   public void equals_mainnet() {
     SpecConfigBellatrix configA =
-        SpecConfigLoader.loadConfig("mainnet").toVersionBellatrix().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionBellatrix().orElseThrow();
     SpecConfigBellatrix configB =
-        SpecConfigLoader.loadConfig("mainnet").toVersionBellatrix().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionBellatrix().orElseThrow();
 
     assertThat(configA).isEqualTo(configB);
     assertThat(configA.hashCode()).isEqualTo(configB.hashCode());
@@ -37,7 +37,7 @@ public class SpecConfigBellatrixTest {
   @Test
   public void equals_sameRandomValues() {
     SpecConfigAltair altair =
-        SpecConfigLoader.loadConfig("mainnet").toVersionAltair().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionAltair().orElseThrow();
     SpecConfigBellatrix configA = createRandomBellatrixConfig(altair, 1);
     SpecConfigBellatrix configB = createRandomBellatrixConfig(altair, 1);
 
@@ -48,7 +48,7 @@ public class SpecConfigBellatrixTest {
   @Test
   public void equals_differentRandomValues() {
     SpecConfigAltair altair =
-        SpecConfigLoader.loadConfig("mainnet").toVersionAltair().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionAltair().orElseThrow();
     SpecConfigBellatrix configA = createRandomBellatrixConfig(altair, 1);
     SpecConfigBellatrix configB = createRandomBellatrixConfig(altair, 2);
 
@@ -59,12 +59,16 @@ public class SpecConfigBellatrixTest {
   @Test
   public void equals_altairConfigDiffer() {
     SpecConfigAltair altairA =
-        SpecConfigLoader.loadConfig("mainnet", b -> {}).toVersionAltair().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet", b -> {})
+            .specConfig()
+            .toVersionAltair()
+            .orElseThrow();
     SpecConfigAltair altairB =
         SpecConfigLoader.loadConfig(
                 "mainnet",
                 b ->
                     b.altairBuilder(ab -> ab.syncCommitteeSize(altairA.getSyncCommitteeSize() + 4)))
+            .specConfig()
             .toVersionAltair()
             .orElseThrow();
 

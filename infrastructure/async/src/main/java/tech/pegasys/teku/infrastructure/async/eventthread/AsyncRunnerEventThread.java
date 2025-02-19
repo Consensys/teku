@@ -43,7 +43,7 @@ public class AsyncRunnerEventThread implements EventThread {
   }
 
   private boolean isEventThread() {
-    return Thread.currentThread().getId() == eventThreadId;
+    return Thread.currentThread().threadId() == eventThreadId;
   }
 
   @Override
@@ -125,7 +125,7 @@ public class AsyncRunnerEventThread implements EventThread {
    */
   private <T> T recordEventThreadIdAndExecute(final ExceptionThrowingSupplier<T> task)
       throws Throwable {
-    eventThreadId = Thread.currentThread().getId();
+    eventThreadId = Thread.currentThread().threadId();
     try {
       return task.get();
     } finally {

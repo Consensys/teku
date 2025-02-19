@@ -26,17 +26,17 @@ import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
+import tech.pegasys.teku.api.peer.Eth2PeerWithEnr;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
 public class GetPeerById extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/node/peers/{peer_id}";
 
-  private static final SerializableTypeDefinition<Eth2Peer> PEERS_BY_ID_RESPONSE_TYPE =
-      SerializableTypeDefinition.object(Eth2Peer.class)
+  private static final SerializableTypeDefinition<Eth2PeerWithEnr> PEERS_BY_ID_RESPONSE_TYPE =
+      SerializableTypeDefinition.object(Eth2PeerWithEnr.class)
           .name("GetPeerResponse")
           .withField("data", PEER_DATA_TYPE, Function.identity())
           .build();
@@ -64,7 +64,8 @@ public class GetPeerById extends RestApiEndpoint {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
-    Optional<Eth2Peer> peer = network.getEth2PeerById(request.getPathParameter(PEER_ID_PARAMETER));
+    final Optional<Eth2PeerWithEnr> peer =
+        network.getEth2PeerById(request.getPathParameter(PEER_ID_PARAMETER));
     if (peer.isEmpty()) {
       request.respondError(SC_NOT_FOUND, "Peer not found");
     } else {

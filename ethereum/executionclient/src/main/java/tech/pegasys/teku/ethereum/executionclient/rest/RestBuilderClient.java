@@ -13,65 +13,88 @@
 
 package tech.pegasys.teku.ethereum.executionclient.rest;
 
-import static tech.pegasys.teku.ethereum.executionclient.rest.RestClient.NO_HEADERS;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
-import static tech.pegasys.teku.spec.config.Constants.BUILDER_GET_PAYLOAD_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.BUILDER_PROPOSAL_DELAY_TOLERANCE;
-import static tech.pegasys.teku.spec.config.Constants.BUILDER_REGISTER_VALIDATOR_TIMEOUT;
-import static tech.pegasys.teku.spec.config.Constants.BUILDER_STATUS_TIMEOUT;
-import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.BuilderApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
+import tech.pegasys.teku.ethereum.executionclient.rest.RestClient.ResponseSchemaAndDeserializableTypeDefinition;
 import tech.pegasys.teku.ethereum.executionclient.schema.BuilderApiResponse;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class RestBuilderClient implements BuilderClient {
 
-  private static final Map<String, String> USER_AGENT_HEADER =
-      Map.of(
+  private static final Logger LOG = LogManager.getLogger();
+
+  private static final Map.Entry<String, String> USER_AGENT_HEADER =
+      Map.entry(
           "User-Agent",
           VersionProvider.CLIENT_IDENTITY + "/" + VersionProvider.IMPLEMENTATION_VERSION);
 
+  private static final Map.Entry<String, String> ACCEPT_HEADER =
+      Map.entry("Accept", "application/octet-stream;q=1.0,application/json;q=0.9");
+
+  private static final Map<String, String> GET_HEADER_HTTP_HEADERS_WITH_USER_AGENT =
+      Map.ofEntries(USER_AGENT_HEADER, ACCEPT_HEADER);
+  private static final Map<String, String> GET_HEADER_HTTP_HEADERS_WITHOUT_USER_AGENT =
+      Map.ofEntries(ACCEPT_HEADER);
+
+  private static final AtomicBoolean LAST_RECEIVED_HEADER_WAS_IN_SSZ = new AtomicBoolean(false);
+
   private final Map<
-          SpecMilestone,
-          DeserializableTypeDefinition<? extends BuilderApiResponse<? extends BuilderPayload>>>
+          SpecMilestone, ResponseSchemaAndDeserializableTypeDefinition<? extends BuilderPayload>>
       cachedBuilderApiPayloadResponseType = new ConcurrentHashMap<>();
 
-  private final Map<
-          SpecMilestone, DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBid>>>
+  private final Map<SpecMilestone, ResponseSchemaAndDeserializableTypeDefinition<SignedBuilderBid>>
       cachedBuilderApiSignedBuilderBidResponseType = new ConcurrentHashMap<>();
 
+  public static final UInt64 REGISTER_VALIDATOR_SSZ_BACKOFF_TIME_MILLIS =
+      UInt64.valueOf(TimeUnit.DAYS.toMillis(1));
+
+  private final RestBuilderClientOptions options;
   private final RestClient restClient;
-  private final SchemaDefinitionCache schemaDefinitionCache;
+  private final TimeProvider timeProvider;
+  private final Spec spec;
   private final boolean setUserAgentHeader;
 
+  private UInt64 nextSszRegisterValidatorsTryMillis = UInt64.ZERO;
+
   public RestBuilderClient(
-      final RestClient restClient, final Spec spec, final boolean setUserAgentHeader) {
+      final RestBuilderClientOptions options,
+      final RestClient restClient,
+      final TimeProvider timeProvider,
+      final Spec spec,
+      final boolean setUserAgentHeader) {
+    this.options = options;
     this.restClient = restClient;
-    this.schemaDefinitionCache = new SchemaDefinitionCache(spec);
+    this.timeProvider = timeProvider;
+    this.spec = spec;
     this.setUserAgentHeader = setUserAgentHeader;
   }
 
@@ -79,7 +102,7 @@ public class RestBuilderClient implements BuilderClient {
   public SafeFuture<Response<Void>> status() {
     return restClient
         .getAsync(BuilderApiMethod.GET_STATUS.getPath())
-        .orTimeout(BUILDER_STATUS_TIMEOUT);
+        .orTimeout(options.builderStatusTimeout());
   }
 
   @Override
@@ -87,17 +110,44 @@ public class RestBuilderClient implements BuilderClient {
       final UInt64 slot, final SszList<SignedValidatorRegistration> signedValidatorRegistrations) {
 
     if (signedValidatorRegistrations.isEmpty()) {
-      return SafeFuture.completedFuture(Response.withNullPayload());
+      return SafeFuture.completedFuture(Response.fromNullPayload());
     }
 
-    final DeserializableTypeDefinition<SszList<SignedValidatorRegistration>> requestType =
-        SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition();
-    return restClient
-        .postAsync(
-            BuilderApiMethod.REGISTER_VALIDATOR.getPath(),
-            signedValidatorRegistrations,
-            requestType)
-        .orTimeout(BUILDER_REGISTER_VALIDATOR_TIMEOUT);
+    if (nextSszRegisterValidatorsTryMillis.isGreaterThan(timeProvider.getTimeInMillis())) {
+      return registerValidatorsUsingJson(signedValidatorRegistrations)
+          .orTimeout(options.builderRegisterValidatorTimeout());
+    }
+
+    return registerValidatorsUsingSsz(signedValidatorRegistrations)
+        .thenCompose(
+            response -> {
+              // Any failure will trigger a retry, not only Unsupported Media Type (415)
+              if (response.isFailure()) {
+                LOG.debug(
+                    "Failed to register validator using SSZ. Will retry using JSON (error: {})",
+                    response.errorMessage());
+
+                nextSszRegisterValidatorsTryMillis =
+                    timeProvider.getTimeInMillis().plus(REGISTER_VALIDATOR_SSZ_BACKOFF_TIME_MILLIS);
+
+                return registerValidatorsUsingJson(signedValidatorRegistrations);
+              }
+
+              return SafeFuture.completedFuture(response);
+            })
+        .orTimeout(options.builderRegisterValidatorTimeout());
+  }
+
+  private SafeFuture<Response<Void>> registerValidatorsUsingJson(
+      final SszList<SignedValidatorRegistration> signedValidatorRegistrations) {
+    return restClient.postAsync(
+        BuilderApiMethod.REGISTER_VALIDATOR.getPath(), signedValidatorRegistrations, false);
+  }
+
+  private SafeFuture<Response<Void>> registerValidatorsUsingSsz(
+      final SszList<SignedValidatorRegistration> signedValidatorRegistrations) {
+    return restClient.postAsync(
+        BuilderApiMethod.REGISTER_VALIDATOR.getPath(), signedValidatorRegistrations, true);
   }
 
   @Override
@@ -109,36 +159,38 @@ public class RestBuilderClient implements BuilderClient {
     urlParams.put("parent_hash", parentHash.toHexString());
     urlParams.put("pubkey", pubKey.toBytesCompressed().toHexString());
 
-    final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(slot);
+    final SpecVersion specVersion = spec.atSlot(slot);
+    final SpecMilestone milestone = specVersion.getMilestone();
 
-    final DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBid>>
-        responseTypeDefinition =
-            cachedBuilderApiSignedBuilderBidResponseType.computeIfAbsent(
-                milestone,
-                __ -> {
-                  final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
-                      getSchemaDefinitionsBellatrix(milestone);
-                  final SignedBuilderBidSchema signedBuilderBidSchema =
-                      schemaDefinitionsBellatrix.getSignedBuilderBidSchema();
-                  return BuilderApiResponse.createTypeDefinition(
-                      signedBuilderBidSchema.getJsonTypeDefinition());
-                });
+    final ResponseSchemaAndDeserializableTypeDefinition<SignedBuilderBid> responseTypeDefinition =
+        cachedBuilderApiSignedBuilderBidResponseType.computeIfAbsent(
+            milestone,
+            __ -> {
+              final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
+                  getSchemaDefinitionsBellatrix(specVersion);
+              final SignedBuilderBidSchema signedBuilderBidSchema =
+                  schemaDefinitionsBellatrix.getSignedBuilderBidSchema();
+
+              return new ResponseSchemaAndDeserializableTypeDefinition<>(
+                  signedBuilderBidSchema,
+                  BuilderApiResponse.createTypeDefinition(
+                      signedBuilderBidSchema.getJsonTypeDefinition()));
+            });
 
     return restClient
         .getAsync(
             BuilderApiMethod.GET_HEADER.resolvePath(urlParams),
-            setUserAgentHeader ? USER_AGENT_HEADER : NO_HEADERS,
+            setUserAgentHeader
+                ? GET_HEADER_HTTP_HEADERS_WITH_USER_AGENT
+                : GET_HEADER_HTTP_HEADERS_WITHOUT_USER_AGENT,
             responseTypeDefinition)
+        .orTimeout(options.builderProposalDelayTolerance())
         .thenApply(
             response ->
-                Response.unwrapVersioned(
-                    response,
-                    this::extractSignedBuilderBid,
-                    milestone,
-                    BuilderApiResponse::getVersion,
-                    true))
+                response.unwrapVersioned(
+                    this::extractSignedBuilderBid, milestone, BuilderApiResponse::version, true))
         .thenApply(Response::convertToOptional)
-        .orTimeout(BUILDER_PROPOSAL_DELAY_TOLERANCE);
+        .thenPeek(response -> LAST_RECEIVED_HEADER_WAS_IN_SSZ.set(response.receivedAsSsz()));
   }
 
   @Override
@@ -146,15 +198,12 @@ public class RestBuilderClient implements BuilderClient {
       final SignedBeaconBlock signedBlindedBeaconBlock) {
 
     final UInt64 blockSlot = signedBlindedBeaconBlock.getSlot();
-    final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(blockSlot);
-
+    final SpecVersion specVersion = spec.atSlot(blockSlot);
+    final SpecMilestone milestone = specVersion.getMilestone();
     final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
-        getSchemaDefinitionsBellatrix(milestone);
+        getSchemaDefinitionsBellatrix(specVersion);
 
-    final DeserializableTypeDefinition<SignedBeaconBlock> requestTypeDefinition =
-        schemaDefinitionsBellatrix.getSignedBlindedBeaconBlockSchema().getJsonTypeDefinition();
-
-    final DeserializableTypeDefinition<? extends BuilderApiResponse<? extends BuilderPayload>>
+    final ResponseSchemaAndDeserializableTypeDefinition<? extends BuilderPayload>
         responseTypeDefinition =
             cachedBuilderApiPayloadResponseType.computeIfAbsent(
                 milestone,
@@ -163,47 +212,45 @@ public class RestBuilderClient implements BuilderClient {
     return restClient
         .postAsync(
             BuilderApiMethod.GET_PAYLOAD.getPath(),
-            Map.of(HEADER_CONSENSUS_VERSION, milestone.name().toLowerCase(Locale.ROOT)),
+            Map.ofEntries(
+                Map.entry(HEADER_CONSENSUS_VERSION, milestone.name().toLowerCase(Locale.ROOT)),
+                ACCEPT_HEADER),
             signedBlindedBeaconBlock,
-            requestTypeDefinition,
+            LAST_RECEIVED_HEADER_WAS_IN_SSZ.get(),
             responseTypeDefinition)
         .thenApply(
             response ->
-                Response.unwrapVersioned(
-                    response,
-                    this::extractBuilderPayload,
-                    milestone,
-                    BuilderApiResponse::getVersion,
-                    false))
-        .orTimeout(BUILDER_GET_PAYLOAD_TIMEOUT);
+                response.unwrapVersioned(
+                    this::extractBuilderPayload, milestone, BuilderApiResponse::version, false))
+        .orTimeout(options.builderGetPayloadTimeout());
   }
 
   private <T extends BuilderPayload>
-      DeserializableTypeDefinition<BuilderApiResponse<T>> payloadTypeDefinition(
+      ResponseSchemaAndDeserializableTypeDefinition<T> payloadTypeDefinition(
           final BuilderPayloadSchema<T> schema) {
     final DeserializableTypeDefinition<T> typeDefinition = schema.getJsonTypeDefinition();
-    return BuilderApiResponse.createTypeDefinition(typeDefinition);
+    return new ResponseSchemaAndDeserializableTypeDefinition<>(
+        schema, BuilderApiResponse.createTypeDefinition(typeDefinition));
   }
 
   private <T extends SignedBuilderBid> SignedBuilderBid extractSignedBuilderBid(
       final BuilderApiResponse<T> builderApiResponse) {
-    return builderApiResponse.getData();
+    return builderApiResponse.data();
   }
 
   private <T extends BuilderPayload> BuilderPayload extractBuilderPayload(
       final BuilderApiResponse<T> builderApiResponse) {
-    return builderApiResponse.getData();
+    return builderApiResponse.data();
   }
 
-  private SchemaDefinitionsBellatrix getSchemaDefinitionsBellatrix(
-      final SpecMilestone specMilestone) {
-    return schemaDefinitionCache
-        .getSchemaDefinition(specMilestone)
+  private SchemaDefinitionsBellatrix getSchemaDefinitionsBellatrix(final SpecVersion specVersion) {
+    return specVersion
+        .getSchemaDefinitions()
         .toVersionBellatrix()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    specMilestone
+                    specVersion.getMilestone()
                         + " is not a supported milestone for the builder rest api. Milestones >= Bellatrix are supported."));
   }
 }

@@ -14,13 +14,23 @@
 package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
+import static tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra.MAX_RANDOM_VALUE;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.crypto.Sha256;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
@@ -53,31 +63,18 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
   }
 
   /**
-   * get_active_balance
-   *
-   * @param state The state to get the effective balance from
-   * @param validatorIndex the index of the validator
-   */
-  public UInt64 getActiveBalance(final BeaconState state, final int validatorIndex) {
-    final Validator validator = state.getValidators().get(validatorIndex);
-    final UInt64 maxEffectiveBalance = predicatesElectra.getValidatorMaxEffectiveBalance(validator);
-    final UInt64 validatorBalance = state.getBalances().get(validatorIndex).get();
-    return validatorBalance.min(maxEffectiveBalance);
-  }
-
-  /**
    * get_pending_balance_to_withdraw
    *
    * @param state The state
    * @param validatorIndex The index of the validator
-   * @return The sum of the withdrawal amounts for the validator in the partial withdrawal queue
+   * @return The sum of the withdrawal amounts for the validator in the partial withdrawal queue.
    */
   public UInt64 getPendingBalanceToWithdraw(
       final BeaconStateElectra state, final int validatorIndex) {
     final List<PendingPartialWithdrawal> partialWithdrawals =
         state.getPendingPartialWithdrawals().asList();
     return partialWithdrawals.stream()
-        .filter(z -> z.getIndex() == validatorIndex)
+        .filter(z -> z.getValidatorIndex() == validatorIndex)
         .map(PendingPartialWithdrawal::getAmount)
         .reduce(UInt64.ZERO, UInt64::plus);
   }
@@ -115,19 +112,45 @@ public class BeaconStateAccessorsElectra extends BeaconStateAccessorsDeneb {
     return (BeaconStateAccessorsElectra) beaconStateAccessors;
   }
 
-  /**
-   * implements get_validator_max_effective_balance state accessor
-   *
-   * @param validator - a validator from a state.
-   * @return the max effective balance for the specified validator based on its withdrawal
-   *     credentials.
-   */
-  public UInt64 getValidatorMaxEffectiveBalance(final Validator validator) {
-    return predicatesElectra.getValidatorMaxEffectiveBalance(validator);
-  }
-
   @Override
   public IntList getNextSyncCommitteeIndices(final BeaconState state) {
     return getNextSyncCommitteeIndices(state, configElectra.getMaxEffectiveBalanceElectra());
+  }
+
+  @Override
+  protected IntList getNextSyncCommitteeIndices(
+      final BeaconState state, final UInt64 maxEffectiveBalance) {
+    final UInt64 epoch = getCurrentEpoch(state).plus(1);
+    final IntList activeValidatorIndices = getActiveValidatorIndices(state, epoch);
+    final int activeValidatorCount = activeValidatorIndices.size();
+    checkArgument(activeValidatorCount > 0, "Provided state has no active validators");
+
+    final Bytes32 seed = getSeed(state, epoch, Domain.SYNC_COMMITTEE);
+    final SszList<Validator> validators = state.getValidators();
+    final IntList syncCommitteeIndices = new IntArrayList();
+    final int syncCommitteeSize = configElectra.getSyncCommitteeSize();
+    final Sha256 sha256 = getSha256Instance();
+
+    int i = 0;
+    Bytes randomBytes = null;
+    while (syncCommitteeIndices.size() < syncCommitteeSize) {
+      if (i % 16 == 0) {
+        randomBytes = Bytes.wrap(sha256.digest(seed, uint64ToBytes(Math.floorDiv(i, 16L))));
+      }
+      final int shuffledIndex =
+          miscHelpers.computeShuffledIndex(i % activeValidatorCount, activeValidatorCount, seed);
+      final int candidateIndex = activeValidatorIndices.getInt(shuffledIndex);
+      final int offset = (i % 16) * 2;
+      final UInt64 randomValue = bytesToUInt64(randomBytes.slice(offset, 2));
+      final UInt64 effectiveBalance = validators.get(candidateIndex).getEffectiveBalance();
+      if (effectiveBalance
+          .times(MAX_RANDOM_VALUE)
+          .isGreaterThanOrEqualTo(maxEffectiveBalance.times(randomValue))) {
+        syncCommitteeIndices.add(candidateIndex);
+      }
+      i++;
+    }
+
+    return syncCommitteeIndices;
   }
 }

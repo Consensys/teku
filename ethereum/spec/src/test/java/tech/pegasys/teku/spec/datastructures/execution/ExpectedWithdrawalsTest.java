@@ -126,15 +126,51 @@ class ExpectedWithdrawalsTest {
         spec.getBlockProcessor(preState.getSlot()).getExpectedWithdrawals(preState);
     final MutableBeaconStateElectra mutableBeaconStateElectra =
         MutableBeaconStateElectra.required(preState.createWritableCopy());
-    assertThat(withdrawals.getPartialWithdrawalCount()).isEqualTo(1);
+    assertThat(withdrawals.getPartialWithdrawalCount()).isEqualTo(2);
 
     withdrawals.processWithdrawalsUnchecked(
         mutableBeaconStateElectra,
         SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions()),
         spec.getGenesisSpec().beaconStateMutators(),
         SpecConfigElectra.required(spec.getGenesisSpecConfig()));
-    assertThat(mutableBeaconStateElectra.getPendingPartialWithdrawals().size()).isEqualTo(2);
-    assertThat(mutableBeaconStateElectra.getNextWithdrawalIndex()).isEqualTo(UInt64.ONE);
+    assertThat(mutableBeaconStateElectra.getPendingPartialWithdrawals().size()).isEqualTo(1);
+    assertThat(mutableBeaconStateElectra.getNextWithdrawalIndex()).isEqualTo(UInt64.valueOf(2));
     assertThat(mutableBeaconStateElectra.getValidators().size()).isEqualTo(3);
+  }
+
+  @Test
+  void electraPendingPartialCountsSkippedWithdrawals() {
+    spec = TestSpecFactory.createMinimalElectra();
+    dataStructureUtil = new DataStructureUtil(spec);
+    final SpecConfigElectra specConfigElectra =
+        SpecConfigElectra.required(spec.getGenesisSpec().getConfig());
+    final UInt64 electraMaxBalance = specConfigElectra.getMaxEffectiveBalance();
+    final long partialWithdrawalBalance = 10241024L;
+
+    final BeaconStateElectra preState =
+        BeaconStateElectra.required(
+            new BeaconStateTestBuilder(dataStructureUtil)
+                .activeConsolidatingValidator(electraMaxBalance.plus(partialWithdrawalBalance))
+                // the two validators below are skipped because they are queued for exit therefore
+                // they're withdrawals are skipped
+                .activeConsolidatingValidatorQueuedForExit(
+                    electraMaxBalance.plus(partialWithdrawalBalance + 1))
+                .activeConsolidatingValidatorQueuedForExit(
+                    electraMaxBalance.plus(partialWithdrawalBalance + 2))
+                .pendingPartialWithdrawal(0, electraMaxBalance.plus(partialWithdrawalBalance))
+                .pendingPartialWithdrawal(
+                    1, electraMaxBalance.plus(partialWithdrawalBalance).plus(1))
+                .pendingPartialWithdrawal(
+                    2, electraMaxBalance.plus(partialWithdrawalBalance).plus(2))
+                .build());
+
+    final ExpectedWithdrawals withdrawals =
+        spec.getBlockProcessor(preState.getSlot()).getExpectedWithdrawals(preState);
+
+    // even having 2 of the 3 partial withdrawals skipped,
+    // the count should be 2(which is the MAX_PENDING_PARTIALS_PER_WITHDRAWALS_SWEEP for minimal
+    // spec)
+    // because we consider the skipped in the count
+    assertThat(withdrawals.getPartialWithdrawalCount()).isEqualTo(2);
   }
 }

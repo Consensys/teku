@@ -18,7 +18,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 
 @SuppressWarnings("JavaCase")
 public class AttesterSlashing {
@@ -58,10 +58,9 @@ public class AttesterSlashing {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof AttesterSlashing)) {
+    if (!(o instanceof AttesterSlashing that)) {
       return false;
     }
-    AttesterSlashing that = (AttesterSlashing) o;
     return Objects.equals(attestation_1, that.attestation_1)
         && Objects.equals(attestation_2, that.attestation_2);
   }

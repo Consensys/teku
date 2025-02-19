@@ -25,7 +25,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -102,16 +103,21 @@ import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 public class Spec {
   private final Map<SpecMilestone, SpecVersion> specVersions;
   private final ForkSchedule forkSchedule;
   private final StateTransition stateTransition;
+  private final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent;
 
   private Spec(
-      final Map<SpecMilestone, SpecVersion> specVersions, final ForkSchedule forkSchedule) {
-    Preconditions.checkArgument(specVersions != null && specVersions.size() > 0);
+      final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent,
+      final Map<SpecMilestone, SpecVersion> specVersions,
+      final ForkSchedule forkSchedule) {
+    Preconditions.checkArgument(specVersions != null && !specVersions.isEmpty());
     Preconditions.checkArgument(forkSchedule != null);
+    this.specConfigAndParent = specConfigAndParent;
     this.specVersions = specVersions;
     this.forkSchedule = forkSchedule;
 
@@ -119,12 +125,16 @@ public class Spec {
     this.stateTransition = new StateTransition(this::atSlot);
   }
 
-  static Spec create(final SpecConfig config, final SpecMilestone highestMilestoneSupported) {
-    final Map<SpecMilestone, SpecVersion> specVersions = new HashMap<>();
+  static Spec create(
+      final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent,
+      final SpecMilestone highestMilestoneSupported) {
+    final Map<SpecMilestone, SpecVersion> specVersions = new EnumMap<>(SpecMilestone.class);
     final ForkSchedule.Builder forkScheduleBuilder = ForkSchedule.builder();
+    final SchemaRegistryBuilder schemaRegistryBuilder = SchemaRegistryBuilder.create();
 
     for (SpecMilestone milestone : SpecMilestone.getMilestonesUpTo(highestMilestoneSupported)) {
-      SpecVersion.create(milestone, config)
+      SpecVersion.create(
+              milestone, specConfigAndParent.forMilestone(milestone), schemaRegistryBuilder)
           .ifPresent(
               milestoneSpec -> {
                 forkScheduleBuilder.addNextMilestone(milestoneSpec);
@@ -134,7 +144,7 @@ public class Spec {
 
     final ForkSchedule forkSchedule = forkScheduleBuilder.build();
 
-    return new Spec(specVersions, forkSchedule);
+    return new Spec(specConfigAndParent, specVersions, forkSchedule);
   }
 
   public SpecVersion forMilestone(final SpecMilestone milestone) {
@@ -155,6 +165,10 @@ public class Spec {
 
   private SpecVersion atTimeMillis(final UInt64 genesisTimeMillis, final UInt64 currentTimeMillis) {
     return atTime(millisToSeconds(genesisTimeMillis), millisToSeconds(currentTimeMillis));
+  }
+
+  public SpecConfigAndParent<? extends SpecConfig> getSpecConfigAndParent() {
+    return specConfigAndParent;
   }
 
   public SpecConfig getSpecConfig(final UInt64 epoch) {
@@ -934,18 +948,46 @@ public class Spec {
         .isLessThanOrEqualTo(specConfigDeneb.getMinEpochsForBlobSidecarsRequests());
   }
 
-  public Optional<Integer> getMaxBlobsPerBlock() {
-    return getSpecConfigDeneb().map(SpecConfigDeneb::getMaxBlobsPerBlock);
-  }
+  /**
+   * This method is used to setup caches and limits during the initialization of the node. We
+   * normally increase the blobs with each fork, but in case we will decrease them, let's consider
+   * the last two forks.
+   */
+  public Optional<Integer> getMaxBlobsPerBlockForHighestMilestone() {
+    final SpecMilestone highestSupportedMilestone =
+        getForkSchedule().getHighestSupportedMilestone();
 
-  public Optional<Integer> getMaxBlobsPerBlock(final UInt64 slot) {
-    return getSpecConfigDeneb(slot).map(SpecConfigDeneb::getMaxBlobsPerBlock);
+    final Optional<Integer> maybeHighestMaxBlobsPerBlock =
+        forMilestone(highestSupportedMilestone)
+            .getConfig()
+            .toVersionDeneb()
+            .map(SpecConfigDeneb::getMaxBlobsPerBlock);
+
+    final Optional<Integer> maybeSecondHighestMaxBlobsPerBlock =
+        highestSupportedMilestone
+            .getPreviousMilestoneIfExists()
+            .map(this::forMilestone)
+            .map(SpecVersion::getConfig)
+            .flatMap(SpecConfig::toVersionDeneb)
+            .map(SpecConfigDeneb::getMaxBlobsPerBlock);
+
+    if (maybeHighestMaxBlobsPerBlock.isEmpty() && maybeSecondHighestMaxBlobsPerBlock.isEmpty()) {
+      return Optional.empty();
+    }
+
+    final int highestMaxBlobsPerBlock = maybeHighestMaxBlobsPerBlock.orElse(0);
+    final int secondHighestMaxBlobsPerBlock = maybeSecondHighestMaxBlobsPerBlock.orElse(0);
+    final int max = Math.max(highestMaxBlobsPerBlock, secondHighestMaxBlobsPerBlock);
+
+    return Optional.of(max);
   }
 
   public UInt64 computeSubnetForBlobSidecar(final BlobSidecar blobSidecar) {
-    final SpecConfig config = atSlot(blobSidecar.getSlot()).getConfig();
-    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
-    return blobSidecar.getIndex().mod(specConfigDeneb.getBlobSidecarSubnetCount());
+    return blobSidecar
+        .getIndex()
+        .mod(
+            SpecConfigDeneb.required(atSlot(blobSidecar.getSlot()).getConfig())
+                .getBlobSidecarSubnetCount());
   }
 
   public Optional<UInt64> computeFirstSlotWithBlobSupport() {
@@ -966,10 +1008,6 @@ public class Spec {
     return Optional.ofNullable(forMilestone(highestSupportedMilestone))
         .map(SpecVersion::getConfig)
         .flatMap(SpecConfig::toVersionDeneb);
-  }
-
-  private Optional<SpecConfigDeneb> getSpecConfigDeneb(final UInt64 slot) {
-    return atSlot(slot).getConfig().toVersionDeneb();
   }
 
   // Private helpers

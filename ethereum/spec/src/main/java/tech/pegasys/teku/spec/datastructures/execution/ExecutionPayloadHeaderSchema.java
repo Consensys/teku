@@ -17,6 +17,9 @@ import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
 
 public interface ExecutionPayloadHeaderSchema<T extends ExecutionPayloadHeader>
     extends SszContainerSchema<T> {
@@ -37,4 +40,16 @@ public interface ExecutionPayloadHeaderSchema<T extends ExecutionPayloadHeader>
 
   ExecutionPayloadHeader createExecutionPayloadHeader(
       Consumer<ExecutionPayloadHeaderBuilder> builderConsumer);
+
+  default ExecutionPayloadHeaderSchemaBellatrix toVersionBellatrixRequired() {
+    throw new UnsupportedOperationException("Not a Bellatrix schema");
+  }
+
+  default ExecutionPayloadHeaderSchemaCapella toVersionCapellaRequired() {
+    throw new UnsupportedOperationException("Not a Capella schema");
+  }
+
+  default ExecutionPayloadHeaderSchemaDeneb toVersionDenebRequired() {
+    throw new UnsupportedOperationException("Not a Deneb schema");
+  }
 }

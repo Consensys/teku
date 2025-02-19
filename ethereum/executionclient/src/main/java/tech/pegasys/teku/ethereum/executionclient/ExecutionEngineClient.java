@@ -15,12 +15,13 @@ package tech.pegasys.teku.ethereum.executionclient;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
@@ -61,9 +62,10 @@ public interface ExecutionEngineClient {
       Bytes32 parentBeaconBlockRoot);
 
   SafeFuture<Response<PayloadStatusV1>> newPayloadV4(
-      ExecutionPayloadV4 executionPayload,
+      ExecutionPayloadV3 executionPayload,
       List<VersionedHash> blobVersionedHashes,
-      Bytes32 parentBeaconBlockRoot);
+      Bytes32 parentBeaconBlockRoot,
+      List<Bytes> executionRequests);
 
   SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV1(
       ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV1> payloadAttributes);
@@ -77,4 +79,6 @@ public interface ExecutionEngineClient {
   SafeFuture<Response<List<String>>> exchangeCapabilities(List<String> capabilities);
 
   SafeFuture<Response<List<ClientVersionV1>>> getClientVersionV1(ClientVersionV1 clientVersion);
+
+  SafeFuture<Response<List<BlobAndProofV1>>> getBlobsV1(List<VersionedHash> blobVersionedHashes);
 }

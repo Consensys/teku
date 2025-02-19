@@ -149,4 +149,9 @@ public class ExecutionPayloadHeaderSchemaBellatrix
   public SszByteListSchema<?> getExtraDataSchema() {
     return (SszByteListSchema<?>) getFieldSchema10();
   }
+
+  @Override
+  public ExecutionPayloadHeaderSchemaBellatrix toVersionBellatrixRequired() {
+    return this;
+  }
 }

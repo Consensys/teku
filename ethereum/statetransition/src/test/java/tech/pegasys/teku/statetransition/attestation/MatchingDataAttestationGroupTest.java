@@ -353,7 +353,26 @@ class MatchingDataAttestationGroupTest {
       final Optional<Integer> committeeIndex, final int... validators) {
     final SszBitlist aggregationBits =
         attestationSchema.getAggregationBitsSchema().ofBits(10, validators);
+    final boolean isElectra = spec.atSlot(SLOT).getMilestone().isGreaterThanOrEqualTo(ELECTRA);
     final Supplier<SszBitvector> committeeBits;
+    final Optional<Attestation> singleAttestation;
+    final int resolvedCommitteeIndex = committeeIndex.orElse(0);
+
+    if (validators.length == 1 && isElectra) {
+      singleAttestation =
+          Optional.of(
+              spec.getGenesisSchemaDefinitions()
+                  .toVersionElectra()
+                  .orElseThrow()
+                  .getSingleAttestationSchema()
+                  .create(
+                      UInt64.valueOf(resolvedCommitteeIndex),
+                      UInt64.valueOf(validators[0]),
+                      attestationData,
+                      dataStructureUtil.randomSignature()));
+    } else {
+      singleAttestation = Optional.empty();
+    }
 
     if (spec.atSlot(SLOT).getMilestone().isGreaterThanOrEqualTo(ELECTRA)) {
       committeeBits =
@@ -361,14 +380,21 @@ class MatchingDataAttestationGroupTest {
               attestationSchema
                   .getCommitteeBitsSchema()
                   .orElseThrow()
-                  .ofBits(committeeIndex.orElse(0));
+                  .ofBits(resolvedCommitteeIndex);
     } else {
       committeeBits = () -> null;
     }
-    return ValidatableAttestation.from(
-        spec,
+
+    final Attestation attestation =
         attestationSchema.create(
-            aggregationBits, attestationData, dataStructureUtil.randomSignature(), committeeBits),
-        committeeSizes);
+            aggregationBits, attestationData, dataStructureUtil.randomSignature(), committeeBits);
+
+    final ValidatableAttestation validatableAttestation =
+        ValidatableAttestation.from(spec, singleAttestation.orElse(attestation), committeeSizes);
+
+    singleAttestation.ifPresent(
+        __ -> validatableAttestation.convertToAggregatedFormatFromSingleAttestation(attestation));
+
+    return validatableAttestation;
   }
 }

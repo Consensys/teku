@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 
 /**
  * Hides some serious abuse of Java's type system so that from the outside we have a type safe chain
@@ -76,9 +77,9 @@ class BuilderChain<In extends SpecConfig, Out extends In> implements ForkConfigB
 
   @Override
   @SuppressWarnings("unchecked")
-  public Out build(final In specConfig) {
-    final SpecConfig config = builderToApply.build(specConfig);
-    return (Out) tail.build(config);
+  public SpecConfigAndParent<Out> build(final SpecConfigAndParent<In> specConfig) {
+    final SpecConfigAndParent<In> config = builderToApply.build(specConfig);
+    return tail.build(config);
   }
 
   @Override
@@ -95,7 +96,7 @@ class BuilderChain<In extends SpecConfig, Out extends In> implements ForkConfigB
   private static class NoOpForkBuilder<T extends SpecConfig> implements ForkConfigBuilder<T, T> {
 
     @Override
-    public T build(final T specConfig) {
+    public SpecConfigAndParent<T> build(final SpecConfigAndParent<T> specConfig) {
       return specConfig;
     }
 

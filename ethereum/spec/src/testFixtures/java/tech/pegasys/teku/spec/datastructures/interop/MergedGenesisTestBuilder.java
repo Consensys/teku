@@ -13,18 +13,17 @@
 
 package tech.pegasys.teku.spec.datastructures.interop;
 
-import java.util.Collections;
-import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.config.GenesisConfigFile;
+import org.hyperledger.besu.config.GenesisConfig;
 import org.hyperledger.besu.config.GenesisConfigOptions;
 import org.hyperledger.besu.datatypes.Wei;
 import org.hyperledger.besu.ethereum.chain.BadBlockManager;
 import org.hyperledger.besu.ethereum.chain.GenesisState;
 import org.hyperledger.besu.ethereum.core.Block;
 import org.hyperledger.besu.ethereum.core.BlockHeader;
-import org.hyperledger.besu.ethereum.core.MiningParameters;
+import org.hyperledger.besu.ethereum.core.MiningConfiguration;
 import org.hyperledger.besu.ethereum.mainnet.MainnetProtocolSchedule;
 import org.hyperledger.besu.ethereum.mainnet.ProtocolSchedule;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -35,13 +34,16 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 public class MergedGenesisTestBuilder {
   public static ExecutionPayloadHeader createPayloadForBesuGenesis(
       final SchemaDefinitions schemaDefinitions, final String genesisConfigFile) {
-    final GenesisConfigFile configFile = GenesisConfigFile.fromConfig(genesisConfigFile);
-    final GenesisConfigOptions genesisConfigOptions =
-        configFile.getConfigOptions(Collections.emptyMap());
+    final GenesisConfig configFile = GenesisConfig.fromConfig(genesisConfigFile);
+    final GenesisConfigOptions genesisConfigOptions = configFile.getConfigOptions();
     final BadBlockManager badBlockManager = new BadBlockManager();
     final ProtocolSchedule protocolSchedule =
         MainnetProtocolSchedule.fromConfig(
-            genesisConfigOptions, MiningParameters.MINING_DISABLED, badBlockManager);
+            genesisConfigOptions,
+            MiningConfiguration.MINING_DISABLED,
+            badBlockManager,
+            false,
+            new NoOpMetricsSystem());
     final GenesisState genesisState = GenesisState.fromConfig(configFile, protocolSchedule);
     final Block genesisBlock = genesisState.getBlock();
     final BlockHeader header = genesisBlock.getHeader();
@@ -74,10 +76,6 @@ public class MergedGenesisTestBuilder {
                             .orElseThrow())
                 // New in Deneb
                 .blobGasUsed(() -> UInt64.ZERO)
-                .excessBlobGas(() -> UInt64.ZERO)
-                // New in Electra
-                .depositRequestsRoot(() -> Bytes32.ZERO)
-                .withdrawalRequestsRoot(() -> Bytes32.ZERO)
-                .consolidationRequestsRoot(() -> Bytes32.ZERO));
+                .excessBlobGas(() -> UInt64.ZERO));
   }
 }

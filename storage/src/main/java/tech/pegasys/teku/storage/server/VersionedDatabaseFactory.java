@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -27,6 +28,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
 import tech.pegasys.teku.storage.server.leveldb.LevelDbDatabaseFactory;
@@ -46,7 +48,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   @VisibleForTesting static final String STORAGE_MODE_PATH = "data-storage-mode.txt";
   @VisibleForTesting static final String METADATA_FILENAME = "metadata.yml";
   @VisibleForTesting static final String NETWORK_FILENAME = "network.yml";
-
   private final MetricsSystem metricsSystem;
   private final File dataDirectory;
   private final int maxKnownNodeCacheSize;
@@ -61,12 +62,17 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
   private final SyncDataAccessor dbSettingFileSyncDataAccessor;
+  private final Optional<Eth2Network> maybeNetwork;
 
   public VersionedDatabaseFactory(
-      final MetricsSystem metricsSystem, final Path dataPath, final StorageConfiguration config) {
+      final MetricsSystem metricsSystem,
+      final Path dataPath,
+      final StorageConfiguration config,
+      final Optional<Eth2Network> maybeNetwork) {
 
     this.metricsSystem = metricsSystem;
     this.dataDirectory = dataPath.toFile();
+    this.maybeNetwork = maybeNetwork;
 
     this.createDatabaseVersion = config.getDataStorageCreateDbVersion();
     this.maxKnownNodeCacheSize = config.getMaxKnownNodeCacheSize();
@@ -166,7 +172,11 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private Database createV4Database() {
     try {
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(),
+          spec.getGenesisSpecConfig().getGenesisForkVersion(),
+          eth1Address,
+          spec.getGenesisSpecConfig().getDepositChainId(),
+          maybeNetwork);
       return RocksDbDatabaseFactory.createV4(
           metricsSystem,
           KvStoreConfiguration.v4Settings(dbDirectory.toPath()),
@@ -190,7 +200,11 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final V5DatabaseMetadata metaData =
           V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(),
+          spec.getGenesisSpecConfig().getGenesisForkVersion(),
+          eth1Address,
+          spec.getGenesisSpecConfig().getDepositChainId(),
+          maybeNetwork);
       return RocksDbDatabaseFactory.createV4(
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
@@ -233,7 +247,11 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final V5DatabaseMetadata metaData =
           V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(),
+          spec.getGenesisSpecConfig().getGenesisForkVersion(),
+          eth1Address,
+          spec.getGenesisSpecConfig().getDepositChainId(),
+          maybeNetwork);
       return LevelDbDatabaseFactory.createLevelDb(
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
@@ -284,7 +302,11 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         V6DatabaseMetadata.init(getMetadataFile(), V6DatabaseMetadata.singleDBDefault());
 
     DatabaseNetwork.init(
-        getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
+        getNetworkFile(),
+        spec.getGenesisSpecConfig().getGenesisForkVersion(),
+        eth1Address,
+        spec.getGenesisSpecConfig().getDepositChainId(),
+        maybeNetwork);
 
     return metaData.getSingleDbConfiguration().getConfiguration();
   }

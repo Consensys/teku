@@ -17,9 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,8 +29,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
@@ -46,10 +42,18 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 class MergeTransitionBlockValidatorTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private final Bytes32 terminalBlockHash = Bytes32.random();
+  private final UInt64 terminalEpoch = UInt64.ZERO;
+  private final Spec spec =
+      TestSpecFactory.createMinimalBellatrix(
+          b ->
+              b.bellatrixBuilder(
+                  bb ->
+                      bb.terminalBlockHash(terminalBlockHash)
+                          .terminalBlockHashActivationEpoch(terminalEpoch)));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ExecutionLayerChannelStub executionLayer =
-      new ExecutionLayerChannelStub(spec, false, Optional.empty());
+      new ExecutionLayerChannelStub(spec, false);
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
 
   @BeforeAll
@@ -79,7 +83,7 @@ class MergeTransitionBlockValidatorTest {
 
   @Test
   void shouldReturnValidImmediatelyWhenThereIsTransitionBlockFullyVerified() {
-    final SignedBlockAndState chainHead = generateNonfinalizedTransition();
+    final SignedBlockAndState chainHead = generateNonFinalizedTransition(true);
     storageSystem.chainUpdater().saveBlock(chainHead);
     final SignedBlockAndState blockToVerify = storageSystem.chainBuilder().generateNextBlock();
 
@@ -109,10 +113,9 @@ class MergeTransitionBlockValidatorTest {
 
   @Test
   void shouldVerifyNonFinalizedAncestorTransitionBlock() {
-    final SignedBlockAndState transitionBlock = generateNonfinalizedTransition();
+    final SignedBlockAndState transitionBlock = generateNonFinalizedTransition(true);
     final SignedBlockAndState chainHead = storageSystem.chainBuilder().getLatestBlockAndState();
     final SignedBlockAndState blockToVerify = storageSystem.chainBuilder().generateNextBlock();
-    withValidTransitionBlock(transitionBlock);
 
     final MergeTransitionBlockValidator transitionVerifier = createTransitionValidator();
 
@@ -133,8 +136,6 @@ class MergeTransitionBlockValidatorTest {
                 .getLatestExecutionPayloadHeader(),
             blockToVerify.getBlock());
 
-    assertThat(executionLayer.getRequestedPowBlocks())
-        .contains(getExecutionPayload(transitionBlock).getParentHash());
     assertThat(result)
         .isCompletedWithValue(
             new PayloadValidationResult(transitionBlock.getRoot(), PayloadStatus.VALID));
@@ -142,10 +143,9 @@ class MergeTransitionBlockValidatorTest {
 
   @Test
   void shouldReportRootForInvalidNonFinalizedAncestorTransitionBlock() {
-    final SignedBlockAndState transitionBlock = generateNonfinalizedTransition();
+    final SignedBlockAndState transitionBlock = generateNonFinalizedTransition(false);
     final SignedBlockAndState chainHead = storageSystem.chainBuilder().getLatestBlockAndState();
     final SignedBlockAndState blockToVerify = storageSystem.chainBuilder().generateNextBlock();
-    withInvalidTransitionBlock(transitionBlock);
 
     final MergeTransitionBlockValidator transitionVerifier = createTransitionValidator();
 
@@ -166,8 +166,6 @@ class MergeTransitionBlockValidatorTest {
                 .getLatestExecutionPayloadHeader(),
             blockToVerify.getBlock());
 
-    assertThat(executionLayer.getRequestedPowBlocks())
-        .contains(getExecutionPayload(transitionBlock).getParentHash());
     assertThat(result).isCompleted();
     final PayloadValidationResult validationResult = safeJoin(result);
     assertThat(validationResult.getInvalidTransitionBlockRoot())
@@ -177,7 +175,7 @@ class MergeTransitionBlockValidatorTest {
 
   @Test
   void shouldVerifyFinalizedAncestorTransitionBlock() {
-    final SignedBlockAndState transitionBlock = generateFinalizedTransition();
+    generateFinalizedTransition(true);
     final BeaconStateBellatrix chainHeadState =
         storageSystem
             .chainBuilder()
@@ -185,7 +183,6 @@ class MergeTransitionBlockValidatorTest {
             .getState()
             .toVersionBellatrix()
             .orElseThrow();
-    withValidTransitionBlock(transitionBlock);
 
     final SignedBlockAndState blockToVerify = storageSystem.chainBuilder().generateNextBlock();
 
@@ -198,8 +195,6 @@ class MergeTransitionBlockValidatorTest {
         transitionVerifier.verifyTransitionBlock(
             chainHeadState.getLatestExecutionPayloadHeader(), blockToVerify.getBlock());
 
-    assertThat(executionLayer.getRequestedPowBlocks())
-        .contains(getExecutionPayload(transitionBlock).getParentHash());
     assertThat(result).isCompletedWithValue(new PayloadValidationResult(PayloadStatus.VALID));
   }
 
@@ -210,7 +205,7 @@ class MergeTransitionBlockValidatorTest {
    */
   @Test
   void shouldFailWithFatalServiceFailuresExceptionWhenFinalizedAncestorTransitionBlockIsInvalid() {
-    final SignedBlockAndState transitionBlock = generateFinalizedTransition();
+    generateFinalizedTransition(false);
     final BeaconStateBellatrix chainHeadState =
         storageSystem
             .chainBuilder()
@@ -218,7 +213,6 @@ class MergeTransitionBlockValidatorTest {
             .getState()
             .toVersionBellatrix()
             .orElseThrow();
-    withInvalidTransitionBlock(transitionBlock);
 
     final SignedBlockAndState blockToVerify = storageSystem.chainBuilder().generateNextBlock();
 
@@ -234,51 +228,19 @@ class MergeTransitionBlockValidatorTest {
     assertThatSafeFuture(result).isCompletedExceptionallyWith(FatalServiceFailureException.class);
   }
 
-  private void withValidTransitionBlock(final SignedBlockAndState transitionBlock) {
-    final UInt256 ttd =
-        spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalTotalDifficulty();
-    final UInt256 terminalBlockDifficulty = ttd.plus(1);
-    final UInt256 ttdBlockParentDifficulty = ttd.subtract(1);
-    withPowBlockDifficulties(transitionBlock, terminalBlockDifficulty, ttdBlockParentDifficulty);
-  }
-
-  private void withInvalidTransitionBlock(final SignedBlockAndState transitionBlock) {
-    final UInt256 ttd =
-        spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalTotalDifficulty();
-    final UInt256 terminalBlockDifficulty = ttd.subtract(1);
-    final UInt256 ttdBlockParentDifficulty = ttd.subtract(2);
-    withPowBlockDifficulties(transitionBlock, terminalBlockDifficulty, ttdBlockParentDifficulty);
-  }
-
-  private void withPowBlockDifficulties(
-      final SignedBlockAndState transitionBlock,
-      final UInt256 terminalBlockDifficulty,
-      final UInt256 ttdBlockParentDifficulty) {
-    final Bytes32 terminalBlockParentHash = dataStructureUtil.randomBytes32();
-    executionLayer.addPowBlock(
-        new PowBlock(
-            getExecutionPayload(transitionBlock).getParentHash(),
-            terminalBlockParentHash,
-            terminalBlockDifficulty,
-            UInt64.ZERO));
-    executionLayer.addPowBlock(
-        new PowBlock(
-            terminalBlockParentHash,
-            dataStructureUtil.randomBytes32(),
-            ttdBlockParentDifficulty,
-            UInt64.ZERO));
-  }
-
-  private SignedBlockAndState generateNonfinalizedTransition() {
+  private SignedBlockAndState generateNonFinalizedTransition(final boolean isValid) {
     storageSystem
         .chainBuilder()
         .generateBlocksUpToSlot(5)
         .forEach(storageSystem.chainUpdater()::saveOptimisticBlock);
-    final Bytes32 terminalBlockHash = dataStructureUtil.randomBytes32();
     final SignedBlockAndState transitionBlock =
         storageSystem
             .chainBuilder()
-            .generateBlockAtSlot(6, BlockOptions.create().setTerminalBlockHash(terminalBlockHash));
+            .generateBlockAtSlot(
+                6,
+                BlockOptions.create()
+                    .setTerminalBlockHash(
+                        isValid ? terminalBlockHash : dataStructureUtil.randomBytes32()));
     storageSystem.chainUpdater().saveOptimisticBlock(transitionBlock);
 
     storageSystem
@@ -290,24 +252,14 @@ class MergeTransitionBlockValidatorTest {
     return transitionBlock;
   }
 
-  private SignedBlockAndState generateFinalizedTransition() {
-    final SignedBlockAndState transitionBlock = generateNonfinalizedTransition();
+  private void generateFinalizedTransition(final boolean isValid) {
+    generateNonFinalizedTransition(isValid);
 
     // Finalize between transition block and chain head
     storageSystem.chainUpdater().finalizeEpoch(1);
-    return transitionBlock;
-  }
-
-  private ExecutionPayload getExecutionPayload(final SignedBlockAndState blockToVerify) {
-    return blockToVerify
-        .getBlock()
-        .getMessage()
-        .getBody()
-        .getOptionalExecutionPayload()
-        .orElseThrow();
   }
 
   private MergeTransitionBlockValidator createTransitionValidator() {
-    return new MergeTransitionBlockValidator(spec, storageSystem.recentChainData(), executionLayer);
+    return new MergeTransitionBlockValidator(spec, storageSystem.recentChainData());
   }
 }

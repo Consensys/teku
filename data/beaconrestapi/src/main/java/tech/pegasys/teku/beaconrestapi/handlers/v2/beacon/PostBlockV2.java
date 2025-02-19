@@ -16,8 +16,9 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ETH_CONSENSUS_VERSION_TYPE;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BROADCAST_VALIDATION;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllSupportedMilestones;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.headerBasedSelector;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.headerBasedSelectorWithSlotFallback;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
@@ -113,8 +114,9 @@ public class PostBlockV2 extends AbstractPostBlockV2 {
                         .milestoneAtSlot(blockContainer.getSlot())
                         .equals(milestone)),
             context ->
-                headerBasedSelector(
+                headerBasedSelectorWithSlotFallback(
                     context.getHeaders(),
+                    context.getBody(),
                     schemaDefinitionCache,
                     SchemaDefinitions::getSignedBlockContainerSchema),
             spec::deserializeSignedBlockContainer)
@@ -125,8 +127,9 @@ public class PostBlockV2 extends AbstractPostBlockV2 {
             SC_ACCEPTED,
             "Block has been successfully broadcast, but failed validation and has not been imported.")
         .withBadRequestResponse(Optional.of("Unable to parse request body."))
+        .response(SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE, HTTP_ERROR_RESPONSE_TYPE)
         .response(
-            SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing.", HTTP_ERROR_RESPONSE_TYPE)
+            SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
         .build();
   }
 }

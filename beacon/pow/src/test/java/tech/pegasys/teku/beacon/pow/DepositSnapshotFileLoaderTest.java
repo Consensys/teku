@@ -122,7 +122,7 @@ public class DepositSnapshotFileLoaderTest {
 
     assertThatThrownBy(() -> depositSnapshotLoader.loadDepositSnapshot())
         .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessageContaining("File '/foo/empty2' not found");
+        .hasMessageContaining("Failed to load deposit tree snapshot from /foo/empty2");
   }
 
   @Test
@@ -135,7 +135,7 @@ public class DepositSnapshotFileLoaderTest {
 
     assertThatThrownBy(() -> depositSnapshotLoader.loadDepositSnapshot())
         .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessageContaining("File '/foo/empty1' not found");
+        .hasMessageContaining("Failed to load deposit tree snapshot from /foo/empty1");
   }
 
   @Test

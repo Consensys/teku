@@ -13,16 +13,15 @@
 
 package tech.pegasys.teku.storage.server.rocksdb;
 
-import io.prometheus.client.Collector;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.ExternalSummary;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import org.rocksdb.HistogramData;
 import org.rocksdb.HistogramType;
@@ -38,11 +37,6 @@ import org.rocksdb.TickerType;
 public class RocksDbStats implements AutoCloseable {
   private static final Logger LOG = LogManager.getLogger();
 
-  static final List<String> LABELS = Collections.singletonList("quantile");
-  static final List<String> LABEL_50 = Collections.singletonList("0.5");
-  static final List<String> LABEL_95 = Collections.singletonList("0.95");
-  static final List<String> LABEL_99 = Collections.singletonList("0.99");
-
   // Tickers - RocksDB equivalent of counters
   static final TickerType[] TICKERS = {
     TickerType.BLOCK_CACHE_ADD,
@@ -52,12 +46,10 @@ public class RocksDbStats implements AutoCloseable {
     TickerType.BLOCK_CACHE_INDEX_HIT,
     TickerType.BLOCK_CACHE_INDEX_ADD,
     TickerType.BLOCK_CACHE_INDEX_BYTES_INSERT,
-    TickerType.BLOCK_CACHE_INDEX_BYTES_EVICT,
     TickerType.BLOCK_CACHE_FILTER_MISS,
     TickerType.BLOCK_CACHE_FILTER_HIT,
     TickerType.BLOCK_CACHE_FILTER_ADD,
     TickerType.BLOCK_CACHE_FILTER_BYTES_INSERT,
-    TickerType.BLOCK_CACHE_FILTER_BYTES_EVICT,
     TickerType.BLOCK_CACHE_DATA_MISS,
     TickerType.BLOCK_CACHE_DATA_HIT,
     TickerType.BLOCK_CACHE_DATA_ADD,
@@ -91,7 +83,6 @@ public class RocksDbStats implements AutoCloseable {
     TickerType.NUMBER_DB_NEXT_FOUND,
     TickerType.NUMBER_DB_PREV_FOUND,
     TickerType.ITER_BYTES_READ,
-    TickerType.NO_FILE_CLOSES,
     TickerType.NO_FILE_OPENS,
     TickerType.NO_FILE_ERRORS,
     // TickerType.STALL_L0_SLOWDOWN_MICROS,
@@ -99,26 +90,18 @@ public class RocksDbStats implements AutoCloseable {
     // TickerType.STALL_L0_NUM_FILES_MICROS,
     TickerType.STALL_MICROS,
     TickerType.DB_MUTEX_WAIT_MICROS,
-    TickerType.RATE_LIMIT_DELAY_MILLIS,
-    TickerType.NO_ITERATORS,
     TickerType.NUMBER_MULTIGET_BYTES_READ,
     TickerType.NUMBER_MULTIGET_KEYS_READ,
     TickerType.NUMBER_MULTIGET_CALLS,
-    TickerType.NUMBER_FILTERED_DELETES,
     TickerType.NUMBER_MERGE_FAILURES,
     TickerType.BLOOM_FILTER_PREFIX_CHECKED,
     TickerType.BLOOM_FILTER_PREFIX_USEFUL,
     TickerType.NUMBER_OF_RESEEKS_IN_ITERATION,
     TickerType.GET_UPDATES_SINCE_CALLS,
-    TickerType.BLOCK_CACHE_COMPRESSED_MISS,
-    TickerType.BLOCK_CACHE_COMPRESSED_HIT,
-    TickerType.BLOCK_CACHE_COMPRESSED_ADD,
-    TickerType.BLOCK_CACHE_COMPRESSED_ADD_FAILURES,
     TickerType.WAL_FILE_SYNCED,
     TickerType.WAL_FILE_BYTES,
     TickerType.WRITE_DONE_BY_SELF,
     TickerType.WRITE_DONE_BY_OTHER,
-    TickerType.WRITE_TIMEDOUT,
     TickerType.WRITE_WITH_WAL,
     TickerType.COMPACT_READ_BYTES,
     TickerType.COMPACT_WRITE_BYTES,
@@ -129,7 +112,6 @@ public class RocksDbStats implements AutoCloseable {
     TickerType.NUMBER_SUPERVERSION_CLEANUPS,
     TickerType.NUMBER_BLOCK_COMPRESSED,
     TickerType.NUMBER_BLOCK_DECOMPRESSED,
-    TickerType.NUMBER_BLOCK_NOT_COMPRESSED,
     TickerType.MERGE_OPERATION_TOTAL_TIME,
     TickerType.FILTER_OPERATION_TOTAL_TIME,
     TickerType.ROW_CACHE_HIT,
@@ -156,11 +138,6 @@ public class RocksDbStats implements AutoCloseable {
     HistogramType.READ_BLOCK_COMPACTION_MICROS,
     HistogramType.READ_BLOCK_GET_MICROS,
     HistogramType.WRITE_RAW_BLOCK_MICROS,
-    HistogramType.STALL_L0_SLOWDOWN_COUNT,
-    HistogramType.STALL_MEMTABLE_COMPACTION_COUNT,
-    HistogramType.STALL_L0_NUM_FILES_COUNT,
-    HistogramType.HARD_RATE_LIMIT_DELAY_COUNT,
-    HistogramType.SOFT_RATE_LIMIT_DELAY_COUNT,
     HistogramType.NUM_FILES_IN_SINGLE_COMPACTION,
     HistogramType.DB_SEEK,
     HistogramType.WRITE_STALL,
@@ -169,14 +146,12 @@ public class RocksDbStats implements AutoCloseable {
     HistogramType.BYTES_PER_READ,
     HistogramType.BYTES_PER_WRITE,
     HistogramType.BYTES_PER_MULTIGET,
-    HistogramType.BYTES_COMPRESSED,
-    HistogramType.BYTES_DECOMPRESSED,
     HistogramType.COMPRESSION_TIMES_NANOS,
     HistogramType.DECOMPRESSION_TIMES_NANOS,
     HistogramType.READ_NUM_MERGE_OPERANDS,
   };
 
-  private boolean closed = false;
+  private final AtomicBoolean closed = new AtomicBoolean(false);
   private final Statistics stats;
   private final MetricsSystem metricsSystem;
   private final MetricCategory category;
@@ -214,10 +189,34 @@ public class RocksDbStats implements AutoCloseable {
 
     if (metricsSystem instanceof PrometheusMetricsSystem) {
       for (final HistogramType histogram : HISTOGRAMS) {
-        ((PrometheusMetricsSystem) metricsSystem)
-            .addCollector(category, () -> histogramToCollector(category, stats, histogram));
+        metricsSystem.createSummary(
+            category,
+            category.getApplicationPrefix().orElse("")
+                + category.getName()
+                + "_"
+                + histogram.name().toLowerCase(Locale.ROOT),
+            "RocksDB histogram for " + histogram.name(),
+            () -> provideExternalSummary(histogram));
       }
     }
+  }
+
+  private ExternalSummary provideExternalSummary(final HistogramType histogramType) {
+    return ifOpen(
+        () -> {
+          final HistogramData data = stats.getHistogramData(histogramType);
+
+          return new ExternalSummary(
+              data.getCount(),
+              data.getSum(),
+              List.of(
+                  new ExternalSummary.Quantile(0.0, data.getMin()),
+                  new ExternalSummary.Quantile(0.5, data.getMedian()),
+                  new ExternalSummary.Quantile(0.95, data.getPercentile95()),
+                  new ExternalSummary.Quantile(0.99, data.getPercentile99()),
+                  new ExternalSummary.Quantile(1.0, data.getMax())));
+        },
+        null);
   }
 
   private long getLongProperty(final RocksDB database, final String name) {
@@ -233,49 +232,15 @@ public class RocksDbStats implements AutoCloseable {
         0L);
   }
 
-  private Collector histogramToCollector(
-      final MetricCategory metricCategory, final Statistics stats, final HistogramType histogram) {
-    return new Collector() {
-      final String metricName =
-          metricCategory.getApplicationPrefix().orElse("")
-              + metricCategory.getName()
-              + "_"
-              + histogram.name().toLowerCase(Locale.ROOT);
-
-      @Override
-      public List<MetricFamilySamples> collect() {
-        return ifOpen(
-            () -> {
-              final HistogramData data = stats.getHistogramData(histogram);
-              return Collections.singletonList(
-                  new MetricFamilySamples(
-                      metricName,
-                      Type.SUMMARY,
-                      "RocksDB histogram for " + metricName,
-                      Arrays.asList(
-                          new MetricFamilySamples.Sample(
-                              metricName, LABELS, LABEL_50, data.getMedian()),
-                          new MetricFamilySamples.Sample(
-                              metricName, LABELS, LABEL_95, data.getPercentile95()),
-                          new MetricFamilySamples.Sample(
-                              metricName, LABELS, LABEL_99, data.getPercentile99()))));
-            },
-            Collections.emptyList());
-      }
-    };
-  }
-
   @Override
-  public synchronized void close() {
-    if (closed) {
-      return;
+  public void close() {
+    if (closed.compareAndSet(false, true)) {
+      stats.close();
     }
-    closed = true;
-    stats.close();
   }
 
-  private synchronized <T> T ifOpen(final Supplier<T> supplier, final T defaultValue) {
-    if (closed) {
+  private <T> T ifOpen(final Supplier<T> supplier, final T defaultValue) {
+    if (closed.get()) {
       return defaultValue;
     }
     return supplier.get();

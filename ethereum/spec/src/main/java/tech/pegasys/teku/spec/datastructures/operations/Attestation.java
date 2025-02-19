@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
+import com.google.common.collect.Sets;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -30,14 +30,18 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.phase0.Attestat
  * Interface used to represent different types of attestations ({@link AttestationPhase0} and {@link
  * tech.pegasys.teku.spec.datastructures.state.PendingAttestation})
  */
-public interface Attestation extends SszData, SszContainer {
+public interface Attestation extends SszContainer {
 
   @Override
   AttestationSchema<? extends Attestation> getSchema();
 
-  UInt64 getEarliestSlotForForkChoiceProcessing(final Spec spec);
+  default UInt64 getEarliestSlotForForkChoiceProcessing(final Spec spec) {
+    return getData().getEarliestSlotForForkChoice(spec);
+  }
 
-  Collection<Bytes32> getDependentBlockRoots();
+  default Collection<Bytes32> getDependentBlockRoots() {
+    return Sets.newHashSet(getData().getTarget().getRoot(), getData().getBeaconBlockRoot());
+  }
 
   AttestationData getData();
 
@@ -66,4 +70,16 @@ public interface Attestation extends SszData, SszContainer {
   }
 
   boolean requiresCommitteeBits();
+
+  default boolean isSingleAttestation() {
+    return false;
+  }
+
+  default SingleAttestation toSingleAttestationRequired() {
+    throw new UnsupportedOperationException("Not a SingleAttestation");
+  }
+
+  default UInt64 getValidatorIndexRequired() {
+    throw new UnsupportedOperationException("Not a SingleAttestation");
+  }
 }

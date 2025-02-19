@@ -15,6 +15,8 @@ package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -104,8 +106,10 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
   protected void processEpoch(final BeaconState preState, final MutableBeaconState state)
       throws EpochProcessingException {
-    final ValidatorStatuses validatorStatuses =
-        validatorStatusFactory.createValidatorStatuses(preState);
+    // After Electra, it is possible that the validator set is updated within epoch processing
+    // (process_pending_deposits). This is handled by recreateValidatorStatusIfNewValidatorsAreFound
+    // (post-Electra)
+    ValidatorStatuses validatorStatuses = validatorStatusFactory.createValidatorStatuses(preState);
 
     final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
     final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
@@ -122,7 +126,13 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processRegistryUpdates(state, validatorStatuses.getStatuses());
     processSlashings(state, validatorStatuses);
     processEth1DataReset(state);
-    processPendingBalanceDeposits(state);
+    processPendingDeposits(state);
+
+    if (shouldCheckNewValidatorsDuringEpochProcessing()) {
+      validatorStatuses =
+          recreateValidatorStatusIfNewValidatorsAreFound(state, validatorStatuses, currentEpoch);
+    }
+
     processPendingConsolidations(state);
     processEffectiveBalanceUpdates(state, validatorStatuses.getStatuses());
     processSlashingsReset(state);
@@ -136,6 +146,40 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       loggerThrottler.invoke(
           timeProvider.getTimeInSeconds(), (log) -> log.info("Beacon chain is in inactivity leak"));
     }
+  }
+
+  @VisibleForTesting
+  public ValidatorStatuses recreateValidatorStatusIfNewValidatorsAreFound(
+      final BeaconState state,
+      final ValidatorStatuses validatorStatuses,
+      final UInt64 currentEpoch) {
+    final int cachedValidatorCount = validatorStatuses.getValidatorCount();
+    final int stateValidatorCount = state.getValidators().size();
+    if (stateValidatorCount > cachedValidatorCount) {
+      // New validators added, create new  validator statuses
+      final List<ValidatorStatus> newValidatorStatuses =
+          new ArrayList<>(stateValidatorCount - cachedValidatorCount);
+      for (int i = cachedValidatorCount; i < stateValidatorCount; i++) {
+        final ValidatorStatus status =
+            validatorStatusFactory.createValidatorStatus(
+                state.getValidators().get(i), currentEpoch.minusMinZero(1), currentEpoch);
+        newValidatorStatuses.add(status);
+      }
+      return validatorStatusFactory.recreateValidatorStatuses(
+          validatorStatuses, newValidatorStatuses);
+    } else {
+      return validatorStatuses;
+    }
+  }
+
+  /**
+   * This method is used to decide if we want to check the possibility of the validator set changing
+   * mid-processing an epoch. This is only required post-Electra.
+   *
+   * @return false by default, true post-Electra (EpochProcessorElectra overrides this method)
+   */
+  protected boolean shouldCheckNewValidatorsDuringEpochProcessing() {
+    return false;
   }
 
   private void updateTransitionCaches(
@@ -327,15 +371,11 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       for (int index = 0; index < validators.size(); index++) {
         final ValidatorStatus status = statuses.get(index);
 
-        if (isEligibleForActivationQueue(status)) {
-          final Validator validator = validators.get(index);
-          if (validator.getActivationEligibilityEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH)) {
-            validators.set(
-                index, validator.withActivationEligibilityEpoch(currentEpoch.plus(UInt64.ONE)));
-          }
-        }
-
-        if (status.isActiveInCurrentEpoch()
+        final Validator validator = validators.get(index);
+        if (isEligibleForActivationQueue(validator, status)) {
+          validators.set(
+              index, validator.withActivationEligibilityEpoch(currentEpoch.plus(UInt64.ONE)));
+        } else if (status.isActiveInCurrentEpoch()
             && status.getCurrentEpochEffectiveBalance().isLessThanOrEqualTo(ejectionBalance)) {
           beaconStateMutators.initiateValidatorExit(state, index, validatorExitContextSupplier);
         }
@@ -391,9 +431,11 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
    * @param status - Validator status
    * @return true if validator is eligible to be added to the activation queue
    */
-  protected boolean isEligibleForActivationQueue(final ValidatorStatus status) {
+  protected boolean isEligibleForActivationQueue(
+      final Validator validator, final ValidatorStatus status) {
     return !status.isActiveInCurrentEpoch()
-        && status.getCurrentEpochEffectiveBalance().equals(maxEffectiveBalance);
+        && status.getCurrentEpochEffectiveBalance().equals(maxEffectiveBalance)
+        && validator.getActivationEligibilityEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH);
   }
 
   /** Processes slashings */
@@ -453,7 +495,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     final UInt64 maxEffectiveBalance = specConfig.getMaxEffectiveBalance();
     final UInt64 hysteresisQuotient = specConfig.getHysteresisQuotient();
     final UInt64 effectiveBalanceIncrement = specConfig.getEffectiveBalanceIncrement();
-    for (int index = 0; index < validators.size(); index++) {
+    for (int index = 0; index < statuses.size(); index++) {
       final ValidatorStatus status = statuses.get(index);
       final UInt64 balance = balances.getElement(index);
 

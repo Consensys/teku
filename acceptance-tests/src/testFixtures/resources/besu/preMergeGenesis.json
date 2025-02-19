@@ -12,7 +12,7 @@
     "berlinBlock": 0,
     "londonBlock": 0,
     "preMergeForkBlock": 0,
-    "terminalTotalDifficulty": 10001,
+    "terminalTotalDifficulty": 0,
     "contractSizeLimit": 2147483647,
     "ethash": {
       "fixeddifficulty": 100

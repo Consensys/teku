@@ -41,6 +41,7 @@ public class BLS {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  @SuppressWarnings("NonFinalStaticField")
   private static BLS12381 blsImpl;
 
   static {

@@ -45,7 +45,7 @@ public class EpochProcessingExecutor {
           epochProcessor.processHistoricalSummariesUpdate(state);
       case SYNC_COMMITTEE_UPDATES -> epochProcessor.processSyncCommitteeUpdates(state);
       case INACTIVITY_UPDATES -> processInactivityUpdates(state);
-      case PENDING_BALANCE_DEPOSITS -> processPendingBalanceDeposits(state);
+      case PENDING_DEPOSITS -> processPendingDeposits(state);
       case PENDING_CONSOLIDATIONS -> processPendingConsolidations(state);
       default ->
           throw new UnsupportedOperationException(
@@ -58,8 +58,8 @@ public class EpochProcessingExecutor {
         state, validatorStatusFactory.createValidatorStatuses(state));
   }
 
-  private void processPendingBalanceDeposits(final MutableBeaconState state) {
-    epochProcessor.processPendingBalanceDeposits(state);
+  private void processPendingDeposits(final MutableBeaconState state) {
+    epochProcessor.processPendingDeposits(state);
   }
 
   private void processPendingConsolidations(final MutableBeaconState state) {

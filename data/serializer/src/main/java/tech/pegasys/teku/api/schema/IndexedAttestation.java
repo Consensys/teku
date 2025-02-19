@@ -24,7 +24,7 @@ import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 
 @SuppressWarnings("JavaCase")
 public class IndexedAttestation {
@@ -74,10 +74,9 @@ public class IndexedAttestation {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof IndexedAttestation)) {
+    if (!(o instanceof IndexedAttestation that)) {
       return false;
     }
-    IndexedAttestation that = (IndexedAttestation) o;
     return Objects.equals(attesting_indices, that.attesting_indices)
         && Objects.equals(data, that.data)
         && Objects.equals(signature, that.signature);

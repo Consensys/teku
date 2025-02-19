@@ -82,8 +82,8 @@ public class EpochProcessingTestExecutor implements TestExecutor {
               "epoch_processing/pending_consolidations",
               new EpochProcessingTestExecutor(EpochOperation.PENDING_CONSOLIDATIONS))
           .put(
-              "epoch_processing/pending_balance_deposits",
-              new EpochProcessingTestExecutor(EpochOperation.PENDING_BALANCE_DEPOSITS))
+              "epoch_processing/pending_deposits",
+              new EpochProcessingTestExecutor(EpochOperation.PENDING_DEPOSITS))
           .build();
 
   private final EpochOperation operation;

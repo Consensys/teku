@@ -54,7 +54,9 @@ public class BeaconStateBuilderCapella
 
   @Override
   protected BeaconStateCapella getEmptyState() {
-    return BeaconStateSchemaCapella.create(spec.getConfig()).createEmpty();
+    return BeaconStateSchemaCapella.create(
+            spec.getConfig(), spec.getSchemaDefinitions().getSchemaRegistry())
+        .createEmpty();
   }
 
   @Override

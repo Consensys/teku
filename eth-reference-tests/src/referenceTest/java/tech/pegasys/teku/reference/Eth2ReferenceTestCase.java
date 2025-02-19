@@ -53,6 +53,7 @@ public abstract class Eth2ReferenceTestCase {
           .put("light_client/single_merkle_proof", TestExecutor.IGNORE_TESTS)
           .put("light_client/sync", TestExecutor.IGNORE_TESTS)
           .put("light_client/update_ranking", TestExecutor.IGNORE_TESTS)
+          .put("light_client/data_collection", TestExecutor.IGNORE_TESTS)
           .build();
 
   private static final ImmutableMap<String, TestExecutor> PHASE_0_TEST_TYPES =

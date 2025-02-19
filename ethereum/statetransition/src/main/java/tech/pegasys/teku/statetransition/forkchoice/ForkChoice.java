@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
-import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsValidationResult.INVALID;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -893,7 +892,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .orElseThrow(
             () ->
                 new UnsupportedOperationException(
-                    "ValidateableAttestation does not have an IndexedAttestation."));
+                    "ValidatableAttestation does not have an IndexedAttestation."));
   }
 
   private SafeFuture<Void> onForkChoiceThread(final ExceptionThrowingRunnable task) {

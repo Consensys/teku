@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -135,8 +136,13 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
     }
 
     public EnumTypeBuilder(final Class<T> itemType) {
-      this.itemType = itemType;
-      this.serializer = Enum::toString;
+      this(itemType, false);
+    }
+
+    public EnumTypeBuilder(final Class<T> itemType, final boolean forceLowercase) {
+      this(
+          itemType,
+          forceLowercase ? (val) -> val.toString().toLowerCase(Locale.ROOT) : Enum::toString);
     }
 
     public EnumTypeBuilder<T> parser(final Class<T> itemType) {

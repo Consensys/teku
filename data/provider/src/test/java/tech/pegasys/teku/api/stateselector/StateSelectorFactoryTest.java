@@ -36,7 +36,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
-import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -66,8 +65,7 @@ public class StateSelectorFactoryTest {
 
   @Test
   public void finalizedSelector_shouldGetFinalizedState() {
-    when(client.getLatestFinalized())
-        .thenReturn(Optional.of(AnchorPoint.fromInitialState(spec, state)));
+    when(client.getBestFinalizedState()).thenReturn(SafeFuture.completedFuture(Optional.of(state)));
     Optional<StateAndMetaData> result = safeJoin(factory.finalizedSelector().getState());
     assertThat(result).contains(withMetaData(state, true));
   }

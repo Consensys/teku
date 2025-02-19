@@ -32,7 +32,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -53,8 +52,7 @@ public class EventSubscriberTest {
 
   private final Context context = new StubContext(req, res);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  private final List<EventType> allEventTypes =
-      Arrays.stream(EventType.values()).collect(Collectors.toList());
+  private final List<EventType> allEventTypes = Arrays.stream(EventType.values()).toList();
 
   private SseClient sseClient;
 

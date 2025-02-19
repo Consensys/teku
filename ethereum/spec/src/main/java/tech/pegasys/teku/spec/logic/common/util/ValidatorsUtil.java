@@ -16,8 +16,8 @@ package tech.pegasys.teku.spec.logic.common.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -79,7 +79,7 @@ public class ValidatorsUtil {
 
   public Int2ObjectMap<CommitteeAssignment> getValidatorIndexToCommitteeAssignmentMap(
       final BeaconState state, final UInt64 epoch) {
-    final Int2ObjectMap<CommitteeAssignment> assignmentMap = new Int2ObjectArrayMap<>();
+    final Int2ObjectMap<CommitteeAssignment> assignmentMap = new Int2ObjectOpenHashMap<>();
 
     final int slotsPerEpoch = specConfig.getSlotsPerEpoch();
     final int committeeCountPerSlot =
@@ -165,7 +165,7 @@ public class ValidatorsUtil {
 
   public UInt64 getPendingBalanceToWithdraw(final BeaconState state, final int validatorIndex) {
     return state.toVersionElectra().orElseThrow().getPendingPartialWithdrawals().stream()
-        .filter(withdrawal -> withdrawal.getIndex() == validatorIndex)
+        .filter(withdrawal -> withdrawal.getValidatorIndex() == validatorIndex)
         .map(PendingPartialWithdrawal::getAmount)
         .reduce(UInt64::plus)
         .orElse(UInt64.ZERO);

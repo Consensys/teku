@@ -21,6 +21,9 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 
 public class SnappyBlockCompressorTest {
+
+  private static final long MAX_PAYLOAD_SIZE = Long.MAX_VALUE;
+
   private final SnappyBlockCompressor compressor = new SnappyBlockCompressor();
 
   @Test
@@ -29,7 +32,8 @@ public class SnappyBlockCompressorTest {
 
     final Bytes compressed = compressor.compress(original);
     assertThat(compressed).isNotEqualTo(original);
-    final Bytes uncompressed = compressor.uncompress(compressed, SszLengthBounds.ofBytes(0, 1000));
+    final Bytes uncompressed =
+        compressor.uncompress(compressed, SszLengthBounds.ofBytes(0, 1000), MAX_PAYLOAD_SIZE);
 
     assertThat(uncompressed).isEqualTo(original);
   }
@@ -38,25 +42,62 @@ public class SnappyBlockCompressorTest {
   public void uncompress_randomData() {
     final Bytes data = Bytes.fromHexString("0x0102");
 
-    assertThatThrownBy(() -> compressor.uncompress(data, SszLengthBounds.ofBytes(0, 1000)))
+    assertThatThrownBy(
+            () -> compressor.uncompress(data, SszLengthBounds.ofBytes(0, 1000), MAX_PAYLOAD_SIZE))
         .isInstanceOf(DecodingException.class);
   }
 
   @Test
-  void uncompress_uncompressedLengthLongerThanMaxLength() {
+  void uncompress_uncompressedLengthLongerThanSszLenghtBounds() {
     final Bytes original = Bytes.fromHexString("0x010203040506");
 
     final Bytes compressed = compressor.compress(original);
-    assertThatThrownBy(() -> compressor.uncompress(compressed, SszLengthBounds.ofBytes(0, 4)))
-        .isInstanceOf(DecodingException.class);
+    assertThatThrownBy(
+            () ->
+                compressor.uncompress(compressed, SszLengthBounds.ofBytes(0, 4), MAX_PAYLOAD_SIZE))
+        .isInstanceOf(DecodingException.class)
+        .hasMessageContaining("not within expected bounds");
   }
 
   @Test
-  void uncompress_uncompressedLengthShorterThanMinLength() {
+  void uncompress_uncompressedLengthShorterThanSszLengthBounds() {
     final Bytes original = Bytes.fromHexString("0x010203040506");
 
     final Bytes compressed = compressor.compress(original);
-    assertThatThrownBy(() -> compressor.uncompress(compressed, SszLengthBounds.ofBytes(100, 200)))
-        .isInstanceOf(DecodingException.class);
+
+    assertThatThrownBy(
+            () ->
+                compressor.uncompress(
+                    compressed, SszLengthBounds.ofBytes(100, 200), MAX_PAYLOAD_SIZE))
+        .isInstanceOf(DecodingException.class)
+        .hasMessageContaining("not within expected bounds");
+  }
+
+  @Test
+  void uncompress_uncompressedLengthLongerThanMaxBytesLength() {
+    final Bytes original = Bytes.fromHexString("0x010203040506");
+    final long smallMaxBytesLength = 3;
+    assertThat(smallMaxBytesLength).isLessThan(original.size());
+
+    final Bytes compressed = compressor.compress(original);
+    assertThatThrownBy(
+            () ->
+                compressor.uncompress(
+                    compressed, SszLengthBounds.ofBytes(0, 1000), smallMaxBytesLength))
+        .isInstanceOf(DecodingException.class)
+        .hasMessageContaining("exceeds max length in bytes");
+  }
+
+  @Test
+  void uncompress_uncompressedLengthEqualThanMaxBytesLength() throws DecodingException {
+    final Bytes original = Bytes.fromHexString("0x010203040506");
+    final long exactMaxBytesLength = original.size();
+
+    final Bytes compressed = compressor.compress(original);
+    assertThat(compressed).isNotEqualTo(original);
+    final Bytes uncompressed =
+        compressor.uncompress(compressed, SszLengthBounds.ofBytes(0, 1000), exactMaxBytesLength);
+
+    assertThat(uncompressed).isEqualTo(original);
   }
 }

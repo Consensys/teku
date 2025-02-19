@@ -39,7 +39,7 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
   private final Counter publishFailureCounter;
 
   private final GossipFailureLogger gossipFailureLogger =
-      new GossipFailureLogger("sync committee message");
+      GossipFailureLogger.createSuppressing("sync_committee_message");
 
   public SyncCommitteeMessageGossipManager(
       final MetricsSystem metricsSystem,
@@ -109,18 +109,18 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
               publishSuccessCounter.inc();
             },
             error -> {
-              gossipFailureLogger.logWithSuppression(error, message.getSlot());
+              gossipFailureLogger.log(error, Optional.of(message.getSlot()));
               publishFailureCounter.inc();
             });
   }
 
   public void subscribeToSubnetId(final int subnetId) {
-    LOG.trace("Subscribing to subnet ID {}", subnetId);
+    LOG.trace("Subscribing to sync committee subnet {}", subnetId);
     subnetSubscriptions.subscribeToSubnetId(subnetId);
   }
 
   public void unsubscribeFromSubnetId(final int subnetId) {
-    LOG.trace("Unsubscribing to subnet ID {}", subnetId);
+    LOG.trace("Unsubscribing to sync committee subnet {}", subnetId);
     subnetSubscriptions.unsubscribeFromSubnetId(subnetId);
   }
 

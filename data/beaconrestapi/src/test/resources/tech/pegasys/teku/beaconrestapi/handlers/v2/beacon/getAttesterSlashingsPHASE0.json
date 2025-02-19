@@ -4,89 +4,89 @@
     {
       "attestation_1": {
         "attesting_indices": [
-          "4666673844721362956",
           "4665021361504678828",
-          "4669978815449698508"
+          "4669978815449698508",
+          "4668326327938047084"
         ],
         "data": {
-          "slot": "4668326327938047084",
-          "index": "4660063907559659148",
-          "beacon_block_root": "0x8200a6402ca295554fb9562193cc71d60272d63beeaf2201fdf53e846e77f919",
+          "slot": "4660063907559659148",
+          "index": "4658411424342975020",
+          "beacon_block_root": "0x499db7404cbff78670f0209f1932346fef68d985cb55a8d27472742bdf54d379",
           "source": {
-            "epoch": "542887588",
-            "root": "0x5cbeb140ec0ad7cb653388caecba483cf66bd817821ed18ca1f3b7f3b9b58a04"
+            "epoch": "542695214",
+            "root": "0x1f86d83f0bf91cc0d7e07410828140e0dddbb331dc20b6743f9f79e549b50b11"
           },
           "target": {
-            "epoch": "535577359",
-            "root": "0x32a7d23faa44fc04cc23dc3b560a55ade3deb2c393e9de2e6d20bdad2416c39b"
+            "epoch": "535384985",
+            "root": "0xf943e43fcb615e36ec5aa6b9db6f1746d0d5b50d708f6400e39cf25495f39cfb"
           }
         },
-        "signature": "0x992e2695a49aaedcb373280f375a08adaafafff0bab131d48674136f5e452c8bb0797618eeb99bc3a4835bca2bd6aec6067807e927604548997a795d7ba982a5274f0d1d55624a8c7b66973c6e717f3c46bd2d92bc1696d3173751a6b0bf6a63"
+        "signature": "0xae757bc04a0f7ee8e8d1668c8de3fd4ca45ca7e8f7ad7d3323350213956386cfc97094f156a7d6ab2d3ebe6a7eb7ce2c10d0d32091ee4867224ef5856bff529e9f0c2cb9c0085a28f6a47d75aae926913f681a6b21e25b093b78e3cf188bb6be"
       },
       "attestation_2": {
         "attesting_indices": [
-          "4666673844721362956",
           "4665021361504678828",
-          "4669978815449698508"
+          "4669978815449698508",
+          "4668326327938047084"
         ],
         "data": {
-          "slot": "4602226973500878187",
-          "index": "4593964548827522954",
-          "beacon_block_root": "0x7e2bbb3f2a737918a12f79e9a52da7e1fceaae0b6c0c82172425cbce8d99a0c6",
+          "slot": "4593964548827522954",
+          "index": "4592312065610838826",
+          "beacon_block_root": "0x45c8cc3f4a90db49c16643672a93697ae9e1b15549b207e99aa10076fe767a26",
           "source": {
-            "epoch": "535192610",
-            "root": "0x58e9c63feadbba8eb6a9aa92fd1b7e47efe4b0e7ff7a30a3c822443ed8d731b1"
+            "epoch": "535000236",
+            "root": "0xb88ea93f0a5617e780f8ae6b1fc8e4480ff4abc18f66fc45ada895271cbcc666"
           },
           "target": {
-            "epoch": "534038364",
-            "root": "0xcbafa33faaa1f62b763b1697f350f91515f7aa53462f2500db29d9eff71c7ef1"
+            "epoch": "533845989",
+            "root": "0x924cb53fcabe585d9672e01478b6bbae02eead9d22d5aad151a60e9768fa5751"
           }
         },
-        "signature": "0x9776d892cbc6c914554d0153158c9a7c72164e9f60d3fe5816bdaf08a9bf3ca67d77a9c1d6431ba3294ec9032424322b0ab9e9a58fb0b9d8de93946ff414d2bef1f58da9f4a9b1e585c57571a6c8c8c2c0aa1c574939b7acd228d3f35d7b6e6e"
+        "signature": "0x93bcd24f4a430255688b4a9a548da6f88a03bcf775104980edb7e818a3eb26f40ed8981681e4c92e4f02360fcc91bfdf062466e46c2a11058d2200e378fec149f13445aa520ea8e87bd94d3b260478c4ac0a92c27a3af35dae1e843e4112e05c"
       }
     },
     {
       "attestation_1": {
         "attesting_indices": [
-          "4589007099177470570",
-          "4580744678799082634",
-          "4579092195582398506"
+          "4579092195582398506",
+          "4584049649527418186",
+          "4582397162015766762"
         ],
         "data": {
-          "slot": "4584049649527418186",
-          "index": "4582397162015766762",
-          "beacon_block_root": "0xed7436400b3f287283b1005a48f4f70e79abc311779529d2628c4161a3a79565",
+          "slot": "4627014230341074699",
+          "index": "4625361742829423275",
+          "beacon_block_root": "0xc7324240cba769e8982b3203a1e2ce746ca5c5ed0a04d85d078abad0efe52650",
           "source": {
-            "epoch": "538462976",
-            "root": "0xc7324240cba769e8982b3203a1e2ce746ca5c5ed0a04d85d078abad0efe52650"
-          },
-          "target": {
             "epoch": "538847725",
             "root": "0x3af91e408b6da58558bd9d0797174a4392b7bf5950b8ccba1a914f820d2b7390"
+          },
+          "target": {
+            "epoch": "537693478",
+            "root": "0x14b72a404bd6e6fb6d37cfb0f00521a985b1c135e4267b46be8ec8f15869047b"
           }
         },
-        "signature": "0x88a276eb43fd6674df0c66f4a2d988eb33b7d1dd992b71ccc4a6a8202cd12533828bc067f6b424fc554ed97bf16202bd0e4a9e9ba9bcde870fe7a51ae3351e2f63999138f8bc8ef315b0e168beda213ce3cbb7776026257c65b88fe28f00318f"
+        "signature": "0x89253547c4da2415ab254923840e8988872bb213d72482da53998afaf78d3d4be75b3d45dafa853e297c274286792098167a69856d813f5b38d1eecbca1a63d67e6f38acd72149931b5b9bf53d45b94c3b2b81d7183c1f18836bf1dbbd7e019a"
       },
       "attestation_2": {
         "attesting_indices": [
-          "4589007099177470570",
-          "4580744678799082634",
-          "4579092195582398506"
+          "4579092195582398506",
+          "4584049649527418186",
+          "4582397162015766762"
         ],
         "data": {
-          "slot": "4623709263907706443",
-          "index": "4622056780691022315",
-          "beacon_block_root": "0x867d07400b9c22992dc93ab5e53a9c77abc3bba12adb6fa3d1955da376ae50bb",
+          "slot": "4613794356017667083",
+          "index": "4612141872800982955",
+          "beacon_block_root": "0x603b1340cb04640f42436c5e3e2973dd9ebdbd7dbd491e2f7593d612c2ece1a5",
           "source": {
-            "epoch": "536923980",
-            "root": "0x603b1340cb04640f42436c5e3e2973dd9ebdbd7dbd491e2f7593d612c2ece1a5"
-          },
-          "target": {
             "epoch": "537308729",
             "root": "0xd301f03f8bca9fac02d5d762345eeeabc4cfb7e903fe128c889a6bc4e0312ee6"
+          },
+          "target": {
+            "epoch": "536154483",
+            "root": "0xacbffb3f4b33e122174f090c8d4cc511b7c9b9c5966cc1172c98e4332b70bfd0"
           }
         },
-        "signature": "0xaa6e7c4619474f9b282e9f9bacf70496bee8b8fc79bb139ce047ffe273b1198bd34d35a9e42aab7ea1650b777218eaa706d3b1f017fff3be70a00851ad131c8877550e53ab01fd4850f5546664d1696c122a92ba49e68da2656ebcf43a82078b"
+        "signature": "0x987deb6cea81585136778dd3825ee4bc58bbbf1f007b9d2c819c4441de0c6c4f727aef2aa8e373231d451f3f2ee72a7e0e4e6d8e3f24c0c0371fe0bf37fed52eab8615b90cb16cfd74d7d47f9de296c35481ece0c3f2b23a25e9085515e6d0e4"
       }
     }
   ]

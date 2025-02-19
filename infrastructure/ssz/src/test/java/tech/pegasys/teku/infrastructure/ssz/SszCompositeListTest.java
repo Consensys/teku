@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
 
 public class SszCompositeListTest {
 
-  static SszSchema<TestView> testType =
+  static final SszSchema<TestView> TEST_TYPE =
       new SszSchema<>() {
 
         @Override
@@ -131,7 +131,7 @@ public class SszCompositeListTest {
 
     @Override
     public SszSchema<?> getSchema() {
-      return testType;
+      return TEST_TYPE;
     }
 
     @Override
@@ -150,7 +150,7 @@ public class SszCompositeListTest {
 
   @Test
   public void simpleTest1() {
-    SszListSchema<TestView, ?> listType = SszListSchema.create(testType, 3);
+    SszListSchema<TestView, ?> listType = SszListSchema.create(TEST_TYPE, 3);
     SszMutableList<TestView> list = listType.getDefault().createWritableCopy();
     TreeNode n0 = list.commitChanges().getBackingNode();
     list.set(0, new TestView(0x111));

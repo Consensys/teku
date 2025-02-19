@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer.chains;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -31,12 +33,15 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class ThrottlingSyncSource implements SyncSource {
   private static final Logger LOG = LogManager.getLogger();
-  private static final long TIME_OUT = 60;
+
+  private static final long TIMEOUT_SECONDS = 60;
   public static final Duration PEER_REQUEST_DELAY = Duration.ofSeconds(3);
+
   private final AsyncRunner asyncRunner;
   private final SyncSource delegate;
 
   private final RateTracker blocksRateTracker;
+  private final Optional<Integer> maybeMaxBlobsPerBlock;
   private final RateTracker blobSidecarsRateTracker;
 
   public ThrottlingSyncSource(
@@ -44,15 +49,17 @@ public class ThrottlingSyncSource implements SyncSource {
       final TimeProvider timeProvider,
       final SyncSource delegate,
       final int maxBlocksPerMinute,
+      final Optional<Integer> maybeMaxBlobsPerBlock,
       final Optional<Integer> maybeMaxBlobSidecarsPerMinute) {
     this.asyncRunner = asyncRunner;
     this.delegate = delegate;
-    this.blocksRateTracker = RateTracker.create(maxBlocksPerMinute, TIME_OUT, timeProvider);
+    this.blocksRateTracker = RateTracker.create(maxBlocksPerMinute, TIMEOUT_SECONDS, timeProvider);
+    this.maybeMaxBlobsPerBlock = maybeMaxBlobsPerBlock;
     this.blobSidecarsRateTracker =
         maybeMaxBlobSidecarsPerMinute
             .map(
                 maxBlobSidecarsPerMinute ->
-                    RateTracker.create(maxBlobSidecarsPerMinute, TIME_OUT, timeProvider))
+                    RateTracker.create(maxBlobSidecarsPerMinute, TIMEOUT_SECONDS, timeProvider))
             .orElse(RateTracker.NOOP);
   }
 
@@ -61,25 +68,61 @@ public class ThrottlingSyncSource implements SyncSource {
       final UInt64 startSlot,
       final UInt64 count,
       final RpcResponseListener<SignedBeaconBlock> listener) {
-    if (blocksRateTracker.approveObjectsRequest(count.longValue()).isPresent()) {
-      LOG.debug("Sending request for {} blocks", count);
-      return delegate.requestBlocksByRange(startSlot, count, listener);
-    } else {
-      return asyncRunner.runAfterDelay(
-          () -> requestBlocksByRange(startSlot, count, listener), PEER_REQUEST_DELAY);
-    }
+    return blocksRateTracker
+        .approveObjectsRequest(count.longValue())
+        .map(
+            requestApproval -> {
+              LOG.debug("Sending request for {} blocks", count);
+              final RpcResponseListenerWithCount<SignedBeaconBlock> listenerWithCount =
+                  new RpcResponseListenerWithCount<>(listener);
+              return delegate
+                  .requestBlocksByRange(startSlot, count, listenerWithCount)
+                  .alwaysRun(
+                      () ->
+                          // adjust for slots with empty blocks
+                          blocksRateTracker.adjustObjectsRequest(
+                              requestApproval, listenerWithCount.count.get()));
+            })
+        .orElseGet(
+            () -> {
+              LOG.debug(
+                  "Rate limiting request for {} blocks. Retry in {} seconds",
+                  count,
+                  PEER_REQUEST_DELAY.toSeconds());
+              return asyncRunner.runAfterDelay(
+                  () -> requestBlocksByRange(startSlot, count, listener), PEER_REQUEST_DELAY);
+            });
   }
 
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRange(
       final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecar> listener) {
-    if (blobSidecarsRateTracker.approveObjectsRequest(count.longValue()).isPresent()) {
-      LOG.debug("Sending request for {} blob sidecars", count);
-      return delegate.requestBlobSidecarsByRange(startSlot, count, listener);
-    } else {
-      return asyncRunner.runAfterDelay(
-          () -> requestBlobSidecarsByRange(startSlot, count, listener), PEER_REQUEST_DELAY);
-    }
+    final UInt64 blobSidecarsCount = maybeMaxBlobsPerBlock.map(count::times).orElse(UInt64.ZERO);
+    return blobSidecarsRateTracker
+        .approveObjectsRequest(blobSidecarsCount.longValue())
+        .map(
+            requestApproval -> {
+              LOG.debug("Sending request for approximately {} blob sidecars", blobSidecarsCount);
+              final RpcResponseListenerWithCount<BlobSidecar> listenerWithCount =
+                  new RpcResponseListenerWithCount<>(listener);
+              return delegate
+                  .requestBlobSidecarsByRange(startSlot, count, listenerWithCount)
+                  .alwaysRun(
+                      () ->
+                          // adjust for slots with empty blocks and slots with blobs <
+                          // maxBlobsPerBlock
+                          blobSidecarsRateTracker.adjustObjectsRequest(
+                              requestApproval, listenerWithCount.count.get()));
+            })
+        .orElseGet(
+            () -> {
+              LOG.debug(
+                  "Rate limiting request for approximately {} blob sidecars. Retry in {} seconds",
+                  blobSidecarsCount,
+                  PEER_REQUEST_DELAY.toSeconds());
+              return asyncRunner.runAfterDelay(
+                  () -> requestBlobSidecarsByRange(startSlot, count, listener), PEER_REQUEST_DELAY);
+            });
   }
 
   @Override
@@ -95,5 +138,23 @@ public class ThrottlingSyncSource implements SyncSource {
   @Override
   public String toString() {
     return delegate.toString();
+  }
+
+  @VisibleForTesting
+  static class RpcResponseListenerWithCount<T> implements RpcResponseListener<T> {
+
+    private final AtomicInteger count = new AtomicInteger(0);
+
+    private final RpcResponseListener<T> delegate;
+
+    private RpcResponseListenerWithCount(final RpcResponseListener<T> delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override
+    public SafeFuture<?> onResponse(final T response) {
+      count.incrementAndGet();
+      return delegate.onResponse(response);
+    }
   }
 }

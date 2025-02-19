@@ -14,7 +14,7 @@
 package tech.pegasys.teku.validator.client.signer;
 
 import com.google.common.base.Suppliers;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -28,7 +28,8 @@ import tech.pegasys.teku.validator.client.Validator;
 public class MilestoneBasedBlockContainerSigner implements BlockContainerSigner {
 
   private final Spec spec;
-  private final Map<SpecMilestone, BlockContainerSigner> registeredSigners = new HashMap<>();
+  private final Map<SpecMilestone, BlockContainerSigner> registeredSigners =
+      new EnumMap<>(SpecMilestone.class);
 
   public MilestoneBasedBlockContainerSigner(final Spec spec) {
     this.spec = spec;

@@ -68,6 +68,16 @@ executors:
       architecture: "amd64"
       platform: "linux/amd64"
 
+  machine_large_executor_amd64:
+    machine:
+      image: ubuntu-2204:2024.01.1 # https://circleci.com/developer/machine/image/ubuntu-2204
+      docker_layer_caching: true
+    resource_class: large
+    working_directory: ~/project
+    environment:
+      architecture: "amd64"
+      platform: "linux/amd64"
+
   machine_executor_arm64:
     machine:
       image: ubuntu-2204:2024.01.1 # https://circleci.com/developer/machine/image/ubuntu-2204
@@ -353,8 +363,8 @@ jobs:
           path: build/test-results
 
   acceptanceTests:
-    parallelism: 5
-    executor: machine_executor_amd64
+    parallelism: 4
+    executor: machine_large_executor_amd64
     steps:
       - install_java_21
       - prepare

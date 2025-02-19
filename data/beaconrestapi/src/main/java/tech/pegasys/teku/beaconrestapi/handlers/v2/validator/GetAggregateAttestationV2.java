@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ATTESTATION_DATA_ROOT_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.COMMITTEE_INDEX_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_CONSENSUS_HEADER_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
@@ -71,8 +72,12 @@ public class GetAggregateAttestationV2 extends RestApiEndpoint {
             .queryParamRequired(SLOT_PARAMETER)
             .queryParamRequired(COMMITTEE_INDEX_PARAMETER)
             .response(
-                HttpStatusCodes.SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
+                HttpStatusCodes.SC_OK,
+                "Request successful",
+                getResponseType(schemaDefinitionCache),
+                ETH_CONSENSUS_HEADER_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.provider = provider;
   }

@@ -17,6 +17,10 @@
         "description" : "Node is ready",
         "content" : { }
       },
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
+      },
       "206" : {
         "description" : "Node is syncing but can serve incomplete data",
         "content" : { }

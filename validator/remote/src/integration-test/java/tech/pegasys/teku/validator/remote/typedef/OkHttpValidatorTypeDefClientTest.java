@@ -27,13 +27,20 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_METHOD_NO
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BUILDER_BOOST_FACTOR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BROADCAST_VALIDATION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -43,6 +50,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import okhttp3.mockwebserver.MockResponse;
@@ -54,12 +62,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
+import tech.pegasys.teku.infrastructure.http.RestApiConstants;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -69,9 +80,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
@@ -150,15 +164,23 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBlindedBeaconBlock();
 
+    final BroadcastValidationLevel broadcastValidationLevel = BroadcastValidationLevel.GOSSIP;
     final SendSignedBlockResult result =
         okHttpValidatorTypeDefClientWithPreferredSsz.sendSignedBlock(
-            signedBeaconBlock, BroadcastValidationLevel.GOSSIP);
+            signedBeaconBlock, broadcastValidationLevel);
 
     assertThat(result.isPublished()).isTrue();
 
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
     assertThat(recordedRequest.getBody().readByteArray())
         .isEqualTo(signedBeaconBlock.sszSerialize().toArrayUnsafe());
+    if (specMilestone.isLessThanOrEqualTo(ALTAIR)) {
+      assertThat(recordedRequest.getPath())
+          .contains(ValidatorApiMethod.SEND_SIGNED_BLOCK_V2.getPath(emptyMap()));
+    } else {
+      assertThat(recordedRequest.getPath())
+          .contains(ValidatorApiMethod.SEND_SIGNED_BLINDED_BLOCK_V2.getPath(emptyMap()));
+    }
     assertThat(recordedRequest.getRequestUrl().queryParameter(PARAM_BROADCAST_VALIDATION))
         .isEqualTo("gossip");
     assertThat(recordedRequest.getHeader(HEADER_CONSENSUS_VERSION))
@@ -186,13 +208,21 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
                 .getSignedBlindedBlockContainerSchema()
                 .getJsonTypeDefinition());
 
+    if (specMilestone.isLessThanOrEqualTo(ALTAIR)) {
+      assertThat(recordedRequest.getPath())
+          .contains(ValidatorApiMethod.SEND_SIGNED_BLOCK_V2.getPath(emptyMap()));
+    } else {
+      assertThat(recordedRequest.getPath())
+          .contains(ValidatorApiMethod.SEND_SIGNED_BLINDED_BLOCK_V2.getPath(emptyMap()));
+    }
+
     final String actualRequest = recordedRequest.getBody().readUtf8();
 
     assertJsonEquals(actualRequest, expectedRequest);
   }
 
   @TestTemplate
-  void getsSyncingStatus() {
+  void getsSyncingStatus() throws InterruptedException {
     mockWebServer.enqueue(
         new MockResponse()
             .setResponseCode(200)
@@ -208,6 +238,8 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     final SyncingStatus result = typeDefClient.getSyncingStatus();
 
+    final RecordedRequest request = mockWebServer.takeRequest();
+
     assertThat(result)
         .satisfies(
             syncingStatus -> {
@@ -216,6 +248,33 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
               assertThat(syncingStatus.isSyncing()).isTrue();
               assertThat(syncingStatus.getIsOptimistic()).hasValue(true);
             });
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.GET_SYNCING_STATUS.getPath(emptyMap()));
+  }
+
+  @TestTemplate
+  void getProposerDuties_shouldMakeExpectedRequest() throws InterruptedException {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
+
+    final UInt64 epoch = dataStructureUtil.randomEpoch();
+    typeDefClient.getProposerDuties(epoch);
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+    assertThat(request.getMethod()).isEqualTo("GET");
+    assertThat(request.getPath())
+        .isEqualTo(
+            "/" + ValidatorApiMethod.GET_PROPOSER_DUTIES.getPath(Map.of(EPOCH, epoch.toString())));
+  }
+
+  @TestTemplate
+  void getPeerCount_shouldMakeExpectedRequest() throws InterruptedException {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
+
+    typeDefClient.getPeerCount();
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+    assertThat(request.getMethod()).isEqualTo("GET");
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_PEER_COUNT.getPath(emptyMap()));
   }
 
   @TestTemplate
@@ -313,7 +372,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-    SszList<SignedValidatorRegistration> validatorRegistrations =
+    final SszList<SignedValidatorRegistration> validatorRegistrations =
         dataStructureUtil.randomSignedValidatorRegistrations(5);
 
     sszRegisterValidatorsRequest.submit(validatorRegistrations);
@@ -391,7 +450,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final String body = serialize(response, STATE_VALIDATORS_RESPONSE_TYPE);
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(body));
 
-    Optional<List<StateValidatorData>> result =
+    final Optional<List<StateValidatorData>> result =
         typeDefClient.postStateValidators(List.of("1", "2"));
 
     assertThat(result).isPresent();
@@ -433,7 +492,8 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     final UInt64 epoch = ONE;
     final IntList validatorIndices = IntList.of(1, 2);
-    Optional<SyncCommitteeDuties> result = typeDefClient.postSyncDuties(epoch, validatorIndices);
+    final Optional<SyncCommitteeDuties> result =
+        typeDefClient.postSyncDuties(epoch, validatorIndices);
 
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
     assertThat(recordedRequest.getPath()).isEqualTo("/eth/v1/validator/duties/sync/" + epoch);
@@ -458,7 +518,8 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     final UInt64 epoch = ONE;
     final IntList validatorIndices = IntList.of(1, 2);
-    Optional<AttesterDuties> result = typeDefClient.postAttesterDuties(epoch, validatorIndices);
+    final Optional<AttesterDuties> result =
+        typeDefClient.postAttesterDuties(epoch, validatorIndices);
 
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
     assertThat(recordedRequest.getPath()).isEqualTo("/eth/v1/validator/duties/attester/" + epoch);
@@ -501,7 +562,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     typeDefClient.subscribeToPersistentSubnets(subnetSubscriptions);
 
-    RecordedRequest request = mockWebServer.takeRequest();
+    final RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("POST");
     assertThat(request.getPath())
@@ -563,7 +624,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
             new CommitteeSubscriptionRequest(
                 validatorIndex2, committeeIndex2, committeesAtSlot2, slot2, aggregator2)));
 
-    RecordedRequest request = mockWebServer.takeRequest();
+    final RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("POST");
     assertThat(request.getPath())
@@ -680,7 +741,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     typeDefClient.createAggregate(slot, attestationHashTreeRoot, Optional.empty());
 
-    RecordedRequest request = mockWebServer.takeRequest();
+    final RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("GET");
     assertThat(request.getPath()).contains(ValidatorApiMethod.GET_AGGREGATE.getPath(emptyMap()));
@@ -700,13 +761,218 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     typeDefClient.createAggregate(
         slot, attestationHashTreeRoot, Optional.of(dataStructureUtil.randomUInt64()));
 
-    RecordedRequest request = mockWebServer.takeRequest();
+    final RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("GET");
     assertThat(request.getPath()).contains(ValidatorApiMethod.GET_AGGREGATE_V2.getPath(emptyMap()));
     assertThat(request.getRequestUrl().queryParameter("slot")).isEqualTo(slot.toString());
     assertThat(request.getRequestUrl().queryParameter("attestation_data_root"))
         .isEqualTo(attestationHashTreeRoot.toHexString());
+  }
+
+  @TestTemplate
+  public void sendValidatorsLiveness_makesExpectedRequest() throws Exception {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
+
+    final UInt64 epoch = dataStructureUtil.randomEpoch();
+    final List<UInt64> validatorIndices =
+        List.of(dataStructureUtil.randomValidatorIndex(), dataStructureUtil.randomValidatorIndex());
+
+    typeDefClient.sendValidatorsLiveness(epoch, validatorIndices);
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getMethod()).isEqualTo("POST");
+    assertThat(request.getPath())
+        .contains(
+            ValidatorApiMethod.SEND_VALIDATOR_LIVENESS.getPath(
+                Map.of(RestApiConstants.EPOCH, epoch.toString())));
+    assertThat(request.getBody().readUtf8())
+        .isEqualTo("[\"" + validatorIndices.get(0) + "\",\"" + validatorIndices.get(1) + "\"]");
+  }
+
+  @TestTemplate
+  public void sendSyncCommitteeMessages_makesExpectedRequest() throws Exception {
+    assumeThat(specMilestone).isGreaterThan(PHASE0);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
+
+    final UInt64 epoch = dataStructureUtil.randomEpoch();
+    final List<SyncCommitteeMessage> syncCommitteeMessages =
+        List.of(
+            dataStructureUtil.randomSyncCommitteeMessage(),
+            dataStructureUtil.randomSyncCommitteeMessage());
+
+    typeDefClient.sendSyncCommitteeMessages(syncCommitteeMessages);
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+    assertThat(request.getMethod()).isEqualTo("POST");
+    assertThat(request.getPath())
+        .contains(
+            ValidatorApiMethod.SEND_SYNC_COMMITTEE_MESSAGES.getPath(
+                Map.of(RestApiConstants.EPOCH, epoch.toString())));
+
+    final String expectedRequestPayloadBody =
+        serialize(
+            syncCommitteeMessages,
+            SerializableTypeDefinition.listOf(
+                SyncCommitteeMessageSchema.INSTANCE.getJsonTypeDefinition()));
+    assertThat(request.getBody().readString(StandardCharsets.UTF_8))
+        .isEqualTo(expectedRequestPayloadBody);
+  }
+
+  @TestTemplate
+  public void createAttestationData_makesExpectedRequest() throws Exception {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
+
+    final UInt64 slot = dataStructureUtil.randomSlot();
+    final int committeeIndex = dataStructureUtil.randomPositiveInt();
+
+    typeDefClient.createAttestationData(slot, committeeIndex);
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getMethod()).isEqualTo("GET");
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.GET_ATTESTATION_DATA.getPath(emptyMap()));
+    assertThat(request.getRequestUrl().queryParameter(SLOT)).isEqualTo(slot.toString());
+    assertThat(request.getRequestUrl().queryParameter(COMMITTEE_INDEX))
+        .isEqualTo(String.valueOf(committeeIndex));
+  }
+
+  @TestTemplate
+  public void createUnsignedBlock_makesExpectedRequest() throws Exception {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
+
+    final UInt64 slot = dataStructureUtil.randomSlot();
+    final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
+    final Bytes32 graffiti = dataStructureUtil.randomBytes32();
+    final UInt64 boostFactor = dataStructureUtil.randomUInt64();
+
+    typeDefClient.createUnsignedBlock(
+        slot, randaoReveal, Optional.of(graffiti), Optional.of(boostFactor));
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getMethod()).isEqualTo("GET");
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.GET_UNSIGNED_BLOCK_V3.getPath(Map.of(SLOT, slot.toString())));
+    assertThat(request.getRequestUrl().queryParameter(RANDAO_REVEAL))
+        .isEqualTo(randaoReveal.toString());
+    assertThat(request.getRequestUrl().queryParameter(GRAFFITI)).isEqualTo(graffiti.toString());
+    assertThat(request.getRequestUrl().queryParameter(BUILDER_BOOST_FACTOR))
+        .isEqualTo(boostFactor.toString());
+  }
+
+  @TestTemplate
+  public void sendAggregate_makesExpectedRequest_preElectra() throws Exception {
+    assumeThat(specMilestone).isLessThan(ELECTRA);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
+
+    final List<SignedAggregateAndProof> aggregateAndProofs =
+        List.of(
+            dataStructureUtil.randomSignedAggregateAndProof(),
+            dataStructureUtil.randomSignedAggregateAndProof());
+
+    typeDefClient.sendAggregateAndProofs(aggregateAndProofs);
+    final RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getMethod()).isEqualTo("POST");
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOFS.getPath(emptyMap()));
+
+    final String expectedRequestPayloadBody =
+        serialize(
+            aggregateAndProofs,
+            SerializableTypeDefinition.listOf(
+                spec.getGenesisSchemaDefinitions()
+                    .getSignedAggregateAndProofSchema()
+                    .getJsonTypeDefinition()));
+
+    assertThat(request.getBody().readString(StandardCharsets.UTF_8))
+        .isEqualTo(expectedRequestPayloadBody);
+  }
+
+  @TestTemplate
+  public void sendAggregate_makesExpectedRequest_postElectra() throws Exception {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(ELECTRA);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
+
+    final List<SignedAggregateAndProof> aggregateAndProofs =
+        List.of(
+            dataStructureUtil.randomSignedAggregateAndProof(),
+            dataStructureUtil.randomSignedAggregateAndProof());
+
+    typeDefClient.sendAggregateAndProofs(aggregateAndProofs);
+    final RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getMethod()).isEqualTo("POST");
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOFS_V2.getPath(emptyMap()));
+
+    final String expectedRequestPayloadBody =
+        serialize(
+            aggregateAndProofs,
+            SerializableTypeDefinition.listOf(
+                spec.getGenesisSchemaDefinitions()
+                    .getSignedAggregateAndProofSchema()
+                    .getJsonTypeDefinition()));
+
+    assertThat(request.getBody().readString(StandardCharsets.UTF_8))
+        .isEqualTo(expectedRequestPayloadBody);
+    assertThat(request.getHeader(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
+  }
+
+  @TestTemplate
+  public void sendSignedAttestation_makesExpectedRequest_preElectra() throws Exception {
+    assumeThat(specMilestone).isLessThan(ELECTRA);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
+
+    final List<Attestation> attestations =
+        List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+
+    typeDefClient.sendSignedAttestations(attestations);
+    final RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getMethod()).isEqualTo("POST");
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION.getPath(emptyMap()));
+
+    final String expectedRequestPayloadBody =
+        serialize(
+            attestations,
+            SerializableTypeDefinition.listOf(
+                spec.getGenesisSchemaDefinitions().getAttestationSchema().getJsonTypeDefinition()));
+
+    assertThat(request.getBody().readString(StandardCharsets.UTF_8))
+        .isEqualTo(expectedRequestPayloadBody);
+  }
+
+  @TestTemplate
+  public void sendSignedAttestation_makesExpectedRequest_postElectra() throws Exception {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(ELECTRA);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
+
+    final List<Attestation> attestations =
+        List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
+
+    typeDefClient.sendSignedAttestations(attestations);
+    final RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getMethod()).isEqualTo("POST");
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION_V2.getPath(emptyMap()));
+
+    final String expectedRequestPayloadBody =
+        serialize(
+            attestations,
+            SerializableTypeDefinition.listOf(
+                spec.getGenesisSchemaDefinitions().getAttestationSchema().getJsonTypeDefinition()));
+
+    assertThat(request.getBody().readString(StandardCharsets.UTF_8))
+        .isEqualTo(expectedRequestPayloadBody);
+    assertThat(request.getHeader(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
   }
 
   @TestTemplate
@@ -761,10 +1027,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final String body =
         serialize(
             expectedAttestation,
-            spec.getGenesisSchemaDefinitions()
-                .getAttestationSchema()
-                .castTypeToAttestationSchema()
-                .getJsonTypeDefinition());
+            spec.getGenesisSchemaDefinitions().getAttestationSchema().getJsonTypeDefinition());
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(SC_OK).setBody("{\"data\": " + body + "}"));
 
@@ -784,10 +1047,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final String body =
         serialize(
             expectedAttestation,
-            spec.getGenesisSchemaDefinitions()
-                .getAttestationSchema()
-                .castTypeToAttestationSchema()
-                .getJsonTypeDefinition());
+            spec.getGenesisSchemaDefinitions().getAttestationSchema().getJsonTypeDefinition());
     mockWebServer.enqueue(
         new MockResponse()
             .setResponseCode(SC_OK)

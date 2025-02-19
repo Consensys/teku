@@ -31,15 +31,15 @@ class WithdrawalRequestTest {
       new DataStructureUtil(TestSpecFactory.createMinimal(SpecMilestone.ELECTRA));
   private final WithdrawalRequestSchema withdrawalRequestSchema = new WithdrawalRequestSchema();
   private final Bytes20 sourceAddress = dataStructureUtil.randomBytes20();
-  private final BLSPublicKey validatorPublicKey = dataStructureUtil.randomPublicKey();
+  private final BLSPublicKey validatorPubkey = dataStructureUtil.randomPublicKey();
   private final UInt64 amount = dataStructureUtil.randomUInt64();
 
   @Test
   public void objectEquality() {
     final WithdrawalRequest withdrawalRequest1 =
-        withdrawalRequestSchema.create(sourceAddress, validatorPublicKey, amount);
+        withdrawalRequestSchema.create(sourceAddress, validatorPubkey, amount);
     final WithdrawalRequest withdrawalRequest2 =
-        withdrawalRequestSchema.create(sourceAddress, validatorPublicKey, amount);
+        withdrawalRequestSchema.create(sourceAddress, validatorPubkey, amount);
 
     assertThat(withdrawalRequest1).isEqualTo(withdrawalRequest2);
   }
@@ -47,16 +47,16 @@ class WithdrawalRequestTest {
   @Test
   public void objectAccessorMethods() {
     final WithdrawalRequest withdrawalRequest =
-        withdrawalRequestSchema.create(sourceAddress, validatorPublicKey, amount);
+        withdrawalRequestSchema.create(sourceAddress, validatorPubkey, amount);
 
     assertThat(withdrawalRequest.getSourceAddress()).isEqualTo(sourceAddress);
-    assertThat(withdrawalRequest.getValidatorPublicKey()).isEqualTo(validatorPublicKey);
+    assertThat(withdrawalRequest.getValidatorPubkey()).isEqualTo(validatorPubkey);
   }
 
   @Test
   public void roundTripSSZ() {
     final WithdrawalRequest withdrawalRequest =
-        withdrawalRequestSchema.create(sourceAddress, validatorPublicKey, amount);
+        withdrawalRequestSchema.create(sourceAddress, validatorPubkey, amount);
 
     final Bytes sszBytes = withdrawalRequest.sszSerialize();
     final WithdrawalRequest deserializedObject = withdrawalRequestSchema.sszDeserialize(sszBytes);

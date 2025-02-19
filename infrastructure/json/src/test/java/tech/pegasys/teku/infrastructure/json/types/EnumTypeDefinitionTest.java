@@ -32,6 +32,18 @@ public class EnumTypeDefinitionTest {
   }
 
   @Test
+  void shouldSerializeEnumForceLowerCase() throws Exception {
+    DeserializableTypeDefinition<YES_NO> definition =
+        DeserializableTypeDefinition.enumOf(YES_NO.class);
+    String json = JsonUtil.serialize(YES_NO.YES, definition);
+    assertThat(json).isEqualTo("\"YES\"");
+
+    definition = DeserializableTypeDefinition.enumOf(YES_NO.class, true);
+    json = JsonUtil.serialize(YES_NO.YES, definition);
+    assertThat(json).isEqualTo("\"yes\"");
+  }
+
+  @Test
   void shouldParseEnum() throws Exception {
     assertThat(JsonUtil.parse("\"no\"", definition)).isEqualTo(YesNo.NO);
   }
@@ -72,5 +84,11 @@ public class EnumTypeDefinitionTest {
     public String toString() {
       return displayName;
     }
+  }
+
+  @SuppressWarnings("JavaCase")
+  private enum YES_NO {
+    YES,
+    NO
   }
 }

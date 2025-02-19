@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -104,7 +105,7 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
   }
 
   @Override
-  public void publishBlobSidecar(final BlobSidecar blobSidecar) {
-    blobSidecarGossipManager.publishBlobSidecar(blobSidecar);
+  public SafeFuture<Void> publishBlobSidecar(final BlobSidecar blobSidecar) {
+    return blobSidecarGossipManager.publishBlobSidecar(blobSidecar);
   }
 }

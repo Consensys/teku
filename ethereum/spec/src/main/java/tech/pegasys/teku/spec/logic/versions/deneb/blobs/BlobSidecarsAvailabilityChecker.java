@@ -15,9 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.deneb.blobs;
 
 import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult.NOT_REQUIRED_RESULT_FUTURE;
 
-import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
@@ -35,12 +33,6 @@ public interface BlobSidecarsAvailabilityChecker {
         public SafeFuture<BlobSidecarsAndValidationResult> getAvailabilityCheckResult() {
           return NOT_REQUIRED_RESULT_FUTURE;
         }
-
-        @Override
-        public BlobSidecarsAndValidationResult validateImmediately(
-            final List<BlobSidecar> blobSidecars) {
-          return BlobSidecarsAndValidationResult.NOT_REQUIRED;
-        }
       };
 
   BlobSidecarsAvailabilityChecker NOT_REQUIRED = NOOP;
@@ -55,7 +47,4 @@ public interface BlobSidecarsAvailabilityChecker {
   boolean initiateDataAvailabilityCheck();
 
   SafeFuture<BlobSidecarsAndValidationResult> getAvailabilityCheckResult();
-
-  /** Perform the data availability check immediately on the provided blob sidecars */
-  BlobSidecarsAndValidationResult validateImmediately(List<BlobSidecar> blobSidecars);
 }

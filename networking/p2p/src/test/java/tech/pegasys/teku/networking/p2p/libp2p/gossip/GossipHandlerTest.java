@@ -20,12 +20,14 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
 import io.libp2p.core.pubsub.ValidationResult;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import kotlin.Unit;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +41,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 public class GossipHandlerTest {
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final int gossipMaxSize = spec.getNetworkingConfig().getGossipMaxSize();
+  private final int gossipMaxSize = spec.getNetworkingConfig().getMaxPayloadSize();
   private final Topic topic = new Topic("Testing");
   private final PubsubPublisherApi publisher = mock(PubsubPublisherApi.class);
   private final TopicHandler topicHandler = mock(TopicHandler.class);
@@ -96,15 +98,15 @@ public class GossipHandlerTest {
   @Test
   public void gossip_newMessage() {
     final Bytes message = Bytes.fromHexString("0x01");
-    gossipHandler.gossip(message);
+    assertThatSafeFuture(gossipHandler.gossip(message)).isCompleted();
     verify(publisher).publish(toByteBuf(message), topic);
   }
 
   @Test
   public void gossip_duplicateMessage() { // Deduplication is done a libp2p level.
     final Bytes message = Bytes.fromHexString("0x01");
-    gossipHandler.gossip(message);
-    gossipHandler.gossip(message);
+    assertThatSafeFuture(gossipHandler.gossip(message)).isCompleted();
+    assertThatSafeFuture(gossipHandler.gossip(message)).isCompleted();
     verify(publisher, times(2)).publish(toByteBuf(message), topic);
   }
 
@@ -112,10 +114,42 @@ public class GossipHandlerTest {
   public void gossip_distinctMessages() {
     final Bytes message1 = Bytes.fromHexString("0x01");
     final Bytes message2 = Bytes.fromHexString("0x02");
-    gossipHandler.gossip(message1);
-    gossipHandler.gossip(message2);
+    assertThatSafeFuture(gossipHandler.gossip(message1)).isCompleted();
+    assertThatSafeFuture(gossipHandler.gossip(message2)).isCompleted();
     verify(publisher).publish(toByteBuf(message1), topic);
     verify(publisher).publish(toByteBuf(message2), topic);
+  }
+
+  @Test
+  public void gossip_forwardsGossipFailures() {
+    final Bytes message = Bytes.fromHexString("0x01");
+    final SafeFuture<Unit> result = new SafeFuture<>();
+    when(publisher.publish(any(), any())).thenReturn(result);
+    final SafeFuture<Void> gossipResult = gossipHandler.gossip(message);
+
+    verify(publisher).publish(toByteBuf(message), topic);
+    assertThat(gossipResult).isNotCompleted();
+
+    result.completeExceptionally(new RuntimeException("Failed to gossip"));
+    assertThatSafeFuture(gossipResult)
+        .isCompletedExceptionallyWith(RuntimeException.class)
+        .hasMessage("Failed to gossip");
+  }
+
+  @Test
+  public void
+      gossip_returnFutureCompletingOnSuccessfulPublishing() { // Deduplication is done a libp2p
+    // level.
+    final Bytes message = Bytes.fromHexString("0x01");
+    final SafeFuture<Unit> result = new SafeFuture<>();
+    when(publisher.publish(any(), any())).thenReturn(result);
+    final SafeFuture<Void> gossipResult = gossipHandler.gossip(message);
+
+    verify(publisher).publish(toByteBuf(message), topic);
+    assertThat(gossipResult).isNotCompleted();
+
+    result.complete(Unit.INSTANCE);
+    assertThat(gossipResult).isCompleted();
   }
 
   private ByteBuf toByteBuf(final Bytes bytes) {

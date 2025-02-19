@@ -22,6 +22,7 @@ import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.function.Supplier;
+import org.assertj.core.util.Files;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -187,6 +188,19 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.storageConfiguration().getBlobsPruningInterval())
         .isEqualTo(Duration.ofSeconds(55));
     assertThat(config.storageConfiguration().getBlobsPruningLimit()).isEqualTo(10);
+  }
+
+  @Test
+  void shouldSetBlobsPruningArchivePath() {
+    // path needs to exist.
+    String someTempPath = Files.temporaryFolderPath();
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xdata-storage-blobs-archive-path=" + someTempPath);
+
+    assertThat(config.storageConfiguration().getBlobsArchivePath())
+        .isPresent()
+        .get()
+        .isEqualTo(someTempPath);
   }
 
   @Test

@@ -44,14 +44,13 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
+import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
@@ -67,6 +66,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
@@ -185,7 +185,7 @@ public class Web3JExecutionEngineClientTest {
         .matches(
             forkChoiceUpdatedResultResponse ->
                 forkChoiceUpdatedResultResponse
-                    .getPayload()
+                    .payload()
                     .asInternalExecutionPayload()
                     .getPayloadStatus()
                     .equals(payloadStatusResponse));
@@ -203,7 +203,7 @@ public class Web3JExecutionEngineClientTest {
         eeClient.exchangeCapabilities(consensusCapabilities);
     assertThat(response)
         .succeedsWithin(1, TimeUnit.SECONDS)
-        .isEqualTo(new Response<>(executionCapabilities));
+        .isEqualTo(Response.fromPayloadReceivedAsJson(executionCapabilities));
 
     final Map<String, Object> requestData = takeRequest();
     verifyJsonRpcMethodCall(requestData, "engine_exchangeCapabilities");
@@ -224,7 +224,7 @@ public class Web3JExecutionEngineClientTest {
         eeClient.getClientVersionV1(consensusClientVersion);
     assertThat(response)
         .succeedsWithin(1, TimeUnit.SECONDS)
-        .isEqualTo(new Response<>(List.of(executionClientVersion)));
+        .isEqualTo(Response.fromPayloadReceivedAsJson(List.of(executionClientVersion)));
 
     final Map<String, Object> requestData = takeRequest();
     verifyJsonRpcMethodCall(requestData, "engine_getClientVersionV1");
@@ -270,7 +270,7 @@ public class Web3JExecutionEngineClientTest {
         .succeedsWithin(1, TimeUnit.SECONDS)
         .matches(
             response ->
-                response.getPayload().asInternalExecutionPayload().equals(payloadStatusResponse));
+                response.payload().asInternalExecutionPayload().equals(payloadStatusResponse));
 
     final Map<String, Object> requestData = takeRequest();
     verifyJsonRpcMethodCall(requestData, "engine_newPayloadV3");
@@ -318,38 +318,34 @@ public class Web3JExecutionEngineClientTest {
     mockSuccessfulResponse(bodyResponse);
 
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
-    final ExecutionPayloadV4 executionPayloadV4 =
-        ExecutionPayloadV4.fromInternalExecutionPayload(executionPayload);
+    final ExecutionPayloadV3 executionPayloadV3 =
+        ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
 
     final List<VersionedHash> blobVersionedHashes = dataStructureUtil.randomVersionedHashes(3);
     final Bytes32 parentBeaconBlockRoot = dataStructureUtil.randomBytes32();
+    final List<Bytes> executionRequests = dataStructureUtil.randomEncodedExecutionRequests();
 
     final SafeFuture<Response<PayloadStatusV1>> futureResponse =
-        eeClient.newPayloadV4(executionPayloadV4, blobVersionedHashes, parentBeaconBlockRoot);
+        eeClient.newPayloadV4(
+            executionPayloadV3, blobVersionedHashes, parentBeaconBlockRoot, executionRequests);
 
     assertThat(futureResponse)
         .succeedsWithin(1, TimeUnit.SECONDS)
         .matches(
             response ->
-                response.getPayload().asInternalExecutionPayload().equals(payloadStatusResponse));
+                response.payload().asInternalExecutionPayload().equals(payloadStatusResponse));
 
     final Map<String, Object> requestData = takeRequest();
     verifyJsonRpcMethodCall(requestData, "engine_newPayloadV4");
 
-    final Map<String, Object> executionPayloadV4Parameter =
+    final Map<String, Object> executionPayloadV3Parameter =
         (Map<String, Object>) ((List<Object>) requestData.get("params")).get(0);
-    // 19 fields in ExecutionPayloadV4
-    assertThat(executionPayloadV4Parameter).hasSize(20);
+    // 17 fields in ExecutionPayloadV4
+    assertThat(executionPayloadV3Parameter).hasSize(17);
     // sanity check
-    assertThat(executionPayloadV4Parameter.get("parentHash"))
-        .isEqualTo(executionPayloadV4.parentHash.toHexString());
+    assertThat(executionPayloadV3Parameter.get("parentHash"))
+        .isEqualTo(executionPayloadV3.parentHash.toHexString());
 
-    assertThat(executionPayloadV4Parameter.get("depositRequests"))
-        .asInstanceOf(InstanceOfAssertFactories.LIST)
-        .hasSameSizeAs(executionPayloadV4.depositRequests);
-    assertThat(executionPayloadV4Parameter.get("withdrawalRequests"))
-        .asInstanceOf(InstanceOfAssertFactories.LIST)
-        .hasSameSizeAs(executionPayloadV4.withdrawalRequests);
     assertThat(((List<Object>) requestData.get("params")).get(1))
         .asInstanceOf(LIST)
         .containsExactlyElementsOf(
@@ -359,6 +355,55 @@ public class Web3JExecutionEngineClientTest {
     assertThat(((List<Object>) requestData.get("params")).get(2))
         .asString()
         .isEqualTo(parentBeaconBlockRoot.toHexString());
+    assertThat(((List<Object>) requestData.get("params")).get(3))
+        .asInstanceOf(LIST)
+        .containsExactlyElementsOf(
+            executionRequests.stream().map(Bytes::toHexString).collect(Collectors.toList()));
+  }
+
+  @TestTemplate
+  @SuppressWarnings("unchecked")
+  public void getBlobsV1_shouldBuildRequestAndResponseSuccessfully() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
+    final List<BlobSidecar> blobSidecars =
+        dataStructureUtil.randomBlobSidecars(
+            spec.getMaxBlobsPerBlockForHighestMilestone().orElseThrow());
+    final List<BlobAndProofV1> blobsAndProofsV1 =
+        blobSidecars.stream()
+            .map(
+                blobSidecar ->
+                    new BlobAndProofV1(
+                        blobSidecar.getBlob().getBytes(),
+                        blobSidecar.getKZGProof().getBytesCompressed()))
+            .toList();
+    final String blobsAndProofsJson =
+        blobSidecars.stream()
+            .map(
+                blobSidecar ->
+                    String.format(
+                        "{ \"blob\": \"%s\", \"proof\": \"%s\" }",
+                        blobSidecar.getBlob().getBytes().toHexString(),
+                        blobSidecar.getKZGProof().getBytesCompressed().toHexString()))
+            .collect(Collectors.joining(", "));
+    final String bodyResponse =
+        "{\"jsonrpc\": \"2.0\", \"id\": 0, \"result\": [" + blobsAndProofsJson + "]}";
+
+    mockSuccessfulResponse(bodyResponse);
+
+    final List<VersionedHash> blobVersionedHashes = dataStructureUtil.randomVersionedHashes(3);
+
+    final SafeFuture<Response<List<BlobAndProofV1>>> futureResponse =
+        eeClient.getBlobsV1(blobVersionedHashes);
+
+    assertThat(futureResponse)
+        .succeedsWithin(1, TimeUnit.SECONDS)
+        .matches(response -> response.payload().equals(blobsAndProofsV1));
+
+    final Map<String, Object> requestData = takeRequest();
+    verifyJsonRpcMethodCall(requestData, "engine_getBlobsV1");
+    assertThat(requestData.get("params"))
+        .asInstanceOf(LIST)
+        .containsExactly(blobVersionedHashes.stream().map(VersionedHash::toHexString).toList());
   }
 
   private void mockSuccessfulResponse(final String responseBody) {

@@ -592,7 +592,7 @@ class FailoverValidatorApiHandlerTest {
     SafeFutureAssert.assertThatSafeFuture(creationRequest.run(failoverApiHandler)).isCompleted();
 
     final SignedBeaconBlock blindedSignedBlock =
-        DATA_STRUCTURE_UTIL.randomSignedBlindedBeaconBlock(UInt64.ONE);
+        DATA_STRUCTURE_UTIL.signedBlock(blindedBlock.blockContainer().getBlock());
 
     final ValidatorApiChannelRequest<SendSignedBlockResult> publishingRequest =
         apiChannel ->
@@ -882,10 +882,11 @@ class FailoverValidatorApiHandlerTest {
       final RemoteValidatorApiChannel apiChannel,
       final String methodLabel,
       final RequestOutcome outcome) {
-    return stubMetricsSystem
-        .getCounter(
-            TekuMetricCategory.VALIDATOR,
-            FailoverValidatorApiHandler.REMOTE_BEACON_NODES_REQUESTS_COUNTER_NAME)
-        .getValue(apiChannel.getEndpoint().toString(), methodLabel, outcome.toString());
+    return stubMetricsSystem.getCounterValue(
+        TekuMetricCategory.VALIDATOR,
+        FailoverValidatorApiHandler.REMOTE_BEACON_NODES_REQUESTS_COUNTER_NAME,
+        apiChannel.getEndpoint().toString(),
+        methodLabel,
+        outcome.toString());
   }
 }

@@ -27,36 +27,6 @@
           "address": "0xabcf8e0d4e9587369b2301d0790347320302cc09",
           "amount": "32000000000"
         }
-      ],
-      "deposit_requests": [
-        {
-          "pubkey": "0x94e2d4cf94fb757578c496885af2075c26e2483eeffa6e894ac791f7c1945b0fbf9a6f7860736db93e03d511c4b08516",
-          "withdrawal_credentials": "0x010000000000000000000000a2a06043d17ac951519956f43432e6811a0a4c5e",
-          "amount": "4853404529811048049",
-          "signature": "0x85cc5356a9646f0ffd512b7d2e7d3242c81303a415e61b490d28635896aef1f2db03ae8a1439908d03cc131515ef83f003dd7b36ce480c43f4495ffd339b2b9d1e5461309a02ce193202f27d216a4f0e13f7b47295f3e1a44c8f0e8ae8e1e5a8",
-          "index": "4843489626215975984"
-        },
-        {
-          "pubkey": "0xa5041469fc5f6a944fda64e7ab422c1479ab9d0de12a2f3ac7292dfe368408cbc6d2b0ff519b521427da731e7378806e",
-          "withdrawal_credentials": "0x010000000000000000000000fdc8e14312fb98663ed87639047022e291c761d2",
-          "amount": "4889759173463000754",
-          "signature": "0xa19b99131e621d31846245039e99d6540418acc08844a3996544cca2d9965f8a24cc49cf695bd78959a784e1b5646b480b88aec749a62ea934ed3001af50bb8babfb15bb9df1f3d57abd738f65de02b77398c82302f500218675cd96ee3b2357",
-          "index": "4893064144191336306"
-        }
-      ],
-      "withdrawal_requests": [
-        {
-          "source_address": "0x240bd643529257f0285e4590ab814b7c9dcd5ff6",
-          "validator_pubkey": "0x802775e14fda679e4594ca8ccda68a706957fe82c10e66d258eafd21fe5b2877c226092004f82874fb4022d73b74eea6",
-          "amount": "4878191786651244561"
-        }
-      ],
-      "consolidation_requests": [
-        {
-          "source_address": "0x240bd643529257f0285e4590ab814b7c9dcd5ff6",
-          "source_pubkey": "0x802775e14fda679e4594ca8ccda68a706957fe82c10e66d258eafd21fe5b2877c226092004f82874fb4022d73b74eea6",
-          "target_pubkey": "0x802775e14fda679e4594ca8ccda68a706957fe82c10e66d258eafd21fe5b2877c226092004f82874fb4022d73b74eea6"
-        }
       ]
     },
     "blobs_bundle": {

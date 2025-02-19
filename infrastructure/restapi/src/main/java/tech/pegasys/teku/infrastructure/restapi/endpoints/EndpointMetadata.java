@@ -577,7 +577,7 @@ public class EndpointMetadata {
     }
 
     public EndpointMetaDataBuilder response(final int responseCode, final String description) {
-      return response(responseCode, description, emptyList());
+      return response(responseCode, description, emptyList(), emptyList());
     }
 
     public EndpointMetaDataBuilder defaultResponseType(final String defaultContentType) {
@@ -671,7 +671,22 @@ public class EndpointMetadata {
         final String description,
         final SerializableTypeDefinition<?> content) {
       return response(
-          responseCode, description, List.of(new JsonResponseContentTypeDefinition<>(content)));
+          responseCode,
+          description,
+          List.of(new JsonResponseContentTypeDefinition<>(content)),
+          emptyList());
+    }
+
+    public EndpointMetaDataBuilder response(
+        final int responseCode,
+        final String description,
+        final SerializableTypeDefinition<?> content,
+        final SerializableTypeDefinition<?> header) {
+      return response(
+          responseCode,
+          description,
+          List.of(new JsonResponseContentTypeDefinition<>(content)),
+          List.of(new JsonResponseContentTypeDefinition<>(header)));
     }
 
     public <T> EndpointMetaDataBuilder response(
@@ -682,14 +697,43 @@ public class EndpointMetadata {
       return response(
           responseCode,
           description,
-          List.of(new JsonResponseContentTypeDefinition<>(content), octetStreamTypeDefinition));
+          List.of(new JsonResponseContentTypeDefinition<>(content), octetStreamTypeDefinition),
+          emptyList());
+    }
+
+    public <T> EndpointMetaDataBuilder response(
+        final int responseCode,
+        final String description,
+        final SerializableTypeDefinition<? extends T> content,
+        final ResponseContentTypeDefinition<? extends T> octetStreamTypeDefinition,
+        final SerializableTypeDefinition<? extends T> header) {
+      return response(
+          responseCode,
+          description,
+          List.of(new JsonResponseContentTypeDefinition<>(content), octetStreamTypeDefinition),
+          List.of(new JsonResponseContentTypeDefinition<>(header)));
+    }
+
+    public <T> EndpointMetaDataBuilder response(
+        final int responseCode,
+        final String description,
+        final SerializableTypeDefinition<? extends T> content,
+        final ResponseContentTypeDefinition<? extends T> octetStreamTypeDefinition,
+        final List<SerializableTypeDefinition<? extends T>> headers) {
+      return response(
+          responseCode,
+          description,
+          List.of(new JsonResponseContentTypeDefinition<>(content), octetStreamTypeDefinition),
+          headers.stream()
+              .map(JsonResponseContentTypeDefinition::new)
+              .collect(Collectors.toList()));
     }
 
     public <T> EndpointMetaDataBuilder response(
         final int responseCode,
         final String description,
         final ResponseContentTypeDefinition<T> octetStreamTypeDefinition) {
-      return response(responseCode, description, List.of(octetStreamTypeDefinition));
+      return response(responseCode, description, List.of(octetStreamTypeDefinition), emptyList());
     }
 
     public EndpointMetaDataBuilder withUnauthorizedResponse() {
@@ -732,6 +776,11 @@ public class EndpointMetadata {
       return this;
     }
 
+    public EndpointMetaDataBuilder withUnsupportedMediaTypeResponse() {
+      response(SC_UNSUPPORTED_MEDIA_TYPE, "Unsupported media type", HTTP_ERROR_RESPONSE_TYPE);
+      return this;
+    }
+
     public EndpointMetaDataBuilder withNotImplementedResponse() {
       response(SC_NOT_IMPLEMENTED, "Not implemented", HTTP_ERROR_RESPONSE_TYPE);
       return this;
@@ -750,7 +799,16 @@ public class EndpointMetadata {
         final int responseCode,
         final String description,
         final List<? extends ResponseContentTypeDefinition<?>> content) {
-      this.responses.put(Integer.toString(responseCode), new OpenApiResponse(description, content));
+      return response(responseCode, description, content, emptyList());
+    }
+
+    public EndpointMetaDataBuilder response(
+        final int responseCode,
+        final String description,
+        final List<? extends ResponseContentTypeDefinition<?>> content,
+        final List<? extends ResponseContentTypeDefinition<?>> header) {
+      this.responses.put(
+          Integer.toString(responseCode), new OpenApiResponse(description, header, content));
       return this;
     }
 

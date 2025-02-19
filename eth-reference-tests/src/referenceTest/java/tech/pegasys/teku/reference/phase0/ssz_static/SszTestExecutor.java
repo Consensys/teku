@@ -187,6 +187,11 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
 
           // Electra types
           .put(
+              "ssz_static/ExecutionRequests",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsElectra.required(schemas).getExecutionRequestsSchema()))
+          .put(
               "ssz_static/DepositRequest",
               new SszTestExecutor<>(
                   schemas -> SchemaDefinitionsElectra.required(schemas).getDepositRequestSchema()))
@@ -201,10 +206,9 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas ->
                       SchemaDefinitionsElectra.required(schemas).getConsolidationRequestSchema()))
           .put(
-              "ssz_static/PendingBalanceDeposit",
+              "ssz_static/PendingDeposit",
               new SszTestExecutor<>(
-                  schemas ->
-                      SchemaDefinitionsElectra.required(schemas).getPendingBalanceDepositSchema()))
+                  schemas -> SchemaDefinitionsElectra.required(schemas).getPendingDepositSchema()))
           .put(
               "ssz_static/PendingConsolidation",
               new SszTestExecutor<>(
@@ -216,6 +220,11 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas ->
                       SchemaDefinitionsElectra.required(schemas)
                           .getPendingPartialWithdrawalSchema()))
+          .put(
+              "ssz_static/SingleAttestation",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsElectra.required(schemas).getSingleAttestationSchema()))
 
           // Legacy Schemas (Not yet migrated to SchemaDefinitions)
           .put(

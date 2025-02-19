@@ -25,11 +25,12 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -72,13 +73,57 @@ class EngineNewPayloadV4Test {
   }
 
   @Test
+  public void blobVersionedHashesParamIsRequired() {
+    final JsonRpcRequestParams params =
+        new JsonRpcRequestParams.Builder().add(dataStructureUtil.randomExecutionPayload()).build();
+
+    assertThatThrownBy(() -> jsonRpcMethod.execute(params))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Missing required parameter at index 1");
+
+    verifyNoInteractions(executionEngineClient);
+  }
+
+  @Test
+  public void parentBeaconBlockRootParamIsRequired() {
+    final JsonRpcRequestParams params =
+        new JsonRpcRequestParams.Builder()
+            .add(dataStructureUtil.randomExecutionPayload())
+            .add(dataStructureUtil.randomVersionedHashes(3))
+            .build();
+
+    assertThatThrownBy(() -> jsonRpcMethod.execute(params))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Missing required parameter at index 2");
+
+    verifyNoInteractions(executionEngineClient);
+  }
+
+  @Test
+  public void executionRequestHashParamIsRequired() {
+    final JsonRpcRequestParams params =
+        new JsonRpcRequestParams.Builder()
+            .add(dataStructureUtil.randomExecutionPayload())
+            .add(dataStructureUtil.randomVersionedHashes(3))
+            .add(dataStructureUtil.randomBytes32())
+            .build();
+
+    assertThatThrownBy(() -> jsonRpcMethod.execute(params))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Missing required parameter at index 3");
+
+    verifyNoInteractions(executionEngineClient);
+  }
+
+  @Test
   public void shouldReturnFailedExecutionWhenEngineClientRequestFails() {
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
     final List<VersionedHash> blobVersionedHashes = dataStructureUtil.randomVersionedHashes(3);
     final Bytes32 parentBeaconBlockRoot = dataStructureUtil.randomBytes32();
+    final List<Bytes> executionRequests = dataStructureUtil.randomEncodedExecutionRequests();
     final String errorResponseFromClient = "error!";
 
-    when(executionEngineClient.newPayloadV4(any(), any(), any()))
+    when(executionEngineClient.newPayloadV4(any(), any(), any(), any()))
         .thenReturn(dummyFailedResponse(errorResponseFromClient));
 
     final JsonRpcRequestParams params =
@@ -86,6 +131,7 @@ class EngineNewPayloadV4Test {
             .add(executionPayload)
             .add(blobVersionedHashes)
             .add(parentBeaconBlockRoot)
+            .add(executionRequests)
             .build();
 
     assertThat(jsonRpcMethod.execute(params))
@@ -94,19 +140,23 @@ class EngineNewPayloadV4Test {
   }
 
   @Test
-  public void shouldCallNewPayloadV4WithExecutionPayloadV4AndBlobVersionedHashes() {
+  public void shouldCallNewPayloadV4WithExecutionPayloadV3AndCorrectParameters() {
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
     final List<VersionedHash> blobVersionedHashes = dataStructureUtil.randomVersionedHashes(4);
     final Bytes32 parentBeaconBlockRoot = dataStructureUtil.randomBytes32();
+    final List<Bytes> executionRequests = dataStructureUtil.randomEncodedExecutionRequests();
 
-    final ExecutionPayloadV4 executionPayloadV4 =
-        ExecutionPayloadV4.fromInternalExecutionPayload(executionPayload);
-    assertThat(executionPayloadV4).isExactlyInstanceOf(ExecutionPayloadV4.class);
+    final ExecutionPayloadV3 executionPayloadV3 =
+        ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
+    assertThat(executionPayloadV3).isExactlyInstanceOf(ExecutionPayloadV3.class);
 
     jsonRpcMethod = new EngineNewPayloadV4(executionEngineClient);
 
     when(executionEngineClient.newPayloadV4(
-            executionPayloadV4, blobVersionedHashes, parentBeaconBlockRoot))
+            eq(executionPayloadV3),
+            eq(blobVersionedHashes),
+            eq(parentBeaconBlockRoot),
+            eq(executionRequests)))
         .thenReturn(dummySuccessfulResponse());
 
     final JsonRpcRequestParams params =
@@ -114,23 +164,28 @@ class EngineNewPayloadV4Test {
             .add(executionPayload)
             .add(blobVersionedHashes)
             .add(parentBeaconBlockRoot)
+            .add(executionRequests)
             .build();
 
     assertThat(jsonRpcMethod.execute(params)).isCompleted();
 
     verify(executionEngineClient)
-        .newPayloadV4(eq(executionPayloadV4), eq(blobVersionedHashes), eq(parentBeaconBlockRoot));
+        .newPayloadV4(
+            eq(executionPayloadV3),
+            eq(blobVersionedHashes),
+            eq(parentBeaconBlockRoot),
+            eq(executionRequests));
     verifyNoMoreInteractions(executionEngineClient);
   }
 
   private SafeFuture<Response<PayloadStatusV1>> dummySuccessfulResponse() {
     return SafeFuture.completedFuture(
-        new Response<>(
+        Response.fromPayloadReceivedAsJson(
             new PayloadStatusV1(
                 ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null)));
   }
 
   private SafeFuture<Response<PayloadStatusV1>> dummyFailedResponse(final String errorMessage) {
-    return SafeFuture.completedFuture(Response.withErrorMessage(errorMessage));
+    return SafeFuture.completedFuture(Response.fromErrorMessage(errorMessage));
   }
 }

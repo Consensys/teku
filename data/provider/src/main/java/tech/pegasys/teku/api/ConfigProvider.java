@@ -30,12 +30,13 @@ public class ConfigProvider {
   }
 
   public Map<String, String> getConfig() {
-    final SpecConfigData configuration = new SpecConfigData(spec.getGenesisSpecConfig());
+    final SpecConfigData configuration =
+        new SpecConfigData(spec.getSpecConfigAndParent().specConfig());
     return configuration.getConfigMap();
   }
 
-  public SpecConfig getGenesisSpec() {
-    return spec.atEpoch(UInt64.ZERO).getConfig();
+  public SpecConfig getSpecConfig() {
+    return spec.getSpecConfigAndParent().specConfig();
   }
 
   public static String formatValue(final Object v) {

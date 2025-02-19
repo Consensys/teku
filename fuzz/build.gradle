@@ -1,15 +1,17 @@
 dependencies {
+    api 'com.fasterxml.jackson.core:jackson-databind'
     implementation project(':ethereum:networks')
     implementation project(':ethereum:spec')
     implementation testFixtures(project(':ethereum:spec'))
     implementation project(':infrastructure:bls')
     implementation project(':infrastructure:ssz')
 
-    implementation 'org.apache.tuweni:tuweni-bytes'
+    implementation 'io.tmio:tuweni-bytes'
     implementation 'it.unimi.dsi:fastutil'
 
     testImplementation 'org.xerial.snappy:snappy-java'
     testImplementation testFixtures(project(':ethereum:spec'))
+    testImplementation project(':infrastructure:json')
 }
 
 

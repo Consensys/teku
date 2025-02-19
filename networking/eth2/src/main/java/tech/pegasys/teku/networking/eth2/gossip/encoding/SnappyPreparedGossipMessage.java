@@ -124,7 +124,7 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
       if (valueType == null) {
         return DecodedMessageResult.failed();
       } else {
-        final Bytes decodedMessage = uncompressPayload();
+        final Bytes decodedMessage = uncompressPayload(networkingConfig.getMaxPayloadSize());
         return DecodedMessageResult.successful(decodedMessage);
       }
     } catch (DecodingException e) {
@@ -141,8 +141,9 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
     return decodedResult.get().getDecodedMessage();
   }
 
-  private Bytes uncompressPayload() throws DecodingException {
-    return snappyCompressor.uncompress(compressedData, valueType.getSszLengthBounds());
+  private Bytes uncompressPayload(final long maxUncompressedLength) throws DecodingException {
+    return snappyCompressor.uncompress(
+        compressedData, valueType.getSszLengthBounds(), maxUncompressedLength);
   }
 
   @Override
@@ -159,7 +160,11 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
 
   @FunctionalInterface
   interface Uncompressor {
-    Bytes uncompress(final Bytes compressedData, final SszLengthBounds lengthBounds)
+
+    Bytes uncompress(
+        final Bytes compressedData,
+        final SszLengthBounds lengthBounds,
+        final long maxUncompressedLengthInBytes)
         throws DecodingException;
   }
 }

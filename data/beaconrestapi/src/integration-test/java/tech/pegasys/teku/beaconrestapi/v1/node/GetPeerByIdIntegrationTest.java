@@ -19,14 +19,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Optional;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.node.Direction;
-import tech.pegasys.teku.api.response.v1.node.Peer;
-import tech.pegasys.teku.api.response.v1.node.PeerResponse;
-import tech.pegasys.teku.api.response.v1.node.State;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -51,16 +48,13 @@ public class GetPeerByIdIntegrationTest extends AbstractDataBackedRestAPIIntegra
     final Response response = get("QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N");
     assertThat(response.code()).isEqualTo(SC_OK);
 
-    final PeerResponse peerResponse =
-        jsonProvider.jsonToObject(response.body().string(), PeerResponse.class);
-    assertThat(peerResponse.data)
-        .isEqualTo(
-            new Peer(
-                node1.toBase58(),
-                null,
-                "/ip/1.2.3.4/tcp/4242/p2p/aeiou",
-                State.connected,
-                Direction.outbound));
+    final JsonNode data = getResponseData(response);
+    assertThat(data.get("peer_id").asText()).isEqualTo(node1.toBase58());
+    assertThat(data.get("enr")).isNull();
+    assertThat(data.get("last_seen_p2p_address").asText())
+        .isEqualTo("/ip/1.2.3.4/tcp/4242/p2p/aeiou");
+    assertThat(data.get("state").asText()).isEqualTo("connected");
+    assertThat(data.get("direction").asText()).isEqualTo("outbound");
   }
 
   private Response get(final String peerId) throws IOException {

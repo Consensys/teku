@@ -34,7 +34,7 @@ public class DenebUpgradeAcceptanceTest extends AcceptanceTestBase {
   @Test
   void shouldUpgradeToDeneb() throws Exception {
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
-    final int genesisTime = currentTime.plus(30).intValue(); // magic node startup time
+    final int genesisTime = currentTime.plus(60).intValue(); // magic node startup time
     final int epochDuration = 4 * 2; // 4 slots, 2 seconds each for swift
     final int shanghaiTime = genesisTime + epochDuration;
     final Map<String, String> genesisOverrides =
@@ -46,8 +46,7 @@ public class DenebUpgradeAcceptanceTest extends AcceptanceTestBase {
 
     BesuNode primaryEL =
         createBesuNode(
-            // "Waiting for Besu 24.9.0 release (https://github.com/Consensys/teku/issues/8535)"
-            BesuDockerVersion.DEVELOP,
+            BesuDockerVersion.STABLE,
             config ->
                 config
                     .withMergeSupport()
@@ -57,10 +56,18 @@ public class DenebUpgradeAcceptanceTest extends AcceptanceTestBase {
             genesisOverrides);
     primaryEL.start();
 
+    TekuBeaconNode primaryNode =
+        createTekuBeaconNode(
+            beaconNodeWithTrustedSetup(genesisTime, primaryEL)
+                .withStartupTargetPeerCount(0)
+                .build());
+
+    primaryNode.start();
+    primaryNode.waitForMilestone(SpecMilestone.DENEB);
+
     BesuNode secondaryEL =
         createBesuNode(
-            // "Waiting for Besu 24.9.0 release (https://github.com/Consensys/teku/issues/8535)"
-            BesuDockerVersion.DEVELOP,
+            BesuDockerVersion.STABLE,
             config ->
                 config
                     .withMergeSupport()
@@ -70,15 +77,6 @@ public class DenebUpgradeAcceptanceTest extends AcceptanceTestBase {
             genesisOverrides);
     secondaryEL.start();
     secondaryEL.addPeer(primaryEL);
-
-    TekuBeaconNode primaryNode =
-        createTekuBeaconNode(
-            beaconNodeWithTrustedSetup(genesisTime, primaryEL)
-                .withStartupTargetPeerCount(0)
-                .build());
-
-    primaryNode.start();
-    primaryNode.waitForMilestone(SpecMilestone.DENEB);
 
     final int primaryNodeGenesisTime = primaryNode.getGenesisTime().intValue();
 
@@ -106,6 +104,6 @@ public class DenebUpgradeAcceptanceTest extends AcceptanceTestBase {
         .withRealNetwork()
         .withJwtSecretFile(JWT_FILE)
         .withDenebEpoch(UInt64.valueOf(2))
-        .withTotalTerminalDifficulty(0);
+        .withTerminalBlockHash(DEFAULT_EL_GENESIS_HASH, 0);
   }
 }

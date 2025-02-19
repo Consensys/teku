@@ -34,7 +34,6 @@ import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
-import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -42,20 +41,19 @@ public class MiscHelpersElectraTest {
 
   private final Spec spec = TestSpecFactory.createMinimalElectra();
   private static final int PROPOSER_INDEX = 3;
-  private final Predicates predicates = new Predicates(spec.getGenesisSpecConfig());
+  private final PredicatesElectra predicatesElectra =
+      new PredicatesElectra(spec.getGenesisSpecConfig());
   private final SchemaDefinitionsElectra schemaDefinitionsElectra =
       SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions());
   private final MiscHelpersElectra miscHelpersElectra =
       new MiscHelpersElectra(
           spec.getGenesisSpecConfig().toVersionElectra().orElseThrow(),
-          predicates,
+          predicatesElectra,
           schemaDefinitionsElectra);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   final BeaconStateAccessorsElectra beaconStateAccessors =
       new BeaconStateAccessorsElectra(
-          spec.getGenesisSpecConfig(),
-          new PredicatesElectra(spec.getGenesisSpecConfig()),
-          miscHelpersElectra);
+          spec.getGenesisSpecConfig(), predicatesElectra, miscHelpersElectra);
 
   private final IntList validatorIndices = IntArrayList.of(1, 2, 3, 4, 5, 6, 7, 0);
 
@@ -98,7 +96,7 @@ public class MiscHelpersElectraTest {
     final SpecConfigElectra specConfigElectra =
         spy(SpecConfigElectra.required(spec.getGenesisSpecConfig()));
     final MiscHelpersElectra miscHelpersElectra =
-        new MiscHelpersElectra(specConfigElectra, predicates, schemaDefinitionsElectra);
+        new MiscHelpersElectra(specConfigElectra, predicatesElectra, schemaDefinitionsElectra);
 
     final BeaconState state =
         new BeaconStateTestBuilder(dataStructureUtil)
@@ -131,7 +129,7 @@ public class MiscHelpersElectraTest {
         proposerIndexCount++;
       }
     }
-    assertThat(proposerIndexCount).isEqualTo(4);
+    assertThat(proposerIndexCount).isEqualTo(5);
   }
 
   private BeaconState randomStateWithConsolidatedValidator(final int consolidationAmount) {

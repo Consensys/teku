@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -65,13 +66,17 @@ public class BlockImporter {
   private final AtomicReference<CheckpointState> latestFinalizedCheckpointState =
       new AtomicReference<>(null);
 
+  private final AsyncRunner asyncRunner;
+
   public BlockImporter(
+      final AsyncRunner asyncRunner,
       final Spec spec,
       final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher,
       final RecentChainData recentChainData,
       final ForkChoice forkChoice,
       final WeakSubjectivityValidator weakSubjectivityValidator,
       final ExecutionLayerChannel executionLayer) {
+    this.asyncRunner = asyncRunner;
     this.spec = spec;
     this.receivedBlockEventsChannelPublisher = receivedBlockEventsChannelPublisher;
     this.recentChainData = recentChainData;
@@ -106,8 +111,13 @@ public class BlockImporter {
     return validateWeakSubjectivityPeriod()
         .thenCompose(
             __ ->
-                forkChoice.onBlock(
-                    block, blockImportPerformance, blockBroadcastValidator, executionLayer))
+                asyncRunner.runAsync(
+                    () ->
+                        forkChoice.onBlock(
+                            block,
+                            blockImportPerformance,
+                            blockBroadcastValidator,
+                            executionLayer)))
         .thenApply(
             result -> {
               if (!result.isSuccessful()) {
@@ -141,7 +151,7 @@ public class BlockImporter {
             });
   }
 
-  private SafeFuture<?> validateWeakSubjectivityPeriod() {
+  private SafeFuture<Void> validateWeakSubjectivityPeriod() {
     return getLatestCheckpointState()
         .thenCombine(
             SafeFuture.of(() -> recentChainData.getCurrentSlot().orElseThrow()),

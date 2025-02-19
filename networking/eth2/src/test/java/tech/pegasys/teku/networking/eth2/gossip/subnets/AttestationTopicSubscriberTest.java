@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -47,6 +48,7 @@ class AttestationTopicSubscriberTest {
     final int committeeId = 10;
     final int subnetId =
         spec.computeSubnetForCommittee(ONE, UInt64.valueOf(committeeId), COMMITTEES_AT_SLOT);
+    subscriber.onSlot(ONE);
     subscriber.subscribeToCommitteeForAggregation(committeeId, COMMITTEES_AT_SLOT, ONE);
 
     verify(settableLabelledGaugeMock)
@@ -156,12 +158,51 @@ class AttestationTopicSubscriberTest {
   }
 
   @Test
+  public void shouldNotSubscribeForExpiredAggregationSubnet() {
+    final int committeeId = 3;
+    final UInt64 slot = UInt64.valueOf(10);
+    final int subnetId =
+        spec.computeSubnetForCommittee(slot, UInt64.valueOf(committeeId), COMMITTEES_AT_SLOT);
+    // Sanity check second subscription is for the same subnet ID.
+    assertThat(subnetId)
+        .isEqualTo(
+            spec.computeSubnetForCommittee(slot, UInt64.valueOf(committeeId), COMMITTEES_AT_SLOT));
+
+    subscriber.onSlot(slot.plus(ONE));
+    subscriber.subscribeToCommitteeForAggregation(committeeId, COMMITTEES_AT_SLOT, slot);
+    verifyNoMoreInteractions(settableLabelledGaugeMock);
+    verify(eth2P2PNetwork, never()).subscribeToAttestationSubnetId(anyInt());
+    verify(eth2P2PNetwork, never()).unsubscribeFromAttestationSubnetId(anyInt());
+  }
+
+  @Test
+  public void shouldNotSubscribeForExpiredPersistentSubnet() {
+    Set<SubnetSubscription> subnetSubscriptions =
+        Set.of(
+            new SubnetSubscription(2, UInt64.valueOf(15)),
+            new SubnetSubscription(1, UInt64.valueOf(20)));
+
+    subscriber.onSlot(UInt64.valueOf(16));
+    subscriber.subscribeToPersistentSubnets(subnetSubscriptions);
+
+    verify(settableLabelledGaugeMock)
+        .set(1, String.format(AttestationTopicSubscriber.GAUGE_PERSISTENT_SUBNETS_LABEL, 1));
+    verifyNoMoreInteractions(settableLabelledGaugeMock);
+
+    verify(eth2P2PNetwork).setLongTermAttestationSubnetSubscriptions(IntSet.of(1));
+
+    verify(eth2P2PNetwork).subscribeToAttestationSubnetId(1);
+    verify(eth2P2PNetwork, never()).subscribeToAttestationSubnetId(eq(2));
+  }
+
+  @Test
   public void shouldSubscribeToNewSubnetsAndUpdateENR_forPersistentSubscriptions() {
     Set<SubnetSubscription> subnetSubscriptions =
         Set.of(
             new SubnetSubscription(1, UInt64.valueOf(20)),
             new SubnetSubscription(2, UInt64.valueOf(15)));
 
+    subscriber.onSlot(UInt64.valueOf(15));
     subscriber.subscribeToPersistentSubnets(subnetSubscriptions);
 
     verify(settableLabelledGaugeMock)

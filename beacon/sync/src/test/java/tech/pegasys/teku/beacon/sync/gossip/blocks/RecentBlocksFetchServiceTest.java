@@ -39,6 +39,7 @@ import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
@@ -51,6 +52,10 @@ public class RecentBlocksFetchServiceTest {
 
   @SuppressWarnings("unchecked")
   private final PendingPool<SignedBeaconBlock> pendingBlockPool = mock(PendingPool.class);
+
+  @SuppressWarnings("unchecked")
+  private final PendingPool<ValidatableAttestation> pendingAttestationsPool =
+      mock(PendingPool.class);
 
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
       mock(BlockBlobSidecarsTrackersPool.class);
@@ -74,6 +79,7 @@ public class RecentBlocksFetchServiceTest {
         new RecentBlocksFetchService(
             asyncRunner,
             pendingBlockPool,
+            pendingAttestationsPool,
             blockBlobSidecarsTrackersPool,
             forwardSync,
             fetchTaskFactory,

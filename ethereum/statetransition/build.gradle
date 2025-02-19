@@ -25,7 +25,7 @@ dependencies {
   implementation project(':storage')
   implementation project(':storage:api')
 
-  implementation 'org.apache.tuweni:tuweni-units'
+  implementation 'io.tmio:tuweni-units'
 
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:networks'))

@@ -41,19 +41,33 @@ import org.rocksdb.CompressionType;
 @SuppressWarnings("FieldCanBeFinal")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class KvStoreConfiguration {
-  public static final int DEFAULT_MAX_OPEN_FILES = 128;
+  public static final int DEFAULT_MAX_OPEN_FILES = 1024;
 
   public static final int DEFAULT_LEVELDB_BLOCK_SIZE = 4096;
 
-  public static final int DEFAULT_LEVELDB_WRITE_BUFFER_SIZE = 4194304;
+  public static final int DEFAULT_LEVELDB_WRITE_BUFFER_SIZE = 4_194_304;
 
   public static final int DEFAULT_LEVELDB_MAX_OPEN_FILES = 1000;
 
   public static final int DEFAULT_MAX_BACKGROUND_JOBS = 6;
   public static final int DEFAULT_BACKGROUND_THREAD_COUNT = 6;
-  public static final long DEFAULT_CACHE_CAPACITY = 8 << 20;
+  public static final long DEFAULT_CACHE_CAPACITY = 128 << 20; // 128MB
   public static final long DEFAULT_WRITE_BUFFER_CAPACITY = 128 << 20;
   private static final boolean DEFAULT_OPTIMISE_FOR_SMALL_DB = false;
+
+  /** RocksDb number of log files to keep on disk */
+  public static final long NUMBER_OF_LOG_FILES_TO_KEEP = 5;
+
+  /** RocksDb Time to roll a log file (1 day = 3600 * 24 seconds) */
+  public static final long TIME_TO_ROLL_LOG_FILE = 86_400L;
+
+  /** Max total size of all WAL file, after which a flush is triggered */
+  public static final long WAL_MAX_TOTAL_SIZE = 1_073_741_824L;
+
+  /** Expected size of a single WAL file, to determine how many WAL files to keep around */
+  public static final long EXPECTED_WAL_FILE_SIZE = 67_108_864L;
+
+  public static final long ROCKSDB_BLOCK_SIZE = 32_768;
 
   /* --------------- Safe to Change Properties ------------ */
 
@@ -88,10 +102,10 @@ public class KvStoreConfiguration {
   /* ---------------     Fixed Properties     ------------ */
 
   @JsonProperty("compressionType")
-  private CompressionType compressionType = CompressionType.NO_COMPRESSION;
+  private CompressionType compressionType = CompressionType.LZ4_COMPRESSION;
 
   @JsonProperty("bottomMostCompressionType")
-  private CompressionType bottomMostCompressionType = CompressionType.NO_COMPRESSION;
+  private CompressionType bottomMostCompressionType = CompressionType.DISABLE_COMPRESSION_OPTION;
 
   @JsonIgnore private Path databaseDir;
 

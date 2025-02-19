@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.coordinator.publisher;
 
 import java.util.List;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -24,38 +25,51 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
-import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class BlockPublisherPhase0 extends AbstractBlockPublisher {
-  private final BlockGossipChannel blockGossipChannel;
 
   public BlockPublisherPhase0(
+      final AsyncRunner asyncRunner,
       final BlockFactory blockFactory,
       final BlockGossipChannel blockGossipChannel,
       final BlockImportChannel blockImportChannel,
-      final PerformanceTracker performanceTracker,
-      final DutyMetrics dutyMetrics) {
-    super(blockFactory, blockImportChannel, performanceTracker, dutyMetrics);
-    this.blockGossipChannel = blockGossipChannel;
+      final DutyMetrics dutyMetrics,
+      final boolean gossipBlobsAfterBlock) {
+    super(
+        asyncRunner,
+        blockFactory,
+        blockGossipChannel,
+        blockImportChannel,
+        dutyMetrics,
+        gossipBlobsAfterBlock);
   }
 
   @Override
-  SafeFuture<BlockImportAndBroadcastValidationResults> importBlockAndBlobSidecars(
+  SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
       final SignedBeaconBlock block,
-      final List<BlobSidecar> blobSidecars,
       final BroadcastValidationLevel broadcastValidationLevel,
       final BlockPublishingPerformance blockPublishingPerformance) {
-    return blockImportChannel
-        .importBlock(block, broadcastValidationLevel)
-        .thenPeek(__ -> blockPublishingPerformance.blockImportCompleted());
+    return blockImportChannel.importBlock(block, broadcastValidationLevel);
   }
 
   @Override
-  void publishBlockAndBlobSidecars(
-      final SignedBeaconBlock block,
+  void importBlobSidecars(
       final List<BlobSidecar> blobSidecars,
       final BlockPublishingPerformance blockPublishingPerformance) {
-    blockGossipChannel.publishBlock(block);
+    // No-op for phase 0
+  }
+
+  @Override
+  SafeFuture<Void> publishBlock(
+      final SignedBeaconBlock block, final BlockPublishingPerformance blockPublishingPerformance) {
     blockPublishingPerformance.blockPublishingInitiated();
+    return blockGossipChannel.publishBlock(block);
+  }
+
+  @Override
+  void publishBlobSidecars(
+      final List<BlobSidecar> blobSidecars,
+      final BlockPublishingPerformance blockPublishingPerformance) {
+    // No-op for phase 0
   }
 }

@@ -1,5 +1,5 @@
 [codespell]
-skip = .git,package-lock.json,LOG.old.*
+skip = .git,package-lock.json,LOG.old.*,venv
 count =
 quiet-level = 3
 ignore-words = ./.codespell/wordlist.txt

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.common.block;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -46,7 +45,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
@@ -55,7 +53,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
-import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -92,6 +89,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
    * Setting to <code>false</code> significantly speeds up state initialization
    */
   @VisibleForTesting
+  @SuppressWarnings("NonFinalStaticField")
   public static BLSSignatureVerifier depositSignatureVerifier = DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
 
   private static final Logger LOG = LogManager.getLogger();
@@ -341,7 +339,13 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     processBlockHeader(state, block);
     processRandaoNoValidation(state, block.getBody());
     processEth1Data(state, block.getBody());
-    processOperationsNoValidation(state, block.getBody(), indexedAttestationCache);
+    processOperationsNoValidation(
+        state, block.getBody(), indexedAttestationCache, getValidatorExitContextSupplier(state));
+  }
+
+  protected Supplier<ValidatorExitContext> getValidatorExitContextSupplier(
+      final MutableBeaconState state) {
+    return beaconStateMutators.createValidatorExitContextSupplier(state);
   }
 
   @Override
@@ -432,14 +436,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected void processOperationsNoValidation(
       final MutableBeaconState state,
       final BeaconBlockBody body,
-      final IndexedAttestationCache indexedAttestationCache)
+      final IndexedAttestationCache indexedAttestationCache,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
     safelyProcess(
         () -> {
           verifyOutstandingDepositsAreProcessed(state, body);
-
-          final Supplier<ValidatorExitContext> validatorExitContextSupplier =
-              beaconStateMutators.createValidatorExitContextSupplier(state);
 
           processProposerSlashingsNoValidation(
               state, body.getProposerSlashings(), validatorExitContextSupplier);
@@ -449,8 +451,6 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           processDeposits(state, body.getDeposits());
           processVoluntaryExitsNoValidation(
               state, body.getVoluntaryExits(), validatorExitContextSupplier);
-          processWithdrawalRequests(
-              state, body.getOptionalExecutionPayload(), validatorExitContextSupplier);
         });
   }
 
@@ -473,7 +473,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     final Supplier<ValidatorExitContext> validatorExitContextSupplier =
-        beaconStateMutators.createValidatorExitContextSupplier(state);
+        getValidatorExitContextSupplier(state);
     processProposerSlashingsNoValidation(state, proposerSlashings, validatorExitContextSupplier);
     final BlockValidationResult validationResult =
         verifyProposerSlashings(state, proposerSlashings, signatureVerifier);
@@ -532,7 +532,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     safelyProcess(
         () -> {
           final Supplier<ValidatorExitContext> validatorExitContextSupplier =
-              beaconStateMutators.createValidatorExitContextSupplier(state);
+              getValidatorExitContextSupplier(state);
           processAttesterSlashings(state, attesterSlashings, validatorExitContextSupplier);
         });
   }
@@ -680,7 +680,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         final BLSPublicKey pubkey = deposit.getData().getPubkey();
         publicKeys.add(List.of(pubkey));
         messages.add(
-            computeDepositSigningRoot(
+            miscHelpers.computeDepositSigningRoot(
                 pubkey,
                 deposit.getData().getWithdrawalCredentials(),
                 deposit.getData().getAmount()));
@@ -693,6 +693,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     }
   }
 
+  /** process_deposit */
   public void processDeposit(
       final MutableBeaconState state,
       final Deposit deposit,
@@ -729,6 +730,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         signatureAlreadyVerified);
   }
 
+  /** apply_deposit */
   public void applyDeposit(
       final MutableBeaconState state,
       final BLSPublicKey pubkey,
@@ -756,35 +758,19 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       // Verify the deposit signature (proof of possession) which is not checked by the deposit
       // contract
       if (signatureAlreadyVerified
-          || depositSignatureIsValid(pubkey, withdrawalCredentials, amount, signature)) {
-        addValidatorToRegistry(state, pubkey, withdrawalCredentials, amount);
+          || miscHelpers.isValidDepositSignature(
+              pubkey, withdrawalCredentials, amount, signature)) {
+        beaconStateMutators.addValidatorToRegistry(state, pubkey, withdrawalCredentials, amount);
       } else {
         handleInvalidDeposit(pubkey, maybePubkeyToIndexMap);
       }
     } else {
-      applyDepositToValidatorIndex(
-          state,
-          withdrawalCredentials,
-          signatureAlreadyVerified,
-          existingIndex.get(),
-          amount,
-          pubkey,
-          signature);
+      // Increase balance by deposit amount
+      beaconStateMutators.increaseBalance(state, existingIndex.get(), amount);
     }
   }
 
-  protected void applyDepositToValidatorIndex(
-      final MutableBeaconState state,
-      final Bytes32 withdrawalCredentials,
-      final boolean signatureAlreadyVerified,
-      final int validatorIndex,
-      final UInt64 amount,
-      final BLSPublicKey pubkey,
-      final BLSSignature signature) {
-    beaconStateMutators.increaseBalance(state, validatorIndex, amount);
-  }
-
-  private void handleInvalidDeposit(
+  protected void handleInvalidDeposit(
       final BLSPublicKey pubkey,
       final Optional<Object2IntMap<BLSPublicKey>> maybePubkeyToIndexMap) {
     LOG.debug("Skipping invalid deposit with pubkey {}", pubkey);
@@ -795,54 +781,6 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         });
   }
 
-  protected boolean depositSignatureIsValid(
-      final BLSPublicKey pubkey,
-      final Bytes32 withdrawalCredentials,
-      final UInt64 amount,
-      final BLSSignature signature) {
-    try {
-      return depositSignatureVerifier.verify(
-          pubkey, computeDepositSigningRoot(pubkey, withdrawalCredentials, amount), signature);
-    } catch (final BlsException e) {
-      return false;
-    }
-  }
-
-  private Bytes computeDepositSigningRoot(
-      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials, final UInt64 amount) {
-    final Bytes32 domain = miscHelpers.computeDomain(Domain.DEPOSIT);
-    final DepositMessage depositMessage = new DepositMessage(pubkey, withdrawalCredentials, amount);
-    return miscHelpers.computeSigningRoot(depositMessage, domain);
-  }
-
-  protected void addValidatorToRegistry(
-      final MutableBeaconState state,
-      final BLSPublicKey pubkey,
-      final Bytes32 withdrawalCredentials,
-      final UInt64 amount) {
-    final Validator validator = getValidatorFromDeposit(pubkey, withdrawalCredentials, amount);
-    LOG.debug("Adding new validator with index {} to state", state.getValidators().size());
-    state.getValidators().append(validator);
-    state.getBalances().appendElement(amount);
-  }
-
-  protected Validator getValidatorFromDeposit(
-      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials, final UInt64 amount) {
-    final UInt64 effectiveBalance =
-        amount
-            .minus(amount.mod(specConfig.getEffectiveBalanceIncrement()))
-            .min(specConfig.getMaxEffectiveBalance());
-    return new Validator(
-        pubkey,
-        withdrawalCredentials,
-        effectiveBalance,
-        false,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH);
-  }
-
   @Override
   public void processVoluntaryExits(
       final MutableBeaconState state,
@@ -850,7 +788,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     final Supplier<ValidatorExitContext> validatorExitContextSupplier =
-        beaconStateMutators.createValidatorExitContextSupplier(state);
+        getValidatorExitContextSupplier(state);
     processVoluntaryExitsNoValidation(state, exits, validatorExitContextSupplier);
     BlockValidationResult signaturesValid = verifyVoluntaryExits(state, exits, signatureVerifier);
     if (!signaturesValid.isValid()) {
@@ -900,25 +838,16 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     return BlockValidationResult.SUCCESSFUL;
   }
 
-  protected void processWithdrawalRequests(
-      final MutableBeaconState state,
-      final Optional<ExecutionPayload> executionPayload,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
-      throws BlockProcessingException {
-    // No WithdrawalRequests until Electra
-  }
-
   @Override
   public void processDepositRequests(
-      final MutableBeaconState state, final SszList<DepositRequest> depositRequests)
-      throws BlockProcessingException {
+      final MutableBeaconState state, final List<DepositRequest> depositRequests) {
     // No DepositRequests until Electra
   }
 
   @Override
   public void processWithdrawalRequests(
       final MutableBeaconState state,
-      final SszList<WithdrawalRequest> withdrawalRequests,
+      final List<WithdrawalRequest> withdrawalRequests,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
     // No WithdrawalRequests until Electra
@@ -926,9 +855,17 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   @Override
   public void processConsolidationRequests(
-      final MutableBeaconState state, final SszList<ConsolidationRequest> consolidationRequests)
+      final MutableBeaconState state, final List<ConsolidationRequest> consolidationRequests)
       throws BlockProcessingException {
     // No Consolidations until Electra
+  }
+
+  @Override
+  public boolean isValidSwitchToCompoundingRequest(
+      final BeaconState beaconState, final ConsolidationRequest consolidationRequest)
+      throws BlockProcessingException {
+    // No Consolidations until Electra
+    return false;
   }
 
   // Catch generic errors and wrap them in a BlockProcessingException
@@ -938,13 +875,6 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     } catch (ArithmeticException | IllegalArgumentException | IndexOutOfBoundsException e) {
       LOG.warn("Failed to process block", e);
       throw new BlockProcessingException(e);
-    }
-  }
-
-  protected void assertCondition(final boolean condition, final String errorMessage)
-      throws BlockProcessingException {
-    if (!condition) {
-      throw new BlockProcessingException(errorMessage);
     }
   }
 

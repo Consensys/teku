@@ -16,8 +16,10 @@ package tech.pegasys.teku.cli.options;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig.DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
 import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT;
 import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT_IPV6;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
@@ -41,7 +43,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
     final P2PConfig p2pConfig = tekuConfig.p2p();
     assertThat(p2pConfig.getTargetSubnetSubscriberCount()).isEqualTo(5);
-    assertThat(p2pConfig.getPeerRateLimit()).isEqualTo(100);
+    assertThat(p2pConfig.getPeerBlocksRateLimit()).isEqualTo(100);
+    assertThat(p2pConfig.getPeerBlobSidecarsRateLimit()).isEqualTo(400);
     assertThat(p2pConfig.getPeerRequestLimit()).isEqualTo(101);
 
     final DiscoveryConfig discoConfig = tekuConfig.discovery();
@@ -64,7 +67,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(syncConfig.getHistoricalSyncBatchSize()).isEqualTo(102);
     assertThat(syncConfig.getForwardSyncBatchSize()).isEqualTo(103);
     assertThat(syncConfig.getForwardSyncMaxPendingBatches()).isEqualTo(8);
-    assertThat(syncConfig.getForwardSyncMaxBlocksPerMinute()).isEqualTo(80);
+    assertThat(syncConfig.getForwardSyncMaxBlocksPerMinute()).isEqualTo(100);
+    assertThat(syncConfig.getForwardSyncMaxBlobSidecarsPerMinute()).isEqualTo(400);
   }
 
   @Test
@@ -244,10 +248,17 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void forwardSyncRateLimit_shouldBeSettable() {
+  public void forwardSyncBlocksRateLimit_shouldBeSettable() {
     TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--Xp2p-sync-rate-limit", "10");
+        getTekuConfigurationFromArguments("--Xp2p-sync-blocks-rate-limit", "10");
     assertThat(tekuConfiguration.sync().getForwardSyncMaxBlocksPerMinute()).isEqualTo(10);
+  }
+
+  @Test
+  public void forwardSyncBlobSidecarsRateLimit_shouldBeSettable() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xp2p-sync-blob-sidecars-rate-limit", "10");
+    assertThat(tekuConfiguration.sync().getForwardSyncMaxBlobSidecarsPerMinute()).isEqualTo(10);
   }
 
   @Test
@@ -336,6 +347,49 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(tekuConfiguration.validatorClient().getValidatorConfig().getExecutorMaxQueueSize())
         .isEqualTo(15_120);
     assertThat(tekuConfiguration.p2p().getBatchVerifyQueueCapacity()).isEqualTo(15_220);
+  }
+
+  @Test
+  public void floodPublishMaxMessageSizeThreshold_defaultIsSetCorrectly() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.network().getGossipConfig().getFloodPublishMaxMessageSizeThreshold())
+        .isEqualTo(DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD);
+  }
+
+  @Test
+  public void floodPublishMaxMessageSizeThreshold_isSetCorrectly() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xp2p-flood-max-message-size-threshold=1000");
+    assertThat(config.network().getGossipConfig().getFloodPublishMaxMessageSizeThreshold())
+        .isEqualTo(1000);
+  }
+
+  @Test
+  public void gossipBlobsAfterBlockEnabled_defaultIsSetCorrectly() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.p2p().isGossipBlobsAfterBlockEnabled())
+        .isEqualTo(DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED);
+  }
+
+  @Test
+  public void gossipBlobsAfterBlockEnabled_shouldNotRequireAValue() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xp2p-gossip-blobs-after-block-enabled");
+    assertThat(config.p2p().isGossipBlobsAfterBlockEnabled()).isTrue();
+  }
+
+  @Test
+  public void gossipBlobsAfterBlockEnabled_true() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xp2p-gossip-blobs-after-block-enabled=true");
+    assertThat(config.p2p().isGossipBlobsAfterBlockEnabled()).isTrue();
+  }
+
+  @Test
+  public void gossipBlobsAfterBlockEnabled_false() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xp2p-gossip-blobs-after-block-enabled=false");
+    assertThat(config.p2p().isGossipBlobsAfterBlockEnabled()).isFalse();
   }
 
   @Test

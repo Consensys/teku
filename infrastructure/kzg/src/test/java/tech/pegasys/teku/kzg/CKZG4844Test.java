@@ -16,7 +16,6 @@ package tech.pegasys.teku.kzg;
 import static ethereum.ckzg4844.CKZG4844JNI.BLS_MODULUS;
 import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_BLOB;
 import static ethereum.ckzg4844.CKZG4844JNI.FIELD_ELEMENTS_PER_BLOB;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -252,21 +251,9 @@ public final class CKZG4844Test {
   }
 
   @Test
-  public void monomialTrustedSetupFilesShouldThrow() {
-    final KZGException kzgException =
-        assertThrows(
-            KZGException.class,
-            () ->
-                CKZG.loadTrustedSetup(
-                    TrustedSetupLoader.getTrustedSetupFile("trusted_setup_monomial.txt")));
-    assertThat(kzgException.getMessage()).contains("Failed to load trusted setup");
-    assertThat(kzgException.getCause().getMessage())
-        .contains("There was an error while loading the Trusted Setup. (C_KZG_BADARGS)");
-  }
-
-  @Test
   public void testInvalidLengthG2PointInNewTrustedSetup() {
-    assertThatThrownBy(() -> new TrustedSetup(List.of(), List.of(Bytes.fromHexString(""))))
+    assertThatThrownBy(
+            () -> new TrustedSetup(List.of(), List.of(Bytes.fromHexString("")), List.of()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Expected G2 point to be 96 bytes");
   }

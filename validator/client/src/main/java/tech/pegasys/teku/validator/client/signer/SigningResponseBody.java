@@ -13,21 +13,36 @@
 
 package tech.pegasys.teku.validator.client.signer;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.SIGNATURE_TYPE;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class SigningResponseBody {
-  private final String signature;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
-  @JsonCreator
-  public SigningResponseBody(
-      @JsonProperty(value = "signature", required = true) final String signature) {
-    this.signature = signature;
+public record SigningResponseBody(BLSSignature signature) {
+
+  static DeserializableTypeDefinition<SigningResponseBody> getJsonTypeDefinition() {
+    return DeserializableTypeDefinition.object(
+            SigningResponseBody.class, SigningResponseBodyBuilder.class)
+        .initializer(SigningResponseBodyBuilder::new)
+        .finisher(SigningResponseBodyBuilder::build)
+        .withField(
+            "signature",
+            SIGNATURE_TYPE,
+            SigningResponseBody::signature,
+            SigningResponseBodyBuilder::signature)
+        .build();
   }
 
-  public String getSignature() {
-    return signature;
+  static class SigningResponseBodyBuilder {
+    private BLSSignature signature;
+
+    SigningResponseBodyBuilder signature(final BLSSignature signature) {
+      this.signature = signature;
+      return this;
+    }
+
+    SigningResponseBody build() {
+      return new SigningResponseBody(signature);
+    }
   }
 }

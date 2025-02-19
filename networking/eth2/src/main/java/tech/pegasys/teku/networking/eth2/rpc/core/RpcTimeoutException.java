@@ -23,6 +23,6 @@ public class RpcTimeoutException extends StreamTimeoutException {
   }
 
   private static String generateMessage(final String message, final Duration timeout) {
-    return String.format("Rpc request timed out after %d sec: %s", timeout.getSeconds(), message);
+    return String.format("Rpc request timed out after %d sec: %s", timeout.toSeconds(), message);
   }
 }

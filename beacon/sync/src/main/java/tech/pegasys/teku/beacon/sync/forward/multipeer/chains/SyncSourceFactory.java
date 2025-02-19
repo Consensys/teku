@@ -26,32 +26,43 @@ public class SyncSourceFactory {
 
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
-  private final Map<Eth2Peer, SyncSource> syncSourcesByPeer = new HashMap<>();
-  private final int maxBlocksPerMinute;
   private final int batchSize;
+  private final int maxBlocksPerMinute;
+  private final int maxBlobSidecarsPerMinute;
+
+  private final Map<Eth2Peer, SyncSource> syncSourcesByPeer = new HashMap<>();
 
   public SyncSourceFactory(
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
+      final int batchSize,
       final int maxBlocksPerMinute,
-      final int batchSize) {
+      final int maxBlobSidecarsPerMinute) {
     this.asyncRunner = asyncRunner;
     this.timeProvider = timeProvider;
-    this.maxBlocksPerMinute = maxBlocksPerMinute;
     this.batchSize = batchSize;
+    this.maxBlocksPerMinute = maxBlocksPerMinute;
+    this.maxBlobSidecarsPerMinute = maxBlobSidecarsPerMinute;
   }
 
   public SyncSource getOrCreateSyncSource(final Eth2Peer peer, final Spec spec) {
-    // Limit request rate to just a little under what we'd accept
+    // Limit request rates for blocks/blobs to just a little under what we'd accept (see
+    // Eth2PeerFactory)
     final int maxBlocksPerMinute = this.maxBlocksPerMinute - batchSize - 1;
-    final Optional<Integer> maxBlobSidecarsPerMinute =
-        spec.getMaxBlobsPerBlock().map(maxBlobsPerBlock -> maxBlocksPerMinute * maxBlobsPerBlock);
-
+    final Optional<Integer> maybeMaxBlobsPerBlock = spec.getMaxBlobsPerBlockForHighestMilestone();
+    final Optional<Integer> maybeMaxBlobSidecarsPerMinute =
+        maybeMaxBlobsPerBlock.map(
+            maxBlobsPerBlock -> this.maxBlobSidecarsPerMinute - (batchSize * maxBlobsPerBlock) - 1);
     return syncSourcesByPeer.computeIfAbsent(
         peer,
         source ->
             new ThrottlingSyncSource(
-                asyncRunner, timeProvider, source, maxBlocksPerMinute, maxBlobSidecarsPerMinute));
+                asyncRunner,
+                timeProvider,
+                source,
+                maxBlocksPerMinute,
+                maybeMaxBlobsPerBlock,
+                maybeMaxBlobSidecarsPerMinute));
   }
 
   public void onPeerDisconnected(final Eth2Peer peer) {

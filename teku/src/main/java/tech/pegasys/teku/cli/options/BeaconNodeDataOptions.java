@@ -164,11 +164,22 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       names = {"--Xdata-storage-blobs-pruning-limit"},
       hidden = true,
       paramLabel = "<INTEGER>",
-      description = "Maximum number of blob sidecars that can be pruned in each pruning session",
+      description =
+          "Maximum number of blocks of blob sidecars that can be pruned in each pruning session",
       fallbackValue = "true",
       showDefaultValue = Visibility.ALWAYS,
       arity = "0..1")
   private int blobsPruningLimit = StorageConfiguration.DEFAULT_BLOBS_PRUNING_LIMIT;
+
+  @CommandLine.Option(
+      names = {"--Xdata-storage-blobs-archive-path"},
+      hidden = true,
+      paramLabel = "<STRING>",
+      description = "Path to write pruned blobs",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1")
+  private String blobsArchivePath = null;
 
   @Option(
       names = {"--Xdata-storage-state-rebuild-timeout-seconds"},
@@ -212,6 +223,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .stateRebuildTimeoutSeconds(stateRebuildTimeoutSeconds)
                 .blobsPruningInterval(Duration.ofSeconds(blobsPruningIntervalSeconds))
                 .blobsPruningLimit(blobsPruningLimit)
+                .blobsArchivePath(blobsArchivePath)
                 .retainedSlots(dataStorageRetainedSlots)
                 .statePruningInterval(Duration.ofSeconds(statePruningIntervalSeconds))
                 .statePruningLimit(statePruningLimit));
@@ -221,7 +233,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .reconstructHistoricStatesEnabled(reconstructHistoricStates));
   }
 
-  private DatabaseVersion parseDatabaseVersion() {
+  public DatabaseVersion parseDatabaseVersion() {
     if (createDbVersion == null) {
       if (dataStorageFrequency == 1 && !DatabaseVersion.isLevelDbSupported()) {
         throw new InvalidConfigurationException(

@@ -47,6 +47,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
@@ -72,7 +73,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   static final String REMOTE_BEACON_NODES_REQUESTS_COUNTER_NAME =
       "remote_beacon_nodes_requests_total";
 
-  private final Map<UInt64, ValidatorApiChannel> blindedBlockCreatorCache =
+  private final Map<SlotAndBlockRoot, ValidatorApiChannel> blindedBlockCreatorCache =
       LimitedMap.createSynchronizedLRU(2);
 
   private final BeaconNodeReadinessManager beaconNodeReadinessManager;
@@ -172,7 +173,13 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
                               .map(BlockContainerAndMetaData::blockContainer)
                               .map(BlockContainer::isBlinded)
                               .orElse(false)) {
-                        blindedBlockCreatorCache.put(slot, apiChannel);
+                        final SlotAndBlockRoot slotAndBlockRoot =
+                            blockContainerAndMetaData
+                                .orElseThrow()
+                                .blockContainer()
+                                .getBlock()
+                                .getSlotAndBlockRoot();
+                        blindedBlockCreatorCache.put(slotAndBlockRoot, apiChannel);
                       }
                     });
     return tryRequestUntilSuccess(request, BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD);
@@ -254,12 +261,14 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer blockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
-    final UInt64 slot = blockContainer.getSlot();
-    if (blockContainer.isBlinded() && blindedBlockCreatorCache.containsKey(slot)) {
-      final ValidatorApiChannel blockCreatorApiChannel = blindedBlockCreatorCache.remove(slot);
+    final SlotAndBlockRoot slotAndBlockRoot = blockContainer.getSignedBlock().getSlotAndBlockRoot();
+    if (blockContainer.isBlinded() && blindedBlockCreatorCache.containsKey(slotAndBlockRoot)) {
+      final ValidatorApiChannel blockCreatorApiChannel =
+          blindedBlockCreatorCache.remove(slotAndBlockRoot);
       LOG.info(
-          "Block for slot {} was blinded and will only be sent to the beacon node which created it.",
-          slot);
+          "Block for slot {} and root {} was blinded and will only be sent to the beacon node which created it.",
+          slotAndBlockRoot.getSlot(),
+          slotAndBlockRoot.getBlockRoot().toHexString());
       return blockCreatorApiChannel.sendSignedBlock(blockContainer, broadcastValidationLevel);
     }
     return relayRequest(

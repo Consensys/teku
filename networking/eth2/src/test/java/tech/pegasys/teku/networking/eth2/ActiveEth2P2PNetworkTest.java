@@ -39,8 +39,10 @@ import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
+import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
@@ -80,10 +82,6 @@ public class ActiveEth2P2PNetworkTest {
   private Fork phase0Fork;
   private Fork altairFork;
   private Bytes32 genesisValidatorsRoot;
-
-  private final int maxFollowDistanceSlots =
-      spec.getGenesisSpecConfig().getMaxSeedLookahead()
-          * spec.slotsPerEpoch(storageSystem.combinedChainDataClient().getCurrentEpoch());
 
   @BeforeEach
   public void setup() {
@@ -190,13 +188,38 @@ public class ActiveEth2P2PNetworkTest {
   }
 
   @Test
-  void onSyncStateChanged_shouldEnableGossipWhenInSync() {
+  void shouldStartGossipOnPeerConnect() {
+    @SuppressWarnings("unchecked")
+    final ArgumentCaptor<PeerConnectedSubscriber<Eth2Peer>> peerManagerCaptor =
+        ArgumentCaptor.forClass(PeerConnectedSubscriber.class);
     // Current slot is a long way beyond the chain head
-    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(1000));
+    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(64));
 
     assertThat(network.start()).isCompleted();
-    // Won't start gossip as chain head is too old
+    verify(peerManager).subscribeConnect(peerManagerCaptor.capture());
+
+    network.onSyncStateChanged(false, false);
+    // based on network time we know we're too far behind, so we don't start gossip
     verify(gossipForkManager, never()).configureGossipForEpoch(any());
+
+    // we are still too far behind, so on peer connect gossip is not started
+    peerManagerCaptor.getValue().onConnected(mock(Eth2Peer.class));
+    verify(gossipForkManager, never()).configureGossipForEpoch(any());
+
+    // Advance the chain
+    storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain(64));
+
+    // on peer connect gossip is started
+    peerManagerCaptor.getValue().onConnected(mock(Eth2Peer.class));
+    verify(gossipForkManager).configureGossipForEpoch(any());
+  }
+
+  @Test
+  void onSyncStateChanged_shouldEnableGossipWhenInSync() {
+    // Current slot is a long way beyond the chain head
+    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(32));
+
+    assertThat(network.start()).isCompleted();
 
     network.onSyncStateChanged(true, false);
 
@@ -257,41 +280,6 @@ public class ActiveEth2P2PNetworkTest {
     // Can't unsubscribe from these so should only subscribe once
     assertThat(subscribers.getSubscriberCount()).isEqualTo(1);
     verify(eventChannels, times(1)).subscribe(eq(BlockGossipChannel.class), any());
-  }
-
-  @Test
-  void isCloseToInSync_shouldCalculateWhenDistanceOutOfRange() {
-    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(maxFollowDistanceSlots + 1));
-    assertThat(network.isCloseToInSync()).isFalse();
-  }
-
-  @Test
-  void isCloseToInSync_shouldCalculateWhenDistanceInRange() {
-    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(maxFollowDistanceSlots));
-    assertThat(network.isCloseToInSync()).isTrue();
-  }
-
-  @Test
-  void isCloseToInSync_shouldReturnFalseWhenEmptyCurrentEpoch() {
-    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
-    final RecentChainData recentChainData = storageSystem.recentChainData();
-    final ActiveEth2P2PNetwork network =
-        new ActiveEth2P2PNetwork(
-            spec,
-            asyncRunner,
-            discoveryNetwork,
-            peerManager,
-            gossipForkManager,
-            eventChannels,
-            recentChainData,
-            attestationSubnetService,
-            syncCommitteeSubnetService,
-            gossipEncoding,
-            gossipConfigurator,
-            processedAttestationSubscriptionProvider,
-            true);
-
-    assertThat(network.isCloseToInSync()).isFalse();
   }
 
   @SuppressWarnings("unchecked")

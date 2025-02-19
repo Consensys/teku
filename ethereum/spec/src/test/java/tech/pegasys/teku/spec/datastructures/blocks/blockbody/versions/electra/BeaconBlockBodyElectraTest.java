@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
@@ -33,6 +34,7 @@ class BeaconBlockBodyElectraTest extends AbstractBeaconBlockBodyTest<BeaconBlock
   protected ExecutionPayloadHeader executionPayloadHeader;
   protected SszList<SignedBlsToExecutionChange> blsToExecutionChanges;
   protected SszList<SszKZGCommitment> blobKzgCommitments;
+  protected ExecutionRequests executionRequests;
 
   @BeforeEach
   void setup() {
@@ -44,6 +46,7 @@ class BeaconBlockBodyElectraTest extends AbstractBeaconBlockBodyTest<BeaconBlock
           executionPayloadHeader = dataStructureUtil.randomExecutionPayloadHeader();
           blsToExecutionChanges = dataStructureUtil.randomSignedBlsToExecutionChangesList();
           blobKzgCommitments = dataStructureUtil.randomBlobKzgCommitments();
+          executionRequests = dataStructureUtil.randomExecutionRequests();
         });
   }
 
@@ -71,7 +74,8 @@ class BeaconBlockBodyElectraTest extends AbstractBeaconBlockBodyTest<BeaconBlock
               builder
                   .syncAggregate(syncAggregate)
                   .blsToExecutionChanges(blsToExecutionChanges)
-                  .blobKzgCommitments(blobKzgCommitments);
+                  .blobKzgCommitments(blobKzgCommitments)
+                  .executionRequests(executionRequests);
               if (blinded) {
                 builder.executionPayloadHeader(executionPayloadHeader);
               } else {

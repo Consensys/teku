@@ -36,20 +36,21 @@ public class SpecConfigLoader {
   private static final String CONFIG_PATH = "configs/";
   private static final String PRESET_PATH = "presets/";
 
-  public static SpecConfig loadConfigStrict(final String configName) {
+  public static SpecConfigAndParent<? extends SpecConfig> loadConfigStrict(
+      final String configName) {
     return loadConfig(configName, false, __ -> {});
   }
 
-  public static SpecConfig loadConfig(final String configName) {
+  public static SpecConfigAndParent<? extends SpecConfig> loadConfig(final String configName) {
     return loadConfig(configName, __ -> {});
   }
 
-  public static SpecConfig loadConfig(
+  public static SpecConfigAndParent<? extends SpecConfig> loadConfig(
       final String configName, final Consumer<SpecConfigBuilder> modifier) {
     return loadConfig(configName, true, modifier);
   }
 
-  public static SpecConfig loadConfig(
+  public static SpecConfigAndParent<? extends SpecConfig> loadConfig(
       final String configName,
       final boolean ignoreUnknownConfigItems,
       final Consumer<SpecConfigBuilder> modifier) {
@@ -58,7 +59,8 @@ public class SpecConfigLoader {
     return reader.build(modifier);
   }
 
-  public static SpecConfig loadRemoteConfig(final Map<String, String> config) {
+  public static SpecConfigAndParent<? extends SpecConfig> loadRemoteConfig(
+      final Map<String, String> config) {
     final SpecConfigReader reader = new SpecConfigReader();
     if (config.containsKey(SpecConfigReader.PRESET_KEY)) {
       try {

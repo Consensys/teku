@@ -55,8 +55,7 @@ public class ChainHeadTest {
   @SuppressWarnings("unchecked")
   private ChainHead copy(final SignedBlockAndState original) {
     final SignedBeaconBlock originalBlock = original.getSignedBeaconBlock().orElseThrow();
-    final SignedBeaconBlock blockCopy =
-        copy(originalBlock, (SszSchema<SignedBeaconBlock>) originalBlock.getSchema());
+    final SignedBeaconBlock blockCopy = copy(originalBlock, originalBlock.getSchema());
     final BeaconState stateCopy =
         copy(
             original.getState(),

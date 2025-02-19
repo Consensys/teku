@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -68,12 +68,10 @@ class BeaconStateMutatorsElectraTest {
 
     final BeaconStateElectra postState =
         preState.updatedElectra(state -> stateMutatorsElectra.queueExcessActiveBalance(state, 0));
-    final SszList<PendingBalanceDeposit> postPendingBalanceDeposits =
-        postState.getPendingBalanceDeposits();
+    final SszList<PendingDeposit> postPendingDeposits = postState.getPendingDeposits();
 
-    assertThat(postPendingBalanceDeposits.size()).isEqualTo(1);
-    assertThat(postPendingBalanceDeposits.get(0).getAmount())
-        .isEqualTo(UInt64.valueOf(excessBalance));
+    assertThat(postPendingDeposits.size()).isEqualTo(1);
+    assertThat(postPendingDeposits.get(0).getAmount()).isEqualTo(UInt64.valueOf(excessBalance));
   }
 
   @Test
@@ -87,8 +85,7 @@ class BeaconStateMutatorsElectraTest {
 
     final BeaconStateElectra postState =
         preState.updatedElectra(state -> stateMutatorsElectra.queueExcessActiveBalance(state, 0));
-    final SszList<PendingBalanceDeposit> postPendingBalanceDeposits =
-        postState.getPendingBalanceDeposits();
+    final SszList<PendingDeposit> postPendingBalanceDeposits = postState.getPendingDeposits();
 
     assertThat(postPendingBalanceDeposits.size()).isEqualTo(0);
   }
@@ -107,11 +104,11 @@ class BeaconStateMutatorsElectraTest {
     BeaconStateElectra postState =
         preState.updatedElectra(state -> stateMutatorsElectra.queueExcessActiveBalance(state, 0));
 
-    assertThat(postState.getPendingBalanceDeposits().size()).isEqualTo(1);
+    assertThat(postState.getPendingDeposits().size()).isEqualTo(1);
 
     postState =
         postState.updatedElectra(state -> stateMutatorsElectra.queueExcessActiveBalance(state, 1));
-    assertThat(postState.getPendingBalanceDeposits().size()).isEqualTo(2);
+    assertThat(postState.getPendingDeposits().size()).isEqualTo(2);
   }
 
   @Test
@@ -128,7 +125,7 @@ class BeaconStateMutatorsElectraTest {
     assertThat(preValidator.getEffectiveBalance()).isEqualTo(validatorBalance);
     assertThat(preValidator.getActivationEpoch()).isNotEqualTo(FAR_FUTURE_EPOCH);
     assertThat(preState.getBalances().get(0)).isEqualTo(SszUInt64.of(validatorBalance));
-    assertThat(preState.getPendingBalanceDeposits().size()).isEqualTo(0);
+    assertThat(preState.getPendingDeposits().size()).isEqualTo(0);
 
     final BeaconStateElectra postState =
         preState.updatedElectra(
@@ -144,8 +141,7 @@ class BeaconStateMutatorsElectraTest {
     assertThat(postState.getBalances().get(0)).isEqualTo(SszUInt64.ZERO);
 
     // Created pending balance deposit
-    final SszList<PendingBalanceDeposit> postPendingBalanceDeposits =
-        postState.getPendingBalanceDeposits();
+    final SszList<PendingDeposit> postPendingBalanceDeposits = postState.getPendingDeposits();
     assertThat(postPendingBalanceDeposits.size()).isEqualTo(1);
     assertThat(postPendingBalanceDeposits.get(0).getAmount()).isEqualTo(validatorBalance);
   }
@@ -171,8 +167,9 @@ class BeaconStateMutatorsElectraTest {
                 validator.withWithdrawalCredentials(
                     Bytes32.wrap(dataStructureUtil.randomEth1WithdrawalCredentials())));
     stateMutatorsElectra.switchToCompoundingValidator(state, index);
+
     assertThat(state.getBalances().get(index).get()).isEqualTo(UInt64.valueOf(32_000_000_000L));
-    assertThat(state.getPendingBalanceDeposits().get(0).getAmount())
+    assertThat(state.getPendingDeposits().get(0).getAmount())
         .isEqualTo(UInt64.valueOf(1_000_000_000L));
   }
 }

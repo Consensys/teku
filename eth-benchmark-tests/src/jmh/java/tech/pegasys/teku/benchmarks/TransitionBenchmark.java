@@ -33,6 +33,8 @@ import tech.pegasys.teku.benchmarks.gen.BlockIO;
 import tech.pegasys.teku.benchmarks.gen.KeyFileGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -79,6 +81,7 @@ public abstract class TransitionBenchmark {
   public void init() throws Exception {
     spec = TestSpecFactory.createMainnetAltair();
     AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
+    AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
 
     String blocksFile =
         "/blocks/blocks_epoch_"
@@ -94,7 +97,7 @@ public abstract class TransitionBenchmark {
     wsValidator = WeakSubjectivityFactory.lenientValidator();
     recentChainData = MemoryOnlyRecentChainData.create(spec);
     final MergeTransitionBlockValidator transitionBlockValidator =
-        new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
+        new MergeTransitionBlockValidator(spec, recentChainData);
     ForkChoice forkChoice =
         new ForkChoice(
             spec,
@@ -109,6 +112,7 @@ public abstract class TransitionBenchmark {
 
     blockImporter =
         new BlockImporter(
+            asyncRunner,
             spec,
             receivedBlockEventsChannelPublisher,
             recentChainData,

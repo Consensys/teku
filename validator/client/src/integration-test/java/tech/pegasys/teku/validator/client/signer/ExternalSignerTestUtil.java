@@ -19,38 +19,32 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.JsonBody.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.Map;
 import org.mockserver.integration.ClientAndServer;
-import org.mockserver.model.MediaType;
-import tech.pegasys.teku.api.schema.Fork;
-import tech.pegasys.teku.infrastructure.metrics.StubCounter;
+import org.mockserver.model.JsonBody;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 class ExternalSignerTestUtil {
-  private static final JsonProvider JSON_PROVIDER = new JsonProvider();
 
   static void verifySignRequest(
       final ClientAndServer client,
       final String publicKey,
-      final SigningRequestBody signingRequestBody)
+      final SigningRequestBody signingRequestBody,
+      final SchemaDefinitions schemaDefinitions)
       throws JsonProcessingException {
+    final JsonBody body =
+        json(
+            JsonUtil.serialize(
+                signingRequestBody, signingRequestBody.getJsonTypeDefinition(schemaDefinitions)),
+            STRICT);
     client.verify(
         request()
             .withMethod("POST")
-            .withContentType(MediaType.APPLICATION_JSON)
-            .withBody(json(JSON_PROVIDER.objectToJSON(signingRequestBody), STRICT))
+            .withBody(body)
+            .withHeader("Content-Type", "application/json")
             .withPath(ExternalSigner.EXTERNAL_SIGNER_ENDPOINT + "/" + publicKey));
-  }
-
-  static Map<String, Object> createForkInfo(final ForkInfo forkInfo) {
-    return Map.of(
-        "genesis_validators_root",
-        forkInfo.getGenesisValidatorsRoot(),
-        "fork",
-        new Fork(forkInfo.getFork()));
   }
 
   static void validateMetrics(
@@ -58,10 +52,18 @@ class ExternalSignerTestUtil {
       final long successCount,
       final long failCount,
       final long timeoutCount) {
-    final StubCounter labelledCounter =
-        metricsSystem.getCounter(TekuMetricCategory.VALIDATOR, "external_signer_requests_total");
-    assertThat(labelledCounter.getValue("success")).isEqualTo(successCount);
-    assertThat(labelledCounter.getValue("failed")).isEqualTo(failCount);
-    assertThat(labelledCounter.getValue("timeout")).isEqualTo(timeoutCount);
+
+    assertThat(
+            metricsSystem.getCounterValue(
+                TekuMetricCategory.VALIDATOR, "external_signer_requests_total", "success"))
+        .isEqualTo(successCount);
+    assertThat(
+            metricsSystem.getCounterValue(
+                TekuMetricCategory.VALIDATOR, "external_signer_requests_total", "failed"))
+        .isEqualTo(failCount);
+    assertThat(
+            metricsSystem.getCounterValue(
+                TekuMetricCategory.VALIDATOR, "external_signer_requests_total", "timeout"))
+        .isEqualTo(timeoutCount);
   }
 }

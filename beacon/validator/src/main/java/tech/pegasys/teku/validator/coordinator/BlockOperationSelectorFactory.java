@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -56,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
@@ -145,7 +147,7 @@ public class BlockOperationSelectorFactory {
       final SszList<SignedVoluntaryExit> voluntaryExits =
           voluntaryExitPool.getItemsForBlock(
               blockSlotState,
-              exit -> !exitedValidators.contains(exit.getMessage().getValidatorIndex()),
+              exit -> voluntaryExitPredicate(blockSlotState, exitedValidators, exit),
               exit -> exitedValidators.add(exit.getMessage().getValidatorIndex()));
 
       bodyBuilder
@@ -203,6 +205,25 @@ public class BlockOperationSelectorFactory {
     };
   }
 
+  private boolean voluntaryExitPredicate(
+      final BeaconState blockSlotState,
+      final Set<UInt64> exitedValidators,
+      final SignedVoluntaryExit exit) {
+    final UInt64 validatorIndex = exit.getMessage().getValidatorIndex();
+    if (exitedValidators.contains(validatorIndex)) {
+      return false;
+    }
+    // if there is  a pending withdrawal, the exit is not valid for inclusion in a block.
+    return blockSlotState
+        .toVersionElectra()
+        .map(
+            beaconStateElectra ->
+                beaconStateElectra.getPendingPartialWithdrawals().stream()
+                    .map(PendingPartialWithdrawal::getValidatorIndex)
+                    .noneMatch(index -> index == validatorIndex.intValue()))
+        .orElse(true);
+  }
+
   private SafeFuture<Void> setExecutionData(
       final Optional<ExecutionPayloadContext> executionPayloadContext,
       final BeaconBlockBodyBuilder bodyBuilder,
@@ -241,7 +262,8 @@ public class BlockOperationSelectorFactory {
     return SafeFuture.allOf(
         cacheExecutionPayloadValue(executionPayloadResult, blockSlotState),
         setPayloadOrPayloadHeader(bodyBuilder, executionPayloadResult),
-        setKzgCommitments(bodyBuilder, schemaDefinitions, executionPayloadResult));
+        setKzgCommitments(bodyBuilder, schemaDefinitions, executionPayloadResult),
+        setExecutionRequests(bodyBuilder, executionPayloadResult));
   }
 
   private SafeFuture<Void> cacheExecutionPayloadValue(
@@ -339,6 +361,43 @@ public class BlockOperationSelectorFactory {
         .orElseThrow();
   }
 
+  private SafeFuture<Void> setExecutionRequests(
+      final BeaconBlockBodyBuilder bodyBuilder,
+      final ExecutionPayloadResult executionPayloadResult) {
+    if (!bodyBuilder.supportsExecutionRequests()) {
+      return SafeFuture.COMPLETE;
+    }
+    final SafeFuture<ExecutionRequests> executionRequests;
+    if (executionPayloadResult.isFromLocalFlow()) {
+      // local, non-blinded flow
+      executionRequests =
+          executionPayloadResult
+              .getExecutionRequestsFutureFromLocalFlow()
+              .orElseThrow()
+              .thenApply(Optional::orElseThrow);
+    } else {
+      // builder, blinded flow
+      executionRequests =
+          executionPayloadResult
+              .getBuilderBidOrFallbackDataFuture()
+              .orElseThrow()
+              .thenApply(this::getExecutionRequestsFromBuilderFlow);
+    }
+
+    return executionRequests.thenAccept(bodyBuilder::executionRequests);
+  }
+
+  private ExecutionRequests getExecutionRequestsFromBuilderFlow(
+      final BuilderBidOrFallbackData builderBidOrFallbackData) {
+    return builderBidOrFallbackData
+        .getBuilderBid()
+        // from the builder bid
+        .flatMap(BuilderBid::getOptionalExecutionRequests)
+        // from the local fallback
+        .or(() -> builderBidOrFallbackData.getFallbackDataRequired().getExecutionRequests())
+        .orElseThrow();
+  }
+
   public Consumer<SignedBeaconBlockUnblinder> createBlockUnblinderSelector(
       final BlockPublishingPerformance blockPublishingPerformance) {
     return bodyUnblinder -> {
@@ -412,8 +471,7 @@ public class BlockOperationSelectorFactory {
     };
   }
 
-  public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector(
-      final BlockPublishingPerformance blockPublishingPerformance) {
+  public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector() {
     return blockContainer -> {
       final UInt64 slot = blockContainer.getSlot();
       final SignedBeaconBlock block = blockContainer.getSignedBlock();
@@ -466,17 +524,12 @@ public class BlockOperationSelectorFactory {
       final MiscHelpersDeneb miscHelpersDeneb =
           MiscHelpersDeneb.required(spec.atSlot(slot).miscHelpers());
 
-      final List<BlobSidecar> blobSidecars =
-          IntStream.range(0, blobs.size())
-              .mapToObj(
-                  index ->
-                      miscHelpersDeneb.constructBlobSidecar(
-                          block, UInt64.valueOf(index), blobs.get(index), proofs.get(index)))
-              .toList();
-
-      blockPublishingPerformance.blobSidecarsPrepared();
-
-      return blobSidecars;
+      return IntStream.range(0, blobs.size())
+          .mapToObj(
+              index ->
+                  miscHelpersDeneb.constructBlobSidecar(
+                      block, UInt64.valueOf(index), blobs.get(index), proofs.get(index)))
+          .toList();
     };
   }
 

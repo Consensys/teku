@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.builder;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_BID_SCHEMA;
+
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
@@ -20,16 +22,17 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SignedBuilderBidSchema
     extends ContainerSchema2<SignedBuilderBid, BuilderBid, SszSignature>
     implements SszContainerSchema<SignedBuilderBid> {
 
-  public SignedBuilderBidSchema(
-      final String schemaName, final BuilderBidSchema<?> builderBidSchema) {
+  public SignedBuilderBidSchema(final String schemaName, final SchemaRegistry schemaRegistry) {
     super(
         schemaName,
-        namedSchema("message", SszSchema.as(BuilderBid.class, builderBidSchema)),
+        namedSchema(
+            "message", SszSchema.as(BuilderBid.class, schemaRegistry.get(BUILDER_BID_SCHEMA))),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
   }
 

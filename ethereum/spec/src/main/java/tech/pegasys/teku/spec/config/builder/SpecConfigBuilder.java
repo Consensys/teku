@@ -28,6 +28,7 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigPhase0;
 
@@ -107,8 +108,7 @@ public class SpecConfigBuilder {
   private Eth1Address depositContractAddress;
 
   // Networking
-  private Integer gossipMaxSize;
-  private Integer maxChunkSize;
+  private Integer maxPayloadSize;
   private Integer maxRequestBlocks;
   private Integer epochsPerSubnetSubscription;
   private Integer ttfbTimeout;
@@ -138,85 +138,97 @@ public class SpecConfigBuilder {
           .appendBuilder(new DenebBuilder())
           .appendBuilder(new ElectraBuilder());
 
-  public SpecConfig build() {
+  public SpecConfigAndParent<SpecConfigElectra> build() {
     builderChain.addOverridableItemsToRawConfig(
         (key, value) -> {
           if (value != null) {
             rawConfig.put(key, value);
           }
         });
+
+    if (maxPayloadSize == null && rawConfig.containsKey("GOSSIP_MAX_SIZE")) {
+      try {
+        // for compatibility, add this constant if its missing but we got GOSSIP_MAX_SIZE
+        // both need to be able to initialize due to renamed global config constant.
+        final String gossipMaxSize = (String) rawConfig.get("GOSSIP_MAX_SIZE");
+        rawConfig.put("MAX_PAYLOAD_SIZE", gossipMaxSize);
+        maxPayloadSize(Integer.parseInt(gossipMaxSize));
+      } catch (NumberFormatException e) {
+        LOG.error("Failed to parse GOSSIP_MAX_SIZE", e);
+      }
+    }
     validate();
-    final SpecConfig config =
-        new SpecConfigPhase0(
-            rawConfig,
-            eth1FollowDistance,
-            maxCommitteesPerSlot,
-            targetCommitteeSize,
-            maxValidatorsPerCommittee,
-            minPerEpochChurnLimit,
-            churnLimitQuotient,
-            shuffleRoundCount,
-            minGenesisActiveValidatorCount,
-            minGenesisTime,
-            hysteresisQuotient,
-            hysteresisDownwardMultiplier,
-            hysteresisUpwardMultiplier,
-            proportionalSlashingMultiplier,
-            minDepositAmount,
-            maxEffectiveBalance,
-            ejectionBalance,
-            effectiveBalanceIncrement,
-            genesisForkVersion,
-            genesisDelay,
-            secondsPerSlot,
-            minAttestationInclusionDelay,
-            slotsPerEpoch,
-            minSeedLookahead,
-            maxSeedLookahead,
-            minEpochsToInactivityPenalty,
-            epochsPerEth1VotingPeriod,
-            slotsPerHistoricalRoot,
-            minValidatorWithdrawabilityDelay,
-            shardCommitteePeriod,
-            epochsPerHistoricalVector,
-            epochsPerSlashingsVector,
-            historicalRootsLimit,
-            validatorRegistryLimit,
-            baseRewardFactor,
-            whistleblowerRewardQuotient,
-            proposerRewardQuotient,
-            inactivityPenaltyQuotient,
-            minSlashingPenaltyQuotient,
-            maxProposerSlashings,
-            maxAttesterSlashings,
-            maxAttestations,
-            maxDeposits,
-            maxVoluntaryExits,
-            secondsPerEth1Block,
-            safeSlotsToUpdateJustified,
-            proposerScoreBoost,
-            depositChainId,
-            depositNetworkId,
-            depositContractAddress,
-            gossipMaxSize,
-            maxChunkSize,
-            maxRequestBlocks,
-            epochsPerSubnetSubscription,
-            minEpochsForBlockRequests,
-            ttfbTimeout,
-            respTimeout,
-            attestationPropagationSlotRange,
-            maximumGossipClockDisparity,
-            messageDomainInvalidSnappy,
-            messageDomainValidSnappy,
-            subnetsPerNode,
-            attestationSubnetCount,
-            attestationSubnetExtraBits,
-            attestationSubnetPrefixBits,
-            reorgMaxEpochsSinceFinalization,
-            reorgHeadWeightThreshold,
-            reorgParentWeightThreshold,
-            maxPerEpochActivationExitChurnLimit);
+    final SpecConfigAndParent<SpecConfig> config =
+        SpecConfigAndParent.of(
+            new SpecConfigPhase0(
+                rawConfig,
+                eth1FollowDistance,
+                maxCommitteesPerSlot,
+                targetCommitteeSize,
+                maxValidatorsPerCommittee,
+                minPerEpochChurnLimit,
+                churnLimitQuotient,
+                shuffleRoundCount,
+                minGenesisActiveValidatorCount,
+                minGenesisTime,
+                hysteresisQuotient,
+                hysteresisDownwardMultiplier,
+                hysteresisUpwardMultiplier,
+                proportionalSlashingMultiplier,
+                minDepositAmount,
+                maxEffectiveBalance,
+                ejectionBalance,
+                effectiveBalanceIncrement,
+                genesisForkVersion,
+                genesisDelay,
+                secondsPerSlot,
+                minAttestationInclusionDelay,
+                slotsPerEpoch,
+                minSeedLookahead,
+                maxSeedLookahead,
+                minEpochsToInactivityPenalty,
+                epochsPerEth1VotingPeriod,
+                slotsPerHistoricalRoot,
+                minValidatorWithdrawabilityDelay,
+                shardCommitteePeriod,
+                epochsPerHistoricalVector,
+                epochsPerSlashingsVector,
+                historicalRootsLimit,
+                validatorRegistryLimit,
+                baseRewardFactor,
+                whistleblowerRewardQuotient,
+                proposerRewardQuotient,
+                inactivityPenaltyQuotient,
+                minSlashingPenaltyQuotient,
+                maxProposerSlashings,
+                maxAttesterSlashings,
+                maxAttestations,
+                maxDeposits,
+                maxVoluntaryExits,
+                secondsPerEth1Block,
+                safeSlotsToUpdateJustified,
+                proposerScoreBoost,
+                depositChainId,
+                depositNetworkId,
+                depositContractAddress,
+                maxPayloadSize,
+                maxRequestBlocks,
+                epochsPerSubnetSubscription,
+                minEpochsForBlockRequests,
+                ttfbTimeout,
+                respTimeout,
+                attestationPropagationSlotRange,
+                maximumGossipClockDisparity,
+                messageDomainInvalidSnappy,
+                messageDomainValidSnappy,
+                subnetsPerNode,
+                attestationSubnetCount,
+                attestationSubnetExtraBits,
+                attestationSubnetPrefixBits,
+                reorgMaxEpochsSinceFinalization,
+                reorgHeadWeightThreshold,
+                reorgParentWeightThreshold,
+                maxPerEpochActivationExitChurnLimit));
 
     return builderChain.build(config);
   }
@@ -272,8 +284,7 @@ public class SpecConfigBuilder {
     constants.put("depositNetworkId", depositNetworkId);
     constants.put("depositContractAddress", depositContractAddress);
 
-    constants.put("gossipMaxSize", gossipMaxSize);
-    constants.put("maxChunkSize", maxChunkSize);
+    constants.put("maxPayloadSize", maxPayloadSize);
     constants.put("maxRequestBlocks", maxRequestBlocks);
     constants.put("epochsPerSubnetSubscription", epochsPerSubnetSubscription);
     constants.put("minEpochsForBlockRequests", minEpochsForBlockRequests);
@@ -624,13 +635,8 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder gossipMaxSize(final Integer gossipMaxSize) {
-    this.gossipMaxSize = gossipMaxSize;
-    return this;
-  }
-
-  public SpecConfigBuilder maxChunkSize(final Integer maxChunkSize) {
-    this.maxChunkSize = maxChunkSize;
+  public SpecConfigBuilder maxPayloadSize(final Integer maxPayloadSize) {
+    this.maxPayloadSize = maxPayloadSize;
     return this;
   }
 

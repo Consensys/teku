@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.debug;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_DEBUG;
@@ -71,7 +72,7 @@ public class GetForkChoice extends RestApiEndpoint {
               .withField("weight", UINT64_TYPE, ProtoNodeData::getWeight)
               .withField(
                   "validity",
-                  DeserializableTypeDefinition.enumOf(ProtoNodeValidationStatus.class),
+                  DeserializableTypeDefinition.enumOf(ProtoNodeValidationStatus.class, true),
                   ProtoNodeData::getValidationStatus)
               .withField(
                   "execution_block_hash",
@@ -148,6 +149,8 @@ public class GetForkChoice extends RestApiEndpoint {
             .description("Retrieves all current fork choice context.")
             .tags(TAG_DEBUG)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            .response(
+                SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
             .withServiceUnavailableResponse()
             .build());
     this.chainDataProvider = chainDataProvider;

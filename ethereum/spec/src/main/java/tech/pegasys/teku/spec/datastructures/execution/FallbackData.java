@@ -17,6 +17,7 @@ import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 
 public class FallbackData {
 
@@ -38,6 +39,10 @@ public class FallbackData {
 
   public UInt256 getExecutionPayloadValue() {
     return getPayloadResponse.getExecutionPayloadValue();
+  }
+
+  public Optional<ExecutionRequests> getExecutionRequests() {
+    return getPayloadResponse.getExecutionRequests();
   }
 
   public FallbackReason getReason() {

@@ -17,12 +17,9 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.Comparator;
 import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderDeneb;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -61,9 +58,8 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
     final PredicatesElectra predicatesElectra = new PredicatesElectra(specConfig);
     final MiscHelpersElectra miscHelpersElectra =
         new MiscHelpersElectra(specConfig, predicatesElectra, schemaDefinitions);
-    return schemaDefinitions
-        .getBeaconStateSchema()
-        .createEmpty()
+    final UInt64 activationExitEpoch = miscHelpersElectra.computeActivationExitEpoch(epoch);
+    return BeaconStateElectra.required(schemaDefinitions.getBeaconStateSchema().createEmpty())
         .updatedElectra(
             state -> {
               BeaconStateFields.copyCommonFieldsFromSource(state, preState);
@@ -80,37 +76,8 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
                       specConfig.getElectraForkVersion(),
                       epoch));
 
-              final ExecutionPayloadHeaderDeneb denebHeader =
-                  preStateDeneb.getLatestExecutionPayloadHeader().toVersionDeneb().orElseThrow();
-              final ExecutionPayloadHeader upgradedExecutionPayloadHeader =
-                  schemaDefinitions
-                      .getExecutionPayloadHeaderSchema()
-                      .createExecutionPayloadHeader(
-                          builder ->
-                              builder
-                                  .parentHash(denebHeader.getParentHash())
-                                  .feeRecipient(denebHeader.getFeeRecipient())
-                                  .stateRoot(denebHeader.getStateRoot())
-                                  .receiptsRoot(denebHeader.getReceiptsRoot())
-                                  .logsBloom(denebHeader.getLogsBloom())
-                                  .prevRandao(denebHeader.getPrevRandao())
-                                  .blockNumber(denebHeader.getBlockNumber())
-                                  .gasLimit(denebHeader.getGasLimit())
-                                  .gasUsed(denebHeader.getGasUsed())
-                                  .timestamp(denebHeader.getTimestamp())
-                                  .extraData(denebHeader.getExtraData())
-                                  .baseFeePerGas(denebHeader.getBaseFeePerGas())
-                                  .blockHash(denebHeader.getBlockHash())
-                                  .transactionsRoot(denebHeader.getTransactionsRoot())
-                                  .withdrawalsRoot(denebHeader::getWithdrawalsRoot)
-                                  .blobGasUsed(denebHeader::getBlobGasUsed)
-                                  .excessBlobGas(denebHeader::getExcessBlobGas)
-                                  .depositRequestsRoot(() -> Bytes32.ZERO)
-                                  .withdrawalRequestsRoot(() -> Bytes32.ZERO)
-                                  .consolidationRequestsRoot(() -> Bytes32.ZERO));
-
-              state.setLatestExecutionPayloadHeader(upgradedExecutionPayloadHeader);
-
+              state.setLatestExecutionPayloadHeader(
+                  preStateDeneb.getLatestExecutionPayloadHeader());
               state.setNextWithdrawalValidatorIndex(
                   preStateDeneb.getNextWithdrawalValidatorIndex());
               state.setNextWithdrawalIndex(preStateDeneb.getNextWithdrawalIndex());
@@ -120,11 +87,10 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
               state.setDepositBalanceToConsume(UInt64.ZERO);
               state.setExitBalanceToConsume(
                   beaconStateAccessors.getActivationExitChurnLimit(state));
-              state.setEarliestExitEpoch(findEarliestExitEpoch(state, epoch));
+              state.setEarliestExitEpoch(findEarliestExitEpoch(state, activationExitEpoch));
               state.setConsolidationBalanceToConsume(
                   beaconStateAccessors.getConsolidationChurnLimit(state));
-              state.setEarliestConsolidationEpoch(
-                  miscHelpersElectra.computeActivationExitEpoch(epoch));
+              state.setEarliestConsolidationEpoch(activationExitEpoch);
 
               final SszMutableList<Validator> validators = state.getValidators();
 
@@ -135,7 +101,9 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
                   .boxed()
                   .sorted(
                       Comparator.comparing(
-                          index -> validators.get(index).getActivationEligibilityEpoch()))
+                              (Integer index) ->
+                                  validators.get(index).getActivationEligibilityEpoch())
+                          .thenComparing(index -> index))
                   .forEach(
                       index ->
                           beaconStateMutators.queueEntireBalanceAndResetValidator(state, index));
@@ -152,12 +120,13 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
             });
   }
 
-  private UInt64 findEarliestExitEpoch(final BeaconState state, final UInt64 currentEpoch) {
-    return state.getValidators().stream()
-        .map(Validator::getExitEpoch)
-        .filter(exitEpoch -> !exitEpoch.equals(FAR_FUTURE_EPOCH))
-        .max(UInt64::compareTo)
-        .orElse(currentEpoch)
-        .increment();
+  private UInt64 findEarliestExitEpoch(final BeaconState state, final UInt64 activationExitEpoch) {
+    final UInt64 maxExitEpochFromValidatorSet =
+        state.getValidators().stream()
+            .map(Validator::getExitEpoch)
+            .filter(exitEpoch -> !exitEpoch.equals(FAR_FUTURE_EPOCH))
+            .max(UInt64::compareTo)
+            .orElse(UInt64.ZERO);
+    return maxExitEpochFromValidatorSet.max(activationExitEpoch).increment();
   }
 }

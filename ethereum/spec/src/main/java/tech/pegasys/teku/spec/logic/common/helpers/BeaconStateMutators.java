@@ -19,6 +19,10 @@ import com.google.common.base.Suppliers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -27,6 +31,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 
 public class BeaconStateMutators {
+  private static final Logger LOG = LogManager.getLogger();
+
   protected final SpecConfig specConfig;
   protected final MiscHelpers miscHelpers;
   private final BeaconStateAccessors beaconStateAccessors;
@@ -215,6 +221,22 @@ public class BeaconStateMutators {
     public void setExitQueueChurn(final UInt64 exitQueueChurn) {
       this.exitQueueChurn = exitQueueChurn;
     }
+  }
+
+  /**
+   * <a
+   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#deposits">add_validator_to_registry</a>
+   */
+  public void addValidatorToRegistry(
+      final MutableBeaconState state,
+      final BLSPublicKey pubkey,
+      final Bytes32 withdrawalCredentials,
+      final UInt64 amount) {
+    final Validator validator =
+        miscHelpers.getValidatorFromDeposit(pubkey, withdrawalCredentials, amount);
+    LOG.debug("Adding new validator with index {} to state", state.getValidators().size());
+    state.getValidators().append(validator);
+    state.getBalances().appendElement(amount);
   }
 
   public void slashValidator(

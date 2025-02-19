@@ -82,6 +82,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
+import tech.pegasys.teku.storage.archive.fsarchive.FileSystemArchive;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseContext;
@@ -121,20 +122,24 @@ public class DatabaseTest {
   private StateStorageMode storageMode;
   private StorageSystem storageSystem;
   private Database database;
+  private FileSystemArchive fileSystemDataArchive;
   private RecentChainData recentChainData;
   private UpdatableStore store;
   private final List<StorageSystem> storageSystems = new ArrayList<>();
 
   @BeforeEach
-  public void setup() {
+  public void setup() throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalDeneb());
   }
 
-  private void setupWithSpec(final Spec spec) {
+  private void setupWithSpec(final Spec spec) throws IOException {
     this.spec = spec;
     this.dataStructureUtil = new DataStructureUtil(spec);
     this.chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
     this.chainProperties = new ChainProperties(spec);
+    final Path blobsArchive = Files.createTempDirectory("blobs");
+    tmpDirectories.add(blobsArchive.toFile());
+    this.fileSystemDataArchive = new FileSystemArchive(blobsArchive);
     genesisBlockAndState = chainBuilder.generateGenesis(genesisTime, true);
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
     genesisAnchor = AnchorPoint.fromGenesisState(spec, genesisBlockAndState.getState());
@@ -293,7 +298,10 @@ public class DatabaseTest {
             List.of(blobSidecar5_0)));
 
     // let's prune with limit to 1
-    assertThat(database.pruneOldestBlobSidecars(UInt64.MAX_VALUE, 1)).isTrue();
+    assertThat(
+            database.pruneOldestBlobSidecars(
+                UInt64.MAX_VALUE, 1, fileSystemDataArchive.getBlobSidecarWriter()))
+        .isTrue();
     assertBlobSidecarKeys(
         blobSidecar2_0.getSlot(),
         blobSidecar5_0.getSlot(),
@@ -309,8 +317,14 @@ public class DatabaseTest {
     assertThat(database.getEarliestBlobSidecarSlot()).contains(UInt64.valueOf(2));
     assertThat(database.getBlobSidecarColumnCount()).isEqualTo(4L);
 
+    // check if the pruned blob was written to disk. Not validating contents here.
+    assertThat(getSlotBlobsArchiveFile(blobSidecar1_0)).exists();
+    assertThat(getSlotBlobsArchiveFile(blobSidecar2_0)).doesNotExist();
+
     // let's prune up to slot 1 (nothing will be pruned)
-    assertThat(database.pruneOldestBlobSidecars(ONE, 10)).isFalse();
+    assertThat(
+            database.pruneOldestBlobSidecars(ONE, 10, fileSystemDataArchive.getBlobSidecarWriter()))
+        .isFalse();
     assertBlobSidecarKeys(
         blobSidecar2_0.getSlot(),
         blobSidecar5_0.getSlot(),
@@ -327,19 +341,37 @@ public class DatabaseTest {
     assertThat(database.getBlobSidecarColumnCount()).isEqualTo(4L);
 
     // let's prune all from slot 4 excluded
-    assertThat(database.pruneOldestBlobSidecars(UInt64.valueOf(3), 10)).isFalse();
+    assertThat(
+            database.pruneOldestBlobSidecars(
+                UInt64.valueOf(3), 10, fileSystemDataArchive.getBlobSidecarWriter()))
+        .isFalse();
     assertBlobSidecarKeys(
         blobSidecar1_0.getSlot(), blobSidecar5_0.getSlot(), blobSidecarToKey(blobSidecar5_0));
     assertBlobSidecars(Map.of(blobSidecar5_0.getSlot(), List.of(blobSidecar5_0)));
     assertThat(database.getEarliestBlobSidecarSlot()).contains(UInt64.valueOf(4));
     assertThat(database.getBlobSidecarColumnCount()).isEqualTo(1L);
 
+    // check if the pruned blob was written to disk. Not validating contents here.
+    assertThat(getSlotBlobsArchiveFile(blobSidecar2_0)).exists();
+    assertThat(getSlotBlobsArchiveFile(blobSidecar3_0)).exists();
+    assertThat(getSlotBlobsArchiveFile(blobSidecar5_0)).doesNotExist();
+
     // let's prune all
-    assertThat(database.pruneOldestBlobSidecars(UInt64.valueOf(5), 1)).isTrue();
+    assertThat(
+            database.pruneOldestBlobSidecars(
+                UInt64.valueOf(5), 1, fileSystemDataArchive.getBlobSidecarWriter()))
+        .isTrue();
     // all empty now
     assertBlobSidecarKeys(ZERO, UInt64.valueOf(10));
     assertThat(database.getEarliestBlobSidecarSlot()).contains(UInt64.valueOf(6));
     assertThat(database.getBlobSidecarColumnCount()).isEqualTo(0L);
+
+    // check if the pruned blob was written to disk. Not validating contents here.
+    assertThat(getSlotBlobsArchiveFile(blobSidecar5_0)).exists();
+  }
+
+  private File getSlotBlobsArchiveFile(final BlobSidecar blobSidecar) {
+    return fileSystemDataArchive.resolve(blobSidecar.getSlotAndBlockRoot());
   }
 
   @TestTemplate
@@ -436,7 +468,10 @@ public class DatabaseTest {
             List.of(blobSidecar5_0)));
 
     // Pruning with a prune limit set to 1: Only blobSidecar1 will be pruned
-    assertThat(database.pruneOldestNonCanonicalBlobSidecars(UInt64.MAX_VALUE, 1)).isTrue();
+    assertThat(
+            database.pruneOldestNonCanonicalBlobSidecars(
+                UInt64.MAX_VALUE, 1, fileSystemDataArchive.getBlobSidecarWriter()))
+        .isTrue();
     assertNonCanonicalBlobSidecarKeys(
         blobSidecar2_0.getSlot(),
         blobSidecar5_0.getSlot(),
@@ -450,9 +485,16 @@ public class DatabaseTest {
             blobSidecar3_0.getSlot(), List.of(blobSidecar3_0),
             blobSidecar5_0.getSlot(), List.of(blobSidecar5_0)));
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(4L);
+
+    // check if the pruned blob was written to disk. Not validating contents here.
+    assertThat(getSlotBlobsArchiveFile(blobSidecar1_0)).exists();
+    assertThat(getSlotBlobsArchiveFile(blobSidecar2_0)).doesNotExist();
 
     // Pruning up to slot 1: No blobs pruned
-    assertThat(database.pruneOldestNonCanonicalBlobSidecars(ONE, 10)).isFalse();
+    assertThat(
+            database.pruneOldestNonCanonicalBlobSidecars(
+                ONE, 10, fileSystemDataArchive.getBlobSidecarWriter()))
+        .isFalse();
     assertNonCanonicalBlobSidecarKeys(
         blobSidecar2_0.getSlot(),
         blobSidecar5_0.getSlot(),
@@ -467,18 +509,36 @@ public class DatabaseTest {
             blobSidecar5_0.getSlot(), List.of(blobSidecar5_0)));
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(4L);
 
+    // check if the pruned blob was written to disk. Not validating contents here.
+    assertThat(getSlotBlobsArchiveFile(blobSidecar1_0)).exists();
+    assertThat(getSlotBlobsArchiveFile(blobSidecar2_0)).doesNotExist();
+
     // Prune blobs up to slot 3
-    assertThat(database.pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf(3), 10)).isFalse();
+    assertThat(
+            database.pruneOldestNonCanonicalBlobSidecars(
+                UInt64.valueOf(3), 10, fileSystemDataArchive.getBlobSidecarWriter()))
+        .isFalse();
     assertNonCanonicalBlobSidecarKeys(
         blobSidecar1_0.getSlot(), blobSidecar5_0.getSlot(), blobSidecarToKey(blobSidecar5_0));
     assertNonCanonicalBlobSidecars(Map.of(blobSidecar5_0.getSlot(), List.of(blobSidecar5_0)));
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(1L);
 
+    // check if the pruned blob was written to disk. Not validating contents here.
+    assertThat(getSlotBlobsArchiveFile(blobSidecar2_0)).exists();
+    assertThat(getSlotBlobsArchiveFile(blobSidecar3_0)).exists();
+    assertThat(getSlotBlobsArchiveFile(blobSidecar5_0)).doesNotExist();
+
     // Pruning all blobs
-    assertThat(database.pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf(5), 1)).isTrue();
+    assertThat(
+            database.pruneOldestNonCanonicalBlobSidecars(
+                UInt64.valueOf(5), 1, fileSystemDataArchive.getBlobSidecarWriter()))
+        .isTrue();
     // No blobs should be left
     assertNonCanonicalBlobSidecarKeys(ZERO, UInt64.valueOf(10));
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(0L);
+
+    // check if the pruned blob was written to disk. Not validating contents here.
+    assertThat(getSlotBlobsArchiveFile(blobSidecar5_0)).exists();
   }
 
   @TestTemplate
@@ -2147,7 +2207,8 @@ public class DatabaseTest {
         spec.computeEpochAtSlot(finalizedBlock.getSlot()).plus(1), finalizedBlock);
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
 
-    final UInt64 lastPrunedSlot1 = database.pruneFinalizedBlocks(UInt64.valueOf(3), 100);
+    final UInt64 lastPrunedSlot1 =
+        database.pruneFinalizedBlocks(UInt64.valueOf(3), 100, UInt64.valueOf(10));
     assertThat(lastPrunedSlot1).isEqualTo(UInt64.valueOf(3));
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(0))).isEmpty();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(1))).isEmpty();
@@ -2157,14 +2218,87 @@ public class DatabaseTest {
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(5))).isPresent();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
 
-    final UInt64 lastPrunedSlot2 = database.pruneFinalizedBlocks(UInt64.valueOf(5), 1);
+    final UInt64 lastPrunedSlot2 =
+        database.pruneFinalizedBlocks(UInt64.valueOf(5), 1, UInt64.valueOf(10));
     assertThat(lastPrunedSlot2).isEqualTo(UInt64.valueOf(4));
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(4))).isEmpty();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(5))).isPresent();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
 
-    final UInt64 lastPrunedSlot3 = database.pruneFinalizedBlocks(UInt64.valueOf(4), 1);
+    final UInt64 lastPrunedSlot3 =
+        database.pruneFinalizedBlocks(UInt64.valueOf(4), 1, UInt64.valueOf(10));
     assertThat(lastPrunedSlot3).isEqualTo(UInt64.valueOf(4));
+  }
+
+  @TestTemplate
+  public void pruneFinalizedBlocks_UpdatesEarliestAvailableBlockSlot(final DatabaseContext context)
+      throws Exception {
+    initialize(context, StateStorageMode.ARCHIVE);
+    final List<SignedBlockAndState> blockAndStates = chainBuilder.generateBlocksUpToSlot(5);
+    addBlocks(blockAndStates);
+    // Block 7 skipped simulating it was an empty block
+    final SignedBlockAndState finalizedBlock = chainBuilder.generateBlockAtSlot(7);
+    addBlocks(finalizedBlock);
+    justifyAndFinalizeEpoch(
+        spec.computeEpochAtSlot(finalizedBlock.getSlot()).plus(1), finalizedBlock);
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isEmpty();
+
+    final UInt64 lastPrunedSlot1 =
+        database.pruneFinalizedBlocks(UInt64.valueOf(3), 100, UInt64.valueOf(10));
+    assertThat(lastPrunedSlot1).isEqualTo(UInt64.valueOf(3));
+    assertThat(database.getEarliestAvailableBlockSlot()).isEqualTo(Optional.of(UInt64.valueOf(4)));
+
+    final UInt64 lastPrunedSlot2 =
+        database.pruneFinalizedBlocks(UInt64.valueOf(5), 10, UInt64.valueOf(10));
+    assertThat(lastPrunedSlot2).isEqualTo(UInt64.valueOf(5));
+    // there's no slot 6 because that was purposely skipped so we expect the earliest available
+    // block slot to be 7
+    assertThat(database.getEarliestAvailableBlockSlot()).isEqualTo(Optional.of(UInt64.valueOf(7)));
+  }
+
+  @TestTemplate
+  public void pruneFinalizedBlocks_UpdatesEarliestAvailableBlockSlotWhenLimited(
+      final DatabaseContext context) throws Exception {
+    initialize(context, StateStorageMode.ARCHIVE);
+    final List<SignedBlockAndState> blockAndStates = chainBuilder.generateBlocksUpToSlot(5);
+    addBlocks(blockAndStates);
+    // Block 7 skipped simulating it was an empty block
+    final SignedBlockAndState finalizedBlock = chainBuilder.generateBlockAtSlot(7);
+    addBlocks(finalizedBlock);
+    justifyAndFinalizeEpoch(
+        spec.computeEpochAtSlot(finalizedBlock.getSlot()).plus(1), finalizedBlock);
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isEmpty();
+
+    final UInt64 lastPrunedSlot1 =
+        database.pruneFinalizedBlocks(UInt64.valueOf(3), 2, UInt64.valueOf(10));
+    assertThat(lastPrunedSlot1).isEqualTo(UInt64.valueOf(1));
+    assertThat(database.getEarliestAvailableBlockSlot()).isEqualTo(Optional.of(UInt64.valueOf(2)));
+
+    final UInt64 lastPrunedSlot2 =
+        database.pruneFinalizedBlocks(UInt64.valueOf(5), 10, UInt64.valueOf(10));
+    assertThat(lastPrunedSlot2).isEqualTo(UInt64.valueOf(5));
+    // there's no slot 6 because that was purposely skipped so we expect the earliest available
+    // block slot to be 7
+    assertThat(database.getEarliestAvailableBlockSlot()).isEqualTo(Optional.of(UInt64.valueOf(7)));
+  }
+
+  @TestTemplate
+  public void
+      pruneFinalizedBlocks_ClearEarliestAvailableBlockSlotVariableWhenNoBlocksLeftAfterPrune(
+          final DatabaseContext context) throws Exception {
+    initialize(context, StateStorageMode.ARCHIVE);
+    final List<SignedBlockAndState> blockAndStates = chainBuilder.generateBlocksUpToSlot(5);
+    addBlocks(blockAndStates);
+    // Block 7 skipped simulating it was an empty block
+    final SignedBlockAndState finalizedBlock = chainBuilder.generateBlockAtSlot(7);
+    addBlocks(finalizedBlock);
+    justifyAndFinalizeEpoch(
+        spec.computeEpochAtSlot(finalizedBlock.getSlot()).plus(1), finalizedBlock);
+
+    final UInt64 lastPrunedSlot1 =
+        database.pruneFinalizedBlocks(UInt64.valueOf(7), 10, UInt64.valueOf(10));
+    assertThat(lastPrunedSlot1).isEqualTo(UInt64.valueOf(7));
+    assertThat(database.getEarliestAvailableBlockSlot()).isEqualTo(Optional.empty());
   }
 
   private List<Map.Entry<Bytes32, UInt64>> getFinalizedStateRootsList() {

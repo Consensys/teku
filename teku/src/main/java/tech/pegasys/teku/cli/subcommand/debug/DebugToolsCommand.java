@@ -15,11 +15,15 @@ package tech.pegasys.teku.cli.subcommand.debug;
 
 import static tech.pegasys.teku.infrastructure.time.SystemTimeProvider.SYSTEM_TIME_PROVIDER;
 
+import io.libp2p.core.PeerId;
+import io.libp2p.core.crypto.KeyKt;
+import io.libp2p.core.crypto.PrivKey;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -30,6 +34,7 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
+import tech.pegasys.teku.cli.subcommand.storage.RocksDbCommand;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
@@ -54,7 +59,12 @@ import tech.pegasys.teku.validator.client.slashingriskactions.DoppelgangerDetect
 @Command(
     name = "debug-tools",
     description = "Utilities for debugging issues",
-    subcommands = {DebugDbCommand.class, PrettyPrintCommand.class, ValidatorKeysCheckCommand.class},
+    subcommands = {
+      DebugDbCommand.class,
+      PrettyPrintCommand.class,
+      ValidatorKeysCheckCommand.class,
+      RocksDbCommand.class
+    },
     showDefaultValues = true,
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,
@@ -237,6 +247,35 @@ public class DebugToolsCommand implements Runnable {
         assignment.slot(),
         assignment.committeeIndex(),
         assignment.committee().indexOf(validatorIndex));
+    return 0;
+  }
+
+  @Command(
+      name = "get-peer-id",
+      description = "Gets the peerID from private key file.",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int getPeerID(
+      @Option(
+              names = {"--input", "-i"},
+              description = "File to read the privateKey from",
+              required = true)
+          final Path input) {
+    try {
+      final Bytes privateKeyBytes = Bytes.wrap(Files.readAllBytes(Paths.get(input.toUri())));
+      final PrivKey privKey = KeyKt.unmarshalPrivateKey(privateKeyBytes.toArrayUnsafe());
+      System.out.print("Peer ID: " + PeerId.fromPubKey(privKey.publicKey()));
+    } catch (IOException e) {
+      System.err.println("Failed to read private key file: " + e.getMessage());
+      return 1;
+    }
     return 0;
   }
 }

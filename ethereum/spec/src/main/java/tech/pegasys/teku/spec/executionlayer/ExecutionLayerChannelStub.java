@@ -48,11 +48,13 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
@@ -64,21 +66,23 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsBuilderElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
-import tech.pegasys.teku.spec.datastructures.util.DepositRequestsUtil;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
+
   private static final Logger LOG = LogManager.getLogger();
   private static final ClientVersion STUB_CLIENT_VERSION =
       new ClientVersion("SB", ExecutionLayerChannel.STUB_ENDPOINT_PREFIX, "0.0.0", Bytes4.ZERO);
-
-  private static final boolean GENERATE_DEPOSIT_REQUESTS = false;
 
   private final TimeProvider timeProvider;
   private final Map<Bytes32, PowBlock> knownBlocks = new ConcurrentHashMap<>();
@@ -88,7 +92,6 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private final Set<Bytes32> requestedPowBlocks = new HashSet<>();
   private final Spec spec;
   private final BlobsUtil blobsUtil;
-  private final DepositRequestsUtil depositRequestsUtil;
   private final Random random = new Random();
 
   private PayloadStatus payloadStatus = PayloadStatus.VALID;
@@ -97,7 +100,6 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   // transition emulation
   private static final Bytes32 TERMINAL_BLOCK_PARENT_HASH = Bytes32.ZERO;
   private final boolean transitionEmulationEnabled;
-  private final Bytes32 terminalBlockHashInTTDMode;
   private boolean bellatrixActivationDetected = false;
   private Bytes32 terminalBlockHash;
   private PowBlock terminalBlockParent;
@@ -114,16 +116,11 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private boolean online = true;
 
   public ExecutionLayerChannelStub(
-      final Spec spec,
-      final TimeProvider timeProvider,
-      final boolean enableTransitionEmulation,
-      final Optional<Bytes32> terminalBlockHashInTTDMode) {
+      final Spec spec, final TimeProvider timeProvider, final boolean enableTransitionEmulation) {
     this.payloadIdToHeadAndAttrsCache = LRUCache.create(10);
     this.spec = spec;
     this.timeProvider = timeProvider;
     this.transitionEmulationEnabled = enableTransitionEmulation;
-    this.terminalBlockHashInTTDMode =
-        terminalBlockHashInTTDMode.orElse(Bytes32.fromHexStringLenient("0x01"));
     final KZG kzg;
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       // trusted setup loading will be handled by the BeaconChainController
@@ -132,14 +129,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       kzg = KZG.NOOP;
     }
     this.blobsUtil = new BlobsUtil(spec, kzg);
-    this.depositRequestsUtil = new DepositRequestsUtil(spec);
   }
 
-  public ExecutionLayerChannelStub(
-      final Spec spec,
-      final boolean enableTransitionEmulation,
-      final Optional<Bytes32> terminalBlockHashInTTDMode) {
-    this(spec, SYSTEM_TIME_PROVIDER, enableTransitionEmulation, terminalBlockHashInTTDMode);
+  public ExecutionLayerChannelStub(final Spec spec, final boolean enableTransitionEmulation) {
+    this(spec, SYSTEM_TIME_PROVIDER, enableTransitionEmulation);
   }
 
   public void addPowBlock(final PowBlock block) {
@@ -288,10 +281,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                         .transactions(transactions)
                         .withdrawals(() -> payloadAttributes.getWithdrawals().orElse(List.of()))
                         .blobGasUsed(() -> UInt64.ZERO)
-                        .excessBlobGas(() -> UInt64.ZERO)
-                        .depositRequests(() -> generateDepositRequests(state))
-                        .withdrawalRequests(List::of)
-                        .consolidationRequests(List::of));
+                        .excessBlobGas(() -> UInt64.ZERO));
 
     // we assume all blocks are produced locally
     lastValidBlock =
@@ -299,7 +289,6 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
             new PowBlock(
                 executionPayload.getBlockHash(),
                 executionPayload.getParentHash(),
-                UInt256.ZERO,
                 payloadAttributes.getTimestamp()));
 
     headAndAttrs.currentExecutionPayload = Optional.of(executionPayload);
@@ -310,22 +299,46 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         state.getSlot(),
         executionPayload.getBlockHash());
 
+    final Optional<ExecutionRequests> maybeExecutionRequests = getExecutionRequests(slot);
+
     final GetPayloadResponse getPayloadResponse =
         headAndAttrs
             .currentBlobsBundle
             .map(
                 blobsBundle -> {
                   LOG.info("getPayload: blobsBundle: {}", blobsBundle.toBriefString());
-                  return new GetPayloadResponse(
-                      executionPayload, UInt256.valueOf(424242424242424242L), blobsBundle, false);
+                  if (maybeExecutionRequests.isPresent()) {
+                    return new GetPayloadResponse(
+                        executionPayload,
+                        UInt256.valueOf(424242424242424242L),
+                        blobsBundle,
+                        false,
+                        maybeExecutionRequests.get());
+                  } else {
+                    return new GetPayloadResponse(
+                        executionPayload, UInt256.valueOf(424242424242424242L), blobsBundle, false);
+                  }
                 })
             .orElse(new GetPayloadResponse(executionPayload, UInt256.valueOf(434242424242424242L)));
 
     return SafeFuture.completedFuture(getPayloadResponse);
   }
 
+  private Optional<ExecutionRequests> getExecutionRequests(final UInt64 slot) {
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      final ExecutionRequestsSchema executionRequestsSchema =
+          SchemaDefinitionsElectra.required(
+                  spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+              .getExecutionRequestsSchema();
+      return Optional.of(new ExecutionRequestsBuilderElectra(executionRequestsSchema).build());
+    } else {
+      return Optional.empty();
+    }
+  }
+
   @Override
-  public SafeFuture<PayloadStatus> engineNewPayload(final NewPayloadRequest newPayloadRequest) {
+  public SafeFuture<PayloadStatus> engineNewPayload(
+      final NewPayloadRequest newPayloadRequest, final UInt64 slot) {
     offlineCheck();
 
     final ExecutionPayload executionPayload = newPayloadRequest.getExecutionPayload();
@@ -346,6 +359,13 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     offlineCheck();
 
     return SafeFuture.completedFuture(List.of(STUB_CLIENT_VERSION));
+  }
+
+  @Override
+  public SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobs(
+      final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
+    return SafeFuture.completedFuture(
+        blobVersionedHashes.stream().map(e -> Optional.<BlobAndProof>empty()).toList());
   }
 
   @Override
@@ -403,6 +423,14 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                                 .getBlobKzgCommitmentsSchema()
                                 .createFromBlobsBundle(blobsBundle);
                           });
+              final Optional<ExecutionRequests> executionRequests =
+                  schemaDefinitions
+                      .toVersionElectra()
+                      .map(SchemaDefinitionsElectra::getExecutionRequestsSchema)
+                      .map(
+                          executionRequestsSchema ->
+                              new ExecutionRequestsBuilderElectra(executionRequestsSchema).build());
+
               final BuilderBid builderBid =
                   schemaDefinitions
                       .getBuilderBidSchema()
@@ -413,6 +441,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                             builder.value(getPayloadResponse.getExecutionPayloadValue());
                             // using an empty public key for the stub
                             builder.publicKey(BLSPublicKey.empty());
+                            executionRequests.ifPresent(builder::executionRequests);
                           });
               return BuilderBidOrFallbackData.create(builderBid);
             })
@@ -449,7 +478,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         executionPayloadHeader
             .hashTreeRoot()
             .equals(lastBuilderPayloadToBeUnblinded.get().hashTreeRoot()),
-        "provided signed blinded block contains an execution payload header not matching the previously retrieved execution payload via getPayloadHeader");
+        "provided signed blinded block contains an execution payload header not matching the previously retrieved "
+            + "execution payload via getPayloadHeader");
 
     LOG.info(
         "proposeBlindedBlock: slot: {} block: {} -> unblinded executionPayload blockHash: {}",
@@ -535,31 +565,14 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
     LOG.info("Preparing transition blocks using spec");
     final Bytes32 configTerminalBlockHash = specConfigBellatrix.getTerminalBlockHash();
-    final UInt256 terminalTotalDifficulty = specConfigBellatrix.getTerminalTotalDifficulty();
 
-    if (configTerminalBlockHash.isZero()) {
-      // TTD emulation
-      LOG.info("Transition via TTD: {}", terminalTotalDifficulty);
+    LOG.info("Preparing transition via TBH: {}", configTerminalBlockHash);
+    this.transitionTime = bellatrixActivationTime;
+    this.terminalBlockHash = configTerminalBlockHash;
 
-      transitionTime = bellatrixActivationTime.plus(specConfigBellatrix.getSecondsPerSlot() - 1);
-
-      terminalBlockHash = terminalBlockHashInTTDMode;
-
-    } else {
-      // TBH emulation
-      LOG.info("Preparing transition via TBH: {}", configTerminalBlockHash);
-
-      // transition time is not relevant, just wait for the getPowBlock asking for the transition
-      // block
-      transitionTime = bellatrixActivationTime;
-      terminalBlockHash = configTerminalBlockHash;
-    }
-
-    terminalBlockParent =
-        new PowBlock(TERMINAL_BLOCK_PARENT_HASH, Bytes32.ZERO, UInt256.ZERO, UInt64.ZERO);
-    terminalBlock =
-        new PowBlock(
-            terminalBlockHash, TERMINAL_BLOCK_PARENT_HASH, terminalTotalDifficulty, transitionTime);
+    this.terminalBlockParent = new PowBlock(TERMINAL_BLOCK_PARENT_HASH, Bytes32.ZERO, UInt64.ZERO);
+    this.terminalBlock =
+        new PowBlock(terminalBlockHash, TERMINAL_BLOCK_PARENT_HASH, transitionTime);
   }
 
   private HeadAndAttributes getCachedHeadAndAttributes(
@@ -592,7 +605,11 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         blobsUtil.generateBlobs(
             slot,
             blobsToGenerate.orElseGet(
-                () -> random.nextInt(spec.getMaxBlobsPerBlock().orElseThrow() + 1)));
+                () ->
+                    random.nextInt(
+                        SpecConfigDeneb.required(spec.atSlot(slot).getConfig())
+                                .getMaxBlobsPerBlock()
+                            + 1)));
     final List<KZGCommitment> commitments = blobsUtil.blobsToKzgCommitments(blobs);
     final List<KZGProof> proofs = blobsUtil.computeKzgProofs(blobs, commitments);
 
@@ -601,19 +618,5 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     headAndAttrs.currentBlobsBundle = Optional.of(blobsBundle);
 
     return blobsUtil.generateRawBlobTransactionFromKzgCommitments(commitments);
-  }
-
-  private List<DepositRequest> generateDepositRequests(final BeaconState state) {
-    return spec.atSlot(state.getSlot())
-        .getConfig()
-        .toVersionElectra()
-        .map(
-            __ -> {
-              if (GENERATE_DEPOSIT_REQUESTS) {
-                return depositRequestsUtil.generateDepositRequests(state);
-              }
-              return List.<DepositRequest>of();
-            })
-        .orElse(List.of());
   }
 }

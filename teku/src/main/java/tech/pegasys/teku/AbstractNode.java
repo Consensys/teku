@@ -39,6 +39,7 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.logging.StartupLogConfig;
 import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.ServiceController;
@@ -95,7 +96,7 @@ public abstract class AbstractNode implements Node {
             .build());
 
     reportOverrides(tekuConfig);
-    this.metricsEndpoint = new MetricsEndpoint(tekuConfig.metricsConfig(), vertx);
+    this.metricsEndpoint = new MetricsEndpoint(tekuConfig.metricsConfig());
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
     final TekuDefaultExceptionHandler subscriberExceptionHandler =
         new TekuDefaultExceptionHandler();
@@ -133,28 +134,7 @@ public abstract class AbstractNode implements Node {
           .ifPresent(forkEpoch -> STATUS_LOG.warnForkEpochChanged(specMilestone.name(), forkEpoch));
     }
 
-    tekuConfig
-        .eth2NetworkConfiguration()
-        .getTotalTerminalDifficultyOverride()
-        .ifPresent(
-            ttdo ->
-                STATUS_LOG.warnBellatrixParameterChanged(
-                    "TERMINAL_TOTAL_DIFFICULTY", ttdo.toString()));
-
-    tekuConfig
-        .eth2NetworkConfiguration()
-        .getTerminalBlockHashOverride()
-        .ifPresent(
-            tbho ->
-                STATUS_LOG.warnBellatrixParameterChanged("TERMINAL_BLOCK_HASH", tbho.toString()));
-
-    tekuConfig
-        .eth2NetworkConfiguration()
-        .getTerminalBlockHashEpochOverride()
-        .ifPresent(
-            tbheo ->
-                STATUS_LOG.warnBellatrixParameterChanged(
-                    "TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH", tbheo.toString()));
+    reportBellatrixMergeOverrides(tekuConfig);
 
     // Deneb's epochsStoreBlobs warning, which is not actually a full override
     final Optional<SpecVersion> specVersionDeneb =
@@ -173,6 +153,56 @@ public abstract class AbstractNode implements Node {
                   String.valueOf(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()),
                   MAX_EPOCHS_STORE_BLOBS);
             });
+  }
+
+  private void reportBellatrixMergeOverrides(final TekuConfiguration tekuConfig) {
+    tekuConfig
+        .eth2NetworkConfiguration()
+        .getTotalTerminalDifficultyOverride()
+        .ifPresent(
+            ttdo ->
+                STATUS_LOG.warnBellatrixParameterChanged(
+                    "TERMINAL_TOTAL_DIFFICULTY", ttdo.toString()));
+
+    final Optional<Eth2Network> maybeEth2Network =
+        tekuConfig.eth2NetworkConfiguration().getEth2Network();
+
+    final boolean reportTerminalBlockHashOverride;
+    final boolean reportTerminalBlockHashEpochOverride;
+    if (maybeEth2Network.isEmpty()) {
+      reportTerminalBlockHashOverride = true;
+      reportTerminalBlockHashEpochOverride = true;
+    } else {
+      final Eth2NetworkConfiguration defaultConfiguration =
+          Eth2NetworkConfiguration.builder().applyNetworkDefaults(maybeEth2Network.get()).build();
+      reportTerminalBlockHashOverride =
+          !defaultConfiguration
+              .getTerminalBlockHashOverride()
+              .equals(tekuConfig.eth2NetworkConfiguration().getTerminalBlockHashOverride());
+      reportTerminalBlockHashEpochOverride =
+          !defaultConfiguration
+              .getTerminalBlockHashEpochOverride()
+              .equals(tekuConfig.eth2NetworkConfiguration().getTerminalBlockHashEpochOverride());
+    }
+
+    if (reportTerminalBlockHashOverride) {
+      tekuConfig
+          .eth2NetworkConfiguration()
+          .getTerminalBlockHashOverride()
+          .ifPresent(
+              tbho ->
+                  STATUS_LOG.warnBellatrixParameterChanged("TERMINAL_BLOCK_HASH", tbho.toString()));
+    }
+
+    if (reportTerminalBlockHashEpochOverride) {
+      tekuConfig
+          .eth2NetworkConfiguration()
+          .getTerminalBlockHashEpochOverride()
+          .ifPresent(
+              tbheo ->
+                  STATUS_LOG.warnBellatrixParameterChanged(
+                      "TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH", tbheo.toString()));
+    }
   }
 
   @Override

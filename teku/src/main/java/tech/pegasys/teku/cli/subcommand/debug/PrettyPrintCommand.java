@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 @Command(
     name = "pretty-print",
@@ -95,7 +96,11 @@ public class PrettyPrintCommand implements Callable<Integer> {
   @Override
   public Integer call() throws IOException {
     final SpecVersion spec =
-        SpecVersion.create(milestone, SpecConfigLoader.loadConfig(network)).orElseThrow();
+        SpecVersion.create(
+                milestone,
+                SpecConfigLoader.loadConfig(network).specConfig(),
+                SchemaRegistryBuilder.create())
+            .orElseThrow();
     final Bytes inputData;
     try (final InputStream in = openStream()) {
       inputData = Bytes.wrap(IOUtils.toByteArray(in));

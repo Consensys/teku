@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.electra;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -153,6 +154,8 @@ public class SpecLogicElectra extends AbstractSpecLogic {
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
     final LightClientUtil lightClientUtil =
         new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
+    final ExecutionRequestsDataCodec executionRequestsDataCodec =
+        new ExecutionRequestsDataCodec(schemaDefinitions.getExecutionRequestsSchema());
     final BlockProcessorElectra blockProcessor =
         new BlockProcessorElectra(
             config,
@@ -166,7 +169,8 @@ public class SpecLogicElectra extends AbstractSpecLogic {
             attestationUtil,
             validatorsUtil,
             operationValidator,
-            schemaDefinitions);
+            schemaDefinitions,
+            executionRequestsDataCodec);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtilDeneb(
             config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);

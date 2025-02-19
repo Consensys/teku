@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.genesis;
 
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -33,6 +32,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
@@ -43,7 +43,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class GenesisHandlerTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
-  private final SpecConfig specConfig =
+  private final SpecConfigAndParent<? extends SpecConfig> specConfig =
       SpecConfigLoader.loadConfig(
           "minimal", b -> b.minGenesisActiveValidatorCount(VALIDATOR_KEYS.size()));
   private final Spec spec = TestSpecFactory.createPhase0(specConfig);
@@ -63,7 +63,7 @@ public class GenesisHandlerTest {
                     data.getAmount(),
                     UInt64.valueOf(index));
               })
-          .collect(toList());
+          .toList();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
@@ -79,7 +79,7 @@ public class GenesisHandlerTest {
 
   @Test
   public void onDepositsFromBlock_shouldInitializeGenesis() {
-    final UInt64 genesisTime = specConfig.getMinGenesisTime();
+    final UInt64 genesisTime = specConfig.specConfig().getMinGenesisTime();
     final int batchSize = initialDepositData.size() / 2;
 
     final DepositsFromBlockEvent event1 =

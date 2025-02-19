@@ -1,6 +1,6 @@
 dependencies {
     api 'it.unimi.dsi:fastutil'
-    api 'org.apache.tuweni:tuweni-bytes'
+    api 'io.tmio:tuweni-bytes'
     api project(':infrastructure:bls')
     api project(':infrastructure:bytes')
     api project(':infrastructure:collections')
@@ -9,9 +9,9 @@ dependencies {
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-    implementation 'org.apache.tuweni:tuweni-bytes'
-    implementation 'org.apache.tuweni:tuweni-ssz'
-    implementation 'org.apache.tuweni:tuweni-units'
+    implementation 'io.tmio:tuweni-bytes'
+    implementation 'io.tmio:tuweni-ssz'
+    implementation 'io.tmio:tuweni-units'
     implementation project(':ethereum:performance-trackers')
     implementation project(':ethereum:execution-types')
     implementation project(':ethereum:pow:api')
@@ -28,7 +28,7 @@ dependencies {
     implementation project(':infrastructure:time')
 
     testFixturesApi 'com.google.guava:guava'
-    testFixturesApi 'org.apache.tuweni:tuweni-bytes'
+    testFixturesApi 'io.tmio:tuweni-bytes'
     testFixturesApi project(':ethereum:pow:api')
     testFixturesApi project(':infrastructure:ssz')
     testFixturesApi project(':infrastructure:unsigned')
@@ -36,8 +36,8 @@ dependencies {
     testFixturesImplementation 'com.fasterxml.jackson.core:jackson-databind'
     testFixturesImplementation 'net.jqwik:jqwik'
     testFixturesImplementation 'org.apache.logging.log4j:log4j-api'
-    testFixturesImplementation 'org.apache.tuweni:tuweni-units'
-    testFixturesImplementation 'org.apache.tuweni:tuweni-ssz'
+    testFixturesImplementation 'io.tmio:tuweni-units'
+    testFixturesImplementation 'io.tmio:tuweni-ssz'
     testFixturesImplementation 'org.hyperledger.besu.internal:core'
     testFixturesImplementation 'org.hyperledger.besu.internal:config'
     testFixturesImplementation 'org.hyperledger.besu:besu-datatypes'
@@ -74,4 +74,6 @@ dependencies {
     testImplementation testFixtures(project(':infrastructure:ssz'))
     testImplementation testFixtures(project(':infrastructure:metrics'))
     testImplementation testFixtures(project(':infrastructure:time'))
+
+    testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
 }

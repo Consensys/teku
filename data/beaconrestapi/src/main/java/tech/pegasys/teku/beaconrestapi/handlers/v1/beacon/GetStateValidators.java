@@ -59,6 +59,7 @@ public class GetStateValidators extends RestApiEndpoint {
             .tags(TAG_BEACON)
             .response(SC_OK, "Request successful", STATE_VALIDATORS_RESPONSE_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = provider;
   }

@@ -19,6 +19,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import org.web3j.crypto.Credentials;
@@ -46,11 +47,13 @@ public class ExecutionRequestsService implements AutoCloseable {
   private final ScheduledExecutorService executorService;
   private final Web3j web3j;
   private final WithdrawalRequestContract withdrawalRequestContract;
+  private final ConsolidationRequestContract consolidationRequestContract;
 
   public ExecutionRequestsService(
       final String eth1NodeUrl,
       final Credentials eth1Credentials,
-      final Eth1Address withdrawalRequestAddress) {
+      final Eth1Address withdrawalRequestAddress,
+      final Eth1Address consolidationRequestAddress) {
     this.httpClient = new OkHttpClient.Builder().connectionPool(new ConnectionPool()).build();
     this.executorService =
         Executors.newScheduledThreadPool(
@@ -69,6 +72,8 @@ public class ExecutionRequestsService implements AutoCloseable {
 
     this.withdrawalRequestContract =
         new WithdrawalRequestContract(withdrawalRequestAddress, web3j, transactionManager);
+    this.consolidationRequestContract =
+        new ConsolidationRequestContract(consolidationRequestAddress, web3j, transactionManager);
   }
 
   @Override
@@ -96,6 +101,24 @@ public class ExecutionRequestsService implements AutoCloseable {
             });
   }
 
+  public SafeFuture<TransactionReceipt> createConsolidationRequest(
+      final BLSPublicKey sourceValidatorPubkey, final BLSPublicKey targetValidatorPubkey) {
+    // Sanity check that we can interact with the contract
+    Waiter.waitFor(
+        () ->
+            assertThat(consolidationRequestContract.getExcessConsolidationRequests().get())
+                .isEqualTo(0));
+
+    return consolidationRequestContract
+        .createConsolidationRequest(sourceValidatorPubkey, targetValidatorPubkey)
+        .thenCompose(
+            response -> {
+              final String txHash = response.getResult();
+              waitForSuccessfulTransaction(txHash);
+              return getTransactionReceipt(txHash);
+            });
+  }
+
   private SafeFuture<TransactionReceipt> getTransactionReceipt(final String txHash) {
     return SafeFuture.of(
         web3j
@@ -113,6 +136,8 @@ public class ExecutionRequestsService implements AutoCloseable {
           if (!"0x1".equals(transactionReceipt.getStatus())) {
             throw new RuntimeException("Transaction failed");
           }
-        });
+        },
+        1,
+        TimeUnit.MINUTES);
   }
 }

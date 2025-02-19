@@ -18,6 +18,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
@@ -27,6 +28,7 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public interface ExecutionClientHandler {
 
@@ -41,7 +43,10 @@ public interface ExecutionClientHandler {
   SafeFuture<GetPayloadResponse> engineGetPayload(
       ExecutionPayloadContext executionPayloadContext, UInt64 slot);
 
-  SafeFuture<PayloadStatus> engineNewPayload(NewPayloadRequest newPayloadRequest);
+  SafeFuture<PayloadStatus> engineNewPayload(NewPayloadRequest newPayloadRequest, UInt64 slot);
 
   SafeFuture<List<ClientVersion>> engineGetClientVersion(ClientVersion clientVersion);
+
+  SafeFuture<List<BlobAndProof>> engineGetBlobs(
+      List<VersionedHash> blobVersionedHashes, UInt64 slot);
 }

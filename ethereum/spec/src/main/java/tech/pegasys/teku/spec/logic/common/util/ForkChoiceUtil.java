@@ -68,7 +68,7 @@ public class ForkChoiceUtil {
   }
 
   public UInt64 getSlotsSinceGenesis(final ReadOnlyStore store, final boolean useUnixTime) {
-    UInt64 time =
+    final UInt64 time =
         useUnixTime ? UInt64.valueOf(Instant.now().getEpochSecond()) : store.getTimeSeconds();
     return getCurrentSlot(time, store.getGenesisTime());
   }
@@ -87,7 +87,7 @@ public class ForkChoiceUtil {
     }
     return currentTimeMillis
         .minus(genesisTimeMillis)
-        .dividedBy(specConfig.getSecondsPerSlot() * MILLIS_PER_SECOND.longValue());
+        .dividedBy(MILLIS_PER_SECOND.times(specConfig.getSecondsPerSlot()));
   }
 
   public UInt64 getSlotStartTime(final UInt64 slotNumber, final UInt64 genesisTime) {
@@ -96,7 +96,7 @@ public class ForkChoiceUtil {
 
   public UInt64 getSlotStartTimeMillis(final UInt64 slotNumber, final UInt64 genesisTimeMillis) {
     return genesisTimeMillis.plus(
-        slotNumber.times(specConfig.getSecondsPerSlot() * MILLIS_PER_SECOND.longValue()));
+        slotNumber.times(MILLIS_PER_SECOND.times(specConfig.getSecondsPerSlot())));
   }
 
   public UInt64 getCurrentSlot(final ReadOnlyStore store, final boolean useUnixTime) {

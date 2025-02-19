@@ -16,6 +16,7 @@ package tech.pegasys.teku.test.acceptance;
 import com.google.common.io.Resources;
 import java.net.URL;
 import java.util.Map;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
+@Disabled("Won't work until we update Engine API for Electra + EL changes")
 public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
 
   private static final String NETWORK_NAME = "swift";
@@ -78,8 +80,7 @@ public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
     final Map<String, String> genesisOverrides = Map.of("pragueTime", String.valueOf(pragueTime));
 
     return createBesuNode(
-        // "Waiting for Besu 24.9.0 release (https://github.com/Consensys/teku/issues/8535)"
-        BesuDockerVersion.DEVELOP,
+        BesuDockerVersion.STABLE,
         config ->
             config
                 .withMergeSupport()

@@ -21,8 +21,8 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class PendingPartialWithdrawal {
-  @JsonProperty("index")
-  public final int index;
+  @JsonProperty("validator_index")
+  public final int validatorIndex;
 
   @JsonProperty("amount")
   public final UInt64 amount;
@@ -31,10 +31,10 @@ public class PendingPartialWithdrawal {
   public final UInt64 withdrawableEpoch;
 
   public PendingPartialWithdrawal(
-      final @JsonProperty("index") int index,
+      final @JsonProperty("validator_index") int validatorIndex,
       final @JsonProperty("amount") UInt64 amount,
       final @JsonProperty("withdrawable_epoch") UInt64 withdrawableEpoch) {
-    this.index = index;
+    this.validatorIndex = validatorIndex;
     this.amount = amount;
     this.withdrawableEpoch = withdrawableEpoch;
   }
@@ -42,7 +42,7 @@ public class PendingPartialWithdrawal {
   public PendingPartialWithdrawal(
       final tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal
           pendingPartialWithdrawal) {
-    this.index = pendingPartialWithdrawal.getIndex();
+    this.validatorIndex = pendingPartialWithdrawal.getValidatorIndex();
     this.amount = pendingPartialWithdrawal.getAmount();
     this.withdrawableEpoch = pendingPartialWithdrawal.getWithdrawableEpoch();
   }
@@ -59,7 +59,7 @@ public class PendingPartialWithdrawal {
         .get()
         .getPendingPartialWithdrawalSchema()
         .create(
-            SszUInt64.of(UInt64.valueOf(this.index)),
+            SszUInt64.of(UInt64.valueOf(this.validatorIndex)),
             SszUInt64.of(this.amount),
             SszUInt64.of(this.withdrawableEpoch));
   }

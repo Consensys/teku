@@ -55,13 +55,5 @@ public interface ExecutionPayloadHeaderBuilder {
 
   ExecutionPayloadHeaderBuilder excessBlobGas(Supplier<UInt64> excessBlobGasSupplier);
 
-  ExecutionPayloadHeaderBuilder depositRequestsRoot(Supplier<Bytes32> depositRequestsRootSupplier);
-
-  ExecutionPayloadHeaderBuilder withdrawalRequestsRoot(
-      Supplier<Bytes32> withdrawalRequestsRootSupplier);
-
-  ExecutionPayloadHeaderBuilder consolidationRequestsRoot(
-      Supplier<Bytes32> consolidationRequestsRootSupplier);
-
   ExecutionPayloadHeader build();
 }

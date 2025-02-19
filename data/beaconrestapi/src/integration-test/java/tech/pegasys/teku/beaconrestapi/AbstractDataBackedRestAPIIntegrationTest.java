@@ -39,6 +39,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.RewardCalculator;
@@ -54,7 +55,6 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -67,7 +67,6 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.statetransition.MappedOperationPool;
 import tech.pegasys.teku.statetransition.OperationPool;
@@ -158,7 +157,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected ChainUpdater chainUpdater;
 
   protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-  protected final JsonProvider jsonProvider = new JsonProvider();
 
   protected DataProvider dataProvider;
   protected BeaconRestApi beaconRestApi;
@@ -201,8 +199,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
                 recentChainData,
                 BlobSidecarManager.NOOP,
                 new NoopForkChoiceNotifier(),
-                new MergeTransitionBlockValidator(
-                    spec, recentChainData, ExecutionLayerChannel.NOOP),
+                new MergeTransitionBlockValidator(spec, recentChainData),
                 storageSystem.getMetricsSystem());
     final Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier =
         slot -> spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
@@ -457,6 +454,12 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected JsonNode getResponseData(final Response response) throws IOException {
     final JsonNode body = OBJECT_MAPPER.readTree(response.body().string());
     return body.get("data");
+  }
+
+  protected void checkEmptyBodyToRoute(final String route, final int expectedResponseCode)
+      throws IOException {
+    final Response response = post(route, OBJECT_MAPPER.writeValueAsString(""));
+    Assertions.assertThat(response.code()).isEqualTo(expectedResponseCode);
   }
 
   @AfterEach

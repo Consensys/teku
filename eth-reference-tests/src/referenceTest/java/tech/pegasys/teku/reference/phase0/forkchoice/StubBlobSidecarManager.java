@@ -98,12 +98,6 @@ class StubBlobSidecarManager implements BlobSidecarManager {
         return SafeFuture.completedFuture(validateImmediately(block, blobsAndProofs));
       }
 
-      @Override
-      public BlobSidecarsAndValidationResult validateImmediately(
-          final List<BlobSidecar> blobSidecars) {
-        throw new UnsupportedOperationException("Not available in fork choice reference tests");
-      }
-
       private BlobSidecarsAndValidationResult validateImmediately(
           final SignedBeaconBlock block, final BlobsAndProofs blobsAndProofs) {
         final List<KZGCommitment> kzgCommitments =

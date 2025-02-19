@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_HEADER_SCHEMA;
+
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
@@ -23,21 +25,22 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidBuilder;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BuilderBidSchemaBellatrix
     extends ContainerSchema3<BuilderBidBellatrix, ExecutionPayloadHeader, SszUInt256, SszPublicKey>
     implements BuilderBidSchema<BuilderBidBellatrix> {
 
   public BuilderBidSchemaBellatrix(
-      final String containerName,
-      final ExecutionPayloadHeaderSchema<?> executionPayloadHeaderSchema) {
+      final String containerName, final SchemaRegistry schemaRegistry) {
     super(
         containerName,
         namedSchema(
-            "header", SszSchema.as(ExecutionPayloadHeader.class, executionPayloadHeaderSchema)),
+            "header",
+            SszSchema.as(
+                ExecutionPayloadHeader.class, schemaRegistry.get(EXECUTION_PAYLOAD_HEADER_SCHEMA))),
         namedSchema("value", SszPrimitiveSchemas.UINT256_SCHEMA),
         namedSchema("pubkey", SszPublicKeySchema.INSTANCE));
   }

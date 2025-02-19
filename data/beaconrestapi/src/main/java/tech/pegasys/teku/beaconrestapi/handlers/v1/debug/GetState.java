@@ -80,6 +80,7 @@ public class GetState extends RestApiEndpoint {
                     beaconState ->
                         spec.getForkSchedule().getSpecMilestoneAtSlot(beaconState.getSlot())))
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }

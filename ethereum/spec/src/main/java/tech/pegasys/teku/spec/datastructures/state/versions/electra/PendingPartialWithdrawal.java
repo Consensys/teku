@@ -29,10 +29,10 @@ public class PendingPartialWithdrawal
 
   public PendingPartialWithdrawal(
       final PendingPartialWithdrawalSchema pendingPartialWithdrawalSchema,
-      final SszUInt64 index,
+      final SszUInt64 validatorIndex,
       final SszUInt64 amount,
       final SszUInt64 withdrawableEpoch) {
-    super(pendingPartialWithdrawalSchema, index, amount, withdrawableEpoch);
+    super(pendingPartialWithdrawalSchema, validatorIndex, amount, withdrawableEpoch);
   }
 
   public static class PendingPartialWithdrawalSchema
@@ -40,17 +40,17 @@ public class PendingPartialWithdrawal
     public PendingPartialWithdrawalSchema() {
       super(
           "PendingPartialWithdrawal",
-          namedSchema("index", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("validator_index", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("amount", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("withdrawable_epoch", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     public PendingPartialWithdrawal create(
-        final SszUInt64 index, final SszUInt64 amount, final SszUInt64 withdrawableEpoch) {
-      return new PendingPartialWithdrawal(this, index, amount, withdrawableEpoch);
+        final SszUInt64 validatorIndex, final SszUInt64 amount, final SszUInt64 withdrawableEpoch) {
+      return new PendingPartialWithdrawal(this, validatorIndex, amount, withdrawableEpoch);
     }
 
-    public SszUInt64 getIndexSchema() {
+    public SszUInt64 getValidatorIndexSchema() {
       return (SszUInt64) getFieldSchema0();
     }
 
@@ -74,7 +74,7 @@ public class PendingPartialWithdrawal
     super(type, backingNode);
   }
 
-  public int getIndex() {
+  public int getValidatorIndex() {
     return ((SszUInt64) get(0)).get().intValue();
   }
 

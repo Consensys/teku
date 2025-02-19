@@ -27,21 +27,18 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
-import tech.pegasys.teku.infrastructure.jackson.deserializers.bytes.Bytes48KeyDeserializer;
-import tech.pegasys.teku.provider.BLSPublicKeyDeserializer;
-import tech.pegasys.teku.provider.BLSPublicKeySerializer;
 import tech.pegasys.teku.validator.client.ProposerConfig;
 
 public class ProposerConfigLoader {
-  final ObjectMapper objectMapper;
+  private final ObjectMapper objectMapper;
 
   public ProposerConfigLoader() {
-    this(new ObjectMapper());
+    objectMapper = new ObjectMapper();
     addTekuMappers();
   }
 
   private void addTekuMappers() {
-    SimpleModule module =
+    final SimpleModule module =
         new SimpleModule("ProposerConfigLoader", new Version(1, 0, 0, null, null, null));
     module.addDeserializer(BLSPublicKey.class, new BLSPublicKeyDeserializer());
     module.addSerializer(BLSPublicKey.class, new BLSPublicKeySerializer());
@@ -50,8 +47,8 @@ public class ProposerConfigLoader {
     objectMapper.registerModule(module);
   }
 
-  public ProposerConfigLoader(final ObjectMapper objectMapper) {
-    this.objectMapper = objectMapper;
+  public ObjectMapper getObjectMapper() {
+    return objectMapper;
   }
 
   public ProposerConfig getProposerConfig(final URL source) {

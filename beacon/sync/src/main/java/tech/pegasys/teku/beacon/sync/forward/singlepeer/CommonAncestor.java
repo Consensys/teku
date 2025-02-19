@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -24,63 +26,106 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class CommonAncestor {
   private static final Logger LOG = LogManager.getLogger();
-  private final RecentChainData recentChainData;
+  private static final int DEFAULT_MAX_ATTEMPTS = 6;
+  static final UInt64 BLOCK_COUNT_PER_ATTEMPT = UInt64.valueOf(16);
+  static final UInt64 SLOTS_TO_JUMP_BACK_EXPONENTIAL_BASE = UInt64.valueOf(100);
+  // We will try to find a common block downloading 16 blocks per attempt.
+  // We will try 6 times, each time jumping back 100 * 2^attempt slots.
+  // Which means we will jump back 100 slots, then 200 from previous 100,
+  // then 400, and so on up to 3200.
+  // So max attempted distance from initial slot will be 6300 slots.
+  // We will download max 96 blocks in total, before defaulting to firstNonFinalSlot
 
-  static final UInt64 OPTIMISTIC_HISTORY_LENGTH = UInt64.valueOf(3000);
-  // prysm allows a maximum range of 1000 blocks (endSlot - startSlot) due to database limitations
-  static final UInt64 BLOCK_COUNT = UInt64.valueOf(100);
+  private final RecentChainData recentChainData;
+  private final int maxAttempts;
 
   public CommonAncestor(final RecentChainData recentChainData) {
+    this(recentChainData, DEFAULT_MAX_ATTEMPTS);
+  }
+
+  @VisibleForTesting
+  CommonAncestor(final RecentChainData recentChainData, final int maxAttempts) {
     this.recentChainData = recentChainData;
+    this.maxAttempts = maxAttempts;
   }
 
   public SafeFuture<UInt64> getCommonAncestor(
       final SyncSource peer, final UInt64 firstNonFinalSlot, final UInt64 peerHeadSlot) {
     final UInt64 ourHeadSlot = recentChainData.getHeadSlot();
     final UInt64 lowestHeadSlot = ourHeadSlot.min(peerHeadSlot);
-    if (lowestHeadSlot.isLessThan(firstNonFinalSlot.plus(OPTIMISTIC_HISTORY_LENGTH))) {
-      return SafeFuture.completedFuture(firstNonFinalSlot);
-    }
-    final UInt64 localNonFinalisedSlotCount = lowestHeadSlot.minus(firstNonFinalSlot);
-    final UInt64 firstRequestedSlot = lowestHeadSlot.minus(OPTIMISTIC_HISTORY_LENGTH);
-    final UInt64 lastSlot = firstRequestedSlot.plus(BLOCK_COUNT);
+
+    final UInt64 localNonFinalisedSlotCount = lowestHeadSlot.minusMinZero(firstNonFinalSlot);
 
     LOG.debug(
-        "Local head slot {}. Have {} non finalized slots, "
-            + "will sample ahead from {} to {}. Peer head is {}",
+        "Local head slot {}. Have {} non finalized slots, peer head is {}",
         ourHeadSlot,
         localNonFinalisedSlotCount,
-        firstRequestedSlot,
-        lastSlot,
         peerHeadSlot);
 
-    final BestBlockListener blockResponseListener =
-        new BestBlockListener(recentChainData, firstNonFinalSlot);
+    return getCommonAncestor(
+        peer,
+        lowestHeadSlot.minusMinZero(BLOCK_COUNT_PER_ATTEMPT.decrement()),
+        firstNonFinalSlot,
+        0);
+  }
+
+  private SafeFuture<UInt64> getCommonAncestor(
+      final SyncSource peer,
+      final UInt64 firstRequestedSlot,
+      final UInt64 firstNonFinalSlot,
+      final int attempt) {
+    if (attempt >= maxAttempts || firstRequestedSlot.isLessThanOrEqualTo(firstNonFinalSlot)) {
+      return SafeFuture.completedFuture(firstNonFinalSlot);
+    }
+
+    final UInt64 lastSlot = firstRequestedSlot.plus(BLOCK_COUNT_PER_ATTEMPT);
+
+    LOG.debug("Sampling ahead from {} to {}.", firstRequestedSlot, lastSlot);
+
+    final BestBlockListener blockResponseListener = new BestBlockListener(recentChainData);
     final PeerSyncBlockListener blockListener =
         new PeerSyncBlockListener(
-            SafeFuture.COMPLETE, firstRequestedSlot, BLOCK_COUNT, blockResponseListener);
+            SafeFuture.COMPLETE,
+            firstRequestedSlot,
+            BLOCK_COUNT_PER_ATTEMPT,
+            blockResponseListener);
 
-    return peer.requestBlocksByRange(firstRequestedSlot, BLOCK_COUNT, blockListener)
-        .thenApply(__ -> blockResponseListener.getBestSlot());
+    return peer.requestBlocksByRange(firstRequestedSlot, BLOCK_COUNT_PER_ATTEMPT, blockListener)
+        .thenCompose(
+            __ ->
+                blockResponseListener
+                    .getBestSlot()
+                    .map(SafeFuture::completedFuture)
+                    .orElseGet(
+                        () ->
+                            getCommonAncestor(
+                                peer,
+                                firstRequestedSlot.minusMinZero(
+                                    SLOTS_TO_JUMP_BACK_EXPONENTIAL_BASE.times(1L << attempt)),
+                                firstNonFinalSlot,
+                                attempt + 1)));
   }
 
   private static class BestBlockListener implements RpcResponseListener<SignedBeaconBlock> {
     private final RecentChainData recentChainData;
-    private UInt64 bestSlot;
+    private Optional<UInt64> bestSlot;
 
-    BestBlockListener(final RecentChainData recentChainData, final UInt64 bestSlot) {
+    BestBlockListener(final RecentChainData recentChainData) {
       this.recentChainData = recentChainData;
-      this.bestSlot = bestSlot;
+      this.bestSlot = Optional.empty();
     }
 
-    private UInt64 getBestSlot() {
+    private Optional<UInt64> getBestSlot() {
       return bestSlot;
     }
 
     @Override
     public SafeFuture<?> onResponse(final SignedBeaconBlock block) {
       if (recentChainData.containsBlock(block.getRoot())) {
-        bestSlot = bestSlot.max(block.getSlot());
+        bestSlot =
+            bestSlot
+                .map(uInt64 -> uInt64.max(block.getSlot()))
+                .or(() -> Optional.of(block.getSlot()));
       }
 
       return SafeFuture.COMPLETE;

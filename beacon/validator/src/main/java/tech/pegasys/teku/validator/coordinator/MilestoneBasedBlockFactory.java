@@ -14,7 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import com.google.common.base.Suppliers;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,7 +35,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class MilestoneBasedBlockFactory implements BlockFactory {
 
-  private final Map<SpecMilestone, BlockFactory> registeredFactories = new HashMap<>();
+  private final Map<SpecMilestone, BlockFactory> registeredFactories =
+      new EnumMap<>(SpecMilestone.class);
 
   private final Spec spec;
 
@@ -92,13 +93,9 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
   }
 
   @Override
-  public List<BlobSidecar> createBlobSidecars(
-      final SignedBlockContainer blockContainer,
-      final BlockPublishingPerformance blockPublishingPerformance) {
+  public List<BlobSidecar> createBlobSidecars(final SignedBlockContainer blockContainer) {
     final SpecMilestone milestone = getMilestone(blockContainer.getSlot());
-    return registeredFactories
-        .get(milestone)
-        .createBlobSidecars(blockContainer, blockPublishingPerformance);
+    return registeredFactories.get(milestone).createBlobSidecars(blockContainer);
   }
 
   private SpecMilestone getMilestone(final UInt64 slot) {

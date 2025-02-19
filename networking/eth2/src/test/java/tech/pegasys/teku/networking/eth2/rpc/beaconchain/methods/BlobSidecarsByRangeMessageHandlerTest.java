@@ -34,10 +34,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.AssertionsForInterfaceTypes;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -51,7 +50,9 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -59,46 +60,23 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
-import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
+@TestSpecContext(milestone = {SpecMilestone.DENEB, SpecMilestone.ELECTRA})
 public class BlobSidecarsByRangeMessageHandlerTest {
 
   private static final RequestApproval ZERO_OBJECTS_REQUEST_APPROVAL =
       new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build();
-
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(
-          TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
-
+          TestSpecFactory.createDefault().getNetworkingConfig().getMaxPayloadSize());
   private final UInt64 genesisTime = UInt64.valueOf(1982239L);
-  private final UInt64 denebForkEpoch = UInt64.valueOf(1);
-
-  private final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
-
-  private final SpecConfigDeneb specConfigDeneb =
-      SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig());
-
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-
-  private final int maxBlobsPerBlock = specConfigDeneb.getMaxBlobsPerBlock();
-
-  private final int slotsPerEpoch = spec.getSlotsPerEpoch(ZERO);
-
-  private final UInt64 startSlot = denebForkEpoch.increment().times(slotsPerEpoch);
-
-  private final Bytes32 headBlockRoot = dataStructureUtil.randomBytes32();
-
+  private final UInt64 currentForkEpoch = UInt64.valueOf(1);
   private final UInt64 count = UInt64.valueOf(5);
-
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-
   private final Eth2Peer peer = mock(Eth2Peer.class);
-
-  private final MiscHelpersDeneb miscHelpers =
-      spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
 
   @SuppressWarnings("unchecked")
   private final ResponseCallback<BlobSidecar> listener = mock(ResponseCallback.class);
@@ -106,26 +84,50 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final UpdatableStore store = mock(UpdatableStore.class);
-
   private final String protocolId =
       BeaconChainMethodIds.getBlobSidecarsByRangeMethodId(1, RPC_ENCODING);
-
-  private final BlobSidecarsByRangeMessageHandler handler =
-      new BlobSidecarsByRangeMessageHandler(
-          spec, specConfigDeneb, metricsSystem, combinedChainDataClient);
   private final Optional<RequestApproval> allowedObjectsRequest =
       Optional.of(
           new RequestApproval.RequestApprovalBuilder().objectsCount(100).timeSeconds(ZERO).build());
 
+  private SpecMilestone specMilestone;
+  private Spec spec;
+  private BlobSidecarsByRangeMessageHandler handler;
+  private DataStructureUtil dataStructureUtil;
+  private int maxBlobsPerBlock;
+  private int slotsPerEpoch;
+  private UInt64 startSlot;
+
   @BeforeEach
-  public void setUp() {
+  public void setUp(final TestSpecInvocationContextProvider.SpecContext specContext) {
+    specMilestone = specContext.getSpecMilestone();
+    spec =
+        switch (specContext.getSpecMilestone()) {
+          case PHASE0 -> throw new IllegalArgumentException("Phase0 is an unsupported milestone");
+          case ALTAIR -> throw new IllegalArgumentException("Altair is an unsupported milestone");
+          case BELLATRIX ->
+              throw new IllegalArgumentException("Bellatrix is an unsupported milestone");
+          case CAPELLA -> throw new IllegalArgumentException("Capella is an unsupported milestone");
+          case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(currentForkEpoch);
+          case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(currentForkEpoch);
+        };
+
+    dataStructureUtil = new DataStructureUtil(spec);
+    maxBlobsPerBlock =
+        SpecConfigDeneb.required(spec.forMilestone(specMilestone).getConfig())
+            .getMaxBlobsPerBlock();
+    slotsPerEpoch = spec.getSlotsPerEpoch(ZERO);
+    startSlot = currentForkEpoch.increment().times(slotsPerEpoch);
+    handler = new BlobSidecarsByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
+
     when(peer.approveRequest()).thenReturn(true);
     when(peer.approveBlobSidecarsRequest(eq(listener), anyLong()))
         .thenReturn(allowedObjectsRequest);
     when(combinedChainDataClient.getEarliestAvailableBlobSidecarSlot())
         .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
     when(combinedChainDataClient.getStore()).thenReturn(store);
-    when(combinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(headBlockRoot));
+    when(combinedChainDataClient.getBestBlockRoot())
+        .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
     // everything is finalized by default
     when(combinedChainDataClient.getFinalizedBlockSlot())
         .thenReturn(Optional.of(startSlot.plus(count)));
@@ -133,10 +135,10 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
     // mock store
     when(store.getGenesisTime()).thenReturn(genesisTime);
-    setCurrentEpoch(denebForkEpoch.increment());
+    setCurrentEpoch(currentForkEpoch.increment());
   }
 
-  @Test
+  @TestTemplate
   public void validateRequest_validRequest() {
     final Optional<RpcException> result =
         handler.validateRequest(
@@ -144,10 +146,12 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     assertThat(result).isEmpty();
   }
 
-  @Test
+  @TestTemplate
   public void validateRequest_shouldRejectRequestWhenCountIsTooBig() {
     final UInt64 maxRequestBlobSidecars =
-        UInt64.valueOf(specConfigDeneb.getMaxRequestBlobSidecars());
+        UInt64.valueOf(
+            SpecConfigDeneb.required(spec.forMilestone(specMilestone).getConfig())
+                .getMaxRequestBlobSidecars());
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(
             startSlot, maxRequestBlobSidecars.increment(), maxBlobsPerBlock);
@@ -162,15 +166,77 @@ public class BlobSidecarsByRangeMessageHandlerTest {
                     "Only a maximum of %s blob sidecars can be requested per request",
                     maxRequestBlobSidecars)));
 
-    final long rateLimitedCount =
-        metricsSystem
-            .getCounter(TekuMetricCategory.NETWORK, "rpc_blob_sidecars_by_range_requests_total")
-            .getValue("count_too_big");
+    final long countTooBigCount =
+        metricsSystem.getCounterValue(
+            TekuMetricCategory.NETWORK,
+            "rpc_blob_sidecars_by_range_requests_total",
+            "count_too_big");
 
-    assertThat(rateLimitedCount).isOne();
+    assertThat(countTooBigCount).isOne();
   }
 
-  @Test
+  @TestTemplate
+  public void validateRequest_shouldRejectRequestWhenCountOverflowsIntoNegativeNumber() {
+    final UInt64 maxRequestBlobSidecars =
+        UInt64.valueOf(
+            SpecConfigDeneb.required(spec.forMilestone(specMilestone).getConfig())
+                .getMaxRequestBlobSidecars());
+    final BlobSidecarsByRangeRequestMessage request =
+        new BlobSidecarsByRangeRequestMessage(
+            // bypass ArithmeticException when calculating maxSlot
+            startSlot, UInt64.MAX_VALUE.minus(startSlot), maxBlobsPerBlock);
+
+    final Optional<RpcException> result = handler.validateRequest(protocolId, request);
+
+    assertThat(result)
+        .hasValue(
+            new RpcException(
+                INVALID_REQUEST_CODE,
+                String.format(
+                    "Only a maximum of %s blob sidecars can be requested per request",
+                    maxRequestBlobSidecars)));
+
+    final long countTooBigCount =
+        metricsSystem.getCounterValue(
+            TekuMetricCategory.NETWORK,
+            "rpc_blob_sidecars_by_range_requests_total",
+            "count_too_big");
+
+    assertThat(countTooBigCount).isOne();
+  }
+
+  @TestTemplate
+  public void validateRequest_shouldRejectRequestWhenCountOverflowsIntoPositiveNumber() {
+    final UInt64 maxRequestBlobSidecars =
+        UInt64.valueOf(
+            SpecConfigDeneb.required(spec.forMilestone(specMilestone).getConfig())
+                .getMaxRequestBlobSidecars());
+    final BlobSidecarsByRangeRequestMessage request =
+        new BlobSidecarsByRangeRequestMessage(
+            // this count will overflow into a positive number
+            // ((Long.MAX_VALUE / 3) + 100) * 6 = 596
+            startSlot, UInt64.valueOf((Long.MAX_VALUE / 3) + 100), maxBlobsPerBlock);
+
+    final Optional<RpcException> result = handler.validateRequest(protocolId, request);
+
+    assertThat(result)
+        .hasValue(
+            new RpcException(
+                INVALID_REQUEST_CODE,
+                String.format(
+                    "Only a maximum of %s blob sidecars can be requested per request",
+                    maxRequestBlobSidecars)));
+
+    final long countTooBigCount =
+        metricsSystem.getCounterValue(
+            TekuMetricCategory.NETWORK,
+            "rpc_blob_sidecars_by_range_requests_total",
+            "count_too_big");
+
+    assertThat(countTooBigCount).isOne();
+  }
+
+  @TestTemplate
   public void shouldNotSendBlobSidecarsIfPeerIsRateLimited() {
 
     when(peer.approveBlobSidecarsRequest(listener, count.times(maxBlobsPerBlock).longValue()))
@@ -188,16 +254,17 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
     final long rateLimitedCount =
-        metricsSystem
-            .getCounter(TekuMetricCategory.NETWORK, "rpc_blob_sidecars_by_range_requests_total")
-            .getValue("rate_limited");
+        metricsSystem.getCounterValue(
+            TekuMetricCategory.NETWORK,
+            "rpc_blob_sidecars_by_range_requests_total",
+            "rate_limited");
 
     assertThat(rateLimitedCount).isOne();
 
     verifyNoInteractions(listener);
   }
 
-  @Test
+  @TestTemplate
   public void shouldSendResourceUnavailableIfBlobSidecarsAreNotAvailable() {
 
     // current epoch is 5020
@@ -207,7 +274,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     when(combinedChainDataClient.getEarliestAvailableBlobSidecarSlot())
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(denebForkEpoch.plus(5009).times(slotsPerEpoch))));
+                Optional.of(currentForkEpoch.plus(5009).times(slotsPerEpoch))));
 
     // start slot in epoch 5000 within MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS range
     final BlobSidecarsByRangeRequestMessage request =
@@ -231,12 +298,13 @@ public class BlobSidecarsByRangeMessageHandlerTest {
                 "Requested blob sidecars are not available."));
   }
 
-  @Test
+  @TestTemplate
   public void shouldCompleteSuccessfullyIfNoBlobSidecarsInRange() {
     when(combinedChainDataClient.getBlobSidecarKeys(any(), any(), anyLong()))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
     final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(ZERO, count, maxBlobsPerBlock);
+        new BlobSidecarsByRangeRequestMessage(
+            currentForkEpoch.plus(1).times(slotsPerEpoch), count, maxBlobsPerBlock);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
@@ -254,7 +322,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     verify(listener).completeSuccessfully();
   }
 
-  @Test
+  @TestTemplate
   public void shouldSendToPeerRequestedNumberOfFinalizedBlobSidecars() {
 
     final BlobSidecarsByRangeRequestMessage request =
@@ -283,7 +351,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     AssertionsForInterfaceTypes.assertThat(actualSent).containsExactlyElementsOf(expectedSent);
   }
 
-  @Test
+  @TestTemplate
   public void shouldSendToPeerRequestedNumberOfCanonicalBlobSidecars() {
 
     final UInt64 latestFinalizedSlot = startSlot.plus(count).minus(3);
@@ -341,7 +409,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     AssertionsForInterfaceTypes.assertThat(actualSent).containsExactlyElementsOf(expectedSent);
   }
 
-  @Test
+  @TestTemplate
   public void shouldIgnoreRequestWhenCountIsZero() {
 
     final BlobSidecarsByRangeRequestMessage request =
@@ -367,7 +435,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     AssertionsForInterfaceTypes.assertThat(actualSent).isEmpty();
   }
 
-  @Test
+  @TestTemplate
   public void shouldIgnoreRequestWhenCountIsZeroAndHotSlotRequested() {
     // not finalized
     final UInt64 hotStartSlot = startSlot.plus(7);
@@ -430,7 +498,10 @@ public class BlobSidecarsByRangeMessageHandlerTest {
               UInt64.rangeClosed(
                       ZERO,
                       dataStructureUtil
-                          .randomUInt64(miscHelpers.getBlobKzgCommitmentsCount(block))
+                          .randomUInt64(
+                              spec.forMilestone(specMilestone)
+                                  .miscHelpers()
+                                  .getBlobKzgCommitmentsCount(block))
                           .minusMinZero(1))
                   .forEach(
                       index ->

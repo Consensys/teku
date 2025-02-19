@@ -16,14 +16,15 @@ package tech.pegasys.teku.ethereum.executionclient.metrics;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV4;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
@@ -66,6 +67,7 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   public static final String NEW_PAYLOAD_V4_METHOD = "new_payloadV4";
   public static final String EXCHANGE_CAPABILITIES_METHOD = "exchange_capabilities";
   public static final String GET_CLIENT_VERSION_V1_METHOD = "get_client_versionV1";
+  public static final String GET_BLOBS_V1_METHOD = "get_blobs_versionV1";
 
   private final ExecutionEngineClient delegate;
 
@@ -139,11 +141,14 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
 
   @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayloadV4(
-      final ExecutionPayloadV4 executionPayload,
+      final ExecutionPayloadV3 executionPayload,
       final List<VersionedHash> blobVersionedHashes,
-      final Bytes32 parentBeaconBlockRoot) {
+      final Bytes32 parentBeaconBlockRoot,
+      final List<Bytes> executionRequests) {
     return countRequest(
-        () -> delegate.newPayloadV4(executionPayload, blobVersionedHashes, parentBeaconBlockRoot),
+        () ->
+            delegate.newPayloadV4(
+                executionPayload, blobVersionedHashes, parentBeaconBlockRoot, executionRequests),
         NEW_PAYLOAD_V4_METHOD);
   }
 
@@ -191,5 +196,11 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
       final ClientVersionV1 clientVersion) {
     return countRequest(
         () -> delegate.getClientVersionV1(clientVersion), GET_CLIENT_VERSION_V1_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<List<BlobAndProofV1>>> getBlobsV1(
+      final List<VersionedHash> blobVersionedHashes) {
+    return countRequest(() -> delegate.getBlobsV1(blobVersionedHashes), GET_BLOBS_V1_METHOD);
   }
 }

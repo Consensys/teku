@@ -6,12 +6,13 @@ dependencies {
     implementation project(':infrastructure:http')
     implementation project(':infrastructure:io')
     implementation project(':infrastructure:exceptions')
-
-    implementation 'org.apache.tuweni:tuweni-units'
+    implementation project(':infrastructure:time')
+    implementation 'io.tmio:tuweni-units'
 
     testImplementation 'tech.pegasys.discovery:discovery'
 
     testFixturesImplementation project(':ethereum:spec')
     testFixturesImplementation project(':infrastructure:io')
+    testImplementation testFixtures(project(':infrastructure:time'))
     testFixturesImplementation 'com.google.guava:guava'
 }

@@ -21,8 +21,8 @@ dependencies {
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  implementation 'io.prometheus:simpleclient'
-  implementation 'org.apache.tuweni:tuweni-ssz'
+  implementation 'io.prometheus:prometheus-metrics-bom'
+  implementation 'io.tmio:tuweni-ssz'
   implementation 'org.hyperledger.besu.internal:metrics-core'
   implementation 'org.hyperledger.besu:plugin-api'
   implementation 'org.rocksdb:rocksdbjni'
@@ -64,7 +64,7 @@ dependencies {
   testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'
   testFixturesImplementation 'org.junit.jupiter:junit-jupiter-params'
   testFixturesImplementation 'com.google.guava:guava'
-  testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
+  testFixturesImplementation 'io.tmio:tuweni-bytes'
   testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
   testFixturesImplementation 'org.hyperledger.besu:plugin-api'
 

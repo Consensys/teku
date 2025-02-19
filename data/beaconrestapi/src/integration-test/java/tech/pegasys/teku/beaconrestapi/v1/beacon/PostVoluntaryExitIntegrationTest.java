@@ -24,11 +24,12 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -44,56 +45,55 @@ public class PostVoluntaryExitIntegrationTest extends AbstractDataBackedRestAPII
 
   @Test
   public void shouldReturnBadRequestWhenRequestBodyIsInvalid() throws Exception {
-    Response response =
-        post(PostVoluntaryExit.ROUTE, jsonProvider.objectToJSON("{\"foo\": \"bar\"}"));
+    final Response response = post(PostVoluntaryExit.ROUTE, "{\"foo\": \"bar\"}");
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
   }
 
   @Test
   public void shouldReturnBadRequestWhenRequestBodyIsEmpty() throws Exception {
-    Response response = post(PostVoluntaryExit.ROUTE, jsonProvider.objectToJSON(""));
-    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+    checkEmptyBodyToRoute(PostVoluntaryExit.ROUTE, SC_BAD_REQUEST);
   }
 
   @Test
   public void shouldIncludeRejectReasonWhenOperationValidatorRejectsOperation() throws Exception {
-    final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit signedVoluntaryExit =
-        dataStructureUtil.randomSignedVoluntaryExit();
-
-    final SignedVoluntaryExit schemaExit = new SignedVoluntaryExit(signedVoluntaryExit);
-
+    final SignedVoluntaryExit signedVoluntaryExit = dataStructureUtil.randomSignedVoluntaryExit();
     when(voluntaryExitPool.addLocal(signedVoluntaryExit))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("the reason")));
 
-    Response response = post(PostVoluntaryExit.ROUTE, jsonProvider.objectToJSON(schemaExit));
+    final Response response =
+        post(
+            PostVoluntaryExit.ROUTE,
+            JsonUtil.serialize(
+                signedVoluntaryExit, signedVoluntaryExit.getSchema().getJsonTypeDefinition()));
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.body().string()).contains("the reason");
   }
 
   @Test
   public void shouldReturnServerErrorWhenUnexpectedErrorHappens() throws Exception {
-    final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit signedVoluntaryExit =
-        dataStructureUtil.randomSignedVoluntaryExit();
-
-    final SignedVoluntaryExit schemaExit = new SignedVoluntaryExit(signedVoluntaryExit);
-
+    final SignedVoluntaryExit signedVoluntaryExit = dataStructureUtil.randomSignedVoluntaryExit();
     doThrow(new RuntimeException()).when(voluntaryExitPool).addLocal(signedVoluntaryExit);
 
-    Response response = post(PostVoluntaryExit.ROUTE, jsonProvider.objectToJSON(schemaExit));
+    final Response response =
+        post(
+            PostVoluntaryExit.ROUTE,
+            JsonUtil.serialize(
+                signedVoluntaryExit, signedVoluntaryExit.getSchema().getJsonTypeDefinition()));
     assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
   }
 
   @Test
   public void shouldReturnSuccessWhenRequestBodyIsValid() throws Exception {
-    final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit signedVoluntaryExit =
-        dataStructureUtil.randomSignedVoluntaryExit();
-
-    final SignedVoluntaryExit schemaExit = new SignedVoluntaryExit(signedVoluntaryExit);
+    final SignedVoluntaryExit signedVoluntaryExit = dataStructureUtil.randomSignedVoluntaryExit();
 
     when(voluntaryExitPool.addLocal(signedVoluntaryExit))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
-    Response response = post(PostVoluntaryExit.ROUTE, jsonProvider.objectToJSON(schemaExit));
+    final Response response =
+        post(
+            PostVoluntaryExit.ROUTE,
+            JsonUtil.serialize(
+                signedVoluntaryExit, signedVoluntaryExit.getSchema().getJsonTypeDefinition()));
 
     verify(voluntaryExitPool).addLocal(signedVoluntaryExit);
 

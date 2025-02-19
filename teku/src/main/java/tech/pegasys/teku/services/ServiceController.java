@@ -21,7 +21,6 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceFacade;
 
 public abstract class ServiceController extends Service implements ServiceControllerFacade {
-
   protected final List<Service> services = new ArrayList<>();
 
   @Override

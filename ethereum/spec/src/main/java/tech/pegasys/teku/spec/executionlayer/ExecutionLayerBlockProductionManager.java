@@ -34,11 +34,6 @@ public interface ExecutionLayerBlockProductionManager {
   ExecutionLayerBlockProductionManager NOOP =
       new ExecutionLayerBlockProductionManager() {
         @Override
-        public Optional<ExecutionPayloadResult> getCachedPayloadResult(final UInt64 slot) {
-          return Optional.empty();
-        }
-
-        @Override
         public ExecutionPayloadResult initiateBlockProduction(
             final ExecutionPayloadContext context,
             final BeaconState blockSlotState,
@@ -46,6 +41,11 @@ public interface ExecutionLayerBlockProductionManager {
             final Optional<UInt64> requestedBuilderBoostFactor,
             final BlockProductionPerformance blockProductionPerformance) {
           return null;
+        }
+
+        @Override
+        public Optional<ExecutionPayloadResult> getCachedPayloadResult(final UInt64 slot) {
+          return Optional.empty();
         }
 
         @Override

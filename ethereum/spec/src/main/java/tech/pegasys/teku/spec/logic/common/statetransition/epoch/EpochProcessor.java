@@ -18,6 +18,7 @@ import java.util.function.Function;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
@@ -100,7 +101,9 @@ public interface EpochProcessor {
 
   void processSyncCommitteeUpdates(MutableBeaconState state);
 
-  void processPendingBalanceDeposits(MutableBeaconState state);
+  void applyPendingDeposits(MutableBeaconState state, PendingDeposit deposit);
+
+  void processPendingDeposits(MutableBeaconState state);
 
   void processPendingConsolidations(MutableBeaconState state);
 }

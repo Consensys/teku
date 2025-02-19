@@ -22,8 +22,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ThrottlerTest {
   private final AtomicInteger resource = new AtomicInteger(0);
-  private final UInt64 throttingPeriod = UInt64.valueOf(10);
-  private final Throttler<AtomicInteger> throttler = new Throttler<>(resource, throttingPeriod);
+  private final UInt64 throttlingPeriod = UInt64.valueOf(10);
+  private final Throttler<AtomicInteger> throttler = new Throttler<>(resource, throttlingPeriod);
 
   @Test
   public void init_mustThrowWhenThrottlingPeriodIsNull() {
@@ -59,19 +59,19 @@ public class ThrottlerTest {
     assertThat(resource.get()).isEqualTo(1);
 
     // Repeatedly invoke at initial time
-    for (int i = 0; i < throttingPeriod.times(2).intValue(); i++) {
+    for (int i = 0; i < throttlingPeriod.times(2).intValue(); i++) {
       throttler.invoke(initialTime, AtomicInteger::incrementAndGet);
       assertThat(resource.get()).isEqualTo(1);
     }
 
     // Increment time and invoke up to limit
-    for (int i = 0; i < throttingPeriod.intValue(); i++) {
+    for (int i = 0; i < throttlingPeriod.intValue(); i++) {
       throttler.invoke(initialTime.plus(i), AtomicInteger::incrementAndGet);
     }
     assertThat(resource.get()).isEqualTo(1);
 
     // Invoke at boundary
-    throttler.invoke(initialTime.plus(throttingPeriod), AtomicInteger::incrementAndGet);
+    throttler.invoke(initialTime.plus(throttlingPeriod), AtomicInteger::incrementAndGet);
     assertThat(resource.get()).isEqualTo(2);
   }
 
@@ -81,11 +81,11 @@ public class ThrottlerTest {
     throttler.invoke(initialTime, AtomicInteger::incrementAndGet);
     assertThat(resource.get()).isEqualTo(1);
 
-    throttler.invoke(initialTime.plus(throttingPeriod.times(2)), AtomicInteger::incrementAndGet);
+    throttler.invoke(initialTime.plus(throttlingPeriod.times(2)), AtomicInteger::incrementAndGet);
     assertThat(resource.get()).isEqualTo(2);
 
     throttler.invoke(
-        initialTime.plus(throttingPeriod.times(3)).plus(1), AtomicInteger::incrementAndGet);
+        initialTime.plus(throttlingPeriod.times(3)).plus(1), AtomicInteger::incrementAndGet);
     assertThat(resource.get()).isEqualTo(3);
   }
 
@@ -108,19 +108,21 @@ public class ThrottlerTest {
     assertThat(resource.get()).isEqualTo(1);
 
     // Don't throttle under the next threshold
-    throttler.invoke(lastInvocation.plus(throttingPeriod).minus(1), AtomicInteger::incrementAndGet);
+    throttler.invoke(
+        lastInvocation.plus(throttlingPeriod).minus(1), AtomicInteger::incrementAndGet);
     assertThat(resource.get()).isEqualTo(1);
 
     // Invoke once we pass the current threshold
-    lastInvocation = lastInvocation.plus(throttingPeriod.times(2)).plus(1);
+    lastInvocation = lastInvocation.plus(throttlingPeriod.times(2)).plus(1);
     throttler.invoke(lastInvocation, AtomicInteger::incrementAndGet);
     assertThat(resource.get()).isEqualTo(2);
 
     // Don't throttle under the next threshold
-    throttler.invoke(lastInvocation.plus(throttingPeriod).minus(1), AtomicInteger::incrementAndGet);
+    throttler.invoke(
+        lastInvocation.plus(throttlingPeriod).minus(1), AtomicInteger::incrementAndGet);
     assertThat(resource.get()).isEqualTo(2);
     // Invoke at next threshold
-    throttler.invoke(lastInvocation.plus(throttingPeriod), AtomicInteger::incrementAndGet);
+    throttler.invoke(lastInvocation.plus(throttlingPeriod), AtomicInteger::incrementAndGet);
     assertThat(resource.get()).isEqualTo(3);
   }
 }

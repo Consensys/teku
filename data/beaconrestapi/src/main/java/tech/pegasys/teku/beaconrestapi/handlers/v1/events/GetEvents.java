@@ -79,6 +79,7 @@ public class GetEvents extends RestApiEndpoint {
             .tags(TAG_EVENTS, TAG_VALIDATOR_REQUIRED)
             .queryParam(TOPICS_PARAMETER)
             .response(SC_OK, "Request successful", new EventStreamResponseContentTypeDefinition())
+            .withChainDataResponses()
             .build());
     eventSubscriptionManager =
         new EventSubscriptionManager(

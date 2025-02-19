@@ -31,6 +31,8 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSTestUtil;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -63,6 +65,7 @@ public class ProfilingRun {
   private Spec spec = TestSpecFactory.createMainnetPhase0();
 
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
+  private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
 
   @Disabled
   @Test
@@ -97,7 +100,7 @@ public class ProfilingRun {
       RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       final MergeTransitionBlockValidator transitionBlockValidator =
-          new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
+          new MergeTransitionBlockValidator(spec, recentChainData);
       ForkChoice forkChoice =
           new ForkChoice(
               spec,
@@ -111,6 +114,7 @@ public class ProfilingRun {
           BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
       BlockImporter blockImporter =
           new BlockImporter(
+              asyncRunner,
               spec,
               receivedBlockEventsChannelPublisher,
               recentChainData,
@@ -191,7 +195,7 @@ public class ProfilingRun {
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       initialState = null;
       final MergeTransitionBlockValidator transitionBlockValidator =
-          new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
+          new MergeTransitionBlockValidator(spec, recentChainData);
       ForkChoice forkChoice =
           new ForkChoice(
               spec,
@@ -203,6 +207,7 @@ public class ProfilingRun {
               metricsSystem);
       BlockImporter blockImporter =
           new BlockImporter(
+              asyncRunner,
               spec,
               receivedBlockEventsChannelPublisher,
               recentChainData,

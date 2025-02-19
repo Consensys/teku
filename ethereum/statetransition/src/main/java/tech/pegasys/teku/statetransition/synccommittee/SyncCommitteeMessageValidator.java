@@ -68,9 +68,9 @@ public class SyncCommitteeMessageValidator {
   }
 
   public SafeFuture<InternalValidationResult> validate(
-      final ValidatableSyncCommitteeMessage validateableMessage) {
+      final ValidatableSyncCommitteeMessage validatableMessage) {
 
-    final SyncCommitteeMessage message = validateableMessage.getMessage();
+    final SyncCommitteeMessage message = validatableMessage.getMessage();
 
     final Optional<SyncCommitteeUtil> maybeSyncCommitteeUtil =
         spec.getSyncCommitteeUtil(message.getSlot());
@@ -104,11 +104,11 @@ public class SyncCommitteeMessageValidator {
     // Note this validation is _per topic_ so that for a given `slot`, multiple messages could be
     // forwarded with the same `validator_index` as long as the `subnet_id`s are distinct.
     final Optional<UniquenessKey> uniquenessKey;
-    if (validateableMessage.getReceivedSubnetId().isPresent()) {
+    if (validatableMessage.getReceivedSubnetId().isPresent()) {
       final UniquenessKey key =
           getUniquenessKey(
               message,
-              validateableMessage.getReceivedSubnetId().getAsInt(),
+              validatableMessage.getReceivedSubnetId().getAsInt(),
               message.getBeaconBlockRoot());
       final Optional<Bytes32> maybeBestBlockRoot = recentChainData.getBestBlockRoot();
 
@@ -149,12 +149,12 @@ public class SyncCommitteeMessageValidator {
               }
               final BeaconStateAltair state = maybeState.get();
               return validateWithState(
-                  validateableMessage, message, syncCommitteeUtil, state, uniquenessKey);
+                  validatableMessage, message, syncCommitteeUtil, state, uniquenessKey);
             });
   }
 
   private SafeFuture<InternalValidationResult> validateWithState(
-      final ValidatableSyncCommitteeMessage validateableMessage,
+      final ValidatableSyncCommitteeMessage validatableMessage,
       final SyncCommitteeMessage message,
       final SyncCommitteeUtil syncCommitteeUtil,
       final BeaconStateAltair state,
@@ -164,7 +164,7 @@ public class SyncCommitteeMessageValidator {
     // Always calculate the applicable subcommittees to ensure they are cached and can be used to
     // send the gossip.
     final SyncSubcommitteeAssignments assignedSubcommittees =
-        validateableMessage.calculateAssignments(spec, state);
+        validatableMessage.calculateAssignments(spec, state);
 
     // [REJECT] The validator producing this sync_committee_message is in the current sync
     // committee, i.e. state.validators[sync_committee_message.validator_index].pubkey in
@@ -198,10 +198,10 @@ public class SyncCommitteeMessageValidator {
 
     // [REJECT] The subnet_id is correct, i.e. subnet_id in
     // compute_subnets_for_sync_committee(state, sync_committee_message.validator_index).
-    if (validateableMessage.getReceivedSubnetId().isPresent()
+    if (validatableMessage.getReceivedSubnetId().isPresent()
         && !assignedSubcommittees
             .getAssignedSubcommittees()
-            .contains(validateableMessage.getReceivedSubnetId().getAsInt())) {
+            .contains(validatableMessage.getReceivedSubnetId().getAsInt())) {
       return completedFuture(
           reject("Rejecting sync committee message because subnet id is incorrect"));
     }

@@ -80,8 +80,15 @@ public class BeaconBlocksByRangeMessageHandler
   public Optional<RpcException> validateRequest(
       final String protocolId, final BeaconBlocksByRangeRequestMessage request) {
     final int version = BeaconChainMethodIds.extractBeaconBlocksByRangeVersion(protocolId);
-    final SpecMilestone latestMilestoneRequested =
-        spec.getForkSchedule().getSpecMilestoneAtSlot(request.getMaxSlot());
+    final SpecMilestone latestMilestoneRequested;
+    try {
+      latestMilestoneRequested =
+          spec.getForkSchedule().getSpecMilestoneAtSlot(request.getMaxSlot());
+    } catch (final ArithmeticException __) {
+      return Optional.of(
+          new RpcException(INVALID_REQUEST_CODE, "Requested slot is too far in the future"));
+    }
+
     final boolean isAltairActive =
         latestMilestoneRequested.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR);
 
@@ -95,10 +102,18 @@ public class BeaconBlocksByRangeMessageHandler
       return Optional.of(new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero"));
     }
 
-    final UInt64 maxRequestBlocks =
-        spec.forMilestone(latestMilestoneRequested).miscHelpers().getMaxRequestBlocks();
+    final int maxRequestBlocks =
+        spec.forMilestone(latestMilestoneRequested).miscHelpers().getMaxRequestBlocks().intValue();
 
-    if (request.getCount().isGreaterThan(maxRequestBlocks)) {
+    int requestedCount;
+    try {
+      requestedCount = request.getCount().intValue();
+    } catch (final ArithmeticException __) {
+      // handle overflows
+      requestedCount = -1;
+    }
+
+    if (requestedCount == -1 || requestedCount > maxRequestBlocks) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(

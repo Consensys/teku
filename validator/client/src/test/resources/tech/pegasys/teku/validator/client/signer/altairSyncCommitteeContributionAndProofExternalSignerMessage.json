@@ -1,0 +1,12 @@
+{
+  "signingRoot" : "0x235bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464",
+  "type" : "SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF",
+  "fork_info" : {
+    "fork" : {
+      "previous_version" : "0x1f86d83f",
+      "current_version" : "0x32a7d23f",
+      "epoch" : "4603879456717562315"
+    },
+    "genesis_validators_root" : "0x0c65de3f6bad3d7be19d0de5aff82b13d6d8b49f26588dba111e361d6f545486"
+  }
+}

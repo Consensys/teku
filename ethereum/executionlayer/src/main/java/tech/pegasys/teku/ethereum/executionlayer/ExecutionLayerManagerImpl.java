@@ -34,6 +34,7 @@ import tech.pegasys.teku.ethereum.executionclient.ThrottlingExecutionEngineClien
 import tech.pegasys.teku.ethereum.executionclient.metrics.MetricRecordingBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.metrics.MetricRecordingExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestBuilderClient;
+import tech.pegasys.teku.ethereum.executionclient.rest.RestBuilderClientOptions;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClient;
@@ -45,9 +46,9 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
@@ -62,12 +63,12 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Spec spec;
   private final ExecutionClientHandler executionClientHandler;
   private final ExecutionBuilderModule executionBuilderModule;
   private final LabelledMetric<Counter> executionPayloadSourceCounter;
@@ -76,7 +77,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final EventLogger eventLogger,
       final ExecutionClientHandler executionClientHandler,
       final Optional<BuilderClient> builderClient,
-      final Spec spec,
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
@@ -104,7 +104,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     return new ExecutionLayerManagerImpl(
         executionClientHandler,
         builderClient,
-        spec,
         eventLogger,
         builderBidValidator,
         builderCircuitBreaker,
@@ -132,7 +131,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final boolean setUserAgentHeader) {
 
     final RestBuilderClient restBuilderClient =
-        new RestBuilderClient(restClient, spec, setUserAgentHeader);
+        new RestBuilderClient(
+            RestBuilderClientOptions.DEFAULT, restClient, timeProvider, spec, setUserAgentHeader);
     final MetricRecordingBuilderClient metricRecordingBuilderClient =
         new MetricRecordingBuilderClient(restBuilderClient, timeProvider, metricsSystem);
     return new ThrottlingBuilderClient(
@@ -142,7 +142,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private ExecutionLayerManagerImpl(
       final ExecutionClientHandler executionClientHandler,
       final Optional<BuilderClient> builderClient,
-      final Spec spec,
       final EventLogger eventLogger,
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
@@ -150,7 +149,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final UInt64 builderBidCompareFactor,
       final boolean useShouldOverrideBuilderFlag) {
     this.executionClientHandler = executionClientHandler;
-    this.spec = spec;
     this.executionPayloadSourceCounter = executionPayloadSourceCounter;
     this.executionBuilderModule =
         new ExecutionBuilderModule(
@@ -194,41 +192,44 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   @Override
   public SafeFuture<GetPayloadResponse> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
-    return engineGetPayload(executionPayloadContext, state.getSlot(), false)
+    return engineGetPayload(executionPayloadContext, state.getSlot())
         .thenPeek(__ -> recordExecutionPayloadFallbackSource(Source.LOCAL_EL, FallbackReason.NONE));
   }
 
   SafeFuture<GetPayloadResponse> engineGetPayloadForFallback(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
-    return engineGetPayload(executionPayloadContext, slot, true);
+    return engineGetPayload(executionPayloadContext, slot);
   }
 
   private SafeFuture<GetPayloadResponse> engineGetPayload(
-      final ExecutionPayloadContext executionPayloadContext,
-      final UInt64 slot,
-      final boolean isFallbackCall) {
+      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     LOG.trace(
         "calling engineGetPayload(payloadId={}, slot={})",
         executionPayloadContext.getPayloadId(),
         slot);
-    if (!isFallbackCall
-        && executionBuilderModule.isBuilderAvailable()
-        && spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
-      LOG.warn("Builder endpoint is available but a non-blinded block has been requested");
-    }
     return executionClientHandler.engineGetPayload(executionPayloadContext, slot);
   }
 
   @Override
-  public SafeFuture<PayloadStatus> engineNewPayload(final NewPayloadRequest newPayloadRequest) {
+  public SafeFuture<PayloadStatus> engineNewPayload(
+      final NewPayloadRequest newPayloadRequest, final UInt64 slot) {
     LOG.trace("calling engineNewPayload(newPayloadRequest={})", newPayloadRequest);
-    return executionClientHandler.engineNewPayload(newPayloadRequest);
+    return executionClientHandler.engineNewPayload(newPayloadRequest, slot);
   }
 
   @Override
   public SafeFuture<List<ClientVersion>> engineGetClientVersion(final ClientVersion clientVersion) {
     LOG.trace("calling engineGetClientVersion(clientVersion={})", clientVersion);
     return executionClientHandler.engineGetClientVersion(clientVersion);
+  }
+
+  @Override
+  public SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobs(
+      final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
+    LOG.trace("calling engineGetBlobs(blobVersionedHashes={}, slot={})", blobVersionedHashes, slot);
+    return executionClientHandler
+        .engineGetBlobs(blobVersionedHashes, slot)
+        .thenApply(blobsAndProofs -> blobsAndProofs.stream().map(Optional::ofNullable).toList());
   }
 
   @Override

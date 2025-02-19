@@ -21,13 +21,13 @@
       }, {
         "$ref" : "#/components/schemas/SignedBeaconBlockAltair"
       }, {
-        "$ref" : "#/components/schemas/SignedBlindedBlockBellatrix"
+        "$ref" : "#/components/schemas/SignedBlindedBeaconBlockBellatrix"
       }, {
-        "$ref" : "#/components/schemas/SignedBlindedBlockCapella"
+        "$ref" : "#/components/schemas/SignedBlindedBeaconBlockCapella"
       }, {
-        "$ref" : "#/components/schemas/SignedBlindedBlockDeneb"
+        "$ref" : "#/components/schemas/SignedBlindedBeaconBlockDeneb"
       }, {
-        "$ref" : "#/components/schemas/SignedBlindedBlockElectra"
+        "$ref" : "#/components/schemas/SignedBlindedBeaconBlockElectra"
       }  ]
     }
   }

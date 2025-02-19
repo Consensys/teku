@@ -18,10 +18,12 @@ import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -60,6 +62,7 @@ public class AggregateGossipManagerTest {
   @BeforeEach
   public void setup() {
     storageSystem.chainUpdater().initializeGenesis();
+    when(topicChannel.gossip(any())).thenReturn(SafeFuture.COMPLETE);
     doReturn(topicChannel)
         .when(gossipNetwork)
         .subscribe(contains(GossipTopicName.BEACON_AGGREGATE_AND_PROOF.toString()), any());

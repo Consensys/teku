@@ -151,7 +151,7 @@ class ForkChoiceNotifierTest {
 
     when(executionLayerChannel.builderRegisterValidators(any(), any()))
         .thenReturn(SafeFuture.COMPLETE);
-    when(executionLayerChannel.engineNewPayload(any()))
+    when(executionLayerChannel.engineNewPayload(any(), any()))
         .thenReturn(SafeFuture.completedFuture(PayloadStatus.VALID));
     when(executionLayerChannel.engineForkChoiceUpdated(any(), any()))
         .thenReturn(

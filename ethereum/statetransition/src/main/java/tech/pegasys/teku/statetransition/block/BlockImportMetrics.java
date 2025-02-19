@@ -67,7 +67,7 @@ public class BlockImportMetrics {
         MetricsCountersByIntervals.create(
             TekuMetricCategory.BEACON,
             metricsSystem,
-            "block_import_delay_counter",
+            "block_import_delay_counter_total",
             "Counter of blocks falling in different time frames in each import stages",
             List.of("stage", "result"),
             eventsAndBoundaries);

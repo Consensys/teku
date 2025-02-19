@@ -237,9 +237,11 @@ public class ExecutionBuilderModuleTest {
     doAnswer(
             __ -> {
               if (prepareEmptyResponse) {
-                return SafeFuture.completedFuture(new Response<>(Optional.empty()));
+                return SafeFuture.completedFuture(
+                    Response.fromPayloadReceivedAsJson(Optional.empty()));
               }
-              return SafeFuture.completedFuture(new Response<>(Optional.of(signedBuilderBid)));
+              return SafeFuture.completedFuture(
+                  Response.fromPayloadReceivedAsJson(Optional.of(signedBuilderBid)));
             })
         .when(builderClient)
         .getHeader(

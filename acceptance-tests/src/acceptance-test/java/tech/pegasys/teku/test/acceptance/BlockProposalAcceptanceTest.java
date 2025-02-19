@@ -21,7 +21,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Locale;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
@@ -34,8 +35,9 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 public class BlockProposalAcceptanceTest extends AcceptanceTestBase {
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
-  @Test
-  void shouldHaveCorrectFeeRecipientAndGraffiti() throws Exception {
+  @ParameterizedTest(name = "ssz_encode={0}")
+  @ValueSource(booleans = {true, false})
+  void shouldHaveCorrectFeeRecipientAndGraffiti(final boolean useSszBlocks) throws Exception {
     final String networkName = "swift";
 
     final ValidatorKeystores validatorKeystores =
@@ -46,7 +48,8 @@ public class BlockProposalAcceptanceTest extends AcceptanceTestBase {
             .network(networkName)
             .withAltairEpoch(UInt64.ZERO)
             .withBellatrixEpoch(UInt64.ZERO)
-            .validatorKeys(validatorKeystores, validatorKeystores)
+            .withCapellaEpoch(UInt64.ZERO)
+            .validatorKeys(validatorKeystores)
             .generate();
 
     final String defaultFeeRecipient = "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73";
@@ -60,6 +63,7 @@ public class BlockProposalAcceptanceTest extends AcceptanceTestBase {
                 .withInitialState(genesis)
                 .withAltairEpoch(UInt64.ZERO)
                 .withBellatrixEpoch(UInt64.ZERO)
+                .withCapellaEpoch(UInt64.ZERO)
                 .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
                 .build());
     final TekuValidatorNode validatorClient =
@@ -69,6 +73,7 @@ public class BlockProposalAcceptanceTest extends AcceptanceTestBase {
                 .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
                 .withInteropModeDisabled()
                 .withBeaconNodes(beaconNode)
+                .withBeaconNodeSszBlocksEnabled(useSszBlocks)
                 .withGraffiti(userGraffiti)
                 .withNetwork("auto")
                 .build());

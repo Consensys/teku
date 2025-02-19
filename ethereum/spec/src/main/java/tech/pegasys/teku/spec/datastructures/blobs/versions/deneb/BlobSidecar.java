@@ -39,6 +39,10 @@ public class BlobSidecar
         SignedBeaconBlockHeader,
         SszBytes32Vector> {
 
+  private volatile boolean kzgValidated = false;
+  private volatile boolean kzgCommitmentInclusionProofValidated = false;
+  private volatile boolean signatureValidated = false;
+
   BlobSidecar(final BlobSidecarSchema blobSidecarSchema, final TreeNode backingTreeNode) {
     super(blobSidecarSchema, backingTreeNode);
   }
@@ -137,5 +141,34 @@ public class BlobSidecar
         getBlob().toBriefString(),
         getKZGCommitment().toAbbreviatedString(),
         getKZGProof().toAbbreviatedString());
+  }
+
+  public boolean isKzgValidated() {
+    return kzgValidated;
+  }
+
+  public boolean isKzgCommitmentInclusionProofValidated() {
+    return kzgCommitmentInclusionProofValidated;
+  }
+
+  public boolean isSignatureValidated() {
+    return signatureValidated;
+  }
+
+  public void markKzgAsValidated() {
+    kzgValidated = true;
+  }
+
+  public void markKzgCommitmentInclusionProofAsValidated() {
+    kzgCommitmentInclusionProofValidated = true;
+  }
+
+  public void markSignatureAsValidated() {
+    signatureValidated = true;
+  }
+
+  @Override
+  public BlobSidecarSchema getSchema() {
+    return (BlobSidecarSchema) super.getSchema();
   }
 }

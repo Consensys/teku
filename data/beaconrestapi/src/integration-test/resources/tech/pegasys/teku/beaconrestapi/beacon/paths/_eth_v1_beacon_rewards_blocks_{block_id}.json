@@ -1,9 +1,9 @@
 {
   "get" : {
-    "tags" : [ "Beacon", "Rewards"],
+    "tags" : [ "Beacon", "Rewards" ],
     "operationId" : "getBlockRewards",
     "summary" : "Get block rewards",
-    "description" : "Retrieve block reward info for a single block.",
+    "description" : "Retrieve block reward info for a single block. The rewards value is the sum of values of the proposer rewards from attestations, sync committees and slashings included in the proposal.",
     "parameters" : [ {
       "name" : "block_id",
       "required" : true,
@@ -44,6 +44,20 @@
             }
           }
         }
+      },
+      "503" : {
+        "description" : "Service unavailable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
       },
       "400" : {
         "description" : "The request could not be processed, check the response for more information.",

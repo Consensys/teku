@@ -46,8 +46,10 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubnetTopic
 import tech.pegasys.teku.networking.eth2.gossip.topics.Eth2GossipTopicFilter;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
+import tech.pegasys.teku.networking.eth2.peers.DiscoveryNodeIdExtractor;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
+import tech.pegasys.teku.networking.eth2.peers.LibP2PDiscoveryNodeIdExtractor;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.connection.PeerPools;
@@ -139,8 +141,10 @@ public class Eth2P2PNetworkBuilder {
     // Setup eth2 handlers
     final SubnetSubscriptionService attestationSubnetService = new SubnetSubscriptionService();
     final SubnetSubscriptionService syncCommitteeSubnetService = new SubnetSubscriptionService();
+
+    final DiscoveryNodeIdExtractor discoveryNodeIdExtractor = new LibP2PDiscoveryNodeIdExtractor();
     final RpcEncoding rpcEncoding =
-        RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxChunkSize());
+        RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
     if (statusMessageFactory == null) {
       statusMessageFactory = new StatusMessageFactory(combinedChainDataClient.getRecentChainData());
     }
@@ -158,10 +162,12 @@ public class Eth2P2PNetworkBuilder {
             eth2RpcOutstandingPingThreshold,
             eth2StatusUpdateInterval,
             timeProvider,
-            config.getPeerRateLimit(),
+            config.getPeerBlocksRateLimit(),
+            config.getPeerBlobSidecarsRateLimit(),
             config.getPeerRequestLimit(),
             spec,
-            kzg);
+            kzg,
+            discoveryNodeIdExtractor);
     final Collection<RpcMethod<?, ?, ?>> eth2RpcMethods =
         eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);

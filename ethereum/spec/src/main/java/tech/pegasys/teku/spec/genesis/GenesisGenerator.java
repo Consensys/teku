@@ -39,8 +39,8 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
@@ -113,55 +113,32 @@ public class GenesisGenerator {
             processActivation(deposit);
           }
         });
+
+    // Process deposit balance updates
     if (genesisSpec.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
-      // because block processing was made, all deposits will be pending, so at this point
-      // we need to consume all the pending deposits
+      final SchemaDefinitionsElectra schemaDefinitionsElectra =
+          SchemaDefinitionsElectra.required(genesisSpec.getSchemaDefinitions());
+      final BeaconStateMutatorsElectra mutatorsElectra =
+          new BeaconStateMutatorsElectra(
+              specConfig,
+              genesisSpec.miscHelpers(),
+              genesisSpec.beaconStateAccessors(),
+              schemaDefinitionsElectra);
+      BeaconStateElectra.required(state)
+          .getPendingDeposits()
+          .forEach(
+              pendingDeposit -> {
+                mutatorsElectra.increaseBalance(
+                    state,
+                    keyCache.getInt(pendingDeposit.getPublicKey()),
+                    pendingDeposit.getAmount());
+              });
       MutableBeaconStateElectra.required(state)
-          .setDepositRequestsStartIndex(UNSET_DEPOSIT_REQUESTS_START_INDEX);
-      final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
-      final List<Integer> uniqueValidatorIndices =
-          stateElectra.getPendingBalanceDeposits().stream().toList().stream()
-              .map(PendingBalanceDeposit::getIndex)
-              .distinct()
-              .toList();
-      for (int i = 0; i < uniqueValidatorIndices.size(); i++) {
-        consumePendingBalance(stateElectra, uniqueValidatorIndices.get(i));
-        processActivation(uniqueValidatorIndices.get(i));
-      }
-    }
-  }
+          .setPendingDeposits(
+              schemaDefinitionsElectra.getPendingDepositsSchema().createFromElements(List.of()));
 
-  private void consumePendingBalance(
-      final MutableBeaconStateElectra stateElectra, final int validatorIndex) {
-    final SchemaDefinitionsElectra schemaDefinitionsElectra =
-        SchemaDefinitionsElectra.required(genesisSpec.getSchemaDefinitions());
-    final BeaconStateMutatorsElectra mutatorsElectra =
-        new BeaconStateMutatorsElectra(
-            specConfig,
-            genesisSpec.miscHelpers(),
-            genesisSpec.beaconStateAccessors(),
-            schemaDefinitionsElectra);
-    final List<PendingBalanceDeposit> pendingBalanceDeposits =
-        stateElectra.getPendingBalanceDeposits().asList();
-
-    final UInt64 depositAmount =
-        pendingBalanceDeposits.stream()
-            .filter(z -> z.getIndex() == validatorIndex)
-            .map(PendingBalanceDeposit::getAmount)
-            .reduce(UInt64::plus)
-            .orElse(UInt64.ZERO);
-    mutatorsElectra.increaseBalance(state, validatorIndex, depositAmount);
-    if (pendingBalanceDeposits.isEmpty()) {
-      stateElectra.setPendingBalanceDeposits(
-          schemaDefinitionsElectra.getPendingBalanceDepositsSchema().createFromElements(List.of()));
-    } else {
-      stateElectra.setPendingBalanceDeposits(
-          schemaDefinitionsElectra
-              .getPendingBalanceDepositsSchema()
-              .createFromElements(
-                  pendingBalanceDeposits.stream()
-                      .filter(z -> z.getIndex() != validatorIndex)
-                      .toList()));
+      // Process activations
+      keyCache.values().intStream().forEach(this::processActivation);
     }
   }
 

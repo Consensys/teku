@@ -24,9 +24,11 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NetworkDataProvider;
+import tech.pegasys.teku.api.peer.Eth2PeerWithEnr;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers.PeersData;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.CacheLength;
@@ -42,7 +44,10 @@ public class GetPeersTest extends AbstractMigratedBeaconHandlerTest {
   private final Eth2Peer peer2 = mock(Eth2Peer.class);
 
   private final NetworkDataProvider networkDataProvider = mock(NetworkDataProvider.class);
-  private final List<Eth2Peer> data = List.of(peer1, peer2);
+  private final List<Eth2PeerWithEnr> data =
+      List.of(
+          new Eth2PeerWithEnr(peer1, Optional.empty()),
+          new Eth2PeerWithEnr(peer2, Optional.empty()));
   private final GetPeers.PeersData peersData = new PeersData(data);
 
   @BeforeEach
@@ -62,7 +67,7 @@ public class GetPeersTest extends AbstractMigratedBeaconHandlerTest {
   @Test
   public void shouldReturnListOfPeers() throws Exception {
 
-    when(networkDataProvider.getEth2Peers()).thenReturn(data);
+    when(networkDataProvider.getEth2PeersWithEnr()).thenReturn(data);
 
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);

@@ -17,6 +17,8 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -43,18 +45,17 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
         createBesuNode(
             config ->
                 config
-                    .withMiningEnabled(true)
                     .withMergeSupport()
                     .withGenesisFile("besu/preMergeGenesis.json")
                     .withJwtTokenAuthorization(JWT_FILE));
   }
 
   @Test
-  void shouldDetectDoppelgangersViaKeyManagerAPI() throws Exception {
+  void shouldDetectDoppelgangersViaKeyManagerApiForKeystoresWithValidPassword() throws Exception {
     eth1Node.start();
 
     final ValidatorKeystores validatorKeystores =
-        createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 2);
+        createTekuDepositSender(networkName).generateValidatorKeys(2);
 
     final GenesisGenerator.InitialStateData genesis =
         createGenesisGenerator().network(networkName).validatorKeys(validatorKeystores).generate();
@@ -66,7 +67,7 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
                 .withValidatorLivenessTracking()
                 .withJwtSecretFile(JWT_FILE)
                 .withBellatrixEpoch(UInt64.ONE)
-                .withTotalTerminalDifficulty(10001)
+                .withTerminalBlockHash(DEFAULT_EL_GENESIS_HASH, 0)
                 .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
                 .withInitialState(genesis)
                 .build());
@@ -87,8 +88,23 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
     firstValidatorClient.start();
 
     api.assertLocalValidatorListing(Collections.emptyList());
+    final String incorrectPassword = "incorrectPassword";
 
-    api.addLocalValidatorsAndExpect(validatorKeystores, "imported");
+    // Only the validator with the valid password is imported
+    api.addLocalValidatorsAndExpect(
+        validatorKeystores,
+        List.of(validatorKeystores.getPasswords().getFirst(), incorrectPassword),
+        List.of("imported", "error"),
+        Optional.of(
+            List.of(
+                "",
+                "Invalid keystore password for public key: "
+                    + validatorKeystores.getPublicKeys().get(1).toAbbreviatedString())));
+
+    // Perform doppelganger check for the valid imported validator only
+    firstValidatorClient.waitForLogMessageEndingWith(
+        "Starting doppelganger detection for public keys: "
+            + validatorKeystores.getPublicKeys().getFirst().toAbbreviatedString());
     firstValidatorClient.waitForLogMessageContaining("No validators doppelganger detected");
 
     final TekuValidatorNode secondValidatorClient =
@@ -112,9 +128,9 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
 
     secondValidatorClient.waitForLogMessageContaining("Validator doppelganger detected...");
     secondValidatorClient.waitForLogMessageContaining("Doppelganger detection check finished");
-    secondValidatorClient.waitForLogMessageContaining("Detected 2 validators doppelganger");
+    secondValidatorClient.waitForLogMessageContaining("Detected 1 validators doppelganger");
     secondValidatorClient.waitForLogMessageContaining(
-        "Detected 2 active validators doppelganger. The following keys have been ignored");
+        "Detected 1 active validators doppelganger. The following keys have been ignored");
 
     firstValidatorClient.stop();
     secondValidatorClient.stop();

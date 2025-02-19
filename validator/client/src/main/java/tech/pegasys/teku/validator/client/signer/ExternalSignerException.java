@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.signer;
 
 import java.net.URI;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
+import tech.pegasys.teku.validator.api.signer.SignType;
 
 public class ExternalSignerException extends RuntimeException {
 

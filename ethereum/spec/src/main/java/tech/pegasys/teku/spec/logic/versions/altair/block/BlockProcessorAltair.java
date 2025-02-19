@@ -214,20 +214,6 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   }
 
   @Override
-  protected void addValidatorToRegistry(
-      final MutableBeaconState state,
-      final BLSPublicKey pubkey,
-      final Bytes32 withdrawalCredentials,
-      final UInt64 amount) {
-    super.addValidatorToRegistry(state, pubkey, withdrawalCredentials, amount);
-    final MutableBeaconStateAltair stateAltair = MutableBeaconStateAltair.required(state);
-
-    stateAltair.getPreviousEpochParticipation().append(SszByte.ZERO);
-    stateAltair.getCurrentEpochParticipation().append(SszByte.ZERO);
-    stateAltair.getInactivityScores().append(SszUInt64.ZERO);
-  }
-
-  @Override
   public void processSyncAggregate(
       final MutableBeaconState baseState,
       final SyncAggregate aggregate,

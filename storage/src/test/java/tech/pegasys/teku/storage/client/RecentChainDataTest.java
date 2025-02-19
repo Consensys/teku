@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.client;
 
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
@@ -198,6 +197,41 @@ class RecentChainDataTest {
     // Build a small chain
     chainBuilder.generateBlocksUpToSlot(10);
     final SignedBlockAndState anchor = chainBuilder.generateNextBlock();
+
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, anchor.getState());
+    final UInt64 anchorBlockTime =
+        anchorPoint.getBlockSlot().times(genesisSpecConfig.getSecondsPerSlot()).plus(genesisTime);
+    final UInt64 time = anchorBlockTime.plus(100);
+    recentChainData.initializeFromAnchorPoint(anchorPoint, time);
+    assertThat(recentChainData.getStore().getTimeSeconds()).isEqualTo(time);
+  }
+
+  @Test
+  void initializeFromAnchorPoint_withEmptySlotAtEndOfFinalizedEpoch() {
+    initPreGenesis();
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+    final UInt64 genesisTime = UInt64.valueOf(5000);
+    chainBuilder.generateGenesis(genesisTime, true);
+    final List<SignedBlockAndState> chain = chainBuilder.generateBlocksUpToSlot(15);
+    chainBuilder.generateBlockAtSlot(17);
+    final SignedBlockAndState anchor = chain.getLast();
+
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, anchor.getState());
+    final UInt64 anchorBlockTime =
+        anchorPoint.getBlockSlot().times(genesisSpecConfig.getSecondsPerSlot()).plus(genesisTime);
+    final UInt64 time = anchorBlockTime.plus(100);
+    recentChainData.initializeFromAnchorPoint(anchorPoint, time);
+    assertThat(recentChainData.getStore().getTimeSeconds()).isEqualTo(time);
+  }
+
+  @Test
+  void initializeFromAnchorPoint_withEmptySlotAtStartOEpoch() {
+    initPreGenesis();
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+    final UInt64 genesisTime = UInt64.valueOf(5000);
+    chainBuilder.generateGenesis(genesisTime, true);
+    chainBuilder.generateBlocksUpToSlot(15);
+    final SignedBlockAndState anchor = chainBuilder.generateBlockAtSlot(18);
 
     final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, anchor.getState());
     final UInt64 anchorBlockTime =
@@ -475,7 +509,7 @@ class RecentChainDataTest {
             .streamValidAttestationsForBlockAtSlot(ONE)
             .map(attestation -> BlockOptions.create().addAttestation(attestation))
             .limit(2)
-            .collect(toList());
+            .toList();
     final ChainBuilder forkBuilder = chainBuilder.fork();
     final SignedBlockAndState latestBlockAndState =
         chainBuilder.generateBlockAtSlot(UInt64.valueOf(2), blockOptions.get(0));
@@ -520,7 +554,7 @@ class RecentChainDataTest {
             .streamValidAttestationsForBlockAtSlot(ONE)
             .map(attestation -> BlockOptions.create().addAttestation(attestation))
             .limit(2)
-            .collect(toList());
+            .toList();
     final ChainBuilder forkBuilder = chainBuilder.fork();
     final SignedBlockAndState latestBlockAndState =
         chainBuilder.generateBlockAtSlot(UInt64.valueOf(2), blockOptions.get(0));
@@ -754,6 +788,45 @@ class RecentChainDataTest {
   }
 
   @Test
+  public void isCloseToInSync_preGenesis() {
+    initPreGenesis();
+    assertThat(recentChainData.isCloseToInSync()).isFalse();
+  }
+
+  @Test
+  public void isCloseToSync_belowBoundary() {
+    initPostGenesis();
+    final SpecConfig specConfig = spec.getGenesisSpecConfig();
+    final int seconds =
+        specConfig.getMaxSeedLookahead()
+            * specConfig.getSlotsPerEpoch()
+            * specConfig.getSecondsPerSlot();
+    assertThat(recentChainData.isCloseToInSync(UInt64.valueOf(seconds - 1))).isTrue();
+  }
+
+  @Test
+  public void isCloseToSync_atBoundary() {
+    initPostGenesis();
+    final SpecConfig specConfig = spec.getGenesisSpecConfig();
+    final int seconds =
+        specConfig.getMaxSeedLookahead()
+            * specConfig.getSlotsPerEpoch()
+            * specConfig.getSecondsPerSlot();
+    assertThat(recentChainData.isCloseToInSync(UInt64.valueOf(seconds))).isTrue();
+  }
+
+  @Test
+  public void isCloseToSync_aboveBoundary() {
+    initPostGenesis();
+    final SpecConfig specConfig = spec.getGenesisSpecConfig();
+    final int seconds =
+        specConfig.getMaxSeedLookahead()
+            * specConfig.getSlotsPerEpoch()
+            * specConfig.getSecondsPerSlot();
+    assertThat(recentChainData.isCloseToInSync(UInt64.valueOf(seconds + 8))).isFalse();
+  }
+
+  @Test
   public void getBlockRootBySlotWithHeadRoot_withForkRoot() {
     initPostGenesis();
     // Build small chain
@@ -871,7 +944,7 @@ class RecentChainDataTest {
             .streamValidAttestationsForBlockAtSlot(ONE)
             .map(attestation -> BlockOptions.create().addAttestation(attestation))
             .limit(2)
-            .collect(toList());
+            .toList();
     final ChainBuilder forkBuilder = chainBuilder.fork();
 
     final SignedBlockAndState firstBlockAndState =
@@ -965,9 +1038,7 @@ class RecentChainDataTest {
     // Check that only recent, canonical blocks at or after the latest finalized block are left in
     // the store
     final List<SignedBlockAndState> expectedBlocks =
-        chainBuilder
-            .streamBlocksAndStates(finalizedCheckpoint.getEpochStartSlot(spec))
-            .collect(Collectors.toList());
+        chainBuilder.streamBlocksAndStates(finalizedCheckpoint.getEpochStartSlot(spec)).toList();
     final Set<Bytes32> blockRoots =
         expectedBlocks.stream().map(SignedBlockAndState::getRoot).collect(Collectors.toSet());
     // Collect blocks that should be pruned
@@ -1056,7 +1127,6 @@ class RecentChainDataTest {
   private long getReorgCountMetric(final StorageSystem storageSystem) {
     return storageSystem
         .getMetricsSystem()
-        .getCounter(TekuMetricCategory.BEACON, "reorgs_total")
-        .getValue();
+        .getCounterValue(TekuMetricCategory.BEACON, "reorgs_total");
   }
 }

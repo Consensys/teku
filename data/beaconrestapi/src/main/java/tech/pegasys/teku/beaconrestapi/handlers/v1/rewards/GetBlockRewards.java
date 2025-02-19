@@ -67,12 +67,14 @@ public class GetBlockRewards extends RestApiEndpoint {
         EndpointMetadata.get(ROUTE)
             .operationId("getBlockRewards")
             .summary("Get block rewards")
-            .description("Retrieve block reward info for a single block.")
+            .description(
+                "Retrieve block reward info for a single block. The rewards value is the sum of values of the proposer rewards from attestations, sync committees and slashings included in the proposal.")
             .tags(TAG_BEACON, TAG_REWARDS)
             .pathParam(PARAMETER_BLOCK_ID)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
             .withInternalErrorResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }

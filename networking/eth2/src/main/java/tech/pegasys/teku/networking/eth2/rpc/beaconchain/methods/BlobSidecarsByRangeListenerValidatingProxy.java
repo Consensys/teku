@@ -71,6 +71,7 @@ public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSide
           final BlobSidecarSummary blobSidecarSummary = BlobSidecarSummary.create(blobSidecar);
           verifyBlobSidecarIsAfterLast(blobSidecarSummary);
 
+          verifyInclusionProof(blobSidecar);
           verifyKzg(blobSidecar);
 
           maybeLastBlobSidecarSummary = Optional.of(blobSidecarSummary);

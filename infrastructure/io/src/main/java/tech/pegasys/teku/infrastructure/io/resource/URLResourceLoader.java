@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Base64;
@@ -58,7 +59,7 @@ public class URLResourceLoader extends ResourceLoader {
     }
 
     try {
-      final URL url = new URL(source);
+      final URL url = new URI(source).toURL();
       final URLConnection connection = url.openConnection();
       connection.setConnectTimeout(timeoutMillis);
       connection.setReadTimeout(timeoutMillis);

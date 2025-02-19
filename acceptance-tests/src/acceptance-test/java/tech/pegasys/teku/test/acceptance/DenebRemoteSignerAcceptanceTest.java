@@ -96,7 +96,7 @@ public class DenebRemoteSignerAcceptanceTest extends AcceptanceTestBase {
     final Map<String, String> genesisOverrides = Map.of("cancunTime", String.valueOf(genesisTime));
 
     return createBesuNode(
-        BesuDockerVersion.DEVELOP,
+        BesuDockerVersion.STABLE,
         config ->
             config
                 .withMergeSupport()

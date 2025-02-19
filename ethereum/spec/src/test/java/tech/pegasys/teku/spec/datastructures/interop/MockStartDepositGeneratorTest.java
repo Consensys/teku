@@ -16,12 +16,10 @@ package tech.pegasys.teku.spec.datastructures.interop;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.security.Security;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
@@ -59,10 +57,6 @@ class MockStartDepositGeneratorTest {
 
   private final Spec spec = TestSpecFactory.createDefault();
   private final MockStartDepositGenerator generator = new MockStartDepositGenerator(spec);
-
-  static {
-    Security.addProvider(new BouncyCastleProvider());
-  }
 
   @Test
   public void shouldGenerateDepositData() {

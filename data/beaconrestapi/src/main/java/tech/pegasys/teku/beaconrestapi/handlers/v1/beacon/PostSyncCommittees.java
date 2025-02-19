@@ -67,6 +67,7 @@ public class PostSyncCommittees extends RestApiEndpoint {
                 SC_BAD_REQUEST,
                 "Errors with one or more sync committee signatures",
                 getBadRequestResponseTypes())
+            .withChainDataResponses()
             .build());
     this.provider = provider;
   }

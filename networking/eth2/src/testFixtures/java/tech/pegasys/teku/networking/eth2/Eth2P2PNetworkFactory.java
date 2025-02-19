@@ -209,7 +209,7 @@ public class Eth2P2PNetworkFactory {
 
         if (rpcEncoding == null) {
           rpcEncoding =
-              RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxChunkSize());
+              RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
         }
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
@@ -225,10 +225,12 @@ public class Eth2P2PNetworkFactory {
                 eth2RpcOutstandingPingThreshold,
                 eth2StatusUpdateInterval,
                 timeProvider,
-                500,
-                50,
+                P2PConfig.DEFAULT_PEER_BLOCKS_RATE_LIMIT,
+                P2PConfig.DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT,
+                P2PConfig.DEFAULT_PEER_REQUEST_LIMIT,
                 spec,
-                KZG.NOOP);
+                KZG.NOOP,
+                (__) -> Optional.empty());
 
         List<RpcMethod<?, ?, ?>> rpcMethods =
             eth2PeerManager.getBeaconChainMethods().all().stream()

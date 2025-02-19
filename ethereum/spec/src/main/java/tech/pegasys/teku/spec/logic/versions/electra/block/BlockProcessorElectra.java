@@ -14,13 +14,16 @@
 package tech.pegasys.teku.spec.logic.versions.electra.block;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfigElectra.FULL_EXIT_REQUEST_AMOUNT;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -31,28 +34,34 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
+import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingBalanceDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
+import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -64,11 +73,11 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.BlockProcessorDeneb;
-import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
@@ -79,21 +88,24 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   private final SpecConfigElectra specConfigElectra;
   private final PredicatesElectra predicatesElectra;
   private final BeaconStateMutatorsElectra beaconStateMutatorsElectra;
+  private final BeaconStateAccessorsElectra beaconStateAccessorsElectra;
   private final SchemaDefinitionsElectra schemaDefinitionsElectra;
+  private final ExecutionRequestsDataCodec executionRequestsDataCodec;
 
   public BlockProcessorElectra(
       final SpecConfigElectra specConfig,
       final Predicates predicates,
-      final MiscHelpersDeneb miscHelpers,
+      final MiscHelpersElectra miscHelpers,
       final SyncCommitteeUtil syncCommitteeUtil,
-      final BeaconStateAccessorsAltair beaconStateAccessors,
+      final BeaconStateAccessorsElectra beaconStateAccessors,
       final BeaconStateMutatorsElectra beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
       final OperationValidator operationValidator,
-      final SchemaDefinitionsElectra schemaDefinitions) {
+      final SchemaDefinitionsElectra schemaDefinitions,
+      final ExecutionRequestsDataCodec executionRequestsDataCodec) {
     super(
         specConfig,
         predicates,
@@ -110,33 +122,54 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     this.specConfigElectra = specConfig;
     this.predicatesElectra = PredicatesElectra.required(predicates);
     this.beaconStateMutatorsElectra = beaconStateMutators;
+    this.beaconStateAccessorsElectra = beaconStateAccessors;
     this.schemaDefinitionsElectra = schemaDefinitions;
+    this.executionRequestsDataCodec = executionRequestsDataCodec;
+  }
+
+  @Override
+  public NewPayloadRequest computeNewPayloadRequest(
+      final BeaconState state, final BeaconBlockBody beaconBlockBody)
+      throws BlockProcessingException {
+    final ExecutionPayload executionPayload = extractExecutionPayload(beaconBlockBody);
+    final SszList<SszKZGCommitment> blobKzgCommitments = extractBlobKzgCommitments(beaconBlockBody);
+    final List<VersionedHash> versionedHashes =
+        blobKzgCommitments.stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .map(miscHelpers::kzgCommitmentToVersionedHash)
+            .toList();
+    final Bytes32 parentBeaconBlockRoot = state.getLatestBlockHeader().getParentRoot();
+    final ExecutionRequests executionRequests =
+        beaconBlockBody
+            .getOptionalExecutionRequests()
+            .orElseThrow(() -> new BlockProcessingException("Execution requests expected"));
+    return new NewPayloadRequest(
+        executionPayload,
+        versionedHashes,
+        parentBeaconBlockRoot,
+        executionRequestsDataCodec.encode(executionRequests));
   }
 
   @Override
   protected void processOperationsNoValidation(
       final MutableBeaconState state,
       final BeaconBlockBody body,
-      final IndexedAttestationCache indexedAttestationCache)
+      final IndexedAttestationCache indexedAttestationCache,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
-    super.processOperationsNoValidation(state, body, indexedAttestationCache);
+    super.processOperationsNoValidation(
+        state, body, indexedAttestationCache, validatorExitContextSupplier);
 
     safelyProcess(
         () -> {
-          processDepositRequests(
-              state,
-              body.getOptionalExecutionPayload()
-                  .flatMap(ExecutionPayload::toVersionElectra)
-                  .map(ExecutionPayloadElectra::getDepositRequests)
-                  .orElseThrow(
-                      () ->
-                          new BlockProcessingException(
-                              "Deposit requests were not found during block processing.")));
-          this.processConsolidationRequests(
-              state,
-              BeaconBlockBodyElectra.required(body)
-                  .getExecutionPayload()
-                  .getConsolidationRequests());
+          final ExecutionRequests executionRequests =
+              body.getOptionalExecutionRequests()
+                  .orElseThrow(() -> new BlockProcessingException("Execution requests expected"));
+
+          processDepositRequests(state, executionRequests.getDeposits());
+          processWithdrawalRequests(
+              state, executionRequests.getWithdrawals(), validatorExitContextSupplier);
+          processConsolidationRequests(state, executionRequests.getConsolidations());
         });
   }
 
@@ -165,16 +198,6 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     }
   }
 
-  @Override
-  protected void processWithdrawalRequests(
-      final MutableBeaconState state,
-      final Optional<ExecutionPayload> executionPayload,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
-      throws BlockProcessingException {
-    this.processWithdrawalRequests(
-        state, getWithdrawalRequestsFromBlock(executionPayload), validatorExitContextSupplier);
-  }
-
   // process_withdrawals
   @Override
   public void processWithdrawals(
@@ -189,11 +212,41 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         specConfigElectra);
   }
 
+  /*
+   Implements process_deposit_request from consensus-specs (EIP-6110)
+  */
+  @Override
+  public void processDepositRequests(
+      final MutableBeaconState state, final List<DepositRequest> depositRequests) {
+    final MutableBeaconStateElectra electraState = MutableBeaconStateElectra.required(state);
+    final SszMutableList<PendingDeposit> pendingDeposits =
+        MutableBeaconStateElectra.required(state).getPendingDeposits();
+    for (DepositRequest depositRequest : depositRequests) {
+      // process_deposit_request
+      if (electraState
+          .getDepositRequestsStartIndex()
+          .equals(SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX)) {
+        electraState.setDepositRequestsStartIndex(depositRequest.getIndex());
+      }
+
+      final PendingDeposit deposit =
+          schemaDefinitionsElectra
+              .getPendingDepositSchema()
+              .create(
+                  new SszPublicKey(depositRequest.getPubkey()),
+                  SszBytes32.of(depositRequest.getWithdrawalCredentials()),
+                  SszUInt64.of(depositRequest.getAmount()),
+                  new SszSignature(depositRequest.getSignature()),
+                  SszUInt64.of(state.getSlot()));
+      pendingDeposits.append(deposit);
+    }
+  }
+
   /** Implements process_withdrawal_request from consensus-specs (EIP-7002 & EIP-7251). */
   @Override
   public void processWithdrawalRequests(
       final MutableBeaconState state,
-      final SszList<WithdrawalRequest> withdrawalRequests,
+      final List<WithdrawalRequest> withdrawalRequests,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
     final UInt64 slot = state.getSlot();
     final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(slot);
@@ -213,18 +266,18 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
               withdrawalRequest.getAmount().equals(FULL_EXIT_REQUEST_AMOUNT);
           final boolean partialWithdrawalsQueueFull =
               state.toVersionElectra().orElseThrow().getPendingPartialWithdrawals().size()
-                  >= specConfigElectra.getPendingPartialWithdrawalsLimit();
+                  == specConfigElectra.getPendingPartialWithdrawalsLimit();
           if (partialWithdrawalsQueueFull && !isFullExitRequest) {
             LOG.debug("process_withdrawal_request: partial withdrawal queue is full");
             return;
           }
 
           final Optional<Integer> maybeValidatorIndex =
-              validatorsUtil.getValidatorIndex(state, withdrawalRequest.getValidatorPublicKey());
+              validatorsUtil.getValidatorIndex(state, withdrawalRequest.getValidatorPubkey());
           if (maybeValidatorIndex.isEmpty()) {
             LOG.debug(
                 "process_withdrawal_request: no matching validator for public key {}",
-                withdrawalRequest.getValidatorPublicKey());
+                withdrawalRequest.getValidatorPubkey().toAbbreviatedString());
             return;
           }
 
@@ -294,8 +347,8 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
 
               beaconStateMutators.initiateValidatorExit(
                   state, validatorIndex, validatorExitContextSupplier);
-              return;
             }
+            return;
           }
 
           final UInt64 validatorBalance = state.getBalances().get(validatorIndex).get();
@@ -339,54 +392,17 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         });
   }
 
-  private SszList<WithdrawalRequest> getWithdrawalRequestsFromBlock(
-      final Optional<ExecutionPayload> maybeExecutionPayload) throws BlockProcessingException {
-    return maybeExecutionPayload
-        .flatMap(ExecutionPayload::toVersionElectra)
-        .map(ExecutionPayloadElectra::getWithdrawalRequests)
-        .orElseThrow(
-            () ->
-                new BlockProcessingException(
-                    "Withdrawal requests were not found during block processing."));
-  }
-
-  /*
-   Implements process_deposit_request from consensus-specs (EIP-6110)
-  */
-  @Override
-  public void processDepositRequests(
-      final MutableBeaconState state, final SszList<DepositRequest> depositRequests)
-      throws BlockProcessingException {
-    final MutableBeaconStateElectra electraState = MutableBeaconStateElectra.required(state);
-    for (DepositRequest depositRequest : depositRequests) {
-      // process_deposit_request
-      if (electraState
-          .getDepositRequestsStartIndex()
-          .equals(SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX)) {
-        electraState.setDepositRequestsStartIndex(depositRequest.getIndex());
-      }
-      applyDeposit(
-          state,
-          depositRequest.getPubkey(),
-          depositRequest.getWithdrawalCredentials(),
-          depositRequest.getAmount(),
-          depositRequest.getSignature(),
-          Optional.empty(),
-          false);
-    }
-  }
-
   /**
    * Implements process_consolidation_request from consensus-spec (EIP-7251)
    *
-   * @see <a
-   *     href="https://github.com/ethereum/consensus-specs/blob/dev/specs/electra/beacon-chain.md#new-process_consolidation_request"/>
+   * @see <a href="https://github.com/ethereum/consensus-specs/blob/dev/specs/electra/beacon-chain
+   *     .md#new-process_consolidation_request"/>
    */
   @Override
   public void processConsolidationRequests(
-      final MutableBeaconState state, final SszList<ConsolidationRequest> consolidationRequests) {
+      final MutableBeaconState state, final List<ConsolidationRequest> consolidationRequests) {
     LOG.debug(
-        "process_consolidation_request: {} consolidation request to process from block at "
+        "process_consolidation_request: {} consolidation requests to process from block at "
             + "slot {}",
         consolidationRequests.size(),
         state.getSlot());
@@ -401,6 +417,27 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     final UInt64 slot = state.getSlot();
     final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(slot);
 
+    if (isValidSwitchToCompoundingRequest(state, consolidationRequest)) {
+      LOG.debug(
+          "process_consolidation_request: switching validator {} to compounding address",
+          consolidationRequest.getSourcePubkey().toAbbreviatedString());
+      validatorsUtil
+          .getValidatorIndex(state, consolidationRequest.getSourcePubkey())
+          .ifPresent(
+              sourceValidatorIndex ->
+                  beaconStateMutatorsElectra.switchToCompoundingValidator(
+                      state, sourceValidatorIndex));
+      return;
+    }
+
+    // Verify that source != target, so a consolidation cannot be used as an exit
+    if (consolidationRequest.getSourcePubkey().equals(consolidationRequest.getTargetPubkey())) {
+      LOG.debug(
+          "process_consolidation_request: source_pubkey and target_pubkey must be different (pubkey = {})",
+          consolidationRequest.getSourcePubkey().toAbbreviatedString());
+      return;
+    }
+
     // If the pending consolidations queue is full, consolidation requests are ignored
     if (state.getPendingConsolidations().size()
         == specConfigElectra.getPendingConsolidationsLimit()) {
@@ -410,7 +447,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
 
     // If there is too little available consolidation churn limit, consolidation requests are
     // ignored
-    if (BeaconStateAccessorsElectra.required(beaconStateAccessors)
+    if (beaconStateAccessorsElectra
         .getConsolidationChurnLimit(state)
         .isLessThanOrEqualTo(specConfigElectra.getMinActivationBalance())) {
       LOG.debug("process_consolidation_request: not enough consolidation churn limit available");
@@ -423,7 +460,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     if (maybeSourceValidatorIndex.isEmpty()) {
       LOG.debug(
           "process_consolidation_request: source_pubkey {} not found",
-          consolidationRequest.getSourcePubkey());
+          consolidationRequest.getSourcePubkey().toAbbreviatedString());
       return;
     }
 
@@ -433,18 +470,14 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     if (maybeTargetValidatorIndex.isEmpty()) {
       LOG.debug(
           "process_consolidation_request: target_pubkey {} not found",
-          consolidationRequest.getTargetPubkey());
+          consolidationRequest.getTargetPubkey().toAbbreviatedString());
       return;
     }
 
-    // Verify that source != target, so a consolidation cannot be used as an exit.
-    if (maybeSourceValidatorIndex.get().equals(maybeTargetValidatorIndex.get())) {
-      LOG.debug("process_consolidation_request: source_pubkey and target_pubkey must be different");
-      return;
-    }
-
-    final Validator sourceValidator = state.getValidators().get(maybeSourceValidatorIndex.get());
-    final Validator targetValidator = state.getValidators().get(maybeTargetValidatorIndex.get());
+    final int sourceValidatorIndex = maybeSourceValidatorIndex.get();
+    final Validator sourceValidator = state.getValidators().get(sourceValidatorIndex);
+    final int targetValidatorIndex = maybeTargetValidatorIndex.get();
+    final Validator targetValidator = state.getValidators().get(targetValidatorIndex);
 
     // Verify source withdrawal credentials
     final boolean sourceHasExecutionWithdrawalCredentials =
@@ -460,29 +493,47 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       return;
     }
 
-    // Verify that target has execution withdrawal credentials
-    if (!predicatesElectra.hasExecutionWithdrawalCredential(targetValidator)) {
+    // Verify that target has compounding withdrawal credentials
+    if (!predicatesElectra.hasCompoundingWithdrawalCredential(targetValidator)) {
       LOG.debug("process_consolidation_request: invalid target credentials");
       return;
     }
 
     // Verify the source and the target are active
     if (!predicatesElectra.isActiveValidator(sourceValidator, currentEpoch)) {
-      LOG.debug("process_consolidation_request: source validator is inactive");
+      LOG.debug(
+          "process_consolidation_request: source validator {} is inactive", sourceValidatorIndex);
       return;
     }
     if (!predicatesElectra.isActiveValidator(targetValidator, currentEpoch)) {
-      LOG.debug("process_consolidation_request: target validator is inactive");
+      LOG.debug(
+          "process_consolidation_request: target validator {} is inactive", targetValidatorIndex);
       return;
     }
 
     // Verify exits for source and target have not been initiated
     if (!sourceValidator.getExitEpoch().equals(FAR_FUTURE_EPOCH)) {
-      LOG.debug("process_consolidation_request: source validator is exiting");
+      LOG.debug(
+          "process_consolidation_request: source validator {} is exiting", sourceValidatorIndex);
       return;
     }
     if (!targetValidator.getExitEpoch().equals(FAR_FUTURE_EPOCH)) {
-      LOG.debug("process_consolidation_request: target validator is exiting");
+      LOG.debug(
+          "process_consolidation_request: target validator {} is exiting", targetValidatorIndex);
+      return;
+    }
+
+    // Verify the source has been active long enough
+    if (currentEpoch.isLessThan(
+        sourceValidator.getActivationEpoch().plus(specConfig.getShardCommitteePeriod()))) {
+      LOG.debug("process_consolidation_request: source has not been active long enough");
+      return;
+    }
+    // Verify the source has no pending withdrawals in the queue
+    if (beaconStateAccessorsElectra
+        .getPendingBalanceToWithdraw(state, sourceValidatorIndex)
+        .isGreaterThan(ZERO)) {
+      LOG.debug("process_consolidation_request: source has pending withdrawals in the queue");
       return;
     }
 
@@ -496,83 +547,147 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
     state
         .getValidators()
         .update(
-            maybeSourceValidatorIndex.get(),
+            sourceValidatorIndex,
             v -> v.withExitEpoch(exitEpoch).withWithdrawableEpoch(withdrawableEpoch));
     LOG.debug(
         "process_consolidation_request: updated validator {} with exit_epoch = {}, withdrawable_epoch = {}",
-        maybeSourceValidatorIndex.get(),
+        sourceValidatorIndex,
         exitEpoch,
         withdrawableEpoch);
 
     final PendingConsolidation pendingConsolidation =
         new PendingConsolidation(
             schemaDefinitionsElectra.getPendingConsolidationSchema(),
-            SszUInt64.of(UInt64.valueOf(maybeSourceValidatorIndex.get())),
-            SszUInt64.of(UInt64.valueOf(maybeTargetValidatorIndex.get())));
+            SszUInt64.of(UInt64.valueOf(sourceValidatorIndex)),
+            SszUInt64.of(UInt64.valueOf(targetValidatorIndex)));
     state.getPendingConsolidations().append(pendingConsolidation);
 
     LOG.debug("process_consolidation_request: created {}", pendingConsolidation);
   }
 
+  /**
+   * Implements function is_valid_switch_to_compounding_request
+   *
+   * @see <a
+   *     href="https://github.com/ethereum/consensus-specs/blob/dev/specs/electra/beacon-chain.md#new-is_valid_switch_to_compounding_request"/>
+   */
   @Override
-  protected void applyDepositToValidatorIndex(
+  public boolean isValidSwitchToCompoundingRequest(
+      final BeaconState state, final ConsolidationRequest consolidationRequest) {
+
+    // Switch to compounding requires source and target be equal
+    if (!consolidationRequest.getSourcePubkey().equals(consolidationRequest.getTargetPubkey())) {
+      return false;
+    }
+
+    // Verify source_pubkey exists
+    final Optional<Integer> maybeSourceValidatorIndex =
+        validatorsUtil.getValidatorIndex(state, consolidationRequest.getSourcePubkey());
+    if (maybeSourceValidatorIndex.isEmpty()) {
+      return false;
+    }
+
+    final int sourceValidatorIndex = maybeSourceValidatorIndex.get();
+    final Validator sourceValidator = state.getValidators().get(sourceValidatorIndex);
+
+    // Verify request has been authorized
+    final Eth1Address sourceValidatorExecutionAddress =
+        Predicates.getExecutionAddressUnchecked(sourceValidator.getWithdrawalCredentials());
+    if (!sourceValidatorExecutionAddress.equals(
+        Eth1Address.fromBytes(consolidationRequest.getSourceAddress().getWrappedBytes()))) {
+      return false;
+    }
+
+    // Verify source withdrawal credentials
+    if (!predicatesElectra.hasEth1WithdrawalCredential(sourceValidator)) {
+      return false;
+    }
+
+    // Verify the source is active
+    final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(state.getSlot());
+    if (!predicatesElectra.isActiveValidator(sourceValidator, currentEpoch)) {
+      return false;
+    }
+
+    // Verify exit for source has not been initiated
+    return sourceValidator.getExitEpoch().equals(FAR_FUTURE_EPOCH);
+  }
+
+  @Override
+  public void applyDeposit(
       final MutableBeaconState state,
-      final Bytes32 withdrawalCredentials,
-      final boolean signatureAlreadyVerified,
-      final int validatorIndex,
-      final UInt64 amount,
       final BLSPublicKey pubkey,
-      final BLSSignature signature) {
-    final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
-    final SszMutableList<PendingBalanceDeposit> pendingBalanceDeposits =
-        MutableBeaconStateElectra.required(state).getPendingBalanceDeposits();
-    pendingBalanceDeposits.append(
-        schemaDefinitionsElectra
-            .getPendingBalanceDepositSchema()
-            .create(SszUInt64.of(UInt64.fromLongBits(validatorIndex)), SszUInt64.of(amount)));
-    stateElectra.setPendingBalanceDeposits(pendingBalanceDeposits);
-    if (predicatesElectra.isCompoundingWithdrawalCredential(withdrawalCredentials)
-        && PredicatesElectra.isEth1WithdrawalCredential(
-            state.getValidators().get(validatorIndex).getWithdrawalCredentials())
-        && (signatureAlreadyVerified
-            || depositSignatureIsValid(pubkey, withdrawalCredentials, amount, signature))) {
-      beaconStateMutatorsElectra.switchToCompoundingValidator(stateElectra, validatorIndex);
+      final Bytes32 withdrawalCredentials,
+      final UInt64 amount,
+      final BLSSignature signature,
+      final Optional<Object2IntMap<BLSPublicKey>> maybePubkeyToIndexMap,
+      final boolean signatureAlreadyVerified) {
+
+    // Find the validator index associated with this deposit, if it exists
+    final Optional<Integer> existingIndex =
+        maybePubkeyToIndexMap
+            .flatMap(
+                pubkeyToIndexMap -> {
+                  if (pubkeyToIndexMap.containsKey(pubkey)) {
+                    return Optional.of(pubkeyToIndexMap.getInt(pubkey));
+                  } else {
+                    pubkeyToIndexMap.put(pubkey, state.getValidators().size());
+                    return Optional.empty();
+                  }
+                })
+            .or(() -> validatorsUtil.getValidatorIndex(state, pubkey));
+
+    if (existingIndex.isEmpty()) {
+      // This is a new validator
+      // Verify the deposit signature (proof of possession) which is not checked by the deposit
+      // contract
+      if (signatureAlreadyVerified
+          || miscHelpers.isValidDepositSignature(
+              pubkey, withdrawalCredentials, amount, signature)) {
+        beaconStateMutators.addValidatorToRegistry(state, pubkey, withdrawalCredentials, ZERO);
+        final PendingDeposit deposit =
+            schemaDefinitionsElectra
+                .getPendingDepositSchema()
+                .create(
+                    new SszPublicKey(pubkey),
+                    SszBytes32.of(withdrawalCredentials),
+                    SszUInt64.of(amount),
+                    new SszSignature(signature),
+                    SszUInt64.of(SpecConfig.GENESIS_SLOT));
+        MutableBeaconStateElectra.required(state).getPendingDeposits().append(deposit);
+      } else {
+        handleInvalidDeposit(pubkey, maybePubkeyToIndexMap);
+      }
+    } else {
+      final PendingDeposit deposit =
+          schemaDefinitionsElectra
+              .getPendingDepositSchema()
+              .create(
+                  new SszPublicKey(pubkey),
+                  SszBytes32.of(withdrawalCredentials),
+                  SszUInt64.of(amount),
+                  new SszSignature(signature),
+                  SszUInt64.of(SpecConfig.GENESIS_SLOT));
+      MutableBeaconStateElectra.required(state).getPendingDeposits().append(deposit);
     }
   }
 
   @Override
-  protected void addValidatorToRegistry(
+  public void processDepositWithoutCheckingMerkleProof(
       final MutableBeaconState state,
-      final BLSPublicKey pubkey,
-      final Bytes32 withdrawalCredentials,
-      final UInt64 amount) {
-    final Validator validator = getValidatorFromDeposit(pubkey, withdrawalCredentials);
-    LOG.debug("Adding new validator with index {} to state", state.getValidators().size());
-    state.getValidators().append(validator);
-    int validatorIndex = -1;
-    for (int i = state.getValidators().size() - 1; i >= 0; i--) {
-      if (state.getValidators().get(i).getPublicKey().equals(pubkey)) {
-        validatorIndex = i;
-        break;
-      }
-    }
-    if (validatorIndex < 0) {
-      throw new IllegalStateException(
-          "Could not locate validator " + pubkey + " after adding to state.");
-    }
-    final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
+      final Deposit deposit,
+      final Optional<Object2IntMap<BLSPublicKey>> maybePubkeyToIndexMap,
+      final boolean signatureAlreadyVerified) {
+    state.setEth1DepositIndex(state.getEth1DepositIndex().plus(UInt64.ONE));
 
-    stateElectra.getBalances().appendElement(UInt64.ZERO);
-    stateElectra.getPreviousEpochParticipation().append(SszByte.ZERO);
-    stateElectra.getCurrentEpochParticipation().append(SszByte.ZERO);
-    stateElectra.getInactivityScores().append(SszUInt64.ZERO);
-    final SszMutableList<PendingBalanceDeposit> pendingBalanceDeposits =
-        MutableBeaconStateElectra.required(state).getPendingBalanceDeposits();
-    pendingBalanceDeposits.append(
-        schemaDefinitionsElectra
-            .getPendingBalanceDepositSchema()
-            .create(SszUInt64.of(UInt64.fromLongBits(validatorIndex)), SszUInt64.of(amount)));
-    stateElectra.setPendingBalanceDeposits(pendingBalanceDeposits);
+    applyDeposit(
+        state,
+        deposit.getData().getPubkey(),
+        deposit.getData().getWithdrawalCredentials(),
+        deposit.getData().getAmount(),
+        deposit.getData().getSignature(),
+        maybePubkeyToIndexMap,
+        signatureAlreadyVerified);
   }
 
   @Override
@@ -587,7 +702,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
 
     final List<UInt64> committeeIndices = attestation.getCommitteeIndicesRequired();
     final UInt64 committeeCountPerSlot =
-        beaconStateAccessors.getCommitteeCountPerSlot(
+        beaconStateAccessorsElectra.getCommitteeCountPerSlot(
             state, attestation.getData().getTarget().getEpoch());
     final SszBitlist aggregationBits = attestation.getAggregationBits();
     final Optional<OperationInvalidReason> committeeCheckResult =
@@ -608,32 +723,27 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final BeaconState state,
       final UInt64 slot,
       final SszBitlist aggregationBits) {
-    int participantsCount = 0;
+    int committeeOffset = 0;
     for (final UInt64 committeeIndex : committeeIndices) {
       if (committeeIndex.isGreaterThanOrEqualTo(committeeCountPerSlot)) {
         return Optional.of(AttestationInvalidReason.COMMITTEE_INDEX_TOO_HIGH);
       }
       final IntList committee =
-          beaconStateAccessors.getBeaconCommittee(state, slot, committeeIndex);
-      participantsCount += committee.size();
+          beaconStateAccessorsElectra.getBeaconCommittee(state, slot, committeeIndex);
+      final int currentCommitteeOffset = committeeOffset;
+      final boolean committeeHasAtLeastOneAttester =
+          IntStream.range(0, committee.size())
+              .anyMatch(
+                  committeeParticipantIndex ->
+                      aggregationBits.isSet(currentCommitteeOffset + committeeParticipantIndex));
+      if (!committeeHasAtLeastOneAttester) {
+        return Optional.of(AttestationInvalidReason.PARTICIPANTS_COUNT_MISMATCH);
+      }
+      committeeOffset += committee.size();
     }
-    if (participantsCount != aggregationBits.size()) {
+    if (committeeOffset != aggregationBits.size()) {
       return Optional.of(AttestationInvalidReason.PARTICIPANTS_COUNT_MISMATCH);
     }
     return Optional.empty();
-  }
-
-  protected Validator getValidatorFromDeposit(
-      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials) {
-    final UInt64 effectiveBalance = UInt64.ZERO;
-    return new Validator(
-        pubkey,
-        withdrawalCredentials,
-        effectiveBalance,
-        false,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH,
-        FAR_FUTURE_EPOCH);
   }
 }

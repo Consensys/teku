@@ -79,7 +79,8 @@ public class LibP2PGossipNetworkBuilder {
     validate();
     final GossipTopicHandlers topicHandlers = new GossipTopicHandlers();
     final Gossip gossip =
-        createGossip(gossipConfig, logWireGossip, gossipTopicFilter, topicHandlers);
+        createGossip(
+            gossipConfig, networkingSpecConfig, logWireGossip, gossipTopicFilter, topicHandlers);
     final PubsubPublisherApi publisher = gossip.createPublisher(null, NULL_SEQNO_GENERATOR);
 
     return new LibP2PGossipNetwork(metricsSystem, gossip, publisher, topicHandlers);
@@ -100,10 +101,11 @@ public class LibP2PGossipNetworkBuilder {
 
   protected GossipRouter createGossipRouter(
       final GossipConfig gossipConfig,
+      final NetworkingSpecConfig networkingSpecConfig,
       final GossipTopicFilter gossipTopicFilter,
       final GossipTopicHandlers topicHandlers) {
-
-    final GossipParams gossipParams = LibP2PParamsFactory.createGossipParams(gossipConfig);
+    final GossipParams gossipParams =
+        LibP2PParamsFactory.createGossipParams(gossipConfig, networkingSpecConfig);
     final GossipScoreParams scoreParams =
         LibP2PParamsFactory.createGossipScoreParams(gossipConfig.getScoringConfig());
 
@@ -122,7 +124,7 @@ public class LibP2PGossipNetworkBuilder {
 
     builder.setParams(gossipParams);
     builder.setScoreParams(scoreParams);
-    builder.setProtocol(PubsubProtocol.Gossip_V_1_1);
+    builder.setProtocol(PubsubProtocol.Gossip_V_1_2);
     builder.setSubscriptionTopicSubscriptionFilter(subscriptionFilter);
     builder.setSeenCache(seenCache);
     builder.setMessageFactory(
@@ -145,7 +147,7 @@ public class LibP2PGossipNetworkBuilder {
                   .map(handler -> handler.prepareMessage(payload, arrivalTimestamp))
                   .orElse(
                       defaultMessageFactory.create(
-                          topic, payload, networkingSpecConfig, arrivalTimestamp));
+                          topic, payload, this.networkingSpecConfig, arrivalTimestamp));
 
           return new PreparedPubsubMessage(msg, preparedMessage);
         });
@@ -155,11 +157,13 @@ public class LibP2PGossipNetworkBuilder {
 
   protected Gossip createGossip(
       final GossipConfig gossipConfig,
+      final NetworkingSpecConfig networkingSpecConfig,
       final boolean gossipLogsEnabled,
       final GossipTopicFilter gossipTopicFilter,
       final GossipTopicHandlers topicHandlers) {
 
-    final GossipRouter router = createGossipRouter(gossipConfig, gossipTopicFilter, topicHandlers);
+    final GossipRouter router =
+        createGossipRouter(gossipConfig, networkingSpecConfig, gossipTopicFilter, topicHandlers);
 
     if (gossipLogsEnabled) {
       if (debugGossipHandler != null) {

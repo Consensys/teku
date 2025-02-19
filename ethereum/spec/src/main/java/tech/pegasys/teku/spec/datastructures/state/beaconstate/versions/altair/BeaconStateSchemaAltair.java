@@ -14,9 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0.CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0.PREVIOUS_EPOCH_PARTICIPATION_FIELD_INDEX;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
+import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
@@ -30,15 +33,14 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSc
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 
 public class BeaconStateSchemaAltair
     extends AbstractBeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> {
 
-  private static final int PREVIOUS_EPOCH_PARTICIPATION_FIELD_INDEX = 15;
-  private static final int CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX = 16;
-  private static final int INACTIVITY_SCORES_FIELD_INDEX = 21;
-  private static final int CURRENT_SYNC_COMMITTEE_FIELD_INDEX = 22;
-  private static final int NEXT_SYNC_COMMITTEE_FIELD_INDEX = 23;
+  public static final int INACTIVITY_SCORES_FIELD_INDEX = 21;
+  public static final int CURRENT_SYNC_COMMITTEE_FIELD_INDEX = 22;
+  public static final int NEXT_SYNC_COMMITTEE_FIELD_INDEX = 23;
 
   @VisibleForTesting
   BeaconStateSchemaAltair(final SpecConfig specConfig) {
@@ -50,42 +52,45 @@ public class BeaconStateSchemaAltair
   }
 
   public static List<SszField> getUniqueFields(final SpecConfig specConfig) {
-    final SszField previousEpochAttestationsField =
-        new SszField(
-            PREVIOUS_EPOCH_PARTICIPATION_FIELD_INDEX,
-            BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION,
-            () ->
-                SszListSchema.create(
-                    SszPrimitiveSchemas.UINT8_SCHEMA, specConfig.getValidatorRegistryLimit()));
-    final SszField currentEpochAttestationsField =
-        new SszField(
-            CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX,
-            BeaconStateFields.CURRENT_EPOCH_PARTICIPATION,
-            () ->
-                SszListSchema.create(
-                    SszPrimitiveSchemas.UINT8_SCHEMA, specConfig.getValidatorRegistryLimit()));
+    final List<SszField> updatedFields =
+        List.of(
+            new SszField(
+                PREVIOUS_EPOCH_PARTICIPATION_FIELD_INDEX,
+                BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION,
+                () ->
+                    SszListSchema.create(
+                        SszPrimitiveSchemas.UINT8_SCHEMA, specConfig.getValidatorRegistryLimit())),
+            new SszField(
+                CURRENT_EPOCH_PARTICIPATION_FIELD_INDEX,
+                BeaconStateFields.CURRENT_EPOCH_PARTICIPATION,
+                () ->
+                    SszListSchema.create(
+                        SszPrimitiveSchemas.UINT8_SCHEMA, specConfig.getValidatorRegistryLimit())));
 
-    final SszField inactivityScores =
-        new SszField(
-            INACTIVITY_SCORES_FIELD_INDEX,
-            BeaconStateFields.INACTIVITY_SCORES,
-            SszUInt64ListSchema.create(specConfig.getValidatorRegistryLimit()));
-    final SszField currentSyncCommitteeField =
-        new SszField(
-            CURRENT_SYNC_COMMITTEE_FIELD_INDEX,
-            BeaconStateFields.CURRENT_SYNC_COMMITTEE,
-            () -> new SyncCommitteeSchema(SpecConfigAltair.required(specConfig)));
-    final SszField nextSyncCommitteeField =
-        new SszField(
-            NEXT_SYNC_COMMITTEE_FIELD_INDEX,
-            BeaconStateFields.NEXT_SYNC_COMMITTEE,
-            () -> new SyncCommitteeSchema(SpecConfigAltair.required(specConfig)));
-    return List.of(
-        previousEpochAttestationsField,
-        currentEpochAttestationsField,
-        inactivityScores,
-        currentSyncCommitteeField,
-        nextSyncCommitteeField);
+    final List<SszField> newFields =
+        List.of(
+            new SszField(
+                INACTIVITY_SCORES_FIELD_INDEX,
+                BeaconStateFields.INACTIVITY_SCORES,
+                SszUInt64ListSchema.create(specConfig.getValidatorRegistryLimit())),
+            new SszField(
+                CURRENT_SYNC_COMMITTEE_FIELD_INDEX,
+                BeaconStateFields.CURRENT_SYNC_COMMITTEE,
+                () -> new SyncCommitteeSchema(SpecConfigAltair.required(specConfig))),
+            new SszField(
+                NEXT_SYNC_COMMITTEE_FIELD_INDEX,
+                BeaconStateFields.NEXT_SYNC_COMMITTEE,
+                () -> new SyncCommitteeSchema(SpecConfigAltair.required(specConfig))));
+
+    return Stream.concat(
+            BeaconStateSchemaPhase0.getUniqueFields(specConfig).stream(), newFields.stream())
+        .map(
+            field ->
+                updatedFields.stream()
+                    .filter(updatedField -> updatedField.getIndex() == field.getIndex())
+                    .findFirst()
+                    .orElse(field))
+        .toList();
   }
 
   public static BeaconStateSchemaAltair required(final BeaconStateSchema<?, ?> schema) {

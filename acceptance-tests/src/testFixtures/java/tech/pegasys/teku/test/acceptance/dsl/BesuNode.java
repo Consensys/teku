@@ -130,7 +130,14 @@ public class BesuNode extends Node {
    Defined on https://eips.ethereum.org/EIPS/eip-7002 (WITHDRAWAL_REQUEST_PREDEPLOY_ADDRESS)
   */
   public Eth1Address getWithdrawalRequestContractAddress() {
-    return Eth1Address.fromHexString("0x00A3ca265EBcb825B45F985A16CEFB49958cE017");
+    return Eth1Address.fromHexString("0x0c15F14308530b7CDB8460094BbB9cC28b9AaaAA");
+  }
+
+  /*
+   Defined on https://eips.ethereum.org/EIPS/eip-7251 (CONSOLIDATION_REQUEST_PREDEPLOY_ADDRESS)
+  */
+  public Eth1Address getConsolidationRequestContractAddress() {
+    return Eth1Address.fromHexString("0x00b42dbF2194e931E80326D950320f7d9Dbeac02");
   }
 
   public String getInternalJsonRpcUrl() {
@@ -143,6 +150,10 @@ public class BesuNode extends Node {
 
   public String getInternalEngineJsonRpcUrl() {
     return "http://" + nodeAlias + ":" + ENGINE_JSON_RPC_PORT;
+  }
+
+  public String getInternalEngineWebsocketsRpcUrl() {
+    return "ws://" + nodeAlias + ":" + ENGINE_JSON_RPC_PORT;
   }
 
   private String getInternalP2pUrl(final String nodeId) {
@@ -208,10 +219,42 @@ public class BesuNode extends Node {
     final Credentials eth1Credentials = Credentials.create(eth1PrivateKey);
     try (final ExecutionRequestsService executionRequestsService =
         new ExecutionRequestsService(
-            getExternalJsonRpcUrl(), eth1Credentials, getWithdrawalRequestContractAddress())) {
+            getExternalJsonRpcUrl(),
+            eth1Credentials,
+            getWithdrawalRequestContractAddress(),
+            getConsolidationRequestContractAddress())) {
 
       final SafeFuture<TransactionReceipt> future =
           executionRequestsService.createWithdrawalRequest(publicKey, amountInGwei);
+      Waiter.waitFor(future, Duration.ofMinutes(1));
+    }
+  }
+
+  /**
+   * Sends a transaction to the consolidation request contract in the execution layer to create a
+   * consolidation request.
+   *
+   * @param eth1PrivateKey the private key of the eth1 account that will sign the transaction to the
+   *     consolidation contract (has to match the source validator withdrawal credentials)
+   * @param sourceValidatorPublicKey source validator public key
+   * @param targetValidatorPublicKey target validator public key
+   */
+  public void createConsolidationRequest(
+      final String eth1PrivateKey,
+      final BLSPublicKey sourceValidatorPublicKey,
+      final BLSPublicKey targetValidatorPublicKey)
+      throws Exception {
+    final Credentials eth1Credentials = Credentials.create(eth1PrivateKey);
+    try (final ExecutionRequestsService executionRequestsService =
+        new ExecutionRequestsService(
+            getExternalJsonRpcUrl(),
+            eth1Credentials,
+            getWithdrawalRequestContractAddress(),
+            getConsolidationRequestContractAddress())) {
+
+      final SafeFuture<TransactionReceipt> future =
+          executionRequestsService.createConsolidationRequest(
+              sourceValidatorPublicKey, targetValidatorPublicKey);
       Waiter.waitFor(future, Duration.ofMinutes(1));
     }
   }

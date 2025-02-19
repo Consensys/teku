@@ -38,14 +38,28 @@
         "content" : { }
       },
       "400" : {
-        "description": "Invalid request syntax.",
+        "description" : "Invalid request syntax.",
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref": "#/components/schemas/HttpErrorResponse"
+              "$ref" : "#/components/schemas/HttpErrorResponse"
             }
           }
         }
+      },
+      "503" : {
+        "description" : "Service unavailable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
       },
       "500" : {
         "description" : "Internal server error",
