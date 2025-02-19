@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
@@ -56,6 +58,8 @@ public class RocksDbInstanceFactory {
     RocksDbUtil.loadNativeLibrary();
   }
 
+  private static final Logger LOG = LogManager.getLogger();
+
   public static KvStoreAccessor create(
       final MetricsSystem metricsSystem,
       final MetricCategory metricCategory,
@@ -75,19 +79,16 @@ public class RocksDbInstanceFactory {
     final TransactionDBOptions txOptions = new TransactionDBOptions();
     final RocksDbStats rocksDbStats = new RocksDbStats(metricsSystem, metricCategory);
     final DBOptions dbOptions = createDBOptions(configuration, rocksDbStats.getStats());
-    final LRUCache blockCache = new LRUCache(configuration.getCacheCapacity());
-    final ColumnFamilyOptions columnFamilyOptions =
-        createColumnFamilyOptions(configuration, blockCache);
-    final List<AutoCloseable> resources =
-        new ArrayList<>(
-            List.of(txOptions, dbOptions, columnFamilyOptions, rocksDbStats, blockCache));
 
-    List<ColumnFamilyDescriptor> columnDescriptors =
-        createColumnFamilyDescriptors(columns, deletedColumns, columnFamilyOptions);
+    final List<AutoCloseable> resources =
+        new ArrayList<>(List.of(txOptions, dbOptions, rocksDbStats));
+
     Map<Bytes, KvStoreColumn<?, ?>> columnsById =
         columns.stream().collect(Collectors.toMap(KvStoreColumn::getId, Function.identity()));
 
     try {
+      final List<ColumnFamilyDescriptor> columnDescriptors =
+          createColumnFamilyDescriptors(columns, deletedColumns, configuration);
       // columnHandles will be filled when the db is opened
       final List<ColumnFamilyHandle> columnHandles = new ArrayList<>(columnDescriptors.size());
       final TransactionDB db =
@@ -164,24 +165,71 @@ public class RocksDbInstanceFactory {
   }
 
   private static ColumnFamilyOptions createColumnFamilyOptions(
-      final KvStoreConfiguration configuration, final Cache cache) {
-    return new ColumnFamilyOptions()
-        .setCompressionType(configuration.getCompressionType())
-        .setBottommostCompressionType(configuration.getBottomMostCompressionType())
-        .setLevelCompactionDynamicLevelBytes(true)
-        .setTableFormatConfig(createBlockBasedTableConfig(cache));
+      final KvStoreConfiguration configuration, final KvStoreColumn<?, ?> column) {
+    final ColumnFamilyOptions cfOptions;
+    try {
+      final LRUCache cache =
+          column
+              .getIsLargerCacheAvalilable()
+              .map(
+                  isLarger -> {
+                    if (isLarger) {
+                      LOG.info("Using larger cache for column {}", column.getId().toHexString());
+                      return new LRUCache(configuration.getLargerCacheCapacity());
+                    } else {
+                      return new LRUCache(configuration.getCacheCapacity());
+                    }
+                  })
+              .orElse(new LRUCache(configuration.getCacheCapacity()));
+      cfOptions =
+          new ColumnFamilyOptions()
+              .setCompressionType(configuration.getCompressionType())
+              .setBottommostCompressionType(configuration.getBottomMostCompressionType())
+              .setLevelCompactionDynamicLevelBytes(true)
+              .setTableFormatConfig(createBlockBasedTableConfig(cache));
+    } catch (Exception e) {
+      throw new RuntimeException("Error creating column family options", e);
+    }
+    return cfOptions;
+  }
+
+  private static ColumnFamilyOptions createColumnFamilyOptions(
+      final KvStoreConfiguration configuration) {
+    final ColumnFamilyOptions cfOptions;
+    try {
+      final LRUCache cache = new LRUCache(configuration.getCacheCapacity());
+      cfOptions =
+          new ColumnFamilyOptions()
+              .setCompressionType(configuration.getCompressionType())
+              .setBottommostCompressionType(configuration.getBottomMostCompressionType())
+              .setLevelCompactionDynamicLevelBytes(true)
+              .setTableFormatConfig(createBlockBasedTableConfig(cache));
+    } catch (Exception e) {
+      throw new RuntimeException("Error creating column family options", e);
+    }
+    return cfOptions;
   }
 
   private static List<ColumnFamilyDescriptor> createColumnFamilyDescriptors(
       final Collection<KvStoreColumn<?, ?>> columns,
       final Collection<Bytes> deletedColumns,
-      final ColumnFamilyOptions columnFamilyOptions) {
+      final KvStoreConfiguration configuration) {
     final List<ColumnFamilyDescriptor> columnDescriptors =
-        Stream.concat(columns.stream().map(KvStoreColumn::getId), deletedColumns.stream())
-            .map(id -> new ColumnFamilyDescriptor(id.toArrayUnsafe(), columnFamilyOptions))
+        columns.stream()
+            .map(
+                column ->
+                    new ColumnFamilyDescriptor(
+                        column.getId().toArrayUnsafe(),
+                        createColumnFamilyOptions(configuration, column)))
             .collect(Collectors.toCollection(ArrayList::new));
+    columnDescriptors.addAll(
+        deletedColumns.stream()
+            .map(Bytes::toArrayUnsafe)
+            .map(id -> new ColumnFamilyDescriptor(id, createColumnFamilyOptions(configuration)))
+            .toList());
     columnDescriptors.add(
-        new ColumnFamilyDescriptor(Schema.DEFAULT_COLUMN_ID.toArrayUnsafe(), columnFamilyOptions));
+        new ColumnFamilyDescriptor(
+            Schema.DEFAULT_COLUMN_ID.toArrayUnsafe(), createColumnFamilyOptions(configuration)));
     return Collections.unmodifiableList(columnDescriptors);
   }
 

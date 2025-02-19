@@ -57,7 +57,8 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
         KvStoreColumn.create(
             finalizedOffset + 2,
             UINT64_SERIALIZER,
-            KvStoreSerializer.createSignedBlockSerializer(spec));
+            KvStoreSerializer.createSignedBlockSerializer(spec),
+            true);
     finalizedStatesBySlot =
         KvStoreColumn.create(
             finalizedOffset + 3, UINT64_SERIALIZER, KvStoreSerializer.createStateSerializer(spec));
@@ -74,7 +75,8 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
         KvStoreColumn.create(
             finalizedOffset + 12,
             SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER,
-            BYTES_SERIALIZER);
+            BYTES_SERIALIZER,
+            true);
 
     nonCanonicalBlobSidecarBySlotRootBlobIndex =
         KvStoreColumn.create(
