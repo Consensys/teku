@@ -65,6 +65,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
@@ -384,21 +385,21 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start)))
         .finish(
             error -> {
-              Throwable rootCause = Throwables.getRootCause(error);
+              final Throwable rootCause = Throwables.getRootCause(error);
+              final String errorDescription;
               if (rootCause instanceof BindException) {
-                final String errorWhilePerformingDescription =
+                errorDescription =
                     "starting P2P services on port(s) "
                         + p2pNetwork.getListenPorts().stream()
                             .map(Object::toString)
                             .collect(Collectors.joining(","))
                         + ".";
-                STATUS_LOG.fatalError(errorWhilePerformingDescription, rootCause);
-                System.exit(FATAL_EXIT_CODE);
+
               } else {
-                Thread.currentThread()
-                    .getUncaughtExceptionHandler()
-                    .uncaughtException(Thread.currentThread(), error);
+                errorDescription = ExceptionUtil.getMessageOrSimpleName(rootCause);
               }
+              STATUS_LOG.fatalError(errorDescription, rootCause);
+              System.exit(FATAL_EXIT_CODE);
             });
   }
 
