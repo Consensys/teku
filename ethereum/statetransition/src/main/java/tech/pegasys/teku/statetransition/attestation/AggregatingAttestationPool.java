@@ -150,7 +150,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     // if an attestation has committee bits, committees size should have been computed. If this is
     // not the case, we should ignore this attestation and not add it to the pool
     if (attestation.requiresCommitteeBits() && committeesSize.isEmpty()) {
-      LOG.warn(
+      LOG.debug(
           "Committees size couldn't be retrieved for attestation at slot {}, block root {} and target root {}. Will NOT add this attestation to the pool.",
           attestationData.getSlot(),
           attestationData.getBeaconBlockRoot(),
