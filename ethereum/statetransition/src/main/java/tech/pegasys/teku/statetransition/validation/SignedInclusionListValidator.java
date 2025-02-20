@@ -48,16 +48,19 @@ public class SignedInclusionListValidator {
     final SpecConfigEip7805 specConfigEip7805 =
         spec.atSlot(slot).getConfig().toVersionEip7805().orElseThrow();
     final int maxBytesPerInclusionList = specConfigEip7805.getMaxBytesPerInclusionList();
-    final int inclusionListBytesSize = inclusionList.sszSerialize().size();
+    final int transactionsBytesSize =
+        inclusionList.getTransactions().stream()
+            .map(transaction -> transaction.getBytes().size())
+            .reduce(0, Integer::sum);
 
     /*
      * [REJECT] The size of message is within upperbound MAX_BYTES_PER_INCLUSION_LIST
      */
-    if (inclusionListBytesSize > maxBytesPerInclusionList) {
+    if (transactionsBytesSize > maxBytesPerInclusionList) {
       return SafeFuture.completedFuture(
           InternalValidationResult.reject(
-              "Inclusion List size %d (bytes) exceeds max allowed size %d (bytes)",
-              inclusionListBytesSize, maxBytesPerInclusionList));
+              "Inclusion List's transactions size %d (bytes) exceeds max allowed size %d (bytes)",
+              transactionsBytesSize, maxBytesPerInclusionList));
     }
 
     final UInt64 genesisTime = recentChainData.getGenesisTime();

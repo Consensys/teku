@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -611,11 +610,21 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
             .orElseThrow()
             .getExecutionPayloadSchema()
             .getTransactionSchema();
-    Bytes.random(specConfigEip7805.getMaxBytesPerInclusionList() - 200);
-    return IntStream.range(0, specConfigEip7805.getMaxTransactionsPerInclusionList())
-        .mapToObj(__ -> Bytes.random(specConfigEip7805.getMaxBytesPerInclusionList() - 200))
-        .map(transactionSchema::fromBytes)
-        .toList();
+    final int maxTransactionsSize = specConfigEip7805.getMaxBytesPerInclusionList();
+    final List<Transaction> transactions = new ArrayList<>();
+    int currentTransactionsSize = 0;
+    while (transactions.size() < specConfigEip7805.getMaxTransactionsPerInclusionList()
+        && currentTransactionsSize < maxTransactionsSize) {
+      final Bytes transaction = Bytes.random(random.nextInt(10, maxTransactionsSize + 1));
+      final int remainingSize = maxTransactionsSize - currentTransactionsSize;
+      if (transaction.size() <= remainingSize) {
+        transactions.add(transactionSchema.fromBytes(transaction));
+        currentTransactionsSize += transaction.size();
+      } else if (!transactions.isEmpty()) {
+        break;
+      }
+    }
+    return transactions;
   }
 
   private List<Bytes> generateTransactions(
