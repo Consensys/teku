@@ -1,6 +1,13 @@
 
 name: CI
 
+## RUNNERS
+# ubuntu-24.04 = 4cpu, 16GB
+# windows-2022 = 4 cpu, 16GB
+# ubuntu-24.04-arm = 4cpu, 16GB
+# macos-13 = 4cpu, 14GB
+# macos-15 = 3cpu(M1), 7GB
+
 on:
   pull_request:
   push:
@@ -70,9 +77,16 @@ jobs:
 
       - name: Unit Tests
         run: |
-            export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=3"
-            ./gradlew test $GRADLE_ARGS
-          
+          CLASSNAMES=$(find . -iwholename "**/src/test/java/**/*.java" \
+              | sed 's@.*/src/test/java/@@' \
+              | sed 's@/@.@g' \
+              | sed 's/.\{5\}$//' )
+          GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
+          echo "Prepared arguments for Gradle: $GRADLE_ARGS"
+
+          export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=3"
+          ./gradlew --no-daemon --parallel test $GRADLE_ARGS
+        
 #   integrationTests:
 #     needs: assemble
 #     # 4 cpu, 16G ram
