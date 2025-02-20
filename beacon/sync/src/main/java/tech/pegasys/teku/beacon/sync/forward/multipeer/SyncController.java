@@ -156,7 +156,8 @@ public class SyncController {
     syncResult.finishAsync(
         this::onSyncComplete,
         error -> {
-          LOG.error("Error encountered during sync", error);
+          LOG.error("Sync process failed to complete");
+          LOG.debug("Error encountered during sync", error);
           onSyncComplete(SyncResult.FAILED);
         },
         eventThread);
