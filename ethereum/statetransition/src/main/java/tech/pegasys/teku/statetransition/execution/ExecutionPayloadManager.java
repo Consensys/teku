@@ -24,7 +24,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -66,7 +65,6 @@ public class ExecutionPayloadManager
   private final Spec spec;
   private final ExecutionPayloadValidator executionPayloadValidator;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
-  private final ExecutionPayloadBroadcaster executionPayloadBroadcaster;
   private final TimeProvider timeProvider;
   private final AsyncRunner asyncRunner;
   private final ReceivedExecutionPayloadEventsChannel
@@ -79,7 +77,6 @@ public class ExecutionPayloadManager
       final Spec spec,
       final ExecutionPayloadValidator executionPayloadValidator,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
-      final ExecutionPayloadBroadcaster executionPayloadBroadcaster,
       final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,
       final ReceivedExecutionPayloadEventsChannel receivedExecutionPayloadEventsChannelPublisher,
@@ -89,7 +86,6 @@ public class ExecutionPayloadManager
     this.spec = spec;
     this.executionPayloadValidator = executionPayloadValidator;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
-    this.executionPayloadBroadcaster = executionPayloadBroadcaster;
     this.timeProvider = timeProvider;
     this.asyncRunner = asyncRunner;
     this.receivedExecutionPayloadEventsChannelPublisher =
@@ -220,9 +216,6 @@ public class ExecutionPayloadManager
           .thenAccept(
               result -> {
                 if (result.code() == ValidationResultCode.ACCEPT) {
-                  // broadcast the payload which was due processing before importing since it's been
-                  // gossip validated
-                  executionPayloadBroadcaster.broadcast(executionPayloadDueProcessing);
                   importExecutionPayload(executionPayloadDueProcessing);
                 } else {
                   LOG.warn(
@@ -297,9 +290,5 @@ public class ExecutionPayloadManager
 
   public interface RequiredExecutionPayloadSubscriber {
     void onRequiredExecutionPayload(Bytes32 blockRoot);
-  }
-
-  public interface ExecutionPayloadBroadcaster extends VoidReturningChannelInterface {
-    void broadcast(SignedExecutionPayloadEnvelope executionPayload);
   }
 }
