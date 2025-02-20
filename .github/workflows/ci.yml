@@ -23,14 +23,12 @@ jobs:
       - name: Prepare
         uses: ./.github/actions/prepare
 
-      - name: ssh
-        uses: ryanchapman/gha-ssh@v1
-        timeout-minutes: 10
-        with:
-            authorized_github_users: 'joshuafernandes'
+    #   - name: ssh
+    #     uses: ryanchapman/gha-ssh@v1
+    #     timeout-minutes: 10
+    #     with:
+    #         authorized_github_users: 'joshuafernandes'
             
-        #   curl -fLSs https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/main/install.sh | bash
-
       - name: Assemble
         run: |
           ./gradlew --no-daemon --parallel clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compilePropertyTestJava assemble
@@ -52,7 +50,7 @@ jobs:
           retention-days: 7
 
   unitTests:
-    # needs: assemble
+    needs: assemble
     # 4 cpu, 16G ram
     runs-on: ubuntu-24.04
     environment: dev
@@ -69,7 +67,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: workspace
-
 
       - name: Unit Tests
         run: |
