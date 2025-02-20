@@ -52,7 +52,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
 
   private final OwnedValidators validators;
   private final ValidatorApiChannel validatorApiChannel;
-  private final AtomicReference<Map<BLSPublicKey, ValidatorStatus>> latestValidatorsStatus =
+  private final AtomicReference<Map<BLSPublicKey, ValidatorStatus>> latestValidatorStatuses =
       new AtomicReference<>();
   private final AsyncRunner asyncRunner;
   private final AtomicBoolean startupComplete = new AtomicBoolean(false);
@@ -211,12 +211,12 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
     } else {
       final Set<BLSPublicKey> keysToUpdate =
           validators.getPublicKeys().stream()
-              .filter(key -> !latestValidatorsStatus.get().containsKey(key))
+              .filter(key -> !latestValidatorStatuses.get().containsKey(key))
               .collect(Collectors.toSet());
       if (keysToUpdate.isEmpty()) {
         if (possibleMissingEvents) {
           validatorStatusSubscribers.forEach(
-              s -> s.onValidatorStatuses(latestValidatorsStatus.get(), true));
+              s -> s.onValidatorStatuses(latestValidatorStatuses.get(), true));
         }
         lookupInProgress.set(false);
         return;
@@ -232,7 +232,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
                     statusesMapFromValidatorsData(maybeNewValidatorStatuses.get());
 
                 final Map<BLSPublicKey, ValidatorStatus> oldStatuses =
-                    Optional.ofNullable(latestValidatorsStatus.get()).orElse(Map.of());
+                    Optional.ofNullable(latestValidatorStatuses.get()).orElse(Map.of());
 
                 newStatuses.putAll(oldStatuses);
 
@@ -262,7 +262,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
       final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
       final boolean possibleMissingEvents,
       final boolean updateLastRunEpoch) {
-    latestValidatorsStatus.getAndSet(newValidatorStatuses);
+    latestValidatorStatuses.getAndSet(newValidatorStatuses);
 
     validatorStatusSubscribers.forEach(
         s -> s.onValidatorStatuses(newValidatorStatuses, possibleMissingEvents));
