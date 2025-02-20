@@ -1,3 +1,6 @@
+# https://app.circleci.com/pipelines/github/Consensys/teku/35434/workflows/a4ef0807-d48a-4e8a-95b9-ff304aa64ea6
+
+
 version: 2.1
 orbs:
   slack: circleci/slack@3.4.2
@@ -189,35 +192,35 @@ parameters:
     default: false
 
 jobs:
-  assemble:
-    executor: large_executor
-    steps:
-      - prepare
-      - run:
-          name: Assemble
-          command: |
-            ./gradlew --no-daemon --parallel clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compilePropertyTestJava assemble
-      - run:
-          name: Prep Artifacts
-          command: |
-            mkdir /tmp/teku-distributions
-            cp build/distributions/*.tar.gz /tmp/teku-distributions/
-      - notify
-      - save_cache:
-          name: Caching gradle dependencies
-          key: deps-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}-{{ .Branch }}-{{ .Revision }}
-          paths:
-            - .gradle
-            - ~/.gradle
-      - persist_to_workspace:
-          root: ~/project
-          paths:
-            - ./
-      - store_artifacts:
-          name: Distribution artifacts
-          path:  /tmp/teku-distributions
-          destination: distributions
-          when: always
+  # assemble:
+  #   executor: large_executor
+  #   steps:
+  #     - prepare
+  #     - run:
+  #         name: Assemble
+  #         command: |
+  #           ./gradlew --no-daemon --parallel clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compilePropertyTestJava assemble
+  #     - run:
+  #         name: Prep Artifacts
+  #         command: |
+  #           mkdir /tmp/teku-distributions
+  #           cp build/distributions/*.tar.gz /tmp/teku-distributions/
+  #     - notify
+  #     - save_cache:
+  #         name: Caching gradle dependencies
+  #         key: deps-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}-{{ .Branch }}-{{ .Revision }}
+  #         paths:
+  #           - .gradle
+  #           - ~/.gradle
+  #     - persist_to_workspace:
+  #         root: ~/project
+  #         paths:
+  #           - ./
+  #     - store_artifacts:
+  #         name: Distribution artifacts
+  #         path:  /tmp/teku-distributions
+  #         destination: distributions
+  #         when: always
 
   windowsBuild:
     executor:

@@ -1,0 +1,115 @@
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ gha ]
+env:
+  JAVA_TOOL_OPTIONS: -Xmx4096m
+  GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4 -Xmx4096m
+
+jobs:
+  assemble:
+    # 4 cpu, 16G ram
+    runs-on: ubuntu-24.04
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+      - name: Assemble
+        run: |
+          ./gradlew --no-daemon --parallel clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compilePropertyTestJava assemble
+
+    # TODO: check why this is done
+    #   - run:
+    #       name: Prep Artifacts
+    #       command: |
+    #         mkdir /tmp/teku-distributions
+    #         cp build/distributions/*.tar.gz /tmp/teku-distributions/
+
+      - name: Upload workspace build
+        uses: actions/upload-artifact@v4
+        with:
+          name: workspace
+          path: |
+            ./
+            !./.git/**
+          retention-days: 7
+
+  unitTests:
+    needs: assemble
+    # 4 cpu, 16G ram
+    runs-on: ubuntu-24.04
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+      - name: Download workspace build
+        uses: actions/download-artifact@v4
+        with:
+          name: workspace
+
+      - name: Unit Tests
+        run: |
+            export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=3"
+            ./gradlew test $GRADLE_ARGS
+          
+
+  integrationTests:
+    needs: assemble
+    # 4 cpu, 16G ram
+    runs-on: ubuntu-24.04
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+      - name: Download workspace build
+        uses: actions/download-artifact@v4
+        with:
+          name: workspace
+
+      - name: Acceptance Tests
+        run: |
+          ls -la .
+          ./gradlew integrationTest
+          
+    #   - name: Test results and report
+    #     uses: ./.github/actions/testResultsReports
+    #     with:
+    #       suiteName: 'acceptanceTests'
+
+
+#   integrationTests:
+#     executor: medium_plus_executor
+#     steps:
+#       - prepare
+#       - attach_workspace:
+#           at: ~/project
+#       - run:
+#           name: IntegrationTests
+#           no_output_timeout: 20m
+#           command: |
+#             ./gradlew --no-daemon --parallel integrationTest
+#       - notify
+#       - capture_test_results
+#       - store_artifacts:
+#           path: build/test-results
