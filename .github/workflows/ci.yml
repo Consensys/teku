@@ -85,7 +85,7 @@ jobs:
           echo "Prepared arguments for Gradle: $GRADLE_ARGS"
 
           # 15m = export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=8" --no-daemon --parallel 
-          export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=8"
+          export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=8 --configuration-cache"
           ./gradlew test $GRADLE_ARGS
         
 #   integrationTests:
