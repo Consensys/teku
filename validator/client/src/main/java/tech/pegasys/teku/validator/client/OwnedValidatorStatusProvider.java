@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -57,6 +58,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
   private final AtomicBoolean startupComplete = new AtomicBoolean(false);
   private final AtomicBoolean lookupInProgress = new AtomicBoolean(false);
   private final SettableLabelledGauge localValidatorCounts;
+  private final SettableLabelledGauge localValidatorBalances;
   private final AtomicReference<UInt64> lastRunEpoch = new AtomicReference<>();
   private final AtomicReference<UInt64> currentEpoch = new AtomicReference<>();
   private final Spec spec;
@@ -81,6 +83,13 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
             "local_validator_counts",
             "Current number of validators running in this validator client labelled by current status",
             "status");
+    this.localValidatorBalances =
+        SettableLabelledGauge.create(
+            metricsSystem,
+            TekuMetricCategory.VALIDATOR,
+            "local_validator_balances",
+            "Current effective balance staked by validators running in this validator client labelled by their withdrawal credential type",
+            "withdrawal_credentials_type");
   }
 
   @Override
@@ -230,6 +239,20 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
           .alwaysRun(() -> lookupInProgress.set(false))
           .finish(error -> LOG.error("Failed to update validator statuses", error));
     }
+  }
+
+  @VisibleForTesting
+  void updateValidatorDataMetrics(final Map<BLSPublicKey, StateValidatorData> validatorDataMap) {
+    final Map<Byte, Long> credsTypeBalanceMap =
+        validatorDataMap.entrySet().stream()
+            .collect(
+                Collectors.groupingBy(
+                    e -> e.getValue().getValidator().getWithdrawalCredentials().get(0),
+                    Collectors.summingLong(
+                        value ->
+                            value.getValue().getValidator().getEffectiveBalance().longValue())));
+
+    credsTypeBalanceMap.forEach((key, value) -> localValidatorBalances.set(value, key.toString()));
   }
 
   private void onUpdatedValidatorStatuses(
