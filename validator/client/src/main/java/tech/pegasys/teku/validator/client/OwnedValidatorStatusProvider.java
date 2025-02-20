@@ -170,6 +170,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
               }
               onUpdatedValidatorStatuses(
                   statusesMapFromValidatorsData(maybeValidatorStatuses.get()), false, true);
+              updateValidatorDataMetrics(maybeValidatorStatuses.get());
               startupComplete.set(true);
               return SafeFuture.COMPLETE;
             })
@@ -203,6 +204,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
                     statusesMapFromValidatorsData(maybeNewValidatorStatuses.get()),
                     possibleMissingEvents,
                     true);
+                updateValidatorDataMetrics(maybeNewValidatorStatuses.get());
               })
           .alwaysRun(() -> lookupInProgress.set(false))
           .finish(error -> LOG.error("Failed to update validator statuses", error));
@@ -235,6 +237,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
                 newStatuses.putAll(oldStatuses);
 
                 onUpdatedValidatorStatuses(newStatuses, possibleMissingEvents, false);
+                updateValidatorDataMetrics(maybeNewValidatorStatuses.get());
               })
           .alwaysRun(() -> lookupInProgress.set(false))
           .finish(error -> LOG.error("Failed to update validator statuses", error));
