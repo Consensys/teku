@@ -84,8 +84,9 @@ jobs:
           GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
           echo "Prepared arguments for Gradle: $GRADLE_ARGS"
 
-          export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=3"
-          ./gradlew --no-daemon --parallel test $GRADLE_ARGS
+          # 15m = export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=8" --no-daemon --parallel 
+          export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=8"
+          ./gradlew test $GRADLE_ARGS
         
 #   integrationTests:
 #     needs: assemble
