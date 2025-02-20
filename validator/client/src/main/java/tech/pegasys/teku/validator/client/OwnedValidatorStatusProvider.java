@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.client;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -52,7 +51,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
 
   private final OwnedValidators validators;
   private final ValidatorApiChannel validatorApiChannel;
-  private final AtomicReference<Map<BLSPublicKey, StateValidatorData>> latestValidatorsData =
+  private final AtomicReference<Map<BLSPublicKey, ValidatorStatus>> latestValidatorsStatus =
       new AtomicReference<>();
   private final AsyncRunner asyncRunner;
   private final AtomicBoolean startupComplete = new AtomicBoolean(false);
@@ -160,7 +159,8 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
               if (maybeValidatorStatuses.isEmpty()) {
                 return retryInitialValidatorStatusCheck();
               }
-              onUpdatedValidatorStatuses(maybeValidatorStatuses.get(), false, true);
+              onUpdatedValidatorStatuses(
+                  statusesMapFromValidatorsData(maybeValidatorStatuses.get()), false, true);
               startupComplete.set(true);
               return SafeFuture.COMPLETE;
             })
@@ -191,21 +191,21 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
                   return;
                 }
                 onUpdatedValidatorStatuses(
-                    maybeNewValidatorStatuses.get(), possibleMissingEvents, true);
+                    statusesMapFromValidatorsData(maybeNewValidatorStatuses.get()),
+                    possibleMissingEvents,
+                    true);
               })
           .alwaysRun(() -> lookupInProgress.set(false))
           .finish(error -> LOG.error("Failed to update validator statuses", error));
     } else {
       final Set<BLSPublicKey> keysToUpdate =
           validators.getPublicKeys().stream()
-              .filter(key -> !latestValidatorsData.get().containsKey(key))
+              .filter(key -> !latestValidatorsStatus.get().containsKey(key))
               .collect(Collectors.toSet());
       if (keysToUpdate.isEmpty()) {
         if (possibleMissingEvents) {
           validatorStatusSubscribers.forEach(
-              s ->
-                  s.onValidatorStatuses(
-                      statusesMapFromValidatorsData(latestValidatorsData.get()), true));
+              s -> s.onValidatorStatuses(latestValidatorsStatus.get(), true));
         }
         lookupInProgress.set(false);
         return;
@@ -217,11 +217,11 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
                 if (maybeNewValidatorStatuses.isEmpty()) {
                   return;
                 }
-                final Map<BLSPublicKey, StateValidatorData> newStatuses =
-                    new HashMap<>(maybeNewValidatorStatuses.get());
+                final Map<BLSPublicKey, ValidatorStatus> newStatuses =
+                    statusesMapFromValidatorsData(maybeNewValidatorStatuses.get());
 
-                final Map<BLSPublicKey, StateValidatorData> oldStatuses =
-                    Optional.ofNullable(latestValidatorsData.get()).orElse(Map.of());
+                final Map<BLSPublicKey, ValidatorStatus> oldStatuses =
+                    Optional.ofNullable(latestValidatorsStatus.get()).orElse(Map.of());
 
                 newStatuses.putAll(oldStatuses);
 
@@ -233,15 +233,13 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
   }
 
   private void onUpdatedValidatorStatuses(
-      final Map<BLSPublicKey, StateValidatorData> newValidatorStatuses,
+      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
       final boolean possibleMissingEvents,
       final boolean updateLastRunEpoch) {
-    latestValidatorsData.getAndSet(newValidatorStatuses);
+    latestValidatorsStatus.getAndSet(newValidatorStatuses);
 
     validatorStatusSubscribers.forEach(
-        s ->
-            s.onValidatorStatuses(
-                statusesMapFromValidatorsData(newValidatorStatuses), possibleMissingEvents));
+        s -> s.onValidatorStatuses(newValidatorStatuses, possibleMissingEvents));
     if (updateLastRunEpoch) {
       lastRunEpoch.set(currentEpoch.get());
     }
@@ -256,10 +254,9 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
   }
 
   private void updateValidatorCountMetrics(
-      final Map<BLSPublicKey, StateValidatorData> newValidatorStatuses) {
+      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses) {
     final Map<ValidatorStatus, Long> validatorCountByStatus =
         newValidatorStatuses.values().stream()
-            .map(StateValidatorData::getStatus)
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
     Stream.of(ValidatorStatus.values())
         .forEach(
