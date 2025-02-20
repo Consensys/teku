@@ -62,54 +62,127 @@ jobs:
         with:
           name: workspace
 
-      - name: Unit Tests
-        run: |
-            export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=3"
-            ./gradlew test $GRADLE_ARGS
-          
-
-  integrationTests:
-    needs: assemble
-    # 4 cpu, 16G ram
-    runs-on: ubuntu-24.04
-    environment: dev
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
-
-      - name: Prepare
-        uses: ./.github/actions/prepare
-
       - name: Download workspace build
         uses: actions/download-artifact@v4
         with:
           name: workspace
 
-      - name: Acceptance Tests
+      - name: ssh
+        uses: ryanchapman/gha-ssh@v1
+        timeout-minutes: 10
+        with:
+          authorized_github_users: 'joshuafernandes'
+        
+    #   curl -fLSs https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/main/install.sh | bash
+
+
+      - name: Unit Tests
         run: |
-          ls -la .
-          ./gradlew integrationTest
+            export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=3"
+            ./gradlew test $GRADLE_ARGS
           
-    #   - name: Test results and report
-    #     uses: ./.github/actions/testResultsReports
-    #     with:
-    #       suiteName: 'acceptanceTests'
-
-
 #   integrationTests:
+#     needs: assemble
+#     # 4 cpu, 16G ram
+#     runs-on: ubuntu-24.04
+#     environment: dev
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#         with:
+#           submodules: 'recursive'
+
+#       - name: Prepare
+#         uses: ./.github/actions/prepare
+
+#       - name: Download workspace build
+#         uses: actions/download-artifact@v4
+#         with:
+#           name: workspace
+
+#       - name: Acceptance Tests
+#         run: |
+#           ls -la .
+#           ./gradlew integrationTest
+
+#     #   - name: Test results and report
+#     #     uses: ./.github/actions/testResultsReports
+#     #     with:
+#     #       suiteName: 'acceptanceTests'
+
+          
+#   propertyTests:
+#     needs: assemble
+#     # 4 cpu, 16G ram
+#     runs-on: ubuntu-24.04
+#     environment: dev
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#         with:
+#           submodules: 'recursive'
+
+#       - name: Prepare
+#         uses: ./.github/actions/prepare
+
+#       - name: Download workspace build
+#         uses: actions/download-artifact@v4
+#         with:
+#           name: workspace
+
+#       - name: Acceptance Tests
+#         run: |
+#           ls -la .
+#           ./gradlew propertyTest
+
+#   acceptanceTests:
+#     needs: assemble
+#     # 4 cpu, 16G ram
+#     runs-on: ubuntu-24.04
+#     environment: dev
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#         with:
+#           submodules: 'recursive'
+
+#       - name: Prepare
+#         uses: ./.github/actions/prepare
+
+#       - name: Download workspace build
+#         uses: actions/download-artifact@v4
+#         with:
+#           name: workspace
+
+#       - name: Acceptance Tests
+#         run: |
+#           ls -la .
+#           ./gradlew acceptanceTest
+
+#   propertyTests:
+#     parallelism: 1
 #     executor: medium_plus_executor
 #     steps:
 #       - prepare
 #       - attach_workspace:
 #           at: ~/project
 #       - run:
-#           name: IntegrationTests
+#           name: PropertyTests
 #           no_output_timeout: 20m
 #           command: |
-#             ./gradlew --no-daemon --parallel integrationTest
+#             CLASSNAMES=$(circleci tests glob "**/src/property-test/java/**/*.java" \
+#               | sed 's@.*/src/property-test/java/@@' \
+#               | sed 's@/@.@g' \
+#               | sed 's/.\{5\}$//' \
+#               | circleci tests split --split-by=timings --timings-type=classname)
+#             # Format the arguments to "./gradlew test"
+#             GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
+#             echo "Prepared arguments for Gradle: $GRADLE_ARGS"
+#             if [[ -z "$GRADLE_ARGS" ]]
+#             then
+#               echo "Failed to determine correct distribution of tests across nodes"
+#               exit 1
+#             fi
+#             ./gradlew --no-daemon --parallel --info propertyTest $GRADLE_ARGS
 #       - notify
 #       - capture_test_results
-#       - store_artifacts:
-#           path: build/test-results
