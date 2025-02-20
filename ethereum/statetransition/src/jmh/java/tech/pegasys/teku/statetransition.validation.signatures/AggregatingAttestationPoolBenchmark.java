@@ -64,16 +64,16 @@ public class AggregatingAttestationPoolBenchmark {
   // a reference file can be obtained here
   // https://drive.google.com/file/d/139bA7r88riFODZ7S0FpvtO7hmWmdC_XC/view?usp=drive_link
   private static final String STATE_PATH =
-      "/tmp/BeaconStateDeneb_3630479_03664f196162fb81a4406c508674dd1ede09b883d37d0f3d0f076897f68741d2.ssz";
+      "BeaconStateDeneb_3630479_03664f196162fb81a4406c508674dd1ede09b883d37d0f3d0f076897f68741d2.ssz";
 
   // a reference file can be obtained here
   // https://drive.google.com/file/d/1I5vXK-x8ZH9wh40wNf1oACXeF_U3to8J/view?usp=drive_link
-  private static final String POOL_DUMP_PATH = "/tmp/attestations_3630479.multi_ssz";
+  private static final String POOL_DUMP_PATH = "attestations_3630479.multi_ssz";
 
   // a reference file can be obtained here
   // https://drive.google.com/file/d/1PN0OToyNOV0SyjeQaS7oF3J4cKbmy1nX/view?usp=drive_link
   private static final String ACTUAL_BLOCK_PATH =
-      "/tmp/block-3630480-e652bd51c7e4e528fea0728a3ad96f86ceb92e9daa227f315e96a9884ceb187b.ssz";
+      "block-3630480-e652bd51c7e4e528fea0728a3ad96f86ceb92e9daa227f315e96a9884ceb187b.ssz";
 
   private BeaconState state;
   private BeaconState newBlockState;
