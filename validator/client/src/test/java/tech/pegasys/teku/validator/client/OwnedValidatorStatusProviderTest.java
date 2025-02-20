@@ -15,6 +15,9 @@ package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.BLS_WITHDRAWAL_BYTE;
+import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.COMPOUNDING_WITHDRAWAL_BYTE;
+import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.ETH1_ADDRESS_WITHDRAWAL_BYTE;
 
 import java.util.List;
 import java.util.Map;
@@ -61,7 +64,7 @@ class OwnedValidatorStatusProviderTest {
   }
 
   @Test
-  public void testValidatorEffectiveBalanceMetric() {
+  public void testLocalValidatorBalancesMetric() {
     final List<Validator> blsCredsValidators =
         IntStream.range(0, 2)
             .mapToObj(
@@ -107,20 +110,20 @@ class OwnedValidatorStatusProviderTest {
                     validator ->
                         new StateValidatorData(
                             dataStructureUtil.randomValidatorIndex(),
-                            UInt64.THIRTY_TWO_ETH,
+                            validator.getEffectiveBalance(),
                             ValidatorStatus.active_ongoing,
                             validator)));
 
-    ownedValidatorStatusProvider.updateValidatorDataMetrics(validatorDataMap);
+    ownedValidatorStatusProvider.updateValidatorBalanceMetrics(validatorDataMap);
 
     final StubLabelledGauge validatorBalancesMetric =
         metricSystem.getLabelledGauge(TekuMetricCategory.VALIDATOR, "local_validator_balances");
 
-    assertThat(validatorBalancesMetric.getValue("0"))
+    assertThat(validatorBalancesMetric.getValue(String.valueOf(BLS_WITHDRAWAL_BYTE)))
         .hasValue(UInt64.THIRTY_TWO_ETH.times(2).longValue());
-    assertThat(validatorBalancesMetric.getValue("1"))
+    assertThat(validatorBalancesMetric.getValue(String.valueOf(ETH1_ADDRESS_WITHDRAWAL_BYTE)))
         .hasValue(UInt64.THIRTY_TWO_ETH.times(2).longValue());
-    assertThat(validatorBalancesMetric.getValue("2"))
+    assertThat(validatorBalancesMetric.getValue(String.valueOf(COMPOUNDING_WITHDRAWAL_BYTE)))
         .hasValue(UInt64.THIRTY_TWO_ETH.times(2).longValue());
   }
 }
