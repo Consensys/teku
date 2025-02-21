@@ -13,13 +13,13 @@ on:
   push:
     branches: [ gha ]
 env:
-  JAVA_TOOL_OPTIONS: -Xmx4096m
-  GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4 -Xmx4096m
+  # JAVA_TOOL_OPTIONS: -Xmx4096m
+  GRADLE_OPTS: -Dorg.gradle.daemon=true -Dorg.gradle.parallel=true -Dorg.gradle.configuration-cache=true
 
 jobs:
   assemble:
     # 4 cpu, 16G ram
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest-128
     environment: dev
     steps:
       - name: Checkout
@@ -59,7 +59,7 @@ jobs:
   unitTests:
     needs: assemble
     # 4 cpu, 16G ram
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest-128
     environment: dev
     steps:
       - name: Checkout
@@ -85,9 +85,43 @@ jobs:
           echo "Prepared arguments for Gradle: $GRADLE_ARGS"
 
           # 15m = export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=8" --no-daemon --parallel 
-          export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=8 --configuration-cache"
+          export GRADLE_OPTS="$GRADLE_OPTS --configuration-cache"
           ./gradlew test $GRADLE_ARGS
-        
+
+  unitTests2:
+    needs: assemble
+    # 4 cpu, 16G ram
+    runs-on: ubuntu-latest-128
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+      - name: Download workspace build
+        uses: actions/download-artifact@v4
+        with:
+          name: workspace
+
+      - name: Unit Tests
+        run: |
+          CLASSNAMES=$(find . -iwholename "**/src/test/java/**/*.java" \
+              | sed 's@.*/src/test/java/@@' \
+              | sed 's@/@.@g' \
+              | sed 's/.\{5\}$//' )
+          GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
+          echo "Prepared arguments for Gradle: $GRADLE_ARGS"
+
+          # 15m = export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=8" --no-daemon --parallel 
+          export JAVA_TOOL_OPTIONS="-Xmx2500m"
+          export GRADLE_OPTS="$GRADLE_OPTS --configuration-cache"
+          ./gradlew --no-daemon --parallel test $GRADLE_ARGS
+
+
 #   integrationTests:
 #     needs: assemble
 #     # 4 cpu, 16G ram
