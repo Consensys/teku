@@ -12,15 +12,18 @@ on:
   pull_request:
   push:
     branches: [ gha ]
-env:
-  # JAVA_TOOL_OPTIONS: -Xmx4096m
-  GRADLE_OPTS: -Dorg.gradle.daemon=true -Dorg.gradle.parallel=true -Dorg.gradle.configuration-cache=true
+# env:
+#   JAVA_TOOL_OPTIONS: -Xmx4096m
+  # GRADLE_OPTS: -Dorg.gradle.daemon=true -Dorg.gradle.parallel=true -Dorg.gradle.configuration-cache=true
 
 jobs:
   assemble:
     # 4 cpu, 16G ram
-    runs-on: ubuntu-latest-128
+    runs-on: ubuntu-24.04
     environment: dev
+    env:
+      JAVA_TOOL_OPTIONS: -Xmx4096m
+      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4 -Xmx4096m
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -61,6 +64,9 @@ jobs:
     # 4 cpu, 16G ram
     runs-on: ubuntu-latest-128
     environment: dev
+    env:
+      JAVA_TOOL_OPTIONS: -Xmx4096m
+      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4 -Xmx4096m
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -84,8 +90,8 @@ jobs:
           GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
           echo "Prepared arguments for Gradle: $GRADLE_ARGS"
 
-          # 15m = export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=8" --no-daemon --parallel 
-          export GRADLE_OPTS="$GRADLE_OPTS --configuration-cache"
+          # 15m = export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=3" --no-daemon --parallel 
+          # export GRADLE_OPTS="$GRADLE_OPTS --configuration-cache"
           ./gradlew test $GRADLE_ARGS
 
   unitTests2:
@@ -93,6 +99,9 @@ jobs:
     # 4 cpu, 16G ram
     runs-on: ubuntu-latest-128
     environment: dev
+    env:
+      JAVA_TOOL_OPTIONS: Xmx2500m
+      GRADLE_OPTS: -Dorg.gradle.daemon=true -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=8 -Xmx4096m    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -119,7 +128,7 @@ jobs:
           # 15m = export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.workers.max=8" --no-daemon --parallel 
           export JAVA_TOOL_OPTIONS="-Xmx2500m"
           export GRADLE_OPTS="$GRADLE_OPTS --configuration-cache"
-          ./gradlew --no-daemon --parallel test $GRADLE_ARGS
+          ./gradlew test $GRADLE_ARGS
 
 
 #   integrationTests:
