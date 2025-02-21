@@ -56,7 +56,7 @@ import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 public class LibP2PGossipNetworkBuilder {
 
   // Enough to subscribe to three forks simultaneously so testnets can fork in subsequent epochs
-  public static final int MAX_SUBSCRIBED_TOPICS = 250;
+  public static final int MAX_SUBSCRIBED_TOPICS = 500;
 
   public static LibP2PGossipNetworkBuilder create() {
     return new LibP2PGossipNetworkBuilder();
