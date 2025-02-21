@@ -157,8 +157,6 @@ public class PayloadAttestationPool implements SlotEventsChannel {
     return size.get();
   }
 
-  // EIP-7732 TODO: we seem to be producing invalid payload attestations or filter/validation is
-  // implemented wrong
   public synchronized SszList<PayloadAttestation> getPayloadAttestationsForBlock(
       final BeaconState stateAtBlockSlot) {
     final SchemaDefinitions schemaDefinitions =
@@ -180,8 +178,12 @@ public class PayloadAttestationPool implements SlotEventsChannel {
             .filter(Objects::nonNull)
             .filter(
                 group -> {
-                  if (!isValid(stateAtBlockSlot, group.getPayloadAttestationData())) {
-                    invalidAttestationsToRemove.add(group.getPayloadAttestationData());
+                  final PayloadAttestationData groupData = group.getPayloadAttestationData();
+                  if (!isValid(stateAtBlockSlot, groupData)) {
+                    // keep future attestations
+                    if (groupData.getSlot().isLessThan(stateAtBlockSlot.getSlot())) {
+                      invalidAttestationsToRemove.add(groupData);
+                    }
                     return false;
                   }
                   return true;
@@ -245,7 +247,21 @@ public class PayloadAttestationPool implements SlotEventsChannel {
   }
 
   @SuppressWarnings("unused")
-  // EIP-7732 TODO: implement
   public void onPayloadAttestationsIncludedInBlock(
-      final UInt64 slot, final SszList<PayloadAttestation> payloadAttestations) {}
+      final UInt64 slot, final SszList<PayloadAttestation> payloadAttestations) {
+    // clean-up included attestations
+    payloadAttestations.forEach(
+        payloadAttestation -> {
+          final PayloadAttestationData data = payloadAttestation.getData();
+          final Bytes32 dataHash = data.hashTreeRoot();
+          final UInt64 payloadAttestationSlot = data.getSlot();
+          removeGroup(dataHash);
+          final Set<Bytes> dataHashes =
+              payloadAttestationDataHashBySlot.get(payloadAttestationSlot);
+          dataHashes.remove(dataHash);
+          if (dataHashes.isEmpty()) {
+            payloadAttestationDataHashBySlot.remove(payloadAttestationSlot);
+          }
+        });
+  }
 }
