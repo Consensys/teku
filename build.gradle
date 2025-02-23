@@ -1100,7 +1100,6 @@ def calculatePublishVersion() {
     return isReleaseBranch ? "${specificVersion.substring(0, specificVersion.indexOf('+'))}+develop" : "develop"
   }
   return specificVersion
-  // return "25.3.0-SNAPSHOT"
 }
 
 // Calculate the version that teku --version will report (among other places)
@@ -1121,7 +1120,6 @@ def calculateVersion() {
     return "${matcher.group("lastVersion")}+${matcher.group("devVersion")}"
   }
   return version
-  // return "25.3.0-SNAPSHOT"
 }
 
 task printVersion() {
