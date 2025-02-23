@@ -27,6 +27,8 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.time.Throttler;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.Eth2PreparedGossipMessageFactory;
@@ -56,6 +58,10 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   private final NetworkingSpecConfig networkingConfig;
   private final DebugDataDumper debugDataDumper;
   private final String topic;
+  final TimeProvider timeProvider;
+
+  // every  slot of mainnet config
+  private final Throttler<Logger> loggerThrottler = new Throttler<>(LOG, UInt64.valueOf(12));
 
   public Eth2TopicHandler(
       final RecentChainData recentChainData,
@@ -79,6 +85,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
         gossipEncoding.createPreparedGossipMessageFactory(
             recentChainData::getMilestoneByForkDigest);
     this.debugDataDumper = debugDataDumper;
+    this.timeProvider = recentChainData.getStore();
     this.topic = GossipTopics.getTopic(forkDigest, topicName, gossipEncoding);
   }
 
@@ -173,8 +180,12 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       P2P_LOG.onGossipMessageDecodingError(getTopic(), message.getOriginalMessage(), err);
       response = ValidationResult.Invalid;
     } else if (ExceptionUtil.hasCause(err, RejectedExecutionException.class)) {
-      LOG.warn(
-          "Discarding gossip message for topic {} because the executor queue is full", getTopic());
+      loggerThrottler.invoke(
+          timeProvider.getTimeInSeconds(),
+          (log) ->
+              LOG.warn(
+                  "Discarding gossip message for topic {} because the executor queue is full",
+                  getTopic()));
       response = ValidationResult.Ignore;
     } else if (ExceptionUtil.hasCause(err, ServiceCapacityExceededException.class)) {
       LOG.warn(

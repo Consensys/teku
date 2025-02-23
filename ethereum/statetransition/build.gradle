@@ -52,4 +52,6 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:logging'))
 
   jmhImplementation testFixtures(project(':infrastructure:bls'))
+  jmhImplementation testFixtures(project(':ethereum:spec'))
+  jmhImplementation 'org.mockito:mockito-core'
 }
