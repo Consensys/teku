@@ -1,5 +1,5 @@
 
-name: CI
+name: ci
 
 ## RUNNERS
 # ubuntu-24.04 = 4cpu, 16GB
@@ -12,13 +12,22 @@ on:
   pull_request:
   push:
     branches: [ gha ]
+
+  workflow_call:
+    outputs:
+      workflow_run_id: 
+        description: "the run id of the workflow"
+        value: ${{ jobs.build.outputs.workflow_run_id }}
+
+  workflow_dispatch:
+
 env:
   JAVA_TOOL_OPTIONS: -Xmx4096m
   GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4 -Xmx4096m
 
 jobs:
-  assemble:
-    # 4 cpu, 16G ram
+
+  spotless:
     runs-on: ubuntu-24.04
     environment: dev
     steps:
@@ -30,6 +39,48 @@ jobs:
       - name: Prepare
         uses: ./.github/actions/prepare
 
+      - name: Spotless
+        run: |
+          ./gradlew spotlessCheck
+      
+  moduleChecks:
+    runs-on: ubuntu-24.04
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+      - name: Check modules
+        run: |
+          ./gradlew checkMavenCoordinateCollisions checkModuleDependencies
+
+  assemble:
+    runs-on: ubuntu-24.04
+    environment: dev
+    outputs:
+      workflow_run_id: ${{ steps.workflowdetails.outputs.id }}    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: get workflow_details
+        id: workflowdetails
+        shell: bash      
+        run: |
+          echo "id=${{ github.run_id }}" >> $GITHUB_OUTPUT
+          echo "build_date=$(date --rfc-3339=date)" >> $GITHUB_OUTPUT
+    
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+    # TODO: remove me later 
     #   - name: ssh
     #     uses: ryanchapman/gha-ssh@v1
     #     timeout-minutes: 10
@@ -54,7 +105,7 @@ jobs:
           path: |
             ./
             !./.git/**
-          retention-days: 7
+          retention-days: 1
 
   unitTests:
     needs: assemble
@@ -85,6 +136,12 @@ jobs:
           echo "Prepared arguments for Gradle: $GRADLE_ARGS"
           ./gradlew test $GRADLE_ARGS
 
+      - name: Test results 
+        uses: ./.github/actions/testResults
+        if: always()        
+        with:
+          suiteName: 'unitTests'
+
   integrationTests:
     needs: assemble
     # 32 cpu, 128G ram
@@ -108,6 +165,12 @@ jobs:
         run: |
           ls -la .
           ./gradlew integrationTest
+
+      - name: Test results 
+        uses: ./.github/actions/testResults
+        if: always()        
+        with:
+          suiteName: 'integrationTests'
 
   propertyTests:
     needs: assemble
@@ -138,6 +201,12 @@ jobs:
           echo "Prepared arguments for Gradle: $GRADLE_ARGS"
           ./gradlew --info propertyTest $GRADLE_ARGS
 
+      - name: Test results 
+        uses: ./.github/actions/testResults
+        if: always()        
+        with:
+          suiteName: 'propertyTests'
+
   acceptanceTests:
     needs: assemble
     # 32 cpu, 128G ram
@@ -166,3 +235,92 @@ jobs:
           GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
           echo "Prepared arguments for Gradle: $GRADLE_ARGS"
           ./gradlew acceptanceTest $GRADLE_ARGS
+
+      - name: Test results 
+        uses: ./.github/actions/testResults
+        if: always()        
+        with:
+          suiteName: 'acceptanceTests'
+
+  referenceTests:
+    needs: assemble
+    # 32 cpu, 128G ram
+    runs-on: ubuntu-latest-128
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+      - name: Download workspace build
+        uses: actions/download-artifact@v4
+        with:
+          name: workspace
+
+      - name: Fetch Reference Tests
+        run: |
+          if [ ! -d "eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/tests" ]
+          then
+            ./gradlew --no-daemon expandRefTests
+          fi
+
+      # Compile separately so that we have the generated test files for splitting across nodes
+      - name: CompileReferenceTests
+        run: |
+          ./gradlew --no-daemon --parallel compileReferenceTestJava
+
+      - name: Reference Tests      
+        run: |
+          CLASSNAMES=$(find . -iwholename "**/src/referenceTest/generated_tests/**/*Test.java" \
+              | sed 's@.*/src/referenceTest/generated_tests/@@' \
+              | sed 's@/@.@g' \
+              | sed 's/.\{5\}$//' )
+          GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
+          echo "Prepared arguments for Gradle: $GRADLE_ARGS"
+          ./gradlew -x generateReferenceTestClasses -x processReferenceTestResources -x cleanReferenceTestClasses referenceTest $GRADLE_ARGS
+
+      - name: Test results 
+        uses: ./.github/actions/testResults
+        if: always()        
+        with:
+          suiteName: 'referenceTests'
+
+  windowsBuild:
+    needs: [spotless, moduleChecks ]
+    # 32 cpu, 128G ram
+    runs-on: windows-2022
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Prepare
+        uses: ./.github/actions/prepareWindows
+
+      - name: Build
+        shell: powershell
+        run: |
+          $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
+          $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.vfs.watch=false"
+          cmd.exe /c gradlew.bat --no-daemon --parallel --build-cache
+      
+      - name: Build
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force build\test-results
+          Get-ChildItem -Recurse | Where-Object {$_.FullName -match "test-results\\.*\\.*.xml"} | Copy-Item -Destination build\test-results\
+      
+      - name: Publish Windows Test Results and Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          if-no-files-found: ignore
+          retention-days: 7
+          path: |
+            build/test-results/
