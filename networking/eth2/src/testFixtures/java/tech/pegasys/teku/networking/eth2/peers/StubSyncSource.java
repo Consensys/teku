@@ -28,6 +28,7 @@ import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 
 public class StubSyncSource implements SyncSource {
 
@@ -79,6 +80,15 @@ public class StubSyncSource implements SyncSource {
     currentBlobSidecarRequest = Optional.of(request);
     currentBlobSidecarListener = Optional.of(listener);
     return request;
+  }
+
+  // EIP-7732 TODO: implement (test)
+  @Override
+  public SafeFuture<Void> requestExecutionPayloadEnvelopesByRange(
+      final UInt64 startSlot,
+      final UInt64 count,
+      final RpcResponseListener<SignedExecutionPayloadEnvelope> listener) {
+    throw new UnsupportedOperationException();
   }
 
   @Override

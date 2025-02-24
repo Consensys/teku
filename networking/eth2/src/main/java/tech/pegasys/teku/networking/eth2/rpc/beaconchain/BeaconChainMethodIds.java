@@ -29,6 +29,9 @@ public class BeaconChainMethodIds {
   static final String EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT =
       "/eth2/beacon_chain/req/execution_payload_envelopes_by_root";
 
+  static final String EXECUTION_PAYLOAD_ENVELOPES_BY_RANGE =
+      "/eth2/beacon_chain/req/execution_payload_envelopes_by_range";
+
   static final String GET_METADATA = "/eth2/beacon_chain/req/metadata";
   static final String PING = "/eth2/beacon_chain/req/ping";
 
@@ -55,11 +58,6 @@ public class BeaconChainMethodIds {
     return getMethodId(BLOB_SIDECARS_BY_RANGE, version, encoding);
   }
 
-  public static String getExecutionPayloadEnvelopeByRootMethodId(
-      final int version, final RpcEncoding encoding) {
-    return getMethodId(EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT, version, encoding);
-  }
-
   public static String getStatusMethodId(final int version, final RpcEncoding encoding) {
     return getMethodId(STATUS, version, encoding);
   }
@@ -70,10 +68,6 @@ public class BeaconChainMethodIds {
 
   public static int extractBeaconBlocksByRangeVersion(final String methodId) {
     return extractVersion(methodId, BEACON_BLOCKS_BY_RANGE);
-  }
-
-  public static int extractExecutionPayloadEnvelopeByRootVersion(final String methodId) {
-    return extractVersion(methodId, EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT);
   }
 
   public static int extractGetMetadataVersion(final String methodId) {

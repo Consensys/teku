@@ -52,6 +52,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigEip7732;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
@@ -62,6 +63,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsB
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage.ExecutionPayloadEnvelopesByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
@@ -99,6 +101,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       blobSidecarsByRootRequestMessageSchema;
   private final Supplier<ExecutionPayloadEnvelopesByRootRequestMessageSchema>
       executionPayloadEnvelopesByRootRequestMessageSchema;
+  private final Supplier<UInt64> firstSlotSupportingExecutionPayloadEnvelopesByRange;
 
   DefaultEth2Peer(
       final Spec spec,
@@ -143,6 +146,12 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                 SchemaDefinitionsEip7732.required(
                         spec.forMilestone(SpecMilestone.EIP7732).getSchemaDefinitions())
                     .getExecutionPayloadEnvelopesByRootRequestMessageSchema());
+    this.firstSlotSupportingExecutionPayloadEnvelopesByRange =
+        Suppliers.memoize(
+            () -> {
+              final UInt64 eip7732ForkEpoch = getSpecConfigEip7732().getEip7732ForkEpoch();
+              return spec.computeStartSlotAtEpoch(eip7732ForkEpoch);
+            });
   }
 
   @Override
@@ -407,6 +416,42 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRange"));
   }
 
+  @Override
+  public SafeFuture<Void> requestExecutionPayloadEnvelopesByRange(
+      final UInt64 startSlot,
+      final UInt64 count,
+      final RpcResponseListener<SignedExecutionPayloadEnvelope> listener) {
+    return rpcMethods
+        .executionPayloadEnvelopesByRange()
+        .map(
+            method -> {
+              final UInt64 firstSupportedSlot =
+                  firstSlotSupportingExecutionPayloadEnvelopesByRange.get();
+              final ExecutionPayloadEnvelopesByRangeRequestMessage request;
+
+              if (startSlot.isLessThan(firstSupportedSlot)) {
+                LOG.debug(
+                    "Requesting execution payload envelopes from slot {} instead of slot {} because the request is spanning the EIP-7732 fork transition",
+                    firstSupportedSlot,
+                    startSlot);
+                final UInt64 updatedCount =
+                    count.minusMinZero(firstSupportedSlot.minusMinZero(startSlot));
+                if (updatedCount.isZero()) {
+                  return SafeFuture.COMPLETE;
+                }
+                request =
+                    new ExecutionPayloadEnvelopesByRangeRequestMessage(
+                        firstSupportedSlot, updatedCount);
+              } else {
+                request = new ExecutionPayloadEnvelopesByRangeRequestMessage(startSlot, count);
+              }
+              // EIP-7732 TODO: add a listener wrapper for additional verification (similar to
+              // BlocksByRange)
+              return requestStream(method, request, listener);
+            })
+        .orElse(failWithUnsupportedMethodException("ExecutionPayloadEnvelopesByRange"));
+  }
+
   private int calculateMaxBlobsPerBlock(final UInt64 endSlot) {
     return SpecConfigDeneb.required(spec.atSlot(endSlot).getConfig()).getMaxBlobsPerBlock();
   }
@@ -552,6 +597,10 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   private SpecConfigDeneb getSpecConfigDeneb() {
     return SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig());
+  }
+
+  private SpecConfigEip7732 getSpecConfigEip7732() {
+    return SpecConfigEip7732.required(spec.forMilestone(SpecMilestone.EIP7732).getConfig());
   }
 
   private <T> SafeFuture<T> failWithUnsupportedMethodException(final String method) {

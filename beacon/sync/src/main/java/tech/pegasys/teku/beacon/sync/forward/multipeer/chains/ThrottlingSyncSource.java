@@ -30,6 +30,7 @@ import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 
 public class ThrottlingSyncSource implements SyncSource {
   private static final Logger LOG = LogManager.getLogger();
@@ -43,6 +44,7 @@ public class ThrottlingSyncSource implements SyncSource {
   private final RateTracker blocksRateTracker;
   private final Optional<Integer> maybeMaxBlobsPerBlock;
   private final RateTracker blobSidecarsRateTracker;
+  private final RateTracker executionPayloadEnvelopesRateTracker;
 
   public ThrottlingSyncSource(
       final AsyncRunner asyncRunner,
@@ -61,6 +63,8 @@ public class ThrottlingSyncSource implements SyncSource {
                 maxBlobSidecarsPerMinute ->
                     RateTracker.create(maxBlobSidecarsPerMinute, TIMEOUT_SECONDS, timeProvider))
             .orElse(RateTracker.NOOP);
+    this.executionPayloadEnvelopesRateTracker =
+        RateTracker.create(maxBlocksPerMinute, TIMEOUT_SECONDS, timeProvider);
   }
 
   @Override
@@ -122,6 +126,38 @@ public class ThrottlingSyncSource implements SyncSource {
                   PEER_REQUEST_DELAY.toSeconds());
               return asyncRunner.runAfterDelay(
                   () -> requestBlobSidecarsByRange(startSlot, count, listener), PEER_REQUEST_DELAY);
+            });
+  }
+
+  @Override
+  public SafeFuture<Void> requestExecutionPayloadEnvelopesByRange(
+      final UInt64 startSlot,
+      final UInt64 count,
+      final RpcResponseListener<SignedExecutionPayloadEnvelope> listener) {
+    return executionPayloadEnvelopesRateTracker
+        .approveObjectsRequest(count.longValue())
+        .map(
+            requestApproval -> {
+              LOG.debug("Sending request for {} execution payload envelopes", count);
+              final RpcResponseListenerWithCount<SignedExecutionPayloadEnvelope> listenerWithCount =
+                  new RpcResponseListenerWithCount<>(listener);
+              return delegate
+                  .requestExecutionPayloadEnvelopesByRange(startSlot, count, listenerWithCount)
+                  .alwaysRun(
+                      () ->
+                          // adjust for slots with empty execution payloads
+                          executionPayloadEnvelopesRateTracker.adjustObjectsRequest(
+                              requestApproval, listenerWithCount.count.get()));
+            })
+        .orElseGet(
+            () -> {
+              LOG.debug(
+                  "Rate limiting request for {} execution payload envelopes. Retry in {} seconds",
+                  count,
+                  PEER_REQUEST_DELAY.toSeconds());
+              return asyncRunner.runAfterDelay(
+                  () -> requestExecutionPayloadEnvelopesByRange(startSlot, count, listener),
+                  PEER_REQUEST_DELAY);
             });
   }
 
