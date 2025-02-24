@@ -15,7 +15,7 @@ runs:
     - name: Gather test results
       shell: bash
       run: |
-        rm -rf build/test-output
+        # rm -rf build/test-output
         FILES=`find . -name test-results`
         for FILE in $FILES
         do
@@ -27,25 +27,38 @@ runs:
         done
         tree build/test-output/
 
-    # - name: Gather test reports
-    #   shell: bash
-    #   run: |
-    #     rm -rf build/test-reports
-    #     FILES=`find . -name reports -not -path './build/reports'`
-    #     for FILE in $FILES
-    #     do
-    #       MODULE=`echo "$FILE" | sed -e 's@./\(.*\)/build/reports@\1@'`
-    #       TARGET="build/test-reports/$MODULE"
-    #       SOURCE="${FILE}/tests/test"
-    #       mkdir -p "$TARGET"
-    #       if [[ -d "$SOURCE" ]]; then
-    #         cp -rf "$SOURCE" "$TARGET"
-    #       fi
-    #     done
-    #     if [[ -f 'build/reports/dependency-check-report.html' ]]; then
-    #       cp 'build/reports/dependency-check-report.html' 'build/test-reports'
-    #     fi
-    #     tree build/test-reports/
+    - name: Gather test artifacats
+      shell: bash
+      run: |
+        FILES=`find . -name test-artifacts`
+        for FILE in $FILES
+        do
+          MODULE=`echo "$FILE" | sed -e 's@./\(.*\)/build/test-artifacts@\1@'`
+          TARGET="build/test-artifacts/$MODULE"
+          mkdir -p "$TARGET"
+          cp -rf ${FILE}/*/* "$TARGET"
+        done
+        tree build/test-artifacts/
+
+    - name: Gather test reports
+      shell: bash
+      run: |
+        # rm -rf build/test-reports
+        FILES=`find . -name reports -not -path './build/reports'`
+        for FILE in $FILES
+        do
+          MODULE=`echo "$FILE" | sed -e 's@./\(.*\)/build/reports@\1@'`
+          TARGET="build/test-reports/$MODULE"
+          SOURCE="${FILE}/tests/test"
+          mkdir -p "$TARGET"
+          if [[ -d "$SOURCE" ]]; then
+            cp -rf "$SOURCE" "$TARGET"
+          fi
+        done
+        if [[ -f 'build/reports/dependency-check-report.html' ]]; then
+          cp 'build/reports/dependency-check-report.html' 'build/test-reports'
+        fi
+        tree build/test-reports/
 
     - name: Publish Test Results and Reports
       uses: actions/upload-artifact@v4
@@ -56,6 +69,7 @@ runs:
         retention-days: 7
         path: |
           build/test-output/
+          build/test-artifacts/
           build/test-reports/
 
 
