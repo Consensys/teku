@@ -802,21 +802,23 @@ class Store extends CacheableStore {
 
   /** Non-synchronized, no lock, unsafe if Store is not locked externally */
   @Override
-  void cacheInclusionListEquivocator(
-      final SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot,
-      final UInt64 validatorIndex) {
+  void cacheInclusionListEquivocator(final InclusionList inclusionList) {
     inclusionListEquivocators
-        .computeIfAbsent(slotAndInclusionListCommitteeRoot, key -> new HashSet<>())
-        .add(validatorIndex);
+        .computeIfAbsent(
+            new SlotAndInclusionListCommitteeRoot(
+                inclusionList.getSlot(), inclusionList.getInclusionListCommitteeRoot()),
+            key -> new HashSet<>())
+        .add(inclusionList.getValidatorIndex());
   }
 
   /** Non-synchronized, no lock, unsafe if Store is not locked externally */
   @Override
-  void cacheInclusionList(
-      final SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot,
-      final InclusionList inclusionList) {
+  void cacheInclusionList(final InclusionList inclusionList) {
     inclusionLists
-        .computeIfAbsent(slotAndInclusionListCommitteeRoot, key -> new ArrayList<>())
+        .computeIfAbsent(
+            new SlotAndInclusionListCommitteeRoot(
+                inclusionList.getSlot(), inclusionList.getInclusionListCommitteeRoot()),
+            key -> new ArrayList<>())
         .add(inclusionList);
   }
 
