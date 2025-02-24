@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
+import tech.pegasys.teku.spec.datastructures.operations.SlotAndInclusionListCommitteeRoot;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -271,13 +272,21 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public Optional<List<InclusionList>> getInclusionList(final SlotAndBlockRoot slotAndBlockRoot) {
+  public Optional<List<InclusionList>> getInclusionLists(
+      final SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot) {
     return Optional.empty();
   }
 
   @Override
   public Optional<Bytes32> getInclusionListAttesterHead(final Bytes32 headRoot) {
     return Optional.empty();
+  }
+
+  @Override
+  public boolean isInclusionListEquivocator(
+      final SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot,
+      final UInt64 validatorIndex) {
+    return false;
   }
 
   @Override
