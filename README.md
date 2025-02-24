@@ -2,7 +2,7 @@
 
  [![Build Status](https://circleci.com/gh/Consensys/teku.svg?style=svg)](https://circleci.com/gh/Consensys/workflows/teku)
  [![GitHub License](https://img.shields.io/github/license/Consensys/teku.svg?logo=apache)](https://github.com/Consensys/teku/blob/master/LICENSE)
- [![Documentation](https://img.shields.io/badge/docs-readme-blue?logo=readme&logoColor=white)](https://docs.teku.consensys.io/)
+ [![Documentation](https://img.shields.io/badge/docs-readme-blue?logo=readme&logoColor=white)](https://docs.teku.consensys.net/)
  [![Discord](https://img.shields.io/badge/Chat-on%20Discord-%235865F2?logo=discord&logoColor=white)](https://discord.gg/7hPv2T6)
  [![Twitter Follow](https://img.shields.io/twitter/follow/Teku_Consensys)](https://twitter.com/Teku_Consensys)
  [![GitPOAP Badge](https://public-api.gitpoap.io/v1/repo/ConsenSys/teku/badge)](https://www.gitpoap.io/gh/ConsenSys/teku)
@@ -13,7 +13,7 @@ See the [Changelog](https://github.com/Consensys/teku/releases) for details of t
 
 ## Useful links
 
-* [Ethereum Beacon Chain specification](https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md)
+* [Ethereum Beacon Chain specification](https://github.com/ethereum/consensus-specs/blob/main/specs/phase0/beacon-chain.md)
 * [Teku user documentation](https://docs.teku.consensys.net/)
 * [Teku REST API reference documentation](https://consensys.github.io/teku/)
 * [Teku issues](https://github.com/Consensys/teku/issues)
