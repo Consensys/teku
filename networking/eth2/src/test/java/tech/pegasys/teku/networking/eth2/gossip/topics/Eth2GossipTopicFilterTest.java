@@ -180,6 +180,14 @@ class Eth2GossipTopicFilterTest {
     assertThat(filter.isRelevantTopic(irrelevantTopic)).isFalse();
   }
 
+  @TestTemplate
+  void shouldComputeMaxSubscribedTopics() {
+    switch (nextSpecMilestone) {
+      case DENEB -> assertThat(filter.getMaxSubscribedTopics()).isEqualTo(243);
+      case ELECTRA -> assertThat(filter.getMaxSubscribedTopics()).isEqualTo(252);
+    }
+  }
+
   private String getTopicName(final GossipTopicName name) {
     return GossipTopics.getTopic(currentForkInfo.getForkDigest(spec), name, SSZ_SNAPPY);
   }
