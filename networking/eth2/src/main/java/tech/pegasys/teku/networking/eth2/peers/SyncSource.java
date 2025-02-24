@@ -20,6 +20,7 @@ import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
 
 /**
  * Represents an external source of blocks (and blob sidecars post Deneb) to sync. Typically, a
@@ -31,6 +32,9 @@ public interface SyncSource {
 
   SafeFuture<Void> requestBlobSidecarsByRange(
       UInt64 startSlot, UInt64 count, RpcResponseListener<BlobSidecar> listener);
+
+  SafeFuture<Void> requestExecutionPayloadEnvelopesByRange(
+      UInt64 startSlot, UInt64 count, RpcResponseListener<SignedExecutionPayloadEnvelope> listener);
 
   void adjustReputation(final ReputationAdjustment adjustment);
 

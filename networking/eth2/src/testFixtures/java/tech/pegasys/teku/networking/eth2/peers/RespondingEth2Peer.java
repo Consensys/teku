@@ -229,6 +229,15 @@ public class RespondingEth2Peer implements Eth2Peer {
     return createPendingBlobSidecarRequest(handler);
   }
 
+  // EIP-7732 TODO: implement (test)
+  @Override
+  public SafeFuture<Void> requestExecutionPayloadEnvelopesByRange(
+      final UInt64 startSlot,
+      final UInt64 count,
+      final RpcResponseListener<SignedExecutionPayloadEnvelope> listener) {
+    throw new UnsupportedOperationException();
+  }
+
   @Override
   public SafeFuture<Void> requestBlocksByRoot(
       final List<Bytes32> blockRoots, final RpcResponseListener<SignedBeaconBlock> listener) {
