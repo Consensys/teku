@@ -74,6 +74,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Set<Bytes32> pulledUpBlockCheckpoints = new HashSet<>();
   Map<Bytes32, TransactionBlockData> blockData = new HashMap<>();
   Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new HashMap<>();
+  Optional<InclusionList> maybeInclusionList = Optional.empty();
+  Optional<InclusionList> maybeEquivocatedInclusionList = Optional.empty();
   Optional<UInt64> maybeEarliestBlobSidecarTransactionSlot = Optional.empty();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
 
@@ -104,6 +106,16 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       this.maybeEarliestBlobSidecarTransactionSlot = maybeEarliestBlobSidecarSlot;
     }
     putStateRoot(state.hashTreeRoot(), block.getSlotAndBlockRoot());
+  }
+
+  @Override
+  public void putInclusionList(final InclusionList inclusionList) {
+    this.maybeInclusionList = Optional.of(inclusionList);
+  }
+
+  @Override
+  public void putEquivocatedInclusionList(final InclusionList equivocatedInclusionList) {
+    this.maybeEquivocatedInclusionList = Optional.of(equivocatedInclusionList);
   }
 
   private boolean needToUpdateEarliestBlobSidecarSlot(
