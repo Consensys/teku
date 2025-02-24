@@ -70,7 +70,7 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
     totalExecutionPayloadEnvelopesRequestedCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.NETWORK,
-            "rpc_execution_payload_envelopes_by_range_requested_blocks_total",
+            "rpc_execution_payload_envelopes_by_range_requested_envelopes_total",
             "Total number of execution payload envelopes requested in accepted execution payload envelopes by range requests from peers");
   }
 
@@ -232,9 +232,9 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
     return requestState
         .loadNextExecutionPayload()
         .thenCompose(
-            block -> {
+            executionPayload -> {
               requestState.decrementRemainingExecutionPayloads();
-              return handleLoadedExecutionPayload(requestState, block);
+              return handleLoadedExecutionPayload(requestState, executionPayload);
             });
   }
 
@@ -279,7 +279,7 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
       this.callback = callback;
     }
 
-    private boolean needsMoreBlocks() {
+    private boolean needsMoreExecutionPayloads() {
       return !remainingExecutionPayloads.equals(ZERO);
     }
 
@@ -288,7 +288,7 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
     }
 
     boolean isComplete() {
-      return !needsMoreBlocks() || hasReachedHeadSlot();
+      return !needsMoreExecutionPayloads() || hasReachedHeadSlot();
     }
 
     SafeFuture<Void> sendExecutionPayload(final SignedExecutionPayloadEnvelope executionPayload) {
