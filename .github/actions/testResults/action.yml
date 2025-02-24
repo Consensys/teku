@@ -27,18 +27,11 @@ runs:
         done
         tree build/test-output/
 
-    - name: Gather test artifacats
+    - name: Collate acceptance Test reports 
+      if: "${{ inputs.suiteName == 'acceptanceTests' }}"
       shell: bash
       run: |
-        FILES=`find . -name test-artifacts`
-        for FILE in $FILES
-        do
-          MODULE=`echo "$FILE" | sed -e 's@./\(.*\)/build/test-artifacts@\1@'`
-          TARGET="build/test-artifacts/$MODULE"
-          mkdir -p "$TARGET"
-          cp -rf ${FILE}/*/* "$TARGET"
-        done
-        tree build/test-artifacts/
+        cp -r acceptance-tests/build/reports/tests/acceptanceTest  build/test-reports/
 
     - name: Gather test reports
       shell: bash
@@ -59,6 +52,20 @@ runs:
           cp 'build/reports/dependency-check-report.html' 'build/test-reports'
         fi
         tree build/test-reports/
+
+    - name: Gather extra artifacts for acceptance tests
+      if: "${{ github.event.inputs.suiteName == 'acceptanceTests' }}"
+      shell: bash
+      run: |
+        FILES=`find . -name test-artifacts`
+        for FILE in $FILES
+        do
+          MODULE=`echo "$FILE" | sed -e 's@./\(.*\)/build/test-artifacts@\1@'`
+          TARGET="build/test-artifacts/$MODULE"
+          mkdir -p "$TARGET"
+          cp -rf ${FILE}/*/* "$TARGET"
+        done
+        tree build/test-artifacts/
 
     - name: Publish Test Results and Reports
       uses: actions/upload-artifact@v4
