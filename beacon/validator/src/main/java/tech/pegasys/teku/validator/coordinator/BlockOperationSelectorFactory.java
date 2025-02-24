@@ -133,7 +133,7 @@ public class BlockOperationSelectorFactory {
       final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
               blockSlotState, new AttestationForkChecker(spec, blockSlotState));
-      final long time = start - System.currentTimeMillis();
+      final long time = System.currentTimeMillis() - start;
       if (time > 2000) {
         LOG.info(
             "Attestation pool took {}ms to get attestations for block at slot {}. dumping.",
