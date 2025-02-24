@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -139,18 +140,19 @@ public class BlockOperationSelectorFactory {
             "Attestation pool took {}ms to get attestations for block at slot {}. dumping.",
             time,
             blockSlotState.getSlot());
-        SafeFuture.runAsync(
-            () -> {
-              attestationPool.dumpAttestations();
-              try (OutputStream os =
-                  new FileOutputStream(
-                      "/tmp/blockSlotState " + blockSlotState.getSlot() + ".ssz")) {
-                blockSlotState.sszSerialize(os);
-              } catch (final IOException e) {
-                LOG.error("Failed to dump blockSlotState.", e);
-              }
-              LOG.info("Dump completed.");
-            });
+        SafeFuture.of(
+                SafeFuture.runAsync(
+                    () -> {
+                      attestationPool.dumpAttestations();
+                      try (OutputStream os =
+                          new FileOutputStream(
+                              "/tmp/blockSlotState " + blockSlotState.getSlot() + ".ssz")) {
+                        blockSlotState.sszSerialize(os);
+                      } catch (final IOException e) {
+                        throw new UncheckedIOException(e);
+                      }
+                    }))
+            .finish(() -> LOG.info("Dumping completed."), err -> LOG.error("Failed to dump.", err));
       }
 
       // Collect slashings to include
