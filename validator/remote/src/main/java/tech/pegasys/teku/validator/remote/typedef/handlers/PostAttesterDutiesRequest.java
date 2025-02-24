@@ -39,7 +39,7 @@ public class PostAttesterDutiesRequest extends AbstractTypeDefRequest {
         GET_ATTESTATION_DUTIES,
         Map.of(RestApiConstants.EPOCH, epoch.toString()),
         validatorIndices.stream().toList(),
-        DeserializableTypeDefinition.listOf(INTEGER_TYPE, 1),
+        DeserializableTypeDefinition.listOf(INTEGER_TYPE, Optional.of(1), Optional.empty()),
         new ResponseHandler<>(ATTESTER_DUTIES_RESPONSE_TYPE));
   }
 }

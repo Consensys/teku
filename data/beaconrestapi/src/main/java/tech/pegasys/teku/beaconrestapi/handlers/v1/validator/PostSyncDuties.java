@@ -58,7 +58,8 @@ public class PostSyncDuties extends RestApiEndpoint {
             .description("Requests the beacon node to provide a set of sync committee duties")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .pathParam(EPOCH_PARAMETER)
-            .requestBodyType(DeserializableTypeDefinition.listOf(INTEGER_TYPE, 1))
+            .requestBodyType(
+                DeserializableTypeDefinition.listOf(INTEGER_TYPE, Optional.of(1), Optional.empty()))
             .response(SC_OK, "Request successful", SYNC_COMMITTEE_DUTIES_TYPE)
             .withServiceUnavailableResponse()
             .response(
