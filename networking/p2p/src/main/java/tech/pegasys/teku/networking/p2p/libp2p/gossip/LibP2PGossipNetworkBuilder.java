@@ -19,6 +19,7 @@ import static tech.pegasys.teku.networking.p2p.libp2p.config.LibP2PParamsFactory
 import static tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork.NULL_SEQNO_GENERATOR;
 import static tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork.STRICT_FIELDS_VALIDATOR;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import io.libp2p.core.pubsub.PubsubApi;
 import io.libp2p.core.pubsub.PubsubApiKt;
@@ -54,6 +55,9 @@ import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
  * might be changed in any version in backward incompatible way
  */
 public class LibP2PGossipNetworkBuilder {
+
+  // Enough to subscribe to three forks simultaneously so testnets can fork in subsequent epochs
+  @VisibleForTesting public static final int MAX_SUBSCRIBED_TOPICS = 250;
 
   public static LibP2PGossipNetworkBuilder create() {
     return new LibP2PGossipNetworkBuilder();
@@ -109,7 +113,7 @@ public class LibP2PGossipNetworkBuilder {
     final TopicSubscriptionFilter subscriptionFilter =
         new MaxCountTopicSubscriptionFilter(
             MAX_SUBSCRIPTIONS_PER_MESSAGE,
-            gossipTopicFilter.getMaxSubscribedTopics(),
+            MAX_SUBSCRIBED_TOPICS,
             gossipTopicFilter::isRelevantTopic);
 
     final GossipRouterBuilder builder = new GossipRouterBuilder();

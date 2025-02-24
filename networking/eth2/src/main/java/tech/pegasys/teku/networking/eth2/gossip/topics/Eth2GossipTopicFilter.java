@@ -26,7 +26,6 @@ import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -35,14 +34,12 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
 
   private final Spec spec;
   private final Supplier<Set<String>> relevantTopics;
-  private final int maxSubscribedTopics;
 
   public Eth2GossipTopicFilter(
       final RecentChainData recentChainData, final GossipEncoding gossipEncoding, final Spec spec) {
     this.spec = spec;
     relevantTopics =
         Suppliers.memoize(() -> computeRelevantTopics(recentChainData, gossipEncoding));
-    maxSubscribedTopics = computeMaxSubscribedTopics(recentChainData, gossipEncoding);
   }
 
   @Override
@@ -52,11 +49,6 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
       LOG.debug("Ignoring subscription request for topic {}", topic);
     }
     return allowed;
-  }
-
-  @Override
-  public int getMaxSubscribedTopics() {
-    return maxSubscribedTopics;
   }
 
   private Set<String> computeRelevantTopics(
@@ -81,18 +73,5 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
                       gossipEncoding, futureForkDigest, spec, futureSpecVersion.getMilestone()));
             });
     return topics;
-  }
-
-  private int computeMaxSubscribedTopics(
-      final RecentChainData recentChainData, final GossipEncoding gossipEncoding) {
-    final SpecMilestone highestSupportedMilestone =
-        spec.getForkSchedule().getHighestSupportedMilestone();
-    final Fork highestSupportedFork = spec.getForkSchedule().getFork(highestSupportedMilestone);
-    final Bytes4 forkDigest =
-        spec.computeForkDigest(
-            highestSupportedFork.getCurrentVersion(),
-            recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot());
-    // Enough to subscribe to three forks simultaneously so testnets can fork in subsequent epochs
-    return getAllTopics(gossipEncoding, forkDigest, spec, highestSupportedMilestone).size() * 3;
   }
 }

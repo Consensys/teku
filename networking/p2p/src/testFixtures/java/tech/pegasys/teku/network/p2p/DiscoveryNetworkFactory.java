@@ -38,7 +38,6 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetworkBuilder;
-import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.reputation.DefaultReputationManager;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
@@ -130,19 +129,7 @@ public class DiscoveryNetworkFactory {
                             (topic, payload, networkingSpecConfig, arrivalTimestamp) -> {
                               throw new UnsupportedOperationException();
                             })
-                        .gossipTopicFilter(
-                            new GossipTopicFilter() {
-                              @Override
-                              public boolean isRelevantTopic(final String topic) {
-                                return true;
-                              }
-
-                              // safe value for testing
-                              @Override
-                              public int getMaxSubscribedTopics() {
-                                return 250;
-                              }
-                            })
+                        .gossipTopicFilter(topic -> true)
                         .timeProvider(StubTimeProvider.withTimeInMillis(0))
                         .build())
                 .peerPools(peerPools)

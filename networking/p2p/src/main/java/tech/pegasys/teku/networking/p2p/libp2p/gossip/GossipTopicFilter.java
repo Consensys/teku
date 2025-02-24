@@ -13,8 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
+@FunctionalInterface
 public interface GossipTopicFilter {
   boolean isRelevantTopic(String topic);
-
-  int getMaxSubscribedTopics();
 }
