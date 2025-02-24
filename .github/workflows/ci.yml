@@ -23,77 +23,77 @@ on:
 
 env:
   JAVA_TOOL_OPTIONS: -Xmx4096m
-  GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4 -Dorg.gradle.internal.cmdline.max.length=6291456 -Xmx4096m
+  GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4 -Xmx4096m
 
 jobs:
 
-  # spotless:
-  #   runs-on: ubuntu-24.04
-  #   environment: dev
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         submodules: 'recursive'
+  spotless:
+    runs-on: ubuntu-24.04
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
 
-  #     - name: Prepare
-  #       uses: ./.github/actions/prepare
+      - name: Prepare
+        uses: ./.github/actions/prepare
 
-  #     - name: Spotless
-  #       run: |
-  #         ./gradlew spotlessCheck
+      - name: Spotless
+        run: |
+          ./gradlew spotlessCheck
       
-  # moduleChecks:
-  #   runs-on: ubuntu-24.04
-  #   environment: dev
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         submodules: 'recursive'
+  moduleChecks:
+    runs-on: ubuntu-24.04
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
 
-  #     - name: Prepare
-  #       uses: ./.github/actions/prepare
+      - name: Prepare
+        uses: ./.github/actions/prepare
 
-  #     - name: Check modules
-  #       run: |
-  #         ./gradlew checkMavenCoordinateCollisions checkModuleDependencies
+      - name: Check modules
+        run: |
+          ./gradlew checkMavenCoordinateCollisions checkModuleDependencies
 
-  # windowsBuild:
-  #   needs: [spotless, moduleChecks ]
-  #   # 32 cpu, 128G ram
-  #   runs-on: windows-2022
-  #   environment: dev
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         submodules: 'recursive'
+  windowsBuild:
+    needs: [spotless, moduleChecks ]
+    # 32 cpu, 128G ram
+    runs-on: windows-2022
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
 
-  #     - name: Prepare
-  #       uses: ./.github/actions/prepareWindows
+      - name: Prepare
+        uses: ./.github/actions/prepareWindows
 
-  #     - name: Build
-  #       shell: powershell
-  #       run: |
-  #         $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
-  #         $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.vfs.watch=false"
-  #         cmd.exe /c gradlew.bat --no-daemon --parallel --build-cache
+      - name: Build
+        shell: powershell
+        run: |
+          $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
+          $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.vfs.watch=false"
+          cmd.exe /c gradlew.bat --no-daemon --parallel --build-cache
       
-  #     - name: Build
-  #       shell: powershell
-  #       run: |
-  #         New-Item -ItemType Directory -Force build\test-results
-  #         Get-ChildItem -Recurse | Where-Object {$_.FullName -match "test-results\\.*\\.*.xml"} | Copy-Item -Destination build\test-results\
+      - name: Build
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force build\test-results
+          Get-ChildItem -Recurse | Where-Object {$_.FullName -match "test-results\\.*\\.*.xml"} | Copy-Item -Destination build\test-results\
       
-  #     - name: Publish Windows Test Results and Reports
-  #       uses: actions/upload-artifact@v4
-  #       if: always()
-  #       with:
-  #         if-no-files-found: ignore
-  #         retention-days: 7
-  #         path: |
-  #           build/test-results/
+      - name: Publish Windows Test Results and Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          if-no-files-found: ignore
+          retention-days: 7
+          path: |
+            build/test-results/
 
   assemble:
     runs-on: ubuntu-24.04
@@ -143,109 +143,105 @@ jobs:
             !./.git/**
           retention-days: 1
 
-  # unitTests:
-  #   needs: assemble
-  #   # 32 cpu, 128G ram
-  #   runs-on: ubuntu-latest-128
-  #   environment: dev
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         submodules: 'recursive'
+  unitTests:
+    needs: assemble
+    runs-on: ubuntu-latest-128
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
 
-  #     - name: Prepare
-  #       uses: ./.github/actions/prepare
+      - name: Prepare
+        uses: ./.github/actions/prepare
 
-  #     - name: Download workspace build
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: workspace
+      - name: Download workspace build
+        uses: actions/download-artifact@v4
+        with:
+          name: workspace
 
-  #     - name: Unit Tests
-  #       run: |
-  #         CLASSNAMES=$(find . -iwholename "**/src/test/java/**/*.java" \
-  #             | sed 's@.*/src/test/java/@@' \
-  #             | sed 's@/@.@g' \
-  #             | sed 's/.\{5\}$//' )
-  #         GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
-  #         echo "Prepared arguments for Gradle: $GRADLE_ARGS"
-  #         ./gradlew test $GRADLE_ARGS
+      - name: Unit Tests
+        run: |
+          CLASSNAMES=$(find . -iwholename "**/src/test/java/**/*.java" \
+              | sed 's@.*/src/test/java/@@' \
+              | sed 's@/@.@g' \
+              | sed 's/.\{5\}$//' )
+          GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
+          echo "Prepared arguments for Gradle: $GRADLE_ARGS"
+          ./gradlew test $GRADLE_ARGS
 
-  #     - name: Test results 
-  #       uses: ./.github/actions/testResults
-  #       if: always()        
-  #       with:
-  #         suiteName: 'unitTests'
+      - name: Test results 
+        uses: ./.github/actions/testResults
+        if: always()        
+        with:
+          suiteName: 'unitTests'
 
-  # integrationTests:
-  #   needs: assemble
-  #   # 32 cpu, 128G ram
-  #   runs-on: ubuntu-latest-128
-  #   environment: dev
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         submodules: 'recursive'
+  integrationTests:
+    needs: assemble
+    runs-on: ubuntu-latest-128
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
 
-  #     - name: Prepare
-  #       uses: ./.github/actions/prepare
+      - name: Prepare
+        uses: ./.github/actions/prepare
 
-  #     - name: Download workspace build
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: workspace
+      - name: Download workspace build
+        uses: actions/download-artifact@v4
+        with:
+          name: workspace
 
-  #     - name: Integration Tests
-  #       run: |
-  #         ls -la .
-  #         ./gradlew integrationTest
+      - name: Integration Tests
+        run: |
+          ls -la .
+          ./gradlew integrationTest
 
-  #     - name: Test results 
-  #       uses: ./.github/actions/testResults
-  #       if: always()        
-  #       with:
-  #         suiteName: 'integrationTests'
+      - name: Test results 
+        uses: ./.github/actions/testResults
+        if: always()        
+        with:
+          suiteName: 'integrationTests'
 
-  # propertyTests:
-  #   needs: assemble
-  #   # 32 cpu, 128G ram
-  #   runs-on: ubuntu-latest-128
-  #   environment: dev
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         submodules: 'recursive'
+  propertyTests:
+    needs: assemble
+    runs-on: ubuntu-latest-128
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
 
-  #     - name: Prepare
-  #       uses: ./.github/actions/prepare
+      - name: Prepare
+        uses: ./.github/actions/prepare
 
-  #     - name: Download workspace build
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: workspace
+      - name: Download workspace build
+        uses: actions/download-artifact@v4
+        with:
+          name: workspace
 
-  #     - name: Acceptance Tests
-  #       run: |
-  #         CLASSNAMES=$(find . -iwholename "**/src/property-test/java/**/*.java" \
-  #             | sed 's@.*/src/property-test/java/@@' \
-  #             | sed 's@/@.@g' \
-  #             | sed 's/.\{5\}$//' )
-  #         GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
-  #         echo "Prepared arguments for Gradle: $GRADLE_ARGS"
-  #         ./gradlew --info propertyTest $GRADLE_ARGS
+      - name: Acceptance Tests
+        run: |
+          CLASSNAMES=$(find . -iwholename "**/src/property-test/java/**/*.java" \
+              | sed 's@.*/src/property-test/java/@@' \
+              | sed 's@/@.@g' \
+              | sed 's/.\{5\}$//' )
+          GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
+          echo "Prepared arguments for Gradle: $GRADLE_ARGS"
+          ./gradlew --info propertyTest $GRADLE_ARGS
 
-  #     - name: Test results 
-  #       uses: ./.github/actions/testResults
-  #       if: always()        
-  #       with:
-  #         suiteName: 'propertyTests'
+      - name: Test results 
+        uses: ./.github/actions/testResults
+        if: always()        
+        with:
+          suiteName: 'propertyTests'
 
   acceptanceTests:
     needs: assemble
-    # 32 cpu, 128G ram
     runs-on: ubuntu-latest-128
     environment: dev
     steps:
@@ -280,7 +276,6 @@ jobs:
 
   referenceTests:
     needs: assemble
-    # 32 cpu, 128G ram
     runs-on: ubuntu-latest-128
     environment: dev
     steps:
