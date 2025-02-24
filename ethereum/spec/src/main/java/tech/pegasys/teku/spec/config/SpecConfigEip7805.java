@@ -41,6 +41,8 @@ public interface SpecConfigEip7805 extends SpecConfigElectra {
 
   int getMaxBytesPerInclusionList();
 
+  int getViewFreezeDeadline();
+
   @Override
   Optional<SpecConfigEip7805> toVersionEip7805();
 }

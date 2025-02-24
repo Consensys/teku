@@ -94,13 +94,13 @@ public class InclusionListUtil {
     return beaconStateAccessors.getInclusionListCommittee(state, slot);
   }
 
-  // TODO EIP7805 this IntList to SszList conversion to get the HTR could be improved
   public boolean hasCorrectCommitteeRoot(
       final BeaconState state, final UInt64 slot, final Bytes32 committeeRoot) {
     final Bytes32 inclusionCommitteeRoot = getInclusionListCommitteeRoot(state, slot);
     return committeeRoot.equals(inclusionCommitteeRoot);
   }
 
+  // TODO EIP7805 this IntList to SszList conversion to get the HTR could be improved
   public Bytes32 getInclusionListCommitteeRoot(final BeaconState state, final UInt64 slot) {
     final IntList inclusionListCommittee =
         beaconStateAccessors.getInclusionListCommittee(state, slot);
