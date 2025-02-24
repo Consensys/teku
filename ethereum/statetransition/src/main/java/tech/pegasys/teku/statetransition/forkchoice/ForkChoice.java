@@ -23,6 +23,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import java.net.ConnectException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -46,6 +47,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
+import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -60,6 +62,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
+import tech.pegasys.teku.spec.datastructures.operations.SlotAndInclusionListCommitteeRoot;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
@@ -67,10 +70,13 @@ import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.St
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.InclusionListImportResult;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.spec.logic.common.util.InclusionListUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
@@ -268,11 +274,100 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             });
   }
 
-  // TODO EIP7805 implement
-  @SuppressWarnings("unused")
-  public SafeFuture<AttestationProcessingResult> onInclusionList(
+  public SafeFuture<InclusionListImportResult> onInclusionList(
       final SignedInclusionList signedInclusionList) {
-    return SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL);
+    final InclusionList inclusionList = signedInclusionList.getMessage();
+    final UInt64 inclusionListSlot = inclusionList.getSlot();
+    final UInt64 currentSlot = spec.getCurrentSlot(recentChainData.getStore());
+    final UpdatableStore store = recentChainData.getStore();
+
+    // Verify inclusion list slot is either from the current or previous slot
+    if (!inclusionListSlot.equals(currentSlot) || !inclusionListSlot.equals(currentSlot.minus(1))) {
+      return SafeFuture.completedFuture(InclusionListImportResult.FAILED_INCLUSION_LIST_SLOT);
+    }
+
+    final UInt64 currentTime = store.getTimeInMillis();
+    final UInt64 millisIntoSlot = getMillisIntoSlot(currentTime, inclusionListSlot);
+
+    // If the inclusion list is from the previous slot, ignore it if already past the attestation
+    // deadline
+    if (inclusionListSlot.equals(currentSlot.minus(1))) {
+      final UInt64 millisPerSlot = spec.getMillisPerSlot(inclusionListSlot);
+      if (!isBeforeAttestingInterval(millisPerSlot, millisIntoSlot)) {
+        return SafeFuture.completedFuture(
+            InclusionListImportResult.FAILED_PAST_ATTESTATION_DEADLINE);
+      }
+    }
+
+    return recentChainData
+        .retrieveStateInEffectAtSlot(inclusionListSlot)
+        .thenApply(
+            maybeState -> {
+              if (maybeState.isEmpty()) {
+                return InclusionListImportResult.FAILED_STATE_UNAVAILABLE;
+              }
+              final BeaconState state = maybeState.get();
+              // Sanity check that the given `inclusion_list_committee` matches the root in the
+              // inclusion list
+              final InclusionListUtil inclusionListUtil =
+                  spec.atSlot(inclusionListSlot).getInclusionListUtil().orElseThrow();
+              if (!inclusionListUtil.hasCorrectCommitteeRoot(
+                  state, inclusionListSlot, inclusionList.getInclusionListCommitteeRoot())) {
+                return InclusionListImportResult.FAILED_COMMITTEE_ROOT_MISMATCH;
+              }
+
+              // Verify inclusion list validator is part of the committee
+              if (!inclusionListUtil.validatorIndexWithinCommittee(
+                  state, inclusionListSlot, inclusionList.getValidatorIndex())) {
+                return InclusionListImportResult.FAILED_VALIDATOR_NOT_IN_COMMITTEE;
+              }
+
+              // Verify inclusion list signature
+              if (!inclusionListUtil.isValidInclusionListSignature(state, signedInclusionList)) {
+                return InclusionListImportResult.FAILED_INVALID_SIGNATURE;
+              }
+
+              // Do not process inclusion lists from known equivocators
+              final int viewFreezeDeadline =
+                  SpecConfigEip7805.required(spec.atSlot(inclusionListSlot).getConfig())
+                      .getViewFreezeDeadline();
+              final boolean isBeforeFreezeDeadline =
+                  isBeforeFreezeDeadline(
+                      UInt64.valueOf(viewFreezeDeadline),
+                      millisIntoSlot,
+                      inclusionListSlot,
+                      currentSlot);
+              final SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot =
+                  new SlotAndInclusionListCommitteeRoot(
+                      inclusionListSlot, inclusionList.getInclusionListCommitteeRoot());
+
+              final UInt64 validatorIndex = inclusionList.getValidatorIndex();
+              if (!store.isInclusionListEquivocator(
+                  slotAndInclusionListCommitteeRoot, validatorIndex)) {
+                final Optional<List<InclusionList>> maybeInclusionLists =
+                    store.getInclusionLists(slotAndInclusionListCommitteeRoot);
+                final List<InclusionList> inclusionLists =
+                    maybeInclusionLists.orElse(Collections.emptyList()).stream()
+                        .filter(il -> il.getValidatorIndex().equals(validatorIndex))
+                        .toList();
+                if (!inclusionLists.isEmpty() && !inclusionLists.getFirst().equals(inclusionList)) {
+                  // TODO EIP7805 record equivocator in store
+                } else if (isBeforeFreezeDeadline) {
+                  // TODO EIP7805 record IL in store
+                }
+              }
+
+              return InclusionListImportResult.success(signedInclusionList);
+            });
+  }
+
+  private boolean isBeforeFreezeDeadline(
+      final UInt64 viewFreezeDeadline,
+      final UInt64 millisIntoSlot,
+      final UInt64 inclusionListSlot,
+      final UInt64 currentSlot) {
+    return currentSlot.equals(inclusionListSlot)
+        && millisIntoSlot.isLessThan(secondsToMillis(viewFreezeDeadline));
   }
 
   public void applyIndexedAttestations(final List<ValidatableAttestation> attestations) {
@@ -458,9 +553,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         blobSidecarManager.createAvailabilityChecker(block);
 
     blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
-    final SlotAndBlockRoot blockAndSlot =
-        new SlotAndBlockRoot(block.getSlot(), block.hashTreeRoot());
-    final Optional<List<InclusionList>> inclusionLists = store.getInclusionList(blockAndSlot);
+
+    // TODO EIP7805 this shouldn't be block.hashTreeRoot() but rather the IL committee root
+    final Optional<List<InclusionList>> inclusionLists =
+        store.getInclusionLists(
+            new SlotAndInclusionListCommitteeRoot(block.getSlot(), block.hashTreeRoot()));
 
     final BeaconState postState;
     try {
@@ -713,9 +810,16 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .mod(millisPerSlot);
   }
 
+  private UInt64 getMillisIntoSlot(final UInt64 currentTimeMillis, final UInt64 slot) {
+    final MiscHelpers miscHelpers = spec.atSlot(slot).miscHelpers();
+    final UInt64 timeIntoSlotSeconds =
+        miscHelpers.computeTimeAtSlot(recentChainData.getGenesisTime(), slot);
+    return currentTimeMillis.min(secondsToMillis(timeIntoSlotSeconds));
+  }
+
   private boolean isBeforeAttestingInterval(
       final UInt64 millisPerSlot, final UInt64 timeIntoSlotMillis) {
-    UInt64 oneThirdSlot = millisPerSlot.dividedBy(INTERVALS_PER_SLOT);
+    final UInt64 oneThirdSlot = millisPerSlot.dividedBy(INTERVALS_PER_SLOT);
     return timeIntoSlotMillis.isLessThan(oneThirdSlot);
   }
 

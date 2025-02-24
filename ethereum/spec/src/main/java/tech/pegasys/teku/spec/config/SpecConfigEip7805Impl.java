@@ -28,6 +28,7 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigElectra
   private final int maxTransactionsPerInclusionList;
   private final int maxRequestInclusionList;
   private final int maxBytesPerInclusionList;
+  private final int viewFreezeDeadline;
 
   public SpecConfigEip7805Impl(
       final SpecConfigElectra specConfig,
@@ -36,7 +37,8 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigElectra
       final int inclusionListCommitteeSize,
       final int maxTransactionsPerInclusionList,
       final int maxRequestInclusionList,
-      final int maxBytesPerInclusionList) {
+      final int maxBytesPerInclusionList,
+      final int viewFreezeDeadline) {
     super(specConfig);
     this.eip7805ForkVersion = eip7805ForkVersion;
     this.eip7805ForkEpoch = eip7805ForkEpoch;
@@ -44,6 +46,7 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigElectra
     this.maxTransactionsPerInclusionList = maxTransactionsPerInclusionList;
     this.maxRequestInclusionList = maxRequestInclusionList;
     this.maxBytesPerInclusionList = maxBytesPerInclusionList;
+    this.viewFreezeDeadline = viewFreezeDeadline;
   }
 
   @Override
@@ -77,6 +80,11 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigElectra
   }
 
   @Override
+  public int getViewFreezeDeadline() {
+    return viewFreezeDeadline;
+  }
+
+  @Override
   public Optional<SpecConfigEip7805> toVersionEip7805() {
     return Optional.of(this);
   }
@@ -101,7 +109,8 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigElectra
         && inclusionListCommitteeSize == that.inclusionListCommitteeSize
         && maxTransactionsPerInclusionList == that.maxTransactionsPerInclusionList
         && maxRequestInclusionList == that.maxRequestInclusionList
-        && maxBytesPerInclusionList == that.maxBytesPerInclusionList;
+        && maxBytesPerInclusionList == that.maxBytesPerInclusionList
+        && viewFreezeDeadline == that.viewFreezeDeadline;
   }
 
   @Override
@@ -113,6 +122,7 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigElectra
         inclusionListCommitteeSize,
         maxTransactionsPerInclusionList,
         maxRequestInclusionList,
-        maxBytesPerInclusionList);
+        maxBytesPerInclusionList,
+        viewFreezeDeadline);
   }
 }

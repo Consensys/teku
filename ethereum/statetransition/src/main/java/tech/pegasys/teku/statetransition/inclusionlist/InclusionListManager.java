@@ -27,7 +27,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
-import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.InclusionListImportResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.SignedInclusionListValidator;
@@ -92,43 +92,31 @@ public class InclusionListManager implements SlotEventsChannel {
               || internalValidationResult.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
             onInclusionList(signedInclusionList)
                 .finish(
-                    result ->
-                        result.ifInvalid(
-                            reason -> LOG.debug("Rejected received inclusion list: " + reason)),
+                    inclusionListImportResult -> {
+                      if (!inclusionListImportResult.isSuccessful()) {
+                        LOG.debug(
+                            "Rejected received inclusion list: {}",
+                            inclusionListImportResult.getFailureReason());
+                      }
+                    },
                     err -> LOG.error("Failed to process received inclusion list.", err));
           }
         });
   }
 
   // EIP7805 TODO we could use different inclusion list pools (pending, future)
-  public SafeFuture<AttestationProcessingResult> onInclusionList(
+  public SafeFuture<InclusionListImportResult> onInclusionList(
       final SignedInclusionList signedInclusionList) {
     return forkChoice
         .onInclusionList(signedInclusionList)
         .thenApply(
             result -> {
-              switch (result.getStatus()) {
-                case SUCCESSFUL:
-                  LOG.trace(
-                      "Processed inclusion list {} successfully",
-                      signedInclusionList::hashTreeRoot);
-                  add(signedInclusionList);
-                  break;
-                case UNKNOWN_BLOCK:
-                  LOG.trace(
-                      "Ignoring inclusion list {} as required block is not yet present",
-                      signedInclusionList::hashTreeRoot);
-                  break;
-                case SAVED_FOR_FUTURE:
-                  LOG.trace(
-                      "Ignoring inclusion list {} for future slot",
-                      signedInclusionList::hashTreeRoot);
-                  break;
-                case DEFER_FORK_CHOICE_PROCESSING, INVALID:
-                  break;
-                default:
-                  throw new UnsupportedOperationException(
-                      "AttestationProcessingResult is unrecognizable");
+              if (result.isSuccessful()) {
+                LOG.trace(
+                    "Processed inclusion list {} successfully", signedInclusionList::hashTreeRoot);
+                add(signedInclusionList);
+              } else {
+                LOG.trace("Ignoring inclusion list {}", signedInclusionList::hashTreeRoot);
               }
               return result;
             });

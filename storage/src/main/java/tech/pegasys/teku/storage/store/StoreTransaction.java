@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
+import tech.pegasys.teku.spec.datastructures.operations.SlotAndInclusionListCommitteeRoot;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -485,13 +486,21 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public Optional<List<InclusionList>> getInclusionList(final SlotAndBlockRoot slotAndBlockRoot) {
-    return store.getInclusionList(slotAndBlockRoot);
+  public Optional<List<InclusionList>> getInclusionLists(
+      final SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot) {
+    return store.getInclusionLists(slotAndInclusionListCommitteeRoot);
   }
 
   @Override
   public Optional<Bytes32> getInclusionListAttesterHead(final Bytes32 headRoot) {
     return store.getInclusionListAttesterHead(headRoot);
+  }
+
+  @Override
+  public boolean isInclusionListEquivocator(
+      final SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot,
+      final UInt64 validatorIndex) {
+    return store.isInclusionListEquivocator(slotAndInclusionListCommitteeRoot, validatorIndex);
   }
 
   @Override
