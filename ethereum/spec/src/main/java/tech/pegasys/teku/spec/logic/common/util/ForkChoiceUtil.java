@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrate
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.InclusionListImportResult;
 
 public class ForkChoiceUtil {
 
@@ -423,6 +425,12 @@ public class ForkChoiceUtil {
     }
     // Successful so far
     return BlockImportResult.successful(block);
+  }
+
+  public InclusionListImportResult checkOnInclusionListConditions(
+      final SignedInclusionList signedInclusionList) {
+
+    return InclusionListImportResult.success(signedInclusionList);
   }
 
   private boolean blockIsFromFuture(final ReadOnlyStore store, final UInt64 blockSlot) {

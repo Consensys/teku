@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
+import tech.pegasys.teku.spec.datastructures.operations.SlotAndInclusionListCommitteeRoot;
 
 /** Store extension dedicated to keep unsafe updates package-private */
 public abstract class CacheableStore implements UpdatableStore {
@@ -42,9 +43,11 @@ public abstract class CacheableStore implements UpdatableStore {
   abstract void cacheUnsatisfiedInclusionListBlock(Bytes32 blockRoot);
 
   abstract void cacheInclusionListEquivocator(
-      SlotAndBlockRoot slotAndBlockRoot, UInt64 validatorIndex);
+      SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot, UInt64 validatorIndex);
 
-  abstract void cacheInclusionList(SlotAndBlockRoot slotAndBlockRoot, InclusionList inclusionList);
+  abstract void cacheInclusionList(
+      SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot,
+      InclusionList inclusionList);
 
   abstract void cacheStates(Map<Bytes32, StateAndBlockSummary> stateAndBlockSummaries);
 
