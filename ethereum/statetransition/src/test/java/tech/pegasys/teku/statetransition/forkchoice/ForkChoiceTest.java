@@ -15,6 +15,8 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
@@ -35,6 +37,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
 import static tech.pegasys.teku.statetransition.forkchoice.ForkChoice.BLOCK_CREATION_TOLERANCE_MS;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -63,6 +66,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -70,6 +74,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -1406,5 +1411,55 @@ class ForkChoiceTest {
                       SafeFuture.completedFuture(forkChoiceUpdatedResult))));
       return null;
     };
+  }
+
+  @Test
+  void validateInclusionListsThrowsIfThereAreTooManyTransactionInIL(){
+    setupWithSpec(TestSpecFactory.createMinimalEip7805());
+    final SpecConfigEip7805 specConfig = spec.getGenesisSpecConfig().toVersionEip7805().get();
+    final int maxTransactionPerInclusionList = specConfig.getMaxTransactionsPerInclusionList();
+    final int maxCommittee = specConfig.getInclusionListCommitteeSize();
+    final int maxTransactions = maxTransactionPerInclusionList * maxCommittee;
+    final List<Transaction> inclusionListTransactions = new ArrayList<>();
+    for (int i = 0; i <= maxTransactions + 1; i++) {
+      inclusionListTransactions.add(dataStructureUtil.randomExecutionPayloadTransaction());
+    }
+    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> forkChoice.validateInclusionLists(recentChainData.getStore(),inclusionListTransactions, executionPayload),
+            "Inclusion list has too many transactions");
+  }
+
+  @Test
+  void validateInclusionListThrowsIfNotAllInclusionListsTransactionAreInTheExecutionPayload(){
+    setupWithSpec(TestSpecFactory.createMinimalEip7805());
+
+    final List<Transaction> inclusionListTransactions = new ArrayList<>();
+
+    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
+
+    inclusionListTransactions.add(dataStructureUtil.randomExecutionPayloadTransaction());
+    inclusionListTransactions.add(dataStructureUtil.randomExecutionPayloadTransaction());
+
+    assertThrows(
+            IllegalStateException.class,
+            () -> forkChoice.validateInclusionLists(recentChainData.getStore(),inclusionListTransactions, executionPayload),
+            "Inclusion list contains transactions not in the execution payload");
+  }
+
+  @Test
+  void validateInclusionListsDoesNotThrowIfAllILsTransactionsAreInExecutionPayload(){
+    setupWithSpec(TestSpecFactory.createMinimalEip7805());
+
+    final List<Transaction> inclusionListTransactions = new ArrayList<>();
+
+    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
+
+    inclusionListTransactions.add(executionPayload.getTransactions().get(0));
+
+    assertDoesNotThrow(
+            () -> forkChoice.validateInclusionLists(recentChainData.getStore(),inclusionListTransactions, executionPayload));
   }
 }
