@@ -284,7 +284,7 @@ class EndpointMetadataTest {
   @SuppressWarnings({"unchecked", "rawtypes"})
   void getRequestBody_shouldAcceptLists() throws Exception {
     final DeserializableListTypeDefinition<String> type =
-        new DeserializableListTypeDefinition(STRING_TYPE, Optional.empty());
+        new DeserializableListTypeDefinition(STRING_TYPE, Optional.empty(), Optional.empty());
     final EndpointMetadata metadata =
         validBuilder().requestBodyType(type).response(SC_OK, "Success", STRING_TYPE).build();
     final List<String> requestBody =

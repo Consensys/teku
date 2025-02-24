@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 
@@ -46,9 +47,20 @@ class DeserializableArrayTypeDefinitionTest {
   }
 
   @Test
+  void shouldRoundTripMultipleElementList() throws Exception {
+    final DeserializableTypeDefinition<List<String>> boundedArrayType =
+        DeserializableTypeDefinition.listOf(STRING_TYPE, Optional.of(4), Optional.of(4));
+    final List<String> value = List.of("x", "y", "z", "x");
+    final List<String> result =
+        JsonUtil.parse(JsonUtil.serialize(value, boundedArrayType), boundedArrayType);
+
+    assertThat(result).isEqualTo(value);
+  }
+
+  @Test
   void shouldThrowIfMinItemsNotMetWhenParse() {
     final DeserializableTypeDefinition<List<String>> stringMinItemsType =
-        DeserializableTypeDefinition.listOf(STRING_TYPE, 1);
+        DeserializableTypeDefinition.listOf(STRING_TYPE, Optional.of(1), Optional.empty());
     final List<String> value = List.of();
     assertThatThrownBy(
             () -> JsonUtil.parse(JsonUtil.serialize(value, stringMinItemsType), stringMinItemsType))
@@ -61,9 +73,24 @@ class DeserializableArrayTypeDefinitionTest {
   }
 
   @Test
+  void shouldThrowIfMaxItemsNotMetWhenParse() {
+    final DeserializableTypeDefinition<List<String>> boundedArrayType =
+        DeserializableTypeDefinition.listOf(STRING_TYPE, Optional.of(1), Optional.of(2));
+    final List<String> value = List.of("a", "b", "c");
+    assertThatThrownBy(
+            () -> JsonUtil.parse(JsonUtil.serialize(value, boundedArrayType), boundedArrayType))
+        .satisfies(
+            ex -> {
+              assertThat(ex).isInstanceOf(MismatchedInputException.class);
+              assertThat(ex)
+                  .hasMessageContaining("Provided array has more than 2 maximum required items");
+            });
+  }
+
+  @Test
   void shouldParseIfMinItemsMet() throws Exception {
     final DeserializableTypeDefinition<List<String>> stringMinItemsType =
-        DeserializableTypeDefinition.listOf(STRING_TYPE, 1);
+        DeserializableTypeDefinition.listOf(STRING_TYPE, Optional.of(1), Optional.empty());
     final List<String> value = List.of("x");
     final List<String> result =
         JsonUtil.parse(JsonUtil.serialize(value, stringMinItemsType), stringMinItemsType);

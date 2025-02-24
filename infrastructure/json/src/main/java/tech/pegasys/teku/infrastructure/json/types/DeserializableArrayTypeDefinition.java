@@ -29,7 +29,6 @@ public class DeserializableArrayTypeDefinition<ItemT, CollectionT extends Iterab
 
   private final DeserializableTypeDefinition<ItemT> itemType;
   private final Function<List<ItemT>, CollectionT> createFromList;
-  private final Optional<Integer> minItems;
 
   public DeserializableArrayTypeDefinition(
       final DeserializableTypeDefinition<ItemT> itemType,
@@ -37,27 +36,25 @@ public class DeserializableArrayTypeDefinition<ItemT, CollectionT extends Iterab
     super(itemType);
     this.itemType = itemType;
     this.createFromList = createFromList;
-    this.minItems = Optional.empty();
   }
 
   public DeserializableArrayTypeDefinition(
       final DeserializableTypeDefinition<ItemT> itemType,
       final Function<List<ItemT>, CollectionT> createFromList,
-      final Optional<Integer> minItems) {
-    super(itemType);
+      final Optional<Integer> minItems,
+      final Optional<Integer> maxItems) {
+    super(itemType, Optional.empty(), minItems, maxItems);
     this.itemType = itemType;
     this.createFromList = createFromList;
-    this.minItems = minItems;
   }
 
   public DeserializableArrayTypeDefinition(
       final DeserializableTypeDefinition<ItemT> itemType,
       final Function<List<ItemT>, CollectionT> createFromList,
       final String description) {
-    super(itemType, description);
+    super(itemType, Optional.of(description), Optional.empty(), Optional.empty());
     this.itemType = itemType;
     this.createFromList = createFromList;
-    this.minItems = Optional.empty();
   }
 
   @Override
@@ -75,6 +72,12 @@ public class DeserializableArrayTypeDefinition<ItemT, CollectionT extends Iterab
           parser,
           String.class,
           String.format("Provided array has less than %s minimum required items", minItems.get()));
+    }
+    if (maxItems.isPresent() && result.size() > maxItems.get()) {
+      throw MismatchedInputException.from(
+          parser,
+          String.class,
+          String.format("Provided array has more than %s maximum required items", maxItems.get()));
     }
     return createFromList.apply(result);
   }
