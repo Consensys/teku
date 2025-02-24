@@ -931,6 +931,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   public interface OptimisticHeadSubscriber {
     void onOptimisticHeadChanged(boolean isHeadOptimistic);
   }
+
   // Implements `validate_inclusion_lists` added in EIP-7805 - consensus/fork-choice
   public void validateInclusionLists(
       final UpdatableStore store,

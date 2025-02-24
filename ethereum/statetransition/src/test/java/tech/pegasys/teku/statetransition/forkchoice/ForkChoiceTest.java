@@ -16,7 +16,6 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
@@ -1414,7 +1413,7 @@ class ForkChoiceTest {
   }
 
   @Test
-  void validateInclusionListsThrowsIfThereAreTooManyTransactionInIL(){
+  void validateInclusionListsThrowsIfThereAreTooManyTransactionInIL() {
     setupWithSpec(TestSpecFactory.createMinimalEip7805());
     final SpecConfigEip7805 specConfig = spec.getGenesisSpecConfig().toVersionEip7805().get();
     final int maxTransactionPerInclusionList = specConfig.getMaxTransactionsPerInclusionList();
@@ -1428,12 +1427,14 @@ class ForkChoiceTest {
 
     assertThrows(
         IllegalStateException.class,
-        () -> forkChoice.validateInclusionLists(recentChainData.getStore(),inclusionListTransactions, executionPayload),
-            "Inclusion list has too many transactions");
+        () ->
+            forkChoice.validateInclusionLists(
+                recentChainData.getStore(), inclusionListTransactions, executionPayload),
+        "Inclusion list has too many transactions");
   }
 
   @Test
-  void validateInclusionListThrowsIfNotAllInclusionListsTransactionAreInTheExecutionPayload(){
+  void validateInclusionListThrowsIfNotAllInclusionListsTransactionAreInTheExecutionPayload() {
     setupWithSpec(TestSpecFactory.createMinimalEip7805());
 
     final List<Transaction> inclusionListTransactions = new ArrayList<>();
@@ -1444,13 +1445,15 @@ class ForkChoiceTest {
     inclusionListTransactions.add(dataStructureUtil.randomExecutionPayloadTransaction());
 
     assertThrows(
-            IllegalStateException.class,
-            () -> forkChoice.validateInclusionLists(recentChainData.getStore(),inclusionListTransactions, executionPayload),
-            "Inclusion list contains transactions not in the execution payload");
+        IllegalStateException.class,
+        () ->
+            forkChoice.validateInclusionLists(
+                recentChainData.getStore(), inclusionListTransactions, executionPayload),
+        "Inclusion list contains transactions not in the execution payload");
   }
 
   @Test
-  void validateInclusionListsDoesNotThrowIfAllILsTransactionsAreInExecutionPayload(){
+  void validateInclusionListsDoesNotThrowIfAllILsTransactionsAreInExecutionPayload() {
     setupWithSpec(TestSpecFactory.createMinimalEip7805());
 
     final List<Transaction> inclusionListTransactions = new ArrayList<>();
@@ -1460,6 +1463,8 @@ class ForkChoiceTest {
     inclusionListTransactions.add(executionPayload.getTransactions().get(0));
 
     assertDoesNotThrow(
-            () -> forkChoice.validateInclusionLists(recentChainData.getStore(),inclusionListTransactions, executionPayload));
+        () ->
+            forkChoice.validateInclusionLists(
+                recentChainData.getStore(), inclusionListTransactions, executionPayload));
   }
 }
