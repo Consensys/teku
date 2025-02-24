@@ -335,9 +335,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     attestationGroupByDataHash.values().forEach(group -> group.onReorg(commonAncestorSlot));
   }
 
-  public synchronized void dumpAttestations() {
+  public synchronized void dumpAttestations(final UInt64 slot) {
     try (FileWriter fos =
-        new FileWriter("/tmp/attestations_" + dataHashBySlot.firstKey() + ".multi_ssz", UTF_8)) {
+        new FileWriter("/tmp/attestations_" + slot + ".multi_ssz", UTF_8)) {
       dataHashBySlot.descendingMap().values().stream()
           .flatMap(Collection::stream)
           .map(attestationGroupByDataHash::get)
@@ -355,7 +355,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     } catch (final IOException e) {
       LOG.error(
           "An error occurred while dumping pool at slot {}: {}",
-          dataHashBySlot.firstKey(),
+              slot,
           e.getMessage());
     }
   }

@@ -130,6 +130,11 @@ public class BlockOperationSelectorFactory {
     return bodyBuilder -> {
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
+      SafeFuture.of(
+                      SafeFuture.runAsync(
+                              () -> attestationPool.dumpAttestations(blockSlotState.getSlot())))
+              .finish(() -> LOG.info("Attestation pool dumped."), err -> LOG.error("Failed to dump.", err));
+
       final long start = System.currentTimeMillis();
       final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
@@ -143,7 +148,6 @@ public class BlockOperationSelectorFactory {
         SafeFuture.of(
                 SafeFuture.runAsync(
                     () -> {
-                      attestationPool.dumpAttestations();
                       try (OutputStream os =
                           new FileOutputStream(
                               "/tmp/blockSlotState " + blockSlotState.getSlot() + ".ssz")) {
@@ -152,7 +156,7 @@ public class BlockOperationSelectorFactory {
                         throw new UncheckedIOException(e);
                       }
                     }))
-            .finish(() -> LOG.info("Dumping completed."), err -> LOG.error("Failed to dump.", err));
+            .finish(() -> LOG.info("State dump completed."), err -> LOG.error("Failed to dump.", err));
       }
 
       // Collect slashings to include
