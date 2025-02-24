@@ -336,8 +336,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   public synchronized void dumpAttestations(final UInt64 slot) {
-    try (FileWriter fos =
-        new FileWriter("/tmp/attestations_" + slot + ".multi_ssz", UTF_8)) {
+    try (FileWriter fos = new FileWriter("/tmp/attestations_" + slot + ".multi_ssz", UTF_8)) {
       dataHashBySlot.descendingMap().values().stream()
           .flatMap(Collection::stream)
           .map(attestationGroupByDataHash::get)
@@ -353,10 +352,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
                 }
               });
     } catch (final IOException e) {
-      LOG.error(
-          "An error occurred while dumping pool at slot {}: {}",
-              slot,
-          e.getMessage());
+      LOG.error("An error occurred while dumping pool at slot {}: {}", slot, e.getMessage());
     }
   }
 }
