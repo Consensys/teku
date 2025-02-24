@@ -85,13 +85,13 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
 
   private int computeMaxSubscribedTopics(
       final RecentChainData recentChainData, final GossipEncoding gossipEncoding) {
-    final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
     final SpecMilestone highestSupportedMilestone =
         spec.getForkSchedule().getHighestSupportedMilestone();
     final Fork highestSupportedFork = spec.getForkSchedule().getFork(highestSupportedMilestone);
     final Bytes4 forkDigest =
         spec.computeForkDigest(
-            highestSupportedFork.getCurrentVersion(), forkInfo.getGenesisValidatorsRoot());
+            highestSupportedFork.getCurrentVersion(),
+            recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot());
     // Enough to subscribe to three forks simultaneously so testnets can fork in subsequent epochs
     return getAllTopics(gossipEncoding, forkDigest, spec, highestSupportedMilestone).size() * 3;
   }
