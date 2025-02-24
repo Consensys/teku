@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -335,7 +337,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   public synchronized void dumpAttestations() {
     try (FileWriter fos =
-        new FileWriter("/tmp/attestations_" + dataHashBySlot.firstKey() + ".multi_ssz")) {
+        new FileWriter("/tmp/attestations_" + dataHashBySlot.firstKey() + ".multi_ssz", UTF_8)) {
       dataHashBySlot.descendingMap().values().stream()
           .flatMap(Collection::stream)
           .map(attestationGroupByDataHash::get)
