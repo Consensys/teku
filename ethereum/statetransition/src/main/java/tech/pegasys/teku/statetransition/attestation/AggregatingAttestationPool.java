@@ -14,6 +14,8 @@
 package tech.pegasys.teku.statetransition.attestation;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -329,5 +331,30 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   public synchronized void onReorg(final UInt64 commonAncestorSlot) {
     attestationGroupByDataHash.values().forEach(group -> group.onReorg(commonAncestorSlot));
+  }
+
+  public synchronized void dumpAttestations() {
+    try (FileWriter fos =
+        new FileWriter("/tmp/attestations_" + dataHashBySlot.firstKey() + ".multi_ssz")) {
+      dataHashBySlot.descendingMap().values().stream()
+          .flatMap(Collection::stream)
+          .map(attestationGroupByDataHash::get)
+          .filter(Objects::nonNull)
+          .flatMap(MatchingDataAttestationGroup::streamAttestations)
+          .forEach(
+              attestation -> {
+                try {
+                  fos.write(attestation.sszSerialize().toHexString());
+                  fos.write("\n");
+                } catch (IOException e) {
+                  throw new RuntimeException(e);
+                }
+              });
+    } catch (final IOException e) {
+      LOG.error(
+          "An error occurred while dumping pool at slot {}: {}",
+          dataHashBySlot.firstKey(),
+          e.getMessage());
+    }
   }
 }
