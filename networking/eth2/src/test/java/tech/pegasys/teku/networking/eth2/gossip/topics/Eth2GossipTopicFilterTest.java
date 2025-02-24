@@ -185,6 +185,7 @@ class Eth2GossipTopicFilterTest {
     switch (nextSpecMilestone) {
       case DENEB -> assertThat(filter.getMaxSubscribedTopics()).isEqualTo(243);
       case ELECTRA -> assertThat(filter.getMaxSubscribedTopics()).isEqualTo(252);
+      default -> throw new IllegalArgumentException("Unexpected milestone: " + nextSpecMilestone);
     }
   }
 
