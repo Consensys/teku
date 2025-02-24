@@ -57,6 +57,7 @@ public class SyncSourceFactory {
         peer,
         source ->
             new ThrottlingSyncSource(
+                spec,
                 asyncRunner,
                 timeProvider,
                 source,
