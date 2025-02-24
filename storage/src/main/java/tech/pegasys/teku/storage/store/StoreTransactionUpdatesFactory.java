@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -49,6 +50,8 @@ class StoreTransactionUpdatesFactory {
   private final Map<Bytes32, SignedBlockAndState> hotBlockAndStates;
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
   private final Optional<UInt64> maybeEarliestBlobSidecarSlot;
+  private final Optional<InclusionList> maybeInclusionList;
+  private final Optional<InclusionList> maybeEquivocatedInclusionList;
   private final Optional<Bytes32> maybeLatestCanonicalBlockRoot;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final AnchorPoint latestFinalized;
@@ -74,6 +77,8 @@ class StoreTransactionUpdatesFactory {
     blobSidecars = new ConcurrentHashMap<>(tx.blobSidecars);
     maybeEarliestBlobSidecarSlot = tx.maybeEarliestBlobSidecarTransactionSlot;
     maybeLatestCanonicalBlockRoot = tx.maybeLatestCanonicalBlockRoot;
+    maybeInclusionList = tx.maybeInclusionList;
+    maybeEquivocatedInclusionList = tx.maybeEquivocatedInclusionList;
   }
 
   public static StoreTransactionUpdates create(
@@ -257,6 +262,8 @@ class StoreTransactionUpdatesFactory {
         maybeEarliestBlobSidecarSlot,
         prunedHotBlockRoots,
         stateRoots,
+        maybeInclusionList,
+        maybeEquivocatedInclusionList,
         optimisticTransitionBlockRootSet,
         optimisticTransitionBlockRoot,
         maybeLatestCanonicalBlockRoot,
