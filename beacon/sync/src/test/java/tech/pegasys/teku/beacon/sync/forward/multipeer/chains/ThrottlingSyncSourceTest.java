@@ -33,6 +33,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
@@ -42,6 +44,8 @@ class ThrottlingSyncSourceTest {
   private static final int MAX_BLOCKS_PER_MINUTE = 100;
   private static final int MAX_BLOBS_PER_BLOCK = 6;
   private static final int MAX_BLOB_SIDECARS_PER_MINUTE = 100;
+
+  private final Spec spec = TestSpecFactory.createMinimalEip7732();
 
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
@@ -55,6 +59,7 @@ class ThrottlingSyncSourceTest {
 
   private final ThrottlingSyncSource source =
       new ThrottlingSyncSource(
+          spec,
           asyncRunner,
           timeProvider,
           delegate,

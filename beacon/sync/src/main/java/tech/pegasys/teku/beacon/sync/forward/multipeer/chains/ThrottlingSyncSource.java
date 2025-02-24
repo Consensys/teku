@@ -28,6 +28,8 @@ import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.SignedExecutionPayloadEnvelope;
@@ -47,6 +49,7 @@ public class ThrottlingSyncSource implements SyncSource {
   private final RateTracker executionPayloadEnvelopesRateTracker;
 
   public ThrottlingSyncSource(
+      final Spec spec,
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
       final SyncSource delegate,
@@ -64,7 +67,9 @@ public class ThrottlingSyncSource implements SyncSource {
                     RateTracker.create(maxBlobSidecarsPerMinute, TIMEOUT_SECONDS, timeProvider))
             .orElse(RateTracker.NOOP);
     this.executionPayloadEnvelopesRateTracker =
-        RateTracker.create(maxBlocksPerMinute, TIMEOUT_SECONDS, timeProvider);
+        spec.isMilestoneSupported(SpecMilestone.EIP7732)
+            ? RateTracker.create(maxBlocksPerMinute, TIMEOUT_SECONDS, timeProvider)
+            : RateTracker.NOOP;
   }
 
   @Override
