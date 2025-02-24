@@ -347,8 +347,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               final SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot =
                   new SlotAndInclusionListCommitteeRoot(
                       inclusionListSlot, inclusionList.getInclusionListCommitteeRoot());
-
               final UInt64 validatorIndex = inclusionList.getValidatorIndex();
+
               if (!store.isInclusionListEquivocator(
                   slotAndInclusionListCommitteeRoot, validatorIndex)) {
                 final Optional<List<InclusionList>> maybeInclusionLists =
@@ -358,12 +358,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                         .filter(il -> il.getValidatorIndex().equals(validatorIndex))
                         .toList();
                 if (!inclusionLists.isEmpty() && !inclusionLists.getFirst().equals(inclusionList)) {
-                  // TODO EIP7805 record equivocator in store
+                  final StoreTransaction transaction = recentChainData.startStoreTransaction();
+                  transaction.putEquivocatedInclusionList(inclusionList);
+                  transaction.commit().join();
                 } else if (isBeforeFreezeDeadline) {
-                  // TODO EIP7805 record IL in store
+                  final StoreTransaction transaction = recentChainData.startStoreTransaction();
+                  transaction.putInclusionList(inclusionList);
+                  transaction.commit().join();
                 }
               }
-
               return InclusionListImportResult.success(signedInclusionList);
             });
   }
