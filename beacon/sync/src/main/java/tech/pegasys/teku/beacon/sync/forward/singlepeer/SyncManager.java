@@ -104,7 +104,7 @@ public class SyncManager extends Service {
             blobSidecarManager,
             blockBlobSidecarsTrackersPool,
             batchSize,
-                pinnedSyncSlot,
+            pinnedSyncSlot,
             metricsSystem);
     return new SyncManager(asyncRunner, network, recentChainData, peerSync, spec);
   }

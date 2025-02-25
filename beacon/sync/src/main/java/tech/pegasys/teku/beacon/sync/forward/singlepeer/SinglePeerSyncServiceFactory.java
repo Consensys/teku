@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 
+import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -25,19 +26,17 @@ import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-import java.util.Optional;
-
 public class SinglePeerSyncServiceFactory {
   public static ForwardSyncService create(
-          final MetricsSystem metricsSystem,
-          final AsyncRunner asyncRunner,
-          final P2PNetwork<Eth2Peer> p2pNetwork,
-          final RecentChainData recentChainData,
-          final BlockImporter blockImporter,
-          final BlobSidecarManager blobSidecarManager,
-          final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
-          final int batchSize,
-          final Optional<UInt64> pinnedSyncSlot,
+      final MetricsSystem metricsSystem,
+      final AsyncRunner asyncRunner,
+      final P2PNetwork<Eth2Peer> p2pNetwork,
+      final RecentChainData recentChainData,
+      final BlockImporter blockImporter,
+      final BlobSidecarManager blobSidecarManager,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final int batchSize,
+      final Optional<UInt64> pinnedSyncSlot,
       final Spec spec) {
     final SyncManager syncManager =
         SyncManager.create(
@@ -49,7 +48,7 @@ public class SinglePeerSyncServiceFactory {
             blockBlobSidecarsTrackersPool,
             metricsSystem,
             batchSize,
-                pinnedSyncSlot,
+            pinnedSyncSlot,
             spec);
     return new SinglePeerSyncService(syncManager, recentChainData);
   }
