@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer;
 
+import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
@@ -41,8 +42,6 @@ import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
-
-import java.util.Optional;
 
 public class MultipeerSyncService extends Service implements ForwardSyncService {
   private final SyncStallDetector syncStallDetector;
@@ -102,7 +101,8 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
                 eventThread, blobSidecarManager, new PeerScoringConflictResolutionStrategy()),
             batchSize,
             maxPendingBatches,
-            MultipeerCommonAncestorFinder.create(recentChainData, eventThread, pinnedCommonAncestorSlot, spec),
+            MultipeerCommonAncestorFinder.create(
+                recentChainData, eventThread, pinnedCommonAncestorSlot, spec),
             timeProvider);
     final SyncController syncController =
         new SyncController(

@@ -15,10 +15,9 @@ package tech.pegasys.teku.beacon.sync;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
-
-import java.util.Optional;
 
 public class SyncConfig {
 
@@ -45,7 +44,7 @@ public class SyncConfig {
   private final int forwardSyncMaxPendingBatches;
   private final int forwardSyncMaxBlocksPerMinute;
   private final int forwardSyncMaxBlobSidecarsPerMinute;
-    private final Optional<UInt64> pinnedSyncSlot;
+  private final Optional<UInt64> pinnedSyncSlot;
 
   private SyncConfig(
       final boolean isEnabled,
@@ -110,9 +109,9 @@ public class SyncConfig {
     return forwardSyncMaxBlobSidecarsPerMinute;
   }
 
-    public Optional<UInt64> getPinnedSyncSlot() {
-        return pinnedSyncSlot;
-    }
+  public Optional<UInt64> getPinnedSyncSlot() {
+    return pinnedSyncSlot;
+  }
 
   public static class Builder {
     private Boolean isEnabled;
@@ -141,7 +140,7 @@ public class SyncConfig {
           forwardSyncMaxPendingBatches,
           forwardSyncMaxBlocksPerMinute,
           forwardSyncMaxBlobSidecarsPerMinute,
-              pinnedSyncSlot);
+          pinnedSyncSlot);
     }
 
     private void initMissingDefaults() {
@@ -188,7 +187,8 @@ public class SyncConfig {
     }
 
     public Builder pinnedSyncSlot(final Long pinnedSyncSlot) {
-      Optional.ofNullable(pinnedSyncSlot).ifPresent(slot -> this.pinnedSyncSlot = Optional.of(UInt64.valueOf(slot)));
+      Optional.ofNullable(pinnedSyncSlot)
+          .ifPresent(slot -> this.pinnedSyncSlot = Optional.of(UInt64.valueOf(slot)));
       return this;
     }
 

@@ -46,13 +46,12 @@ public class MultipeerCommonAncestorFinder {
   }
 
   public static MultipeerCommonAncestorFinder create(
-      final RecentChainData recentChainData, final EventThread eventThread,
-      final Optional<UInt64> pinnedSlot, final Spec spec) {
+      final RecentChainData recentChainData,
+      final EventThread eventThread,
+      final Optional<UInt64> pinnedSlot,
+      final Spec spec) {
     return new MultipeerCommonAncestorFinder(
-        recentChainData,
-        new CommonAncestor(recentChainData, pinnedSlot),
-        eventThread,
-        spec);
+        recentChainData, new CommonAncestor(recentChainData, pinnedSlot), eventThread, spec);
   }
 
   public SafeFuture<UInt64> findCommonAncestor(final TargetChain targetChain) {

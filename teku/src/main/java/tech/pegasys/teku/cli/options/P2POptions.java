@@ -223,12 +223,12 @@ public class P2POptions {
   private boolean multiPeerSyncEnabled = SyncConfig.DEFAULT_MULTI_PEER_SYNC_ENABLED;
 
   @Option(
-          names = {"--Xp2p-multipeer-sync-pinned-slot"},
-          paramLabel = "<NUMBER>",
-          showDefaultValue = Visibility.ALWAYS,
-          description = "Pin the sync to a specific slot",
-          hidden = true,
-          arity = "1")
+      names = {"--Xp2p-multipeer-sync-pinned-slot"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Pin the sync to a specific slot",
+      hidden = true,
+      arity = "1")
   private Long pinnedSyncSlot;
 
   @Option(
@@ -524,7 +524,7 @@ public class P2POptions {
                     .forwardSyncMaxBlobSidecarsPerMinute(forwardSyncBlobSidecarsRateLimit)
                     .forwardSyncBatchSize(forwardSyncBatchSize)
                     .forwardSyncMaxPendingBatches(forwardSyncMaxPendingBatches)
-                        .pinnedSyncSlot(pinnedSyncSlot));
+                    .pinnedSyncSlot(pinnedSyncSlot));
 
     if (subscribeAllSubnetsEnabled) {
       builder
