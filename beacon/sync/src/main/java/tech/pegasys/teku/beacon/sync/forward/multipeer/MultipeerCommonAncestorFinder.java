@@ -33,7 +33,8 @@ public class MultipeerCommonAncestorFinder {
   private final EventThread eventThread;
   private final Spec spec;
 
-  private static Optional<UInt64> PINNED_HOLESKY_SYNC_SLOT = Optional.of(UInt64.valueOf(3712224));
+  private static final Optional<UInt64> PINNED_HOLESKY_SYNC_SLOT =
+      Optional.of(UInt64.valueOf(3712224));
 
   @VisibleForTesting
   MultipeerCommonAncestorFinder(
