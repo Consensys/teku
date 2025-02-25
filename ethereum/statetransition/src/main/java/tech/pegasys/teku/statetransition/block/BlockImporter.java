@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.block;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -91,8 +92,14 @@ public class BlockImporter {
     return importBlock(block, Optional.empty(), BlockBroadcastValidator.NOOP);
   }
 
-  private static final Bytes32 BAD_HOLESKY_BLOCK =
-      Bytes32.fromHexString("0x2db899881ed8546476d0b92c6aa9110bea9a4cd0dbeb5519eb0ea69575f1f359");
+  private static final List<Bytes32> HOLESKY_BAD_BLOCKS =
+      List.of(
+          // 3712292
+          Bytes32.fromHexString(
+              "0xbdca18a873aec3c8d4b4461c4de229a36211175af8277d14ed287f913723712d"),
+          // 3711006
+          Bytes32.fromHexString(
+              "0x2db899881ed8546476d0b92c6aa9110bea9a4cd0dbeb5519eb0ea69575f1f359"));
 
   @CheckReturnValue
   public SafeFuture<BlockImportResult> importBlock(
@@ -106,7 +113,7 @@ public class BlockImporter {
           block::toLogString);
       return SafeFuture.completedFuture(BlockImportResult.knownBlock(block, knownOptimistic.get()));
     }
-    if (block.getRoot().equals(BAD_HOLESKY_BLOCK)) {
+    if (HOLESKY_BAD_BLOCKS.contains(block.getRoot())) {
       LOG.info("Avoiding bad block from Electra holesky upgrade.");
       return SafeFuture.completedFuture(
           BlockImportResult.failedStateTransition(new Exception("Computer says no")));
