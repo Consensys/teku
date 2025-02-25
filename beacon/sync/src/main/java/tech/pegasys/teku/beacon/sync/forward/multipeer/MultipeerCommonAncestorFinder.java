@@ -33,6 +33,8 @@ public class MultipeerCommonAncestorFinder {
   private final EventThread eventThread;
   private final Spec spec;
 
+  private static Optional<UInt64> PINNED_HOLESKY_SYNC_SLOT = Optional.of(UInt64.valueOf(3712224));
+
   @VisibleForTesting
   MultipeerCommonAncestorFinder(
       final RecentChainData recentChainData,
@@ -48,7 +50,10 @@ public class MultipeerCommonAncestorFinder {
   public static MultipeerCommonAncestorFinder create(
       final RecentChainData recentChainData, final EventThread eventThread, final Spec spec) {
     return new MultipeerCommonAncestorFinder(
-        recentChainData, new CommonAncestor(recentChainData), eventThread, spec);
+        recentChainData,
+        new CommonAncestor(recentChainData, PINNED_HOLESKY_SYNC_SLOT),
+        eventThread,
+        spec);
   }
 
   public SafeFuture<UInt64> findCommonAncestor(final TargetChain targetChain) {

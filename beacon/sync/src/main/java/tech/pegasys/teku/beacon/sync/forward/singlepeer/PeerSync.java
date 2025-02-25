@@ -155,7 +155,7 @@ public class PeerSync {
               if (!findCommonAncestor) {
                 return SafeFuture.completedFuture(startSlot);
               }
-              CommonAncestor ancestor = new CommonAncestor(recentChainData);
+              CommonAncestor ancestor = new CommonAncestor(recentChainData, Optional.empty());
               return ancestor.getCommonAncestor(peer, startSlot, status.getHeadSlot());
             })
         .thenCompose(
