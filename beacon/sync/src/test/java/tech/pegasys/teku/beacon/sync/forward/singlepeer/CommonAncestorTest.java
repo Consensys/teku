@@ -29,9 +29,11 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 
+import java.util.Optional;
+
 public class CommonAncestorTest extends AbstractSyncTest {
 
-  private final CommonAncestor commonAncestor = new CommonAncestor(recentChainData, 4);
+  private final CommonAncestor commonAncestor = new CommonAncestor(recentChainData, 4, Optional.empty());
 
   @Test
   void shouldNotSearchCommonAncestorWithoutSufficientLocalData() {
