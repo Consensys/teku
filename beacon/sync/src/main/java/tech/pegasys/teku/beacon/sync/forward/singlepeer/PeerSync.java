@@ -246,6 +246,12 @@ public class PeerSync {
               } else {
                 throttledRequestCount.set(0);
               }
+              try {
+                System.out.println("Sleeping for 30s");
+                Thread.sleep(30_000);
+              } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+              }
               return executeSync(peer, nextSlot, blockListener.getReadyForNextRequest(), false);
             })
         .exceptionally(err -> handleFailedRequestToPeer(peer, status, err));
