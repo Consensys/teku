@@ -211,6 +211,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               blobSidecarManager,
               blockBlobSidecarsTrackersPool,
               syncConfig.getForwardSyncBatchSize(),
+                  syncConfig.getPinnedSyncSlot(),
               spec);
     }
     return forwardSync;

@@ -198,6 +198,7 @@ public class SyncingNodeManager {
             BlockBlobSidecarsTrackersPool.NOOP,
             new NoOpMetricsSystem(),
             SyncConfig.DEFAULT_FORWARD_SYNC_BATCH_SIZE,
+            Optional.empty(),
             spec);
 
     final ForwardSyncService syncService = new SinglePeerSyncService(syncManager, recentChainData);

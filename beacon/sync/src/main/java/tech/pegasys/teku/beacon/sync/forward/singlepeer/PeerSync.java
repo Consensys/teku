@@ -78,6 +78,8 @@ public class PeerSync {
   private final Counter blockImportSuccessResult;
   private final Counter blockImportFailureResult;
 
+  private final Optional<UInt64> pinnedSyncSlot;
+
   private final AtomicInteger throttledRequestCount = new AtomicInteger(0);
 
   private volatile UInt64 startingSlot = UInt64.valueOf(0);
@@ -89,6 +91,7 @@ public class PeerSync {
       final BlobSidecarManager blobSidecarManager,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final int batchSize,
+      final Optional<UInt64> pinnedSyncSlot,
       final MetricsSystem metricsSystem) {
     this.spec = recentChainData.getSpec();
     this.asyncRunner = asyncRunner;
@@ -106,6 +109,7 @@ public class PeerSync {
     this.blockImportFailureResult = blockImportCounter.labels("rejected");
     this.batchSize = UInt64.valueOf(batchSize);
     this.minSlotsToProgressPerRequest = this.batchSize.dividedBy(4);
+    this.pinnedSyncSlot = pinnedSyncSlot;
   }
 
   public SafeFuture<PeerSyncResult> sync(final Eth2Peer peer) {
@@ -155,7 +159,7 @@ public class PeerSync {
               if (!findCommonAncestor) {
                 return SafeFuture.completedFuture(startSlot);
               }
-              CommonAncestor ancestor = new CommonAncestor(recentChainData, Optional.empty());
+              CommonAncestor ancestor = new CommonAncestor(recentChainData, pinnedSyncSlot);
               return ancestor.getCommonAncestor(peer, startSlot, status.getHeadSlot());
             })
         .thenCompose(
