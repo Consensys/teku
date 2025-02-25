@@ -57,9 +57,7 @@ public class CommonAncestor {
 
   public SafeFuture<UInt64> getCommonAncestor(
       final SyncSource peer, final UInt64 firstNonFinalSlot, final UInt64 peerHeadSlot) {
-    if (pinnedCommonAncestorSlot
-        .map(slot -> slot.equals(recentChainData.getHeadSlot()))
-        .orElse(false)) {
+    if (pinnedCommonAncestorSlot.isPresent()) {
       return getCommonAncestorFromPinned(peer);
     }
 
