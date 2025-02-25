@@ -28,6 +28,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
@@ -100,6 +101,7 @@ public class PeerSyncTest extends AbstractSyncTest {
             blobSidecarManager,
             blockBlobSidecarsTrackersPool,
             FORWARD_SYNC_BATCH_SIZE.intValue(),
+            Optional.empty(),
             new NoOpMetricsSystem());
   }
 

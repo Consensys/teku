@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer;
 
+import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
@@ -77,6 +78,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
       final int maxPendingBatches,
       final int maxBlocksPerMinute,
       final int maxBlobSidecarsPerMinute,
+      final Optional<UInt64> pinnedCommonAncestorSlot,
       final Spec spec) {
     final EventThread eventThread = new AsyncRunnerEventThread("sync", asyncRunnerFactory);
     final SettableLabelledGauge targetChainCountGauge =
@@ -99,7 +101,8 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
                 eventThread, blobSidecarManager, new PeerScoringConflictResolutionStrategy()),
             batchSize,
             maxPendingBatches,
-            MultipeerCommonAncestorFinder.create(recentChainData, eventThread, spec),
+            MultipeerCommonAncestorFinder.create(
+                recentChainData, eventThread, pinnedCommonAncestorSlot, spec),
             timeProvider);
     final SyncController syncController =
         new SyncController(

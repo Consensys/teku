@@ -39,18 +39,28 @@ public class CommonAncestor {
   private final RecentChainData recentChainData;
   private final int maxAttempts;
 
-  public CommonAncestor(final RecentChainData recentChainData) {
-    this(recentChainData, DEFAULT_MAX_ATTEMPTS);
+  private final Optional<UInt64> pinnedCommonAncestorSlot;
+
+  public CommonAncestor(final RecentChainData recentChainData, final Optional<UInt64> pinnedSlot) {
+    this(recentChainData, DEFAULT_MAX_ATTEMPTS, pinnedSlot);
   }
 
   @VisibleForTesting
-  CommonAncestor(final RecentChainData recentChainData, final int maxAttempts) {
+  CommonAncestor(
+      final RecentChainData recentChainData,
+      final int maxAttempts,
+      final Optional<UInt64> pinnedSlot) {
     this.recentChainData = recentChainData;
     this.maxAttempts = maxAttempts;
+    this.pinnedCommonAncestorSlot = pinnedSlot;
   }
 
   public SafeFuture<UInt64> getCommonAncestor(
       final SyncSource peer, final UInt64 firstNonFinalSlot, final UInt64 peerHeadSlot) {
+    if (pinnedCommonAncestorSlot.isPresent()) {
+      return getCommonAncestorFromPinned(peer);
+    }
+
     final UInt64 ourHeadSlot = recentChainData.getHeadSlot();
     final UInt64 lowestHeadSlot = ourHeadSlot.min(peerHeadSlot);
 
@@ -104,6 +114,25 @@ public class CommonAncestor {
                                     SLOTS_TO_JUMP_BACK_EXPONENTIAL_BASE.times(1L << attempt)),
                                 firstNonFinalSlot,
                                 attempt + 1)));
+  }
+
+  private SafeFuture<UInt64> getCommonAncestorFromPinned(final SyncSource peer) {
+    if (pinnedCommonAncestorSlot.isEmpty()) {
+      return SafeFuture.failedFuture(new IllegalStateException("No pinned common ancestor"));
+    }
+    final UInt64 pinnedSlot = pinnedCommonAncestorSlot.get();
+    final UInt64 ourHeadSlot = recentChainData.getHeadSlot();
+    final UInt64 lowestHeadSlot = ourHeadSlot.min(pinnedSlot);
+
+    final UInt64 localNonFinalisedSlotCount = lowestHeadSlot.minusMinZero(pinnedSlot);
+
+    LOG.debug(
+        "Local head slot {}. Have {} non finalized slots, pinned slot is {}",
+        ourHeadSlot,
+        localNonFinalisedSlotCount,
+        pinnedSlot);
+
+    return getCommonAncestor(peer, pinnedSlot, pinnedSlot, maxAttempts - 1);
   }
 
   private static class BestBlockListener implements RpcResponseListener<SignedBeaconBlock> {

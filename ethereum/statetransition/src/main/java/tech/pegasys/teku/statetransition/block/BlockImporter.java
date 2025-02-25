@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
@@ -90,6 +91,9 @@ public class BlockImporter {
     return importBlock(block, Optional.empty(), BlockBroadcastValidator.NOOP);
   }
 
+  private static final Bytes32 BAD_HOLESKY_BLOCK =
+      Bytes32.fromHexString("0x2db899881ed8546476d0b92c6aa9110bea9a4cd0dbeb5519eb0ea69575f1f359");
+
   @CheckReturnValue
   public SafeFuture<BlockImportResult> importBlock(
       final SignedBeaconBlock block,
@@ -101,6 +105,11 @@ public class BlockImporter {
           "Importing known block {}.  Return successful result without re-processing.",
           block::toLogString);
       return SafeFuture.completedFuture(BlockImportResult.knownBlock(block, knownOptimistic.get()));
+    }
+    if (block.getRoot().equals(BAD_HOLESKY_BLOCK)) {
+      LOG.info("Avoiding bad block from Electra holesky upgrade.");
+      return SafeFuture.completedFuture(
+          BlockImportResult.failedStateTransition(new Exception("Computer says no")));
     }
 
     if (!weakSubjectivityValidator.isBlockValid(block, getForkChoiceStrategy())) {
