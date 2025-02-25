@@ -15,7 +15,10 @@ package tech.pegasys.teku.beacon.sync;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
+
+import java.util.Optional;
 
 public class SyncConfig {
 
@@ -42,6 +45,7 @@ public class SyncConfig {
   private final int forwardSyncMaxPendingBatches;
   private final int forwardSyncMaxBlocksPerMinute;
   private final int forwardSyncMaxBlobSidecarsPerMinute;
+    private final Optional<UInt64> pinnedSyncSlot;
 
   private SyncConfig(
       final boolean isEnabled,
@@ -52,7 +56,8 @@ public class SyncConfig {
       final int forwardSyncBatchSize,
       final int forwardSyncMaxPendingBatches,
       final int forwardSyncMaxBlocksPerMinute,
-      final int forwardSyncMaxBlobSidecarsPerMinute) {
+      final int forwardSyncMaxBlobSidecarsPerMinute,
+      final Optional<UInt64> pinnedSyncSlot) {
     this.isEnabled = isEnabled;
     this.isMultiPeerSyncEnabled = isMultiPeerSyncEnabled;
     this.reconstructHistoricStatesEnabled = reconstructHistoricStatesEnabled;
@@ -62,6 +67,7 @@ public class SyncConfig {
     this.forwardSyncMaxPendingBatches = forwardSyncMaxPendingBatches;
     this.forwardSyncMaxBlocksPerMinute = forwardSyncMaxBlocksPerMinute;
     this.forwardSyncMaxBlobSidecarsPerMinute = forwardSyncMaxBlobSidecarsPerMinute;
+    this.pinnedSyncSlot = pinnedSyncSlot;
   }
 
   public static Builder builder() {
@@ -104,6 +110,10 @@ public class SyncConfig {
     return forwardSyncMaxBlobSidecarsPerMinute;
   }
 
+    public Optional<UInt64> getPinnedSyncSlot() {
+        return pinnedSyncSlot;
+    }
+
   public static class Builder {
     private Boolean isEnabled;
     private Boolean isMultiPeerSyncEnabled = DEFAULT_MULTI_PEER_SYNC_ENABLED;
@@ -115,6 +125,7 @@ public class SyncConfig {
     private Integer forwardSyncMaxBlocksPerMinute = DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE;
     private Integer forwardSyncMaxBlobSidecarsPerMinute =
         DEFAULT_FORWARD_SYNC_MAX_BLOB_SIDECARS_PER_MINUTE;
+    private Optional<UInt64> pinnedSyncSlot = Optional.empty();
 
     private Builder() {}
 
@@ -129,7 +140,8 @@ public class SyncConfig {
           forwardSyncBatchSize,
           forwardSyncMaxPendingBatches,
           forwardSyncMaxBlocksPerMinute,
-          forwardSyncMaxBlobSidecarsPerMinute);
+          forwardSyncMaxBlobSidecarsPerMinute,
+              pinnedSyncSlot);
     }
 
     private void initMissingDefaults() {
@@ -172,6 +184,11 @@ public class SyncConfig {
     public Builder forwardSyncMaxPendingBatches(final Integer forwardSyncMaxPendingBatches) {
       checkNotNull(forwardSyncMaxPendingBatches);
       this.forwardSyncMaxPendingBatches = forwardSyncMaxPendingBatches;
+      return this;
+    }
+
+    public Builder pinnedSyncSlot(final Long pinnedSyncSlot) {
+      Optional.ofNullable(pinnedSyncSlot).ifPresent(slot -> this.pinnedSyncSlot = Optional.of(UInt64.valueOf(slot)));
       return this;
     }
 

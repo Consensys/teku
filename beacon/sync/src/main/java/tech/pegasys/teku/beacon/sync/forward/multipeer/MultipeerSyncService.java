@@ -42,6 +42,8 @@ import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
+import java.util.Optional;
+
 public class MultipeerSyncService extends Service implements ForwardSyncService {
   private final SyncStallDetector syncStallDetector;
   private final EventThread eventThread;
@@ -77,6 +79,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
       final int maxPendingBatches,
       final int maxBlocksPerMinute,
       final int maxBlobSidecarsPerMinute,
+      final Optional<UInt64> pinnedCommonAncestorSlot,
       final Spec spec) {
     final EventThread eventThread = new AsyncRunnerEventThread("sync", asyncRunnerFactory);
     final SettableLabelledGauge targetChainCountGauge =
@@ -99,7 +102,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
                 eventThread, blobSidecarManager, new PeerScoringConflictResolutionStrategy()),
             batchSize,
             maxPendingBatches,
-            MultipeerCommonAncestorFinder.create(recentChainData, eventThread, spec),
+            MultipeerCommonAncestorFinder.create(recentChainData, eventThread, pinnedCommonAncestorSlot, spec),
             timeProvider);
     final SyncController syncController =
         new SyncController(
