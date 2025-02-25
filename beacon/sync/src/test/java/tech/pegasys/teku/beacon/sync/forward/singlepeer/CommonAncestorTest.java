@@ -24,16 +24,16 @@ import static tech.pegasys.teku.beacon.sync.forward.singlepeer.CommonAncestor.BL
 import static tech.pegasys.teku.beacon.sync.forward.singlepeer.CommonAncestor.SLOTS_TO_JUMP_BACK_EXPONENTIAL_BASE;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 
-import java.util.Optional;
-
 public class CommonAncestorTest extends AbstractSyncTest {
 
-  private final CommonAncestor commonAncestor = new CommonAncestor(recentChainData, 4, Optional.empty());
+  private final CommonAncestor commonAncestor =
+      new CommonAncestor(recentChainData, 4, Optional.empty());
 
   @Test
   void shouldNotSearchCommonAncestorWithoutSufficientLocalData() {
