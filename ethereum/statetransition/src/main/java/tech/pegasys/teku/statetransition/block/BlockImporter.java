@@ -104,6 +104,7 @@ public class BlockImporter {
         final List<Bytes32> badBlockList =
             Files.readAllLines(badBlockPath).stream().map(Bytes32::fromHexString).toList();
         badBlockList.forEach(badBlock -> LOG.warn("Bad block has been blacklisted: {}", badBlock));
+        return badBlockList;
       } catch (IOException e) {
         LOG.error("Found bad block file but could not read", e);
       }
