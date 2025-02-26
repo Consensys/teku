@@ -46,7 +46,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
 
   private final UInt256 nodeId;
   private final int myTotalCustodyGroups;
-  private final UpdatableDataColumnSidecarCustody custody;
+  private final DataColumnSidecarCustody custody;
   private final DataColumnSidecarRetriever retriever;
 
   private final Spec spec;
@@ -57,7 +57,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
       final Spec spec,
       final CurrentSlotProvider currentSlotProvider,
       final DataColumnSidecarDbAccessor db,
-      final UpdatableDataColumnSidecarCustody custody,
+      final DataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
       final UInt256 nodeId,
       final int myTotalCustodyGroups) {

@@ -38,7 +38,7 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecar
 public class DasCustodySync implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger("das-nyota");
 
-  private final UpdatableDataColumnSidecarCustody custody;
+  private final DataColumnSidecarCustody custody;
   private final DataColumnSidecarRetriever retriever;
   private final int maxPendingColumnRequests;
   private final int minPendingColumnRequests;
@@ -51,7 +51,7 @@ public class DasCustodySync implements SlotEventsChannel {
   private final AtomicLong syncedColumnCount = new AtomicLong();
 
   public DasCustodySync(
-      final UpdatableDataColumnSidecarCustody custody,
+      final DataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
       final int maxPendingColumnRequests,
       final int minPendingColumnRequests) {
@@ -62,7 +62,7 @@ public class DasCustodySync implements SlotEventsChannel {
   }
 
   public DasCustodySync(
-      final UpdatableDataColumnSidecarCustody custody, final DataColumnSidecarRetriever retriever) {
+      final DataColumnSidecarCustody custody, final DataColumnSidecarRetriever retriever) {
     this(custody, retriever, 10 * 1024, 2 * 1024);
   }
 

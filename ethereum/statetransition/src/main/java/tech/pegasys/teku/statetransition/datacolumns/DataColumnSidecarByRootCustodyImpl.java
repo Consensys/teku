@@ -31,18 +31,18 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class DataColumnSidecarByRootCustodyImpl
-    implements DataColumnSidecarByRootCustody, UpdatableDataColumnSidecarCustody {
+    implements DataColumnSidecarByRootCustody, DataColumnSidecarCustody {
 
   public static final int DEFAULT_MAX_CACHE_SIZE_EPOCHS = 1024;
 
-  private final UpdatableDataColumnSidecarCustody custody;
+  private final DataColumnSidecarCustody custody;
   private final CombinedChainDataClient combinedChainDataClient;
   private final UInt64 maxCacheSizeInSlots;
 
   private final ColumnSlotCache cache = new ColumnSlotCache();
 
   public DataColumnSidecarByRootCustodyImpl(
-      final UpdatableDataColumnSidecarCustody custody,
+      final DataColumnSidecarCustody custody,
       final CombinedChainDataClient combinedChainDataClient,
       final UInt64 maxCacheSizeInSlots) {
     this.custody = custody;

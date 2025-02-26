@@ -40,7 +40,7 @@ import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAcces
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 
 public class DataColumnSidecarCustodyImpl
-    implements UpdatableDataColumnSidecarCustody, SlotEventsChannel, FinalizedCheckpointChannel {
+    implements DataColumnSidecarCustody, SlotEventsChannel, FinalizedCheckpointChannel {
 
   private record SlotCustody(
       UInt64 slot,

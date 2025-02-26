@@ -92,6 +92,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustody;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -208,6 +209,7 @@ public class BlockManagerTest {
             localRecentChainData,
             blockImporter,
             blockBlobSidecarsTrackersPool,
+            DataColumnSidecarRecoveringCustody.NOOP,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
@@ -349,6 +351,7 @@ public class BlockManagerTest {
             localRecentChainData,
             blockImporter,
             blockBlobSidecarsTrackersPool,
+            DataColumnSidecarRecoveringCustody.NOOP,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
@@ -1126,6 +1129,7 @@ public class BlockManagerTest {
         localRecentChainData,
         blockImporter,
         blockBlobSidecarsTrackersPool,
+        DataColumnSidecarRecoveringCustody.NOOP,
         pendingBlocks,
         futureBlocks,
         invalidBlockRoots,

@@ -127,7 +127,6 @@ import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.LocalOperationAcceptedFilter;
 import tech.pegasys.teku.statetransition.MappedOperationPool;
@@ -155,13 +154,16 @@ import tech.pegasys.teku.statetransition.datacolumns.DasPreSampler;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustodyImpl;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustody;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustodyImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManagerImpl;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustody;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustodyImpl;
 import tech.pegasys.teku.statetransition.datacolumns.LateInitDataColumnSidecarCustody;
 import tech.pegasys.teku.statetransition.datacolumns.MinCustodyPeriodSlotCalculator;
-import tech.pegasys.teku.statetransition.datacolumns.UpdatableDataColumnSidecarCustody;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipBatchLogger;
@@ -731,14 +733,17 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 .getBlockAtSlotExact(slot)
                 .thenApply(sbb -> sbb.flatMap(SignedBeaconBlock::getBeaconBlock));
 
+    MiscHelpersFulu miscHelpersFulu =
+        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
+
     final int minCustodyGroupRequirement = specConfigFulu.getCustodyRequirement();
     final int maxGroups = specConfigFulu.getNumberOfCustodyGroups();
     final int totalMyCustodyGroups =
         beaconConfig.p2pConfig().getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU));
 
-    final UpdatableDataColumnSidecarCustody custody;
+    final DataColumnSidecarCustody custody;
     {
-      DataColumnSidecarCustodyImpl dataColumnSidecarCustodyImpl =
+      final DataColumnSidecarCustodyImpl dataColumnSidecarCustodyImpl =
           new DataColumnSidecarCustodyImpl(
               spec,
               canonicalBlockResolver,
@@ -756,23 +761,34 @@ public class BeaconChainController extends Service implements BeaconChainControl
             return slotDuration.dividedBy(3);
           };
 
-      DasLongPollCustody dasLongPollCustody =
+      final DasLongPollCustody dasLongPollCustody =
           new DasLongPollCustody(
               dataColumnSidecarCustodyImpl, operationPoolAsyncRunner, gossipWaitTimeoutCalculator);
       eventChannels.subscribe(SlotEventsChannel.class, dasLongPollCustody);
 
-      DataColumnSidecarByRootCustodyImpl dataColumnSidecarByRootCustody =
+      final DataColumnSidecarByRootCustody dataColumnSidecarByRootCustody =
           new DataColumnSidecarByRootCustodyImpl(
               dasLongPollCustody,
               combinedChainDataClient,
               UInt64.valueOf(slotsPerEpoch)
                   .times(DataColumnSidecarByRootCustodyImpl.DEFAULT_MAX_CACHE_SIZE_EPOCHS));
+      final DataColumnSidecarRecoveringCustody dataColumnSidecarRecoveringCustody =
+          new DataColumnSidecarRecoveringCustodyImpl(
+              dataColumnSidecarByRootCustody,
+              operationPoolAsyncRunner,
+              spec,
+              miscHelpersFulu,
+              kzg,
+              isFuluSuperNode(),
+              specConfigFulu.getNumberOfColumns(),
+              slot -> Duration.ofMillis(spec.getMillisPerSlot(slot).dividedBy(3).longValue()));
+      eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarRecoveringCustody);
 
       // TODO fix this dirty hack
       // This is to resolve the initialization loop Network <--> DAS Custody
-      this.dataColumnSidecarCustody.init(dataColumnSidecarByRootCustody);
+      this.dataColumnSidecarCustody.init(dataColumnSidecarRecoveringCustody);
 
-      custody = dataColumnSidecarByRootCustody;
+      custody = dataColumnSidecarRecoveringCustody;
     }
 
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
@@ -805,22 +821,18 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dasRpc,
             operationPoolAsyncRunner,
             Duration.ofSeconds(1));
-    MiscHelpersFulu miscHelpersFulu =
-        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
-    SchemaDefinitionsFulu schemaDefinitionsFulu =
-        SchemaDefinitionsFulu.required(
-            spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions());
     RecoveringSidecarRetriever recoveringSidecarRetriever =
         new RecoveringSidecarRetriever(
             sidecarRetriever,
             kzg,
             miscHelpersFulu,
-            schemaDefinitionsFulu,
             canonicalBlockResolver,
             dbAccessor,
             operationPoolAsyncRunner,
             Duration.ofMinutes(5),
             specConfigFulu.getNumberOfColumns());
+    dataColumnSidecarCustody.subscribeToValidDataColumnSidecars(
+        recoveringSidecarRetriever::onNewValidatedSidecar);
 
     dasCustodySync = new DasCustodySync(custody, recoveringSidecarRetriever);
     eventChannels.subscribe(SlotEventsChannel.class, dasCustodySync);
@@ -871,6 +883,18 @@ public class BeaconChainController extends Service implements BeaconChainControl
     invalidBlockRoots = LimitedMap.createSynchronizedLRU(500);
   }
 
+  private boolean isFuluSuperNode() {
+    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      final int maxGroups =
+          SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
+              .getNumberOfCustodyGroups();
+      final int totalMyCustodyGroups =
+          beaconConfig.p2pConfig().getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU));
+      return maxGroups == totalMyCustodyGroups;
+    }
+    return false;
+  }
+
   protected void initBlockBlobSidecarsTrackersPool() {
     LOG.debug("BeaconChainController.initBlockBlobSidecarsTrackersPool()");
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
@@ -880,26 +904,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
           eventChannels.getPublisher(BlobSidecarGossipChannel.class, beaconAsyncRunner);
 
       // Super node in FULU
-      final boolean isSuperNode;
-      final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher;
-      if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-        final int maxGroups =
-            SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
-                .getNumberOfCustodyGroups();
-        final int totalMyCustodyGroups =
-            beaconConfig
-                .p2pConfig()
-                .getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU));
-        isSuperNode = maxGroups == totalMyCustodyGroups;
-        dataColumnSidecarPublisher =
-            dataColumnSidecars ->
-                eventChannels
-                    .getPublisher(DataColumnSidecarGossipChannel.class)
-                    .publishDataColumnSidecars(dataColumnSidecars);
-      } else {
-        isSuperNode = false;
-        dataColumnSidecarPublisher = __ -> {};
-      }
+      final boolean isSuperNode = isFuluSuperNode();
+      final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher =
+          isSuperNode
+              ? dataColumnSidecars ->
+                  eventChannels
+                      .getPublisher(DataColumnSidecarGossipChannel.class)
+                      .publishDataColumnSidecars(dataColumnSidecars)
+              : __ -> {};
 
       final BlockBlobSidecarsTrackersPoolImpl pool =
           poolFactory.createPoolForBlockBlobSidecarsTrackers(
@@ -1581,6 +1593,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentChainData,
             blockImporter,
             blockBlobSidecarsTrackersPool,
+            dataColumnSidecarCustody,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,

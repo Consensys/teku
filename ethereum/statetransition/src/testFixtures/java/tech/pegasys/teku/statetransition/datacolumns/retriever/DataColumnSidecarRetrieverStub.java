@@ -50,4 +50,7 @@ public class DataColumnSidecarRetrieverStub implements DataColumnSidecarRetrieve
 
   @Override
   public void flush() {}
+
+  @Override
+  public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {}
 }

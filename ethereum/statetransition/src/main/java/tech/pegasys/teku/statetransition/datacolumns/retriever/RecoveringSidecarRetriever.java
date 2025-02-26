@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -31,12 +30,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntry;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 
@@ -46,7 +42,6 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   private final DataColumnSidecarRetriever delegate;
   private final KZG kzg;
   private final MiscHelpersFulu specHelpers;
-  private final SchemaDefinitionsFulu schemaDefinitions;
   private final CanonicalBlockResolver blockResolver;
   private final DataColumnSidecarDbAccessor sidecarDB;
   private final AsyncRunner asyncRunner;
@@ -60,7 +55,6 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
       final DataColumnSidecarRetriever delegate,
       final KZG kzg,
       final MiscHelpersFulu specHelpers,
-      final SchemaDefinitionsFulu schemaDefinitionsElectra,
       final CanonicalBlockResolver blockResolver,
       final DataColumnSidecarDbAccessor sidecarDB,
       final AsyncRunner asyncRunner,
@@ -69,7 +63,6 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     this.delegate = delegate;
     this.kzg = kzg;
     this.specHelpers = specHelpers;
-    this.schemaDefinitions = schemaDefinitionsElectra;
     this.blockResolver = blockResolver;
     this.sidecarDB = sidecarDB;
     this.asyncRunner = asyncRunner;
@@ -97,6 +90,11 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   @Override
   public void flush() {
     delegate.flush();
+  }
+
+  @Override
+  public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {
+    delegate.onNewValidatedSidecar(sidecar);
   }
 
   @VisibleForTesting
@@ -280,53 +278,13 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     }
 
     private void recover() {
-      final List<List<MatrixEntry>> columnBlobEntries =
-          existingSidecarsByColIdx.values().stream()
-              .map(
-                  sideCar ->
-                      IntStream.range(0, sideCar.getDataColumn().size())
-                          .mapToObj(
-                              rowIndex ->
-                                  schemaDefinitions
-                                      .getMatrixEntrySchema()
-                                      .create(
-                                          sideCar.getDataColumn().get(rowIndex),
-                                          sideCar.getSszKZGProofs().get(rowIndex).getKZGProof(),
-                                          sideCar.getIndex(),
-                                          UInt64.valueOf(rowIndex)))
-                          .toList())
-              .toList();
-      final List<List<MatrixEntry>> blobColumnEntries = transpose(columnBlobEntries);
-      final List<List<MatrixEntry>> extendedMatrix =
-          specHelpers.recoverMatrix(blobColumnEntries, kzg);
-      final DataColumnSidecar anyExistingSidecar =
-          existingSidecarsByColIdx.values().stream().findFirst().orElseThrow();
-      final SignedBeaconBlockHeader signedBeaconBlockHeader =
-          anyExistingSidecar.getSignedBeaconBlockHeader();
       final List<DataColumnSidecar> recoveredSidecars =
-          specHelpers.constructDataColumnSidecars(block, signedBeaconBlockHeader, extendedMatrix);
+          specHelpers.reconstructAllDataColumnSidecars(
+              block, existingSidecarsByColIdx.values(), kzg);
       final Map<UInt64, DataColumnSidecar> recoveredSidecarsAsMap =
           recoveredSidecars.stream()
               .collect(Collectors.toUnmodifiableMap(DataColumnSidecar::getIndex, i -> i));
       existingSidecarsByColIdx.putAll(recoveredSidecarsAsMap);
     }
-  }
-
-  private static <T> List<List<T>> transpose(final List<List<T>> matrix) {
-    final int rowCount = matrix.size();
-    final int colCount = matrix.get(0).size();
-    final List<List<T>> ret =
-        Stream.generate(() -> (List<T>) new ArrayList<T>(rowCount)).limit(colCount).toList();
-
-    for (int row = 0; row < rowCount; row++) {
-      if (matrix.get(row).size() != colCount) {
-        throw new IllegalArgumentException("Different number columns in the matrix");
-      }
-      for (int col = 0; col < colCount; col++) {
-        final T val = matrix.get(row).get(col);
-        ret.get(col).add(row, val);
-      }
-    }
-    return ret;
   }
 }

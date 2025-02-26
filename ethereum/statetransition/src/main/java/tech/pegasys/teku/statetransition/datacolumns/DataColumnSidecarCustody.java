@@ -15,28 +15,18 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 public interface DataColumnSidecarCustody {
 
-  DataColumnSidecarCustody NOOP =
-      new DataColumnSidecarCustody() {
-        @Override
-        public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecar(
-            DataColumnSlotAndIdentifier columnId) {
-          return SafeFuture.completedFuture(Optional.empty());
-        }
-
-        @Override
-        public SafeFuture<Boolean> hasCustodyDataColumnSidecar(
-            DataColumnSlotAndIdentifier columnId) {
-          return SafeFuture.completedFuture(false);
-        }
-      };
-
   SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecar(
       DataColumnSlotAndIdentifier columnId);
 
   SafeFuture<Boolean> hasCustodyDataColumnSidecar(DataColumnSlotAndIdentifier columnId);
+
+  SafeFuture<Void> onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar);
+
+  AsyncStream<DataColumnSlotAndIdentifier> retrieveMissingColumns();
 }

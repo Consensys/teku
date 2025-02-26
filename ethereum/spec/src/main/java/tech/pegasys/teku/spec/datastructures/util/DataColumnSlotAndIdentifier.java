@@ -18,6 +18,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 
 public record DataColumnSlotAndIdentifier(UInt64 slot, Bytes32 blockRoot, UInt64 columnIndex)
@@ -42,6 +43,10 @@ public record DataColumnSlotAndIdentifier(UInt64 slot, Bytes32 blockRoot, UInt64
 
   public DataColumnIdentifier toDataColumnIdentifier() {
     return new DataColumnIdentifier(blockRoot(), columnIndex());
+  }
+
+  public SlotAndBlockRoot getSlotAndBlockRoot() {
+    return new SlotAndBlockRoot(slot, blockRoot());
   }
 
   @Override

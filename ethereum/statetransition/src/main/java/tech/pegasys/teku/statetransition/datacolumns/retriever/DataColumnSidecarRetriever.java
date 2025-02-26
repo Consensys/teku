@@ -38,6 +38,8 @@ public interface DataColumnSidecarRetriever {
    */
   void flush();
 
+  void onNewValidatedSidecar(DataColumnSidecar sidecar);
+
   /**
    * The request may complete with this exception when requested column is no more on our local
    * canonical chain

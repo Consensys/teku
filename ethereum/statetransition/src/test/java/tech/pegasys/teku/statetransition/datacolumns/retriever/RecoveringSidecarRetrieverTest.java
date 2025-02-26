@@ -36,7 +36,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDBStub;
@@ -57,8 +56,6 @@ public class RecoveringSidecarRetrieverTest {
       SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
   final MiscHelpersFulu miscHelpers =
       MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
-  final SchemaDefinitionsFulu schemaDefinitions =
-      SchemaDefinitionsFulu.required(spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions());
   final int columnCount = config.getNumberOfColumns();
   final KZG kzg = KZG.getInstance(false);
 
@@ -88,7 +85,6 @@ public class RecoveringSidecarRetrieverTest {
             delegateRetriever,
             kzg,
             miscHelpers,
-            schemaDefinitions,
             blockResolver,
             dbAccessor,
             stubAsyncRunner,
@@ -143,7 +139,6 @@ public class RecoveringSidecarRetrieverTest {
             delegateRetriever,
             kzg,
             miscHelpers,
-            schemaDefinitions,
             blockResolver,
             dbAccessor,
             stubAsyncRunner,
@@ -196,7 +191,6 @@ public class RecoveringSidecarRetrieverTest {
             delegateRetriever,
             kzg,
             miscHelpers,
-            schemaDefinitions,
             blockResolver,
             dbAccessor,
             stubAsyncRunner,

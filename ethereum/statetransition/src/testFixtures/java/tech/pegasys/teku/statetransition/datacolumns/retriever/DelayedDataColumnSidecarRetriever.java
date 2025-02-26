@@ -51,4 +51,7 @@ public class DelayedDataColumnSidecarRetriever implements DataColumnSidecarRetri
 
   @Override
   public void flush() {}
+
+  @Override
+  public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {}
 }

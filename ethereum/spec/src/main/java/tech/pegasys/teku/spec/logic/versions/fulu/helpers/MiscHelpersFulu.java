@@ -19,6 +19,7 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint256ToB
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -300,6 +301,39 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .toList();
   }
 
+  public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
+      final BeaconBlock block,
+      final Collection<DataColumnSidecar> existingSidecars,
+      final KZG kzg) {
+    if (existingSidecars.size() < (specConfigFulu.getNumberOfColumns() / 2)) {
+      throw new IllegalArgumentException(
+          "Number of sidecars must be greater than or equal to the half of column count");
+    }
+    final List<List<MatrixEntry>> columnBlobEntries =
+        existingSidecars.stream()
+            .map(
+                sideCar ->
+                    IntStream.range(0, sideCar.getDataColumn().size())
+                        .mapToObj(
+                            rowIndex ->
+                                schemaDefinitions
+                                    .getMatrixEntrySchema()
+                                    .create(
+                                        sideCar.getDataColumn().get(rowIndex),
+                                        sideCar.getSszKZGProofs().get(rowIndex).getKZGProof(),
+                                        sideCar.getIndex(),
+                                        UInt64.valueOf(rowIndex)))
+                        .toList())
+            .toList();
+    final List<List<MatrixEntry>> blobColumnEntries = transpose(columnBlobEntries);
+    final List<List<MatrixEntry>> extendedMatrix = recoverMatrix(blobColumnEntries, kzg);
+    final DataColumnSidecar anyExistingSidecar =
+        existingSidecars.stream().findFirst().orElseThrow();
+    final SignedBeaconBlockHeader signedBeaconBlockHeader =
+        anyExistingSidecar.getSignedBeaconBlockHeader();
+    return constructDataColumnSidecars(block, signedBeaconBlockHeader, extendedMatrix);
+  }
+
   /**
    * Return the recovered extended matrix.
    *
@@ -375,6 +409,24 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
       }
     }
     return sampleCount;
+  }
+
+  private static <T> List<List<T>> transpose(final List<List<T>> matrix) {
+    final int rowCount = matrix.size();
+    final int colCount = matrix.getFirst().size();
+    final List<List<T>> ret =
+        Stream.generate(() -> (List<T>) new ArrayList<T>(rowCount)).limit(colCount).toList();
+
+    for (int row = 0; row < rowCount; row++) {
+      if (matrix.get(row).size() != colCount) {
+        throw new IllegalArgumentException("Different number columns in the matrix");
+      }
+      for (int col = 0; col < colCount; col++) {
+        final T val = matrix.get(row).get(col);
+        ret.get(col).add(row, val);
+      }
+    }
+    return ret;
   }
 
   private UInt256 mathComb(final UInt64 n, final UInt64 k) {
