@@ -127,7 +127,8 @@ public class ValidatorLogger {
         String.format(
             "%sFailed to produce %s  Slot: %s Validator: %s",
             PREFIX, producedType, slot, formatValidators(maybeKey));
-    log.error(ColorConsolePrinter.print(errorString, Color.RED), error);
+    log.error(ColorConsolePrinter.print(errorString, Color.RED));
+    log.trace(errorString, error);
   }
 
   public void signerNoLongerActive(

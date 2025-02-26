@@ -14,4 +14,5 @@
  - Added Chiado Electra configuration due at Mar-06-2025 09:43:40 GMT+0000
 
 ### Bug Fixes
- - added 415 response code for beacon-api `/eth/v1/validator/register_validator`.
+ - added 415 response code for beacon-api `/eth/v1/validator/register_validator`. 
+ - Removed stack trace by default from duty failure messages.
