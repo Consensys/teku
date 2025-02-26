@@ -779,6 +779,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
               spec,
               miscHelpersFulu,
               kzg,
+              dataColumnSidecar ->
+                  eventChannels
+                      .getPublisher(DataColumnSidecarGossipChannel.class)
+                      .publishDataColumnSidecar(dataColumnSidecar),
               isFuluSuperNode(),
               specConfigFulu.getNumberOfColumns(),
               slot -> Duration.ofMillis(spec.getMillisPerSlot(slot).dividedBy(3).longValue()));

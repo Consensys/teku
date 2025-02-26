@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -51,6 +52,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   private final MiscHelpersFulu miscHelpers;
   private final KZG kzg;
   private final Spec spec;
+  private final Consumer<DataColumnSidecar> dataColumnSidecarPublisher;
 
   private final long columnCount;
   private final int recoverColumnCount;
@@ -68,6 +70,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       final Spec spec,
       final MiscHelpersFulu miscHelpers,
       final KZG kzg,
+      final Consumer<DataColumnSidecar> dataColumnSidecarPublisher,
       final boolean isSuperNode,
       final int columnCount,
       final Function<UInt64, Duration> slotToRecoveryDelay) {
@@ -76,6 +79,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     this.miscHelpers = miscHelpers;
     this.kzg = kzg;
     this.spec = spec;
+    this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
     this.recoveryTasks =
         LimitedMap.createSynchronizedNatural(spec.getGenesisSpec().getSlotsPerEpoch());
     this.isSuperNode = isSuperNode;
@@ -224,6 +228,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                         delegate
                             .onNewValidatedDataColumnSidecar(dataColumnSidecar)
                             .ifExceptionGetsHereRaiseABug();
+                        dataColumnSidecarPublisher.accept(dataColumnSidecar);
                       });
               LOG.info(
                   "Data column sidecars recovery finished for block: {}",

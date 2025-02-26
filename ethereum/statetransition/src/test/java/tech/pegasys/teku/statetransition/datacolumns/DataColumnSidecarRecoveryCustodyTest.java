@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -67,6 +68,9 @@ public class DataColumnSidecarRecoveryCustodyTest {
   private final DataColumnSidecarManager.ValidDataColumnSidecarsListener listener =
       mock(DataColumnSidecarManager.ValidDataColumnSidecarsListener.class);
 
+  @SuppressWarnings("unchecked")
+  private final Consumer<DataColumnSidecar> dataColumnSidecarPublisher = mock(Consumer.class);
+
   private final Supplier<Stream<UInt64>> columnIndexes =
       () ->
           Stream.iterate(
@@ -86,6 +90,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
           spec,
           miscHelpersFulu,
           KZG.NOOP,
+          dataColumnSidecarPublisher,
           true,
           config.getNumberOfColumns(),
           __ -> Duration.ofSeconds(2));
@@ -106,6 +111,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
             spec,
             miscHelpersFulu,
             KZG.NOOP,
+            dataColumnSidecarPublisher,
             true,
             config.getNumberOfColumns(),
             __ -> Duration.ofSeconds(2));
@@ -123,6 +129,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
             spec,
             miscHelpersFulu,
             KZG.NOOP,
+            dataColumnSidecarPublisher,
             false,
             config.getNumberOfColumns(),
             __ -> Duration.ofSeconds(2));
@@ -163,6 +170,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
             i -> {
               verify(delegate).onNewValidatedDataColumnSidecar(eq(sidecars.get(i)));
               verify(listener).onNewValidSidecar(eq(sidecars.get(i)));
+              verify(dataColumnSidecarPublisher).accept(eq(sidecars.get(i)));
             });
     columnIndexes
         .get()
@@ -171,6 +179,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
             i -> {
               verify(delegate).onNewValidatedDataColumnSidecar(eq(sidecars.get(i)));
               verify(listener).onNewValidSidecar(eq(sidecars.get(i)));
+              verify(dataColumnSidecarPublisher).accept(eq(sidecars.get(i)));
             });
   }
 
@@ -250,6 +259,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
     // post reconstructed
     verify(delegate, times(config.getNumberOfColumns())).onNewValidatedDataColumnSidecar(any());
     verify(listener, times(58)).onNewValidSidecar(any());
+    verify(dataColumnSidecarPublisher, times(58)).accept(any());
   }
 
   @Test
@@ -294,5 +304,6 @@ public class DataColumnSidecarRecoveryCustodyTest {
     // post reconstructed
     verify(delegate, times(config.getNumberOfColumns())).onNewValidatedDataColumnSidecar(any());
     verify(listener, times(64)).onNewValidSidecar(any());
+    verify(dataColumnSidecarPublisher, times(64)).accept(any());
   }
 }
