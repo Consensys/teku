@@ -60,7 +60,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   private final String topic;
   final TimeProvider timeProvider;
 
-  // every  slot of mainnet config
+  // every slot of mainnet config
   private final Throttler<Logger> loggerThrottler = new Throttler<>(LOG, UInt64.valueOf(12));
 
   public Eth2TopicHandler(

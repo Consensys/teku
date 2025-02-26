@@ -31,8 +31,9 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class Eth2GossipTopicFilter implements GossipTopicFilter {
   private static final Logger LOG = LogManager.getLogger();
-  private final Supplier<Set<String>> relevantTopics;
+
   private final Spec spec;
+  private final Supplier<Set<String>> relevantTopics;
 
   public Eth2GossipTopicFilter(
       final RecentChainData recentChainData, final GossipEncoding gossipEncoding, final Spec spec) {
