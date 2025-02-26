@@ -16,3 +16,4 @@
 ### Bug Fixes
  - added 415 response code for beacon-api `/eth/v1/validator/register_validator`.
  - Holesky pectra bad block ignored to aid syncing
+ - Removed stack trace by default from duty failure messages.
