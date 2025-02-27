@@ -38,15 +38,21 @@ public class CommonAncestor {
 
   private final RecentChainData recentChainData;
   private final int maxAttempts;
+  private final boolean forceSelectingMostRecentLocalBlocks;
 
-  public CommonAncestor(final RecentChainData recentChainData) {
-    this(recentChainData, DEFAULT_MAX_ATTEMPTS);
+  public CommonAncestor(
+      final RecentChainData recentChainData, final boolean forceSelectingMostRecentLocalBlocks) {
+    this(recentChainData, DEFAULT_MAX_ATTEMPTS, forceSelectingMostRecentLocalBlocks);
   }
 
   @VisibleForTesting
-  CommonAncestor(final RecentChainData recentChainData, final int maxAttempts) {
+  CommonAncestor(
+      final RecentChainData recentChainData,
+      final int maxAttempts,
+      final boolean forceSelectingMostRecentLocalBlocks) {
     this.recentChainData = recentChainData;
     this.maxAttempts = maxAttempts;
+    this.forceSelectingMostRecentLocalBlocks = forceSelectingMostRecentLocalBlocks;
   }
 
   public SafeFuture<UInt64> getCommonAncestor(
@@ -56,7 +62,7 @@ public class CommonAncestor {
 
     final UInt64 localNonFinalisedSlotCount = lowestHeadSlot.minusMinZero(firstNonFinalSlot);
 
-    LOG.debug(
+    LOG.info(
         "Local head slot {}. Have {} non finalized slots, peer head is {}",
         ourHeadSlot,
         localNonFinalisedSlotCount,
@@ -80,7 +86,7 @@ public class CommonAncestor {
 
     final UInt64 lastSlot = firstRequestedSlot.plus(BLOCK_COUNT_PER_ATTEMPT);
 
-    LOG.debug("Sampling ahead from {} to {}.", firstRequestedSlot, lastSlot);
+    LOG.info("Sampling ahead from {} to {}.", firstRequestedSlot, lastSlot);
 
     final BestBlockListener blockResponseListener = new BestBlockListener(recentChainData);
     final PeerSyncBlockListener blockListener =
@@ -97,13 +103,21 @@ public class CommonAncestor {
                     .getBestSlot()
                     .map(SafeFuture::completedFuture)
                     .orElseGet(
-                        () ->
-                            getCommonAncestor(
-                                peer,
-                                firstRequestedSlot.minusMinZero(
-                                    SLOTS_TO_JUMP_BACK_EXPONENTIAL_BASE.times(1L << attempt)),
-                                firstNonFinalSlot,
-                                attempt + 1)));
+                        () -> {
+                          if (forceSelectingMostRecentLocalBlocks) {
+                            // If we are forcing to select the most recent local blocks,
+                            // we expect to have found it by the first attempt.
+                            return SafeFuture.failedFuture(
+                                new RuntimeException(
+                                    "No common ancestor found using mos recent local blocks"));
+                          }
+                          return getCommonAncestor(
+                              peer,
+                              firstRequestedSlot.minusMinZero(
+                                  SLOTS_TO_JUMP_BACK_EXPONENTIAL_BASE.times(1L << attempt)),
+                              firstNonFinalSlot,
+                              attempt + 1);
+                        }));
   }
 
   private static class BestBlockListener implements RpcResponseListener<SignedBeaconBlock> {
