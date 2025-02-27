@@ -392,7 +392,6 @@ public class EndpointMetadata {
         gen.writeObjectField("type", "array");
         gen.writeFieldName("items");
         entry.getValue().serializeOpenApiTypeOrReference(gen);
-        gen.writeObjectField("minItems", "1");
         gen.writeEndObject();
       } else { // Handle regular parameter
         entry.getValue().serializeOpenApiTypeOrReference(gen);
