@@ -45,6 +45,13 @@ public interface SszType {
     return ret;
   }
 
+  /**
+   * Indicates whether the type stores extra data in backing tree, like "size" or "bitvector"
+   * subtrees which act like "service branches" which requires special treatment during
+   * serialization and deserialization
+   */
+  boolean hasExtraDataInBackingTree();
+
   /** Indicates whether the type is fixed or variable size */
   boolean isFixedSize();
 
