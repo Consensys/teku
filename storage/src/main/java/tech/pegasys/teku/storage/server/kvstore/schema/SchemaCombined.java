@@ -63,29 +63,29 @@ public interface SchemaCombined extends Schema {
       getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex();
 
   // Variables
-  KvStoreVariable<UInt64> getVariableGenesisTime();
+  KvStoreUnchunkedVariable<UInt64> getVariableGenesisTime();
 
-  KvStoreVariable<Checkpoint> getVariableJustifiedCheckpoint();
+  KvStoreUnchunkedVariable<Checkpoint> getVariableJustifiedCheckpoint();
 
-  KvStoreVariable<Checkpoint> getVariableBestJustifiedCheckpoint();
+  KvStoreUnchunkedVariable<Checkpoint> getVariableBestJustifiedCheckpoint();
 
-  KvStoreVariable<Checkpoint> getVariableFinalizedCheckpoint();
+  KvStoreUnchunkedVariable<Checkpoint> getVariableFinalizedCheckpoint();
 
-  KvStoreVariable<BeaconState> getVariableLatestFinalizedState();
+  KvStoreChunkedVariable<BeaconState> getVariableLatestFinalizedState();
 
-  KvStoreVariable<MinGenesisTimeBlockEvent> getVariableMinGenesisTimeBlock();
+  KvStoreUnchunkedVariable<MinGenesisTimeBlockEvent> getVariableMinGenesisTimeBlock();
 
-  KvStoreVariable<Checkpoint> getVariableWeakSubjectivityCheckpoint();
+  KvStoreUnchunkedVariable<Checkpoint> getVariableWeakSubjectivityCheckpoint();
 
-  KvStoreVariable<Checkpoint> getVariableAnchorCheckpoint();
+  KvStoreUnchunkedVariable<Checkpoint> getVariableAnchorCheckpoint();
 
-  KvStoreVariable<UInt64> getOptimisticTransitionBlockSlot();
+  KvStoreUnchunkedVariable<UInt64> getOptimisticTransitionBlockSlot();
 
-  KvStoreVariable<UInt64> getVariableEarliestBlobSidecarSlot();
+  KvStoreUnchunkedVariable<UInt64> getVariableEarliestBlobSidecarSlot();
 
-  KvStoreVariable<UInt64> getVariableEarliestBlockSlot();
+  KvStoreUnchunkedVariable<UInt64> getVariableEarliestBlockSlot();
 
-  KvStoreVariable<DepositTreeSnapshot> getVariableFinalizedDepositSnapshot();
+  KvStoreUnchunkedVariable<DepositTreeSnapshot> getVariableFinalizedDepositSnapshot();
 
   Map<String, KvStoreColumn<?, ?>> getColumnMap();
 
