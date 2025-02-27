@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.infrastructure.logging;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public enum LoggingDestination {
   BOTH("both"),
   CONSOLE("console"),
@@ -20,6 +23,7 @@ public enum LoggingDestination {
   FILE("file"),
   CUSTOM("custom");
 
+  private static final Logger LOG = LogManager.getLogger();
   private final String key;
 
   LoggingDestination(final String key) {
@@ -33,6 +37,9 @@ public enum LoggingDestination {
       }
     }
 
+    LOG.warn(
+        "Invalid logging destination '{}' provided. Valid options are: both, console, default, file, custom. Using default destination.",
+        destination);
     return DEFAULT_BOTH;
   }
 }
