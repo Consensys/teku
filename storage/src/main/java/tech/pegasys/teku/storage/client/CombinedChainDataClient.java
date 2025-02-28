@@ -63,6 +63,8 @@ public class CombinedChainDataClient {
       completedFuture(Optional.empty());
   private static final SafeFuture<Optional<SignedBeaconBlock>> BLOCK_NOT_AVAILABLE =
       completedFuture(Optional.empty());
+  private static final SafeFuture<Optional<SignedExecutionPayloadEnvelope>>
+      EXECUTION_PAYLOAD_NOT_AVAILABLE = completedFuture(Optional.empty());
 
   private final RecentChainData recentChainData;
   private final StorageQueryChannel historicalChainData;
@@ -212,6 +214,24 @@ public class CombinedChainDataClient {
                       : regenerateStateAndSlotExact(slot));
     }
     return regenerateStateAndSlotExact(slot);
+  }
+
+  public SafeFuture<Optional<SignedExecutionPayloadEnvelope>> getExecutionPayloadAtSlotExact(
+      final UInt64 slot) {
+    if (!isStoreAvailable()) {
+      return EXECUTION_PAYLOAD_NOT_AVAILABLE;
+    }
+
+    final Optional<Bytes32> recentRoot = recentChainData.getBlockRootInEffectBySlot(slot);
+    if (recentRoot.isPresent()) {
+      return getExecutionPayloadByBlockRoot(recentRoot.get())
+          .thenApply(
+              maybeExecutionPayload ->
+                  maybeExecutionPayload.filter(
+                      executionPayload -> executionPayload.getMessage().getSlot().equals(slot)));
+    }
+
+    return historicalChainData.getFinalizedExecutionPayloadAtSlot(slot);
   }
 
   // EIP-7732 TODO: FIX implement regenerate similar to getStateAtSlotExact
