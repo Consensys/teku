@@ -48,7 +48,7 @@ public class MultipeerCommonAncestorFinder {
   public static MultipeerCommonAncestorFinder create(
       final RecentChainData recentChainData, final EventThread eventThread, final Spec spec) {
     return new MultipeerCommonAncestorFinder(
-        recentChainData, new CommonAncestor(recentChainData), eventThread, spec);
+        recentChainData, new CommonAncestor(recentChainData, true), eventThread, spec);
   }
 
   public SafeFuture<UInt64> findCommonAncestor(final TargetChain targetChain) {
@@ -62,12 +62,13 @@ public class MultipeerCommonAncestorFinder {
     }
 
     return findCommonAncestor(latestFinalizedSlot, targetChain)
-        .thenPeek(ancestor -> LOG.trace("Found common ancestor at slot {}", ancestor));
+        .thenPeek(ancestor -> LOG.info("Found common ancestor at slot {}", ancestor));
   }
 
   private SafeFuture<UInt64> findCommonAncestor(
       final UInt64 latestFinalizedSlot, final TargetChain targetChain) {
     eventThread.checkOnEventThread();
+
     final SyncSource source1 = targetChain.selectRandomPeer().orElseThrow();
     final Optional<SyncSource> source2 = targetChain.selectRandomPeer(source1);
     // Only one peer available, just go with it's common ancestor
@@ -75,10 +76,10 @@ public class MultipeerCommonAncestorFinder {
         commonAncestorFinder.getCommonAncestor(
             source1, latestFinalizedSlot, targetChain.getChainHead().getSlot());
     if (source2.isEmpty()) {
-      LOG.trace("Finding common ancestor from one peer");
+      LOG.info("Finding common ancestor from one peer");
       return source1CommonAncestor;
     }
-    LOG.trace("Finding common ancestor from two peers");
+    LOG.info("Finding common ancestor from two peers");
     // Two peers available, so check they have the same common ancestor
     return source1CommonAncestor
         .thenCombineAsync(
@@ -90,8 +91,8 @@ public class MultipeerCommonAncestorFinder {
             eventThread)
         .exceptionally(
             error -> {
-              LOG.debug("Failed to find common ancestor. Starting sync from finalized slot", error);
-              return latestFinalizedSlot;
+              LOG.info("Failed to find common ancestor. Starting sync from finalized slot", error);
+              throw new RuntimeException("Failed to find common ancestor.", error);
             });
   }
 

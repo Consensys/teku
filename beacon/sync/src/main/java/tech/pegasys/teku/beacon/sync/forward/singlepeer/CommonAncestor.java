@@ -38,15 +38,18 @@ public class CommonAncestor {
 
   private final RecentChainData recentChainData;
   private final int maxAttempts;
+  private final boolean fallbackToFirst;
 
-  public CommonAncestor(final RecentChainData recentChainData) {
-    this(recentChainData, DEFAULT_MAX_ATTEMPTS);
+  public CommonAncestor(final RecentChainData recentChainData, final boolean fallbackToFirst) {
+    this(recentChainData, DEFAULT_MAX_ATTEMPTS, fallbackToFirst);
   }
 
   @VisibleForTesting
-  CommonAncestor(final RecentChainData recentChainData, final int maxAttempts) {
+  CommonAncestor(
+      final RecentChainData recentChainData, final int maxAttempts, final boolean fallbackToFirst) {
     this.recentChainData = recentChainData;
     this.maxAttempts = maxAttempts;
+    this.fallbackToFirst = fallbackToFirst;
   }
 
   public SafeFuture<UInt64> getCommonAncestor(
@@ -56,7 +59,7 @@ public class CommonAncestor {
 
     final UInt64 localNonFinalisedSlotCount = lowestHeadSlot.minusMinZero(firstNonFinalSlot);
 
-    LOG.debug(
+    LOG.info(
         "Local head slot {}. Have {} non finalized slots, peer head is {}",
         ourHeadSlot,
         localNonFinalisedSlotCount,
@@ -74,13 +77,25 @@ public class CommonAncestor {
       final UInt64 firstRequestedSlot,
       final UInt64 firstNonFinalSlot,
       final int attempt) {
-    if (attempt >= maxAttempts || firstRequestedSlot.isLessThanOrEqualTo(firstNonFinalSlot)) {
+    if (firstRequestedSlot.isLessThanOrEqualTo(firstNonFinalSlot)) {
       return SafeFuture.completedFuture(firstNonFinalSlot);
+    }
+
+    if (attempt >= maxAttempts) {
+      if (fallbackToFirst) {
+        return SafeFuture.completedFuture(firstNonFinalSlot);
+      }
+
+      return SafeFuture.failedFuture(
+          new RuntimeException(
+              "Failed to find common ancestor after "
+                  + maxAttempts
+                  + " attempts. Fallback to firstNonFinalSlot is disabled."));
     }
 
     final UInt64 lastSlot = firstRequestedSlot.plus(BLOCK_COUNT_PER_ATTEMPT);
 
-    LOG.debug("Sampling ahead from {} to {}.", firstRequestedSlot, lastSlot);
+    LOG.info("Sampling ahead from {} to {}.", firstRequestedSlot, lastSlot);
 
     final BestBlockListener blockResponseListener = new BestBlockListener(recentChainData);
     final PeerSyncBlockListener blockListener =
@@ -126,6 +141,7 @@ public class CommonAncestor {
             bestSlot
                 .map(uInt64 -> uInt64.max(block.getSlot()))
                 .or(() -> Optional.of(block.getSlot()));
+        LOG.info("Found common ancestor at {}", block.toLogString());
       }
 
       return SafeFuture.COMPLETE;

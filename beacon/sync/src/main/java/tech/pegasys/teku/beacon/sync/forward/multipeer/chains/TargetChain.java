@@ -54,6 +54,10 @@ public class TargetChain {
 
   public Optional<SyncSource> selectRandomPeer(final SyncSource... excluding) {
     final Set<SyncSource> excludedPeers = Set.of(excluding);
+    return selectRandomPeer(excludedPeers);
+  }
+
+  public Optional<SyncSource> selectRandomPeer(final Set<SyncSource> excludedPeers) {
     return peers.stream()
         .filter(peer -> !excludedPeers.contains(peer))
         .skip((int) ((peers.size() - excludedPeers.size()) * Math.random()))
