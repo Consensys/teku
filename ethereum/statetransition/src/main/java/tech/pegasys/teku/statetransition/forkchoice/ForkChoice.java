@@ -934,10 +934,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   // Implements `validate_inclusion_lists` added in EIP-7805 - consensus/fork-choice
   public void validateInclusionLists(
-      final List<Transaction> inclusionListTransactions,
-      final ExecutionPayload executionPayload) {
-    final SpecConfigEip7805 specConfigEip7805 = spec.atSlot(recentChainData.getHeadSlot()).getConfig().toVersionEip7805().orElseThrow();
-    final int maxTransactionPerInclusionList = specConfigEip7805.getMaxTransactionsPerInclusionList();
+      final List<Transaction> inclusionListTransactions, final ExecutionPayload executionPayload) {
+    final SpecConfigEip7805 specConfigEip7805 =
+        spec.atSlot(recentChainData.getHeadSlot()).getConfig().toVersionEip7805().orElseThrow();
+    final int maxTransactionPerInclusionList =
+        specConfigEip7805.getMaxTransactionsPerInclusionList();
     final int inclusionListCommitteeSize = specConfigEip7805.getInclusionListCommitteeSize();
 
     if (inclusionListTransactions.size()

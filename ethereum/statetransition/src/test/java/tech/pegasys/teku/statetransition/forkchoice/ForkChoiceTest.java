@@ -1427,8 +1427,7 @@ class ForkChoiceTest {
 
     assertThrows(
         IllegalStateException.class,
-        () ->
-            forkChoice.validateInclusionLists(inclusionListTransactions, executionPayload),
+        () -> forkChoice.validateInclusionLists(inclusionListTransactions, executionPayload),
         "Inclusion list has too many transactions");
   }
 
@@ -1445,8 +1444,7 @@ class ForkChoiceTest {
 
     assertThrows(
         IllegalStateException.class,
-        () ->
-            forkChoice.validateInclusionLists(inclusionListTransactions, executionPayload),
+        () -> forkChoice.validateInclusionLists(inclusionListTransactions, executionPayload),
         "Inclusion list contains transactions not in the execution payload");
   }
 
@@ -1461,7 +1459,6 @@ class ForkChoiceTest {
     inclusionListTransactions.add(executionPayload.getTransactions().get(0));
 
     assertDoesNotThrow(
-        () ->
-            forkChoice.validateInclusionLists(inclusionListTransactions, executionPayload));
+        () -> forkChoice.validateInclusionLists(inclusionListTransactions, executionPayload));
   }
 }
