@@ -323,6 +323,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private SafeFuture<Boolean> processHead(
       final Optional<UInt64> nodeSlot, final boolean isPreProposal) {
+    LOG.info("processHead {}", nodeSlot);
     final Checkpoint retrievedJustifiedCheckpoint =
         recentChainData.getStore().getJustifiedCheckpoint();
     return recentChainData
