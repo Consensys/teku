@@ -128,6 +128,7 @@ public class BeaconChainMethods {
     blobSidecarsByRoot.ifPresent(allMethods::add);
     blobSidecarsByRange.ifPresent(allMethods::add);
     executionPayloadEnvelopesByRoot.ifPresent(allMethods::add);
+    executionPayloadEnvelopesByRange.ifPresent(allMethods::add);
   }
 
   public static BeaconChainMethods create(

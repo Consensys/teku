@@ -180,7 +180,7 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
                 // an error
                 return SafeFuture.failedFuture(
                     new RpcException.ResourceUnavailableException(
-                        "Requested historical blocks are currently unavailable"));
+                        "Requested historical execution payload envelopes are currently unavailable"));
               }
               final UInt64 headBlockSlot =
                   combinedChainDataClient
@@ -304,7 +304,7 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
     }
 
     SafeFuture<Optional<SignedExecutionPayloadEnvelope>> loadNextExecutionPayload() {
-      final UInt64 slot = this.currentSlot;
+      final UInt64 slot = currentSlot;
       final Bytes32 knownBlockRoot = knownBlockRoots.get(slot);
       if (knownBlockRoot != null) {
         // Known root so lookup by root
@@ -320,8 +320,8 @@ public class ExecutionPayloadEnvelopesByRangeMessageHandler
         // Could also be because the first execution payload requested is above our head slot
         return SafeFuture.completedFuture(Optional.empty());
       } else {
-        // EIP-7732 TODO: Must be a finalized execution payload so lookup by slot
-        return SafeFuture.completedFuture(Optional.empty());
+        // Must be a finalized execution payload so lookup by slot
+        return combinedChainDataClient.getExecutionPayloadAtSlotExact(slot);
       }
     }
   }

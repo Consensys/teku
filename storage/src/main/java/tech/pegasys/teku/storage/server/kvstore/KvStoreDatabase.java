@@ -246,6 +246,12 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public Optional<SignedExecutionPayloadEnvelope> getFinalizedExecutionPayloadAtSlot(
+      final UInt64 slot) {
+    return dao.getFinalizedExecutionPayloadAtSlot(slot);
+  }
+
+  @Override
   public Optional<SignedExecutionPayloadEnvelope> getSignedExecutionPayloadEnvelope(
       final Bytes32 root) {
     return dao.getHotExecutionPayloadEnvelope(root)

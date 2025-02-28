@@ -155,7 +155,16 @@ public interface Database extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getSignedBlock(Bytes32 root);
 
+  /**
+   * Return the finalized execution payload at this slot if such execution payload exists.
+   *
+   * @param slot The slot to query
+   * @return Returns the finalized execution payload proposed at this slot, if such execution
+   *     payload exists
+   */
   // ePBS
+  Optional<SignedExecutionPayloadEnvelope> getFinalizedExecutionPayloadAtSlot(UInt64 slot);
+
   Optional<SignedExecutionPayloadEnvelope> getSignedExecutionPayloadEnvelope(Bytes32 root);
 
   Optional<BeaconState> getHotState(Bytes32 root);
