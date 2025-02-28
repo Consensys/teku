@@ -38,21 +38,21 @@ public class CommonAncestor {
 
   private final RecentChainData recentChainData;
   private final int maxAttempts;
-  private final boolean forceSelectingMostRecentLocalBlocks;
+  private final boolean fallbackToFirst;
 
   public CommonAncestor(
-      final RecentChainData recentChainData, final boolean forceSelectingMostRecentLocalBlocks) {
-    this(recentChainData, DEFAULT_MAX_ATTEMPTS, forceSelectingMostRecentLocalBlocks);
+      final RecentChainData recentChainData, final boolean fallbackToFirst) {
+    this(recentChainData, DEFAULT_MAX_ATTEMPTS, fallbackToFirst);
   }
 
   @VisibleForTesting
   CommonAncestor(
       final RecentChainData recentChainData,
       final int maxAttempts,
-      final boolean forceSelectingMostRecentLocalBlocks) {
+      final boolean fallbackToFirst) {
     this.recentChainData = recentChainData;
     this.maxAttempts = maxAttempts;
-    this.forceSelectingMostRecentLocalBlocks = forceSelectingMostRecentLocalBlocks;
+    this.fallbackToFirst = fallbackToFirst;
   }
 
   public SafeFuture<UInt64> getCommonAncestor(
@@ -80,8 +80,20 @@ public class CommonAncestor {
       final UInt64 firstRequestedSlot,
       final UInt64 firstNonFinalSlot,
       final int attempt) {
-    if (attempt >= maxAttempts || firstRequestedSlot.isLessThanOrEqualTo(firstNonFinalSlot)) {
+    if (firstRequestedSlot.isLessThanOrEqualTo(firstNonFinalSlot)) {
       return SafeFuture.completedFuture(firstNonFinalSlot);
+    }
+
+    if(attempt >= maxAttempts) {
+      if (fallbackToFirst) {
+        return SafeFuture.completedFuture(firstNonFinalSlot);
+      }
+
+        return SafeFuture.failedFuture(
+            new RuntimeException(
+                "Failed to find common ancestor after "
+                    + maxAttempts
+                    + " attempts. Fallback to firstNonFinalSlot is disabled."));
     }
 
     final UInt64 lastSlot = firstRequestedSlot.plus(BLOCK_COUNT_PER_ATTEMPT);
@@ -103,21 +115,12 @@ public class CommonAncestor {
                     .getBestSlot()
                     .map(SafeFuture::completedFuture)
                     .orElseGet(
-                        () -> {
-                          if (forceSelectingMostRecentLocalBlocks) {
-                            // If we are forcing to select the most recent local blocks,
-                            // we expect to have found it by the first attempt.
-                            return SafeFuture.failedFuture(
-                                new RuntimeException(
-                                    "No common ancestor found using mos recent local blocks"));
-                          }
-                          return getCommonAncestor(
-                              peer,
-                              firstRequestedSlot.minusMinZero(
-                                  SLOTS_TO_JUMP_BACK_EXPONENTIAL_BASE.times(1L << attempt)),
-                              firstNonFinalSlot,
-                              attempt + 1);
-                        }));
+                        () -> getCommonAncestor(
+                            peer,
+                            firstRequestedSlot.minusMinZero(
+                                SLOTS_TO_JUMP_BACK_EXPONENTIAL_BASE.times(1L << attempt)),
+                            firstNonFinalSlot,
+                            attempt + 1)));
   }
 
   private static class BestBlockListener implements RpcResponseListener<SignedBeaconBlock> {
