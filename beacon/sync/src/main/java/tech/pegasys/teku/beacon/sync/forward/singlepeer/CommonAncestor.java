@@ -141,6 +141,7 @@ public class CommonAncestor {
             bestSlot
                 .map(uInt64 -> uInt64.max(block.getSlot()))
                 .or(() -> Optional.of(block.getSlot()));
+        LOG.info("Found common ancestor at {}", block.toLogString());
       }
 
       return SafeFuture.COMPLETE;
