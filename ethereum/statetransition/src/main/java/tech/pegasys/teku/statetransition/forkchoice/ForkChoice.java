@@ -601,6 +601,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       LOG.info("Reorg detected. Parent block root: {}", block.getParentRoot());
       reorg = true;
     } else {
+      LOG.info("not reorging {} with {}", recentChainData.getBestBlockRoot(), block.toLogString());
       reorg = false;
     }
 
