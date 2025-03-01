@@ -67,8 +67,9 @@ members of the project's leadership.
 
 ## Attribution
 
-This Code of Conduct is adapted from the [Contributor Covenant], version 1.4,
-available at https://www.contributor-covenant.org/version/1/4/code-of-conduct.html
+This Code of Conduct is adapted from the [Contributor Covenant], Version 1.4,
+available at [Version 1.4 Code of Conduct].
 
 [Contributor Covenant]: https://www.contributor-covenant.org
+[Version 1.4 Code of Conduct]: https://www.contributor-covenant.org/version/1/4/code-of-conduct.html
 [private-quorum@consensys.net]: mailto:private-quorum@consensys.net
