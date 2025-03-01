@@ -22,6 +22,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
@@ -70,8 +72,10 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
+import tech.pegasys.teku.validator.coordinator.OptimizedAttestationAggregationStrategy;
 
 public class BlockOperationSelectorFactory {
+  private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
   private final AggregatingAttestationPool attestationPool;
   private final OperationPool<AttesterSlashing> attesterSlashingPool;
@@ -84,6 +88,7 @@ public class BlockOperationSelectorFactory {
   private final GraffitiBuilder graffitiBuilder;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager;
+  private final OptimizedAttestationAggregationStrategy attestationAggregationStrategy;
 
   public BlockOperationSelectorFactory(
       final Spec spec,
@@ -110,6 +115,7 @@ public class BlockOperationSelectorFactory {
     this.graffitiBuilder = graffitiBuilder;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.executionLayerBlockProductionManager = executionLayerBlockProductionManager;
+    this.attestationAggregationStrategy = new OptimizedAttestationAggregationStrategy(spec, attestationPool);
   }
 
   public Function<BeaconBlockBodyBuilder, SafeFuture<Void>> createSelector(
@@ -121,11 +127,23 @@ public class BlockOperationSelectorFactory {
       final BlockProductionPerformance blockProductionPerformance) {
 
     return bodyBuilder -> {
-      final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
+      final UInt64 slot = blockSlotState.getSlot();
+      final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
 
-      final SszList<Attestation> attestations =
-          attestationPool.getAttestationsForBlock(
-              blockSlotState, new AttestationForkChecker(spec, blockSlotState));
+      // Set randao reveal
+      bodyBuilder.randaoReveal(randaoReveal);
+
+      // Set eth1 data
+      final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
+      bodyBuilder.eth1Data(eth1Data);
+
+      // Set graffiti
+      final Bytes32 graffiti = graffitiBuilder.buildGraffiti(optionalGraffiti);
+      bodyBuilder.graffiti(graffiti);
+
+      // Set attestations
+      final List<Attestation> attestations = selectOptimizedAttestations(blockSlotState);
+      bodyBuilder.attestations(attestations);
 
       // Collect slashings to include
       final Set<UInt64> exitedValidators = new HashSet<>();
@@ -151,10 +169,6 @@ public class BlockOperationSelectorFactory {
               exit -> exitedValidators.add(exit.getMessage().getValidatorIndex()));
 
       bodyBuilder
-          .randaoReveal(randaoReveal)
-          .eth1Data(eth1Data)
-          .graffiti(graffitiBuilder.buildGraffiti(optionalGraffiti))
-          .attestations(attestations)
           .proposerSlashings(proposerSlashings)
           .attesterSlashings(attesterSlashings)
           .deposits(depositProvider.getDeposits(blockSlotState, eth1Data))
@@ -173,9 +187,6 @@ public class BlockOperationSelectorFactory {
         bodyBuilder.blsToExecutionChanges(
             blsToExecutionChangePool.getItemsForBlock(blockSlotState));
       }
-
-      final SchemaDefinitions schemaDefinitions =
-          spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
 
       final SafeFuture<Void> blockProductionComplete;
 
@@ -547,5 +558,19 @@ public class BlockOperationSelectorFactory {
     checkState(
         blockCommitments.size() == blobsBundle.getBlobs().size(),
         "The number of blobs in the builder BlobsBundle doesn't match the number of commitments in the block");
+  }
+
+  /**
+   * Selects attestations for inclusion in a block using an optimized priority-based algorithm.
+   * This method prioritizes attestations based on:
+   * 1. Inclusion delay (older attestations that are about to expire get higher priority)
+   * 2. Aggregation count (attestations with more aggregated signatures get higher priority)
+   * 3. Committee index (to ensure diversity of committees)
+   *
+   * @param blockSlotState The beacon state at the block's slot
+   * @return A list of attestations to include in the block
+   */
+  private List<Attestation> selectOptimizedAttestations(final BeaconState blockSlotState) {
+    return attestationAggregationStrategy.selectOptimizedAttestations(blockSlotState);
   }
 }
