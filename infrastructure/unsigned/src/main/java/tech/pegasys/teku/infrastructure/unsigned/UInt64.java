@@ -30,7 +30,6 @@ public final class UInt64 implements Comparable<UInt64> {
   public static final UInt64 ONE = new UInt64(1);
   public static final UInt64 THIRTY_TWO_ETH = new UInt64(32_000_000_000L);
   public static final UInt64 MAX_VALUE = new UInt64(-1L);
-  public static final UInt64 SAFE_MAX_VALUE = new UInt64(Long.MAX_VALUE - 1);
 
   private final long value;
 
@@ -145,6 +144,19 @@ public final class UInt64 implements Comparable<UInt64> {
     return fromLongBits(longBits1 + longBits2);
   }
 
+  public UInt64 safePlus(final long other) {
+    checkPositive(other);
+    if (value != 0 && Long.compareUnsigned(other, MAX_VALUE.longValue() - value) > 0) {
+      return UInt64.MAX_VALUE;
+    }
+    return plus(value, other);
+  }
+
+  public UInt64 safePlus(final UInt64 other) {
+    checkPositive(other.value);
+    return safePlus(other.value);
+  }
+
   /**
    * Return the result of subtracting the specified value from this one.
    *
@@ -183,19 +195,6 @@ public final class UInt64 implements Comparable<UInt64> {
     }
 
     return Optional.of(fromLongBits(value - other));
-  }
-
-  public Optional<UInt64> safePlus(final long other) {
-    checkPositive(other);
-    if (UInt64.SAFE_MAX_VALUE.minus(other).isGreaterThanOrEqualTo(value)) {
-      return Optional.of(fromLongBits(value + other));
-    }
-    return Optional.empty();
-  }
-
-  public Optional<UInt64> safePlus(final UInt64 other) {
-    checkPositive(other.value);
-    return safePlus(other.value);
   }
 
   /**
