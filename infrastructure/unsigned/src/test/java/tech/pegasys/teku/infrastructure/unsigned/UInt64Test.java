@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -314,6 +315,14 @@ class UInt64Test {
         .isInstanceOf(ArithmeticException.class);
     assertThatThrownBy(() -> UInt64.MAX_VALUE.plus(UInt64.MAX_VALUE))
         .isInstanceOf(ArithmeticException.class);
+  }
+
+  @ParameterizedTest
+  @MethodSource("safePlusNumbers")
+  void safePlus_shouldAddWhenNotOverflowingLongs(
+      final long value1, final long value2, final Optional<UInt64> expected) {
+    final UInt64 uint1 = UInt64.fromLongBits(value1);
+    assertThat(uint1.safePlus(value2)).isEqualTo(expected);
   }
 
   @Test
@@ -629,6 +638,16 @@ class UInt64Test {
     assertThat(UInt64.range(UInt64.valueOf(from), UInt64.valueOf(to)))
         .containsExactlyElementsOf(
             IntStream.range(from, to).mapToObj(UInt64::valueOf).collect(toList()));
+  }
+
+  static Stream<Arguments> safePlusNumbers() {
+    final long max = UInt64.SAFE_MAX_VALUE.longValue();
+    return Stream.of(
+        Arguments.arguments(0L, max, Optional.of(UInt64.SAFE_MAX_VALUE)),
+        Arguments.arguments(max, 0L, Optional.of(UInt64.SAFE_MAX_VALUE)),
+        Arguments.arguments(max - 10L, 10L, Optional.of(UInt64.SAFE_MAX_VALUE)),
+        Arguments.arguments(1L, 10L, Optional.of(UInt64.valueOf(11))),
+        Arguments.arguments(max, 1L, Optional.empty()));
   }
 
   static List<Arguments> rangeNumbers() {
