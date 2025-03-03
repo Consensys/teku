@@ -42,7 +42,8 @@ public interface BlockImportResult {
       new FailedBlockImportResult(FailureReason.FAILED_INCLUSION_LIST_SIZE_CHECK, Optional.empty());
 
   BlockImportResult FAILED_TO_INCLUDE_INCLUSION_LIST_IN_EXECUTION_PAYLOAD =
-      new FailedBlockImportResult(FailureReason.FAILED_TO_INCLUDE_INCLUSION_LIST_IN_EXECUTION_PAYLOAD, Optional.empty());
+      new FailedBlockImportResult(
+          FailureReason.FAILED_TO_INCLUDE_INCLUSION_LIST_IN_EXECUTION_PAYLOAD, Optional.empty());
 
   static BlockImportResult failedDataAvailabilityCheckInvalid(final Optional<Throwable> cause) {
     return new FailedBlockImportResult(FailureReason.FAILED_DATA_AVAILABILITY_CHECK_INVALID, cause);
@@ -59,15 +60,15 @@ public interface BlockImportResult {
         FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION, Optional.of(cause));
   }
 
-  static BlockImportResult failedInclusionListSizeCheck(
-        final Throwable cause) {
-        return new FailedBlockImportResult(FailureReason.FAILED_INCLUSION_LIST_SIZE_CHECK, Optional.of(cause));
-    }
+  static BlockImportResult failedInclusionListSizeCheck(final Throwable cause) {
+    return new FailedBlockImportResult(
+        FailureReason.FAILED_INCLUSION_LIST_SIZE_CHECK, Optional.of(cause));
+  }
 
-  static BlockImportResult failedToIncludeInclusionListInExecutionPayload(
-        final Throwable cause) {
-        return new FailedBlockImportResult(FailureReason.FAILED_TO_INCLUDE_INCLUSION_LIST_IN_EXECUTION_PAYLOAD, Optional.of(cause));
-    }
+  static BlockImportResult failedToIncludeInclusionListInExecutionPayload(final Throwable cause) {
+    return new FailedBlockImportResult(
+        FailureReason.FAILED_TO_INCLUDE_INCLUSION_LIST_IN_EXECUTION_PAYLOAD, Optional.of(cause));
+  }
 
   static BlockImportResult failedStateTransition(final Exception cause) {
     return new FailedBlockImportResult(FailureReason.FAILED_STATE_TRANSITION, Optional.of(cause));
