@@ -33,7 +33,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
-import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FAILED_INCLUSION_LIST_SIZE_VALIDATION;
+import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FAILED_INCLUSION_LIST_SIZE_CHECK;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FAILED_TO_INCLUDE_INCLUSION_LIST_IN_EXECUTION_PAYLOAD;
 import static tech.pegasys.teku.statetransition.forkchoice.ForkChoice.BLOCK_CREATION_TOLERANCE_MS;
 
@@ -1431,7 +1431,7 @@ class ForkChoiceTest {
 
     assertThat(blockImportResult).isPresent();
     assertThat(blockImportResult.get().getFailureReason())
-        .isEqualTo(FAILED_INCLUSION_LIST_SIZE_VALIDATION.getFailureReason());
+        .isEqualTo(FAILED_INCLUSION_LIST_SIZE_CHECK.getFailureReason());
   }
 
   @Test
