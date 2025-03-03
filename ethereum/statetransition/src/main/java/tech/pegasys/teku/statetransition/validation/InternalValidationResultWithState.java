@@ -65,6 +65,12 @@ public class InternalValidationResultWithState {
         InternalValidationResult.ignore(descriptionTemplate, args), Optional.empty());
   }
 
+  public static InternalValidationResultWithState ignore(final String description) {
+    return new InternalValidationResultWithState(
+        InternalValidationResult.create(ValidationResultCode.IGNORE, description),
+        Optional.empty());
+  }
+
   @FormatMethod
   public static InternalValidationResultWithState ignore(
       final BeaconState state, final String descriptionTemplate, final Object... args) {
