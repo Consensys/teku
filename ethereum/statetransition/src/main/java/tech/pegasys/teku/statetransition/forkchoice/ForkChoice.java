@@ -933,7 +933,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   // Implements `validate_inclusion_lists` added in EIP-7805 - consensus/fork-choice
-  public void validateInclusionLists(
+  public Optional<BlockImportResult> validateInclusionLists(
       final List<Transaction> inclusionListTransactions, final ExecutionPayload executionPayload) {
     final SpecConfigEip7805 specConfigEip7805 =
         spec.atSlot(recentChainData.getHeadSlot()).getConfig().toVersionEip7805().orElseThrow();
@@ -943,13 +943,19 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     if (inclusionListTransactions.size()
         > maxTransactionPerInclusionList * inclusionListCommitteeSize) {
-      throw new IllegalStateException("Inclusion list has too many transactions");
+      return Optional.of(
+          BlockImportResult.failedInclusionListSizeCheck(
+              new IllegalStateException("Inclusion list has too many transactions")));
     }
 
     final SszList<Transaction> executionPayloadTransactions = executionPayload.getTransactions();
     if (!executionPayloadTransactions.asList().containsAll(inclusionListTransactions)) {
-      throw new IllegalStateException(
-          "Inclusion list contains transactions not in the execution payload");
+      return Optional.of(
+          BlockImportResult.failedToIncludeInclusionListInExecutionPayload(
+              new IllegalStateException(
+                  "Inclusion list contains transactions not in the execution payload")));
     }
+
+    return Optional.empty();
   }
 }
