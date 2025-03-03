@@ -516,6 +516,10 @@ public class ForkChoiceUtil {
     return Optional.empty();
   }
 
+  public boolean isEpochInIncidentInterval(final UInt64 epoch) {
+    return miscHelpers.isEpochInIncidentInterval(epoch);
+  }
+
   private boolean isBellatrixBlockOld(final ReadOnlyStore store, final UInt64 blockSlot) {
     final Optional<SpecConfigBellatrix> maybeConfig = specConfig.toVersionBellatrix();
     if (maybeConfig.isEmpty()) {

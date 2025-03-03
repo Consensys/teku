@@ -83,8 +83,8 @@ public abstract class AttestationUtil {
     return (
     // case 1: double vote || case 2: surround vote
     (!data1.equals(data2) && data1.getTarget().getEpoch().equals(data2.getTarget().getEpoch()))
-        || (data1.getSource().getEpoch().compareTo(data2.getSource().getEpoch()) < 0
-            && data2.getTarget().getEpoch().compareTo(data1.getTarget().getEpoch()) < 0));
+        || (data1.getSource().getEpoch().isLessThan(data2.getSource().getEpoch())
+            && data2.getTarget().getEpoch().isLessThan(data1.getTarget().getEpoch())));
   }
 
   /**
@@ -234,6 +234,16 @@ public abstract class AttestationUtil {
       final BeaconState state,
       final IndexedAttestation indexedAttestation,
       final AsyncBLSSignatureVerifier signatureVerifier) {
+    if (miscHelpers.isEpochInIncidentInterval(indexedAttestation.getData().getSource().getEpoch())
+        || miscHelpers.isEpochInIncidentInterval(
+            indexedAttestation.getData().getTarget().getEpoch())
+    //            TODO: check slot too. Could we? Should we?
+    //            miscHelpers.isEpochInIncidentInterval(indexedAttestation.getData().getSlot())
+    ) {
+      return completedFuture(
+          AttestationProcessingResult.invalid("Attestation couldn't be from incident intervals"));
+    }
+
     final SszUInt64List indices = indexedAttestation.getAttestingIndices();
 
     if (indices.isEmpty()) {
@@ -314,6 +324,12 @@ public abstract class AttestationUtil {
             : beaconStateAccessors.getBlockRootAtSlot(state, startSlot);
     final Checkpoint source = state.getCurrentJustifiedCheckpoint();
     final Checkpoint target = new Checkpoint(epoch, epochBoundaryBlockRoot);
+    if (miscHelpers.isEpochInIncidentInterval(source.getEpoch())
+        || miscHelpers.isEpochInIncidentInterval(target.getEpoch())) {
+      // TODO: dropping incident interval on any attestation production is not part of the proposed
+      // spec
+      throw new IllegalStateException("Attempt to produce attestation during incident interval");
+    }
 
     // Set attestation data
     return new AttestationData(slot, committeeIndex, beaconBlockRoot, source, target);

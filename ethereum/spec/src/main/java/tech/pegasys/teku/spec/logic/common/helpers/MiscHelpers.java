@@ -452,6 +452,10 @@ public class MiscHelpers {
     return false;
   }
 
+  public boolean isEpochInIncidentInterval(final UInt64 epoch) {
+    return false;
+  }
+
   public Optional<MiscHelpersDeneb> toVersionDeneb() {
     return Optional.empty();
   }

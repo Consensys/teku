@@ -212,7 +212,8 @@ public class BlockManagerTest {
             blockValidator,
             timeProvider,
             eventLogger,
-            Optional.of(mock(BlockImportMetrics.class)));
+            Optional.of(mock(BlockImportMetrics.class)),
+            spec);
     forwardBlockImportedNotificationsTo(blockManager);
     localChain
         .chainUpdater()
@@ -353,7 +354,8 @@ public class BlockManagerTest {
             blockValidator,
             timeProvider,
             eventLogger,
-            Optional.empty());
+            Optional.empty(),
+            spec);
     forwardBlockImportedNotificationsTo(blockManager);
     assertThat(blockManager.start()).isCompleted();
 
@@ -1129,7 +1131,8 @@ public class BlockManagerTest {
         blockValidator,
         timeProvider,
         eventLogger,
-        Optional.empty());
+        Optional.empty(),
+        spec);
   }
 
   private SafeFutureAssert<BlockImportResult> assertThatBlockImport(final SignedBeaconBlock block) {

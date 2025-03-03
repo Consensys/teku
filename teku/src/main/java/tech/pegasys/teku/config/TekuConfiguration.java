@@ -197,9 +197,13 @@ public class TekuConfiguration {
     private Builder() {}
 
     public TekuConfiguration build() {
-      // Create spec, and pass spec to other builders that require it
+      return build(false);
+    }
+
+    // TODO: remove isDbExists hack
+    public TekuConfiguration build(final boolean isDbExists) {
       final Eth2NetworkConfiguration eth2NetworkConfiguration =
-          eth2NetworkConfigurationBuilder.build();
+          eth2NetworkConfigurationBuilder.build(isDbExists);
       final Spec spec = eth2NetworkConfiguration.getSpec();
       final DataConfig dataConfig = dataConfigBuilder.build();
 

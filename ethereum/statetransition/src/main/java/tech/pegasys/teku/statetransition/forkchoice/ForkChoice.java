@@ -408,6 +408,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final Optional<BlockImportPerformance> blockImportPerformance,
       final BlockBroadcastValidator blockBroadcastValidator,
       final ExecutionLayerChannel executionLayer) {
+    if (spec.atSlot(block.getSlot())
+        .getForkChoiceUtil()
+        .isEpochInIncidentInterval(spec.computeEpochAtSlot(block.getSlot()))) {
+      return SafeFuture.completedFuture(BlockImportResult.FAILED_INCIDENT_INTERVAL);
+    }
     if (blockSlotState.isEmpty()) {
       return SafeFuture.completedFuture(BlockImportResult.FAILED_UNKNOWN_PARENT);
     }

@@ -31,15 +31,18 @@ import static tech.pegasys.teku.spec.networks.Eth2Network.SWIFT;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.infrastructure.collections.Interval;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -380,6 +383,7 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
     private int safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
     private String epochsStoreBlobs;
+    private String incidentIntervals = "";
     private Spec spec;
     private boolean forkChoiceLateBlockReorgEnabled = DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
     private boolean forkChoiceUpdatedAlwaysSendPayloadAttributes =
@@ -390,11 +394,27 @@ public class Eth2NetworkConfiguration {
     }
 
     public Eth2NetworkConfiguration build() {
+      return build(false);
+    }
+
+    // TODO: remove unchecked and param
+    @SuppressWarnings("unchecked")
+    public Eth2NetworkConfiguration build(final boolean isDbExists) {
       checkNotNull(constants, "Missing constants");
       validateCommandLineParameters();
 
       final Optional<Integer> maybeEpochsStoreBlobs =
           validateAndParseEpochsStoreBlobs(epochsStoreBlobs);
+
+      // TODO: remove hack, parameters should be always parsed
+      final Interval<UInt64>[] intervals;
+      if (isDbExists) {
+        intervals = parseIntervals();
+      } else {
+        intervals = (Interval<UInt64>[]) new Interval<?>[] {};
+      }
+      Interval.checkIntervalsIntersection(intervals);
+
       if (spec == null) {
         spec =
             SpecFactory.create(
@@ -427,6 +447,10 @@ public class Eth2NetworkConfiguration {
                         denebForkEpoch.ifPresent(denebBuilder::denebForkEpoch);
                         if (maybeEpochsStoreBlobs.isPresent()) {
                           denebBuilder.epochsStoreBlobs(maybeEpochsStoreBlobs);
+                        }
+                        if (intervals.length > 0) {
+                          denebBuilder.incidentIntervals(Arrays.asList(intervals));
+                          LOG.warn("Using incident intervals: {}", Arrays.asList(intervals));
                         }
                         if (trustedSetup.isEmpty()) {
                           LOG.warn(
@@ -480,6 +504,25 @@ public class Eth2NetworkConfiguration {
           asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE),
           forkChoiceLateBlockReorgEnabled,
           forkChoiceUpdatedAlwaysSendPayloadAttributes);
+    }
+
+    @SuppressWarnings({"unchecked", "StringSplitter"})
+    private Interval<UInt64>[] parseIntervals() {
+      return (Interval<UInt64>[])
+          Arrays.stream(incidentIntervals.split(","))
+              .filter(s -> !s.isEmpty())
+              .map(
+                  intervalString -> {
+                    final String[] intervalParts = intervalString.split(Pattern.quote("-"));
+                    if (intervalParts.length != 2) {
+                      throw new IllegalArgumentException(
+                          String.format("Cannot parse interval: %s", intervalString));
+                    }
+                    final long start = Long.parseLong(intervalParts[0]);
+                    final long end = Long.parseLong(intervalParts[1]);
+                    return new Interval<>(UInt64.valueOf(start), UInt64.valueOf(end));
+                  })
+              .toArray(Interval<?>[]::new);
     }
 
     private void validateCommandLineParameters() {
@@ -707,6 +750,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder epochsStoreBlobs(final String epochsStoreBlobs) {
       this.epochsStoreBlobs = epochsStoreBlobs;
+      return this;
+    }
+
+    public Builder incidentIntervals(final String incidentIntervals) {
+      this.incidentIntervals = incidentIntervals;
       return this;
     }
 

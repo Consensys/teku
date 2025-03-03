@@ -229,6 +229,12 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
         .orElse(0);
   }
 
+  @Override
+  public boolean isEpochInIncidentInterval(final UInt64 epoch) {
+    return SpecConfigDeneb.required(specConfig).getIncidentIntervals().stream()
+        .anyMatch(interval -> interval.contains(epoch));
+  }
+
   public int getBlobSidecarKzgCommitmentGeneralizedIndex(final UInt64 blobSidecarIndex) {
     final long blobKzgCommitmentsGeneralizedIndex =
         beaconBlockBodySchema.getBlobKzgCommitmentsGeneralizedIndex();

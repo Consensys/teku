@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
@@ -51,6 +52,7 @@ public class BlockManager extends Service
   private final BlockValidator blockValidator;
   private final TimeProvider timeProvider;
   private final EventLogger eventLogger;
+  private final Spec spec;
 
   private final FutureItems<SignedBeaconBlock> futureBlocks;
   // in the invalidBlockRoots map we are going to store blocks whose import result is invalid
@@ -72,7 +74,8 @@ public class BlockManager extends Service
       final BlockValidator blockValidator,
       final TimeProvider timeProvider,
       final EventLogger eventLogger,
-      final Optional<BlockImportMetrics> blockImportMetrics) {
+      final Optional<BlockImportMetrics> blockImportMetrics,
+      final Spec spec) {
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
@@ -83,6 +86,7 @@ public class BlockManager extends Service
     this.timeProvider = timeProvider;
     this.eventLogger = eventLogger;
     this.blockImportMetrics = blockImportMetrics;
+    this.spec = spec;
   }
 
   @Override
@@ -101,6 +105,19 @@ public class BlockManager extends Service
       final BroadcastValidationLevel broadcastValidationLevel,
       final Optional<RemoteOrigin> origin) {
     LOG.trace("Preparing to import block: {}", block::toLogString);
+    if (spec.atSlot(block.getSlot())
+        .getForkChoiceUtil()
+        .isEpochInIncidentInterval(spec.computeEpochAtSlot(block.getSlot()))) {
+      LOG.info(
+          "Dropping block import and broadcast validation from incident interval,  block: {}",
+          block::toLogString);
+      // TODO: dropping incident interval on any gossip validation is not part of the proposed spec
+      return SafeFuture.completedFuture(
+          new BlockImportAndBroadcastValidationResults(
+              SafeFuture.completedFuture(BlockImportResult.FAILED_INCIDENT_INTERVAL),
+              SafeFuture.completedFuture(
+                  BlockBroadcastValidator.BroadcastValidationResult.CONSENSUS_FAILURE)));
+    }
 
     final BlockBroadcastValidator blockBroadcastValidator =
         blockValidator.initiateBroadcastValidation(block, broadcastValidationLevel);
@@ -313,6 +330,7 @@ public class BlockManager extends Service
                       FAILED_STATE_TRANSITION,
                       FAILED_WEAK_SUBJECTIVITY_CHECKS,
                       DESCENDANT_OF_INVALID_BLOCK,
+                      FAILED_INCIDENT_INTERVAL,
                       INTERNAL_ERROR:
                     logFailedBlockImport(block, result.getFailureReason());
                     dropInvalidBlock(block, result);

@@ -37,6 +37,8 @@ public interface BlockImportResult {
 
   BlockImportResult FAILED_BROADCAST_VALIDATION =
       new FailedBlockImportResult(FailureReason.FAILED_BROADCAST_VALIDATION, Optional.empty());
+  BlockImportResult FAILED_INCIDENT_INTERVAL =
+      new FailedBlockImportResult(FailureReason.FAILED_INCIDENT_INTERVAL, Optional.empty());
 
   static BlockImportResult failedDataAvailabilityCheckInvalid(final Optional<Throwable> cause) {
     return new FailedBlockImportResult(FailureReason.FAILED_DATA_AVAILABILITY_CHECK_INVALID, cause);
@@ -87,6 +89,7 @@ public interface BlockImportResult {
     FAILED_DATA_AVAILABILITY_CHECK_INVALID,
     FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE,
     FAILED_BROADCAST_VALIDATION,
+    FAILED_INCIDENT_INTERVAL,
     INTERNAL_ERROR // A catch-all category for unexpected errors (bugs)
   }
 

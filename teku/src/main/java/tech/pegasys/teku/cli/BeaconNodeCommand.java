@@ -15,6 +15,8 @@ package tech.pegasys.teku.cli;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -72,6 +74,7 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 
 @SuppressWarnings("unused")
@@ -415,7 +418,13 @@ public class BeaconNodeCommand implements Callable<Integer> {
       metricsOptions.configure(builder);
       storeOptions.configure(builder);
 
-      return builder.build();
+      // TODO: hack, remove me
+      DataDirLayout dataDirLayout = DataDirLayout.createFrom(beaconNodeDataOptions.getDataConfig());
+      final Path beaconDataDir = dataDirLayout.getBeaconDataDirectory();
+      final Path dbDataDir = beaconDataDir.resolve("db");
+      boolean isDbExists = Files.exists(dbDataDir);
+
+      return builder.build(isDbExists);
     } catch (IllegalArgumentException | NullPointerException e) {
       throw new InvalidConfigurationException(e);
     }
