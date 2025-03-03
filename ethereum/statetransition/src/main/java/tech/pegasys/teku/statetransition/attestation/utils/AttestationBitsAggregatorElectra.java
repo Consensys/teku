@@ -49,9 +49,6 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
 
   @Override
   public void or(final AttestationBitsAggregator other) {
-    if (other.getAggregationBits().getBitCount() == 1 || this.aggregationBits.getBitCount() == 1) {
-      System.out.println("asd");
-    }
     or(other.getCommitteeBits(), other.getAggregationBits(), false);
   }
 
@@ -62,29 +59,15 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
 
   @Override
   public void or(final Attestation other) {
-    if (other.isSingleAttestation() || this.aggregationBits.getBitCount() == 1) {
-      System.out.println("asd");
-    }
     or(other.getCommitteeBitsRequired(), other.getAggregationBits(), false);
   }
 
   private static class CannotAggregateException extends RuntimeException {}
 
-  @SuppressWarnings("NonFinalStaticField")
-  public static long orCounter = 0;
-
-  @SuppressWarnings("NonFinalStaticField")
-  public static long sameCommitteeBits = 0;
-
   private boolean or(
       final SszBitvector otherCommitteeBits,
       final SszBitlist otherAggregatedBits,
       final boolean isAggregation) {
-    orCounter++;
-
-    if (committeeBits.equals(otherCommitteeBits)) {
-      sameCommitteeBits++;
-    }
 
     final SszBitvector combinedCommitteeBits = committeeBits.or(otherCommitteeBits);
 
