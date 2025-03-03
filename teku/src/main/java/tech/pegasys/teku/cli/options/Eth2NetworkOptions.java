@@ -269,6 +269,19 @@ public class Eth2NetworkOptions {
       arity = "0..1")
   private String epochsStoreBlobs;
 
+  @CommandLine.Option(
+      names = {"--Xincident-intervals"},
+      hidden = true,
+      paramLabel = "<STRING>",
+      description =
+          "Sets the interval where network is considered to be in incident. "
+              + "All the slots in these epochs should be empty. Any chain with blocks "
+              + "inside interval is considered invalid.",
+      fallbackValue = "",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1")
+  private String incidentIntervals;
+
   public Eth2NetworkConfiguration getNetworkConfiguration() {
     return createEth2NetworkConfig(builder -> {});
   }
@@ -345,6 +358,9 @@ public class Eth2NetworkOptions {
     }
     if (eth1DepositContractDeployBlockOverride != null) {
       builder.eth1DepositContractDeployBlock(eth1DepositContractDeployBlockOverride);
+    }
+    if (incidentIntervals != null) {
+      builder.incidentIntervals(incidentIntervals);
     }
     builder
         .ignoreWeakSubjectivityPeriodEnabled(ignoreWeakSubjectivityPeriodEnabled)
