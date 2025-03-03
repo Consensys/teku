@@ -69,8 +69,7 @@ public class AggregatingAttestationPoolBenchmark {
 
   // a reference file can be obtained here
   // https://drive.google.com/file/d/139bA7r88riFODZ7S0FpvtO7hmWmdC_XC/view?usp=drive_link
-  private static final String STATE_PATH =
-      "/tmp/blockSlotState 3738045.ssz";
+  private static final String STATE_PATH = "/tmp/blockSlotState 3738045.ssz";
 
   // a reference file can be obtained here
   // https://drive.google.com/file/d/1I5vXK-x8ZH9wh40wNf1oACXeF_U3to8J/view?usp=drive_link
@@ -110,37 +109,47 @@ public class AggregatingAttestationPoolBenchmark {
     final long[] aggregatedAttestationCount = {0};
 
     var attestationSchema = SPEC.getGenesisSpec().getSchemaDefinitions().getAttestationSchema();
-    var singleAttestationSchema = SPEC.getGenesisSpec().getSchemaDefinitions().toVersionElectra().map(SchemaDefinitionsElectra::getSingleAttestationSchema);
-    var attestationUtil = (AttestationUtilElectra) SPEC.forMilestone(SpecMilestone.ELECTRA).getAttestationUtil();
+    var singleAttestationSchema =
+        SPEC.getGenesisSpec()
+            .getSchemaDefinitions()
+            .toVersionElectra()
+            .map(SchemaDefinitionsElectra::getSingleAttestationSchema);
+    var attestationUtil =
+        (AttestationUtilElectra) SPEC.forMilestone(SpecMilestone.ELECTRA).getAttestationUtil();
     try (final Stream<String> attestationLinesStream = Files.lines(Paths.get(POOL_DUMP_PATH))) {
       attestationLinesStream
-          .map(line -> {
-            try {
-              aggregatedAttestationCount[0]++;
-              return attestationSchema.sszDeserialize(Bytes.fromHexString(line));
-            } catch (Exception e) {
-              aggregatedAttestationCount[0]--;
-              singleAttestationCount[0]++;
-              return singleAttestationSchema.orElseThrow().sszDeserialize(Bytes.fromHexString(line));
-            }
-          })
-          .map(attestation -> {
-            var validatableAttestation = ValidatableAttestation.from(SPEC, attestation);
+          .map(
+              line -> {
+                try {
+                  aggregatedAttestationCount[0]++;
+                  return attestationSchema.sszDeserialize(Bytes.fromHexString(line));
+                } catch (Exception e) {
+                  aggregatedAttestationCount[0]--;
+                  singleAttestationCount[0]++;
+                  return singleAttestationSchema
+                      .orElseThrow()
+                      .sszDeserialize(Bytes.fromHexString(line));
+                }
+              })
+          .map(
+              attestation -> {
+                var validatableAttestation = ValidatableAttestation.from(SPEC, attestation);
 
-            if(attestation.isSingleAttestation()) {
-              final SszBitlist singleAttestationAggregationBits =
-                      attestationUtil.getSingleAttestationAggregationBits(state, (SingleAttestation) attestation);
+                if (attestation.isSingleAttestation()) {
+                  final SszBitlist singleAttestationAggregationBits =
+                      attestationUtil.getSingleAttestationAggregationBits(
+                          state, (SingleAttestation) attestation);
 
-              final Attestation convertedAttestation =
+                  final Attestation convertedAttestation =
                       attestationUtil.convertSingleAttestationToAggregated(
-                              (SingleAttestation) attestation, singleAttestationAggregationBits);
+                          (SingleAttestation) attestation, singleAttestationAggregationBits);
 
-              validatableAttestation.convertToAggregatedFormatFromSingleAttestation(convertedAttestation);
-            }
+                  validatableAttestation.convertToAggregatedFormatFromSingleAttestation(
+                      convertedAttestation);
+                }
 
-            return validatableAttestation;
-
-          })
+                return validatableAttestation;
+              })
           .forEach(
               attestation -> {
                 attestation.saveCommitteeShufflingSeedAndCommitteesSize(state);
@@ -150,7 +159,13 @@ public class AggregatingAttestationPoolBenchmark {
 
     this.newBlockState = SPEC.processSlots(state, state.getSlot().increment());
 
-    System.out.println("init done. Pool size: " + pool.getSize() + " singleAttestationCount: " + singleAttestationCount[0] + " aggregatedAttestationCount: " + aggregatedAttestationCount[0]);
+    System.out.println(
+        "init done. Pool size: "
+            + pool.getSize()
+            + " singleAttestationCount: "
+            + singleAttestationCount[0]
+            + " aggregatedAttestationCount: "
+            + aggregatedAttestationCount[0]);
   }
 
   @Benchmark
@@ -187,11 +202,12 @@ public class AggregatingAttestationPoolBenchmark {
               .sszDeserialize(Bytes.wrap(fileInputStream.readAllBytes()));
     }
 
-//    blockRewardData = blockRewardCalculatorUtil.getBlockRewardData(actualBlock.getMessage(), state);
-//    System.out.println(
-//        "Block attestation rewards: "
-//            + gweiToEth(UInt64.valueOf(blockRewardData.attestations()))
-//            + " ETH (actual block)");
+    //    blockRewardData = blockRewardCalculatorUtil.getBlockRewardData(actualBlock.getMessage(),
+    // state);
+    //    System.out.println(
+    //        "Block attestation rewards: "
+    //            + gweiToEth(UInt64.valueOf(blockRewardData.attestations()))
+    //            + " ETH (actual block)");
   }
 
   public static void main(String[] args) throws Exception {

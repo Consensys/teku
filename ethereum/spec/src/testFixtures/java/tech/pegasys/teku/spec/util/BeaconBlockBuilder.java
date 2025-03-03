@@ -137,7 +137,7 @@ public class BeaconBlockBuilder {
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(dataStructureUtil.randomBlobKzgCommitments());
               }
-              if(builder.supportsExecutionRequests()) {
+              if (builder.supportsExecutionRequests()) {
                 builder.executionRequests(dataStructureUtil.randomExecutionRequests());
               }
               return SafeFuture.COMPLETE;

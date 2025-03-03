@@ -255,7 +255,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .flatMap(
             dataHashSetForSlot ->
                 streamAggregatesForDataHashesBySlot(
-                        stateAtBlockSlot.getSlot(),
+                    stateAtBlockSlot.getSlot(),
                     dataHashSetForSlot,
                     stateAtBlockSlot,
                     forkChecker,
@@ -274,7 +274,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   private Stream<Attestation> streamAggregatesForDataHashesBySlot(
-          final UInt64 slot,
+      final UInt64 slot,
       final Set<Bytes> dataHashSetForSlot,
       final BeaconState stateAtBlockSlot,
       final AttestationForkChecker forkChecker,
@@ -313,7 +313,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(Objects::nonNull)
         .flatMap(
             matchingDataAttestationGroup ->
-                matchingDataAttestationGroup.streamForAPI(maybeCommitteeIndex, requiresCommitteeBits))
+                matchingDataAttestationGroup.streamForAPI(
+                    maybeCommitteeIndex, requiresCommitteeBits))
         .map(ValidatableAttestation::getAttestation)
         .toList();
   }
