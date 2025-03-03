@@ -27,8 +27,10 @@ import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,6 +55,10 @@ public class ProtoArray {
   // When starting from genesis, this value is zero (genesis epoch)
   private final UInt64 initialEpoch;
   private final StatusLogger statusLog;
+
+  private static final int INITIAL_EPOCH_TOLERANCE = 50;
+
+  private final AtomicBoolean nonZeroDeltaSeen = new AtomicBoolean(false);
 
   /**
    * Lists all the known nodes. It is guaranteed that a node will be after its parent in the list.
@@ -138,9 +144,9 @@ public class ProtoArray {
       return;
     }
 
-    int nodeIndex = getTotalTrackedNodeCount();
+    final int nodeIndex = getTotalTrackedNodeCount();
 
-    ProtoNode node =
+    final ProtoNode node =
         new ProtoNode(
             blockSlot,
             stateRoot,
@@ -219,14 +225,37 @@ public class ProtoArray {
       // Justified or finalized epoch changed so we have to re-evaluate all best descendants.
       applyToNodes(this::updateBestDescendantOfParent);
     }
-    int justifiedIndex =
+
+    // In long non finality, try to find closer than the current justified epoch to start from
+    if (!nonZeroDeltaSeen.get()
+        && currentEpoch
+            .minusMinZero(INITIAL_EPOCH_TOLERANCE)
+            .isGreaterThan(justifiedCheckpoint.getEpoch())) {
+      final Optional<ProtoNode> maybeCloseToHead =
+          getNodes().stream()
+              .filter(ProtoNode::isFullyValidated)
+              .filter(
+                  n ->
+                      currentEpoch
+                          .minusMinZero(spec.computeEpochAtSlot(n.getBlockSlot()))
+                          .isLessThan(INITIAL_EPOCH_TOLERANCE))
+              .max(Comparator.comparing(ProtoNode::getBlockSlot));
+      // if i found a block within INITIAL_EPOCH_TOLERANCE epochs, then just assume that's close to
+      // head if we're more
+      // than INITIAL_EPOCH_TOLERANCE epochs away from head anyway and non finalized
+      if (maybeCloseToHead.isPresent()) {
+        return maybeCloseToHead;
+      }
+    }
+
+    final int justifiedIndex =
         indices
             .get(justifiedCheckpoint.getRoot())
             .orElseThrow(
                 fatalException(
                     "Invalid or unknown justified root: " + justifiedCheckpoint.getRoot()));
 
-    ProtoNode justifiedNode = getNodeByIndex(justifiedIndex);
+    final ProtoNode justifiedNode = getNodeByIndex(justifiedIndex);
 
     if (justifiedNode.isInvalid()) {
       return Optional.empty();
@@ -726,6 +755,9 @@ public class ProtoArray {
     // If the node is invalid, remove any existing weight.
     long nodeDelta = node.isInvalid() ? -node.getWeight().longValue() : deltas.getLong(nodeIndex);
     node.adjustWeight(nodeDelta);
+    if (nodeDelta != 0 && !nonZeroDeltaSeen.get()) {
+      nonZeroDeltaSeen.set(true);
+    }
 
     if (node.getParentIndex().isPresent()) {
       int parentIndex = node.getParentIndex().get();
