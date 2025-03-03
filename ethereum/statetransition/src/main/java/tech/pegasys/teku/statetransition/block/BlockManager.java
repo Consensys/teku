@@ -309,6 +309,12 @@ public class BlockManager extends Service
                         block.toLogString());
                     break;
                   // let's avoid default: so we don't forget to explicitly handle new cases
+                  case FAILED_INCLUSION_LIST_SIZE_CHECK:
+                    LOG.warn("Unable to import block {} due to inclusion list size check failure", block.toLogString());
+                    break;
+                  case FAILED_TO_INCLUDE_INCLUSION_LIST_IN_EXECUTION_PAYLOAD:
+                    LOG.warn("Unable to import block {} due to inclusion list not being present in execution payload", block.toLogString());
+                    break;
                   case DOES_NOT_DESCEND_FROM_LATEST_FINALIZED,
                       FAILED_STATE_TRANSITION,
                       FAILED_WEAK_SUBJECTIVITY_CHECKS,
