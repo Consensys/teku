@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.constants.ValidatorConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.StateTooOldException;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BeaconStateUtilTest {
@@ -216,6 +217,6 @@ public class BeaconStateUtilTest {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.ONE);
     final UInt64 epoch3Start = spec.computeStartSlotAtEpoch(UInt64.valueOf(3));
     assertThatThrownBy(() -> beaconStateUtil.getAttestersTotalEffectiveBalance(state, epoch3Start))
-        .isInstanceOf(IllegalArgumentException.class);
+        .isInstanceOf(StateTooOldException.class);
   }
 }

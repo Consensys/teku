@@ -337,11 +337,9 @@ public abstract class BeaconStateAccessors {
   public void validateStateForCommitteeQuery(final BeaconState state, final UInt64 slot) {
     final UInt64 oldestQueryableSlot =
         miscHelpers.getEarliestQueryableSlotForBeaconCommitteeAtTargetSlot(slot);
-    checkArgument(
-        state.getSlot().compareTo(oldestQueryableSlot) >= 0,
-        "Committee information must be derived from a state no older than the previous epoch. State at slot %s is older than cutoff slot %s",
-        state.getSlot(),
-        oldestQueryableSlot);
+    if (state.getSlot().compareTo(oldestQueryableSlot) < 0) {
+      throw new StateTooOldException(slot, oldestQueryableSlot);
+    }
   }
 
   public Bytes32 getDomain(final ForkInfo forkInfo, final Bytes4 domainType, final UInt64 epoch) {
