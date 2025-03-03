@@ -114,13 +114,13 @@ public class BlockImporter {
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
       final BlockBroadcastValidator blockBroadcastValidator) {
-    final Optional<Boolean> knownOptimistic = recentChainData.isBlockOptimistic(block.getRoot());
-    if (knownOptimistic.isPresent()) {
-      LOG.trace(
-          "Importing known block {}.  Return successful result without re-processing.",
-          block::toLogString);
-      return SafeFuture.completedFuture(BlockImportResult.knownBlock(block, knownOptimistic.get()));
-    }
+//    final Optional<Boolean> knownOptimistic = recentChainData.isBlockOptimistic(block.getRoot());
+//    if (knownOptimistic.isPresent()) {
+//      LOG.trace(
+//          "Importing known block {}.  Return successful result without re-processing.",
+//          block::toLogString);
+//      return SafeFuture.completedFuture(BlockImportResult.knownBlock(block, knownOptimistic.get()));
+//    }
     if (BAD_BLOCKS.contains(block.getRoot())) {
       LOG.info("Avoiding bad block from Electra holesky upgrade.");
       return SafeFuture.completedFuture(
