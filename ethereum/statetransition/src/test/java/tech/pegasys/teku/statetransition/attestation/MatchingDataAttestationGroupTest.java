@@ -87,7 +87,7 @@ class MatchingDataAttestationGroupTest {
     final Attestation copy = attestationSchema.sszDeserialize(attestation.sszSerialize());
     int numRemoved = group.onAttestationIncludedInBlock(UInt64.ZERO, copy);
 
-    assertThat(group.stream()).isEmpty();
+    assertThat(group.streamForBlockProduction(SLOT)).isEmpty();
     assertThat(group.isEmpty()).isTrue();
     assertThat(numRemoved).isEqualTo(1);
   }
@@ -106,7 +106,7 @@ class MatchingDataAttestationGroupTest {
     assertThat(numRemoved).isEqualTo(0);
     numRemoved += group.onAttestationIncludedInBlock(UInt64.ZERO, attestation2.getAttestation());
     assertThat(numRemoved).isEqualTo(1);
-    assertThat(group.stream()).containsExactly(attestation3);
+    assertThat(group.streamForBlockProduction(SLOT)).containsExactly(attestation3);
   }
 
   @TestTemplate
@@ -120,7 +120,7 @@ class MatchingDataAttestationGroupTest {
             UInt64.ZERO,
             aggregateAttestations(attestation1.getAttestation(), attestation2.getAttestation()));
 
-    assertThat(group.stream()).containsExactly(attestation3);
+    assertThat(group.streamForBlockProduction(SLOT)).containsExactly(attestation3);
     assertThat(numRemoved).isEqualTo(2); // the one attestation is still there, and we've removed 2.
   }
 
@@ -138,7 +138,7 @@ class MatchingDataAttestationGroupTest {
     assertThat(numRemoved).isEqualTo(0);
 
     assertThat(group.add(attestationToIgnore)).isFalse();
-    assertThat(group.stream()).isEmpty();
+    assertThat(group.streamForBlockProduction(SLOT)).isEmpty();
   }
 
   @TestTemplate
@@ -148,12 +148,12 @@ class MatchingDataAttestationGroupTest {
     final ValidatableAttestation attestation2 = addAttestation(Optional.of(1), 2);
     final ValidatableAttestation attestation3 = addAttestation(Optional.of(1), 3);
 
-    assertThat(group.stream(Optional.of(UInt64.ZERO))).containsExactly(attestation1);
+    assertThat(group.streamForAggregation(Optional.of(UInt64.ZERO))).containsExactly(attestation1);
 
     final Attestation expected =
         aggregateAttestations(attestation2.getAttestation(), attestation3.getAttestation());
 
-    assertThat(group.stream(Optional.of(UInt64.ONE)))
+    assertThat(group.streamForAggregation(Optional.of(UInt64.ONE)))
         .containsExactly(ValidatableAttestation.from(spec, expected));
   }
 
@@ -165,7 +165,7 @@ class MatchingDataAttestationGroupTest {
             spec, attestationSchema.sszDeserialize(attestation.getAttestation().sszSerialize()));
 
     assertThat(group.add(copy)).isFalse();
-    assertThat(group.stream()).containsExactly(attestation);
+    assertThat(group.streamForBlockProduction(SLOT)).containsExactly(attestation);
   }
 
   @TestTemplate
