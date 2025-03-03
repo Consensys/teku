@@ -18,6 +18,8 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -30,6 +32,8 @@ public class ProtoNode {
 
   public static final UInt64 NO_EXECUTION_BLOCK_NUMBER = UInt64.ZERO;
   public static final Bytes32 NO_EXECUTION_BLOCK_HASH = Bytes32.ZERO;
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final UInt64 blockSlot;
   private final Bytes32 stateRoot;
@@ -105,7 +109,12 @@ public class ProtoNode {
       }
       weight = weight.minus(deltaAbsoluteValue);
     } else {
-      weight = weight.plus(delta);
+      if (UInt64.MAX_VALUE.minusMinZero(delta).isGreaterThan(weight)) {
+        weight = weight.plus(delta);
+      } else {
+        LOG.trace("Unable to add delta {} to weight {}", delta, weight);
+        weight = UInt64.MAX_VALUE;
+      }
     }
   }
 
