@@ -108,7 +108,7 @@ public class StoreConfig {
         && blockCacheSize == that.blockCacheSize
         && checkpointStateCacheSize == that.checkpointStateCacheSize
         && hotStatePersistenceFrequencyInEpochs == that.hotStatePersistenceFrequencyInEpochs
-        && initialCanonicalBlockRoot == that.initialCanonicalBlockRoot;
+        && Objects.equals(initialCanonicalBlockRoot, that.initialCanonicalBlockRoot);
   }
 
   @Override
