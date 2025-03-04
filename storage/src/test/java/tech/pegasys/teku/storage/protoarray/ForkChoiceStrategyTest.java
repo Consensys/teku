@@ -98,7 +98,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                         .getExecutionBlockNumber()
                         .orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
                     blockAndState.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
-                    spec.isBlockProcessorOptimistic(blockAndState.getSlot())));
+                    spec.isBlockProcessorOptimistic(blockAndState.getSlot()),
+                        false));
   }
 
   @Test
@@ -156,7 +157,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             anchor.getCheckpoint()),
         ZERO,
         Bytes32.ZERO,
-        false);
+        false,
+            false);
     final ForkChoiceStrategy forkChoiceStrategy = ForkChoiceStrategy.initialize(spec, protoArray);
     TestStoreImpl store = new TestStoreFactory().createAnchorStore(anchor);
 

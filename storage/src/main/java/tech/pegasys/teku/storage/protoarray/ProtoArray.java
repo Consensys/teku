@@ -133,7 +133,8 @@ public class ProtoArray {
       final BlockCheckpoints checkpoints,
       final UInt64 executionBlockNumber,
       final Bytes32 executionBlockHash,
-      final boolean optimisticallyProcessed) {
+      final boolean optimisticallyProcessed,
+      final boolean setAsInitialCanonicalHead) {
     if (indices.contains(blockRoot)) {
       return;
     }
@@ -150,7 +151,7 @@ public class ProtoArray {
             checkpoints,
             executionBlockNumber,
             executionBlockHash,
-            UInt64.ZERO,
+                setAsInitialCanonicalHead ? UInt64.ONE : UInt64.ZERO,
             Optional.empty(),
             Optional.empty(),
             optimisticallyProcessed && !executionBlockHash.isZero() ? OPTIMISTIC : VALID);

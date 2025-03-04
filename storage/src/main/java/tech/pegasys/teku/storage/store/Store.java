@@ -36,6 +36,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.generators.CachingTaskQueue;
@@ -314,6 +315,7 @@ class Store extends CacheableStore {
         forkChoiceStrategy);
   }
 
+  @SuppressWarnings("UnusedVariable")
   private static ProtoArray buildProtoArray(
       final Spec spec,
       final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
@@ -332,11 +334,13 @@ class Store extends CacheableStore {
             .justifiedCheckpoint(justifiedCheckpoint)
             .finalizedCheckpoint(finalizedAnchor.getCheckpoint())
             .build();
+    Bytes32 root =  Bytes32.fromHexString("0xeaa55185d00fd080a7e072c225a26969d34f8591d4f55db97ab447bed05af67c");
     for (StoredBlockMetadata block : blocks) {
       if (block.getCheckpointEpochs().isEmpty()) {
         throw new IllegalStateException(
             "Incompatible database version detected. The data in this database is too old to be read by Teku. A re-sync will be required.");
       }
+      //initialCanonicalBlockRoot.map(root -> root.equals(block.getBlockRoot())).orElse(false);
       protoArray.onBlock(
           block.getBlockSlot(),
           block.getBlockRoot(),
@@ -345,11 +349,12 @@ class Store extends CacheableStore {
           block.getCheckpointEpochs().get(),
           block.getExecutionBlockNumber().orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
           block.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
-          spec.isBlockProcessorOptimistic(block.getBlockSlot()));
+          spec.isBlockProcessorOptimistic(block.getBlockSlot()),
+              block.getBlockRoot().equals(root));
     }
-    initialCanonicalBlockRoot
-        .flatMap(protoArray::getProtoNode)
-        .ifPresent(protoNode -> protoNode.adjustWeight(1));
+//    initialCanonicalBlockRoot
+//        .flatMap(protoArray::getProtoNode)
+//        .ifPresent(protoNode -> protoNode.adjustWeight(1));
     return protoArray;
   }
 

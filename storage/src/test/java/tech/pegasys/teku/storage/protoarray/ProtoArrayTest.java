@@ -563,7 +563,8 @@ class ProtoArrayTest {
             GENESIS_CHECKPOINT, GENESIS_CHECKPOINT, GENESIS_CHECKPOINT, GENESIS_CHECKPOINT),
         ZERO,
         executionBlockHash,
-        true);
+        true,
+            false);
   }
 
   private Bytes32 getExecutionBlockHash(final Bytes32 blockRoot) {

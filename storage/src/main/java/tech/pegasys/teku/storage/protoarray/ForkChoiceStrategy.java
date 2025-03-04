@@ -542,7 +542,8 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
         checkpoints,
         executionBlockNumber,
         executionBlockHash,
-        spec.isBlockProcessorOptimistic(blockSlot));
+        spec.isBlockProcessorOptimistic(blockSlot),
+            false);
   }
 
   private Optional<ProtoNode> getProtoNode(final Bytes32 blockRoot) {
