@@ -564,7 +564,7 @@ class ProtoArrayTest {
         ZERO,
         executionBlockHash,
         true,
-            false);
+        false);
   }
 
   private Bytes32 getExecutionBlockHash(final Bytes32 blockRoot) {

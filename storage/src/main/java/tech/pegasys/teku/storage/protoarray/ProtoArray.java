@@ -151,7 +151,7 @@ public class ProtoArray {
             checkpoints,
             executionBlockNumber,
             executionBlockHash,
-                setAsInitialCanonicalHead ? UInt64.ONE : UInt64.ZERO,
+            setAsInitialCanonicalHead ? UInt64.ONE : UInt64.ZERO,
             Optional.empty(),
             Optional.empty(),
             optimisticallyProcessed && !executionBlockHash.isZero() ? OPTIMISTIC : VALID);

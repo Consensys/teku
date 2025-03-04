@@ -543,7 +543,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
         executionBlockNumber,
         executionBlockHash,
         spec.isBlockProcessorOptimistic(blockSlot),
-            false);
+        false);
   }
 
   private Optional<ProtoNode> getProtoNode(final Bytes32 blockRoot) {
