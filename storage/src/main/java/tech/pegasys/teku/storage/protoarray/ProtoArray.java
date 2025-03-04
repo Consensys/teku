@@ -170,12 +170,13 @@ public class ProtoArray {
       return;
     }
 
-    ProtoNode bestCanonicalHead =
-        getNodeByIndex(initialCanonicalProtoNode.get().getBestDescendantIndex().orElseThrow());
-
-    bestCanonicalHead.adjustWeight(1);
-
     applyToNodes(this::updateBestDescendantOfParent);
+
+    final ProtoNode bestHead = initialCanonicalProtoNode.get().getBestDescendantIndex().map(this::getNodeByIndex).orElse(initialCanonicalProtoNode.get());
+
+    bestHead.adjustWeight(1);
+
+    //applyDeltas(new LongArrayList(Collections.nCopies(getTotalTrackedNodeCount(), 0L)));
   }
 
   /**
