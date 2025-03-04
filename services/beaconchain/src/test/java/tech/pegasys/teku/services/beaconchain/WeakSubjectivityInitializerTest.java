@@ -184,7 +184,7 @@ public class WeakSubjectivityInitializerTest {
         dataStructureUtil.randomAnchorPoint(UInt64.ZERO, spec.fork(UInt64.ZERO));
 
     // Should not throw
-    initializer.validateInitialAnchor(anchor, UInt64.ZERO, spec, Optional.empty());
+    initializer.validateInitialAnchor(anchor, UInt64.ZERO, spec, Optional.empty(),false);
   }
 
   @Test
@@ -194,7 +194,7 @@ public class WeakSubjectivityInitializerTest {
         dataStructureUtil.randomAnchorPoint(UInt64.ZERO, spec.fork(UInt64.ZERO));
 
     // Should not throw
-    initializer.validateInitialAnchor(anchor, UInt64.valueOf(10), spec, Optional.empty());
+    initializer.validateInitialAnchor(anchor, UInt64.valueOf(10), spec, Optional.empty(),false);
   }
 
   @Test
@@ -207,7 +207,7 @@ public class WeakSubjectivityInitializerTest {
         dataStructureUtil.randomAnchorPoint(currentEpoch.plus(1), spec.fork(currentEpoch));
 
     assertThatThrownBy(
-            () -> initializer.validateInitialAnchor(anchor, currentSlot, spec, Optional.empty()))
+            () -> initializer.validateInitialAnchor(anchor, currentSlot, spec, Optional.empty(),false))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining(
             "The provided initial state appears to be from a future slot ("
@@ -225,7 +225,7 @@ public class WeakSubjectivityInitializerTest {
         dataStructureUtil.randomAnchorPoint(currentEpoch.minus(1), spec.fork(currentEpoch));
 
     assertThatThrownBy(
-            () -> initializer.validateInitialAnchor(anchor, currentSlot, spec, Optional.empty()))
+            () -> initializer.validateInitialAnchor(anchor, currentSlot, spec, Optional.empty(),false))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining(
             "The provided initial state is too recent. Please check that the initial state corresponds to a finalized"
@@ -243,7 +243,7 @@ public class WeakSubjectivityInitializerTest {
         dataStructureUtil.randomAnchorPoint(anchorEpoch, spec.fork(currentEpoch));
 
     // Should not throw
-    initializer.validateInitialAnchor(anchor, currentSlot, spec, Optional.empty());
+    initializer.validateInitialAnchor(anchor, currentSlot, spec, Optional.empty(),false);
   }
 
   @Test
@@ -260,7 +260,7 @@ public class WeakSubjectivityInitializerTest {
     doReturn(true).when(wsCalculator).isWithinWeakSubjectivityPeriod(any(), eq(currentSlot));
 
     // Should not throw
-    initializer.validateInitialAnchor(anchor, currentSlot, spec, Optional.of(wsCalculator));
+    initializer.validateInitialAnchor(anchor, currentSlot, spec, Optional.of(wsCalculator),false);
   }
 
   @Test
@@ -279,7 +279,7 @@ public class WeakSubjectivityInitializerTest {
     assertThatThrownBy(
             () ->
                 initializer.validateInitialAnchor(
-                    anchor, currentSlot, spec, Optional.of(wsCalculator)))
+                    anchor, currentSlot, spec, Optional.of(wsCalculator),false))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("Cannot sync outside of weak subjectivity period");
   }
@@ -299,7 +299,7 @@ public class WeakSubjectivityInitializerTest {
 
     // Should not throw because weak subjectivity calculator is empty so rule is not enforced
     initializer.validateInitialAnchor(
-        anchor, spec.computeStartSlotAtEpoch(currentEpoch), spec, Optional.empty());
+        anchor, spec.computeStartSlotAtEpoch(currentEpoch), spec, Optional.empty(),false);
   }
 
   @Test
