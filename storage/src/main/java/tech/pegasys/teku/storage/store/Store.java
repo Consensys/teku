@@ -292,7 +292,8 @@ class Store extends CacheableStore {
                 initialCheckpoint,
                 currentEpoch,
                 justifiedCheckpoint,
-                finalizedAnchor));
+                finalizedAnchor,
+                config.getInitialCanonicalBlockRoot()));
     return create(
         asyncRunner,
         metricsSystem,
@@ -319,7 +320,8 @@ class Store extends CacheableStore {
       final Optional<Checkpoint> initialCheckpoint,
       final UInt64 currentEpoch,
       final Checkpoint justifiedCheckpoint,
-      final AnchorPoint finalizedAnchor) {
+      final AnchorPoint finalizedAnchor,
+      final Optional<Bytes32> initialCanonicalBlockRoot) {
     final List<StoredBlockMetadata> blocks = new ArrayList<>(blockInfoByRoot.values());
     blocks.sort(Comparator.comparing(StoredBlockMetadata::getBlockSlot));
     final ProtoArray protoArray =
@@ -345,6 +347,9 @@ class Store extends CacheableStore {
           block.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
           spec.isBlockProcessorOptimistic(block.getBlockSlot()));
     }
+    initialCanonicalBlockRoot
+        .flatMap(protoArray::getProtoNode)
+        .ifPresent(protoNode -> protoNode.adjustWeight(1));
     return protoArray;
   }
 
