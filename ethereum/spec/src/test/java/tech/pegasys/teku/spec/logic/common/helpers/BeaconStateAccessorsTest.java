@@ -92,7 +92,7 @@ public class BeaconStateAccessorsTest {
 
     final UInt64 outOfRangeSlot = spec.computeStartSlotAtEpoch(epoch.plus(2));
     assertThatThrownBy(() -> beaconStateAccessors.getBeaconCommittee(state, outOfRangeSlot, ONE))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(StateTooOldException.class)
         .hasMessageContaining(
             "Committee information must be derived from a state no older than the previous epoch");
   }
@@ -105,7 +105,7 @@ public class BeaconStateAccessorsTest {
 
     final UInt64 outOfRangeSlot = spec.computeStartSlotAtEpoch(epoch.plus(2));
     assertThatThrownBy(() -> beaconStateAccessors.getBeaconCommittee(state, outOfRangeSlot, ONE))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(StateTooOldException.class)
         .hasMessageContaining(
             "Committee information must be derived from a state no older than the previous epoch");
   }
@@ -139,7 +139,7 @@ public class BeaconStateAccessorsTest {
 
     final UInt64 outOfRangeSlot = spec.computeStartSlotAtEpoch(epoch.plus(2));
     assertThatThrownBy(() -> beaconStateAccessors.getBeaconCommitteesSize(state, outOfRangeSlot))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(StateTooOldException.class)
         .hasMessageContaining(
             "Committee information must be derived from a state no older than the previous epoch");
   }
