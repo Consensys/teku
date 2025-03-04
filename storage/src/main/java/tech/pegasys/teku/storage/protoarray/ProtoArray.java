@@ -233,18 +233,31 @@ public class ProtoArray {
             .isGreaterThan(justifiedCheckpoint.getEpoch())) {
       final Optional<ProtoNode> maybeCloseToHead =
           getNodes().stream()
-              .filter(ProtoNode::isFullyValidated)
               .filter(
                   n ->
                       currentEpoch
                           .minusMinZero(spec.computeEpochAtSlot(n.getBlockSlot()))
                           .isLessThan(INITIAL_EPOCH_TOLERANCE))
+              .filter(ProtoNode::isFullyValidated)
+              .filter(this::nodeIsViableForHead)
+              .filter(
+                  n ->
+                      n.getBlockSlot()
+                          .isLessThan(spec.computeStartSlotAtEpoch(currentEpoch.minusMinZero(3))))
               .max(Comparator.comparing(ProtoNode::getBlockSlot));
-      // if i found a block within INITIAL_EPOCH_TOLERANCE epochs, then just assume that's close to
+
+      // if I found a block within INITIAL_EPOCH_TOLERANCE epochs, then just assume that's close to
       // head if we're more
       // than INITIAL_EPOCH_TOLERANCE epochs away from head anyway and non finalized
       if (maybeCloseToHead.isPresent()) {
+        LOG.info(
+            "Attempting to start at position {}:{}, current epoch {}",
+            maybeCloseToHead.get().getBlockSlot(),
+            maybeCloseToHead.get().getBlockRoot(),
+            currentEpoch);
         return maybeCloseToHead;
+      } else {
+        LOG.info("Couldn't really find a good position to start from");
       }
     }
 
