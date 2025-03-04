@@ -172,11 +172,16 @@ public class ProtoArray {
 
     applyToNodes(this::updateBestDescendantOfParent);
 
-    final ProtoNode bestHead = initialCanonicalProtoNode.get().getBestDescendantIndex().map(this::getNodeByIndex).orElse(initialCanonicalProtoNode.get());
+    final ProtoNode bestHead =
+        initialCanonicalProtoNode
+            .get()
+            .getBestDescendantIndex()
+            .map(this::getNodeByIndex)
+            .orElse(initialCanonicalProtoNode.get());
 
     bestHead.adjustWeight(1);
 
-    //applyDeltas(new LongArrayList(Collections.nCopies(getTotalTrackedNodeCount(), 0L)));
+    // applyDeltas(new LongArrayList(Collections.nCopies(getTotalTrackedNodeCount(), 0L)));
   }
 
   /**
