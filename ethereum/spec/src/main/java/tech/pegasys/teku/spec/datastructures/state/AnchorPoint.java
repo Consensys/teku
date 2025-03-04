@@ -97,8 +97,8 @@ public class AnchorPoint extends StateAndBlockSummary {
       final BeaconBlockHeader header = BeaconBlockHeader.fromState(state);
 
       // Calculate closest epoch boundary to use for the checkpoint
-      final UInt64 epoch = spec.computeNextEpochBoundary(state.getSlot());
-      final Checkpoint checkpoint = new Checkpoint(epoch, header.hashTreeRoot());
+      final UInt64 epoch = state.getFinalizedCheckpoint().getEpochStartSlot(spec);
+      final Checkpoint checkpoint = new Checkpoint(epoch, state.getFinalizedCheckpoint().getRoot());
 
       return new AnchorPoint(spec, checkpoint, state, header);
     }
