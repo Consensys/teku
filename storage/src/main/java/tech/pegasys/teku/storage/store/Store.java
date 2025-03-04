@@ -333,14 +333,12 @@ class Store extends CacheableStore {
             .justifiedCheckpoint(justifiedCheckpoint)
             .finalizedCheckpoint(finalizedAnchor.getCheckpoint())
             .build();
-    Bytes32 root =
-        Bytes32.fromHexString("0xeaa55185d00fd080a7e072c225a26969d34f8591d4f55db97ab447bed05af67c");
     for (StoredBlockMetadata block : blocks) {
       if (block.getCheckpointEpochs().isEmpty()) {
         throw new IllegalStateException(
             "Incompatible database version detected. The data in this database is too old to be read by Teku. A re-sync will be required.");
       }
-      // initialCanonicalBlockRoot.map(root -> root.equals(block.getBlockRoot())).orElse(false);
+      //
       protoArray.onBlock(
           block.getBlockSlot(),
           block.getBlockRoot(),
@@ -350,11 +348,8 @@ class Store extends CacheableStore {
           block.getExecutionBlockNumber().orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
           block.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
           spec.isBlockProcessorOptimistic(block.getBlockSlot()),
-          block.getBlockRoot().equals(root));
+          initialCanonicalBlockRoot.map(root -> root.equals(block.getBlockRoot())).orElse(false));
     }
-    //    initialCanonicalBlockRoot
-    //        .flatMap(protoArray::getProtoNode)
-    //        .ifPresent(protoNode -> protoNode.adjustWeight(1));
     return protoArray;
   }
 
