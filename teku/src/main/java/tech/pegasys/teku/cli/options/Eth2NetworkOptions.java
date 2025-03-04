@@ -66,7 +66,8 @@ public class Eth2NetworkOptions {
       description = "Allows override .",
       arity = "0..1",
       fallbackValue = "true",
-      showDefaultValue = Visibility.ALWAYS)
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
   private boolean isCheckpointOverrideEnabled = false;
 
   @Option(
