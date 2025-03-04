@@ -350,6 +350,9 @@ class Store extends CacheableStore {
           spec.isBlockProcessorOptimistic(block.getBlockSlot()),
           initialCanonicalBlockRoot.map(root -> root.equals(block.getBlockRoot())).orElse(false));
     }
+
+    initialCanonicalBlockRoot.ifPresent(protoArray::setInitialCanonicalBlockRoot);
+
     return protoArray;
   }
 
