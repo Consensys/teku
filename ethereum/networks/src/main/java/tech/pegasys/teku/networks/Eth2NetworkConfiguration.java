@@ -566,8 +566,7 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
-    public Builder isCheckpointOverrideEnabled(
-        final boolean isCheckpointOverrideEnabled) {
+    public Builder isCheckpointOverrideEnabled(final boolean isCheckpointOverrideEnabled) {
       this.isCheckpointOverrideEnabled = isCheckpointOverrideEnabled;
       return this;
     }

@@ -60,7 +60,7 @@ public class Eth2NetworkOptions {
       showDefaultValue = Visibility.ALWAYS)
   private boolean ignoreWeakSubjectivityPeriodEnabled = false;
 
-@Option(
+  @Option(
       names = {"--Xis-checkpoint-override-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Allows override .",
