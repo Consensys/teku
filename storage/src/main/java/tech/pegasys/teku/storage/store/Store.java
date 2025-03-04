@@ -292,7 +292,8 @@ class Store extends CacheableStore {
                 initialCheckpoint,
                 currentEpoch,
                 justifiedCheckpoint,
-                finalizedAnchor));
+                finalizedAnchor,
+                config.getInitialCanonicalBlockRoot()));
     return create(
         asyncRunner,
         metricsSystem,
@@ -313,13 +314,15 @@ class Store extends CacheableStore {
         forkChoiceStrategy);
   }
 
+  @SuppressWarnings("UnusedVariable")
   private static ProtoArray buildProtoArray(
       final Spec spec,
       final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
       final Optional<Checkpoint> initialCheckpoint,
       final UInt64 currentEpoch,
       final Checkpoint justifiedCheckpoint,
-      final AnchorPoint finalizedAnchor) {
+      final AnchorPoint finalizedAnchor,
+      final Optional<Bytes32> initialCanonicalBlockRoot) {
     final List<StoredBlockMetadata> blocks = new ArrayList<>(blockInfoByRoot.values());
     blocks.sort(Comparator.comparing(StoredBlockMetadata::getBlockSlot));
     final ProtoArray protoArray =
@@ -335,6 +338,7 @@ class Store extends CacheableStore {
         throw new IllegalStateException(
             "Incompatible database version detected. The data in this database is too old to be read by Teku. A re-sync will be required.");
       }
+      //
       protoArray.onBlock(
           block.getBlockSlot(),
           block.getBlockRoot(),
@@ -343,8 +347,12 @@ class Store extends CacheableStore {
           block.getCheckpointEpochs().get(),
           block.getExecutionBlockNumber().orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
           block.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
-          spec.isBlockProcessorOptimistic(block.getBlockSlot()));
+          spec.isBlockProcessorOptimistic(block.getBlockSlot()),
+          initialCanonicalBlockRoot.map(root -> root.equals(block.getBlockRoot())).orElse(false));
     }
+
+    initialCanonicalBlockRoot.ifPresent(protoArray::setInitialCanonicalBlockRoot);
+
     return protoArray;
   }
 

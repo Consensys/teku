@@ -133,13 +133,15 @@ public class ProtoArray {
       final BlockCheckpoints checkpoints,
       final UInt64 executionBlockNumber,
       final Bytes32 executionBlockHash,
-      final boolean optimisticallyProcessed) {
+      final boolean optimisticallyProcessed,
+      final boolean setAsInitialCanonicalHead) {
     if (indices.contains(blockRoot)) {
       return;
     }
 
     int nodeIndex = getTotalTrackedNodeCount();
 
+    @SuppressWarnings("DuplicateBranches")
     ProtoNode node =
         new ProtoNode(
             blockSlot,
@@ -150,7 +152,7 @@ public class ProtoArray {
             checkpoints,
             executionBlockNumber,
             executionBlockHash,
-            UInt64.ZERO,
+            setAsInitialCanonicalHead ? UInt64.ZERO : UInt64.ZERO,
             Optional.empty(),
             Optional.empty(),
             optimisticallyProcessed && !executionBlockHash.isZero() ? OPTIMISTIC : VALID);
@@ -159,6 +161,27 @@ public class ProtoArray {
     nodes.add(node);
 
     updateBestDescendantOfParent(node, nodeIndex);
+  }
+
+  public void setInitialCanonicalBlockRoot(final Bytes32 initialCanonicalBlockRoot) {
+    final Optional<ProtoNode> initialCanonicalProtoNode = getProtoNode(initialCanonicalBlockRoot);
+    if (initialCanonicalProtoNode.isEmpty()) {
+      LOG.warn("Initial canonical block root not found: {}", initialCanonicalBlockRoot);
+      return;
+    }
+
+    applyToNodes(this::updateBestDescendantOfParent);
+
+    final ProtoNode bestHead =
+        initialCanonicalProtoNode
+            .get()
+            .getBestDescendantIndex()
+            .map(this::getNodeByIndex)
+            .orElse(initialCanonicalProtoNode.get());
+
+    bestHead.adjustWeight(1);
+
+    // applyDeltas(new LongArrayList(Collections.nCopies(getTotalTrackedNodeCount(), 0L)));
   }
 
   /**
