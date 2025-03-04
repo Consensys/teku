@@ -60,6 +60,8 @@ public class Eth2NetworkConfiguration {
 
   public static final boolean DEFAULT_ALLOW_SYNC_OUTSIDE_WEAK_SUBJECTIVITY_PERIOD = false;
 
+  public static final boolean DEFAULT_CHECKPOINT_OVERRIDE_ENABLED = false;
+
   public static final int DEFAULT_ASYNC_P2P_MAX_THREADS = 10;
 
   public static final int DEFAULT_ASYNC_P2P_MAX_QUEUE = DEFAULT_MAX_QUEUE_SIZE;
@@ -360,6 +362,7 @@ public class Eth2NetworkConfiguration {
     private boolean isUsingCustomInitialState = false;
     private boolean allowSyncOutsideWeakSubjectivityPeriod =
         DEFAULT_ALLOW_SYNC_OUTSIDE_WEAK_SUBJECTIVITY_PERIOD;
+    private boolean isCheckpointOverrideEnabled = DEFAULT_CHECKPOINT_OVERRIDE_ENABLED;
     private int startupTargetPeerCount = DEFAULT_STARTUP_TARGET_PEER_COUNT;
     private int startupTimeoutSeconds = DEFAULT_STARTUP_TIMEOUT_SECONDS;
     private int asyncP2pMaxThreads = DEFAULT_ASYNC_P2P_MAX_THREADS;
@@ -457,7 +460,8 @@ public class Eth2NetworkConfiguration {
               initialState,
               checkpointSyncUrl,
               isUsingCustomInitialState,
-              allowSyncOutsideWeakSubjectivityPeriod),
+              allowSyncOutsideWeakSubjectivityPeriod,
+              isCheckpointOverrideEnabled),
           startupTargetPeerCount,
           startupTimeoutSeconds,
           discoveryBootnodes,
@@ -559,6 +563,12 @@ public class Eth2NetworkConfiguration {
     public Builder ignoreWeakSubjectivityPeriodEnabled(
         final boolean ignoreWeakSubjectivityPeriodEnabled) {
       this.allowSyncOutsideWeakSubjectivityPeriod = ignoreWeakSubjectivityPeriodEnabled;
+      return this;
+    }
+
+    public Builder isCheckpointOverrideEnabled(
+        final boolean isCheckpointOverrideEnabled) {
+      this.isCheckpointOverrideEnabled = isCheckpointOverrideEnabled;
       return this;
     }
 
@@ -818,8 +828,6 @@ public class Eth2NetworkConfiguration {
           .startupTimeoutSeconds(120)
           .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .eth1DepositContractDeployBlock(1273020)
-          .defaultInitialStateFromUrl(
-              "https://github.com/eth-clients/merge-testnets/raw/9c873ab67b902aa676370a549129e5e91013afa3/sepolia/genesis.ssz")
           .customGenesisState(
               "https://github.com/eth-clients/merge-testnets/raw/9c873ab67b902aa676370a549129e5e91013afa3/sepolia/genesis.ssz")
           .discoveryBootnodes(

@@ -1418,11 +1418,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
           Optional.of(WeakSubjectivityCalculator.create(beaconConfig.weakSubjectivity()));
     }
 
+    final boolean isCheckPointOverrideEnabled = beaconConfig
+            .eth2NetworkConfig()
+            .getNetworkBoostrapConfig()
+            .isCheckpointOverrideEnabled();
+
     // Validate
     initialAnchor.ifPresent(
         anchor -> {
           final UInt64 currentSlot = getCurrentSlot(anchor.getState().getGenesisTime());
-          wsInitializer.validateInitialAnchor(anchor, currentSlot, spec, maybeWsCalculator);
+          wsInitializer.validateInitialAnchor(anchor, currentSlot, spec, maybeWsCalculator, isCheckPointOverrideEnabled);
         });
 
     if (initialAnchor.isPresent()) {

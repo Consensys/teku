@@ -22,18 +22,21 @@ public class StateBoostrapConfig {
   private final Optional<String> checkpointSyncUrl;
   private final boolean isUsingCustomInitialState;
   private final boolean allowSyncOutsideWeakSubjectivityPeriod;
+  private final boolean isCheckpointOverrideEnabled;
 
   public StateBoostrapConfig(
       final Optional<String> genesisState,
       final Optional<String> initialState,
       final Optional<String> checkpointSyncUrl,
       final boolean isUsingCustomInitialState,
-      final boolean allowSyncOutsideWeakSubjectivityPeriod) {
+      final boolean allowSyncOutsideWeakSubjectivityPeriod,
+      final boolean isCheckpointOverrideEnabled) {
     this.checkpointSyncUrl = checkpointSyncUrl;
     this.genesisState = genesisState;
     this.initialState = initialState;
     this.isUsingCustomInitialState = isUsingCustomInitialState;
     this.allowSyncOutsideWeakSubjectivityPeriod = allowSyncOutsideWeakSubjectivityPeriod;
+    this.isCheckpointOverrideEnabled = isCheckpointOverrideEnabled;
   }
 
   public Optional<String> getGenesisState() {
@@ -60,6 +63,10 @@ public class StateBoostrapConfig {
     return allowSyncOutsideWeakSubjectivityPeriod;
   }
 
+  public boolean isCheckpointOverrideEnabled() {
+    return isCheckpointOverrideEnabled;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -71,6 +78,7 @@ public class StateBoostrapConfig {
     final StateBoostrapConfig that = (StateBoostrapConfig) o;
     return isUsingCustomInitialState == that.isUsingCustomInitialState
         && allowSyncOutsideWeakSubjectivityPeriod == that.allowSyncOutsideWeakSubjectivityPeriod
+        && isCheckpointOverrideEnabled == that.isCheckpointOverrideEnabled
         && Objects.equals(genesisState, that.genesisState)
         && Objects.equals(initialState, that.initialState)
         && Objects.equals(checkpointSyncUrl, that.checkpointSyncUrl);
@@ -83,6 +91,7 @@ public class StateBoostrapConfig {
         initialState,
         checkpointSyncUrl,
         isUsingCustomInitialState,
-        allowSyncOutsideWeakSubjectivityPeriod);
+        allowSyncOutsideWeakSubjectivityPeriod,
+        isCheckpointOverrideEnabled);
   }
 }
