@@ -75,6 +75,7 @@ public class TestStoreFactory {
         new HashMap<>(),
         new HashMap<>(),
         new HashMap<>(),
+        Optional.empty(),
         Optional.empty());
   }
 
@@ -120,6 +121,7 @@ public class TestStoreFactory {
         checkpointStates,
         votes,
         blobSidecars,
+        Optional.empty(),
         Optional.empty());
   }
 

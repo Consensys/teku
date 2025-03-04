@@ -80,6 +80,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<UInt64> getSlotForFinalizedStateRoot(Bytes32 stateRoot);
 
+  Optional<Bytes32> getLatestCanonicalBlockRoot();
+
   Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(Bytes32 root);
 
   void ingest(KvStoreCombinedDao dao, int batchSize, Consumer<String> logger);
@@ -187,6 +189,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void setBestJustifiedCheckpoint(Checkpoint checkpoint);
 
     void setFinalizedCheckpoint(Checkpoint checkpoint);
+
+    void setLatestCanonicalBlockRoot(Bytes32 canonicalBlockRoot);
 
     void setWeakSubjectivityCheckpoint(Checkpoint checkpoint);
 

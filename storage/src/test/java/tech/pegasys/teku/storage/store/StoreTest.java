@@ -80,6 +80,7 @@ class StoreTest extends AbstractStoreTest {
                     genesisCheckpoint,
                     genesisCheckpoint,
                     Collections.emptyMap(),
+                    Optional.empty(),
                     Collections.emptyMap(),
                     defaultStoreConfig))
         .isInstanceOf(IllegalArgumentException.class)

@@ -54,6 +54,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected Map<UInt64, VoteTracker> votes;
   protected Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
   protected Optional<UInt64> earliestBlobSidecarSlot;
+  protected Optional<Bytes32> latestCanonicalBlockRoot;
   protected Optional<Bytes32> proposerBoostRoot = Optional.empty();
   protected final TestReadOnlyForkChoiceStrategy forkChoiceStrategy =
       new TestReadOnlyForkChoiceStrategy();
@@ -72,7 +73,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       final Map<Checkpoint, BeaconState> checkpointStates,
       final Map<UInt64, VoteTracker> votes,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
-      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot,
+      final Optional<Bytes32> maybeLatestCanonicalBlockRoot) {
     this.spec = spec;
     this.timeMillis = secondsToMillis(time);
     this.genesisTime = genesisTime;
@@ -87,6 +89,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     this.votes = votes;
     this.blobSidecars = blobSidecars;
     this.earliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
+    this.latestCanonicalBlockRoot = maybeLatestCanonicalBlockRoot;
   }
 
   // Readonly methods
@@ -336,6 +339,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   @Override
   public void setProposerBoostRoot(final Bytes32 boostedBlockRoot) {
     proposerBoostRoot = Optional.of(boostedBlockRoot);
+  }
+
+  @Override
+  public void setLatestCanonicalBlockRoot(final Bytes32 latestCanonicalBlockRoot) {
+    this.latestCanonicalBlockRoot = Optional.of(latestCanonicalBlockRoot);
   }
 
   @Override

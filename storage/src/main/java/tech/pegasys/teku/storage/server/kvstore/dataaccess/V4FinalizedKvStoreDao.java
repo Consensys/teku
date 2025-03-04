@@ -111,6 +111,10 @@ public class V4FinalizedKvStoreDao {
     return db.get(schema.getColumnSlotsByFinalizedStateRoot(), stateRoot);
   }
 
+  public Optional<Bytes32> getLatestCanonicalBlockRoot() {
+    return db.get(schema.getVariableLatestCanonicalBlockRoot());
+  }
+
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(
       final Bytes32 stateRoot) {
     Optional<UInt64> maybeSlot = db.get(schema.getColumnSlotsByFinalizedStateRoot(), stateRoot);
