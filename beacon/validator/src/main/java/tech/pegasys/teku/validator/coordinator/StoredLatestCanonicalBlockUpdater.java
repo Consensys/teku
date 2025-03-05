@@ -32,7 +32,7 @@ public class StoredLatestCanonicalBlockUpdater implements SlotEventsChannel {
   }
 
   @Override
-  public void onSlot(UInt64 slot) {
+  public void onSlot(final UInt64 slot) {
     if (!slot.mod(UInt64.valueOf(32)).equals(ONE)) {
       return;
     }
