@@ -200,6 +200,7 @@ import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 import tech.pegasys.teku.validator.coordinator.Eth1VotingPeriod;
 import tech.pegasys.teku.validator.coordinator.GraffitiBuilder;
 import tech.pegasys.teku.validator.coordinator.MilestoneBasedBlockFactory;
+import tech.pegasys.teku.validator.coordinator.StoredLatestCanonicalBlockUpdater;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
 import tech.pegasys.teku.validator.coordinator.ValidatorIndexCacheTracker;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
@@ -544,6 +545,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initRestAPI();
     initOperationsReOrgManager();
     initValidatorIndexCacheTracker();
+    initStoredLatestCanonicalBlockUpdater();
   }
 
   private void initKeyValueStore() {
@@ -1341,6 +1343,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blsToExecutionChangePool,
             recentChainData);
     eventChannels.subscribe(ChainHeadChannel.class, operationsReOrgManager);
+  }
+
+  protected void initStoredLatestCanonicalBlockUpdater() {
+    LOG.debug("BeaconChainController.initStoredLatestCanonicalBlockUpdater()");
+    final StoredLatestCanonicalBlockUpdater storedLatestCanonicalBlockUpdater =
+        new StoredLatestCanonicalBlockUpdater(recentChainData);
+
+    eventChannels.subscribe(SlotEventsChannel.class, storedLatestCanonicalBlockUpdater);
   }
 
   protected void initValidatorIndexCacheTracker() {

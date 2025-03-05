@@ -22,8 +22,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
-import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -87,21 +85,6 @@ class TickProcessorTest {
     assertThatSafeFuture(laterTickResult).isNotDone();
     laterCommitComplete.complete(null);
     assertThatSafeFuture(laterTickResult).isCompleted();
-  }
-
-  @Test
-  void shouldUpdateLatestCanonicalRoot() {
-    final Optional<Bytes32> blockRoot = Optional.of(Bytes32.fromHexString("0x01"));
-    final StoreTransaction storeTransaction = mock(StoreTransaction.class);
-    when(storeTransaction.commit()).thenReturn(SafeFuture.COMPLETE);
-
-    when(recentChainData.startStoreTransaction()).thenReturn(storeTransaction);
-    when(recentChainData.getBestBlockRoot()).thenReturn(blockRoot);
-
-    final SafeFuture<Void> result = tickProcessor.onTick(UInt64.valueOf(100));
-    assertThatSafeFuture(result).isCompleted();
-
-    verify(storeTransaction).setLatestCanonicalBlockRoot(blockRoot.get());
   }
 
   @Test

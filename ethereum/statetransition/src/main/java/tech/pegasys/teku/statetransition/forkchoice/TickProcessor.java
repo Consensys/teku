@@ -54,7 +54,6 @@ public class TickProcessor {
   private synchronized SafeFuture<Void> processOnTick() {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     spec.onTick(transaction, highestPendingTime);
-    recentChainData.getBestBlockRoot().ifPresent(transaction::setLatestCanonicalBlockRoot);
     highestProcessedTime = highestPendingTime;
     nextUpdateScheduled = false;
     lastUpdate = transaction.commit();
