@@ -185,6 +185,8 @@ public class ProtoArray {
       parent.adjustWeight(1);
       node = parent;
     }
+
+    applyToNodes(this::updateBestDescendantOfParent);
   }
 
   /**
