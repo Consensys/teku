@@ -91,11 +91,11 @@ public class AnchorPoint extends StateAndBlockSummary {
     return new AnchorPoint(spec, genesisCheckpoint, genesisState, signedGenesisBlock);
   }
 
-  public static AnchorPoint fromInitialState(final Spec spec, final BeaconState state) {
+  public static AnchorPoint fromInitialState(final Spec spec, final BeaconState state, final BeaconState finalizedState) {
     if (isGenesisState(state)) {
       return fromGenesisState(spec, state);
     } else {
-      final BeaconBlockHeader header = BeaconBlockHeader.fromState(state);
+      final BeaconBlockHeader header = BeaconBlockHeader.fromState(finalizedState);
 
       // Calculate closest epoch boundary to use for the checkpoint
       final UInt64 epoch = state.getFinalizedCheckpoint().getEpochStartSlot(spec);
