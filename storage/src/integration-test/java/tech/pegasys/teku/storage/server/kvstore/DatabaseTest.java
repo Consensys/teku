@@ -1642,6 +1642,7 @@ public class DatabaseTest {
             .asyncRunner(mock(AsyncRunner.class))
             .blockProvider(mock(BlockProvider.class))
             .stateProvider(mock(StateAndBlockSummaryProvider.class))
+            .latestCanonicalBlockRoot(Optional.empty())
             .build();
 
     assertThat(store.getTimeSeconds()).isEqualTo(genesisTime);
