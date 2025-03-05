@@ -155,7 +155,8 @@ class RecentChainDataTest {
     chainBuilder.generateBlocksUpToSlot(10);
     final SignedBlockAndState anchor = chainBuilder.generateNextBlock();
 
-    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, anchor.getState());
+    final AnchorPoint anchorPoint =
+        AnchorPoint.fromInitialState(spec, anchor.getState(), anchor.getState());
     final UInt64 anchorBlockTime =
         anchorPoint.getBlockSlot().times(genesisSpecConfig.getSecondsPerSlot()).plus(genesisTime);
     recentChainData.initializeFromAnchorPoint(anchorPoint, UInt64.valueOf(100));
@@ -179,7 +180,8 @@ class RecentChainDataTest {
     chainBuilder.generateBlocksUpToSlot(10);
     final SignedBlockAndState anchor = chainBuilder.generateNextBlock();
 
-    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, anchor.getState());
+    final AnchorPoint anchorPoint =
+        AnchorPoint.fromInitialState(spec, anchor.getState(), anchor.getState());
     final UInt64 anchorBlockTime =
         anchorPoint.getBlockSlot().times(genesisSpecConfig.getSecondsPerSlot()).plus(genesisTime);
     final UInt64 time = genesisTime.plus(1);
@@ -198,7 +200,8 @@ class RecentChainDataTest {
     chainBuilder.generateBlocksUpToSlot(10);
     final SignedBlockAndState anchor = chainBuilder.generateNextBlock();
 
-    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, anchor.getState());
+    final AnchorPoint anchorPoint =
+        AnchorPoint.fromInitialState(spec, anchor.getState(), anchor.getState());
     final UInt64 anchorBlockTime =
         anchorPoint.getBlockSlot().times(genesisSpecConfig.getSecondsPerSlot()).plus(genesisTime);
     final UInt64 time = anchorBlockTime.plus(100);
@@ -216,7 +219,8 @@ class RecentChainDataTest {
     chainBuilder.generateBlockAtSlot(17);
     final SignedBlockAndState anchor = chain.getLast();
 
-    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, anchor.getState());
+    final AnchorPoint anchorPoint =
+        AnchorPoint.fromInitialState(spec, anchor.getState(), anchor.getState());
     final UInt64 anchorBlockTime =
         anchorPoint.getBlockSlot().times(genesisSpecConfig.getSecondsPerSlot()).plus(genesisTime);
     final UInt64 time = anchorBlockTime.plus(100);
@@ -233,7 +237,8 @@ class RecentChainDataTest {
     chainBuilder.generateBlocksUpToSlot(15);
     final SignedBlockAndState anchor = chainBuilder.generateBlockAtSlot(18);
 
-    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, anchor.getState());
+    final AnchorPoint anchorPoint =
+        AnchorPoint.fromInitialState(spec, anchor.getState(), anchor.getState());
     final UInt64 anchorBlockTime =
         anchorPoint.getBlockSlot().times(genesisSpecConfig.getSecondsPerSlot()).plus(genesisTime);
     final UInt64 time = anchorBlockTime.plus(100);
