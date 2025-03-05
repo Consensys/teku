@@ -91,7 +91,8 @@ public class AnchorPoint extends StateAndBlockSummary {
     return new AnchorPoint(spec, genesisCheckpoint, genesisState, signedGenesisBlock);
   }
 
-  public static AnchorPoint fromInitialState(final Spec spec, final BeaconState state, final BeaconState finalizedState) {
+  public static AnchorPoint fromInitialState(
+      final Spec spec, final BeaconState state, final BeaconState finalizedState) {
     if (isGenesisState(state)) {
       return fromGenesisState(spec, state);
     } else {

@@ -85,7 +85,8 @@ public class WeakSubjectivityInitializer {
       final Spec spec, final String stateResource, final String sanitizedResource)
       throws IOException {
     STATUS_LOG.loadingInitialStateResource(sanitizedResource);
-    final String finalizedStateResource = stateResource.substring(0,stateResource.lastIndexOf("/")+1) + "finalized";
+    final String finalizedStateResource =
+        stateResource.substring(0, stateResource.lastIndexOf("/") + 1) + "finalized";
     final BeaconState finalizedState = ChainDataLoader.loadState(spec, finalizedStateResource);
     final BeaconState state = ChainDataLoader.loadState(spec, stateResource);
     if (state.getSlot().isGreaterThan(state.getLatestBlockHeader().getSlot())) {
