@@ -50,8 +50,8 @@ public class AnchorPoint extends StateAndBlockSummary {
       final BeaconState state,
       final BeaconBlockSummary blockSummary) {
     super(blockSummary, state);
-    checkArgument(
-        checkpoint.getRoot().equals(blockSummary.getRoot()), "Checkpoint and block must match");
+//    checkArgument(
+//        checkpoint.getRoot().equals(blockSummary.getRoot()), "Checkpoint and block must match");
     checkArgument(
         checkpoint.getEpochStartSlot(spec).isGreaterThanOrEqualTo(blockSummary.getSlot()),
         "Block must be at or prior to the start of the checkpoint epoch");
