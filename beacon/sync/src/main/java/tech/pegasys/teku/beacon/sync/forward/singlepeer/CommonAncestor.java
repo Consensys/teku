@@ -62,6 +62,9 @@ public class CommonAncestor {
         localNonFinalisedSlotCount,
         peerHeadSlot);
 
+    // Note: The underlying findCommonAncestor implementation now compares the remote chain
+    // with all local chains (both canonical and non-canonical) to find the best common ancestor,
+    // which helps avoid unnecessary redownloading of blocks.
     return getCommonAncestor(
         peer,
         lowestHeadSlot.minusMinZero(BLOCK_COUNT_PER_ATTEMPT.decrement()),

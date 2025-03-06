@@ -497,32 +497,63 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   public Optional<SlotAndBlockRoot> findCommonAncestor(final Bytes32 root1, final Bytes32 root2) {
     protoArrayLock.readLock().lock();
     try {
-      Optional<ProtoNode> chainHead1 = protoArray.getProtoNode(root1);
-      Optional<ProtoNode> chainHead2 = protoArray.getProtoNode(root2);
-      while (chainHead1.isPresent() && chainHead2.isPresent()) {
-        final ProtoNode node1 = chainHead1.get();
-        final ProtoNode node2 = chainHead2.get();
-        if (node1.getBlockSlot().isGreaterThan(node2.getBlockSlot())) {
-          // Chain 1 is longer than chain 2 so need to move further up chain 2
-          chainHead1 = node1.getParentIndex().map(protoArray::getNodeByIndex);
-        } else if (node2.getBlockSlot().isGreaterThan(node1.getBlockSlot())) {
-          // Chain 2 is longer than chain 1 so need to move further up chain 1
-          chainHead2 = node2.getParentIndex().map(protoArray::getNodeByIndex);
-        } else {
-          // At the same slot, check if this is the common ancestor
-          if (node1.getBlockRoot().equals(node2.getBlockRoot())) {
-            return Optional.of(new SlotAndBlockRoot(node1.getBlockSlot(), node1.getBlockRoot()));
+      // First try to find direct common ancestor between the two specific chains
+      Optional<SlotAndBlockRoot> directCommonAncestor = findDirectCommonAncestor(root1, root2);
+      if (directCommonAncestor.isPresent()) {
+        return directCommonAncestor;
+      }
+
+      // If the direct search doesn't find a common ancestor, try considering non-canonical chains
+      // If root2 is from a remote chain we're syncing with, check all local chain heads
+      List<ProtoNodeData> chainHeads = getChainHeads(true); // Include non-viable heads
+      
+      Optional<SlotAndBlockRoot> bestCommonAncestor = Optional.empty();
+      UInt64 bestCommonAncestorSlot = UInt64.ZERO;
+
+      // Try each local chain head to find the best common ancestor
+      for (ProtoNodeData chainHead : chainHeads) {
+        if (!chainHead.getBlockRoot().equals(root1)) { // Skip if it's the same as root1
+          Optional<SlotAndBlockRoot> commonAncestor = 
+              findDirectCommonAncestor(chainHead.getBlockRoot(), root2);
+          
+          if (commonAncestor.isPresent() && 
+              commonAncestor.get().getSlot().isGreaterThan(bestCommonAncestorSlot)) {
+            bestCommonAncestor = commonAncestor;
+            bestCommonAncestorSlot = commonAncestor.get().getSlot();
           }
-          // Nope, need to move further up both chains
-          chainHead1 = node1.getParentIndex().map(protoArray::getNodeByIndex);
-          chainHead2 = node2.getParentIndex().map(protoArray::getNodeByIndex);
         }
       }
-      // Reached the start of protoarray without finding a common ancestor
-      return Optional.empty();
+
+      return bestCommonAncestor;
     } finally {
       protoArrayLock.readLock().unlock();
     }
+  }
+
+  // Helper method that implements the original findCommonAncestor logic
+  private Optional<SlotAndBlockRoot> findDirectCommonAncestor(final Bytes32 root1, final Bytes32 root2) {
+    Optional<ProtoNode> chainHead1 = protoArray.getProtoNode(root1);
+    Optional<ProtoNode> chainHead2 = protoArray.getProtoNode(root2);
+    while (chainHead1.isPresent() && chainHead2.isPresent()) {
+      final ProtoNode node1 = chainHead1.get();
+      final ProtoNode node2 = chainHead2.get();
+      if (node1.getBlockSlot().isGreaterThan(node2.getBlockSlot())) {
+        // Chain 1 is longer than chain 2 so need to move further up chain 2
+        chainHead1 = node1.getParentIndex().map(protoArray::getNodeByIndex);
+      } else if (node2.getBlockSlot().isGreaterThan(node1.getBlockSlot())) {
+        // Chain 2 is longer than chain 1 so need to move further up chain 1
+        chainHead2 = node2.getParentIndex().map(protoArray::getNodeByIndex);
+      } else {
+        // At the same slot, check if this is the common ancestor
+        if (node1.getBlockRoot().equals(node2.getBlockRoot())) {
+          return Optional.of(new SlotAndBlockRoot(node1.getBlockSlot(), node1.getBlockRoot()));
+        }
+        // Nope, need to move further up both chains
+        chainHead1 = node1.getParentIndex().map(protoArray::getNodeByIndex);
+        chainHead2 = node2.getParentIndex().map(protoArray::getNodeByIndex);
+      }
+    }
+    return Optional.empty();
   }
 
   @VisibleForTesting
