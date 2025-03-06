@@ -15,9 +15,8 @@ package tech.pegasys.teku.beacon.sync;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import tech.pegasys.teku.networking.eth2.P2PConfig;
-
 import java.util.OptionalInt;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
 
 public class SyncConfig {
 
@@ -109,9 +108,9 @@ public class SyncConfig {
     return forwardSyncMaxBlobSidecarsPerMinute;
   }
 
-    public OptionalInt getForwardSyncMaxDistanceFromHead() {
-        return forwardSyncMaxDistanceFromHead;
-    }
+  public OptionalInt getForwardSyncMaxDistanceFromHead() {
+    return forwardSyncMaxDistanceFromHead;
+  }
 
   public static class Builder {
     private Boolean isEnabled;
@@ -140,7 +139,7 @@ public class SyncConfig {
           forwardSyncMaxPendingBatches,
           forwardSyncMaxBlocksPerMinute,
           forwardSyncMaxBlobSidecarsPerMinute,
-              forwardSyncMaxDistanceFromHead);
+          forwardSyncMaxDistanceFromHead);
     }
 
     private void initMissingDefaults() {

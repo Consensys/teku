@@ -16,7 +16,6 @@ package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import java.util.OptionalInt;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -42,12 +41,16 @@ public class CommonAncestor {
   private final int maxAttempts;
   private final OptionalInt maxDistanceFromHead;
 
-  public CommonAncestor(final RecentChainData recentChainData, final OptionalInt maxDistanceFromHead) {
+  public CommonAncestor(
+      final RecentChainData recentChainData, final OptionalInt maxDistanceFromHead) {
     this(recentChainData, DEFAULT_MAX_ATTEMPTS, maxDistanceFromHead);
   }
 
   @VisibleForTesting
-  CommonAncestor(final RecentChainData recentChainData, final int maxAttempts, final OptionalInt maxDistanceFromHead) {
+  CommonAncestor(
+      final RecentChainData recentChainData,
+      final int maxAttempts,
+      final OptionalInt maxDistanceFromHead) {
     this.recentChainData = recentChainData;
     this.maxAttempts = maxAttempts;
     this.maxDistanceFromHead = maxDistanceFromHead;
@@ -80,13 +83,12 @@ public class CommonAncestor {
       final int attempt) {
     final UInt64 lastSlot = firstRequestedSlot.plus(BLOCK_COUNT_PER_ATTEMPT);
 
-    if(maxDistanceFromHeadReached(lastSlot)) {
+    if (maxDistanceFromHeadReached(lastSlot)) {
       return SafeFuture.failedFuture(new RuntimeException("Max distance from head reached"));
     }
     if (attempt >= maxAttempts || firstRequestedSlot.isLessThanOrEqualTo(firstNonFinalSlot)) {
       return SafeFuture.completedFuture(firstNonFinalSlot);
     }
-
 
     LOG.debug("Sampling ahead from {} to {}.", firstRequestedSlot, lastSlot);
 
@@ -103,13 +105,15 @@ public class CommonAncestor {
             __ ->
                 blockResponseListener
                     .getBestSlot()
-                    .<SafeFuture<UInt64>>map(bestSlot -> {
-                      if(maxDistanceFromHeadReached(bestSlot)) {
-                        return SafeFuture.failedFuture(new RuntimeException("Max distance from head reached"));
-                      } else {
-                        return SafeFuture.completedFuture(bestSlot);
-                      }
-                    })
+                    .<SafeFuture<UInt64>>map(
+                        bestSlot -> {
+                          if (maxDistanceFromHeadReached(bestSlot)) {
+                            return SafeFuture.failedFuture(
+                                new RuntimeException("Max distance from head reached"));
+                          } else {
+                            return SafeFuture.completedFuture(bestSlot);
+                          }
+                        })
                     .orElseGet(
                         () ->
                             getCommonAncestor(
@@ -121,10 +125,11 @@ public class CommonAncestor {
   }
 
   private boolean maxDistanceFromHeadReached(final UInt64 slot) {
-    if(maxDistanceFromHead.isEmpty()) {
+    if (maxDistanceFromHead.isEmpty()) {
       return false;
     }
-    final UInt64 oldestAcceptedSlotFromHead = recentChainData.getHeadSlot().minusMinZero(maxDistanceFromHead.getAsInt());
+    final UInt64 oldestAcceptedSlotFromHead =
+        recentChainData.getHeadSlot().minusMinZero(maxDistanceFromHead.getAsInt());
     return slot.isLessThan(oldestAcceptedSlotFromHead);
   }
 

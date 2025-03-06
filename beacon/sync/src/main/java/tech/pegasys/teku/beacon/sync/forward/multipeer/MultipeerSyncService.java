@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer;
 
+import java.util.OptionalInt;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
@@ -42,8 +43,6 @@ import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-import java.util.OptionalInt;
-
 public class MultipeerSyncService extends Service implements ForwardSyncService {
   private final SyncStallDetector syncStallDetector;
   private final EventThread eventThread;
@@ -65,21 +64,21 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
   }
 
   public static MultipeerSyncService create(
-          final MetricsSystem metricsSystem,
-          final AsyncRunnerFactory asyncRunnerFactory,
-          final AsyncRunner asyncRunner,
-          final TimeProvider timeProvider,
-          final RecentChainData recentChainData,
-          final PendingPool<SignedBeaconBlock> pendingBlocks,
-          final P2PNetwork<Eth2Peer> p2pNetwork,
-          final BlockImporter blockImporter,
-          final BlobSidecarManager blobSidecarManager,
-          final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
-          final int batchSize,
-          final int maxPendingBatches,
-          final int maxBlocksPerMinute,
-          final int maxBlobSidecarsPerMinute,
-          final OptionalInt maxDistanceFromHeadReached,
+      final MetricsSystem metricsSystem,
+      final AsyncRunnerFactory asyncRunnerFactory,
+      final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
+      final RecentChainData recentChainData,
+      final PendingPool<SignedBeaconBlock> pendingBlocks,
+      final P2PNetwork<Eth2Peer> p2pNetwork,
+      final BlockImporter blockImporter,
+      final BlobSidecarManager blobSidecarManager,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final int batchSize,
+      final int maxPendingBatches,
+      final int maxBlocksPerMinute,
+      final int maxBlobSidecarsPerMinute,
+      final OptionalInt maxDistanceFromHeadReached,
       final Spec spec) {
     final EventThread eventThread = new AsyncRunnerEventThread("sync", asyncRunnerFactory);
     final SettableLabelledGauge targetChainCountGauge =
@@ -102,7 +101,8 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
                 eventThread, blobSidecarManager, new PeerScoringConflictResolutionStrategy()),
             batchSize,
             maxPendingBatches,
-            MultipeerCommonAncestorFinder.create(recentChainData, eventThread, maxDistanceFromHeadReached, spec),
+            MultipeerCommonAncestorFinder.create(
+                recentChainData, eventThread, maxDistanceFromHeadReached, spec),
             timeProvider);
     final SyncController syncController =
         new SyncController(
