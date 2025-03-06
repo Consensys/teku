@@ -286,6 +286,43 @@ abstract class AbstractBlockMetadataStoreTest {
     assertCommonAncestorFound(chainHead.getRoot(), forkHead.getRoot(), Optional.empty());
   }
 
+  @Test
+  void findCommonAncestor_withNonCanonicalChains() {
+    // Create a non-canonical fork
+    final ProtoNode genesisNode = createProtoNode(GENESIS_SLOT, GENESIS_BLOCK_ROOT);
+    final ProtoNode chainBlock1 = createProtoNode(UInt64.valueOf(1), Bytes32.fromHexString("0x01"));
+    chainBlock1.setParentIndex(Optional.of(0));
+    final ProtoNode chainBlock2 = createProtoNode(UInt64.valueOf(2), Bytes32.fromHexString("0x02"));
+    chainBlock2.setParentIndex(Optional.of(1));
+    
+    // Create a non-canonical fork that branches off at block 1
+    final ProtoNode forkBlock2 = createProtoNode(UInt64.valueOf(2), Bytes32.fromHexString("0x22"));
+    forkBlock2.setParentIndex(Optional.of(1));
+    final ProtoNode forkBlock3 = createProtoNode(UInt64.valueOf(3), Bytes32.fromHexString("0x23"));
+    forkBlock3.setParentIndex(Optional.of(2));
+    
+    // Remote chain that shares blocks with the non-canonical fork
+    final ProtoNode remoteBlock2 = createProtoNode(UInt64.valueOf(2), Bytes32.fromHexString("0x22")); // Same as forkBlock2
+    remoteBlock2.setParentIndex(Optional.of(1));
+    final ProtoNode remoteBlock3 = createProtoNode(UInt64.valueOf(3), Bytes32.fromHexString("0x33")); // Different from forkBlock3
+    remoteBlock3.setParentIndex(Optional.of(2));
+    
+    // Build the store with both the canonical chain and the fork
+    final List<ProtoNode> nodes = 
+        List.of(genesisNode, chainBlock1, chainBlock2, forkBlock2, forkBlock3, remoteBlock2, remoteBlock3);
+    final BlockMetadataStore store = createBlockMetadataStore(nodes);
+    
+    // When finding common ancestor between canonical head and remote head, 
+    // should find the best match by considering the non-canonical fork
+    Optional<SlotAndBlockRoot> commonAncestor = 
+        store.findCommonAncestor(chainBlock2.getBlockRoot(), remoteBlock3.getBlockRoot());
+    
+    // Should find forkBlock2 as the common ancestor even though it's not on the canonical chain
+    assertThat(commonAncestor).isPresent();
+    assertThat(commonAncestor.get().getSlot()).isEqualTo(UInt64.valueOf(2));
+    assertThat(commonAncestor.get().getBlockRoot()).isEqualTo(forkBlock2.getBlockRoot());
+  }
+
   private void assertCommonAncestorFound(
       final Bytes32 root1,
       final Bytes32 root2,
