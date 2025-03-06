@@ -186,8 +186,11 @@ public class SyncConfig {
     }
 
     public Builder forwardSyncMaxDistanceFromHead(final Integer forwardSyncMaxDistanceFromHead) {
-      checkNotNull(forwardSyncMaxDistanceFromHead);
-      this.forwardSyncMaxDistanceFromHead = OptionalInt.of(forwardSyncMaxDistanceFromHead);
+      if (forwardSyncMaxDistanceFromHead == null) {
+        this.forwardSyncMaxDistanceFromHead = OptionalInt.empty();
+      } else {
+        this.forwardSyncMaxDistanceFromHead = OptionalInt.of(forwardSyncMaxDistanceFromHead);
+      }
       return this;
     }
 
