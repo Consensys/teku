@@ -1348,7 +1348,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initStoredLatestCanonicalBlockUpdater() {
     LOG.debug("BeaconChainController.initStoredLatestCanonicalBlockUpdater()");
     final StoredLatestCanonicalBlockUpdater storedLatestCanonicalBlockUpdater =
-        new StoredLatestCanonicalBlockUpdater(recentChainData);
+        new StoredLatestCanonicalBlockUpdater(recentChainData, spec);
 
     eventChannels.subscribe(SlotEventsChannel.class, storedLatestCanonicalBlockUpdater);
   }

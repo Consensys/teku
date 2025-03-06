@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -23,32 +24,44 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class StoredLatestCanonicalBlockUpdaterTest {
   private final RecentChainData recentChainData = mock(RecentChainData.class);
-
-  private final StoredLatestCanonicalBlockUpdater updater =
-      new StoredLatestCanonicalBlockUpdater(recentChainData);
+  final StoreTransaction storeTransaction = mock(StoreTransaction.class);
+  private StoredLatestCanonicalBlockUpdater updater;
 
   @Test
   void onSlot_shouldUpdateLatestCanonicalBlockRoot() {
-    final Optional<Bytes32> blockRoot = Optional.of(Bytes32.fromHexString("0x01"));
-    final StoreTransaction storeTransaction = mock(StoreTransaction.class);
+    testSuccessWithSpec(TestSpecFactory.createMainnetDeneb());
+  }
+
+  @Test
+  void onSlot_shouldNotUpdateLatestCanonicalBlockRoot2() {
+    testSuccessWithSpec(TestSpecFactory.createMinimalDeneb());
+  }
+
+  void testSuccessWithSpec(final Spec spec) {
+    final Bytes32 blockRoot = Bytes32.fromHexString("0x01");
+    updater = new StoredLatestCanonicalBlockUpdater(recentChainData, spec);
+    assertThat(updater.getSlotsPerEpoch()).isEqualTo(spec.getGenesisSpec().getSlotsPerEpoch());
     when(storeTransaction.commit()).thenReturn(SafeFuture.COMPLETE);
-
     when(recentChainData.startStoreTransaction()).thenReturn(storeTransaction);
-    when(recentChainData.getBestBlockRoot()).thenReturn(blockRoot);
+    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
 
-    updater.onSlot(UInt64.valueOf(33));
+    updater.onSlot(UInt64.valueOf(spec.getGenesisSpec().getSlotsPerEpoch()).increment());
 
-    verify(storeTransaction).setLatestCanonicalBlockRoot(blockRoot.get());
+    verify(storeTransaction).setLatestCanonicalBlockRoot(blockRoot);
   }
 
   @Test
   void onSlot_shouldNotUpdateLatestCanonicalBlockRoot() {
-    updater.onSlot(UInt64.valueOf(32));
+    final Spec spec = TestSpecFactory.createDefault();
+    updater = new StoredLatestCanonicalBlockUpdater(recentChainData, spec);
+    updater.onSlot(UInt64.valueOf(spec.getGenesisSpec().getSlotsPerEpoch()));
 
     verifyNoInteractions(recentChainData);
   }
