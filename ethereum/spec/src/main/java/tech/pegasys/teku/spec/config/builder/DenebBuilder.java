@@ -17,10 +17,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.collections.Interval;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
@@ -43,6 +45,7 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
   private Integer minEpochsForBlobSidecarsRequests;
   private Integer blobSidecarSubnetCount;
   private Optional<Integer> epochsStoreBlobs = Optional.empty();
+  private List<Interval<UInt64>> incidentIntervals = List.of();
 
   DenebBuilder() {}
 
@@ -63,7 +66,8 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
             maxRequestBlobSidecars,
             minEpochsForBlobSidecarsRequests,
             blobSidecarSubnetCount,
-            epochsStoreBlobs),
+            epochsStoreBlobs,
+            incidentIntervals),
         specConfigAndParent);
   }
 
@@ -130,6 +134,11 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
 
   public DenebBuilder epochsStoreBlobs(final Optional<Integer> epochsStoreBlobs) {
     this.epochsStoreBlobs = epochsStoreBlobs;
+    return this;
+  }
+
+  public DenebBuilder incidentIntervals(final List<Interval<UInt64>> incidentIntervals) {
+    this.incidentIntervals = incidentIntervals;
     return this;
   }
 

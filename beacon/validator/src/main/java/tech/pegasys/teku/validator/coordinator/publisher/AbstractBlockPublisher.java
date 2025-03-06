@@ -90,6 +90,7 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
           final BroadcastValidationLevel broadcastValidationLevel,
           final BlockPublishingPerformance blockPublishingPerformance) {
 
+    LOG.info("BroadcastValidationLevel:{}", broadcastValidationLevel);
     if (broadcastValidationLevel == BroadcastValidationLevel.NOT_REQUIRED) {
       // when broadcast validation is disabled, we can publish the block (and blob sidecars)
       // immediately and then import
@@ -118,6 +119,7 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
         .thenAccept(
             broadcastValidationResult -> {
               if (broadcastValidationResult == BroadcastValidationResult.SUCCESS) {
+                LOG.info("Publishing block, {}", broadcastValidationResult);
                 publishBlockAndBlobs(block, blobSidecars, blockPublishingPerformance);
                 LOG.debug("Block (and blob sidecars) publishing initiated");
               } else {

@@ -14,9 +14,11 @@
 package tech.pegasys.teku.spec.config;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.collections.Interval;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfigDeneb {
@@ -57,6 +59,8 @@ public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfig
   int getKzgCommitmentInclusionProofDepth();
 
   int getEpochsStoreBlobs();
+
+  List<Interval<UInt64>> getIncidentIntervals();
 
   @Override
   Optional<SpecConfigDeneb> toVersionDeneb();

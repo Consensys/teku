@@ -1266,7 +1266,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockValidator,
             timeProvider,
             EVENT_LOG,
-            importMetrics);
+            importMetrics,
+            spec);
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       final FailedExecutionPool failedExecutionPool =
           new FailedExecutionPool(blockManager, beaconAsyncRunner);

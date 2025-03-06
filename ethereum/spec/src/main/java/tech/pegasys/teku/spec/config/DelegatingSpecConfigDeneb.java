@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.spec.config;
 
+import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.collections.Interval;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class DelegatingSpecConfigDeneb extends DelegatingSpecConfigCapella
@@ -69,6 +71,11 @@ public class DelegatingSpecConfigDeneb extends DelegatingSpecConfigCapella
   @Override
   public int getEpochsStoreBlobs() {
     return specConfigDeneb.getEpochsStoreBlobs();
+  }
+
+  @Override
+  public List<Interval<UInt64>> getIncidentIntervals() {
+    return specConfigDeneb.getIncidentIntervals();
   }
 
   @Override

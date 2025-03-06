@@ -113,6 +113,10 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   public synchronized void add(final ValidatableAttestation attestation) {
+    LOG.info(
+        "Adding attestation source: {}, target: {}",
+        attestation.getData().getSource(),
+        attestation.getData().getTarget());
     final Optional<Int2IntMap> committeesSize =
         attestation.getCommitteesSize().or(() -> getCommitteesSize(attestation.getAttestation()));
     getOrCreateAttestationGroup(attestation.getAttestation(), committeesSize)
