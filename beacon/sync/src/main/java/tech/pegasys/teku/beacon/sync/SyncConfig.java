@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 
+import java.util.OptionalInt;
+
 public class SyncConfig {
 
   public static final boolean DEFAULT_MULTI_PEER_SYNC_ENABLED = true;
@@ -115,6 +117,7 @@ public class SyncConfig {
     private Integer forwardSyncMaxBlocksPerMinute = DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE;
     private Integer forwardSyncMaxBlobSidecarsPerMinute =
         DEFAULT_FORWARD_SYNC_MAX_BLOB_SIDECARS_PER_MINUTE;
+    private OptionalInt forwardSyncMaxDistanceFromHead = OptionalInt.empty();
 
     private Builder() {}
 
@@ -172,6 +175,12 @@ public class SyncConfig {
     public Builder forwardSyncMaxPendingBatches(final Integer forwardSyncMaxPendingBatches) {
       checkNotNull(forwardSyncMaxPendingBatches);
       this.forwardSyncMaxPendingBatches = forwardSyncMaxPendingBatches;
+      return this;
+    }
+
+    public Builder forwardSyncMaxDistanceFromHead(final Integer forwardSyncMaxDistanceFromHead) {
+      checkNotNull(forwardSyncMaxDistanceFromHead);
+      this.forwardSyncMaxDistanceFromHead = OptionalInt.of(forwardSyncMaxDistanceFromHead);
       return this;
     }
 

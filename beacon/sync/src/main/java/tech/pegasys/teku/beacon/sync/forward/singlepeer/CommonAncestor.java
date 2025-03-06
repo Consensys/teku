@@ -15,6 +15,8 @@ package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
+import java.util.OptionalInt;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -44,7 +46,7 @@ public class CommonAncestor {
   }
 
   @VisibleForTesting
-  CommonAncestor(final RecentChainData recentChainData, final int maxAttempts) {
+  CommonAncestor(final RecentChainData recentChainData, final int maxAttempts, final OptionalInt maxDistanceFromHead) {
     this.recentChainData = recentChainData;
     this.maxAttempts = maxAttempts;
   }
