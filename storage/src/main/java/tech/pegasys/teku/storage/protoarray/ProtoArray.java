@@ -161,6 +161,34 @@ public class ProtoArray {
     updateBestDescendantOfParent(node, nodeIndex);
   }
 
+  public void setInitialCanonicalBlockRoot(final Bytes32 initialCanonicalBlockRoot) {
+    final Optional<ProtoNode> initialCanonicalProtoNode = getProtoNode(initialCanonicalBlockRoot);
+    if (initialCanonicalProtoNode.isEmpty()) {
+      LOG.warn("Initial canonical block root not found: {}", initialCanonicalBlockRoot);
+      return;
+    }
+
+    applyToNodes(this::updateBestDescendantOfParent);
+
+    // let's peak the best descendant of the initial canonical block root
+    ProtoNode node =
+        initialCanonicalProtoNode
+            .get()
+            .getBestDescendantIndex()
+            .map(this::getNodeByIndex)
+            .orElse(initialCanonicalProtoNode.get());
+
+    // add a single weight to from the best descendant up to the root
+    node.adjustWeight(1);
+    while (node.getParentIndex().isPresent()) {
+      final ProtoNode parent = getNodeByIndex(node.getParentIndex().get());
+      parent.adjustWeight(1);
+      node = parent;
+    }
+
+    applyToNodes(this::updateBestDescendantOfParent);
+  }
+
   /**
    * Follows the best-descendant links to find the best-block (i.e. head-block), including any
    * optimistic nodes which have not yet been fully validated.

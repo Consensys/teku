@@ -86,6 +86,10 @@ public class SchemaHotAdapter implements Schema {
     return delegate.getVariableFinalizedCheckpoint();
   }
 
+  public KvStoreVariable<Bytes32> getVariableLatestCanonicalBlockRoot() {
+    return delegate.getVariableLatestCanonicalBlockRoot();
+  }
+
   public KvStoreVariable<BeaconState> getVariableLatestFinalizedState() {
     return delegate.getVariableLatestFinalizedState();
   }
@@ -145,7 +149,9 @@ public class SchemaHotAdapter implements Schema {
         "ANCHOR_CHECKPOINT",
         getVariableAnchorCheckpoint(),
         "FINALIZED_DEPOSIT_SNAPSHOT",
-        getVariableFinalizedDepositSnapshot());
+        getVariableFinalizedDepositSnapshot(),
+        "LATEST_CANONICAL_BLOCK_ROOT",
+        getVariableLatestCanonicalBlockRoot());
   }
 
   @Override
