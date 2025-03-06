@@ -15,6 +15,8 @@ package tech.pegasys.teku.beacon.sync.forward.multipeer;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
+import java.util.OptionalInt;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
@@ -46,9 +48,9 @@ public class MultipeerCommonAncestorFinder {
   }
 
   public static MultipeerCommonAncestorFinder create(
-      final RecentChainData recentChainData, final EventThread eventThread, final Spec spec) {
+          final RecentChainData recentChainData, final EventThread eventThread, final OptionalInt maxDistanceFromHeadReached, final Spec spec) {
     return new MultipeerCommonAncestorFinder(
-        recentChainData, new CommonAncestor(recentChainData), eventThread, spec);
+        recentChainData, new CommonAncestor(recentChainData, maxDistanceFromHeadReached), eventThread, spec);
   }
 
   public SafeFuture<UInt64> findCommonAncestor(final TargetChain targetChain) {

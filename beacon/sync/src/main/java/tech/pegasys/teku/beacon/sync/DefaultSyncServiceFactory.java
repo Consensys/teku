@@ -197,6 +197,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               syncConfig.getForwardSyncMaxPendingBatches(),
               syncConfig.getForwardSyncMaxBlocksPerMinute(),
               syncConfig.getForwardSyncMaxBlobSidecarsPerMinute(),
+                  syncConfig.getForwardSyncMaxDistanceFromHead(),
               spec);
     } else {
       LOG.info("Using single peer sync");
@@ -210,6 +211,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               blobSidecarManager,
               blockBlobSidecarsTrackersPool,
               syncConfig.getForwardSyncBatchSize(),
+                  syncConfig.getForwardSyncMaxDistanceFromHead(),
               spec);
     }
     return forwardSync;

@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -94,6 +95,7 @@ public class SyncManager extends Service {
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final MetricsSystem metricsSystem,
       final int batchSize,
+      final OptionalInt maxDistanceFromHeadReached,
       final Spec spec) {
     final PeerSync peerSync =
         new PeerSync(
@@ -103,6 +105,7 @@ public class SyncManager extends Service {
             blobSidecarManager,
             blockBlobSidecarsTrackersPool,
             batchSize,
+                maxDistanceFromHeadReached,
             metricsSystem);
     return new SyncManager(asyncRunner, network, recentChainData, peerSync, spec);
   }

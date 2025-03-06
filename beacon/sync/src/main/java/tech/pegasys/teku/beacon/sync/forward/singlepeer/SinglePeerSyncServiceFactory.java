@@ -24,6 +24,8 @@ import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
+import java.util.OptionalInt;
+
 public class SinglePeerSyncServiceFactory {
   public static ForwardSyncService create(
       final MetricsSystem metricsSystem,
@@ -34,6 +36,7 @@ public class SinglePeerSyncServiceFactory {
       final BlobSidecarManager blobSidecarManager,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final int batchSize,
+      final OptionalInt maxDistanceFromHeadReached,
       final Spec spec) {
     final SyncManager syncManager =
         SyncManager.create(
@@ -45,6 +48,7 @@ public class SinglePeerSyncServiceFactory {
             blockBlobSidecarsTrackersPool,
             metricsSystem,
             batchSize,
+                maxDistanceFromHeadReached,
             spec);
     return new SinglePeerSyncService(syncManager, recentChainData);
   }

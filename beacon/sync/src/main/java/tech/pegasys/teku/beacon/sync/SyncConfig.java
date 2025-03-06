@@ -44,6 +44,7 @@ public class SyncConfig {
   private final int forwardSyncMaxPendingBatches;
   private final int forwardSyncMaxBlocksPerMinute;
   private final int forwardSyncMaxBlobSidecarsPerMinute;
+  private final OptionalInt forwardSyncMaxDistanceFromHead;
 
   private SyncConfig(
       final boolean isEnabled,
@@ -54,7 +55,8 @@ public class SyncConfig {
       final int forwardSyncBatchSize,
       final int forwardSyncMaxPendingBatches,
       final int forwardSyncMaxBlocksPerMinute,
-      final int forwardSyncMaxBlobSidecarsPerMinute) {
+      final int forwardSyncMaxBlobSidecarsPerMinute,
+      final OptionalInt forwardSyncMaxDistanceFromHead) {
     this.isEnabled = isEnabled;
     this.isMultiPeerSyncEnabled = isMultiPeerSyncEnabled;
     this.reconstructHistoricStatesEnabled = reconstructHistoricStatesEnabled;
@@ -64,6 +66,7 @@ public class SyncConfig {
     this.forwardSyncMaxPendingBatches = forwardSyncMaxPendingBatches;
     this.forwardSyncMaxBlocksPerMinute = forwardSyncMaxBlocksPerMinute;
     this.forwardSyncMaxBlobSidecarsPerMinute = forwardSyncMaxBlobSidecarsPerMinute;
+    this.forwardSyncMaxDistanceFromHead = forwardSyncMaxDistanceFromHead;
   }
 
   public static Builder builder() {
@@ -106,6 +109,10 @@ public class SyncConfig {
     return forwardSyncMaxBlobSidecarsPerMinute;
   }
 
+    public OptionalInt getForwardSyncMaxDistanceFromHead() {
+        return forwardSyncMaxDistanceFromHead;
+    }
+
   public static class Builder {
     private Boolean isEnabled;
     private Boolean isMultiPeerSyncEnabled = DEFAULT_MULTI_PEER_SYNC_ENABLED;
@@ -132,7 +139,8 @@ public class SyncConfig {
           forwardSyncBatchSize,
           forwardSyncMaxPendingBatches,
           forwardSyncMaxBlocksPerMinute,
-          forwardSyncMaxBlobSidecarsPerMinute);
+          forwardSyncMaxBlobSidecarsPerMinute,
+              forwardSyncMaxDistanceFromHead);
     }
 
     private void initMissingDefaults() {

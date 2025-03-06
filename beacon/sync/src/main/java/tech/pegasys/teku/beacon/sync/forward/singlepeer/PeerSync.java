@@ -17,6 +17,7 @@ import com.google.common.base.Throwables;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -77,6 +78,7 @@ public class PeerSync {
   private final AsyncRunner asyncRunner;
   private final Counter blockImportSuccessResult;
   private final Counter blockImportFailureResult;
+  private final OptionalInt maxDistanceFromHeadReached;
 
   private final AtomicInteger throttledRequestCount = new AtomicInteger(0);
 
@@ -89,6 +91,7 @@ public class PeerSync {
       final BlobSidecarManager blobSidecarManager,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final int batchSize,
+      final OptionalInt maxDistanceFromHeadReached,
       final MetricsSystem metricsSystem) {
     this.spec = recentChainData.getSpec();
     this.asyncRunner = asyncRunner;
@@ -105,6 +108,7 @@ public class PeerSync {
     this.blockImportSuccessResult = blockImportCounter.labels("imported");
     this.blockImportFailureResult = blockImportCounter.labels("rejected");
     this.batchSize = UInt64.valueOf(batchSize);
+    this.maxDistanceFromHeadReached = maxDistanceFromHeadReached;
     this.minSlotsToProgressPerRequest = this.batchSize.dividedBy(4);
   }
 
@@ -155,7 +159,7 @@ public class PeerSync {
               if (!findCommonAncestor) {
                 return SafeFuture.completedFuture(startSlot);
               }
-              CommonAncestor ancestor = new CommonAncestor(recentChainData);
+              CommonAncestor ancestor = new CommonAncestor(recentChainData, maxDistanceFromHeadReached);
               return ancestor.getCommonAncestor(peer, startSlot, status.getHeadSlot());
             })
         .thenCompose(
