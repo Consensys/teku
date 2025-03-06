@@ -94,6 +94,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Optional<Bytes32> getLatestCanonicalBlockRoot() {
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
     return Optional.empty();
   }

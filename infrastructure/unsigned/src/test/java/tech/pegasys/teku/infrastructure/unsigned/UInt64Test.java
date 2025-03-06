@@ -316,6 +316,14 @@ class UInt64Test {
         .isInstanceOf(ArithmeticException.class);
   }
 
+  @ParameterizedTest
+  @MethodSource("safePlusNumbers")
+  void safePlus_shouldAddWhenNotOverflowingLongs(
+      final long value1, final long value2, final UInt64 expected) {
+    final UInt64 uint1 = UInt64.fromLongBits(value1);
+    assertThat(uint1.safePlus(value2)).isEqualTo(expected);
+  }
+
   @Test
   void plus_shouldThrowIllegalArgumentExceptionIfNegativeLongProvided() {
     assertThatThrownBy(() -> UInt64.ONE.plus(-1)).isInstanceOf(IllegalArgumentException.class);
@@ -629,6 +637,16 @@ class UInt64Test {
     assertThat(UInt64.range(UInt64.valueOf(from), UInt64.valueOf(to)))
         .containsExactlyElementsOf(
             IntStream.range(from, to).mapToObj(UInt64::valueOf).collect(toList()));
+  }
+
+  static Stream<Arguments> safePlusNumbers() {
+    final long max = UInt64.MAX_VALUE.longValue();
+    return Stream.of(
+        Arguments.arguments(max, 0L, UInt64.MAX_VALUE),
+        Arguments.arguments(max - 10L, 10L, UInt64.MAX_VALUE),
+        Arguments.arguments(max - 11L, 10L, UInt64.MAX_VALUE.minus(1)),
+        Arguments.arguments(1L, 10L, UInt64.valueOf(11)),
+        Arguments.arguments(max, 1L, UInt64.MAX_VALUE));
   }
 
   static List<Arguments> rangeNumbers() {

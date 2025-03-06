@@ -73,6 +73,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Map<Bytes32, TransactionBlockData> blockData = new HashMap<>();
   Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new HashMap<>();
   Optional<UInt64> maybeEarliestBlobSidecarTransactionSlot = Optional.empty();
+  Optional<Bytes32> maybeLatestCanonicalBlockRoot = Optional.empty();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
 
   StoreTransaction(
@@ -170,6 +171,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   public void setProposerBoostRoot(final Bytes32 boostedBlockRoot) {
     proposerBoostRoot = Optional.of(boostedBlockRoot);
     proposerBoostRootSet = true;
+  }
+
+  @Override
+  public void setLatestCanonicalBlockRoot(final Bytes32 latestCanonicalBlockRoot) {
+    maybeLatestCanonicalBlockRoot = Optional.of(latestCanonicalBlockRoot);
   }
 
   @Override

@@ -120,6 +120,8 @@ public interface Database extends AutoCloseable {
 
   Optional<UInt64> getSlotForFinalizedStateRoot(Bytes32 stateRoot);
 
+  Optional<Bytes32> getLatestCanonicalBlockRoot();
+
   /**
    * Return the finalized block at this slot if such a block exists.
    *

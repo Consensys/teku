@@ -20,16 +20,10 @@ public class GossipSubValidationUtil {
 
   public static ValidationResult fromInternalValidationResult(
       final InternalValidationResult result) {
-    switch (result.code()) {
-      case ACCEPT:
-        return ValidationResult.Valid;
-      case SAVE_FOR_FUTURE:
-      case IGNORE:
-        return ValidationResult.Ignore;
-      case REJECT:
-        return ValidationResult.Invalid;
-      default:
-        throw new IllegalArgumentException("Unexpected internal validation result: " + result);
-    }
+    return switch (result.code()) {
+      case ACCEPT -> ValidationResult.Valid;
+      case SAVE_FOR_FUTURE, IGNORE -> ValidationResult.Ignore;
+      case REJECT -> ValidationResult.Invalid;
+    };
   }
 }

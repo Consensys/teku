@@ -519,6 +519,39 @@ class ProtoArrayTest {
     assertThat(protoArray.getProtoNode(block1b).orElseThrow().isOptimistic()).isTrue();
   }
 
+  @Test
+  void setInitialCanonicalBlockRoot_shouldEnsureCanonicalHeadIsSet() {
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addValidBlock(1, block1b, GENESIS_CHECKPOINT.getRoot());
+    addValidBlock(2, block2a, block1a);
+    addValidBlock(2, block2b, block1b);
+
+    // due to tie breaking block2b is the head
+    assertHead(block2b);
+
+    protoArray.setInitialCanonicalBlockRoot(block2a);
+
+    // block2a is now the head due to weight
+    assertHead(block2a);
+  }
+
+  @Test
+  void setInitialCanonicalBlockRoot_shouldEnsureCanonicalHeadIsSetWhenBlockRootIsNotAChainTip() {
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addValidBlock(1, block1b, GENESIS_CHECKPOINT.getRoot());
+    addValidBlock(2, block2a, block1a);
+    addValidBlock(2, block2b, block1b);
+
+    // due to tie breaking block2b is the head
+    assertHead(block2b);
+
+    // setting chain a as the canonical chain via non-tip block
+    protoArray.setInitialCanonicalBlockRoot(block1a);
+
+    // block2a is now the head due to weight
+    assertHead(block2a);
+  }
+
   private void assertHead(final Bytes32 expectedBlockHash) {
     final ProtoNode node = protoArray.getProtoNode(expectedBlockHash).orElseThrow();
     assertThat(
