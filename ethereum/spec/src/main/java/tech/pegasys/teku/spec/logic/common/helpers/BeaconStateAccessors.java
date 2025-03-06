@@ -338,7 +338,7 @@ public abstract class BeaconStateAccessors {
     final UInt64 oldestQueryableSlot =
         miscHelpers.getEarliestQueryableSlotForBeaconCommitteeAtTargetSlot(slot);
     if (state.getSlot().compareTo(oldestQueryableSlot) < 0) {
-      throw new StateTooOldException(slot, oldestQueryableSlot);
+      throw new StateTooOldException(state.getSlot(), oldestQueryableSlot);
     }
   }
 
