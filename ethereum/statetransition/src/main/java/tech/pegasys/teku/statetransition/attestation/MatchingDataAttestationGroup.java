@@ -302,17 +302,13 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
     private boolean maybeFilterOnCommitteeIndex(final ValidatableAttestation candidate) {
       final Optional<SszBitvector> maybeCommitteeBits =
           candidate.getAttestation().getCommitteeBits();
-      if (maybeCommitteeBits.isEmpty()) {
-        return true;
-      }
-
-      //      if (maybeCommitteeIndex.isEmpty()) {
-      //        return !candidate.getUnconvertedAttestation().isSingleAttestation()
-      //            || maybeSlot.map(slot -> attestationData.getSlot().equals(slot)).orElse(false);
+      //      if (maybeCommitteeBits.isEmpty() || maybeCommitteeIndex.isEmpty()) {
+      //        return true;
       //      }
 
       if (maybeCommitteeIndex.isEmpty()) {
-        return !candidate.getUnconvertedAttestation().isSingleAttestation();
+        return !candidate.getUnconvertedAttestation().isSingleAttestation()
+            || maybeSlot.map(slot -> attestationData.getSlot().equals(slot)).orElse(false);
       }
 
       final SszBitvector committeeBits = maybeCommitteeBits.get();
