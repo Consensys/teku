@@ -255,10 +255,7 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
   private class AggregatingIterator implements Iterator<ValidatableAttestation> {
 
     private final Optional<UInt64> maybeCommitteeIndex;
-
-    @SuppressWarnings("UnusedVariable")
     private final Optional<UInt64> maybeSlot;
-
     private final AttestationBitsAggregator includedValidators;
 
     private Iterator<ValidatableAttestation> remainingAttestations = getRemainingAttestations();
