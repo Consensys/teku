@@ -132,31 +132,34 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
    */
   @Override
   public Iterator<ValidatableAttestation> iterator() {
-    return new AggregatingIterator(Optional.empty());
+    return new AggregatingIterator(Optional.empty(), Optional.empty());
   }
 
-  public Iterator<ValidatableAttestation> iterator(final Optional<UInt64> committeeIndex) {
-    return new AggregatingIterator(committeeIndex);
+  public Iterator<ValidatableAttestation> iterator(
+      final Optional<UInt64> committeeIndex, final Optional<UInt64> slot) {
+    return new AggregatingIterator(committeeIndex, slot);
   }
 
-  public Stream<ValidatableAttestation> stream() {
-    return StreamSupport.stream(spliterator(Optional.empty()), false);
+  public Stream<ValidatableAttestation> streamForBlockProduction(final UInt64 slot) {
+    return StreamSupport.stream(spliterator(Optional.empty(), Optional.of(slot)), false);
   }
 
-  public Stream<ValidatableAttestation> stream(final Optional<UInt64> committeeIndex) {
-    return StreamSupport.stream(spliterator(committeeIndex), false);
+  public Stream<ValidatableAttestation> streamForAggregation(
+      final Optional<UInt64> committeeIndex) {
+    return StreamSupport.stream(spliterator(committeeIndex, Optional.empty()), false);
   }
 
-  public Stream<ValidatableAttestation> stream(
+  public Stream<ValidatableAttestation> streamForAPI(
       final Optional<UInt64> committeeIndex, final boolean requiresCommitteeBits) {
     if (noMatchingAttestations(committeeIndex, requiresCommitteeBits)) {
       return Stream.empty();
     }
-    return StreamSupport.stream(spliterator(committeeIndex), false);
+    return StreamSupport.stream(spliterator(committeeIndex, Optional.empty()), false);
   }
 
-  public Spliterator<ValidatableAttestation> spliterator(final Optional<UInt64> committeeIndex) {
-    return Spliterators.spliteratorUnknownSize(iterator(committeeIndex), 0);
+  public Spliterator<ValidatableAttestation> spliterator(
+      final Optional<UInt64> committeeIndex, final Optional<UInt64> slot) {
+    return Spliterators.spliteratorUnknownSize(iterator(committeeIndex, slot), 0);
   }
 
   /**
@@ -252,12 +255,15 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
   private class AggregatingIterator implements Iterator<ValidatableAttestation> {
 
     private final Optional<UInt64> maybeCommitteeIndex;
+    private final Optional<UInt64> maybeSlot;
     private final AttestationBitsAggregator includedValidators;
 
     private Iterator<ValidatableAttestation> remainingAttestations = getRemainingAttestations();
 
-    private AggregatingIterator(final Optional<UInt64> committeeIndex) {
+    private AggregatingIterator(
+        final Optional<UInt64> committeeIndex, final Optional<UInt64> slot) {
       this.maybeCommitteeIndex = committeeIndex;
+      this.maybeSlot = slot.map(UInt64::decrement);
       includedValidators = MatchingDataAttestationGroup.this.includedValidators.copy();
     }
 
@@ -296,8 +302,13 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
     private boolean maybeFilterOnCommitteeIndex(final ValidatableAttestation candidate) {
       final Optional<SszBitvector> maybeCommitteeBits =
           candidate.getAttestation().getCommitteeBits();
-      if (maybeCommitteeBits.isEmpty() || maybeCommitteeIndex.isEmpty()) {
-        return true;
+      //      if (maybeCommitteeBits.isEmpty() || maybeCommitteeIndex.isEmpty()) {
+      //        return true;
+      //      }
+
+      if (maybeCommitteeIndex.isEmpty()) {
+        return !candidate.getUnconvertedAttestation().isSingleAttestation()
+            || maybeSlot.map(slot -> attestationData.getSlot().equals(slot)).orElse(false);
       }
 
       final SszBitvector committeeBits = maybeCommitteeBits.get();

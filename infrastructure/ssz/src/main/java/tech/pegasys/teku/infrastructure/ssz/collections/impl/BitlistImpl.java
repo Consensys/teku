@@ -84,6 +84,13 @@ class BitlistImpl {
     return new BitlistImpl(size, newData, maxSize);
   }
 
+  public BitlistImpl withBit(final int i) {
+    checkElementIndex(i, size);
+    BitSet newSet = (BitSet) data.clone();
+    newSet.set(i);
+    return new BitlistImpl(size, newSet, maxSize);
+  }
+
   public boolean getBit(final int i) {
     checkElementIndex(i, size);
     return data.get(i);
