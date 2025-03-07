@@ -23,7 +23,6 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutablePrimitiveList;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszListImpl;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;

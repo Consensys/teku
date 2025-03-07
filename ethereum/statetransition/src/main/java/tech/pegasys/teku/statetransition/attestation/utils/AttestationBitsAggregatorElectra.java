@@ -68,17 +68,17 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
       final SszBitvector otherCommitteeBits,
       final SszBitlist otherAggregatedBits,
       final boolean isAggregation) {
-    if(isAggregation && otherAggregatedBits.getBitCount() == 1) {
+    if (isAggregation && otherAggregatedBits.getBitCount() == 1) {
       // optimization for single aggregation
       final int otherCommitteeIndex = otherCommitteeBits.getLastSetBitIndex();
       final int otherAggregatedBit = otherAggregatedBits.streamAllSetBits().findFirst().getAsInt();
-      final int startingPosition = committeeBitsStartingPositions.getOrDefault(otherCommitteeIndex, -1);
-      if(startingPosition != -1) {
-        if(aggregationBits.getBit(startingPosition + otherAggregatedBit)) {
+      final int startingPosition =
+          committeeBitsStartingPositions.getOrDefault(otherCommitteeIndex, -1);
+      if (startingPosition != -1) {
+        if (aggregationBits.getBit(startingPosition + otherAggregatedBit)) {
           throw new CannotAggregateException();
         }
-        aggregationBits =
-                aggregationBits.withBit(startingPosition + otherAggregatedBit);
+        aggregationBits = aggregationBits.withBit(startingPosition + otherAggregatedBit);
         return true;
       }
     }
@@ -112,12 +112,13 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
                 SszBitlist source1 = null, maybeSource2 = null;
                 int source1StartingPosition, source2StartingPosition;
 
-                source1StartingPosition = committeeBitsStartingPositions.getOrDefault(committeeIndex, -1);
+                source1StartingPosition =
+                    committeeBitsStartingPositions.getOrDefault(committeeIndex, -1);
                 if (source1StartingPosition != -1) {
                   source1 = aggregationBits;
                 }
                 source2StartingPosition =
-                        otherCommitteeBitsStartingPositions.getOrDefault(committeeIndex, -1);
+                    otherCommitteeBitsStartingPositions.getOrDefault(committeeIndex, -1);
                 if (source2StartingPosition != -1) {
                   if (source1 != null) {
                     maybeSource2 = otherAggregatedBits;
@@ -207,12 +208,14 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
       // same set and we can directly compare aggregation bits.
       return aggregationBits.isSuperSetOf(other.getAggregationBits());
     }
-    if(other.getAggregationBits().getBitCount() == 1) {
+    if (other.getAggregationBits().getBitCount() == 1) {
       // optimization for single aggregation
       final int otherCommitteeIndex = other.getCommitteeBitsRequired().getLastSetBitIndex();
-      final int otherAggregatedBit = other.getAggregationBits().streamAllSetBits().findFirst().getAsInt();
-      final int startingPosition = committeeBitsStartingPositions.getOrDefault(otherCommitteeIndex, -1);
-      if(startingPosition != -1) {
+      final int otherAggregatedBit =
+          other.getAggregationBits().streamAllSetBits().findFirst().getAsInt();
+      final int startingPosition =
+          committeeBitsStartingPositions.getOrDefault(otherCommitteeIndex, -1);
+      if (startingPosition != -1) {
         return aggregationBits.getBit(startingPosition + otherAggregatedBit);
       }
     }
