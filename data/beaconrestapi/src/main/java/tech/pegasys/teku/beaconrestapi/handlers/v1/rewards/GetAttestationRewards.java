@@ -104,16 +104,16 @@ public class GetAttestationRewards extends RestApiEndpoint {
             .optionalRequestBody()
             .requestBodyType(DeserializableTypeDefinition.listOf(STRING_TYPE))
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
-            .withNotImplementedResponse()
             .withNotFoundResponse()
             .withInternalErrorResponse()
+            .withChainDataResponses()
             .build());
 
     this.chainDataProvider = chainDataProvider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final UInt64 epoch = request.getPathParameter(EPOCH_PARAMETER);
     // Validator identifier might be the validator's public key or index. If empty we query all
     // validators.

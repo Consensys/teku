@@ -73,20 +73,17 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
     }
     LOG.trace("Received message for topic {}", topic);
 
-    PubsubMessage pubsubMessage = message.getOriginalMessage();
-    if (!(pubsubMessage instanceof PreparedPubsubMessage)) {
+    final PubsubMessage pubsubMessage = message.getOriginalMessage();
+    if (!(pubsubMessage instanceof PreparedPubsubMessage gossipPubsubMessage)) {
       throw new IllegalArgumentException(
           "Don't know this PubsubMessage implementation: " + pubsubMessage.getClass());
     }
-    PreparedPubsubMessage gossipPubsubMessage = (PreparedPubsubMessage) pubsubMessage;
     return handler.handleMessage(gossipPubsubMessage.getPreparedMessage());
   }
 
-  public void gossip(Bytes bytes) {
+  public SafeFuture<Void> gossip(final Bytes bytes) {
     LOG.trace("Gossiping {}: {} bytes", topic, bytes.size());
-    SafeFuture.of(publisher.publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), topic))
-        .finish(
-            () -> LOG.trace("Successfully gossiped message on {}", topic),
-            err -> LOG.debug("Failed to gossip message on " + topic, err));
+    return SafeFuture.of(publisher.publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), topic))
+        .thenRun(() -> LOG.trace("Successfully gossiped message on {}", topic));
   }
 }

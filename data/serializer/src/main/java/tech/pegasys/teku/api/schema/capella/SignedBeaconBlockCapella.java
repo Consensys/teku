@@ -23,7 +23,7 @@ public class SignedBeaconBlockCapella extends SignedBeaconBlock implements Signe
   private final BeaconBlockCapella message;
 
   public SignedBeaconBlockCapella(
-      tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
+      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
     super(internalBlock);
     this.message = new BeaconBlockCapella(internalBlock.getMessage());
   }

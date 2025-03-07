@@ -34,10 +34,10 @@ public class PayloadStatusV1 {
   private final String validationError;
 
   public PayloadStatusV1(
-      @JsonProperty("status") ExecutionPayloadStatus status,
-      @JsonProperty("latestValidHash") Bytes32 latestValidHash,
-      @JsonProperty("validationError") String validationError) {
-    checkNotNull(status, "status cannot be null");
+      final @JsonProperty("status") ExecutionPayloadStatus status,
+      final @JsonProperty("latestValidHash") Bytes32 latestValidHash,
+      final @JsonProperty("validationError") String validationError) {
+    checkNotNull(status, "status");
     this.status = status;
     this.latestValidHash = latestValidHash;
     this.validationError = validationError;

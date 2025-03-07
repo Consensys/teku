@@ -38,13 +38,13 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
   private final Set<UInt64> receivedValidSlashingForProposerSet =
       LimitedSet.createSynchronized(VALID_VALIDATOR_SET_SIZE);
 
-  public ProposerSlashingValidator(final Spec spec, RecentChainData recentChainData) {
+  public ProposerSlashingValidator(final Spec spec, final RecentChainData recentChainData) {
     this.spec = spec;
     this.recentChainData = recentChainData;
   }
 
   @Override
-  public SafeFuture<InternalValidationResult> validateForGossip(ProposerSlashing slashing) {
+  public SafeFuture<InternalValidationResult> validateForGossip(final ProposerSlashing slashing) {
     if (!isFirstValidSlashingForValidator(slashing)) {
       LOG.trace(
           "ProposerSlashingValidator: Slashing is not the first one for the given validator.");
@@ -83,7 +83,7 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
   }
 
   private SafeFuture<Optional<OperationInvalidReason>> passesProcessProposerSlashingConditions(
-      ProposerSlashing slashing) {
+      final ProposerSlashing slashing) {
     return getState()
         .thenApply(
             state -> {
@@ -105,7 +105,7 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
     return Optional.empty();
   }
 
-  private boolean isFirstValidSlashingForValidator(ProposerSlashing slashing) {
+  private boolean isFirstValidSlashingForValidator(final ProposerSlashing slashing) {
     return !receivedValidSlashingForProposerSet.contains(
         slashing.getHeader1().getMessage().getProposerIndex());
   }

@@ -28,13 +28,13 @@ public class NoopCompressor implements Compressor {
     private final int uncompressedPayloadSize;
     private boolean disposed = false;
 
-    public NoopDecompressor(int uncompressedPayloadSize) {
+    public NoopDecompressor(final int uncompressedPayloadSize) {
       this.decoder = new NoopDecoder(uncompressedPayloadSize);
       this.uncompressedPayloadSize = uncompressedPayloadSize;
     }
 
     @Override
-    public Optional<ByteBuf> decodeOneMessage(ByteBuf input) throws CompressionException {
+    public Optional<ByteBuf> decodeOneMessage(final ByteBuf input) throws CompressionException {
       if (disposed) {
         throw new DisposedDecompressorException();
       }
@@ -64,7 +64,7 @@ public class NoopCompressor implements Compressor {
   }
 
   @Override
-  public Decompressor createDecompressor(int uncompressedPayloadSize) {
+  public Decompressor createDecompressor(final int uncompressedPayloadSize) {
     return new NoopDecompressor(uncompressedPayloadSize);
   }
 

@@ -52,17 +52,17 @@ public class GetGenesisApiDataBuilder {
   private Bytes32 genesisValidatorsRoot;
   private Bytes4 genesisForkVersion;
 
-  public GetGenesisApiDataBuilder genesisTime(UInt64 genesisTime) {
+  public GetGenesisApiDataBuilder genesisTime(final UInt64 genesisTime) {
     this.genesisTime = genesisTime;
     return this;
   }
 
-  public GetGenesisApiDataBuilder genesisValidatorsRoot(Bytes32 genesisValidatorsRoot) {
+  public GetGenesisApiDataBuilder genesisValidatorsRoot(final Bytes32 genesisValidatorsRoot) {
     this.genesisValidatorsRoot = genesisValidatorsRoot;
     return this;
   }
 
-  public GetGenesisApiDataBuilder genesisForkVersion(Bytes4 genesisForkVersion) {
+  public GetGenesisApiDataBuilder genesisForkVersion(final Bytes4 genesisForkVersion) {
     this.genesisForkVersion = genesisForkVersion;
     return this;
   }

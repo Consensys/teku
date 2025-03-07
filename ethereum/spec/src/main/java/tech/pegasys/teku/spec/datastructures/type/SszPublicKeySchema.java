@@ -34,7 +34,7 @@ public class SszPublicKeySchema extends SszByteVectorSchemaImpl<SszPublicKey> {
   }
 
   @Override
-  public SszPublicKey createFromBackingNode(TreeNode node) {
+  public SszPublicKey createFromBackingNode(final TreeNode node) {
     return new SszPublicKey(node);
   }
 }

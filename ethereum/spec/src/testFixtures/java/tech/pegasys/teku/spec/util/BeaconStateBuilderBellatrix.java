@@ -48,7 +48,9 @@ public class BeaconStateBuilderBellatrix
 
   @Override
   protected BeaconStateBellatrix getEmptyState() {
-    return BeaconStateSchemaBellatrix.create(spec.getConfig()).createEmpty();
+    return BeaconStateSchemaBellatrix.create(
+            spec.getConfig(), spec.getSchemaDefinitions().getSchemaRegistry())
+        .createEmpty();
   }
 
   @Override

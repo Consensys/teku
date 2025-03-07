@@ -356,13 +356,13 @@ public class TerminalPowBlockMonitor {
     eventLogger.terminalPowBlockTtdEta(latestBlock.getTotalDifficulty(), eta, etaInstant);
   }
 
-  private void onTerminalPowBlockFound(Bytes32 blockHash) {
+  private void onTerminalPowBlockFound(final Bytes32 blockHash) {
     foundTerminalBlockHash = Optional.of(blockHash);
     forkChoiceNotifier.onTerminalBlockReached(blockHash);
     eventLogger.terminalPowBlockDetected(blockHash);
   }
 
-  private boolean notYetFound(Bytes32 blockHash) {
+  private boolean notYetFound(final Bytes32 blockHash) {
     return !foundTerminalBlockHash.map(blockHash::equals).orElse(false);
   }
 

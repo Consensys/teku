@@ -26,11 +26,9 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.api.response.v1.EventType;
-import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -39,8 +37,6 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 class EventSourceHandler implements BackgroundEventHandler {
 
   private static final Logger LOG = LogManager.getLogger();
-
-  private final JsonProvider jsonProvider = new JsonProvider();
 
   private final ValidatorTimingChannel validatorTimingChannel;
   private final Counter disconnectCounter;
@@ -112,14 +108,14 @@ class EventSourceHandler implements BackgroundEventHandler {
   }
 
   private void handleHeadEvent(final String data) throws JsonProcessingException {
-    final HeadEvent headEvent = jsonProvider.jsonToObject(data, HeadEvent.class);
+    final HeadEvent headEvent = JsonUtil.parse(data, HeadEvent.TYPE_DEFINITION);
     validatorTimingChannel.onHeadUpdate(
-        headEvent.slot,
-        headEvent.previousDutyDependentRoot,
-        headEvent.currentDutyDependentRoot,
-        headEvent.block);
+        headEvent.slot(),
+        headEvent.previousDutyDependentRoot(),
+        headEvent.currentDutyDependentRoot(),
+        headEvent.block());
     if (generateEarlyAttestations) {
-      validatorTimingChannel.onAttestationCreationDue(headEvent.slot);
+      validatorTimingChannel.onAttestationCreationDue(headEvent.slot());
     }
   }
 

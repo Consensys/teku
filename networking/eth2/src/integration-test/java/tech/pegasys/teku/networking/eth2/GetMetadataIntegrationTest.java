@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assumptions.assumeThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
@@ -30,7 +29,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageAltair;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.eip7594.MetadataMessageEip7594;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.fulu.MetadataMessageFulu;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0.MetadataMessagePhase0;
 
 public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest {
@@ -74,7 +73,7 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     peerAndNetwork.network().subscribeToSyncCommitteeSubnetId(1);
     peerAndNetwork.network().subscribeToSyncCommitteeSubnetId(2);
     MetadataMessage md3 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
-    assertThat(md3).isInstanceOfAny(MetadataMessageAltair.class, MetadataMessageEip7594.class);
+    assertThat(md3).isInstanceOfAny(MetadataMessageAltair.class, MetadataMessageFulu.class);
 
     // Check metadata
     assertThat(md3.getSeqNumber()).isGreaterThan(md2.getSeqNumber());
@@ -85,7 +84,7 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     // Unsubscribe from sync committee subnet
     peerAndNetwork.network().unsubscribeFromSyncCommitteeSubnetId(2);
     MetadataMessage md4 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
-    assertThat(md4).isInstanceOfAny(MetadataMessageAltair.class, MetadataMessageEip7594.class);
+    assertThat(md4).isInstanceOfAny(MetadataMessageAltair.class, MetadataMessageFulu.class);
 
     // Check metadata
     assertThat(md4.getSeqNumber()).isGreaterThan(md3.getSeqNumber());
@@ -110,7 +109,7 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     peerAndNetwork.network().subscribeToSyncCommitteeSubnetId(1);
     peerAndNetwork.network().setLongTermAttestationSubnetSubscriptions(List.of(0, 1, 8));
     MetadataMessage md3 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
-    assertThat(md3).isInstanceOfAny(MetadataMessageAltair.class, MetadataMessageEip7594.class);
+    assertThat(md3).isInstanceOfAny(MetadataMessageAltair.class, MetadataMessageFulu.class);
 
     assertThat(md3.getSeqNumber()).isGreaterThan(md2.getSeqNumber());
     assertThat(md3.getOptionalSyncnets().orElseThrow().getBitCount()).isEqualTo(1);
@@ -130,8 +129,8 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     final Eth2Peer peer = peerAndNetwork.peer();
     MetadataMessage md1 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
 
-    Assumptions.assumeTrue(md1 instanceof MetadataMessageEip7594, "Milestone skipped");
-    assertThat(((MetadataMessageEip7594) md1).getCustodySubnetCount().isGreaterThan(0)).isTrue();
+    Assumptions.assumeTrue(md1 instanceof MetadataMessageFulu, "Milestone skipped");
+    assertThat(((MetadataMessageFulu) md1).getCustodyGroupCount().isGreaterThan(0)).isTrue();
   }
 
   @ParameterizedTest(name = "{0} => {1}, nextSpecEnabledLocally={2}, nextSpecEnabledRemotely={3}")
@@ -154,16 +153,17 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     assertThat(res).isCompleted();
     final MetadataMessage metadata = safeJoin(res);
     assertThat(metadata).isInstanceOf(expectedType);
-    // There will be update of custody_subnet_count in this case
-    assumeThat(nextMilestone == SpecMilestone.EIP7594 && nextSpecEnabledRemotely).isFalse();
-    assertThat(metadata.getSeqNumber()).isEqualTo(UInt64.ZERO);
+    // There will be update of custody_group_count in this case
+    if (!(nextMilestone == SpecMilestone.FULU && nextSpecEnabledRemotely)) {
+      assertThat(metadata.getSeqNumber()).isEqualTo(UInt64.ZERO);
+    }
   }
 
   private static Class<?> milestoneToMetadataClass(final SpecMilestone milestone) {
     return switch (milestone) {
       case PHASE0 -> MetadataMessagePhase0.class;
-      case ALTAIR, BELLATRIX, CAPELLA, DENEB -> MetadataMessageAltair.class;
-      case EIP7594 -> MetadataMessageEip7594.class;
+      case ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA -> MetadataMessageAltair.class;
+      case FULU -> MetadataMessageFulu.class;
     };
   }
 }

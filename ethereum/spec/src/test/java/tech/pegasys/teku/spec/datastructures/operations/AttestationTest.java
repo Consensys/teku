@@ -26,20 +26,20 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class AttestationTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final AttestationSchema schema =
+  private final AttestationSchema<?> schema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
-  private SszBitlist aggregationBitfield = dataStructureUtil.randomBitlist();
-  private AttestationData data = dataStructureUtil.randomAttestationData();
-  private BLSSignature aggregateSignature = dataStructureUtil.randomSignature();
+  private final SszBitlist aggregationBitfield = dataStructureUtil.randomBitlist();
+  private final AttestationData data = dataStructureUtil.randomAttestationData();
+  private final BLSSignature aggregateSignature = dataStructureUtil.randomSignature();
 
-  private Attestation attestation = schema.create(aggregationBitfield, data, aggregateSignature);
+  private final Attestation attestation =
+      schema.create(aggregationBitfield, data, aggregateSignature);
 
   @Test
   public void shouldBeDependentOnTargetBlockAndBeaconBlockRoot() {

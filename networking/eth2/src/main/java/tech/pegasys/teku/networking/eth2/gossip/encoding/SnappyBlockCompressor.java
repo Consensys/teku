@@ -24,16 +24,24 @@ import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
  */
 public class SnappyBlockCompressor {
 
-  public Bytes uncompress(final Bytes compressedData, final SszLengthBounds lengthBounds)
+  public Bytes uncompress(
+      final Bytes compressedData, final SszLengthBounds lengthBounds, final long maxBytesLength)
       throws DecodingException {
-
     try {
-      final int actualLength = Snappy.uncompressedLength(compressedData.toArrayUnsafe());
-      if (!lengthBounds.isWithinBounds(actualLength)) {
+      final int uncompressedLength = Snappy.uncompressedLength(compressedData.toArrayUnsafe());
+
+      if (uncompressedLength > maxBytesLength) {
+        throw new DecodingException(
+            String.format(
+                "Uncompressed length %d exceeds max length in bytes of %s",
+                uncompressedLength, maxBytesLength));
+      }
+
+      if (!lengthBounds.isWithinBounds(uncompressedLength)) {
         throw new DecodingException(
             String.format(
                 "Uncompressed length %d is not within expected bounds %s",
-                actualLength, lengthBounds.toString()));
+                uncompressedLength, lengthBounds));
       }
       return Bytes.wrap(Snappy.uncompress(compressedData.toArrayUnsafe()));
     } catch (IOException e) {

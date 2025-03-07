@@ -32,8 +32,8 @@ public class WeakSubjectivityConfig {
   private final Optional<UInt64> suppressWSPeriodChecksUntilEpoch;
 
   private WeakSubjectivityConfig(
-      Spec spec,
-      UInt64 safetyDecay,
+      final Spec spec,
+      final UInt64 safetyDecay,
       final Optional<Checkpoint> weakSubjectivityCheckpoint,
       final Optional<UInt64> suppressWSPeriodChecksUntilEpoch) {
     this.spec = spec;
@@ -135,11 +135,12 @@ public class WeakSubjectivityConfig {
       return this;
     }
 
-    public Builder weakSubjectivityCheckpoint(Checkpoint weakSubjectivityCheckpoint) {
+    public Builder weakSubjectivityCheckpoint(final Checkpoint weakSubjectivityCheckpoint) {
       return weakSubjectivityCheckpoint(Optional.of(weakSubjectivityCheckpoint));
     }
 
-    public Builder weakSubjectivityCheckpoint(Optional<Checkpoint> weakSubjectivityCheckpoint) {
+    public Builder weakSubjectivityCheckpoint(
+        final Optional<Checkpoint> weakSubjectivityCheckpoint) {
       checkNotNull(weakSubjectivityCheckpoint);
       this.weakSubjectivityCheckpoint = weakSubjectivityCheckpoint;
       return this;
@@ -157,7 +158,7 @@ public class WeakSubjectivityConfig {
       return this;
     }
 
-    public Builder safetyDecay(UInt64 safetyDecay) {
+    public Builder safetyDecay(final UInt64 safetyDecay) {
       this.safetyDecay = safetyDecay;
       return this;
     }

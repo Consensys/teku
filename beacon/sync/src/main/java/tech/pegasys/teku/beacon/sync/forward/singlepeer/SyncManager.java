@@ -259,14 +259,14 @@ public class SyncManager extends Service {
                 .thenComparing(p -> Math.random()));
   }
 
-  private void onNewPeer(Eth2Peer peer) {
+  private void onNewPeer(final Eth2Peer peer) {
     if (isPeerSyncSuitable(peer)) {
       LOG.trace("New peer connected ({}), schedule sync.", peer.getId());
       startOrScheduleSync();
     }
   }
 
-  private boolean isPeerSyncSuitable(Eth2Peer peer) {
+  private boolean isPeerSyncSuitable(final Eth2Peer peer) {
     UInt64 ourFinalizedEpoch = recentChainData.getFinalizedEpoch();
     LOG.trace(
         "Looking for suitable peer (out of {}) with finalized epoch > {}.",

@@ -73,7 +73,7 @@ public class OwnedKeyManager implements KeyManager {
   }
 
   @Override
-  public Optional<Validator> getValidatorByPublicKey(BLSPublicKey publicKey) {
+  public Optional<Validator> getValidatorByPublicKey(final BLSPublicKey publicKey) {
     return validatorLoader.getOwnedValidators().getValidator(publicKey);
   }
 
@@ -392,7 +392,7 @@ public class OwnedKeyManager implements KeyManager {
           importResults.add(
               validatorLoader.loadExternalMutableValidator(
                   externalValidator.getPublicKey(), externalValidator.getUrl(), false));
-          if (importResults.get(importResults.size() - 1).getPostKeyResult().getImportStatus()
+          if (importResults.getLast().getPostKeyResult().getImportStatus()
               == ImportStatus.IMPORTED) {
             reloadRequired = true;
           }
@@ -427,7 +427,7 @@ public class OwnedKeyManager implements KeyManager {
           importResults.add(
               validatorLoader.loadExternalMutableValidator(
                   externalValidator.getPublicKey(), externalValidator.getUrl(), true));
-          if (importResults.get(importResults.size() - 1).getPostKeyResult().getImportStatus()
+          if (importResults.getLast().getPostKeyResult().getImportStatus()
               == ImportStatus.IMPORTED) {
             reloadRequired = true;
           }

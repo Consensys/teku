@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
@@ -57,7 +57,7 @@ public class BeaconProposerPreparerTest {
   private long slotsPerEpoch;
 
   @BeforeEach
-  void setUp(SpecContext specContext) {
+  void setUp(final SpecContext specContext) {
     final Spec spec = specContext.getSpec();
 
     final Validator validator1 =

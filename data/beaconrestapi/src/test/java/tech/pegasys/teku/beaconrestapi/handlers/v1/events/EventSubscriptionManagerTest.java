@@ -55,6 +55,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
@@ -65,7 +66,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ReorgContext;
 
 public class EventSubscriptionManagerTest {
-  private final Spec spec = TestSpecFactory.createMinimalDeneb();
+  private final Spec spec = TestSpecFactory.createMinimalElectra();
   private final SpecConfig specConfig = spec.getGenesisSpecConfig();
   private final DataStructureUtil data = new DataStructureUtil(spec);
   protected final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
@@ -107,6 +108,7 @@ public class EventSubscriptionManagerTest {
       SignedBeaconBlock.create(data.randomSignedBeaconBlock(0));
   private final BlobSidecar sampleBlobSidecar = data.randomBlobSidecar();
   private final Attestation sampleAttestation = data.randomAttestation(0);
+  private final SingleAttestation singleAttestation = data.randomSingleAttestation();
 
   private final AttesterSlashing sampleAttesterSlashing =
       spec.getGenesisSchemaDefinitions()
@@ -123,7 +125,7 @@ public class EventSubscriptionManagerTest {
       data.randomPayloadBuildingAttributes(true);
   final PayloadAttributesData samplePayloadAttributesData =
       new PayloadAttributesData(
-          SpecMilestone.DENEB,
+          SpecMilestone.ELECTRA,
           new Data(
               samplePayloadAttributes.getProposalSlot(),
               samplePayloadAttributes.getParentBeaconBlockRoot(),
@@ -300,6 +302,15 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
+  void shouldPropagateSingleAttestation() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=single_attestation");
+    manager.registerClient(client1);
+
+    triggerSingleAttestationEvent();
+    checkEvent("single_attestation", new SingleAttestationEvent(singleAttestation));
+  }
+
+  @Test
   void shouldPropagateAttesterSlashing() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=attester_slashing");
     manager.registerClient(client1);
@@ -438,6 +449,11 @@ public class EventSubscriptionManagerTest {
     asyncRunner.executeQueuedActions();
   }
 
+  private void triggerSingleAttestationEvent() {
+    manager.onNewAttestation(ValidatableAttestation.from(spec, singleAttestation));
+    asyncRunner.executeQueuedActions();
+  }
+
   private void triggerAttesterSlashingEvent() {
     manager.onNewAttesterSlashing(sampleAttesterSlashing, InternalValidationResult.ACCEPT, false);
     asyncRunner.executeQueuedActions();
@@ -519,7 +535,7 @@ public class EventSubscriptionManagerTest {
     asyncRunner.executeQueuedActions();
   }
 
-  private <T, E extends Event<T>> void checkEvent(String eventType, E event)
+  private <T, E extends Event<T>> void checkEvent(final String eventType, final E event)
       throws JsonProcessingException {
     final String eventString = outputStream.getString();
     assertThat(eventString).contains(String.format("event: %s\n", eventType));

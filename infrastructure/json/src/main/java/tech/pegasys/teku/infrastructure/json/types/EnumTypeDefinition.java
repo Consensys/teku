@@ -17,7 +17,9 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -26,6 +28,9 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
   private final Function<T, String> serializer;
 
   private final Set<T> excludedEnumerations = new HashSet<>();
+  private Optional<String> example = Optional.empty();
+  private Optional<String> description = Optional.empty();
+  private Optional<String> format = Optional.empty();
 
   public EnumTypeDefinition(final Class<T> itemType) {
     this(itemType, Objects::toString);
@@ -45,6 +50,21 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
     this.excludedEnumerations.addAll(excludedEnumerations);
   }
 
+  public EnumTypeDefinition(
+      final Class<T> itemType,
+      final Function<T, String> serializer,
+      final Optional<String> example,
+      final Optional<String> description,
+      final Optional<String> format,
+      final Optional<Set<T>> excludedEnumerations) {
+    this.itemType = itemType;
+    this.serializer = serializer;
+    this.example = example;
+    this.description = description;
+    this.format = format;
+    excludedEnumerations.ifPresent(this.excludedEnumerations::addAll);
+  }
+
   @Override
   public T deserialize(final JsonParser parser) throws IOException {
     return deserializeFromString(parser.getValueAsString());
@@ -53,6 +73,17 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
   @Override
   public void serializeOpenApiTypeFields(final JsonGenerator gen) throws IOException {
     gen.writeStringField("type", "string");
+
+    if (description.isPresent()) {
+      gen.writeStringField("description", description.get());
+    }
+    if (example.isPresent()) {
+      gen.writeStringField("example", example.get());
+    }
+    if (format.isPresent()) {
+      gen.writeStringField("format", format.get());
+    }
+
     gen.writeArrayFieldStart("enum");
 
     for (T value : itemType.getEnumConstants()) {
@@ -90,6 +121,66 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
     throw new IllegalArgumentException("Unknown enum value: " + value);
   }
 
+  public static class EnumTypeBuilder<T extends Enum<T>> {
+
+    private Class<T> itemType;
+    private Function<T, String> serializer;
+    private Optional<String> example = Optional.empty();
+    private Optional<String> description = Optional.empty();
+    private Optional<String> format = Optional.empty();
+    private Optional<Set<T>> excludedEnumerations = Optional.empty();
+
+    public EnumTypeBuilder(final Class<T> itemType, final Function<T, String> serializer) {
+      this.itemType = itemType;
+      this.serializer = serializer;
+    }
+
+    public EnumTypeBuilder(final Class<T> itemType) {
+      this(itemType, false);
+    }
+
+    public EnumTypeBuilder(final Class<T> itemType, final boolean forceLowercase) {
+      this(
+          itemType,
+          forceLowercase ? (val) -> val.toString().toLowerCase(Locale.ROOT) : Enum::toString);
+    }
+
+    public EnumTypeBuilder<T> parser(final Class<T> itemType) {
+      this.itemType = itemType;
+      return this;
+    }
+
+    public EnumTypeBuilder<T> parser(final Function<T, String> serializer) {
+      this.serializer = serializer;
+      return this;
+    }
+
+    public EnumTypeBuilder<T> example(final String example) {
+      this.example = Optional.of(example);
+      return this;
+    }
+
+    public EnumTypeBuilder<T> description(final String description) {
+      this.description = Optional.of(description);
+      return this;
+    }
+
+    public EnumTypeBuilder<T> format(final String format) {
+      this.format = Optional.of(format);
+      return this;
+    }
+
+    public EnumTypeBuilder<T> excludedEnumerations(final Set<T> excludedEnumerations) {
+      this.excludedEnumerations = Optional.of(excludedEnumerations);
+      return this;
+    }
+
+    public EnumTypeDefinition<T> build() {
+      return new EnumTypeDefinition<>(
+          itemType, serializer, example, description, format, excludedEnumerations);
+    }
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -99,11 +190,15 @@ public class EnumTypeDefinition<T extends Enum<T>> extends PrimitiveTypeDefiniti
       return false;
     }
     final EnumTypeDefinition<?> that = (EnumTypeDefinition<?>) o;
-    return Objects.equals(itemType, that.itemType);
+    return Objects.equals(itemType, that.itemType)
+        && Objects.equals(example, that.example)
+        && Objects.equals(description, that.description)
+        && Objects.equals(format, that.format)
+        && Objects.equals(excludedEnumerations, that.excludedEnumerations);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(itemType);
+    return Objects.hash(itemType, example, description, format, excludedEnumerations);
   }
 }

@@ -22,17 +22,17 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszBitvector
 public interface SszBitvectorSchema<SszBitvectorT extends SszBitvector>
     extends SszPrimitiveVectorSchema<Boolean, SszBit, SszBitvectorT> {
 
-  static SszBitvectorSchema<SszBitvector> create(long length) {
+  static SszBitvectorSchema<SszBitvector> create(final long length) {
     return new SszBitvectorSchemaImpl(length);
   }
 
   SszBitvectorT ofBits(int... setBitIndices);
 
-  default SszBitvectorT fromBytes(Bytes bitvectorBytes) {
+  default SszBitvectorT fromBytes(final Bytes bitvectorBytes) {
     return sszDeserialize(bitvectorBytes);
   }
 
-  default SszBitvectorT ofBits(Iterable<Integer> setBitIndices) {
+  default SszBitvectorT ofBits(final Iterable<Integer> setBitIndices) {
     int[] indicesArray =
         StreamSupport.stream(setBitIndices.spliterator(), false).mapToInt(i -> i).toArray();
     return ofBits(indicesArray);

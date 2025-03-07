@@ -77,7 +77,7 @@ public class Waiter {
   }
 
   public static void ensureConditionRemainsMet(
-      final Condition condition, int waitTimeInMilliseconds) throws InterruptedException {
+      final Condition condition, final int waitTimeInMilliseconds) throws InterruptedException {
     final long mustBeTrueUntil = System.currentTimeMillis() + waitTimeInMilliseconds;
     while (System.currentTimeMillis() < mustBeTrueUntil) {
       try {

@@ -85,7 +85,7 @@ public class YamlConfigFileParamsProvider extends AbstractParamsProvider<Object>
 
   @Override
   protected Map.Entry<String, String> translateToArg(
-      OptionSpec matchedOption, Map.Entry<String, Object> yamlEntry) {
+      final OptionSpec matchedOption, final Map.Entry<String, Object> yamlEntry) {
     final Object value = yamlEntry.getValue();
 
     final String translatedValue;
@@ -160,7 +160,7 @@ public class YamlConfigFileParamsProvider extends AbstractParamsProvider<Object>
     }
   }
 
-  private void checkConfigurationValidity(boolean isEmpty) {
+  private void checkConfigurationValidity(final boolean isEmpty) {
     if (isEmpty) {
       throw new ParameterException(
           commandLine, String.format("Empty yaml configuration file: %s", configFile));

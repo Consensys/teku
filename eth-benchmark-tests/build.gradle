@@ -17,10 +17,10 @@ dependencies {
   implementation testFixtures(project(':ethereum:statetransition'))
   jmhImplementation testFixtures(project(':eth-benchmark-tests'))
 
-  implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'io.tmio:tuweni-bytes'
 
   jmhImplementation project(':infrastructure:crypto')
-  jmhImplementation 'org.apache.tuweni:tuweni-ssz'
+  jmhImplementation 'io.tmio:tuweni-ssz'
   jmhImplementation testFixtures(project(':ethereum:weaksubjectivity'))
   jmhImplementation testFixtures(project(':infrastructure:async'))
 
@@ -34,6 +34,6 @@ dependencies {
   testFixturesImplementation testFixtures(project(':ethereum:statetransition'))
   testFixturesImplementation testFixtures(project(':storage'))
 
-  testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
-  testFixturesImplementation 'org.apache.tuweni:tuweni-ssz'
+  testFixturesImplementation 'io.tmio:tuweni-bytes'
+  testFixturesImplementation 'io.tmio:tuweni-ssz'
 }

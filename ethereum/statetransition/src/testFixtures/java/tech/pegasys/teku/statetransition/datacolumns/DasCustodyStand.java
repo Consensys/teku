@@ -29,8 +29,8 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfigEip7594;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -45,7 +45,7 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 @SuppressWarnings("unused")
 public class DasCustodyStand {
 
-  public static Builder builder(Spec spec) {
+  public static Builder builder(final Spec spec) {
     return new Builder().withSpec(spec);
   }
 
@@ -60,28 +60,27 @@ public class DasCustodyStand {
   public final DataColumnSidecarDBStub db;
   public final DataColumnSidecarDbAccessor dbAccessor;
 
-  public final SpecConfigEip7594 config;
   public final DataColumnSidecarCustodyImpl custody;
 
   public final DataStructureUtil dataStructureUtil;
 
   private final List<SlotEventsChannel> slotListeners = new CopyOnWriteArrayList<>();
   private final List<FinalizedCheckpointChannel> finalizedListeners = new CopyOnWriteArrayList<>();
-  private final int totalCustodySubnetCount;
+  private final int totalCustodyGroupCount;
 
   private UInt64 currentSlot = UInt64.ZERO;
 
   public DasCustodyStand(
-      Spec spec,
-      UInt64 currentSlot,
-      UInt256 myNodeId,
-      int totalCustodySubnetCount,
-      Optional<Duration> asyncDbDelay,
-      Optional<Duration> asyncBlockResolverDelay) {
+      final Spec spec,
+      final UInt64 currentSlot,
+      final UInt256 myNodeId,
+      final int totalCustodyGroupCount,
+      final Optional<Duration> asyncDbDelay,
+      final Optional<Duration> asyncBlockResolverDelay) {
     this.spec = spec;
     this.myNodeId = myNodeId;
     this.blockResolver = new CanonicalBlockResolverStub(spec);
-    CanonicalBlockResolver asyncBlockResolver =
+    final CanonicalBlockResolver asyncBlockResolver =
         asyncBlockResolverDelay
             .map(
                 delay ->
@@ -89,10 +88,9 @@ public class DasCustodyStand {
                         new DelayedCanonicalBlockResolver(
                             this.blockResolver, stubAsync.getStubAsyncRunner(), delay))
             .orElse(this.blockResolver);
-    this.config = SpecConfigEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).getConfig());
     this.minCustodyPeriodSlotCalculator = MinCustodyPeriodSlotCalculator.createFromSpec(spec);
     this.db = new DataColumnSidecarDBStub();
-    DataColumnSidecarDB asyncDb =
+    final DataColumnSidecarDB asyncDb =
         asyncDbDelay
             .map(
                 dbDelay ->
@@ -109,62 +107,62 @@ public class DasCustodyStand {
             dbAccessor,
             minCustodyPeriodSlotCalculator,
             myNodeId,
-            totalCustodySubnetCount);
+            totalCustodyGroupCount);
     subscribeToSlotEvents(this.custody);
     subscribeToFinalizedEvents(this.custody);
 
-    DataStructureUtil util = new DataStructureUtil(0, spec);
-    BLSSignature singleSignature = util.randomSignature();
-    BLSPublicKey singlePubKey = util.randomPublicKey();
+    final DataStructureUtil util = new DataStructureUtil(0, spec);
+    final BLSSignature singleSignature = util.randomSignature();
+    final BLSPublicKey singlePubKey = util.randomPublicKey();
     this.dataStructureUtil =
         util.withSignatureGenerator(__ -> singleSignature).withPubKeyGenerator(() -> singlePubKey);
-    this.totalCustodySubnetCount = totalCustodySubnetCount;
+    this.totalCustodyGroupCount = totalCustodyGroupCount;
   }
 
-  public void advanceTimeGradually(Duration delta) {
+  public void advanceTimeGradually(final Duration delta) {
     stubAsync.advanceTimeGradually(delta);
   }
 
-  public void advanceTimeGraduallyUntilAllDone(Duration maxAdvancePeriod) {
+  public void advanceTimeGraduallyUntilAllDone(final Duration maxAdvancePeriod) {
     stubAsync.advanceTimeGraduallyUntilAllDone(maxAdvancePeriod);
   }
 
-  public SignedBeaconBlock createBlockWithBlobs(int slot) {
+  public SignedBeaconBlock createBlockWithBlobs(final int slot) {
     return createBlock(slot, 3);
   }
 
-  public SignedBeaconBlock createBlockWithoutBlobs(int slot) {
+  public SignedBeaconBlock createBlockWithoutBlobs(final int slot) {
     return createBlock(slot, 0);
   }
 
-  public SignedBeaconBlock createBlock(int slot, int blobCount) {
-    UInt64 slotU = UInt64.valueOf(slot);
-    BeaconBlockBody beaconBlockBody =
+  public SignedBeaconBlock createBlock(final int slot, final int blobCount) {
+    final UInt64 slotU = UInt64.valueOf(slot);
+    final BeaconBlockBody beaconBlockBody =
         dataStructureUtil.randomBeaconBlockBodyWithCommitments(blobCount);
-    BeaconBlock block = dataStructureUtil.randomBeaconBlock(slotU, beaconBlockBody);
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(slotU, beaconBlockBody);
     return dataStructureUtil.signedBlock(block);
   }
 
-  public DataColumnSidecar createSidecar(SignedBeaconBlock block, int column) {
+  public DataColumnSidecar createSidecar(final SignedBeaconBlock block, final int column) {
     return dataStructureUtil.randomDataColumnSidecar(block.asHeader(), UInt64.valueOf(column));
   }
 
-  public boolean hasBlobs(BeaconBlock block) {
+  public boolean hasBlobs(final BeaconBlock block) {
     return block
         .getBody()
-        .toVersionEip7594()
+        .toVersionDeneb()
         .map(b -> !b.getBlobKzgCommitments().isEmpty())
         .orElse(false);
   }
 
-  public Collection<UInt64> getCustodyColumnIndexes(UInt64 slot) {
-    UInt64 epoch = spec.computeEpochAtSlot(slot);
+  public Collection<UInt64> getCustodyColumnIndexes(final UInt64 slot) {
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
     return spec.atEpoch(epoch)
         .miscHelpers()
-        .toVersionEip7594()
+        .toVersionFulu()
         .map(
-            miscHelpersEip7594 ->
-                miscHelpersEip7594.computeCustodyColumnIndexes(myNodeId, totalCustodySubnetCount))
+            miscHelpersFulu ->
+                miscHelpersFulu.computeCustodyColumnIndexes(myNodeId, totalCustodyGroupCount))
         .orElse(Collections.emptyList());
   }
 
@@ -172,9 +170,9 @@ public class DasCustodyStand {
     return minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot);
   }
 
-  public List<DataColumnSidecar> createCustodyColumnSidecars(SignedBeaconBlock block) {
+  public List<DataColumnSidecar> createCustodyColumnSidecars(final SignedBeaconBlock block) {
     if (hasBlobs(block.getBeaconBlock().orElseThrow())) {
-      Collection<UInt64> custodyColumnIndexes = getCustodyColumnIndexes(block.getSlot());
+      final Collection<UInt64> custodyColumnIndexes = getCustodyColumnIndexes(block.getSlot());
       return custodyColumnIndexes.stream()
           .map(colIndex -> createSidecar(block, colIndex.intValue()))
           .toList();
@@ -183,15 +181,15 @@ public class DasCustodyStand {
     }
   }
 
-  public void subscribeToSlotEvents(SlotEventsChannel subscriber) {
+  public void subscribeToSlotEvents(final SlotEventsChannel subscriber) {
     slotListeners.add(subscriber);
   }
 
-  public void incCurrentSlot(int delta) {
+  public void incCurrentSlot(final int delta) {
     setCurrentSlot(getCurrentSlot().intValue() + delta);
   }
 
-  public void setCurrentSlot(int slot) {
+  public void setCurrentSlot(final int slot) {
     if (currentSlot.isGreaterThan(slot)) {
       throw new IllegalArgumentException("New slot " + slot + " < " + currentSlot);
     }
@@ -203,12 +201,12 @@ public class DasCustodyStand {
     return currentSlot;
   }
 
-  public void subscribeToFinalizedEvents(FinalizedCheckpointChannel subscriber) {
+  public void subscribeToFinalizedEvents(final FinalizedCheckpointChannel subscriber) {
     finalizedListeners.add(subscriber);
   }
 
-  public void setFinalizedEpoch(int epoch) {
-    Checkpoint finalizedCheckpoint = new Checkpoint(UInt64.valueOf(epoch), Bytes32.ZERO);
+  public void setFinalizedEpoch(final int epoch) {
+    final Checkpoint finalizedCheckpoint = new Checkpoint(UInt64.valueOf(epoch), Bytes32.ZERO);
     finalizedListeners.forEach(l -> l.onNewFinalizedCheckpoint(finalizedCheckpoint, false));
   }
 
@@ -216,52 +214,52 @@ public class DasCustodyStand {
     private Spec spec;
     private UInt64 currentSlot = UInt64.ZERO;
     private UInt256 myNodeId = UInt256.ONE;
-    private Integer totalCustodySubnetCount;
+    private Integer totalCustodyGroupCount;
     private Optional<Duration> asyncDbDelay = Optional.empty();
     private Optional<Duration> asyncBlockResolverDelay = Optional.empty();
 
-    public Builder withSpec(Spec spec) {
+    public Builder withSpec(final Spec spec) {
       this.spec = spec;
       return this;
     }
 
-    public Builder withCurrentSlot(UInt64 currentSlot) {
+    public Builder withCurrentSlot(final UInt64 currentSlot) {
       this.currentSlot = currentSlot;
       return this;
     }
 
-    public Builder withMyNodeId(UInt256 myNodeId) {
+    public Builder withMyNodeId(final UInt256 myNodeId) {
       this.myNodeId = myNodeId;
       return this;
     }
 
-    public Builder withTotalCustodySubnetCount(Integer totalCustodySubnetCount) {
-      this.totalCustodySubnetCount = totalCustodySubnetCount;
+    public Builder withTotalCustodySubnetCount(final Integer totalCustodySubnetCount) {
+      this.totalCustodyGroupCount = totalCustodySubnetCount;
       return this;
     }
 
-    public Builder withAsyncDb(Duration asyncDbDelay) {
+    public Builder withAsyncDb(final Duration asyncDbDelay) {
       this.asyncDbDelay = Optional.ofNullable(asyncDbDelay);
       return this;
     }
 
-    public Builder withAsyncBlockResolver(Duration asyncBlockResolverDelay) {
+    public Builder withAsyncBlockResolver(final Duration asyncBlockResolverDelay) {
       this.asyncBlockResolverDelay = Optional.ofNullable(asyncBlockResolverDelay);
       return this;
     }
 
     public DasCustodyStand build() {
-      if (totalCustodySubnetCount == null) {
+      if (totalCustodyGroupCount == null) {
         checkNotNull(spec);
-        SpecConfigEip7594 configEip7594 =
-            SpecConfigEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).getConfig());
-        totalCustodySubnetCount = configEip7594.getCustodyRequirement();
+        final SpecConfigFulu configFulu =
+            SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
+        totalCustodyGroupCount = configFulu.getCustodyRequirement();
       }
       return new DasCustodyStand(
           spec,
           currentSlot,
           myNodeId,
-          totalCustodySubnetCount,
+          totalCustodyGroupCount,
           asyncDbDelay,
           asyncBlockResolverDelay);
     }

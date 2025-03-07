@@ -33,7 +33,7 @@ public class EnvironmentVariableParamsProvider extends AbstractParamsProvider<St
   }
 
   @Override
-  public Map<String, String> getAdditionalParams(List<OptionSpec> potentialParams) {
+  public Map<String, String> getAdditionalParams(final List<OptionSpec> potentialParams) {
     return getAdditionalParams(potentialParams, environment);
   }
 
@@ -64,7 +64,7 @@ public class EnvironmentVariableParamsProvider extends AbstractParamsProvider<St
 
   @Override
   protected Map.Entry<String, String> translateToArg(
-      OptionSpec matchedOption, Map.Entry<String, String> envEntry) {
+      final OptionSpec matchedOption, final Map.Entry<String, String> envEntry) {
     return Map.entry(matchedOption.longestName(), envEntry.getValue());
   }
 }

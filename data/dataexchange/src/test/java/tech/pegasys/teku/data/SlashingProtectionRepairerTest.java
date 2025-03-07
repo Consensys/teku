@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class SlashingProtectionRepairerTest {
   private static final UInt64 TWO = UInt64.valueOf(2);
   final ValidatorSigningRecord validatorSigningRecord =
-      new ValidatorSigningRecord(null, ONE, ONE, ONE);
+      new ValidatorSigningRecord(Optional.empty(), ONE, ONE, ONE);
   private SyncDataAccessor syncDataAccessor;
   private final SubCommandLogger subCommandLogger = mock(SubCommandLogger.class);
   final Spec spec = TestSpecFactory.createMinimalPhase0();
@@ -78,7 +78,8 @@ public class SlashingProtectionRepairerTest {
 
   @Test
   void updateSigningRecord_shouldUpdateBlockSlot() {
-    final ValidatorSigningRecord expectedValue = new ValidatorSigningRecord(null, TWO, ONE, ONE);
+    final ValidatorSigningRecord expectedValue =
+        new ValidatorSigningRecord(Optional.empty(), TWO, ONE, ONE);
     assertThat(
             SlashingProtectionRepairer.updateSigningRecord(
                 TWO, ZERO, Optional.of(validatorSigningRecord)))
@@ -87,7 +88,8 @@ public class SlashingProtectionRepairerTest {
 
   @Test
   void updateSigningRecord_shouldUpdateAttestationEpoch() {
-    final ValidatorSigningRecord expectedValue = new ValidatorSigningRecord(null, ONE, TWO, TWO);
+    final ValidatorSigningRecord expectedValue =
+        new ValidatorSigningRecord(Optional.empty(), ONE, TWO, TWO);
     assertThat(
             SlashingProtectionRepairer.updateSigningRecord(
                 ONE, TWO, Optional.of(validatorSigningRecord)))
@@ -96,24 +98,29 @@ public class SlashingProtectionRepairerTest {
 
   @Test
   void updateSigningRecord_shouldUpdateSourceAttestationEpoch() {
-    final ValidatorSigningRecord initialValue = new ValidatorSigningRecord(null, ONE, ZERO, TWO);
-    final ValidatorSigningRecord expectedValue = new ValidatorSigningRecord(null, ONE, ONE, TWO);
+    final ValidatorSigningRecord initialValue =
+        new ValidatorSigningRecord(Optional.empty(), ONE, ZERO, TWO);
+    final ValidatorSigningRecord expectedValue =
+        new ValidatorSigningRecord(Optional.empty(), ONE, ONE, TWO);
     assertThat(SlashingProtectionRepairer.updateSigningRecord(ONE, ONE, Optional.of(initialValue)))
         .isEqualTo(expectedValue);
   }
 
   @Test
   void updateSigningRecord_shouldUpdateTargetAttestationEpoch() {
-    final ValidatorSigningRecord initialValue = new ValidatorSigningRecord(null, ONE, TWO, ONE);
-    final ValidatorSigningRecord expectedValue = new ValidatorSigningRecord(null, ONE, TWO, TWO);
+    final ValidatorSigningRecord initialValue =
+        new ValidatorSigningRecord(Optional.empty(), ONE, TWO, ONE);
+    final ValidatorSigningRecord expectedValue =
+        new ValidatorSigningRecord(Optional.empty(), ONE, TWO, TWO);
     assertThat(SlashingProtectionRepairer.updateSigningRecord(ZERO, TWO, Optional.of(initialValue)))
         .isEqualTo(expectedValue);
   }
 
   @Test
-  public void shouldNotUpdateFilesWithInvalidPubkeys(@TempDir Path tempDir) throws IOException {
+  public void shouldNotUpdateFilesWithInvalidPubkeys(@TempDir final Path tempDir)
+      throws IOException {
     setupPathForTest(tempDir, Map.of("a.yml", Optional.of(validatorSigningRecord)));
-    SlashingProtectionRepairer repairer =
+    final SlashingProtectionRepairer repairer =
         SlashingProtectionRepairer.create(subCommandLogger, tempDir, true);
     assertThat(repairer.hasUpdates()).isFalse();
     verify(subCommandLogger).display(" --- a.yml - invalid public key - ignoring file");
@@ -126,7 +133,7 @@ public class SlashingProtectionRepairerTest {
   }
 
   @Test
-  public void shouldUpdateValidAndInvalidFiles(@TempDir Path tempDir) throws IOException {
+  public void shouldUpdateValidAndInvalidFiles(@TempDir final Path tempDir) throws IOException {
     setupPathForTest(tempDir, testData);
     SlashingProtectionRepairer repairer =
         SlashingProtectionRepairer.create(subCommandLogger, tempDir, true);
@@ -138,7 +145,8 @@ public class SlashingProtectionRepairerTest {
 
     final Optional<ValidatorSigningRecord> defaultRecord =
         Optional.of(
-            new ValidatorSigningRecord(null, blockSlot, attestationEpoch, attestationEpoch));
+            new ValidatorSigningRecord(
+                Optional.empty(), blockSlot, attestationEpoch, attestationEpoch));
 
     assertThat(fileContents(tempDir.resolve(keys.get(0)))).isEqualTo(defaultRecord);
     // all original values were lower, so the entire file should get updated
@@ -152,7 +160,7 @@ public class SlashingProtectionRepairerTest {
   }
 
   @Test
-  public void shouldUpdateInvalidFiles(@TempDir Path tempDir) throws IOException {
+  public void shouldUpdateInvalidFiles(@TempDir final Path tempDir) throws IOException {
     setupPathForTest(tempDir, testData);
     SlashingProtectionRepairer repairer =
         SlashingProtectionRepairer.create(subCommandLogger, tempDir, false);
@@ -164,7 +172,8 @@ public class SlashingProtectionRepairerTest {
 
     final Optional<ValidatorSigningRecord> defaultRecord =
         Optional.of(
-            new ValidatorSigningRecord(null, blockSlot, attestationEpoch, attestationEpoch));
+            new ValidatorSigningRecord(
+                Optional.empty(), blockSlot, attestationEpoch, attestationEpoch));
 
     assertThat(fileContents(tempDir.resolve(keys.get(0)))).isEqualTo(defaultRecord);
     assertThat(fileContents(tempDir.resolve(keys.get(1)))).isEqualTo(testData.get(keys.get(1)));
@@ -179,7 +188,8 @@ public class SlashingProtectionRepairerTest {
 
   private Optional<ValidatorSigningRecord> optionalSigningRecord(
       final UInt64 blockSlot, final UInt64 sourceEpoch, final UInt64 targetEpoch) {
-    return Optional.of(new ValidatorSigningRecord(null, blockSlot, sourceEpoch, targetEpoch));
+    return Optional.of(
+        new ValidatorSigningRecord(Optional.empty(), blockSlot, sourceEpoch, targetEpoch));
   }
 
   private String randomValidatorFile() {
@@ -187,7 +197,8 @@ public class SlashingProtectionRepairerTest {
   }
 
   private void setupPathForTest(
-      Path slashingProtectionPath, Map<String, Optional<ValidatorSigningRecord>> records)
+      final Path slashingProtectionPath,
+      final Map<String, Optional<ValidatorSigningRecord>> records)
       throws IOException {
     syncDataAccessor = SyncDataAccessor.create(slashingProtectionPath);
     for (Map.Entry<String, Optional<ValidatorSigningRecord>> entry : records.entrySet()) {

@@ -47,7 +47,7 @@ public class GeneratedClassesNotModifiedTest {
    */
   @Test
   @EnabledIfSystemProperty(named = PROJECT_PROPERTY_NAME, matches = ".*")
-  void checkGeneratesSszClassesWasNotModified(@TempDir Path tmpDir) throws IOException {
+  void checkGeneratesSszClassesWasNotModified(@TempDir final Path tmpDir) throws IOException {
     Path sszProjectSource = Path.of(System.getProperty(PROJECT_PROPERTY_NAME));
     Path committedSrcRoot = sszProjectSource.resolve(Path.of("src", "main", "java"));
     Path templatesSrcRoot = sszProjectSource.resolve(Path.of("generator", "src", "main", "java"));
@@ -70,7 +70,7 @@ public class GeneratedClassesNotModifiedTest {
     }
   }
 
-  private void compareJavaSrc(String committedSrc, String generatedSrc) {
+  private void compareJavaSrc(final String committedSrc, final String generatedSrc) {
     String canonicalCommittedSrc = comparableSrc(committedSrc);
     String canonicalGeneratedSrc = comparableSrc(generatedSrc);
     if (!canonicalCommittedSrc.equals(canonicalGeneratedSrc)) {
@@ -83,15 +83,15 @@ public class GeneratedClassesNotModifiedTest {
     }
   }
 
-  private String comparableSrc(String src) {
+  private String comparableSrc(final String src) {
     return removeSpaces(removeComments(src));
   }
 
-  private String removeSpaces(String src) {
+  private String removeSpaces(final String src) {
     return SPACES_PATTERN.matcher(src).replaceAll("");
   }
 
-  private String removeComments(String src) {
+  private String removeComments(final String src) {
     String s1 = MULTILINE_LINE_COMMENT_PATTERN.matcher(src).replaceAll("");
     return ONE_LINE_COMMENT_PATTERN.matcher(s1).replaceAll("");
   }

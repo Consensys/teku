@@ -20,7 +20,7 @@ public abstract class Event<T> {
   final SerializableTypeDefinition<T> type;
   final T data;
 
-  Event(SerializableTypeDefinition<T> type, T data) {
+  Event(final SerializableTypeDefinition<T> type, final T data) {
     this.type = type;
     this.data = data;
   }

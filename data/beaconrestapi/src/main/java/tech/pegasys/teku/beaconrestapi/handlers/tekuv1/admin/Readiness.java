@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.REQUIRE_PREPARED_PROPOSERS_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.REQUIRE_VALIDATOR_REGISTRATIONS_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.TARGET_PEER_COUNT_PARAMETER;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
@@ -68,6 +69,8 @@ public class Readiness extends RestApiEndpoint {
             .queryParam(REQUIRE_VALIDATOR_REGISTRATIONS_PARAMETER)
             .response(SC_OK, "Node is ready")
             .response(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues")
+            .response(
+                SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
             .build());
     this.syncProvider = syncProvider;
     this.chainDataProvider = chainDataProvider;
@@ -77,7 +80,7 @@ public class Readiness extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
 
     if (!chainDataProvider.isStoreAvailable()
@@ -94,7 +97,7 @@ public class Readiness extends RestApiEndpoint {
   private boolean belowTargetPeerCount(final RestApiRequest request) {
     return request
         .getOptionalQueryParameter(TARGET_PEER_COUNT_PARAMETER)
-        .map(targetPeerCount -> networkDataProvider.getPeerCount() < targetPeerCount)
+        .map(targetPeerCount -> networkDataProvider.countPeers() < targetPeerCount)
         .orElse(false);
   }
 

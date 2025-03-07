@@ -53,13 +53,13 @@ public class LightClientUpdateSchema
   }
 
   public LightClientUpdate create(
-      LightClientHeader attestedHeader,
-      SyncCommittee nextSyncCommittee,
-      SszBytes32Vector nextSyncCommitteeBranch,
-      LightClientHeader finalizedHeader,
-      SszBytes32Vector finalityBranch,
-      SyncAggregate syncAggregate,
-      SszUInt64 signatureSlot) {
+      final LightClientHeader attestedHeader,
+      final SyncCommittee nextSyncCommittee,
+      final SszBytes32Vector nextSyncCommitteeBranch,
+      final LightClientHeader finalizedHeader,
+      final SszBytes32Vector finalityBranch,
+      final SyncAggregate syncAggregate,
+      final SszUInt64 signatureSlot) {
     return new LightClientUpdate(
         this,
         attestedHeader,
@@ -72,7 +72,7 @@ public class LightClientUpdateSchema
   }
 
   @Override
-  public LightClientUpdate createFromBackingNode(TreeNode node) {
+  public LightClientUpdate createFromBackingNode(final TreeNode node) {
     return new LightClientUpdate(this, node);
   }
 

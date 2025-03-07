@@ -24,7 +24,7 @@ public interface RpcResponseHandler<T> extends RpcResponseListener<T> {
     onCompleted(Optional.empty());
   }
 
-  default void onCompleted(Throwable t) {
+  default void onCompleted(final Throwable t) {
     onCompleted(Optional.of(t));
   }
 }

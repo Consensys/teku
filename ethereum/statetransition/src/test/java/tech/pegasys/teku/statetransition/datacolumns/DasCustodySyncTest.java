@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -43,13 +43,14 @@ public class DasCustodySyncTest {
   static final int MAX_AVERAGE_BLOCK_DB_READS_PER_SLOT = 30;
 
   final Spec spec =
-      TestSpecFactory.createMinimalEip7594(
+      TestSpecFactory.createMinimalFulu(
           builder ->
-              builder.eip7594Builder(
-                  dasBuilder ->
-                      dasBuilder
+              builder.fuluBuilder(
+                  fuluBuilder ->
+                      fuluBuilder
                           .dataColumnSidecarSubnetCount(4)
                           .numberOfColumns(8)
+                          .numberOfCustodyGroups(8)
                           .custodyRequirement(2)
                           .minEpochsForDataColumnSidecarsRequests(64)));
 
@@ -306,7 +307,7 @@ public class DasCustodySyncTest {
     assertThat(retrieverStub.requests).hasSize(retrieveRequests_1_0.size() * 2);
   }
 
-  private void addBlockAndSidecars(int slot) {
+  private void addBlockAndSidecars(final int slot) {
     SignedBeaconBlock block = custodyStand.createBlockWithBlobs(slot);
     custodyStand.blockResolver.addBlock(block.getMessage());
     List<DataColumnSidecar> columnSidecars = custodyStand.createCustodyColumnSidecars(block);
@@ -318,7 +319,7 @@ public class DasCustodySyncTest {
         custodyStand.getMinCustodySlot().intValue(), custodyStand.getCurrentSlot().intValue());
   }
 
-  private void assertCustodyColumnsPresent(int fromSlot, int tillSlot) {
+  private void assertCustodyColumnsPresent(final int fromSlot, final int tillSlot) {
     for (int slot = fromSlot; slot < tillSlot; slot++) {
       UInt64 uSlot = UInt64.valueOf(slot);
       Optional<BeaconBlock> maybeBlock = custodyStand.blockResolver.getBlockAtSlot(uSlot).join();
@@ -351,11 +352,11 @@ public class DasCustodySyncTest {
     custodyStand.advanceTimeGraduallyUntilAllDone(ofMinutes(1));
   }
 
-  private <T> T await(CompletableFuture<T> future) {
+  private <T> T await(final CompletableFuture<T> future) {
     return await(future, ofMinutes(1));
   }
 
-  private <T> T await(CompletableFuture<T> future, Duration maxWait) {
+  private <T> T await(final CompletableFuture<T> future, final Duration maxWait) {
     for (int i = 0; i < maxWait.toMillis(); i++) {
       if (future.isDone()) {
         try {

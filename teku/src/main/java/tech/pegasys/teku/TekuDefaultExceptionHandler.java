@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.events.ChannelExceptionHandler;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.services.beaconchain.EphemeryLifecycleException;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 
@@ -83,6 +84,9 @@ public final class TekuDefaultExceptionHandler
       statusLog.fatalError(subscriberDescription, exception);
       System.exit(FATAL_EXIT_CODE);
     } else if (exception instanceof OutOfMemoryError) {
+      statusLog.fatalError(subscriberDescription, exception);
+      System.exit(ERROR_EXIT_CODE);
+    } else if (exception instanceof EphemeryLifecycleException) {
       statusLog.fatalError(subscriberDescription, exception);
       System.exit(ERROR_EXIT_CODE);
     } else if (exception instanceof ShuttingDownException) {

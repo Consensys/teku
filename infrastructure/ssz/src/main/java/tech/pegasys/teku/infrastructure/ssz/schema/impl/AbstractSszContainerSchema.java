@@ -50,11 +50,12 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     private final String name;
     private final SszSchema<T> schema;
 
-    public static <T extends SszData> NamedSchema<T> of(String name, SszSchema<T> schema) {
+    public static <T extends SszData> NamedSchema<T> of(
+        final String name, final SszSchema<T> schema) {
       return new NamedSchema<>(name, schema);
     }
 
-    private NamedSchema(String name, SszSchema<T> schema) {
+    private NamedSchema(final String name, final SszSchema<T> schema) {
       this.name = name;
       this.schema = schema;
     }
@@ -69,12 +70,12 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   }
 
   protected static <T extends SszData> NamedSchema<T> namedSchema(
-      SszFieldName fieldName, SszSchema<T> schema) {
+      final SszFieldName fieldName, final SszSchema<T> schema) {
     return namedSchema(fieldName.getSszFieldName(), schema);
   }
 
   protected static <T extends SszData> NamedSchema<T> namedSchema(
-      String fieldName, SszSchema<T> schema) {
+      final String fieldName, final SszSchema<T> schema) {
     return new NamedSchema<>(fieldName, schema);
   }
 
@@ -90,7 +91,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   private final DeserializableTypeDefinition<C> jsonTypeDefinition;
 
   protected AbstractSszContainerSchema(
-      String name, List<? extends NamedSchema<?>> childrenSchemas) {
+      final String name, final List<? extends NamedSchema<?>> childrenSchemas) {
     this.containerName = name;
     for (int i = 0; i < childrenSchemas.size(); i++) {
       final NamedSchema<?> childSchema = childrenSchemas.get(i);
@@ -108,7 +109,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     this.jsonTypeDefinition = SszContainerTypeDefinition.createFor(this);
   }
 
-  protected AbstractSszContainerSchema(List<SszSchema<?>> childrenSchemas) {
+  protected AbstractSszContainerSchema(final List<SszSchema<?>> childrenSchemas) {
     this.containerName = "";
     for (int i = 0; i < childrenSchemas.size(); i++) {
       final String name = "field-" + i;
@@ -123,7 +124,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   }
 
   @Override
-  public TreeNode createTreeFromFieldValues(List<? extends SszData> fieldValues) {
+  public TreeNode createTreeFromFieldValues(final List<? extends SszData> fieldValues) {
     checkArgument(fieldValues.size() == getFieldsCount(), "Wrong number of filed values");
     return TreeUtil.createTree(fieldValues.stream().map(SszData::getBackingNode).toList());
   }
@@ -162,7 +163,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   }
 
   @Override
-  public SszSchema<?> getChildSchema(int index) {
+  public SszSchema<?> getChildSchema(final int index) {
     return childrenSchemas.get(index);
   }
 
@@ -173,7 +174,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
    * @return The index if it exists, otherwise -1
    */
   @Override
-  public int getFieldIndex(String fieldName) {
+  public int getFieldIndex(final String fieldName) {
     return childrenNamesToFieldIndex.getOrDefault(fieldName, -1);
   }
 
@@ -186,7 +187,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }
@@ -227,7 +228,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   }
 
   @Override
-  public int getSszVariablePartSize(TreeNode node) {
+  public int getSszVariablePartSize(final TreeNode node) {
     if (isFixedSize()) {
       return 0;
     } else {
@@ -248,7 +249,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   }
 
   @Override
-  public int sszSerializeTree(TreeNode node, SszWriter writer) {
+  public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
     int variableChildOffset = getSszFixedPartSize();
     int[] variableSizes = new int[getFieldsCount()];
     for (int i = 0; i < getFieldsCount(); i++) {
@@ -276,7 +277,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   }
 
   @Override
-  public TreeNode sszDeserializeTree(SszReader reader) {
+  public TreeNode sszDeserializeTree(final SszReader reader) {
     int endOffset = reader.getAvailableBytes();
     int childCount = getFieldsCount();
     Queue<TreeNode> fixedChildrenSubtrees = new ArrayDeque<>(childCount);

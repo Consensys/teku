@@ -40,7 +40,7 @@ public abstract class AbstractEth2RpcMethod<
   }
 
   @Override
-  public Bytes encodeRequest(TRequest request) {
+  public Bytes encodeRequest(final TRequest request) {
     return requestEncoder.encodeRequest(request);
   }
 

@@ -43,9 +43,7 @@ public class BellatrixStateUpgrade implements StateUpgrade<BeaconStateBellatrix>
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
     BeaconStateAltair preStateAltair = BeaconStateAltair.required(preState);
 
-    return schemaDefinitions
-        .getBeaconStateSchema()
-        .createEmpty()
+    return BeaconStateBellatrix.required(schemaDefinitions.getBeaconStateSchema().createEmpty())
         .updatedBellatrix(
             state -> {
               BeaconStateFields.copyCommonFieldsFromSource(state, preState);

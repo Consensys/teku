@@ -51,13 +51,13 @@ public class DepositProcessingController {
   private final Eth1BlockFetcher eth1BlockFetcher;
 
   public DepositProcessingController(
-      SpecConfig config,
-      Eth1Provider eth1Provider,
-      Eth1EventsChannel eth1EventsChannel,
-      AsyncRunner asyncRunner,
-      DepositFetcher depositFetcher,
-      Eth1BlockFetcher eth1BlockFetcher,
-      Eth1HeadTracker headTracker) {
+      final SpecConfig config,
+      final Eth1Provider eth1Provider,
+      final Eth1EventsChannel eth1EventsChannel,
+      final AsyncRunner asyncRunner,
+      final DepositFetcher depositFetcher,
+      final Eth1BlockFetcher eth1BlockFetcher,
+      final Eth1HeadTracker headTracker) {
     this.config = config;
     this.eth1Provider = eth1Provider;
     this.eth1EventsChannel = eth1EventsChannel;
@@ -73,7 +73,7 @@ public class DepositProcessingController {
   }
 
   // inclusive of start block
-  public synchronized void startSubscription(BigInteger subscriptionStartBlock) {
+  public synchronized void startSubscription(final BigInteger subscriptionStartBlock) {
     LOG.debug("Starting subscription at block {}", subscriptionStartBlock);
     latestSuccessfullyQueriedBlock = subscriptionStartBlock.subtract(BigInteger.ONE);
     newBlockSubscription = headTracker.subscribe(this::onNewCanonicalBlockNumber);
@@ -89,7 +89,7 @@ public class DepositProcessingController {
     return depositFetcher.fetchDepositsInRange(fromBlockNumber, toBlockNumber);
   }
 
-  private synchronized void onNewCanonicalBlockNumber(UInt64 newCanonicalBlockNumber) {
+  private synchronized void onNewCanonicalBlockNumber(final UInt64 newCanonicalBlockNumber) {
     this.latestCanonicalBlockNumber = newCanonicalBlockNumber.bigIntegerValue();
     fetchLatestSubscriptionDeposits();
   }
@@ -165,7 +165,8 @@ public class DepositProcessingController {
     return active || latestCanonicalBlockNumber.compareTo(latestSuccessfullyQueriedBlock) <= 0;
   }
 
-  private synchronized void onSubscriptionDepositRequestSuccessful(BigInteger requestToBlock) {
+  private synchronized void onSubscriptionDepositRequestSuccessful(
+      final BigInteger requestToBlock) {
     active = false;
     latestSuccessfullyQueriedBlock = requestToBlock;
     if (latestCanonicalBlockNumber.compareTo(latestSuccessfullyQueriedBlock) > 0) {
@@ -177,12 +178,12 @@ public class DepositProcessingController {
   }
 
   private synchronized void onSubscriptionDepositRequestFailed(
-      Throwable err, BigInteger fromBlock) {
+      final Throwable err, final BigInteger fromBlock) {
     onSubscriptionDepositRequestFailed(err, fromBlock, fromBlock);
   }
 
   private synchronized void onSubscriptionDepositRequestFailed(
-      Throwable err, BigInteger fromBlock, BigInteger toBlock) {
+      final Throwable err, final BigInteger fromBlock, final BigInteger toBlock) {
     active = false;
 
     if (Throwables.getRootCause(err) instanceof InvalidDepositEventsException) {

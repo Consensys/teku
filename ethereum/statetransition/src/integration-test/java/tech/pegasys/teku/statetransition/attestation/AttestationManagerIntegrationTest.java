@@ -35,8 +35,8 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -75,7 +75,7 @@ class AttestationManagerIntegrationTest {
 
   private final AggregatingAttestationPool attestationPool =
       new AggregatingAttestationPool(
-          spec, new NoOpMetricsSystem(), DEFAULT_MAXIMUM_ATTESTATION_COUNT);
+          spec, recentChainData, new NoOpMetricsSystem(), DEFAULT_MAXIMUM_ATTESTATION_COUNT);
   private final MergeTransitionBlockValidator transitionBlockValidator =
       new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
   private final ForkChoice forkChoice =
@@ -262,7 +262,7 @@ class AttestationManagerIntegrationTest {
             .chainBuilder()
             .sign(validatorId, signer -> signer.signAttestationData(attestationData, forkInfo));
 
-    final AttestationSchema attestationSchema =
+    final AttestationSchema<?> attestationSchema =
         spec.atSlot(attestationSlot).getSchemaDefinitions().getAttestationSchema();
     SszBitlist aggregationBits =
         attestationSchema

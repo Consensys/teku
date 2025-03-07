@@ -258,10 +258,10 @@ public class StoreTransactionTest extends AbstractStoreTest {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(epochStartSlot);
     final Checkpoint checkpoint = new Checkpoint(epoch, blockAndState.getRoot());
 
-    UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+    final UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.putBlockAndState(blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
 
-    SafeFuture<Optional<BeaconState>> result = tx.retrieveCheckpointState(checkpoint);
+    final SafeFuture<Optional<BeaconState>> result = tx.retrieveCheckpointState(checkpoint);
     assertThat(result).isCompletedWithValue(Optional.of(blockAndState.getState()));
   }
 
@@ -415,7 +415,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
             mainChainBlock4.getRoot());
   }
 
-  private void setTime(UpdatableStore store, final UInt64 newTime) {
+  private void setTime(final UpdatableStore store, final UInt64 newTime) {
     final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.setTimeMillis(newTime);
     assertThat(tx.commit()).isCompleted();

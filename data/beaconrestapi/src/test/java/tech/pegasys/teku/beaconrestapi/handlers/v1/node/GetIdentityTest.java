@@ -53,7 +53,7 @@ public class GetIdentityTest extends AbstractMigratedBeaconHandlerTest {
     when(eth2P2PNetwork.getMetadata()).thenReturn(defaultMetadata);
     when(eth2P2PNetwork.getNodeId()).thenReturn(nodeid);
     when(nodeid.toBase58()).thenReturn("aeiou");
-    when(eth2P2PNetwork.getNodeAddress()).thenReturn("address");
+    when(eth2P2PNetwork.getNodeAddresses()).thenReturn(List.of("address"));
 
     handler.handleRequest(request);
 

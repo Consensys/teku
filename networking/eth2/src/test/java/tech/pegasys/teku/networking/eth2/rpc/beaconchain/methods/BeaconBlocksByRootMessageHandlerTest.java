@@ -95,7 +95,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
   }
 
   @Test
-  public void onIncomingMessage_shouldRejectRequestWhenCountIsTooBig() {
+  public void validateRequest_shouldRejectRequestWhenCountIsTooBig() {
     final UInt64 denebForkEpoch = UInt64.valueOf(4);
     // Testing for Deneb since can't initialize BeaconBlocksByRootMessageHandler with size more
     // than MAX_REQUEST_BLOCKS
@@ -115,18 +115,15 @@ public class BeaconBlocksByRootMessageHandlerTest {
             .map(__ -> Bytes32.ZERO)
             .collect(Collectors.toList());
 
-    handler.onIncomingMessage(
-        V2_PROTOCOL_ID,
-        peer,
-        new BeaconBlocksByRootRequestMessage(
-            spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(), roots),
-        callback);
+    final Optional<RpcException> result =
+        handler.validateRequest(
+            V2_PROTOCOL_ID,
+            new BeaconBlocksByRootRequestMessage(
+                spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(),
+                roots));
 
-    // Rate limiter not invoked
-    verify(peer, never()).approveBlocksRequest(any(), anyLong());
-
-    verify(callback)
-        .completeWithErrorResponse(
+    assertThat(result)
+        .hasValue(
             new RpcException(
                 INVALID_REQUEST_CODE, "Only a maximum of 128 blocks can be requested per request"));
   }

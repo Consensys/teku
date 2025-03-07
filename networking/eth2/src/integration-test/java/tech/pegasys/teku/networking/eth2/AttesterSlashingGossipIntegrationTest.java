@@ -24,6 +24,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory.Eth2P2PNetworkBuilder;
@@ -35,7 +37,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class AttesterSlashingGossipIntegrationTest {
-
+  private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(3);
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
   private final DataStructureUtil dataStructureUtil =
@@ -91,6 +93,6 @@ public class AttesterSlashingGossipIntegrationTest {
 
   private NodeManager createNodeManager(final Consumer<Eth2P2PNetworkBuilder> networkBuilder)
       throws Exception {
-    return NodeManager.create(networkFactory, validatorKeys, networkBuilder);
+    return NodeManager.create(asyncRunner, networkFactory, validatorKeys, networkBuilder);
   }
 }

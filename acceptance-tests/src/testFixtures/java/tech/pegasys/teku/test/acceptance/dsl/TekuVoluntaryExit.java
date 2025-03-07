@@ -44,7 +44,7 @@ public class TekuVoluntaryExit extends Node {
   }
 
   public static TekuVoluntaryExit create(
-      final Network network, Consumer<TekuVoluntaryExit.Config> configOptions) {
+      final Network network, final Consumer<TekuVoluntaryExit.Config> configOptions) {
 
     final TekuVoluntaryExit.Config config = new TekuVoluntaryExit.Config();
     configOptions.accept(config);
@@ -54,7 +54,7 @@ public class TekuVoluntaryExit extends Node {
     return node;
   }
 
-  public TekuVoluntaryExit withValidatorKeystores(ValidatorKeystores validatorKeystores)
+  public TekuVoluntaryExit withValidatorKeystores(final ValidatorKeystores validatorKeystores)
       throws Exception {
     this.config.withValidatorKeys(
         WORKING_DIRECTORY
@@ -96,7 +96,7 @@ public class TekuVoluntaryExit extends Node {
   }
 
   public static class Config {
-    private Map<String, Object> configMap = new HashMap<>();
+    private final Map<String, Object> configMap = new HashMap<>();
 
     public Config() {
       configMap.put("log-destination", "console");

@@ -47,7 +47,7 @@ public class BeaconBlock implements UnsignedBlock, UnsignedBlindedBlock {
     return body;
   }
 
-  protected BeaconBlock(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
+  protected BeaconBlock(final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
     this.slot = message.getSlot();
     this.proposer_index = message.getProposerIndex();
     this.parent_root = message.getParentRoot();
@@ -86,7 +86,7 @@ public class BeaconBlock implements UnsignedBlock, UnsignedBlindedBlock {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

@@ -33,7 +33,7 @@ public interface MetadataMessage extends SszContainer, RpcRequest {
     return Optional.empty();
   }
 
-  default Optional<UInt64> getOptionalCustodySubnetCount() {
+  default Optional<UInt64> getOptionalCustodyGroupCount() {
     return Optional.empty();
   }
 }

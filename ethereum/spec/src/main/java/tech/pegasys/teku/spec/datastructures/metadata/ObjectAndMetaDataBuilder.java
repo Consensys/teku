@@ -22,27 +22,27 @@ public class ObjectAndMetaDataBuilder<T> {
   private boolean canonical;
   private boolean finalized;
 
-  public ObjectAndMetaDataBuilder<T> data(T data) {
+  public ObjectAndMetaDataBuilder<T> data(final T data) {
     this.data = data;
     return this;
   }
 
-  public ObjectAndMetaDataBuilder<T> milestone(SpecMilestone milestone) {
+  public ObjectAndMetaDataBuilder<T> milestone(final SpecMilestone milestone) {
     this.milestone = milestone;
     return this;
   }
 
-  public ObjectAndMetaDataBuilder<T> executionOptimistic(boolean executionOptimistic) {
+  public ObjectAndMetaDataBuilder<T> executionOptimistic(final boolean executionOptimistic) {
     this.executionOptimistic = executionOptimistic;
     return this;
   }
 
-  public ObjectAndMetaDataBuilder<T> canonical(boolean canonical) {
+  public ObjectAndMetaDataBuilder<T> canonical(final boolean canonical) {
     this.canonical = canonical;
     return this;
   }
 
-  public ObjectAndMetaDataBuilder<T> finalized(boolean finalized) {
+  public ObjectAndMetaDataBuilder<T> finalized(final boolean finalized) {
     this.finalized = finalized;
     return this;
   }

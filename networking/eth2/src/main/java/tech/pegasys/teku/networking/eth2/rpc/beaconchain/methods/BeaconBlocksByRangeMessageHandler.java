@@ -165,7 +165,6 @@ public class BeaconBlocksByRangeMessageHandler
     final UInt64 startSlot = message.getStartSlot();
     final UInt64 count = message.getCount();
     final UInt64 step = message.getStep();
-    final UInt64 endSlot = startSlot.plus(step.times(count)).minus(ONE);
 
     return combinedChainDataClient
         .getEarliestAvailableBlockSlot()
@@ -183,7 +182,7 @@ public class BeaconBlocksByRangeMessageHandler
                       .map(MinimalBeaconBlockSummary::getSlot)
                       .orElse(ZERO);
               final NavigableMap<UInt64, Bytes32> hotRoots;
-              if (combinedChainDataClient.isFinalized(endSlot)) {
+              if (combinedChainDataClient.isFinalized(message.getMaxSlot())) {
                 // All blocks are finalized so skip scanning the protoarray
                 hotRoots = new TreeMap<>();
               } else {
@@ -195,8 +194,12 @@ public class BeaconBlocksByRangeMessageHandler
               // finalized
               // so we don't need to worry about inconsistent blocks
               final UInt64 headSlot = hotRoots.isEmpty() ? headBlockSlot : hotRoots.lastKey();
-              return sendNextBlock(
-                  new RequestState(startSlot, step, count, headSlot, hotRoots, callback));
+              final RequestState initialState =
+                  new RequestState(startSlot, step, count, headSlot, hotRoots, callback);
+              if (initialState.isComplete()) {
+                return SafeFuture.completedFuture(initialState);
+              }
+              return sendNextBlock(initialState);
             });
   }
 
@@ -220,7 +223,11 @@ public class BeaconBlocksByRangeMessageHandler
     // Ensure blocks are loaded off of the event thread
     return requestState
         .loadNextBlock()
-        .thenCompose(block -> handleLoadedBlock(requestState, block));
+        .thenCompose(
+            block -> {
+              requestState.decrementRemainingBlocks();
+              return handleLoadedBlock(requestState, block);
+            });
   }
 
   /** Sends the block and returns true if the request is now complete. */
@@ -241,12 +248,14 @@ public class BeaconBlocksByRangeMessageHandler
   }
 
   private class RequestState {
+
     private final UInt64 headSlot;
     private final ResponseCallback<SignedBeaconBlock> callback;
     private final UInt64 step;
     private final NavigableMap<UInt64, Bytes32> knownBlockRoots;
     private UInt64 currentSlot;
     private UInt64 remainingBlocks;
+
     private final AtomicInteger sentBlocks = new AtomicInteger(0);
 
     RequestState(
@@ -258,9 +267,7 @@ public class BeaconBlocksByRangeMessageHandler
         final ResponseCallback<SignedBeaconBlock> callback) {
       this.currentSlot = startSlot;
       this.knownBlockRoots = knownBlockRoots;
-      // Minus 1 to account for sending the block at startSlot.
-      // We only decrement this when moving to the next slot but we're already at the first slot
-      this.remainingBlocks = count.minus(ONE);
+      this.remainingBlocks = count;
       this.step = step;
       this.headSlot = headSlot;
       this.callback = callback;
@@ -287,8 +294,11 @@ public class BeaconBlocksByRangeMessageHandler
       return callback.respond(block).thenRun(sentBlocks::incrementAndGet);
     }
 
+    void decrementRemainingBlocks() {
+      remainingBlocks = remainingBlocks.minusMinZero(1);
+    }
+
     void incrementCurrentSlot() {
-      remainingBlocks = remainingBlocks.minus(ONE);
       currentSlot = currentSlot.plus(step);
     }
 

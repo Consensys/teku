@@ -36,7 +36,7 @@ public final class BeaconBlocksByRangeRequestMessage
     }
 
     @Override
-    public BeaconBlocksByRangeRequestMessage createFromBackingNode(TreeNode node) {
+    public BeaconBlocksByRangeRequestMessage createFromBackingNode(final TreeNode node) {
       return new BeaconBlocksByRangeRequestMessage(this, node);
     }
   }
@@ -45,7 +45,7 @@ public final class BeaconBlocksByRangeRequestMessage
       new BeaconBlocksByRangeRequestMessageSchema();
 
   private BeaconBlocksByRangeRequestMessage(
-      BeaconBlocksByRangeRequestMessageSchema type, TreeNode backingNode) {
+      final BeaconBlocksByRangeRequestMessageSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -67,7 +67,7 @@ public final class BeaconBlocksByRangeRequestMessage
   }
 
   public UInt64 getMaxSlot() {
-    return getStartSlot().plus(getCount().minus(1).times(getStep()));
+    return getStartSlot().plus(getCount().minusMinZero(1).times(getStep()));
   }
 
   @Override

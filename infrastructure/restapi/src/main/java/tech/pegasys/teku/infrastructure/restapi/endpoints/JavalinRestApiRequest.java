@@ -282,12 +282,12 @@ public class JavalinRestApiRequest implements RestApiRequest {
   }
 
   @Override
-  public void header(String name, String value) {
+  public void header(final String name, final String value) {
     context.header(name, value);
   }
 
   @Override
-  public void startEventStream(Consumer<SseClient> clientConsumer) {
+  public void startEventStream(final Consumer<SseClient> clientConsumer) {
     SseHandler sseHandler =
         new SseHandler(
             client -> {

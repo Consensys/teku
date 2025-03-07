@@ -19,22 +19,37 @@ import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 import java.util.ArrayList;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BeaconStateTestBuilder {
   private final List<Validator> validators = new ArrayList<>();
   private final List<UInt64> balances = new ArrayList<>();
+
+  private final List<PendingPartialWithdrawal> pendingPartialWithdrawals = new ArrayList<>();
   private UInt64 slot;
   private Fork fork;
   private final DataStructureUtil dataStructureUtil;
+
+  private final SpecConfig specConfig;
+  private final Spec spec;
 
   public BeaconStateTestBuilder(final DataStructureUtil dataStructureUtil) {
     this.slot = dataStructureUtil.randomUInt64();
     this.fork = dataStructureUtil.randomFork();
     this.dataStructureUtil = dataStructureUtil;
+    this.specConfig = dataStructureUtil.getSpec().getGenesisSpecConfig();
+    this.spec = dataStructureUtil.getSpec();
   }
 
   public BeaconStateTestBuilder slot(final long slot) {
@@ -53,13 +68,54 @@ public class BeaconStateTestBuilder {
     return this;
   }
 
-  public BeaconStateTestBuilder activeValidator(final UInt64 effectiveBalance) {
+  public BeaconStateTestBuilder activeValidator(final UInt64 balance) {
+    final UInt64 maxEffectiveBalance =
+        spec.getSpecConfig(spec.computeEpochAtSlot(slot)).getMaxEffectiveBalance();
     validators.add(
         dataStructureUtil
             .randomValidator()
-            .withEffectiveBalance(effectiveBalance)
+            .withEffectiveBalance(maxEffectiveBalance.min(balance))
             .withActivationEpoch(UInt64.ZERO)
             .withExitEpoch(FAR_FUTURE_EPOCH));
+    balances.add(balance);
+    return this;
+  }
+
+  public BeaconStateTestBuilder activeEth1Validator(final UInt64 balance) {
+    validators.add(
+        dataStructureUtil
+            .randomValidator()
+            .withWithdrawalCredentials(dataStructureUtil.randomEth1WithdrawalCredentials())
+            .withEffectiveBalance(specConfig.getMaxEffectiveBalance().min(balance))
+            .withActivationEpoch(UInt64.ZERO)
+            .withExitEpoch(FAR_FUTURE_EPOCH));
+    balances.add(balance);
+    return this;
+  }
+
+  public BeaconStateTestBuilder activeConsolidatingValidator(final UInt64 balance) {
+    validators.add(
+        dataStructureUtil
+            .randomValidator()
+            .withWithdrawalCredentials(dataStructureUtil.randomCompoundingWithdrawalCredentials())
+            .withEffectiveBalance(
+                SpecConfigElectra.required(specConfig).getMaxEffectiveBalanceElectra().min(balance))
+            .withActivationEpoch(UInt64.ZERO)
+            .withExitEpoch(FAR_FUTURE_EPOCH));
+    balances.add(balance);
+    return this;
+  }
+
+  public BeaconStateTestBuilder activeConsolidatingValidatorQueuedForExit(final UInt64 balance) {
+    validators.add(
+        dataStructureUtil
+            .randomValidator()
+            .withWithdrawalCredentials(dataStructureUtil.randomCompoundingWithdrawalCredentials())
+            .withEffectiveBalance(
+                SpecConfigElectra.required(specConfig).getMaxEffectiveBalanceElectra().min(balance))
+            .withActivationEpoch(UInt64.ZERO)
+            .withExitEpoch(FAR_FUTURE_EPOCH.minus(1)));
+    balances.add(balance);
     return this;
   }
 
@@ -75,6 +131,35 @@ public class BeaconStateTestBuilder {
               state.setFork(fork);
               state.getValidators().appendAll(validators);
               state.getBalances().appendAllElements(balances);
+              if (!pendingPartialWithdrawals.isEmpty()) {
+                final SszList<PendingPartialWithdrawal> partialWithdrawalSszList =
+                    SchemaDefinitionsElectra.required(
+                            dataStructureUtil.getSpec().atSlot(slot).getSchemaDefinitions())
+                        .getPendingPartialWithdrawalsSchema()
+                        .createFromElements(pendingPartialWithdrawals);
+                MutableBeaconStateElectra.required(state)
+                    .setPendingPartialWithdrawals(partialWithdrawalSszList);
+              }
             });
+  }
+
+  public BeaconStateTestBuilder pendingPartialWithdrawal(
+      final int validatorIndex, final UInt64 partialBalanceAmount) {
+    final PendingPartialWithdrawal pendingPartialWithdrawal =
+        SchemaDefinitionsElectra.required(
+                dataStructureUtil.getSpec().atSlot(slot).getSchemaDefinitions())
+            .getPendingPartialWithdrawalSchema()
+            .create(
+                SszUInt64.of(UInt64.valueOf(validatorIndex)),
+                SszUInt64.of(partialBalanceAmount),
+                SszUInt64.of(
+                    dataStructureUtil
+                        .getSpec()
+                        .atSlot(slot)
+                        .miscHelpers()
+                        .computeEpochAtSlot(slot)));
+
+    pendingPartialWithdrawals.add(pendingPartialWithdrawal);
+    return this;
   }
 }

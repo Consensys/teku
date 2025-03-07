@@ -22,6 +22,7 @@ import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigCapellaImpl;
@@ -38,14 +39,17 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
   CapellaBuilder() {}
 
   @Override
-  public SpecConfigCapella build(final SpecConfigBellatrix specConfig) {
-    return new SpecConfigCapellaImpl(
-        specConfig,
-        capellaForkVersion,
-        capellaForkEpoch,
-        maxBlsToExecutionChanges,
-        maxWithdrawalsPerPayload,
-        maxValidatorsPerWithdrawalSweep);
+  public SpecConfigAndParent<SpecConfigCapella> build(
+      final SpecConfigAndParent<SpecConfigBellatrix> specConfig) {
+    return SpecConfigAndParent.of(
+        new SpecConfigCapellaImpl(
+            specConfig.specConfig(),
+            capellaForkVersion,
+            capellaForkEpoch,
+            maxBlsToExecutionChanges,
+            maxWithdrawalsPerPayload,
+            maxValidatorsPerWithdrawalSweep),
+        specConfig);
   }
 
   public CapellaBuilder capellaForkEpoch(final UInt64 capellaForkEpoch) {

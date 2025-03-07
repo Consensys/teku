@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.bellatrix.helpers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
@@ -43,7 +44,7 @@ class BellatrixTransitionHelpersTest {
   private final UInt256 terminalDifficulty =
       spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalTotalDifficulty();
 
-  private UInt64 slot = dataStructureUtil.randomUInt64();
+  private final UInt64 slot = dataStructureUtil.randomUInt64();
 
   private final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
 
@@ -97,6 +98,8 @@ class BellatrixTransitionHelpersTest {
             .getBellatrixTransitionHelpers()
             .orElseThrow()
             .validateMergeBlock(executionLayer, payload, blockSlot);
+    // Verify EL is never called if hash is configured and matches
+    verifyNoMoreInteractions(executionLayer);
     assertPayloadResultStatus(result, ExecutionPayloadStatus.VALID);
   }
 

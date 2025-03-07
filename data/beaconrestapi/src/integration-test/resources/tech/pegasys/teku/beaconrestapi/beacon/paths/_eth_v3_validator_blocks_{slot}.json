@@ -34,13 +34,6 @@
         "format" : "byte"
       }
     }, {
-      "name" : "skip_randao_verification",
-      "in" : "query",
-      "schema" : {
-        "type" : "boolean",
-        "description" : "Skip verification of the `randao_reveal` value. If this flag is set then the\n `randao_reveal` must be set to the point at infinity (`0xc0..00`). This query parameter\n  is a flag and does not take a value"
-      }
-    }, {
       "name" : "builder_boost_factor",
       "in" : "query",
       "schema" : {
@@ -49,10 +42,61 @@
         "example" : "1",
         "format" : "uint64"
       }
+    }, {
+      "name" : "skip_randao_verification",
+      "allowEmptyValue" : true,
+      "in" : "query",
+      "schema" : {
+        "type" : "string",
+        "description" : "Skip verification of the `randao_reveal` value. Ignored in the Teku implementation.",
+        "minLength" : 0,
+        "maxLength" : 0
+      }
     } ],
     "responses" : {
       "200" : {
         "description" : "Request successful",
+        "headers": {
+          "Eth-Consensus-Version": {
+            "description": "Required in response so client can deserialize returned json or ssz data more effectively.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "phase0",
+                "altair",
+                "bellatrix",
+                "capella",
+                "deneb",
+                "electra"
+              ],
+              "example": "phase0"
+            }
+          },
+          "Eth-Execution-Payload-Blinded": {
+            "description": "Required in response so client can deserialize returned json or ssz data to the correct object.",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          "Eth-Execution-Payload-Value": {
+            "description": "Execution payload value in Wei. Required in response so client can determine relative value of execution payloads.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "1"
+            }
+          },
+          "Eth-Consensus-Block-Value": {
+            "description": "Consensus rewards paid to the proposer for this block, in Wei. Required in response so client can determine relative value of consensus blocks.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "1"
+            }
+          }
+        },
         "content" : {
           "application/json" : {
             "schema" : {
@@ -66,6 +110,20 @@
             }
           }
         }
+      },
+      "503" : {
+        "description" : "Service unavailable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
       },
       "400" : {
         "description" : "The request could not be processed, check the response for more information.",

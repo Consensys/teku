@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.SnappyFramedCompressor;
 
 public interface RpcEncoding {
-  static RpcEncoding createSszSnappyEncoding(int maxChunkSize) {
+  static RpcEncoding createSszSnappyEncoding(final int maxChunkSize) {
     return new LengthPrefixedEncoding(
         "ssz_snappy",
         RpcPayloadEncoders.createSszEncoders(),

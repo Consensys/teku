@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.remote.typedef.handlers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_BLOCK_VALUE;
@@ -35,6 +36,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -43,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
 @TestSpecContext(allMilestones = true, network = Eth2Network.MINIMAL)
@@ -54,7 +57,12 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
   @BeforeEach
   void setupRequest() {
     request =
-        new ProduceBlockRequest(mockWebServer.url("/"), okHttpClient, spec, UInt64.ONE, false);
+        new ProduceBlockRequest(
+            mockWebServer.url("/"),
+            okHttpClient,
+            new SchemaDefinitionCache(spec),
+            UInt64.ONE,
+            false);
     responseBodyBuffer = new Buffer();
   }
 
@@ -82,7 +90,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
+        request.submit(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
@@ -134,7 +142,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
+        request.submit(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
@@ -165,7 +173,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
+        request.submit(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData.map(BlockContainerAndMetaData::blockContainer))
         .hasValue(blockResponse.getData());
@@ -195,7 +203,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
+        request.submit(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
@@ -221,7 +229,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
+        request.submit(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
@@ -251,7 +259,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
-        request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
+        request.submit(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainerAndMetaData).isPresent();
 
@@ -270,8 +278,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
 
     // no optional parameters
-    assertThatThrownBy(
-        () -> request.createUnsignedBlock(signature, Optional.empty(), Optional.empty()));
+    assertThat(request.submit(signature, Optional.empty(), Optional.empty())).isEmpty();
 
     recordedRequest = mockWebServer.takeRequest();
 
@@ -284,10 +291,9 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
 
     // with all parameters
-    assertThatThrownBy(
-        () ->
-            request.createUnsignedBlock(
-                signature, Optional.of(Bytes32.ZERO), Optional.of(UInt64.valueOf(48))));
+    assertThat(
+            request.submit(signature, Optional.of(Bytes32.ZERO), Optional.of(UInt64.valueOf(48))))
+        .isEmpty();
 
     recordedRequest = mockWebServer.takeRequest();
 
@@ -298,6 +304,18 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
         .isEqualTo("0x0000000000000000000000000000000000000000000000000000000000000000");
     assertThat(recordedRequest.getRequestUrl().queryParameter("builder_boost_factor"))
         .isEqualTo("48");
+  }
+
+  @TestTemplate
+  void handle500() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
+    assertThatThrownBy(
+            () ->
+                request.submit(
+                    BLSSignature.empty(),
+                    Optional.of(Bytes32.ZERO),
+                    Optional.of(UInt64.valueOf(48))))
+        .isInstanceOf(RemoteServiceNotAvailableException.class);
   }
 
   private String readExpectedJsonResource(

@@ -18,6 +18,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -37,14 +38,37 @@ public class JsonUtil {
     return serialize(gen -> type.serialize(value, gen));
   }
 
+  public static <T> String prettySerialize(final T value, final SerializableTypeDefinition<T> type)
+      throws JsonProcessingException {
+    return prettySerialize(gen -> type.serialize(value, gen));
+  }
+
   public static String serialize(final JsonWriter serializer) throws JsonProcessingException {
     return serialize(FACTORY, serializer);
+  }
+
+  public static String prettySerialize(final JsonWriter serializer) throws JsonProcessingException {
+    return prettySerialize(FACTORY, serializer);
   }
 
   public static String serialize(final JsonFactory factory, final JsonWriter serializer)
       throws JsonProcessingException {
     final StringWriter writer = new StringWriter();
     try (final JsonGenerator gen = factory.createGenerator(writer)) {
+      serializer.accept(gen);
+    } catch (final JsonProcessingException e) {
+      throw e;
+    } catch (final IOException e) {
+      throw new UncheckedIOException(e);
+    }
+    return writer.toString();
+  }
+
+  public static String prettySerialize(final JsonFactory factory, final JsonWriter serializer)
+      throws JsonProcessingException {
+    final StringWriter writer = new StringWriter();
+    try (final JsonGenerator gen = factory.createGenerator(writer)) {
+      gen.setPrettyPrinter(new DefaultPrettyPrinter());
       serializer.accept(gen);
     } catch (final JsonProcessingException e) {
       throw e;
@@ -155,7 +179,7 @@ public class JsonUtil {
     while (!parser.isClosed()) {
       final JsonToken jsonToken = parser.nextToken();
       if (JsonToken.FIELD_NAME.equals(jsonToken)) {
-        final String currentFieldName = parser.getCurrentName();
+        final String currentFieldName = parser.currentName();
         if (currentFieldName.equals(fieldName)) {
           if (path.length == i + 1) {
             parser.nextToken();

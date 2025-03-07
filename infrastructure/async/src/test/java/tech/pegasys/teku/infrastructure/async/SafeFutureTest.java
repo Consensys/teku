@@ -41,7 +41,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 public class SafeFutureTest {
 
   private static class TestAsyncExec {
-    SafeFuture<Integer> fut = new SafeFuture<>();
+    final SafeFuture<Integer> fut = new SafeFuture<>();
     boolean executed = false;
 
     SafeFuture<Integer> exec() {
@@ -51,17 +51,17 @@ public class SafeFutureTest {
   }
 
   private static class InterruptTest {
-    SafeFuture<Integer> interruptorFut1 = new SafeFuture<>();
-    SafeFuture<Integer> interruptorFut2 = new SafeFuture<>();
-    Interruptor interruptor1 =
+    final SafeFuture<Integer> interruptorFut1 = new SafeFuture<>();
+    final SafeFuture<Integer> interruptorFut2 = new SafeFuture<>();
+    final Interruptor interruptor1 =
         SafeFuture.createInterruptor(interruptorFut1, IllegalStateException::new);
-    Interruptor interruptor2 =
+    final Interruptor interruptor2 =
         SafeFuture.createInterruptor(interruptorFut2, IllegalArgumentException::new);
-    SafeFuture<Integer> fut0 = new SafeFuture<>();
-    TestAsyncExec exec1 = new TestAsyncExec();
-    TestAsyncExec exec2 = new TestAsyncExec();
+    final SafeFuture<Integer> fut0 = new SafeFuture<>();
+    final TestAsyncExec exec1 = new TestAsyncExec();
+    final TestAsyncExec exec2 = new TestAsyncExec();
 
-    SafeFuture<Integer> intFut =
+    final SafeFuture<Integer> intFut =
         fut0.orInterrupt(interruptor1, interruptor2)
             .thenCompose(__ -> exec1.exec())
             .orInterrupt(interruptor1, interruptor2)
@@ -704,7 +704,7 @@ public class SafeFutureTest {
     assertThatSafeFuture(result).isCompletedExceptionallyWith(exception);
   }
 
-  private static boolean hasDependents(CompletableFuture<?> fut) {
+  private static boolean hasDependents(final CompletableFuture<?> fut) {
     return fut.getNumberOfDependents() > 0;
   }
 

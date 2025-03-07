@@ -24,27 +24,27 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class DataColumnSidecarByRootCustodyImpl
-    implements DataColumnSidecarByRootCustody, UpdatableDataColumnSidecarCustody {
+    implements DataColumnSidecarByRootCustody, DataColumnSidecarCustody {
 
   public static final int DEFAULT_MAX_CACHE_SIZE_EPOCHS = 1024;
 
-  private final UpdatableDataColumnSidecarCustody custody;
+  private final DataColumnSidecarCustody custody;
   private final CombinedChainDataClient combinedChainDataClient;
   private final UInt64 maxCacheSizeInSlots;
 
   private final ColumnSlotCache cache = new ColumnSlotCache();
 
   public DataColumnSidecarByRootCustodyImpl(
-      UpdatableDataColumnSidecarCustody custody,
-      CombinedChainDataClient combinedChainDataClient,
-      UInt64 maxCacheSizeInSlots) {
+      final DataColumnSidecarCustody custody,
+      final CombinedChainDataClient combinedChainDataClient,
+      final UInt64 maxCacheSizeInSlots) {
     this.custody = custody;
     this.combinedChainDataClient = combinedChainDataClient;
     this.maxCacheSizeInSlots = maxCacheSizeInSlots;
@@ -52,7 +52,7 @@ public class DataColumnSidecarByRootCustodyImpl
 
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecarByRoot(
-      DataColumnIdentifier columnId) {
+      final DataColumnIdentifier columnId) {
 
     return cache
         .getOrComputeAsync(
@@ -69,7 +69,8 @@ public class DataColumnSidecarByRootCustodyImpl
   }
 
   @Override
-  public SafeFuture<Void> onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar) {
+  public SafeFuture<Void> onNewValidatedDataColumnSidecar(
+      final DataColumnSidecar dataColumnSidecar) {
     cache.pruneCaches(dataColumnSidecar.getSlot().minusMinZero(maxCacheSizeInSlots));
     cache.addColumnSlotIdFromSidecar(dataColumnSidecar);
     return custody.onNewValidatedDataColumnSidecar(dataColumnSidecar);
@@ -82,12 +83,13 @@ public class DataColumnSidecarByRootCustodyImpl
 
   @Override
   public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecar(
-      DataColumnSlotAndIdentifier columnId) {
+      final DataColumnSlotAndIdentifier columnId) {
     return custody.getCustodyDataColumnSidecar(columnId);
   }
 
   @Override
-  public SafeFuture<Boolean> hasCustodyDataColumnSidecar(DataColumnSlotAndIdentifier columnId) {
+  public SafeFuture<Boolean> hasCustodyDataColumnSidecar(
+      final DataColumnSlotAndIdentifier columnId) {
     return custody.hasCustodyDataColumnSidecar(columnId);
   }
 
@@ -96,14 +98,14 @@ public class DataColumnSidecarByRootCustodyImpl
     private final NavigableMap<UInt64, Bytes32> slotToBlockRoot = new TreeMap<>();
 
     public synchronized Optional<DataColumnSlotAndIdentifier> get(
-        DataColumnIdentifier dataColumnIdentifier) {
+        final DataColumnIdentifier dataColumnIdentifier) {
       return Optional.ofNullable(blockRootToSlot.get(dataColumnIdentifier.getBlockRoot()))
           .map(slot -> new DataColumnSlotAndIdentifier(slot, dataColumnIdentifier));
     }
 
     public SafeFuture<Optional<DataColumnSlotAndIdentifier>> getOrComputeAsync(
-        DataColumnIdentifier dataColumnIdentifier,
-        Function<Bytes32, SafeFuture<Optional<UInt64>>> asyncRootToSlotSupplier) {
+        final DataColumnIdentifier dataColumnIdentifier,
+        final Function<Bytes32, SafeFuture<Optional<UInt64>>> asyncRootToSlotSupplier) {
       return get(dataColumnIdentifier)
           .map(id -> SafeFuture.completedFuture(Optional.of(id)))
           .orElseGet(
@@ -124,17 +126,17 @@ public class DataColumnSidecarByRootCustodyImpl
                                           slot, dataColumnIdentifier))));
     }
 
-    public void addColumnSlotIdFromSidecar(DataColumnSidecar sidecar) {
+    public void addColumnSlotIdFromSidecar(final DataColumnSidecar sidecar) {
       addBlockRootToSlot(sidecar.getBlockRoot(), sidecar.getSlot());
     }
 
-    public synchronized void addBlockRootToSlot(Bytes32 blockRoot, UInt64 slot) {
+    public synchronized void addBlockRootToSlot(final Bytes32 blockRoot, final UInt64 slot) {
       blockRootToSlot.put(blockRoot, slot);
       slotToBlockRoot.put(slot, blockRoot);
     }
 
-    public synchronized void pruneCaches(UInt64 tillSlotExclusive) {
-      SortedMap<UInt64, Bytes32> toPrune = slotToBlockRoot.headMap(tillSlotExclusive);
+    public synchronized void pruneCaches(final UInt64 tillSlotExclusive) {
+      final SortedMap<UInt64, Bytes32> toPrune = slotToBlockRoot.headMap(tillSlotExclusive);
       toPrune.values().forEach(blockRootToSlot::remove);
       toPrune.clear();
     }

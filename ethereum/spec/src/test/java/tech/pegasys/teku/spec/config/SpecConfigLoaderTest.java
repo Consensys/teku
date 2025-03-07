@@ -41,9 +41,9 @@ public class SpecConfigLoaderTest {
   @ParameterizedTest(name = "{0}")
   @EnumSource(Eth2Network.class)
   public void shouldLoadAllKnownNetworks(final Eth2Network network) throws Exception {
-    final SpecConfig config = SpecConfigLoader.loadConfigStrict(network.configName());
+    final SpecConfig config = SpecConfigLoader.loadConfigStrict(network.configName()).specConfig();
     // testing latest SpecConfig ensures all fields will be asserted on
-    assertAllFieldsSet(config, SpecConfigEip7594.class);
+    assertAllFieldsSet(config, SpecConfigElectra.class);
   }
 
   /**
@@ -55,31 +55,32 @@ public class SpecConfigLoaderTest {
    * sufficient.
    */
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"prater", "mainnet"})
+  @ValueSource(strings = {"holesky", "mainnet"})
   public void shouldMaintainConfigNameBackwardsCompatibility(final String name) {
-    final SpecConfig config = SpecConfigLoader.loadConfig(name);
+    final SpecConfig config = SpecConfigLoader.loadConfig(name).specConfig();
     assertThat(config.getRawConfig().get("CONFIG_NAME")).isEqualTo(name);
   }
 
   @Test
   public void shouldLoadMainnet() throws Exception {
-    final SpecConfig config = SpecConfigLoader.loadConfig("mainnet");
+    final SpecConfig config = SpecConfigLoader.loadConfig("mainnet").specConfig();
     assertAllBellatrixFieldsSet(config);
   }
 
   @Test
   public void shouldLoadMainnetFromFileUrl() throws Exception {
     final URL url = getMainnetConfigResourceAsUrl();
-    final SpecConfig config = SpecConfigLoader.loadConfig(url.toString());
+    final SpecConfig config = SpecConfigLoader.loadConfig(url.toString()).specConfig();
     assertAllBellatrixFieldsSet(config);
   }
 
   @Test
-  public void shouldLoadMainnetFromFile(@TempDir Path tempDir) throws Exception {
+  public void shouldLoadMainnetFromFile(@TempDir final Path tempDir) throws Exception {
     try (final InputStream inputStream = getMainnetConfigAsStream()) {
       final Path file = tempDir.resolve("mainnet.yml");
       writeStreamToFile(inputStream, file);
-      final SpecConfig config = SpecConfigLoader.loadConfig(file.toAbsolutePath().toString());
+      final SpecConfig config =
+          SpecConfigLoader.loadConfig(file.toAbsolutePath().toString()).specConfig();
       assertAllBellatrixFieldsSet(config);
     }
   }
@@ -90,13 +91,14 @@ public class SpecConfigLoaderTest {
       throws Exception {
     try (final InputStream in =
         Resources.getResource(SpecConfigLoaderTest.class, specFilename).openStream()) {
-      final SpecConfig config = SpecConfigLoader.loadRemoteConfig(readJsonConfig(in));
+      final SpecConfig config = SpecConfigLoader.loadRemoteConfig(readJsonConfig(in)).specConfig();
       assertAllAltairFieldsSet(config);
     }
   }
 
   @Test
-  public void shouldHandleInvalidPresetValue_wrongType(@TempDir Path tempDir) throws Exception {
+  public void shouldHandleInvalidPresetValue_wrongType(@TempDir final Path tempDir)
+      throws Exception {
     try (final InputStream inputStream = loadInvalidFile("invalidPreset_wrongType.yaml")) {
       final Path file = tempDir.resolve("invalid.yml");
       writeStreamToFile(inputStream, file);
@@ -112,7 +114,8 @@ public class SpecConfigLoaderTest {
   }
 
   @Test
-  public void shouldHandleInvalidPresetValue_unknownPreset(@TempDir Path tempDir) throws Exception {
+  public void shouldHandleInvalidPresetValue_unknownPreset(@TempDir final Path tempDir)
+      throws Exception {
     try (final InputStream inputStream = loadInvalidFile("invalidPreset_unknown.yaml")) {
       final Path file = tempDir.resolve("invalid.yml");
       writeStreamToFile(inputStream, file);
@@ -133,7 +136,8 @@ public class SpecConfigLoaderTest {
   @Test
   public void shouldBeAbleToOverridePresetValues() {
     final URL configUrl = SpecConfigLoaderTest.class.getResource("standard/with-overrides.yaml");
-    final SpecConfig config = SpecConfigLoader.loadConfig(configUrl.toString(), false, __ -> {});
+    final SpecConfig config =
+        SpecConfigLoader.loadConfig(configUrl.toString(), false, __ -> {}).specConfig();
     assertThat(config).isNotNull();
     assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(12); // Mainnet preset is 64.
   }

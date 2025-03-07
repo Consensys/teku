@@ -50,17 +50,17 @@ public class ProposerDutiesBuilder {
   private boolean executionOptimistic;
   private List<ProposerDuty> duties;
 
-  public ProposerDutiesBuilder dependentRoot(Bytes32 dependentRoot) {
+  public ProposerDutiesBuilder dependentRoot(final Bytes32 dependentRoot) {
     this.dependentRoot = dependentRoot;
     return this;
   }
 
-  public ProposerDutiesBuilder executionOptimistic(boolean executionOptimistic) {
+  public ProposerDutiesBuilder executionOptimistic(final boolean executionOptimistic) {
     this.executionOptimistic = executionOptimistic;
     return this;
   }
 
-  public ProposerDutiesBuilder duties(List<ProposerDuty> duties) {
+  public ProposerDutiesBuilder duties(final List<ProposerDuty> duties) {
     this.duties = duties;
     return this;
   }

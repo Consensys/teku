@@ -15,6 +15,8 @@ package tech.pegasys.teku.spec.logic.common.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor.depositSignatureVerifier;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintTo4Bytes;
@@ -27,6 +29,9 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.impl.BlsException;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.crypto.Sha256;
@@ -37,17 +42,21 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
-import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 
 public class MiscHelpers {
 
@@ -62,7 +71,7 @@ public class MiscHelpers {
     this.specConfig = specConfig;
   }
 
-  public int computeShuffledIndex(int index, int indexCount, Bytes32 seed) {
+  public int computeShuffledIndex(final int index, final int indexCount, final Bytes32 seed) {
     checkArgument(index < indexCount, "CommitteeUtil.computeShuffledIndex1");
 
     final Sha256 sha256 = getSha256Instance();
@@ -98,6 +107,14 @@ public class MiscHelpers {
 
   public int computeProposerIndex(
       final BeaconState state, final IntList indices, final Bytes32 seed) {
+    return computeProposerIndex(state, indices, seed, specConfig.getMaxEffectiveBalance());
+  }
+
+  protected int computeProposerIndex(
+      final BeaconState state,
+      final IntList indices,
+      final Bytes32 seed,
+      final UInt64 maxEffectiveBalance) {
     checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
 
     final Sha256 sha256 = getSha256Instance();
@@ -106,15 +123,16 @@ public class MiscHelpers {
     final int total = indices.size();
     byte[] hash = null;
     while (true) {
-      int candidateIndex = indices.getInt(computeShuffledIndex(i % total, total, seed));
+      final int candidateIndex = indices.getInt(computeShuffledIndex(i % total, total, seed));
       if (i % 32 == 0) {
         hash = sha256.digest(seed, uint64ToBytes(Math.floorDiv(i, 32L)));
       }
-      int randomByte = UnsignedBytes.toInt(hash[i % 32]);
-      UInt64 effectiveBalance = state.getValidators().get(candidateIndex).getEffectiveBalance();
-      if (effectiveBalance
+      final int randomByte = UnsignedBytes.toInt(hash[i % 32]);
+      final UInt64 validatorEffectiveBalance =
+          state.getValidators().get(candidateIndex).getEffectiveBalance();
+      if (validatorEffectiveBalance
           .times(MAX_RANDOM_BYTE)
-          .isGreaterThanOrEqualTo(specConfig.getMaxEffectiveBalance().times(randomByte))) {
+          .isGreaterThanOrEqualTo(maxEffectiveBalance.times(randomByte))) {
         return candidateIndex;
       }
       i++;
@@ -150,7 +168,7 @@ public class MiscHelpers {
     return blockEpoch.dividedBy(n).isGreaterThan(parentEpoch.dividedBy(n));
   }
 
-  public UInt64 computeActivationExitEpoch(UInt64 epoch) {
+  public UInt64 computeActivationExitEpoch(final UInt64 epoch) {
     return epoch.plus(UInt64.ONE).plus(specConfig.getMaxSeedLookahead());
   }
 
@@ -248,13 +266,13 @@ public class MiscHelpers {
     return computeStartSlotAtEpoch(nextPeriodEpoch);
   }
 
-  IntList shuffleList(IntList input, Bytes32 seed) {
+  IntList shuffleList(final IntList input, final Bytes32 seed) {
     final int[] indices = input.toIntArray();
     shuffleList(indices, seed);
     return IntList.of(indices);
   }
 
-  public void shuffleList(int[] input, Bytes32 seed) {
+  public void shuffleList(final int[] input, final Bytes32 seed) {
 
     int listSize = input.length;
     if (listSize == 0) {
@@ -301,26 +319,34 @@ public class MiscHelpers {
     }
   }
 
-  public Bytes computeSigningRoot(Merkleizable object, Bytes32 domain) {
+  public Bytes computeSigningRoot(final Merkleizable object, final Bytes32 domain) {
     return new SigningData(object.hashTreeRoot(), domain).hashTreeRoot();
   }
 
-  public Bytes computeSigningRoot(UInt64 number, Bytes32 domain) {
+  public Bytes computeSigningRoot(final UInt64 number, final Bytes32 domain) {
     SigningData domainWrappedObject = new SigningData(SszUInt64.of(number).hashTreeRoot(), domain);
     return domainWrappedObject.hashTreeRoot();
   }
 
-  public Bytes32 computeSigningRoot(Bytes bytes, Bytes32 domain) {
+  public Bytes32 computeSigningRoot(final Bytes bytes, final Bytes32 domain) {
     SigningData domainWrappedObject =
         new SigningData(SszByteVector.computeHashTreeRoot(bytes), domain);
     return domainWrappedObject.hashTreeRoot();
   }
 
-  public Bytes4 computeForkDigest(Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
+  public Bytes computeDepositSigningRoot(
+      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials, final UInt64 amount) {
+    final Bytes32 domain = computeDomain(Domain.DEPOSIT);
+    final DepositMessage depositMessage = new DepositMessage(pubkey, withdrawalCredentials, amount);
+    return computeSigningRoot(depositMessage, domain);
+  }
+
+  public Bytes4 computeForkDigest(
+      final Bytes4 currentVersion, final Bytes32 genesisValidatorsRoot) {
     return new Bytes4(computeForkDataRoot(currentVersion, genesisValidatorsRoot).slice(0, 4));
   }
 
-  public Bytes32 computeDomain(Bytes4 domainType) {
+  public Bytes32 computeDomain(final Bytes4 domainType) {
     return computeDomain(domainType, specConfig.getGenesisForkVersion(), Bytes32.ZERO);
   }
 
@@ -329,13 +355,46 @@ public class MiscHelpers {
   }
 
   public Bytes32 computeDomain(
-      Bytes4 domainType, Bytes4 forkVersion, Bytes32 genesisValidatorsRoot) {
+      final Bytes4 domainType, final Bytes4 forkVersion, final Bytes32 genesisValidatorsRoot) {
     final Bytes32 forkDataRoot = computeForkDataRoot(forkVersion, genesisValidatorsRoot);
     return Bytes32.wrap(Bytes.concatenate(domainType.getWrappedBytes(), forkDataRoot.slice(0, 28)));
   }
 
-  private Bytes32 computeForkDataRoot(Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
+  private Bytes32 computeForkDataRoot(
+      final Bytes4 currentVersion, final Bytes32 genesisValidatorsRoot) {
     return new ForkData(currentVersion, genesisValidatorsRoot).hashTreeRoot();
+  }
+
+  /** is_valid_deposit_signature */
+  public boolean isValidDepositSignature(
+      final BLSPublicKey pubkey,
+      final Bytes32 withdrawalCredentials,
+      final UInt64 amount,
+      final BLSSignature signature) {
+    try {
+      return depositSignatureVerifier.verify(
+          pubkey, computeDepositSigningRoot(pubkey, withdrawalCredentials, amount), signature);
+    } catch (final BlsException e) {
+      return false;
+    }
+  }
+
+  /** get_validator_from_deposit */
+  public Validator getValidatorFromDeposit(
+      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials, final UInt64 amount) {
+    final UInt64 effectiveBalance =
+        amount
+            .minus(amount.mod(specConfig.getEffectiveBalanceIncrement()))
+            .min(specConfig.getMaxEffectiveBalance());
+    return new Validator(
+        pubkey,
+        withdrawalCredentials,
+        effectiveBalance,
+        false,
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH);
   }
 
   public boolean isMergeTransitionComplete(final BeaconState state) {
@@ -354,16 +413,22 @@ public class MiscHelpers {
     return false;
   }
 
-  public void validateBlobSidecarsBatchAgainstBlock(
-      final List<BlobSidecar> blobSidecars,
-      final BeaconBlock block,
-      final List<KZGCommitment> kzgCommitmentsFromBlock) {
+  public boolean verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
+      final List<BlobSidecar> blobSidecars, final SignedBeaconBlock signedBeaconBlock) {
+    return blobSidecars.stream()
+        .allMatch(
+            blobSidecar ->
+                verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
+                    blobSidecar, signedBeaconBlock));
+  }
+
+  public boolean verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
+      final BlobSidecar blobSidecar, final SignedBeaconBlock signedBeaconBlock) {
     throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
   }
 
   public void verifyBlobSidecarCompleteness(
-      final List<BlobSidecar> verifiedBlobSidecars,
-      final List<KZGCommitment> kzgCommitmentsFromBlock)
+      final List<BlobSidecar> verifiedBlobSidecars, final SignedBeaconBlock signedBeaconBlock)
       throws IllegalArgumentException {
     throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
   }
@@ -376,12 +441,15 @@ public class MiscHelpers {
     return UInt64.valueOf(specConfig.getNetworkingConfig().getMaxRequestBlocks());
   }
 
-  public boolean verifyDataColumnSidecarKzgProof(
-      final KZG kzg, final DataColumnSidecar dataColumnSidecar) {
-    return false;
+  public int getBlobKzgCommitmentsCount(final SignedBeaconBlock signedBeaconBlock) {
+    throw new UnsupportedOperationException("No Blob KZG Commitments before Deneb");
   }
 
-  public boolean verifyDataColumnSidecarInclusionProof(final DataColumnSidecar dataColumnSidecar) {
+  public UInt64 getMaxEffectiveBalance(final Validator validator) {
+    return specConfig.getMaxEffectiveBalance();
+  }
+
+  public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
     return false;
   }
 
@@ -389,7 +457,11 @@ public class MiscHelpers {
     return Optional.empty();
   }
 
-  public Optional<MiscHelpersEip7594> toVersionEip7594() {
+  public Optional<MiscHelpersElectra> toVersionElectra() {
+    return Optional.empty();
+  }
+
+  public Optional<MiscHelpersFulu> toVersionFulu() {
     return Optional.empty();
   }
 }

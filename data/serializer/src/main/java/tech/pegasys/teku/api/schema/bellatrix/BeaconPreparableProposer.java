@@ -40,8 +40,8 @@ public class BeaconPreparableProposer {
 
   @JsonCreator
   public BeaconPreparableProposer(
-      @JsonProperty("validator_index") UInt64 validator_index,
-      @JsonProperty("fee_recipient") Eth1Address fee_recipient) {
+      final @JsonProperty("validator_index") UInt64 validator_index,
+      final @JsonProperty("fee_recipient") Eth1Address fee_recipient) {
     this.validator_index = validator_index;
     this.fee_recipient = fee_recipient;
   }

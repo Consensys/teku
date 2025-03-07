@@ -170,13 +170,13 @@ public class Web3jEth1ProviderTest {
 
     // advance less then required
     timeProvider.advanceTimeBySeconds(
-        Constants.ETH1_INVALID_ENDPOINT_CHECK_INTERVAL.getSeconds() - 10);
+        Constants.ETH1_INVALID_ENDPOINT_CHECK_INTERVAL.toSeconds() - 10);
 
     // just failed, no need to validate
     assertThat(provider.needsToBeValidated()).isFalse();
 
     // advance to go after
-    timeProvider.advanceTimeBySeconds(Constants.ETH1_INVALID_ENDPOINT_CHECK_INTERVAL.getSeconds());
+    timeProvider.advanceTimeBySeconds(Constants.ETH1_INVALID_ENDPOINT_CHECK_INTERVAL.toSeconds());
 
     // after the interval needs to be validated
     assertThat(provider.needsToBeValidated()).isTrue();
@@ -186,8 +186,7 @@ public class Web3jEth1ProviderTest {
     // just validated, no need to validate
     assertThat(provider.needsToBeValidated()).isFalse();
 
-    timeProvider.advanceTimeBySeconds(
-        Constants.ETH1_VALID_ENDPOINT_CHECK_INTERVAL.getSeconds() + 1);
+    timeProvider.advanceTimeBySeconds(Constants.ETH1_VALID_ENDPOINT_CHECK_INTERVAL.toSeconds() + 1);
 
     // after the interval needs to be validated
     assertThat(provider.needsToBeValidated()).isTrue();
@@ -198,13 +197,13 @@ public class Web3jEth1ProviderTest {
 
     // advance less then required
     timeProvider.advanceTimeBySeconds(
-        Constants.ETH1_FAILED_ENDPOINT_CHECK_INTERVAL.getSeconds() - 10);
+        Constants.ETH1_FAILED_ENDPOINT_CHECK_INTERVAL.toSeconds() - 10);
 
     // just failed a call, no need to validate
     assertThat(provider.needsToBeValidated()).isFalse();
 
     // advance to go after
-    timeProvider.advanceTimeBySeconds(Constants.ETH1_FAILED_ENDPOINT_CHECK_INTERVAL.getSeconds());
+    timeProvider.advanceTimeBySeconds(Constants.ETH1_FAILED_ENDPOINT_CHECK_INTERVAL.toSeconds());
 
     // after the interval needs to be validated
     assertThat(provider.needsToBeValidated()).isTrue();
@@ -223,7 +222,7 @@ public class Web3jEth1ProviderTest {
         .isCompletedExceptionallyWith(RejectedRequestException.class);
   }
 
-  private void prepareRequestWithSyncingResponse(Request request, boolean isSyncing) {
+  private void prepareRequestWithSyncingResponse(final Request request, final boolean isSyncing) {
     EthSyncing response = new EthSyncing();
     EthSyncing.Result result = new EthSyncing.Result();
     result.setSyncing(isSyncing);
@@ -231,17 +230,17 @@ public class Web3jEth1ProviderTest {
     when(request.sendAsync()).thenReturn(SafeFuture.completedFuture(response));
   }
 
-  private void prepareRequestWithChainidResponse(Request request, String chainId) {
+  private void prepareRequestWithChainidResponse(final Request request, final String chainId) {
     EthChainId response = new EthChainId();
     response.setResult(chainId);
     when(request.sendAsync()).thenReturn(SafeFuture.completedFuture(response));
   }
 
-  private void prepareFailingRequestByException(Request request) {
+  private void prepareFailingRequestByException(final Request request) {
     when(request.sendAsync()).thenReturn(SafeFuture.failedFuture(new RuntimeException("error")));
   }
 
-  private void prepareFailingRequestWithChainidJRPCError(Request request) {
+  private void prepareFailingRequestWithChainidJRPCError(final Request request) {
     EthChainId response = new EthChainId();
     response.setError(new Response.Error(-100, "error message"));
     when(request.sendAsync()).thenReturn(SafeFuture.completedFuture(response));

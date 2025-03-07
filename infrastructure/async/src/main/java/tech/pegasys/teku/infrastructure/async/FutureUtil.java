@@ -25,12 +25,12 @@ public class FutureUtil {
   public static <T> void ignoreFuture(final Future<T> future) {}
 
   static void runWithFixedDelay(
-      AsyncRunner runner,
-      ExceptionThrowingRunnable runnable,
-      Cancellable task,
+      final AsyncRunner runner,
+      final ExceptionThrowingRunnable runnable,
+      final Cancellable task,
       final Duration initialDelay,
       final Duration duration,
-      Consumer<Throwable> exceptionHandler) {
+      final Consumer<Throwable> exceptionHandler) {
 
     runner
         .runAfterDelay(
@@ -85,11 +85,11 @@ public class FutureUtil {
   }
 
   static void runAfterDelay(
-      AsyncRunner runner,
-      ExceptionThrowingRunnable runnable,
-      Cancellable task,
+      final AsyncRunner runner,
+      final ExceptionThrowingRunnable runnable,
+      final Cancellable task,
       final Duration delay,
-      Consumer<Throwable> exceptionHandler) {
+      final Consumer<Throwable> exceptionHandler) {
     runner
         .runAfterDelay(
             () -> {

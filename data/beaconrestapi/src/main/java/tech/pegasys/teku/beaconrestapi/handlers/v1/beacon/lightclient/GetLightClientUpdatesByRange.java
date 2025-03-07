@@ -60,12 +60,12 @@ public class GetLightClientUpdatesByRange extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.respondError(501, "Not implemented");
   }
 
   private static ResponseContentTypeDefinition<List<ObjectAndMetaData<LightClientUpdate>>>
-      getJsonResponseType(SchemaDefinitionCache schemaDefinitionCache) {
+      getJsonResponseType(final SchemaDefinitionCache schemaDefinitionCache) {
     final SerializableTypeDefinition<LightClientUpdate> lightClientUpdateType =
         SchemaDefinitionsAltair.required(
                 schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ALTAIR))

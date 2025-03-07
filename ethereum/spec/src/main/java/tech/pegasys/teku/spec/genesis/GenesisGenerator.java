@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.genesis;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -26,6 +27,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -37,7 +39,11 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class GenesisGenerator {
 
@@ -58,9 +64,9 @@ public class GenesisGenerator {
     final SchemaDefinitions schemaDefinitions = genesisSpec.getSchemaDefinitions();
 
     state = schemaDefinitions.getBeaconStateSchema().createBuilder();
-    Bytes32 latestBlockRoot =
+    final Bytes32 latestBlockRoot =
         schemaDefinitions.getBeaconBlockBodySchema().createEmpty().hashTreeRoot();
-    BeaconBlockHeader beaconBlockHeader =
+    final BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(
             SpecConfig.GENESIS_SLOT, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, latestBlockRoot);
     state.setLatestBlockHeader(beaconBlockHeader);
@@ -72,24 +78,28 @@ public class GenesisGenerator {
             .createWritableCopy();
   }
 
-  public void updateExecutionPayloadHeader(ExecutionPayloadHeader payloadHeader) {
+  public void updateExecutionPayloadHeader(final ExecutionPayloadHeader payloadHeader) {
     state
         .toMutableVersionBellatrix()
         .ifPresent(stateBellatrix -> stateBellatrix.setLatestExecutionPayloadHeader(payloadHeader));
   }
 
   public void updateCandidateState(
-      Bytes32 eth1BlockHash, UInt64 eth1Timestamp, List<? extends Deposit> deposits) {
+      final Bytes32 eth1BlockHash, final UInt64 eth1Timestamp, final List<Deposit> deposits) {
     updateGenesisTime(eth1Timestamp);
 
     state.setEth1Data(
         new Eth1Data(
             Bytes32.ZERO, UInt64.valueOf(depositDataList.size() + deposits.size()), eth1BlockHash));
+    if (genesisSpec.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      MutableBeaconStateElectra.required(state)
+          .setDepositRequestsStartIndex(UNSET_DEPOSIT_REQUESTS_START_INDEX);
+    }
 
     // Process deposits
     deposits.forEach(
         deposit -> {
-          LOG.trace("About to process deposit: {}", depositDataList::size);
+          LOG.trace("About to process deposit: {}", depositDataList.size());
           depositDataList.append(deposit.getData());
 
           // Skip verifying the merkle proof as these deposits come directly from an Eth1 event.
@@ -99,37 +109,73 @@ public class GenesisGenerator {
               .processDepositWithoutCheckingMerkleProof(
                   state, deposit, Optional.of(keyCache), false);
 
-          processActivation(deposit);
+          if (!genesisSpec.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+            processActivation(deposit);
+          }
         });
+
+    // Process deposit balance updates
+    if (genesisSpec.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      final SchemaDefinitionsElectra schemaDefinitionsElectra =
+          SchemaDefinitionsElectra.required(genesisSpec.getSchemaDefinitions());
+      final BeaconStateMutatorsElectra mutatorsElectra =
+          new BeaconStateMutatorsElectra(
+              specConfig,
+              genesisSpec.miscHelpers(),
+              genesisSpec.beaconStateAccessors(),
+              schemaDefinitionsElectra);
+      BeaconStateElectra.required(state)
+          .getPendingDeposits()
+          .forEach(
+              pendingDeposit -> {
+                mutatorsElectra.increaseBalance(
+                    state,
+                    keyCache.getInt(pendingDeposit.getPublicKey()),
+                    pendingDeposit.getAmount());
+              });
+      MutableBeaconStateElectra.required(state)
+          .setPendingDeposits(
+              schemaDefinitionsElectra.getPendingDepositsSchema().createFromElements(List.of()));
+
+      // Process activations
+      keyCache.values().intStream().forEach(this::processActivation);
+    }
   }
 
   private void processActivation(final Deposit deposit) {
-    final int index = keyCache.getOrDefault(deposit.getData().getPubkey(), -1);
+    processActivation(keyCache.getOrDefault(deposit.getData().getPubkey(), -1));
+  }
+
+  private void processActivation(final int index) {
     if (index == -1) {
       // Could be absent if the deposit was invalid
       return;
     }
-    Validator validator = state.getValidators().get(index);
+    final Validator validator = state.getValidators().get(index);
     if (validator.getActivationEpoch().equals(GENESIS_EPOCH)) {
       // Validator is already activated (and thus already has the max effective balance)
       return;
     }
-    UInt64 balance = state.getBalances().getElement(index);
-    UInt64 effectiveBalance =
+
+    final UInt64 balance = state.getBalances().getElement(index);
+    final UInt64 effectiveBalance =
         balance
             .minus(balance.mod(specConfig.getEffectiveBalanceIncrement()))
             .min(specConfig.getMaxEffectiveBalance());
 
-    UInt64 activationEligibilityEpoch = validator.getActivationEligibilityEpoch();
-    UInt64 activationEpoch = validator.getActivationEpoch();
+    final UInt64 activationEligibilityEpoch;
+    final UInt64 activationEpoch;
 
     if (effectiveBalance.equals(specConfig.getMaxEffectiveBalance())) {
       activationEligibilityEpoch = GENESIS_EPOCH;
       activationEpoch = GENESIS_EPOCH;
       activeValidatorCount++;
+    } else {
+      activationEligibilityEpoch = validator.getActivationEligibilityEpoch();
+      activationEpoch = validator.getActivationEpoch();
     }
 
-    Validator modifiedValidator =
+    final Validator modifiedValidator =
         new Validator(
             validator.getPubkeyBytes(),
             validator.getWithdrawalCredentials(),
@@ -178,14 +224,14 @@ public class GenesisGenerator {
   }
 
   private void calculateDepositRoot() {
-    Eth1Data eth1Data = state.getEth1Data();
+    final Eth1Data eth1Data = state.getEth1Data();
     state.setEth1Data(
         new Eth1Data(
             depositDataList.hashTreeRoot(), eth1Data.getDepositCount(), eth1Data.getBlockHash()));
   }
 
   private void updateGenesisTime(final UInt64 eth1Timestamp) {
-    UInt64 genesisTime = eth1Timestamp.plus(specConfig.getGenesisDelay());
+    final UInt64 genesisTime = eth1Timestamp.plus(specConfig.getGenesisDelay());
     state.setGenesisTime(genesisTime);
   }
 }

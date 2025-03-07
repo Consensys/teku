@@ -50,7 +50,8 @@ public class AttestationData {
     this.target = target;
   }
 
-  public AttestationData(tech.pegasys.teku.spec.datastructures.operations.AttestationData data) {
+  public AttestationData(
+      final tech.pegasys.teku.spec.datastructures.operations.AttestationData data) {
     this.slot = data.getSlot();
     this.index = data.getIndex();
     this.beacon_block_root = data.getBeaconBlockRoot();
@@ -68,7 +69,7 @@ public class AttestationData {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

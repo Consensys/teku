@@ -29,17 +29,18 @@ import tech.pegasys.teku.networking.p2p.gossip.config.GossipPeerScoringConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipScoringConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicScoringConfig;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 
 public class LibP2PParamsFactory {
 
   public static final int MAX_SUBSCRIPTIONS_PER_MESSAGE = 200;
-  public static final int MAX_COMPRESSED_GOSSIP_SIZE = 10 * (1 << 20);
 
-  public static GossipParams createGossipParams(final GossipConfig gossipConfig) {
+  public static GossipParams createGossipParams(
+      final GossipConfig gossipConfig, final NetworkingSpecConfig networkingSpecConfig) {
     final GossipParamsBuilder builder = GossipParams.builder();
     addGossipParamsDValues(gossipConfig, builder);
     addGossipParamsMiscValues(gossipConfig, builder);
-    addGossipParamsMaxValues(builder);
+    addGossipParamsMaxValues(networkingSpecConfig, builder);
     return builder.build();
   }
 
@@ -47,10 +48,10 @@ public class LibP2PParamsFactory {
       final GossipConfig gossipConfig, final GossipParamsBuilder builder) {
     builder
         .fanoutTTL(gossipConfig.getFanoutTTL())
+        .floodPublishMaxMessageSizeThreshold(gossipConfig.getFloodPublishMaxMessageSizeThreshold())
         .gossipSize(gossipConfig.getAdvertise())
         .gossipHistoryLength(gossipConfig.getHistory())
         .heartbeatInterval(gossipConfig.getHeartbeatInterval())
-        .floodPublish(true)
         .seenTTL(gossipConfig.getSeenTTL());
   }
 
@@ -65,9 +66,12 @@ public class LibP2PParamsFactory {
         .DOut(Math.min(gossipConfig.getD() / 2, Math.max(0, gossipConfig.getDLow() - 1)));
   }
 
-  private static void addGossipParamsMaxValues(final GossipParamsBuilder builder) {
+  private static void addGossipParamsMaxValues(
+      final NetworkingSpecConfig networkingSpecConfig, final GossipParamsBuilder builder) {
+    final int gossipMaxSize = networkingSpecConfig.getGossipMaxSize();
+    final int compressedMaxGossipSize = 32 + gossipMaxSize + (gossipMaxSize / 6);
     builder
-        .maxGossipMessageSize(MAX_COMPRESSED_GOSSIP_SIZE)
+        .maxGossipMessageSize(compressedMaxGossipSize)
         .maxPublishedMessages(1000)
         .maxTopicsPerPublishedMessage(1)
         .maxSubscriptions(MAX_SUBSCRIPTIONS_PER_MESSAGE)

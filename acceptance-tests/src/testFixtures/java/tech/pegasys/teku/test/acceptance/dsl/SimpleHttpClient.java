@@ -21,6 +21,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -44,19 +45,36 @@ public class SimpleHttpClient {
     return this.get(baseUrl, path, Collections.emptyMap());
   }
 
-  public String get(final URI baseUrl, final String path, Map<String, String> headers)
+  public Optional<String> getOptional(final URI baseUrl, final String path) throws IOException {
+    Optional<ResponseBody> maybeBody =
+        this.getOptionalResponseBody(baseUrl, path, Collections.emptyMap());
+    if (maybeBody.isEmpty()) {
+      return Optional.empty();
+    } else {
+      return Optional.of(maybeBody.get().string());
+    }
+  }
+
+  public String get(final URI baseUrl, final String path, final Map<String, String> headers)
       throws IOException {
     final ResponseBody body = getResponseBody(baseUrl, path, headers);
     return body.string();
   }
 
-  public Bytes getAsBytes(final URI baseUrl, final String path, Map<String, String> headers)
+  public Bytes getAsBytes(final URI baseUrl, final String path, final Map<String, String> headers)
       throws IOException {
     final ResponseBody body = getResponseBody(baseUrl, path, headers);
     return Bytes.wrap(body.bytes());
   }
 
   private ResponseBody getResponseBody(
+      final URI baseUrl, final String path, final Map<String, String> headers) throws IOException {
+    Optional<ResponseBody> maybeBody = getOptionalResponseBody(baseUrl, path, headers);
+    assertThat(maybeBody).isNotEmpty();
+    return maybeBody.get();
+  }
+
+  private Optional<ResponseBody> getOptionalResponseBody(
       final URI baseUrl, final String path, final Map<String, String> headers) throws IOException {
     LOG.debug("GET {}, headers: {}", path, headers.toString());
     final URL url = baseUrl.resolve(path).toURL();
@@ -65,12 +83,18 @@ public class SimpleHttpClient {
     final Response response = httpClient.newCall(builder.build()).execute();
     final ResponseBody body = response.body();
     if (!response.isSuccessful()) {
-      fail(
-          "Received unsuccessful response from %s: %s %s %s",
-          url, response.code(), response.message(), body != null ? body.string() : "null");
+      if (response.code() == 404) {
+        return Optional.empty();
+      } else {
+        fail(
+            "Received unsuccessful response from %s: %s %s %s",
+            url, response.code(), response.message(), body != null ? body.string() : "null");
+        return Optional.empty();
+      }
+    } else {
+      assertThat(body).isNotNull();
+      return Optional.of(body);
     }
-    assertThat(body).isNotNull();
-    return body;
   }
 
   public String post(final URI baseUrl, final String path, final String jsonBody)
@@ -79,7 +103,10 @@ public class SimpleHttpClient {
   }
 
   public String post(
-      final URI baseUrl, final String path, final String jsonBody, Map<String, String> headers)
+      final URI baseUrl,
+      final String path,
+      final String jsonBody,
+      final Map<String, String> headers)
       throws IOException {
     final RequestBody requestBody = RequestBody.create(jsonBody, JSON);
     final Request.Builder builder =
@@ -98,7 +125,10 @@ public class SimpleHttpClient {
   }
 
   public String delete(
-      final URI baseUrl, final String path, final String jsonBody, Map<String, String> headers)
+      final URI baseUrl,
+      final String path,
+      final String jsonBody,
+      final Map<String, String> headers)
       throws IOException {
     final RequestBody requestBody = RequestBody.create(jsonBody, JSON);
 

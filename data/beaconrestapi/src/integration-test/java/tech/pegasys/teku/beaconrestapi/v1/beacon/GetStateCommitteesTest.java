@@ -17,20 +17,15 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateCommitteesResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
-import tech.pegasys.teku.beaconrestapi.BadRequest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateCommittees;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetStateCommitteesTest extends AbstractDataBackedRestAPIIntegrationTest {
 
@@ -43,25 +38,20 @@ public class GetStateCommitteesTest extends AbstractDataBackedRestAPIIntegration
   public void shouldGetCommitteesWithNoQueryParameters() throws IOException {
     final Response response = get("head", emptyMap());
     assertThat(response.code()).isEqualTo(SC_OK);
-    final GetStateCommitteesResponse body =
-        jsonProvider.jsonToObject(response.body().string(), GetStateCommitteesResponse.class);
-    final List<EpochCommitteeResponse> data = body.data;
-    assertThat(data).isNotEmpty();
+    final JsonNode data = getResponseData(response);
+    assertThat(data.size()).isGreaterThan(0);
   }
 
   @Test
   public void shouldGetCommitteesForNextEpoch() throws IOException {
     final Response response = get("head", Map.of("epoch", "1"));
     assertThat(response.code()).isEqualTo(SC_OK);
-    final GetStateCommitteesResponse body =
-        jsonProvider.jsonToObject(response.body().string(), GetStateCommitteesResponse.class);
-    final List<EpochCommitteeResponse> data = body.data;
-    data.forEach(
-        committee -> {
-          assertThat(committee.slot)
-              .isGreaterThanOrEqualTo(UInt64.valueOf(specConfig.getSlotsPerEpoch()));
-          assertThat(committee.slot).isLessThan(UInt64.valueOf(specConfig.getSlotsPerEpoch() * 2L));
-        });
+    final JsonNode data = getResponseData(response);
+    for (int i = 0; i < data.size(); i++) {
+      assertThat(data.get(i).get("slot").asInt())
+          .isGreaterThanOrEqualTo(specConfig.getSlotsPerEpoch());
+      assertThat(data.get(i).get("slot").asLong()).isLessThan(specConfig.getSlotsPerEpoch() * 2L);
+    }
     assertThat(data.size()).isEqualTo(8);
   }
 
@@ -69,44 +59,41 @@ public class GetStateCommitteesTest extends AbstractDataBackedRestAPIIntegration
   public void shouldGetCommitteesForSingleIndex() throws IOException {
     final Response response = get("head", Map.of("index", "0"));
     assertThat(response.code()).isEqualTo(SC_OK);
-    final GetStateCommitteesResponse body =
-        jsonProvider.jsonToObject(response.body().string(), GetStateCommitteesResponse.class);
-    final List<EpochCommitteeResponse> data = body.data;
-    data.forEach(committee -> assertThat(committee.index).isEqualTo(ZERO));
+    final JsonNode data = getResponseData(response);
     assertThat(data.size()).isEqualTo(8);
+    for (int i = 0; i < data.size(); i++) {
+      assertThat(data.get(i).get("index").asInt()).isZero();
+    }
   }
 
   @Test
   public void shouldGetCommitteesForSingleIndexAndSlotAndEpoch() throws IOException {
     final Response response = get("head", Map.of("index", "0", "slot", "9", "epoch", "1"));
     assertThat(response.code()).isEqualTo(SC_OK);
-    final GetStateCommitteesResponse body =
-        jsonProvider.jsonToObject(response.body().string(), GetStateCommitteesResponse.class);
-    final List<EpochCommitteeResponse> data = body.data;
-    data.forEach(
-        committee -> {
-          assertThat(committee.index).isEqualTo(ZERO);
-          assertThat(committee.slot).isEqualTo(UInt64.valueOf(9));
-        });
+    final JsonNode data = getResponseData(response);
     assertThat(data.size()).isEqualTo(1);
+    assertThat(data.get(0).get("index").asInt()).isZero();
+    assertThat(data.get(0).get("slot").asInt()).isEqualTo(9);
+    assertThat(data.get(0).get("validators").size()).isEqualTo(2);
   }
 
   @Test
   public void shouldGetBadRequestIfSlotAndEpochDontAlign() throws IOException {
     final Response response = get("head", Map.of("slot", "1", "epoch", "1"));
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
-    final BadRequest body = jsonProvider.jsonToObject(response.body().string(), BadRequest.class);
-    assertThat(body.getCode()).isEqualTo(SC_BAD_REQUEST);
-    assertThat(body.getMessage()).isEqualToIgnoringCase("Slot 1 is not in epoch 1");
+    final JsonNode body = OBJECT_MAPPER.readTree(response.body().string());
+    assertThat(body.get("code").asInt()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(body.get("message").asText()).isEqualToIgnoringCase("Slot 1 is not in epoch 1");
   }
 
   @Test
   public void shouldGetBadRequestIfEpochTooFarInFuture() throws IOException {
     final Response response = get("head", Map.of("epoch", "1024000"));
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
-    final BadRequest body = jsonProvider.jsonToObject(response.body().string(), BadRequest.class);
-    assertThat(body.getCode()).isEqualTo(SC_BAD_REQUEST);
-    assertThat(body.getMessage()).startsWith("Epoch 1024000 is too far ahead ");
+
+    final JsonNode body = OBJECT_MAPPER.readTree(response.body().string());
+    assertThat(body.get("code").asInt()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(body.get("message").asText()).startsWith("Epoch 1024000 is too far ahead ");
   }
 
   public Response get(final String stateIdString, final Map<String, String> query)

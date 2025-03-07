@@ -20,14 +20,14 @@ import org.apache.tuweni.units.bigints.UInt256;
 
 public interface DasPeerCustodyCountSupplier {
 
-  static DasPeerCustodyCountSupplier createStub(int defaultValue) {
+  static DasPeerCustodyCountSupplier createStub(final int defaultValue) {
     return (__) -> defaultValue;
   }
 
   static DasPeerCustodyCountSupplier capped(
-      DasPeerCustodyCountSupplier delegate, int minValue, int maxValue) {
-    return (nodeId) -> min(maxValue, max(minValue, delegate.getCustodyCountForPeer(nodeId)));
+      final DasPeerCustodyCountSupplier delegate, final int minValue, final int maxValue) {
+    return (nodeId) -> min(maxValue, max(minValue, delegate.getCustodyGroupCountForPeer(nodeId)));
   }
 
-  int getCustodyCountForPeer(UInt256 nodeId);
+  int getCustodyGroupCountForPeer(UInt256 nodeId);
 }

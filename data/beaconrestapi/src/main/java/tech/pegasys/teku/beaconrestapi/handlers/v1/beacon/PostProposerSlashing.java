@@ -59,7 +59,7 @@ public class PostProposerSlashing extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final ProposerSlashing proposerSlashing = request.getRequestBody();
     final SafeFuture<InternalValidationResult> future =
         nodeDataProvider.postProposerSlashing(proposerSlashing);

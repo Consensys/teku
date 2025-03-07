@@ -138,31 +138,31 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private File configFile;
 
   @Mixin(name = "Network")
-  private Eth2NetworkOptions eth2NetworkOptions = new Eth2NetworkOptions();
+  private final Eth2NetworkOptions eth2NetworkOptions = new Eth2NetworkOptions();
 
   @Mixin(name = "P2P")
-  private P2POptions p2POptions = new P2POptions();
+  private final P2POptions p2POptions = new P2POptions();
 
   @Mixin(name = "Validator")
-  private ValidatorOptions validatorOptions = new ValidatorOptions();
+  private final ValidatorOptions validatorOptions = new ValidatorOptions();
 
   @Mixin(name = "Execution Layer")
-  private ExecutionLayerOptions executionLayerOptions = new ExecutionLayerOptions();
+  private final ExecutionLayerOptions executionLayerOptions = new ExecutionLayerOptions();
 
   @Mixin(name = "Data Storage")
-  private BeaconNodeDataOptions beaconNodeDataOptions = new BeaconNodeDataOptions();
+  private final BeaconNodeDataOptions beaconNodeDataOptions = new BeaconNodeDataOptions();
 
   @Mixin(name = "Beacon REST API")
-  private BeaconRestApiOptions beaconRestApiOptions = new BeaconRestApiOptions();
+  private final BeaconRestApiOptions beaconRestApiOptions = new BeaconRestApiOptions();
 
   @Mixin(name = "Validator REST API")
-  private ValidatorRestApiOptions validatorRestApiOptions = new ValidatorRestApiOptions();
+  private final ValidatorRestApiOptions validatorRestApiOptions = new ValidatorRestApiOptions();
 
   @Mixin(name = "Weak Subjectivity")
-  private WeakSubjectivityOptions weakSubjectivityOptions = new WeakSubjectivityOptions();
+  private final WeakSubjectivityOptions weakSubjectivityOptions = new WeakSubjectivityOptions();
 
   @Mixin(name = "Interop")
-  private InteropOptions interopOptions = new InteropOptions();
+  private final InteropOptions interopOptions = new InteropOptions();
 
   @Mixin(name = "Store")
   private final StoreOptions storeOptions = new StoreOptions();
@@ -171,7 +171,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private final LoggingOptions loggingOptions = new LoggingOptions();
 
   @Mixin(name = "Metrics")
-  private MetricsOptions metricsOptions = new MetricsOptions();
+  private final MetricsOptions metricsOptions = new MetricsOptions();
 
   @CommandLine.Spec private CommandLine.Model.CommandSpec spec;
 
@@ -212,7 +212,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   private CommandLine getCommandLine() {
-    return configureCommandLine(new CommandLine(this)).addSubcommand(validatorClientSubcommand);
+    return configureCommandLine(new CommandLine(this).addSubcommand(validatorClientSubcommand));
   }
 
   public int parse(final String[] args) {
@@ -319,13 +319,13 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return ex.getCommandLine().getCommandSpec().exitCodeOnInvalidInput();
   }
 
-  private void printUsage(PrintWriter outputWriter) {
+  private void printUsage(final PrintWriter outputWriter) {
     outputWriter.println();
     outputWriter.println("To display full help:");
     outputWriter.println("teku [COMMAND] --help");
   }
 
-  public boolean isOptionSpecified(String optionLongName) {
+  public boolean isOptionSpecified(final String optionLongName) {
     var parseResult = spec.commandLine().getParseResult();
     var option = spec.findOption(optionLongName);
     return option != null && parseResult.hasMatchedOption(option);

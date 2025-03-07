@@ -56,6 +56,8 @@ class BeaconBlocksByRangeRequestMessageTest {
         Arguments.of(0, 2, 2, 2),
         Arguments.of(10, 2, 2, 12),
         Arguments.of(0, 5, 2, 8),
-        Arguments.of(10, 5, 2, 18));
+        Arguments.of(10, 5, 2, 18),
+        Arguments.of(10, 3, 5, 20),
+        Arguments.of(0, 0, 1, 0));
   }
 }

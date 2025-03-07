@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszBytes32Ve
 public interface SszBytes32VectorSchema<SszVectorT extends SszBytes32Vector>
     extends SszPrimitiveVectorSchema<Bytes32, SszBytes32, SszVectorT> {
 
-  static SszBytes32VectorSchema<SszBytes32Vector> create(int length) {
+  static SszBytes32VectorSchema<SszBytes32Vector> create(final int length) {
     return new SszBytes32VectorSchemaImpl<>(length);
   }
 }

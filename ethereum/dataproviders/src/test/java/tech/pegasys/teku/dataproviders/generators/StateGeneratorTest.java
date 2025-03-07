@@ -119,7 +119,7 @@ public class StateGeneratorTest {
   }
 
   private void testGeneratorWithMissingBlock(
-      BiConsumer<StateGenerator, SignedBeaconBlock> processor) {
+      final BiConsumer<StateGenerator, SignedBeaconBlock> processor) {
     // Build a small chain
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     chainBuilder.generateBlocksUpToSlot(5);

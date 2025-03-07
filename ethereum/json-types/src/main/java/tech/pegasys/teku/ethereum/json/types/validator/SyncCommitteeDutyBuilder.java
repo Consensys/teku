@@ -51,18 +51,18 @@ public class SyncCommitteeDutyBuilder {
   private int validatorIndex;
   private IntSet validatorSyncCommitteeIndices;
 
-  public SyncCommitteeDutyBuilder publicKey(BLSPublicKey publicKey) {
+  public SyncCommitteeDutyBuilder publicKey(final BLSPublicKey publicKey) {
     this.publicKey = publicKey;
     return this;
   }
 
-  public SyncCommitteeDutyBuilder validatorIndex(int validatorIndex) {
+  public SyncCommitteeDutyBuilder validatorIndex(final int validatorIndex) {
     this.validatorIndex = validatorIndex;
     return this;
   }
 
   public SyncCommitteeDutyBuilder validatorSyncCommitteeIndices(
-      IntSet validatorSyncCommitteeIndices) {
+      final IntSet validatorSyncCommitteeIndices) {
     this.validatorSyncCommitteeIndices = validatorSyncCommitteeIndices;
     return this;
   }

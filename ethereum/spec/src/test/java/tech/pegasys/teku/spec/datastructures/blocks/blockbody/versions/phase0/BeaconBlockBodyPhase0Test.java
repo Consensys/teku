@@ -37,7 +37,7 @@ public class BeaconBlockBodyPhase0Test extends AbstractBeaconBlockBodyTest<Beaco
 
   @Override
   protected BlindedBeaconBlockBodyBellatrix createBlindedBlockBody(
-      Consumer<BeaconBlockBodyBuilder> contentProvider) {
+      final Consumer<BeaconBlockBodyBuilder> contentProvider) {
     return null;
   }
 }

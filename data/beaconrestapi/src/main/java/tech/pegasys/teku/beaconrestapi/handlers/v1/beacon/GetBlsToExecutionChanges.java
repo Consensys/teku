@@ -86,7 +86,7 @@ public class GetBlsToExecutionChanges extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
     final Optional<Boolean> locallySubmitted =
         request.getOptionalQueryParameter(LOCALLY_SUBMITTED_QUERY_PARAMETER);

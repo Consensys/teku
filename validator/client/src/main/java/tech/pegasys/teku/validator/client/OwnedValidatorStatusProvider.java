@@ -88,7 +88,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
   }
 
   @Override
-  public void onSlot(UInt64 slot) {
+  public void onSlot(final UInt64 slot) {
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
     currentEpoch.set(epoch);
     final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(epoch);
@@ -99,10 +99,10 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
 
   @Override
   public void onHeadUpdate(
-      UInt64 slot,
-      Bytes32 previousDutyDependentRoot,
-      Bytes32 currentDutyDependentRoot,
-      Bytes32 headBlockRoot) {}
+      final UInt64 slot,
+      final Bytes32 previousDutyDependentRoot,
+      final Bytes32 currentDutyDependentRoot,
+      final Bytes32 headBlockRoot) {}
 
   @Override
   public void onPossibleMissedEvents() {
@@ -115,19 +115,19 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
   }
 
   @Override
-  public void onBlockProductionDue(UInt64 slot) {}
+  public void onBlockProductionDue(final UInt64 slot) {}
 
   @Override
-  public void onAttestationCreationDue(UInt64 slot) {}
+  public void onAttestationCreationDue(final UInt64 slot) {}
 
   @Override
-  public void onAttestationAggregationDue(UInt64 slot) {}
+  public void onAttestationAggregationDue(final UInt64 slot) {}
 
   @Override
-  public void onAttesterSlashing(AttesterSlashing attesterSlashing) {}
+  public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
 
   @Override
-  public void onProposerSlashing(ProposerSlashing proposerSlashing) {}
+  public void onProposerSlashing(final ProposerSlashing proposerSlashing) {}
 
   @Override
   public void onUpdatedValidatorStatuses(

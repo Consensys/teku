@@ -61,7 +61,7 @@ public class GetProposerSlashings extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
     List<ProposerSlashing> proposerSlashings = nodeDataProvider.getProposerSlashings();
     request.respondOk(proposerSlashings);

@@ -24,13 +24,13 @@ public abstract class SszCompositeSchemaTestBase extends SszSchemaTestBase {
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  void isPrimitive_shouldReturnFalse(SszCompositeSchema<?> schema) {
+  void isPrimitive_shouldReturnFalse(final SszCompositeSchema<?> schema) {
     assertThat(schema.isPrimitive()).isFalse();
   }
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  void getChildSchema_shouldThrowIndexOutOfBounds(SszCompositeSchema<?> schema) {
+  void getChildSchema_shouldThrowIndexOutOfBounds(final SszCompositeSchema<?> schema) {
     Assumptions.assumeThat(schema.getMaxLength()).isLessThan(Integer.MAX_VALUE);
     assertThatThrownBy(() -> schema.getChildSchema((int) schema.getMaxLength()))
         .isInstanceOf(IndexOutOfBoundsException.class);

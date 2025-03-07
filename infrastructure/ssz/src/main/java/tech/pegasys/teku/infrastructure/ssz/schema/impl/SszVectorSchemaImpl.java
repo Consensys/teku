@@ -23,20 +23,20 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 public class SszVectorSchemaImpl<SszElementT extends SszData>
     extends AbstractSszVectorSchema<SszElementT, SszVector<SszElementT>> {
 
-  SszVectorSchemaImpl(SszSchema<SszElementT> elementType, long vectorLength) {
+  SszVectorSchemaImpl(final SszSchema<SszElementT> elementType, final long vectorLength) {
     this(elementType, vectorLength, false, SszSchemaHints.none());
   }
 
   public SszVectorSchemaImpl(
-      SszSchema<SszElementT> elementSchema,
-      long vectorLength,
-      boolean isListBacking,
-      SszSchemaHints hints) {
+      final SszSchema<SszElementT> elementSchema,
+      final long vectorLength,
+      final boolean isListBacking,
+      final SszSchemaHints hints) {
     super(elementSchema, vectorLength, isListBacking, hints);
   }
 
   @Override
-  public SszVector<SszElementT> createFromBackingNode(TreeNode node) {
+  public SszVector<SszElementT> createFromBackingNode(final TreeNode node) {
     return new SszVectorImpl<>(this, node);
   }
 }

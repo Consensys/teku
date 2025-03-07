@@ -27,7 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 public class TreeUtil {
 
   public static class ZeroLeafNode extends SimpleLeafNode {
-    public ZeroLeafNode(int size) {
+    public ZeroLeafNode(final int size) {
       super(Bytes.wrap(new byte[size]));
     }
 
@@ -40,7 +40,7 @@ public class TreeUtil {
   public static class ZeroBranchNode extends SimpleBranchNode {
     private final int height;
 
-    public ZeroBranchNode(TreeNode left, TreeNode right, int height) {
+    public ZeroBranchNode(final TreeNode left, final TreeNode right, final int height) {
       super(left, right);
       this.height = height;
     }
@@ -66,11 +66,11 @@ public class TreeUtil {
     ZERO_TREES_BY_ROOT = mapBuilder.build();
   }
 
-  public static int bitsCeilToBytes(int bits) {
+  public static int bitsCeilToBytes(final int bits) {
     return (bits + 7) / 8;
   }
 
-  public static long bitsCeilToBytes(long bits) {
+  public static long bitsCeilToBytes(final long bits) {
     return (bits + 7) / 8;
   }
 
@@ -83,17 +83,18 @@ public class TreeUtil {
    * @param defaultNode default leaf element. For complex vectors it could be default vector element
    *     struct subtree
    */
-  public static TreeNode createDefaultTree(long maxLength, TreeNode defaultNode) {
+  public static TreeNode createDefaultTree(final long maxLength, final TreeNode defaultNode) {
     return createTree(
         defaultNode, LeafNode.EMPTY_LEAF.equals(defaultNode) ? 0 : maxLength, treeDepth(maxLength));
   }
 
   /** Creates a binary tree of width `nextPowerOf2(leafNodes.size())` with specific leaf nodes */
-  public static TreeNode createTree(List<? extends TreeNode> children) {
+  public static TreeNode createTree(final List<? extends TreeNode> children) {
     return createTree(children, treeDepth(children.size()));
   }
 
-  private static TreeNode createTree(TreeNode defaultNode, long defaultNodesCount, int depth) {
+  private static TreeNode createTree(
+      final TreeNode defaultNode, final long defaultNodesCount, final int depth) {
     if (defaultNodesCount == 0) {
       return ZERO_TREES[depth];
     } else if (depth == 0) {
@@ -111,7 +112,7 @@ public class TreeUtil {
     }
   }
 
-  public static TreeNode createTree(List<? extends TreeNode> leafNodes, int depth) {
+  public static TreeNode createTree(final List<? extends TreeNode> leafNodes, final int depth) {
     if (leafNodes.isEmpty()) {
       return ZERO_TREES[depth];
     } else if (depth == 0) {
@@ -129,7 +130,7 @@ public class TreeUtil {
   }
 
   public static TreeNode createTree(
-      List<? extends TreeNode> leafNodes, TreeNode defaultNode, int depth) {
+      final List<? extends TreeNode> leafNodes, final TreeNode defaultNode, final int depth) {
     if (leafNodes.isEmpty()) {
       if (depth > 0) {
         TreeNode defaultChild = createTree(leafNodes, defaultNode, depth - 1);
@@ -152,11 +153,11 @@ public class TreeUtil {
     }
   }
 
-  public static long nextPowerOf2(long x) {
+  public static long nextPowerOf2(final long x) {
     return x <= 1 ? 1 : Long.highestOneBit(x - 1) << 1;
   }
 
-  public static int treeDepth(long maxChunks) {
+  public static int treeDepth(final long maxChunks) {
     return Long.bitCount(nextPowerOf2(maxChunks) - 1);
   }
 
@@ -168,7 +169,10 @@ public class TreeUtil {
    */
   @VisibleForTesting
   static void iterateLeaves(
-      TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<LeafNode> visitor) {
+      final TreeNode node,
+      final long fromGeneralIndex,
+      final long toGeneralIndex,
+      final Consumer<LeafNode> visitor) {
     node.iterateRange(
         fromGeneralIndex,
         toGeneralIndex,
@@ -181,7 +185,10 @@ public class TreeUtil {
   }
 
   public static void iterateLeavesData(
-      TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<Bytes> visitor) {
+      final TreeNode node,
+      final long fromGeneralIndex,
+      final long toGeneralIndex,
+      final Consumer<Bytes> visitor) {
     node.iterateRange(
         fromGeneralIndex,
         toGeneralIndex,
@@ -193,7 +200,7 @@ public class TreeUtil {
         });
   }
 
-  public static Bytes concatenateLeavesData(TreeNode tree) {
+  public static Bytes concatenateLeavesData(final TreeNode tree) {
     List<Bytes> leavesData = new ArrayList<>();
     iterateLeavesData(
         tree, GIndexUtil.LEFTMOST_G_INDEX, GIndexUtil.RIGHTMOST_G_INDEX, leavesData::add);

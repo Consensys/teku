@@ -21,11 +21,11 @@ class HashToCurve {
   // https://github.com/ethereum/consensus-specs/blob/v0.12.0/specs/phase0/beacon-chain.md#bls-signatures
   static final String ETH2_DST = "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
 
-  static P2 hashToG2(Bytes message) {
+  static P2 hashToG2(final Bytes message) {
     return hashToG2(message, ETH2_DST);
   }
 
-  static P2 hashToG2(Bytes message, String dst) {
+  static P2 hashToG2(final Bytes message, final String dst) {
     P2 p2Hash = new P2();
     return p2Hash.hash_to(message.toArray(), dst, new byte[0]);
   }

@@ -18,13 +18,13 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.teku.GetDepositsResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDeposits;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
@@ -46,10 +46,10 @@ public class GetDepositsIntegrationTest extends AbstractDataBackedRestAPIIntegra
     when(eth1DataProvider.getAvailableDeposits()).thenReturn(new ArrayList<>());
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
-    GetDepositsResponse getDepositsResponse =
-        jsonProvider.jsonToObject(response.body().string(), GetDepositsResponse.class);
-    assertThat(getDepositsResponse).isNotNull();
-    assertThat(getDepositsResponse.data).isEmpty();
+    final JsonNode data = getResponseData(response);
+    assertThat(data).isNotNull();
+    assertThat(data.isArray()).isTrue();
+    assertThat(data.size()).isZero();
   }
 
   @Test

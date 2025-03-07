@@ -38,8 +38,8 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class UpnpClientTest {
-  private UpnpService natService = mock(UpnpService.class);
-  private Registry registry = mock(Registry.class);
+  private final UpnpService natService = mock(UpnpService.class);
+  private final Registry registry = mock(Registry.class);
   private UpnpClient upnpClient;
 
   @BeforeEach

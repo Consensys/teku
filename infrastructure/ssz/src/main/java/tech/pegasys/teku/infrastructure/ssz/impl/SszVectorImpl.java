@@ -27,16 +27,19 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 public class SszVectorImpl<SszElementT extends SszData> extends AbstractSszCollection<SszElementT>
     implements SszVector<SszElementT> {
 
-  public SszVectorImpl(SszCompositeSchema<?> schema, Supplier<TreeNode> lazyBackingNode) {
+  public SszVectorImpl(
+      final SszCompositeSchema<?> schema, final Supplier<TreeNode> lazyBackingNode) {
     super(schema, lazyBackingNode);
   }
 
-  public SszVectorImpl(SszCompositeSchema<?> schema, TreeNode backingNode) {
+  public SszVectorImpl(final SszCompositeSchema<?> schema, final TreeNode backingNode) {
     super(schema, backingNode);
   }
 
   public SszVectorImpl(
-      SszCompositeSchema<?> schema, TreeNode backingNode, IntCache<SszElementT> cache) {
+      final SszCompositeSchema<?> schema,
+      final TreeNode backingNode,
+      final IntCache<SszElementT> cache) {
     super(schema, backingNode, cache);
   }
 
@@ -62,7 +65,7 @@ public class SszVectorImpl<SszElementT extends SszData> extends AbstractSszColle
   }
 
   @Override
-  protected void checkIndex(int index) {
+  protected void checkIndex(final int index) {
     if (index < 0 || index >= size()) {
       throw new IndexOutOfBoundsException(
           "Invalid index " + index + " for vector with size " + size());

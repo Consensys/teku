@@ -61,6 +61,7 @@ import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.openapi.request.MilestoneSpecificOctetStreamRequestContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.request.OctetStreamRequestContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.openapi.request.OneOfArrayJsonRequestContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.request.OneOfJsonRequestContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.request.OneOfJsonRequestContentTypeDefinition.BodyTypeSelector;
 import tech.pegasys.teku.infrastructure.restapi.openapi.request.RequestContentTypeDefinition;
@@ -85,6 +86,7 @@ public class EndpointMetadata {
   private final Map<String, StringValueTypeDefinition<?>> pathParams;
   private final Map<String, StringValueTypeDefinition<?>> requiredQueryParams;
   private final Map<String, StringValueTypeDefinition<?>> queryParams;
+  private final Map<String, StringValueTypeDefinition<?>> queryParamsAllowEmpty;
   private final Map<String, StringValueTypeDefinition<?>> queryListParams;
   private final Map<String, StringValueTypeDefinition<?>> requiredHeaders;
   private final Map<String, StringValueTypeDefinition<?>> headers;
@@ -105,6 +107,7 @@ public class EndpointMetadata {
       final List<String> tags,
       final Map<String, StringValueTypeDefinition<?>> pathParams,
       final Map<String, StringValueTypeDefinition<?>> queryParams,
+      final Map<String, StringValueTypeDefinition<?>> queryParamsAllowEmpty,
       final Map<String, StringValueTypeDefinition<?>> requiredQueryParams,
       final Map<String, StringValueTypeDefinition<?>> queryListParams,
       final Map<String, StringValueTypeDefinition<?>> requiredHeaders,
@@ -124,6 +127,7 @@ public class EndpointMetadata {
     this.tags = tags;
     this.pathParams = pathParams;
     this.queryParams = queryParams;
+    this.queryParamsAllowEmpty = queryParamsAllowEmpty;
     this.requiredQueryParams = requiredQueryParams;
     this.queryListParams = queryListParams;
     this.requiredHeaders = requiredHeaders;
@@ -223,12 +227,15 @@ public class EndpointMetadata {
     checkArgument(
         requiredQueryParams.containsKey(parameterName)
             || queryParams.containsKey(parameterName)
+            || queryParamsAllowEmpty.containsKey(parameterName)
             || queryListParams.containsKey(parameterName),
         "Query parameter " + parameterName + " was not found in endpoint metadata");
     if (requiredQueryParams.containsKey(parameterName)) {
       return requiredQueryParams.get(parameterName);
     } else if (queryParams.containsKey(parameterName)) {
       return queryParams.get(parameterName);
+    } else if (queryParamsAllowEmpty.containsKey(parameterName)) {
+      return queryParamsAllowEmpty.get(parameterName);
     }
 
     return queryListParams.get(parameterName);
@@ -308,19 +315,21 @@ public class EndpointMetadata {
     if (deprecated) {
       gen.writeBooleanField("deprecated", true);
     }
-    if (pathParams.size() > 0
-        || queryParams.size() > 0
-        || requiredQueryParams.size() > 0
-        || queryListParams.size() > 0
-        || requiredHeaders.size() > 0
-        || headers.size() > 0) {
+    if (!pathParams.isEmpty()
+        || !queryParams.isEmpty()
+        || !queryParamsAllowEmpty.isEmpty()
+        || !requiredQueryParams.isEmpty()
+        || !queryListParams.isEmpty()
+        || !requiredHeaders.isEmpty()
+        || !headers.isEmpty()) {
       gen.writeArrayFieldStart("parameters");
-      writeParameters(gen, pathParams, "path", true, false);
-      writeParameters(gen, requiredQueryParams, "query", true, false);
-      writeParameters(gen, queryParams, "query", false, false);
-      writeParameters(gen, queryListParams, "query", false, true);
-      writeParameters(gen, requiredHeaders, "header", true, false);
-      writeParameters(gen, headers, "header", false, false);
+      writeParameters(gen, pathParams, "path", true, false, false);
+      writeParameters(gen, requiredQueryParams, "query", true, false, false);
+      writeParameters(gen, queryParams, "query", false, false, false);
+      writeParameters(gen, queryParamsAllowEmpty, "query", false, false, true);
+      writeParameters(gen, queryListParams, "query", false, true, false);
+      writeParameters(gen, requiredHeaders, "header", true, false, false);
+      writeParameters(gen, headers, "header", false, false, false);
       gen.writeEndArray();
     }
 
@@ -364,13 +373,17 @@ public class EndpointMetadata {
       final Map<String, StringValueTypeDefinition<?>> fields,
       final String parameterUsedIn,
       final boolean isMandatoryField,
-      final boolean isList)
+      final boolean isList,
+      final boolean allowEmptyValue)
       throws IOException {
     for (Map.Entry<String, StringValueTypeDefinition<?>> entry : fields.entrySet()) {
       gen.writeStartObject();
       gen.writeObjectField("name", entry.getKey());
       if (isMandatoryField) {
         gen.writeObjectField("required", true);
+      }
+      if (allowEmptyValue) {
+        gen.writeObjectField("allowEmptyValue", true);
       }
       gen.writeObjectField("in", parameterUsedIn);
       gen.writeFieldName("schema");
@@ -384,6 +397,7 @@ public class EndpointMetadata {
       } else { // Handle regular parameter
         entry.getValue().serializeOpenApiTypeOrReference(gen);
       }
+
       gen.writeEndObject();
     }
   }
@@ -430,6 +444,8 @@ public class EndpointMetadata {
     private boolean requiredRequestBody = true;
     private final Map<String, StringValueTypeDefinition<?>> pathParams = new LinkedHashMap<>();
     private final Map<String, StringValueTypeDefinition<?>> queryParams = new LinkedHashMap<>();
+    private final Map<String, StringValueTypeDefinition<?>> queryParamsAllowEmpty =
+        new LinkedHashMap<>();
     private final Map<String, StringValueTypeDefinition<?>> requiredQueryParams =
         new LinkedHashMap<>();
     private final Map<String, StringValueTypeDefinition<?>> queryListParams = new LinkedHashMap<>();
@@ -464,21 +480,27 @@ public class EndpointMetadata {
 
     public EndpointMetaDataBuilder queryParam(final ParameterMetadata<?> parameterMetadata) {
       final String param = parameterMetadata.getName();
-      if (queryParams.containsKey(param)
-          || requiredQueryParams.containsKey(param)
-          || queryListParams.containsKey(param)) {
+      if (queryParamAlreadyAdded(param)) {
         throw new IllegalStateException("Query parameters already contains " + param);
       }
       queryParams.put(parameterMetadata.getName(), parameterMetadata.getType());
       return this;
     }
 
+    public EndpointMetaDataBuilder queryParamAllowsEmpty(
+        final ParameterMetadata<?> parameterMetadata) {
+      final String param = parameterMetadata.getName();
+      if (queryParamAlreadyAdded(param)) {
+        throw new IllegalStateException("Query parameters already contains " + param);
+      }
+      queryParamsAllowEmpty.put(parameterMetadata.getName(), parameterMetadata.getType());
+      return this;
+    }
+
     public EndpointMetaDataBuilder queryParamRequired(
         final ParameterMetadata<?> parameterMetadata) {
       final String param = parameterMetadata.getName();
-      if (queryParams.containsKey(param)
-          || requiredQueryParams.containsKey(param)
-          || queryListParams.containsKey(param)) {
+      if (queryParamAlreadyAdded(param)) {
         throw new IllegalStateException("Query parameters already contains " + param);
       }
       requiredQueryParams.put(parameterMetadata.getName(), parameterMetadata.getType());
@@ -487,13 +509,18 @@ public class EndpointMetadata {
 
     public EndpointMetaDataBuilder queryListParam(final ParameterMetadata<?> parameterMetadata) {
       final String param = parameterMetadata.getName();
-      if (queryParams.containsKey(param)
-          || requiredQueryParams.containsKey(param)
-          || queryListParams.containsKey(param)) {
+      if (queryParamAlreadyAdded(param)) {
         throw new IllegalStateException("Query parameters already contains " + param);
       }
       queryListParams.put(parameterMetadata.getName(), parameterMetadata.getType());
       return this;
+    }
+
+    private boolean queryParamAlreadyAdded(final String param) {
+      return queryParams.containsKey(param)
+          || queryParamsAllowEmpty.containsKey(param)
+          || requiredQueryParams.containsKey(param)
+          || queryListParams.containsKey(param);
     }
 
     public EndpointMetaDataBuilder headerRequired(final ParameterMetadata<?> headerMetadata) {
@@ -550,7 +577,7 @@ public class EndpointMetadata {
     }
 
     public EndpointMetaDataBuilder response(final int responseCode, final String description) {
-      return response(responseCode, description, emptyList());
+      return response(responseCode, description, emptyList(), emptyList());
     }
 
     public EndpointMetaDataBuilder defaultResponseType(final String defaultContentType) {
@@ -596,6 +623,15 @@ public class EndpointMetadata {
     }
 
     public <T> EndpointMetaDataBuilder requestBodyType(
+        final SerializableTypeDefinition<List<T>> requestBodyType,
+        final OneOfArrayJsonRequestContentTypeDefinition.BodyTypeSelector<T> bodyTypeSelector) {
+      this.requestBodyTypes.put(
+          ContentTypes.JSON,
+          new OneOfArrayJsonRequestContentTypeDefinition<>(requestBodyType, bodyTypeSelector));
+      return this;
+    }
+
+    public <T> EndpointMetaDataBuilder requestBodyType(
         final SerializableOneOfTypeDefinition<T> requestBodyType,
         final BodyTypeSelector<T> bodyTypeSelector,
         final IOFunction<Bytes, T> octetStreamParser) {
@@ -635,7 +671,22 @@ public class EndpointMetadata {
         final String description,
         final SerializableTypeDefinition<?> content) {
       return response(
-          responseCode, description, List.of(new JsonResponseContentTypeDefinition<>(content)));
+          responseCode,
+          description,
+          List.of(new JsonResponseContentTypeDefinition<>(content)),
+          emptyList());
+    }
+
+    public EndpointMetaDataBuilder response(
+        final int responseCode,
+        final String description,
+        final SerializableTypeDefinition<?> content,
+        final SerializableTypeDefinition<?> header) {
+      return response(
+          responseCode,
+          description,
+          List.of(new JsonResponseContentTypeDefinition<>(content)),
+          List.of(new JsonResponseContentTypeDefinition<>(header)));
     }
 
     public <T> EndpointMetaDataBuilder response(
@@ -646,14 +697,43 @@ public class EndpointMetadata {
       return response(
           responseCode,
           description,
-          List.of(new JsonResponseContentTypeDefinition<>(content), octetStreamTypeDefinition));
+          List.of(new JsonResponseContentTypeDefinition<>(content), octetStreamTypeDefinition),
+          emptyList());
+    }
+
+    public <T> EndpointMetaDataBuilder response(
+        final int responseCode,
+        final String description,
+        final SerializableTypeDefinition<? extends T> content,
+        final ResponseContentTypeDefinition<? extends T> octetStreamTypeDefinition,
+        final SerializableTypeDefinition<? extends T> header) {
+      return response(
+          responseCode,
+          description,
+          List.of(new JsonResponseContentTypeDefinition<>(content), octetStreamTypeDefinition),
+          List.of(new JsonResponseContentTypeDefinition<>(header)));
+    }
+
+    public <T> EndpointMetaDataBuilder response(
+        final int responseCode,
+        final String description,
+        final SerializableTypeDefinition<? extends T> content,
+        final ResponseContentTypeDefinition<? extends T> octetStreamTypeDefinition,
+        final List<SerializableTypeDefinition<? extends T>> headers) {
+      return response(
+          responseCode,
+          description,
+          List.of(new JsonResponseContentTypeDefinition<>(content), octetStreamTypeDefinition),
+          headers.stream()
+              .map(JsonResponseContentTypeDefinition::new)
+              .collect(Collectors.toList()));
     }
 
     public <T> EndpointMetaDataBuilder response(
         final int responseCode,
         final String description,
         final ResponseContentTypeDefinition<T> octetStreamTypeDefinition) {
-      return response(responseCode, description, List.of(octetStreamTypeDefinition));
+      return response(responseCode, description, List.of(octetStreamTypeDefinition), emptyList());
     }
 
     public EndpointMetaDataBuilder withUnauthorizedResponse() {
@@ -701,7 +781,7 @@ public class EndpointMetadata {
       return this;
     }
 
-    public EndpointMetaDataBuilder withBadRequestResponse(Optional<String> maybeMessage) {
+    public EndpointMetaDataBuilder withBadRequestResponse(final Optional<String> maybeMessage) {
       response(
           SC_BAD_REQUEST,
           maybeMessage.orElse(
@@ -714,7 +794,16 @@ public class EndpointMetadata {
         final int responseCode,
         final String description,
         final List<? extends ResponseContentTypeDefinition<?>> content) {
-      this.responses.put(Integer.toString(responseCode), new OpenApiResponse(description, content));
+      return response(responseCode, description, content, emptyList());
+    }
+
+    public EndpointMetaDataBuilder response(
+        final int responseCode,
+        final String description,
+        final List<? extends ResponseContentTypeDefinition<?>> content,
+        final List<? extends ResponseContentTypeDefinition<?>> header) {
+      this.responses.put(
+          Integer.toString(responseCode), new OpenApiResponse(description, header, content));
       return this;
     }
 
@@ -752,6 +841,7 @@ public class EndpointMetadata {
           tags,
           pathParams,
           queryParams,
+          queryParamsAllowEmpty,
           requiredQueryParams,
           queryListParams,
           requiredHeaders,

@@ -88,7 +88,7 @@ public class InteropConfig {
 
     private InteropConfigBuilder() {}
 
-    public InteropConfigBuilder interopGenesisTime(Integer interopGenesisTime) {
+    public InteropConfigBuilder interopGenesisTime(final Integer interopGenesisTime) {
       if (interopGenesisTime < 0) {
         throw new InvalidConfigurationException(
             String.format("Invalid interopGenesisTime: %d", interopGenesisTime));
@@ -103,13 +103,13 @@ public class InteropConfig {
       return this;
     }
 
-    public InteropConfigBuilder specProvider(Spec spec) {
+    public InteropConfigBuilder specProvider(final Spec spec) {
       this.spec = spec;
       return this;
     }
 
     public InteropConfigBuilder interopOwnedValidatorStartIndex(
-        int interopOwnedValidatorStartIndex) {
+        final int interopOwnedValidatorStartIndex) {
       if (interopOwnedValidatorStartIndex < 0) {
         throw new InvalidConfigurationException(
             String.format(
@@ -119,7 +119,7 @@ public class InteropConfig {
       return this;
     }
 
-    public InteropConfigBuilder interopOwnedValidatorCount(int interopOwnedValidatorCount) {
+    public InteropConfigBuilder interopOwnedValidatorCount(final int interopOwnedValidatorCount) {
       if (interopOwnedValidatorCount < 0) {
         throw new InvalidConfigurationException(
             String.format("Invalid interopOwnedValidatorCount: %d", interopOwnedValidatorCount));
@@ -128,7 +128,7 @@ public class InteropConfig {
       return this;
     }
 
-    public InteropConfigBuilder interopNumberOfValidators(int interopNumberOfValidators) {
+    public InteropConfigBuilder interopNumberOfValidators(final int interopNumberOfValidators) {
       if (interopNumberOfValidators < 0) {
         throw new InvalidConfigurationException(
             String.format("Invalid interopNumberOfValidators: %d", interopNumberOfValidators));
@@ -137,7 +137,7 @@ public class InteropConfig {
       return this;
     }
 
-    public InteropConfigBuilder interopEnabled(boolean interopEnabled) {
+    public InteropConfigBuilder interopEnabled(final boolean interopEnabled) {
       this.interopEnabled = interopEnabled;
       return this;
     }

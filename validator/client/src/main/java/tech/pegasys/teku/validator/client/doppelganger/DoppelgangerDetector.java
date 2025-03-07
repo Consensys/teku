@@ -117,7 +117,7 @@ public class DoppelgangerDetector {
     private final Set<BLSPublicKey> pubKeys;
     private Optional<UInt64> epochAtStart = Optional.empty();
     private final Map<UInt64, BLSPublicKey> detectedDoppelgangers = new HashMap<>();
-    private AtomicBoolean firstCheck = new AtomicBoolean(true);
+    private final AtomicBoolean firstCheck = new AtomicBoolean(true);
 
     public DoppelgangerDetectionTask(final UInt64 startTime, final Set<BLSPublicKey> pubKeys) {
       this.startTime = startTime;
@@ -286,7 +286,7 @@ public class DoppelgangerDetector {
     }
 
     private void logMissingIndices(
-        final Set<BLSPublicKey> pubKeys, Map<BLSPublicKey, UInt64> validatorIndicesByPubKey) {
+        final Set<BLSPublicKey> pubKeys, final Map<BLSPublicKey, UInt64> validatorIndicesByPubKey) {
       Set<BLSPublicKey> publicKeysWithoutIndices =
           pubKeys.stream()
               .filter(publicKey -> !validatorIndicesByPubKey.containsKey(publicKey))
@@ -313,7 +313,7 @@ public class DoppelgangerDetector {
         doppelgangers.forEach(
             doppelganger ->
                 detectedDoppelgangers.putIfAbsent(
-                    doppelganger.getRight().getIndex(), doppelganger.getLeft()));
+                    doppelganger.getRight().index(), doppelganger.getLeft()));
         if (allKeysAreActive()) {
           statusLog.doppelgangerDetectionEnd(
               mapToAbbreviatedKeys(pubKeys).collect(Collectors.toSet()),
@@ -327,7 +327,7 @@ public class DoppelgangerDetector {
     private Map<UInt64, String> mapLivenessAtEpochToIndicesByPubKeyStrings(
         final List<Pair<BLSPublicKey, ValidatorLivenessAtEpoch>> doppelgangers) {
       return doppelgangers.stream()
-          .collect(Collectors.toMap(e -> e.getRight().getIndex(), e -> e.getLeft().toString()));
+          .collect(Collectors.toMap(e -> e.getRight().index(), e -> e.getLeft().toString()));
     }
 
     private Stream<String> mapToAbbreviatedKeys(final Set<BLSPublicKey> pubKeys) {
@@ -344,7 +344,7 @@ public class DoppelgangerDetector {
                       .filter(
                           validatorLivenessAtEpoch ->
                               validatorPubKeysByIndices.containsValue(
-                                      validatorLivenessAtEpoch.getIndex())
+                                      validatorLivenessAtEpoch.index())
                                   && validatorLivenessAtEpoch.isLive())
                       .map(
                           validatorLivenessAtEpoch ->
@@ -352,8 +352,7 @@ public class DoppelgangerDetector {
                                   validatorPubKeysByIndices.entrySet().stream()
                                       .filter(
                                           e ->
-                                              e.getValue()
-                                                  .equals(validatorLivenessAtEpoch.getIndex()))
+                                              e.getValue().equals(validatorLivenessAtEpoch.index()))
                                       .findFirst()
                                       .get()
                                       .getKey(),

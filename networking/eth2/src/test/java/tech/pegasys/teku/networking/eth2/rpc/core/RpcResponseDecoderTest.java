@@ -277,7 +277,7 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
         : dataStructureUtil.stateBuilderAltair().build();
   }
 
-  private void completeIgnoringUnprocessedData(RpcResponseDecoder<?, ?> decoder) {
+  private void completeIgnoringUnprocessedData(final RpcResponseDecoder<?, ?> decoder) {
     try {
       decoder.complete();
     } catch (Exception e) {

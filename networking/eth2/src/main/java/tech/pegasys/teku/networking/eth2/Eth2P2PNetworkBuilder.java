@@ -39,7 +39,8 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsBellatrix;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsCapella;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsDeneb;
-import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsEip7594;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsElectra;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsFulu;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetTopicProvider;
@@ -76,7 +77,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -90,6 +91,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 
@@ -136,6 +138,7 @@ public class Eth2P2PNetworkBuilder {
   protected StatusMessageFactory statusMessageFactory;
   protected KZG kzg;
   protected boolean recordMessageArrival;
+  protected DebugDataDumper debugDataDumper;
   private DasGossipLogger dasGossipLogger;
   private DasReqRespLogger dasReqRespLogger;
 
@@ -160,11 +163,11 @@ public class Eth2P2PNetworkBuilder {
       statusMessageFactory = new StatusMessageFactory(combinedChainDataClient.getRecentChainData());
     }
 
-    final Optional<UInt64> dasTotalCustodySubnetCount =
-        spec.isMilestoneSupported(SpecMilestone.EIP7594)
+    final Optional<UInt64> dasTotalCustodyGroupCount =
+        spec.isMilestoneSupported(SpecMilestone.FULU)
             ? Optional.of(
                 UInt64.valueOf(
-                    config.getTotalCustodySubnetCount(spec.forMilestone(SpecMilestone.EIP7594))))
+                    config.getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU))))
             : Optional.empty();
 
     final Eth2PeerManager eth2PeerManager =
@@ -187,7 +190,7 @@ public class Eth2P2PNetworkBuilder {
             spec,
             kzg,
             discoveryNodeIdExtractor,
-            dasTotalCustodySubnetCount,
+            dasTotalCustodyGroupCount,
             dasReqRespLogger);
     final Collection<RpcMethod<?, ?, ?>> eth2RpcMethods =
         eth2PeerManager.getBeaconChainMethods().all();
@@ -215,7 +218,7 @@ public class Eth2P2PNetworkBuilder {
         gossipEncoding,
         config.getGossipConfigurator(),
         processedAttestationSubscriptionProvider,
-        dasTotalCustodySubnetCount.orElse(UInt64.ZERO).intValue(),
+        dasTotalCustodyGroupCount.orElse(UInt64.ZERO).intValue(),
         config.isAllTopicsFilterEnabled());
   }
 
@@ -230,6 +233,7 @@ public class Eth2P2PNetworkBuilder {
             forkAndSpecMilestone ->
                 createSubscriptions(forkAndSpecMilestone, network, gossipEncoding))
         .forEach(gossipForkManagerBuilder::fork);
+
     return gossipForkManagerBuilder.build();
   }
 
@@ -238,106 +242,139 @@ public class Eth2P2PNetworkBuilder {
       final DiscoveryNetwork<?> network,
       final GossipEncoding gossipEncoding) {
     return switch (forkAndSpecMilestone.getSpecMilestone()) {
-      case PHASE0 -> new GossipForkSubscriptionsPhase0(
-          forkAndSpecMilestone.getFork(),
-          spec,
-          asyncRunner,
-          metricsSystem,
-          network,
-          combinedChainDataClient.getRecentChainData(),
-          gossipEncoding,
-          gossipedBlockProcessor,
-          gossipedAttestationConsumer,
-          gossipedAggregateProcessor,
-          gossipedAttesterSlashingConsumer,
-          gossipedProposerSlashingConsumer,
-          gossipedVoluntaryExitConsumer);
-      case ALTAIR -> new GossipForkSubscriptionsAltair(
-          forkAndSpecMilestone.getFork(),
-          spec,
-          asyncRunner,
-          metricsSystem,
-          network,
-          combinedChainDataClient.getRecentChainData(),
-          gossipEncoding,
-          gossipedBlockProcessor,
-          gossipedAttestationConsumer,
-          gossipedAggregateProcessor,
-          gossipedAttesterSlashingConsumer,
-          gossipedProposerSlashingConsumer,
-          gossipedVoluntaryExitConsumer,
-          gossipedSignedContributionAndProofProcessor,
-          gossipedSyncCommitteeMessageProcessor);
-      case BELLATRIX -> new GossipForkSubscriptionsBellatrix(
-          forkAndSpecMilestone.getFork(),
-          spec,
-          asyncRunner,
-          metricsSystem,
-          network,
-          combinedChainDataClient.getRecentChainData(),
-          gossipEncoding,
-          gossipedBlockProcessor,
-          gossipedAttestationConsumer,
-          gossipedAggregateProcessor,
-          gossipedAttesterSlashingConsumer,
-          gossipedProposerSlashingConsumer,
-          gossipedVoluntaryExitConsumer,
-          gossipedSignedContributionAndProofProcessor,
-          gossipedSyncCommitteeMessageProcessor);
-      case CAPELLA -> new GossipForkSubscriptionsCapella(
-          forkAndSpecMilestone.getFork(),
-          spec,
-          asyncRunner,
-          metricsSystem,
-          network,
-          combinedChainDataClient.getRecentChainData(),
-          gossipEncoding,
-          gossipedBlockProcessor,
-          gossipedAttestationConsumer,
-          gossipedAggregateProcessor,
-          gossipedAttesterSlashingConsumer,
-          gossipedProposerSlashingConsumer,
-          gossipedVoluntaryExitConsumer,
-          gossipedSignedContributionAndProofProcessor,
-          gossipedSyncCommitteeMessageProcessor,
-          gossipedSignedBlsToExecutionChangeProcessor);
-      case DENEB -> new GossipForkSubscriptionsDeneb(
-          forkAndSpecMilestone.getFork(),
-          spec,
-          asyncRunner,
-          metricsSystem,
-          network,
-          combinedChainDataClient.getRecentChainData(),
-          gossipEncoding,
-          gossipedBlockProcessor,
-          gossipedBlobSidecarProcessor,
-          gossipedAttestationConsumer,
-          gossipedAggregateProcessor,
-          gossipedAttesterSlashingConsumer,
-          gossipedProposerSlashingConsumer,
-          gossipedVoluntaryExitConsumer,
-          gossipedSignedContributionAndProofProcessor,
-          gossipedSyncCommitteeMessageProcessor,
-          gossipedSignedBlsToExecutionChangeProcessor);
-      case EIP7594 -> new GossipForkSubscriptionsEip7594(
-          forkAndSpecMilestone.getFork(),
-          spec,
-          asyncRunner,
-          metricsSystem,
-          network,
-          combinedChainDataClient.getRecentChainData(),
-          gossipEncoding,
-          gossipedBlockProcessor,
-          gossipedAttestationConsumer,
-          gossipedAggregateProcessor,
-          gossipedAttesterSlashingConsumer,
-          gossipedProposerSlashingConsumer,
-          gossipedVoluntaryExitConsumer,
-          gossipedSignedContributionAndProofProcessor,
-          gossipedSyncCommitteeMessageProcessor,
-          gossipedSignedBlsToExecutionChangeProcessor,
-          dataColumnSidecarOperationProcessor,
-          dasGossipLogger);
+      case PHASE0 ->
+          new GossipForkSubscriptionsPhase0(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              combinedChainDataClient.getRecentChainData(),
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedAttestationConsumer,
+              gossipedAggregateProcessor,
+              gossipedAttesterSlashingConsumer,
+              gossipedProposerSlashingConsumer,
+              gossipedVoluntaryExitConsumer,
+              debugDataDumper);
+      case ALTAIR ->
+          new GossipForkSubscriptionsAltair(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              combinedChainDataClient.getRecentChainData(),
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedAttestationConsumer,
+              gossipedAggregateProcessor,
+              gossipedAttesterSlashingConsumer,
+              gossipedProposerSlashingConsumer,
+              gossipedVoluntaryExitConsumer,
+              gossipedSignedContributionAndProofProcessor,
+              gossipedSyncCommitteeMessageProcessor,
+              debugDataDumper);
+      case BELLATRIX ->
+          new GossipForkSubscriptionsBellatrix(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              combinedChainDataClient.getRecentChainData(),
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedAttestationConsumer,
+              gossipedAggregateProcessor,
+              gossipedAttesterSlashingConsumer,
+              gossipedProposerSlashingConsumer,
+              gossipedVoluntaryExitConsumer,
+              gossipedSignedContributionAndProofProcessor,
+              gossipedSyncCommitteeMessageProcessor,
+              debugDataDumper);
+      case CAPELLA ->
+          new GossipForkSubscriptionsCapella(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              combinedChainDataClient.getRecentChainData(),
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedAttestationConsumer,
+              gossipedAggregateProcessor,
+              gossipedAttesterSlashingConsumer,
+              gossipedProposerSlashingConsumer,
+              gossipedVoluntaryExitConsumer,
+              gossipedSignedContributionAndProofProcessor,
+              gossipedSyncCommitteeMessageProcessor,
+              gossipedSignedBlsToExecutionChangeProcessor,
+              debugDataDumper);
+      case DENEB ->
+          new GossipForkSubscriptionsDeneb(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              combinedChainDataClient.getRecentChainData(),
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedBlobSidecarProcessor,
+              gossipedAttestationConsumer,
+              gossipedAggregateProcessor,
+              gossipedAttesterSlashingConsumer,
+              gossipedProposerSlashingConsumer,
+              gossipedVoluntaryExitConsumer,
+              gossipedSignedContributionAndProofProcessor,
+              gossipedSyncCommitteeMessageProcessor,
+              gossipedSignedBlsToExecutionChangeProcessor,
+              debugDataDumper);
+      case ELECTRA ->
+          new GossipForkSubscriptionsElectra(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              combinedChainDataClient.getRecentChainData(),
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedBlobSidecarProcessor,
+              gossipedAttestationConsumer,
+              gossipedAggregateProcessor,
+              gossipedAttesterSlashingConsumer,
+              gossipedProposerSlashingConsumer,
+              gossipedVoluntaryExitConsumer,
+              gossipedSignedContributionAndProofProcessor,
+              gossipedSyncCommitteeMessageProcessor,
+              gossipedSignedBlsToExecutionChangeProcessor,
+              debugDataDumper);
+      case FULU ->
+          new GossipForkSubscriptionsFulu(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              combinedChainDataClient.getRecentChainData(),
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedBlobSidecarProcessor,
+              gossipedAttestationConsumer,
+              gossipedAggregateProcessor,
+              gossipedAttesterSlashingConsumer,
+              gossipedProposerSlashingConsumer,
+              gossipedVoluntaryExitConsumer,
+              gossipedSignedContributionAndProofProcessor,
+              gossipedSyncCommitteeMessageProcessor,
+              gossipedSignedBlsToExecutionChangeProcessor,
+              dataColumnSidecarOperationProcessor,
+              debugDataDumper,
+              dasGossipLogger);
     };
   }
 
@@ -464,7 +501,7 @@ public class Eth2P2PNetworkBuilder {
         "gossipedSignedBlsToExecutionChangeProcessor", gossipedSignedBlsToExecutionChangeProcessor);
   }
 
-  private void assertNotNull(String fieldName, Object fieldValue) {
+  private void assertNotNull(final String fieldName, final Object fieldValue) {
     checkState(fieldValue != null, "Field " + fieldName + " must be set.");
   }
 
@@ -488,7 +525,7 @@ public class Eth2P2PNetworkBuilder {
   }
 
   public Eth2P2PNetworkBuilder dataColumnSidecarCustody(
-      DataColumnSidecarByRootCustody dataColumnSidecarCustody) {
+      final DataColumnSidecarByRootCustody dataColumnSidecarCustody) {
     checkNotNull(dataColumnSidecarCustody);
     this.dataColumnSidecarCustody = dataColumnSidecarCustody;
     return this;
@@ -581,7 +618,7 @@ public class Eth2P2PNetworkBuilder {
   }
 
   public Eth2P2PNetworkBuilder gossipedDataColumnSidecarOperationProcessor(
-      OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor) {
+      final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor) {
     checkNotNull(dataColumnSidecarOperationProcessor);
     this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
     return this;
@@ -659,7 +696,12 @@ public class Eth2P2PNetworkBuilder {
     return this;
   }
 
-  public Eth2P2PNetworkBuilder gossipDasLogger(DasGossipLogger dasGossipLogger) {
+  public Eth2P2PNetworkBuilder p2pDebugDataDumper(final DebugDataDumper debugDataDumper) {
+    this.debugDataDumper = debugDataDumper;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder gossipDasLogger(final DasGossipLogger dasGossipLogger) {
     this.dasGossipLogger = dasGossipLogger;
     return this;
   }

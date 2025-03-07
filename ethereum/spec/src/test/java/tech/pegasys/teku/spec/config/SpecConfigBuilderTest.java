@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -32,8 +33,9 @@ import tech.pegasys.teku.spec.config.builder.AltairBuilder;
 import tech.pegasys.teku.spec.config.builder.BellatrixBuilder;
 import tech.pegasys.teku.spec.config.builder.CapellaBuilder;
 import tech.pegasys.teku.spec.config.builder.DenebBuilder;
-import tech.pegasys.teku.spec.config.builder.Eip7594Builder;
+import tech.pegasys.teku.spec.config.builder.ElectraBuilder;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
+import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class SpecConfigBuilderTest {
@@ -47,7 +49,7 @@ class SpecConfigBuilderTest {
           BellatrixBuilder.class,
           CapellaBuilder.class,
           DenebBuilder.class,
-          Eip7594Builder.class);
+          ElectraBuilder.class);
 
   /**
    * Ensures Builders have actually non-primitive setters, because primitive setters are silently
@@ -94,6 +96,25 @@ class SpecConfigBuilderTest {
                     .isFalse();
               });
     }
+  }
+
+  @Test
+  public void shouldCreateSpecVersionWithEffectiveSpecConfigVersion() {
+    final Spec spec = getSpec(__ -> {});
+    spec.getForkSchedule().getActiveMilestones().stream()
+        .map(ForkAndSpecMilestone::getSpecMilestone)
+        .forEach(
+            milestone ->
+                assertThat(spec.forMilestone(milestone).getConfig().getMilestone())
+                    .isEqualTo(milestone));
+  }
+
+  @Test
+  public void shouldCreateSpecExposingNonActiveConfig() {
+    // we will need to update this when we schedule ELECTRA on mainnet
+    final Spec spec = getSpec(__ -> {});
+    assertThat(spec.getForkSchedule().getHighestSupportedMilestone()).isNotEqualTo(FULU);
+    assertThat(spec.getSpecConfigAndParent().specConfig().getMilestone()).isEqualTo(FULU);
   }
 
   @Test
@@ -168,8 +189,9 @@ class SpecConfigBuilderTest {
         .isEqualTo(randomUInt64);
   }
 
-  private Spec getSpec(Consumer<SpecConfigBuilder> consumer) {
-    final SpecConfig config = SpecConfigLoader.loadConfig("mainnet", consumer);
+  private Spec getSpec(final Consumer<SpecConfigBuilder> consumer) {
+    final SpecConfigAndParent<? extends SpecConfig> config =
+        SpecConfigLoader.loadConfig("mainnet", consumer);
     return SpecFactory.create(config);
   }
 }

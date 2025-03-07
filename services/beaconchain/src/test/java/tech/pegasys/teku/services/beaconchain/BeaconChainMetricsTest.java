@@ -111,7 +111,7 @@ class BeaconChainMetricsTest {
     chainHead = dataStructureUtil.randomSignedBlockAndState(updatedState);
   }
 
-  private void setBlockRoots(List<Bytes32> newBlockRoots) {
+  private void setBlockRoots(final List<Bytes32> newBlockRoots) {
     updateState(s -> s.getBlockRoots().setAllElements(newBlockRoots));
   }
 

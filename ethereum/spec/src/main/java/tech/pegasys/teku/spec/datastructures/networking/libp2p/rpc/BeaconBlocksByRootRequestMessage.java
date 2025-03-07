@@ -35,18 +35,18 @@ public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
     }
 
     @Override
-    public BeaconBlocksByRootRequestMessage createFromBackingNode(TreeNode node) {
+    public BeaconBlocksByRootRequestMessage createFromBackingNode(final TreeNode node) {
       return new BeaconBlocksByRootRequestMessage(this, node);
     }
   }
 
   public BeaconBlocksByRootRequestMessage(
-      final BeaconBlocksByRootRequestMessageSchema schema, List<Bytes32> roots) {
+      final BeaconBlocksByRootRequestMessageSchema schema, final List<Bytes32> roots) {
     super(schema, schema.createTreeFromElements(roots.stream().map(SszBytes32::of).toList()));
   }
 
   private BeaconBlocksByRootRequestMessage(
-      BeaconBlocksByRootRequestMessageSchema schema, TreeNode node) {
+      final BeaconBlocksByRootRequestMessageSchema schema, final TreeNode node) {
     super(schema, node);
   }
 

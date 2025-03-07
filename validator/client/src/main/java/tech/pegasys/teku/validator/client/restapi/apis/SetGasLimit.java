@@ -72,7 +72,7 @@ public class SetGasLimit extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final BLSPublicKey publicKey = request.getPathParameter(PARAM_PUBKEY_TYPE);
     final SetGasLimit.SetGasLimitBody body = request.getRequestBody();
     if (body.gasLimit.equals(UInt64.ZERO)) {

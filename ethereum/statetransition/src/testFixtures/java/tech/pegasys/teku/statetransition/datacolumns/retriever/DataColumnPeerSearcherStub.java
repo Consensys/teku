@@ -24,7 +24,7 @@ public class DataColumnPeerSearcherStub implements DataColumnPeerSearcher {
     private final UInt64 columnIndex;
     private boolean disposed;
 
-    public PeerSearchRequestStub(UInt64 slot, UInt64 columnIndex) {
+    public PeerSearchRequestStub(final UInt64 slot, final UInt64 columnIndex) {
       this.slot = slot;
       this.columnIndex = columnIndex;
     }
@@ -50,7 +50,7 @@ public class DataColumnPeerSearcherStub implements DataColumnPeerSearcher {
   private final List<PeerSearchRequestStub> requests = new ArrayList<>();
 
   @Override
-  public PeerSearchRequest requestPeers(UInt64 slot, UInt64 columnIndex) {
+  public PeerSearchRequest requestPeers(final UInt64 slot, final UInt64 columnIndex) {
     PeerSearchRequestStub request = new PeerSearchRequestStub(slot, columnIndex);
     requests.add(request);
     return request;

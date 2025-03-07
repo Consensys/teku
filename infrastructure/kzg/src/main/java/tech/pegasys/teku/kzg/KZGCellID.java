@@ -17,7 +17,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public record KZGCellID(UInt64 id) {
 
-  public static KZGCellID fromCellColumnIndex(int idx) {
+  public static KZGCellID fromCellColumnIndex(final int idx) {
     return new KZGCellID(UInt64.valueOf(idx));
   }
 

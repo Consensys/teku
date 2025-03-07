@@ -30,12 +30,12 @@ public class TotalAttestationReward {
   private final long inactivity;
 
   public TotalAttestationReward(
-      long validatorIndex,
-      long head,
-      long target,
-      long source,
-      Optional<UInt64> inclusionDelay,
-      long inactivity) {
+      final long validatorIndex,
+      final long head,
+      final long target,
+      final long source,
+      final Optional<UInt64> inclusionDelay,
+      final long inactivity) {
     this.validatorIndex = validatorIndex;
     this.head = head;
     this.target = target;
@@ -44,7 +44,8 @@ public class TotalAttestationReward {
     this.inactivity = inactivity;
   }
 
-  public TotalAttestationReward(long validatorIndex, final RewardAndPenalty rewardAndPenalty) {
+  public TotalAttestationReward(
+      final long validatorIndex, final RewardAndPenalty rewardAndPenalty) {
     this.validatorIndex = validatorIndex;
 
     final DetailedRewardAndPenalty detailedRewardAndPenalty =
@@ -97,7 +98,7 @@ public class TotalAttestationReward {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

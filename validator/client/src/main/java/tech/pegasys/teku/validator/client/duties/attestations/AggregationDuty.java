@@ -97,7 +97,7 @@ public class AggregationDuty implements Duty {
             new CommitteeAggregator(
                 validator,
                 UInt64.valueOf(validatorIndex),
-                attestationCommitteeIndex,
+                UInt64.valueOf(attestationCommitteeIndex),
                 proof,
                 unsignedAttestationFuture));
   }
@@ -135,7 +135,11 @@ public class AggregationDuty implements Duty {
 
     final SafeFuture<Optional<Attestation>> createAggregationFuture =
         validatorDutyMetrics.record(
-            () -> validatorApiChannel.createAggregate(slot, attestationData.hashTreeRoot()),
+            () ->
+                validatorApiChannel.createAggregate(
+                    slot,
+                    attestationData.hashTreeRoot(),
+                    Optional.of(aggregator.attestationCommitteeIndex)),
             this,
             ValidatorDutyMetricsSteps.CREATE);
 
@@ -184,14 +188,14 @@ public class AggregationDuty implements Duty {
 
     private final Validator validator;
     private final UInt64 validatorIndex;
-    private final int attestationCommitteeIndex;
+    private final UInt64 attestationCommitteeIndex;
     private final BLSSignature proof;
     private final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture;
 
     private CommitteeAggregator(
         final Validator validator,
         final UInt64 validatorIndex,
-        final int attestationCommitteeIndex,
+        final UInt64 attestationCommitteeIndex,
         final BLSSignature proof,
         final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture) {
       this.validator = validator;

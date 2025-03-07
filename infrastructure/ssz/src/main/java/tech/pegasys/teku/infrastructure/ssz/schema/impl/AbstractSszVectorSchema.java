@@ -49,25 +49,28 @@ public abstract class AbstractSszVectorSchema<
 
   private final boolean isListBacking;
   private final int fixedPartSize;
-  private SszLengthBounds sszLengthBounds;
+  private final SszLengthBounds sszLengthBounds;
 
   private final Supplier<DeserializableTypeDefinition<SszVectorT>> jsonTypeDefinition =
       Suppliers.memoize(this::createTypeDefinition);
 
-  protected AbstractSszVectorSchema(SszSchema<SszElementT> elementType, long vectorLength) {
+  protected AbstractSszVectorSchema(
+      final SszSchema<SszElementT> elementType, final long vectorLength) {
     this(elementType, vectorLength, false);
   }
 
   protected AbstractSszVectorSchema(
-      SszSchema<SszElementT> elementType, long vectorLength, boolean isListBacking) {
+      final SszSchema<SszElementT> elementType,
+      final long vectorLength,
+      final boolean isListBacking) {
     this(elementType, vectorLength, isListBacking, SszSchemaHints.none());
   }
 
   protected AbstractSszVectorSchema(
-      SszSchema<SszElementT> elementSchema,
-      long vectorLength,
-      boolean isListBacking,
-      SszSchemaHints hints) {
+      final SszSchema<SszElementT> elementSchema,
+      final long vectorLength,
+      final boolean isListBacking,
+      final SszSchemaHints hints) {
     super(vectorLength, elementSchema, hints);
     this.isListBacking = isListBacking;
     this.fixedPartSize = calcSszFixedPartSize();
@@ -140,7 +143,7 @@ public abstract class AbstractSszVectorSchema<
   }
 
   @Override
-  public int getSszVariablePartSize(TreeNode node) {
+  public int getSszVariablePartSize(final TreeNode node) {
     return getVariablePartSize(node, getLength());
   }
 
@@ -159,12 +162,12 @@ public abstract class AbstractSszVectorSchema<
   }
 
   @Override
-  public int sszSerializeTree(TreeNode node, SszWriter writer) {
+  public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
     return sszSerializeVector(node, writer, getLength());
   }
 
   @Override
-  public TreeNode sszDeserializeTree(SszReader reader) {
+  public TreeNode sszDeserializeTree(final SszReader reader) {
     if (getElementSchema().equals(SszPrimitiveSchemas.BIT_SCHEMA)) {
       throw new UnsupportedOperationException(
           "Bitvector deserialization is only supported by SszBitvectorSchema");
@@ -178,7 +181,8 @@ public abstract class AbstractSszVectorSchema<
   }
 
   @Override
-  public TreeNode loadBackingNodes(TreeNodeSource nodeSource, Bytes32 rootHash, long rootGIndex) {
+  public TreeNode loadBackingNodes(
+      final TreeNodeSource nodeSource, final Bytes32 rootHash, final long rootGIndex) {
     final long lastUsefulGIndex =
         GIndexUtil.gIdxChildGIndex(rootGIndex, maxChunks() - 1, treeDepth());
     return LoadingUtil.loadNodesToDepth(
@@ -224,7 +228,7 @@ public abstract class AbstractSszVectorSchema<
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

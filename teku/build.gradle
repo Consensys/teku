@@ -1,7 +1,6 @@
 dependencies {
   implementation project(':beacon:pow')
   implementation project(':beacon:validator')
-  implementation project(':data:serializer')
   implementation project(':data:publisher')
   implementation project(':data:beaconrestapi')
   implementation project(':ethereum:signingrecord')
@@ -19,6 +18,7 @@ dependencies {
   implementation project(':ethereum:weaksubjectivity')
   implementation project(':infrastructure:crypto')
   implementation project(':infrastructure:events')
+  implementation project(':infrastructure:http')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:io')
   implementation project(':infrastructure:logging')
@@ -52,8 +52,8 @@ dependencies {
   implementation 'io.vertx:vertx-core'
   implementation 'org.apache.logging.log4j:log4j-slf4j-impl'
   implementation 'org.apache.logging.log4j:log4j-slf4j2-impl'
-  implementation 'org.apache.tuweni:tuweni-ssz'
-  implementation 'org.apache.tuweni:tuweni-units'
+  implementation 'io.tmio:tuweni-ssz'
+  implementation 'io.tmio:tuweni-units'
   implementation 'org.hyperledger.besu.internal:metrics-core'
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'

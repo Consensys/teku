@@ -24,12 +24,14 @@ public class SszListSchemaImpl<ElementDataT extends SszData>
     extends AbstractSszListSchema<ElementDataT, SszList<ElementDataT>> {
 
   public SszListSchemaImpl(
-      SszSchema<ElementDataT> elementSchema, long maxLength, SszSchemaHints hints) {
+      final SszSchema<ElementDataT> elementSchema,
+      final long maxLength,
+      final SszSchemaHints hints) {
     super(elementSchema, maxLength, hints);
   }
 
   @Override
-  public SszList<ElementDataT> createFromBackingNode(TreeNode node) {
+  public SszList<ElementDataT> createFromBackingNode(final TreeNode node) {
     return new SszListImpl<>(this, node);
   }
 }

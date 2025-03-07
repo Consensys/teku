@@ -26,13 +26,13 @@ public class SszMutableVectorImpl<
     extends AbstractSszMutableCollection<SszElementT, SszMutableElementT>
     implements SszMutableRefVector<SszElementT, SszMutableElementT> {
 
-  public SszMutableVectorImpl(AbstractSszComposite<SszElementT> backingImmutableData) {
+  public SszMutableVectorImpl(final AbstractSszComposite<SszElementT> backingImmutableData) {
     super(backingImmutableData);
   }
 
   @Override
   protected AbstractSszComposite<SszElementT> createImmutableSszComposite(
-      TreeNode backingNode, IntCache<SszElementT> childrenCache) {
+      final TreeNode backingNode, final IntCache<SszElementT> childrenCache) {
     return new SszVectorImpl<>(getSchema(), backingNode, childrenCache);
   }
 
@@ -49,7 +49,7 @@ public class SszMutableVectorImpl<
   }
 
   @Override
-  protected void checkIndex(int index, boolean set) {
+  protected void checkIndex(final int index, final boolean set) {
     if (index < 0 || index >= size()) {
       throw new IndexOutOfBoundsException(
           "Invalid index " + index + " for vector with size " + size());

@@ -27,13 +27,13 @@ public class DepositEventsAccessor {
   private final Eth1Provider eth1Provider;
   private final String contractAddress;
 
-  public DepositEventsAccessor(Eth1Provider eth1Provider, String contractAddress) {
+  public DepositEventsAccessor(final Eth1Provider eth1Provider, final String contractAddress) {
     this.eth1Provider = eth1Provider;
     this.contractAddress = contractAddress;
   }
 
   public SafeFuture<List<DepositEventEventResponse>> depositEventInRange(
-      DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
+      final DefaultBlockParameter startBlock, final DefaultBlockParameter endBlock) {
     final EthFilter filter = new EthFilter(startBlock, endBlock, this.contractAddress);
     filter.addSingleTopic(EventEncoder.encode(DepositContract.DEPOSITEVENT_EVENT));
     return SafeFuture.of(

@@ -1,6 +1,6 @@
 dependencies {
-    api 'org.apache.tuweni:tuweni-bytes'
-    api 'org.apache.tuweni:tuweni-units'
+    api 'io.tmio:tuweni-bytes'
+    api 'io.tmio:tuweni-units'
 
     implementation 'org.web3j:utils'
     implementation 'org.apache.logging.log4j:log4j-core'

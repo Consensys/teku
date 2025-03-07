@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Validata
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBellatrix {
@@ -61,7 +62,8 @@ public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBella
       final OperationProcessor<ValidatableSyncCommitteeMessage>
           syncCommitteeMessageOperationProcessor,
       final OperationProcessor<SignedBlsToExecutionChange>
-          signedBlsToExecutionChangeOperationProcessor) {
+          signedBlsToExecutionChangeOperationProcessor,
+      final DebugDataDumper debugDataDumper) {
     super(
         fork,
         spec,
@@ -77,7 +79,8 @@ public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBella
         proposerSlashingProcessor,
         voluntaryExitProcessor,
         signedContributionAndProofOperationProcessor,
-        syncCommitteeMessageOperationProcessor);
+        syncCommitteeMessageOperationProcessor,
+        debugDataDumper);
 
     this.signedBlsToExecutionChangeOperationProcessor =
         signedBlsToExecutionChangeOperationProcessor;
@@ -97,7 +100,8 @@ public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBella
             gossipEncoding,
             forkInfo,
             signedBlsToExecutionChangeOperationProcessor,
-            spec.getNetworkingConfig());
+            spec.getNetworkingConfig(),
+            debugDataDumper);
 
     addGossipManager(gossipManager);
     this.signedBlsToExecutionChangeGossipManager = Optional.of(gossipManager);

@@ -40,21 +40,21 @@ public class ExecutionPayloadCapella extends ExecutionPayloadBellatrix implement
 
   @JsonCreator
   public ExecutionPayloadCapella(
-      @JsonProperty("parent_hash") Bytes32 parentHash,
-      @JsonProperty("fee_recipient") Bytes20 feeRecipient,
-      @JsonProperty("state_root") Bytes32 stateRoot,
-      @JsonProperty("receipts_root") Bytes32 receiptsRoot,
-      @JsonProperty("logs_bloom") Bytes logsBloom,
-      @JsonProperty("prev_randao") Bytes32 prevRandao,
-      @JsonProperty("block_number") UInt64 blockNumber,
-      @JsonProperty("gas_limit") UInt64 gasLimit,
-      @JsonProperty("gas_used") UInt64 gasUsed,
-      @JsonProperty("timestamp") UInt64 timestamp,
-      @JsonProperty("extra_data") Bytes extraData,
-      @JsonProperty("base_fee_per_gas") UInt256 baseFeePerGas,
-      @JsonProperty("block_hash") Bytes32 blockHash,
-      @JsonProperty("transactions") List<Bytes> transactions,
-      @JsonProperty("withdrawals") List<Withdrawal> withdrawals) {
+      final @JsonProperty("parent_hash") Bytes32 parentHash,
+      final @JsonProperty("fee_recipient") Bytes20 feeRecipient,
+      final @JsonProperty("state_root") Bytes32 stateRoot,
+      final @JsonProperty("receipts_root") Bytes32 receiptsRoot,
+      final @JsonProperty("logs_bloom") Bytes logsBloom,
+      final @JsonProperty("prev_randao") Bytes32 prevRandao,
+      final @JsonProperty("block_number") UInt64 blockNumber,
+      final @JsonProperty("gas_limit") UInt64 gasLimit,
+      final @JsonProperty("gas_used") UInt64 gasUsed,
+      final @JsonProperty("timestamp") UInt64 timestamp,
+      final @JsonProperty("extra_data") Bytes extraData,
+      final @JsonProperty("base_fee_per_gas") UInt256 baseFeePerGas,
+      final @JsonProperty("block_hash") Bytes32 blockHash,
+      final @JsonProperty("transactions") List<Bytes> transactions,
+      final @JsonProperty("withdrawals") List<Withdrawal> withdrawals) {
     super(
         parentHash,
         feeRecipient,
@@ -74,7 +74,7 @@ public class ExecutionPayloadCapella extends ExecutionPayloadBellatrix implement
   }
 
   public ExecutionPayloadCapella(
-      tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
+      final tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
     super(executionPayload);
     this.withdrawals =
         executionPayload.getOptionalWithdrawals().orElseThrow().stream()

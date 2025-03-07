@@ -19,12 +19,12 @@ public class SszByteArrayWriter implements SszWriter {
   private final byte[] bytes;
   private int size = 0;
 
-  public SszByteArrayWriter(int maxSize) {
+  public SszByteArrayWriter(final int maxSize) {
     bytes = new byte[maxSize];
   }
 
   @Override
-  public void write(byte[] bytes, int offset, int length) {
+  public void write(final byte[] bytes, final int offset, final int length) {
     System.arraycopy(bytes, offset, this.bytes, this.size, length);
     this.size += length;
   }

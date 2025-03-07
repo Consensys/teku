@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
 
 public class SszCompositeListTest {
 
-  static SszSchema<TestView> testType =
+  static final SszSchema<TestView> TEST_TYPE =
       new SszSchema<>() {
 
         @Override
@@ -49,7 +49,7 @@ public class SszCompositeListTest {
         }
 
         @Override
-        public TestView createFromBackingNode(TreeNode node) {
+        public TestView createFromBackingNode(final TreeNode node) {
           return new TestView(node);
         }
 
@@ -90,17 +90,17 @@ public class SszCompositeListTest {
         }
 
         @Override
-        public int getSszVariablePartSize(TreeNode node) {
+        public int getSszVariablePartSize(final TreeNode node) {
           return 0;
         }
 
         @Override
-        public int sszSerializeTree(TreeNode node, SszWriter writer) {
+        public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
           return 0;
         }
 
         @Override
-        public TreeNode sszDeserializeTree(SszReader reader) {
+        public TreeNode sszDeserializeTree(final SszReader reader) {
           return null;
         }
 
@@ -115,18 +115,18 @@ public class SszCompositeListTest {
     TreeNode node;
     public final int v;
 
-    public TestView(int v) {
+    public TestView(final int v) {
       this.v = v;
     }
 
-    public TestView(TreeNode node) {
+    public TestView(final TreeNode node) {
       this.node = node;
       this.v = node.hashTreeRoot().trimLeadingZeros().toInt();
     }
 
     @Override
     public SszSchema<?> getSchema() {
-      return testType;
+      return TEST_TYPE;
     }
 
     @Override
@@ -145,7 +145,7 @@ public class SszCompositeListTest {
 
   @Test
   public void simpleTest1() {
-    SszListSchema<TestView, ?> listType = SszListSchema.create(testType, 3);
+    SszListSchema<TestView, ?> listType = SszListSchema.create(TEST_TYPE, 3);
     SszMutableList<TestView> list = listType.getDefault().createWritableCopy();
     TreeNode n0 = list.commitChanges().getBackingNode();
     list.set(0, new TestView(0x111));

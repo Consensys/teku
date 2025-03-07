@@ -67,7 +67,7 @@ public class SchemaSerializationTests {
   DataStructureUtil dataStructureUtil;
 
   @BeforeEach
-  void setUp(SpecContext specContext) throws IOException {
+  void setUp(final SpecContext specContext) throws IOException {
     jsonWriter = new StringWriter();
     jsonGenerator = new JsonFactory().createGenerator(jsonWriter);
     objectMapper = new ObjectMapper();
@@ -216,7 +216,8 @@ public class SchemaSerializationTests {
     deserializer.deserialize(parser, objectMapper.getDeserializationContext());
   }
 
-  private JsonParser prepareDeserializationContext(String serializedValue) throws IOException {
+  private JsonParser prepareDeserializationContext(final String serializedValue)
+      throws IOException {
     String json = String.format("{\"value\":%s}", serializedValue);
     JsonParser parser = objectMapper.getFactory().createParser(json);
     parser.nextToken();
@@ -448,16 +449,16 @@ public class SchemaSerializationTests {
   }
 
   private ForkChoiceUpdatedResult createExternalForkChoiceUpdatedResult(
-      ExecutionPayloadStatus status, Bytes32 latestValidHash, Bytes8 payloadId) {
+      final ExecutionPayloadStatus status, final Bytes32 latestValidHash, final Bytes8 payloadId) {
     return new ForkChoiceUpdatedResult(
         new PayloadStatusV1(status, latestValidHash, null), payloadId);
   }
 
   private tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult
       createInternalForkChoiceUpdatedResult(
-          ExecutionPayloadStatus status,
-          Optional<Bytes32> latestValidHash,
-          Optional<Bytes8> payloadId) {
+          final ExecutionPayloadStatus status,
+          final Optional<Bytes32> latestValidHash,
+          final Optional<Bytes8> payloadId) {
     return new tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult(
         PayloadStatus.create(status, latestValidHash, Optional.empty()), payloadId);
   }

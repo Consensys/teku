@@ -29,7 +29,7 @@ import org.apache.tuweni.bytes.Bytes;
 public class FilePrivateKeySource implements PrivateKeySource {
   private final String fileName;
 
-  public FilePrivateKeySource(String fileName) {
+  public FilePrivateKeySource(final String fileName) {
     this.fileName = fileName;
   }
 
@@ -79,7 +79,7 @@ public class FilePrivateKeySource implements PrivateKeySource {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

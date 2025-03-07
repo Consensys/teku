@@ -98,7 +98,7 @@ public class MultiThreadedStoreTest {
     }
   }
 
-  private Runnable createStoreTaskForSlot(long slotNumber) {
+  private Runnable createStoreTaskForSlot(final long slotNumber) {
     return () -> {
       final StoreTransaction transaction = recentChainData.startStoreTransaction();
       final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(slotNumber);

@@ -17,11 +17,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.node.Syncing;
-import tech.pegasys.teku.api.response.v1.node.SyncingResponse;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
@@ -35,13 +34,7 @@ public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrat
     startRestAPIAtGenesis();
     when(syncService.getSyncStatus()).thenReturn(getSyncStatus(true, 1, 10, 15));
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
-
-    final Response response = get();
-    assertThat(response.code()).isEqualTo(SC_OK);
-    final SyncingResponse syncingResponse =
-        jsonProvider.jsonToObject(response.body().string(), SyncingResponse.class);
-    assertThat(syncingResponse.data)
-        .isEqualTo(new Syncing(UInt64.valueOf(10), UInt64.valueOf(5), true, false));
+    verifyData(10, 5, true, false);
   }
 
   @Test
@@ -49,14 +42,7 @@ public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrat
     startRestAPIAtGenesis();
     when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 6, 11, 16));
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-
-    final Response response = get();
-    assertThat(response.code()).isEqualTo(SC_OK);
-    final SyncingResponse syncingResponse =
-        jsonProvider.jsonToObject(response.body().string(), SyncingResponse.class);
-    assertThat(syncingResponse.data)
-        // 0 sync distance because we're not syncing.
-        .isEqualTo(new Syncing(UInt64.valueOf(11), UInt64.ZERO, false, false));
+    verifyData(11, 0, false, false);
   }
 
   @Test
@@ -66,17 +52,20 @@ public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrat
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
     // update EL availability
     dataProvider.getExecutionClientDataProvider().onAvailabilityUpdated(false);
-
-    final Response response = get();
-    assertThat(response.code()).isEqualTo(SC_OK);
-    final SyncingResponse syncingResponse =
-        jsonProvider.jsonToObject(response.body().string(), SyncingResponse.class);
-    assertThat(syncingResponse.data)
-        .isEqualTo(new Syncing(UInt64.valueOf(10), UInt64.valueOf(5), true, true));
+    verifyData(10, 5, true, true);
   }
 
-  private Response get() throws IOException {
-    return getResponse(GetSyncing.ROUTE);
+  private void verifyData(
+      final int headSlot, final int syncDistance, final boolean isSyncing, final boolean elOffline)
+      throws IOException {
+    final Response response = getResponse(GetSyncing.ROUTE);
+    assertThat(response.code()).isEqualTo(SC_OK);
+    final JsonNode data = getResponseData(response);
+
+    assertThat(data.get("head_slot").asInt()).isEqualTo(headSlot);
+    assertThat(data.get("sync_distance").asInt()).isEqualTo(syncDistance);
+    assertThat(data.get("is_syncing").asBoolean()).isEqualTo(isSyncing);
+    assertThat(data.get("el_offline").asBoolean()).isEqualTo(elOffline);
   }
 
   private SyncingStatus getSyncStatus(

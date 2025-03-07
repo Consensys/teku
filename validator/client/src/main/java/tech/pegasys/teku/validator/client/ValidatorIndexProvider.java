@@ -107,7 +107,7 @@ public class ValidatorIndexProvider {
         .map(Map.Entry::getKey);
   }
 
-  public boolean containsPublicKey(BLSPublicKey publicKey) {
+  public boolean containsPublicKey(final BLSPublicKey publicKey) {
     return validatorIndicesByPublicKey.containsKey(publicKey);
   }
 

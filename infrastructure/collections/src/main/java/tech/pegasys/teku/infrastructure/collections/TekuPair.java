@@ -23,14 +23,14 @@ import com.google.common.base.Objects;
  */
 public final class TekuPair<TLeft, TRight> {
 
-  public static <TLeft, TRight> TekuPair<TLeft, TRight> of(TLeft left, TRight right) {
+  public static <TLeft, TRight> TekuPair<TLeft, TRight> of(final TLeft left, final TRight right) {
     return new TekuPair<>(left, right);
   }
 
   private final TLeft left;
   private final TRight right;
 
-  private TekuPair(TLeft left, TRight right) {
+  private TekuPair(final TLeft left, final TRight right) {
     this.left = left;
     this.right = right;
   }
@@ -44,14 +44,13 @@ public final class TekuPair<TLeft, TRight> {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof TekuPair)) {
+    if (!(o instanceof TekuPair<?, ?> tekuPair)) {
       return false;
     }
-    TekuPair<?, ?> tekuPair = (TekuPair<?, ?>) o;
     return Objects.equal(getLeft(), tekuPair.getLeft())
         && Objects.equal(getRight(), tekuPair.getRight());
   }

@@ -17,16 +17,15 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
-import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 
@@ -41,47 +40,44 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
       final TimeProvider timeProvider,
       final boolean enableTransitionEmulation,
       final Optional<Bytes32> terminalBlockHashInTTDMode,
-      final BuilderCircuitBreaker builderCircuitBreaker) {
-    super(spec, timeProvider, enableTransitionEmulation, terminalBlockHashInTTDMode);
+      final BuilderCircuitBreaker builderCircuitBreaker,
+      final Optional<Integer> numberOfGeneratedBlobs) {
+    super(
+        spec,
+        timeProvider,
+        enableTransitionEmulation,
+        terminalBlockHashInTTDMode,
+        numberOfGeneratedBlobs);
     this.builderCircuitBreaker = builderCircuitBreaker;
   }
 
   @Override
-  public void onSlot(UInt64 slot) {
+  public void onSlot(final UInt64 slot) {
     // NOOP
   }
 
   @Override
-  public SafeFuture<HeaderWithFallbackData> builderGetHeader(
+  public SafeFuture<BuilderBidOrFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final SafeFuture<UInt256> payloadValueResult,
       final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
     final boolean builderCircuitBreakerEngaged = builderCircuitBreaker.isEngaged(state);
     LOG.info("Builder Circuit Breaker isEngaged: " + builderCircuitBreakerEngaged);
 
     return super.builderGetHeader(
-            executionPayloadContext,
-            state,
-            payloadValueResult,
-            requestedBuilderBoostFactor,
-            blockProductionPerformance)
+            executionPayloadContext, state, requestedBuilderBoostFactor, blockProductionPerformance)
         .thenCompose(
-            headerWithFallbackData -> {
+            builderBidOrFallbackData -> {
               if (builderCircuitBreakerEngaged) {
                 return engineGetPayload(executionPayloadContext, state)
                     .thenApply(
-                        payload ->
-                            HeaderWithFallbackData.create(
-                                headerWithFallbackData.getExecutionPayloadHeader(),
-                                headerWithFallbackData.getBlobKzgCommitments(),
+                        getPayloadResponse ->
+                            BuilderBidOrFallbackData.create(
                                 new FallbackData(
-                                    payload.getExecutionPayload(),
-                                    payload.getBlobsBundle(),
-                                    FallbackReason.CIRCUIT_BREAKER_ENGAGED)));
+                                    getPayloadResponse, FallbackReason.CIRCUIT_BREAKER_ENGAGED)));
               } else {
-                return SafeFuture.completedFuture(headerWithFallbackData);
+                return SafeFuture.completedFuture(builderBidOrFallbackData);
               }
             });
   }

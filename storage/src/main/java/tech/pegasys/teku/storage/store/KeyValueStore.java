@@ -42,7 +42,7 @@ public interface KeyValueStore<TKey, TValue> {
    * <p>The implementation may override this default method and declare it to be an atomic store
    * update. Though this generic interface makes no restrictions on atomicity of this method
    */
-  default void updateAll(Iterable<EntryUpdate<? extends TKey, ? extends TValue>> data) {
+  default void updateAll(final Iterable<EntryUpdate<? extends TKey, ? extends TValue>> data) {
     data.forEach(
         update -> {
           if (update.getType() == UpdateType.UPDATE) {
@@ -66,15 +66,15 @@ public interface KeyValueStore<TKey, TValue> {
     private final K key;
     private final V value;
 
-    public static <K, V> EntryUpdate<K, V> update(K key, V value) {
+    public static <K, V> EntryUpdate<K, V> update(final K key, final V value) {
       return new EntryUpdate<>(UpdateType.UPDATE, key, value);
     }
 
-    public static <K, V> EntryUpdate<K, V> remove(K key) {
+    public static <K, V> EntryUpdate<K, V> remove(final K key) {
       return new EntryUpdate<>(UpdateType.REMOVE, key, null);
     }
 
-    private EntryUpdate(UpdateType type, K key, V value) {
+    private EntryUpdate(final UpdateType type, final K key, final V value) {
       this.type = type;
       this.key = key;
       this.value = value;

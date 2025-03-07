@@ -25,7 +25,7 @@ public class OperationPoolEntry<T extends MessageWithValidatorId>
 
   private UInt64 timeSubmitted;
 
-  public OperationPoolEntry(T message, boolean isLocal, final UInt64 timeSubmitted) {
+  public OperationPoolEntry(final T message, final boolean isLocal, final UInt64 timeSubmitted) {
     this.message = message;
     this.isLocal = isLocal;
     this.timeSubmitted = timeSubmitted;
@@ -48,7 +48,7 @@ public class OperationPoolEntry<T extends MessageWithValidatorId>
   }
 
   @Override
-  public int compareTo(@NotNull OperationPoolEntry<T> o) {
+  public int compareTo(final @NotNull OperationPoolEntry<T> o) {
     if (isLocal && !o.isLocal) {
       return -1;
     }

@@ -72,6 +72,11 @@ public class AttestationValidator {
   }
 
   private InternalValidationResult singleAttestationChecks(final Attestation attestation) {
+    // if it is a SingleAttestation type we are guaranteed to be a valid single attestation
+    if (attestation.isSingleAttestation()) {
+      return InternalValidationResult.ACCEPT;
+    }
+
     // The attestation is unaggregated -- that is, it has exactly one participating validator
     // (len([bit for bit in attestation.aggregation_bits if bit == 0b1]) == 1).
     final int bitCount = attestation.getAggregationBits().getBitCount();
@@ -118,6 +123,23 @@ public class AttestationValidator {
       return completedFuture(InternalValidationResultWithState.saveForFuture());
     }
 
+    if (attestation.requiresCommitteeBits()) {
+      // [REJECT] len(committee_indices) == 1, where committee_indices =
+      // get_committee_indices(attestation)
+      if (attestation.getCommitteeBitsRequired().getBitCount() != 1) {
+        return SafeFuture.completedFuture(
+            InternalValidationResultWithState.reject(
+                "Rejecting attestation because committee bits count is not 1"));
+      }
+
+      // [REJECT] attestation.data.index == 0
+      if (!attestation.getData().getIndex().isZero()) {
+        return SafeFuture.completedFuture(
+            InternalValidationResultWithState.reject(
+                "Rejecting attestation because attestation data index must be 0"));
+      }
+    }
+
     return stateSelector
         .getStateToValidate(attestation.getData())
         .thenCompose(
@@ -130,7 +152,8 @@ public class AttestationValidator {
               final BeaconState state = maybeState.get();
 
               // The committee index is within the expected range
-              if (data.getIndex()
+              if (attestation
+                  .getFirstCommitteeIndex()
                   .isGreaterThanOrEqualTo(
                       spec.getCommitteeCountPerSlot(state, data.getTarget().getEpoch()))) {
                 return completedFuture(
@@ -146,17 +169,20 @@ public class AttestationValidator {
                 return completedFuture(
                     InternalValidationResultWithState.reject(
                         "Attestation received on incorrect subnet (%s) for specified committee index (%s)",
-                        attestation.getData().getIndex(), receivedOnSubnetId.getAsInt()));
+                        attestation.getFirstCommitteeIndex(), receivedOnSubnetId.getAsInt()));
               }
 
-              // [REJECT] The number of aggregation bits matches the committee size
-              final IntList committee =
-                  spec.getBeaconCommittee(state, data.getSlot(), data.getIndex());
-              if (committee.size() != attestation.getAggregationBits().size()) {
-                return completedFuture(
-                    InternalValidationResultWithState.reject(
-                        "Aggregation bit size %s is greater than committee size %s",
-                        attestation.getAggregationBits().size(), committee.size()));
+              if (!attestation.isSingleAttestation()) {
+                // [REJECT] The number of aggregation bits matches the committee size
+                final IntList committee =
+                    spec.getBeaconCommittee(
+                        state, data.getSlot(), attestation.getFirstCommitteeIndex());
+                if (committee.size() != attestation.getAggregationBits().size()) {
+                  return completedFuture(
+                      InternalValidationResultWithState.reject(
+                          "Aggregation bit size %s is greater than committee size %s",
+                          attestation.getAggregationBits().size(), committee.size()));
+                }
               }
 
               return spec.isValidIndexedAttestation(
@@ -190,7 +216,7 @@ public class AttestationValidator {
 
                         // Save committee shuffling seed since the state is available and
                         // attestation is valid
-                        validatableAttestation.saveCommitteeShufflingSeed(state);
+                        validatableAttestation.saveCommitteeShufflingSeedAndCommitteesSize(state);
                         return InternalValidationResultWithState.accept(state);
                       });
             });

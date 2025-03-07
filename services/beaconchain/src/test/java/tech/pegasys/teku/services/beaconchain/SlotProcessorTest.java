@@ -79,7 +79,7 @@ public class SlotProcessorTest {
   private final UInt64 genesisTimeMillis = secondsToMillis(genesisTime);
   private final UInt64 desiredSlot = UInt64.valueOf(100L);
 
-  private SlotProcessor createSlotProcessor(Spec spec) {
+  private SlotProcessor createSlotProcessor(final Spec spec) {
     return new SlotProcessor(
         spec,
         recentChainData,
@@ -261,7 +261,7 @@ public class SlotProcessorTest {
   @EnumSource(
       value = Eth2Network.class,
       names = {"MAINNET", "MINIMAL", "GNOSIS"})
-  public void onTick_shouldRunAttestationsDuringProcessing(Eth2Network eth2Network) {
+  public void onTick_shouldRunAttestationsDuringProcessing(final Eth2Network eth2Network) {
     Spec spec = TestSpecFactory.create(SpecMilestone.PHASE0, eth2Network);
     int millisPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot() * 1000;
 
@@ -316,7 +316,7 @@ public class SlotProcessorTest {
   @EnumSource(
       value = Eth2Network.class,
       names = {"MAINNET", "MINIMAL", "GNOSIS"})
-  void shouldProgressThroughMultipleSlots(Eth2Network eth2Network) {
+  void shouldProgressThroughMultipleSlots(final Eth2Network eth2Network) {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
@@ -345,7 +345,8 @@ public class SlotProcessorTest {
   @EnumSource(
       value = Eth2Network.class,
       names = {"MAINNET", "MINIMAL", "GNOSIS"})
-  void shouldPrecomputeEpochTransitionJustBeforeFirstSlotOfNextEpoch(Eth2Network eth2Network) {
+  void shouldPrecomputeEpochTransitionJustBeforeFirstSlotOfNextEpoch(
+      final Eth2Network eth2Network) {
     final RecentChainData recentChainData = mock(RecentChainData.class);
     when(recentChainData.getGenesisTimeMillis()).thenReturn(genesisTimeMillis);
     final Optional<MinimalBeaconBlockSummary> headBlock =
@@ -404,7 +405,7 @@ public class SlotProcessorTest {
     verify(recentChainData, atMostOnce()).retrieveStateAtSlot(any());
   }
 
-  private long oneThirdMillis(long millis) {
+  private long oneThirdMillis(final long millis) {
     return millis / 3L;
   }
 }

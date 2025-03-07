@@ -27,7 +27,7 @@ import tech.pegasys.teku.validator.remote.sentry.SentryNodesConfigLoader;
 public class ValidatorClientOptions {
 
   @ArgGroup(multiplicity = "0..1")
-  private ExclusiveParams exclusiveParams = new ExclusiveParams();
+  private final ExclusiveParams exclusiveParams = new ExclusiveParams();
 
   @Option(
       names = {"--Xfailovers-send-subnet-subscriptions-enabled"},
@@ -86,7 +86,18 @@ public class ValidatorClientOptions {
   private boolean obolDvtSelectionsEndpointEnabled =
       ValidatorConfig.DEFAULT_OBOL_DVT_SELECTIONS_ENDPOINT_ENABLED;
 
-  public void configure(TekuConfiguration.Builder builder) {
+  @Option(
+      names = {"--Xattestations-v2-apis-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Enable the attestations V2 APIs (attestations/attester slashings pools and attestations aggregation)",
+      hidden = true,
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean attestationsV2ApisEnabled = ValidatorConfig.DEFAULT_ATTESTATIONS_V2_APIS_ENABLED;
+
+  public void configure(final TekuConfiguration.Builder builder) {
     configureBeaconNodeApiEndpoints();
 
     builder.validator(
@@ -99,7 +110,8 @@ public class ValidatorClientOptions {
                 .failoversSendSubnetSubscriptionsEnabled(failoversSendSubnetSubscriptionsEnabled)
                 .failoversPublishSignedDutiesEnabled(failoversPublishSignedDutiesEnabled)
                 .sentryNodeConfigurationFile(exclusiveParams.sentryConfigFile)
-                .obolDvtSelectionsEndpointEnabled(obolDvtSelectionsEndpointEnabled));
+                .obolDvtSelectionsEndpointEnabled(obolDvtSelectionsEndpointEnabled)
+                .attestationsV2ApisEnabled(attestationsV2ApisEnabled));
   }
 
   private void configureBeaconNodeApiEndpoints() {

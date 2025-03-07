@@ -1,0 +1,22 @@
+{
+  "signingRoot" : "0x3f9c1cc3af54c94ee8a677aee350bb772b00c3864b7dfdd34ffaf6ab004d1f0a",
+  "type" : "BLOCK_V2",
+  "fork_info" : {
+    "fork" : {
+      "previous_version" : "0x003ea73e",
+      "current_version" : "0x135fa13e",
+      "epoch" : "4517950290795281992"
+    },
+    "genesis_validators_root" : "0xed1cad3ee8099978b13707b6acc357bb1b768147301dd68a5d5beccacb0094b3"
+  },
+  "beacon_block" : {
+    "version" : "BELLATRIX",
+    "block_header" : {
+      "slot" : "4666673844721362956",
+      "proposer_index" : "4665021361504678828",
+      "parent_root" : "0xfd18cf40cc907a739be483f1ca0ee23ad65cdd3df23205eabc6d660a75d1f54e",
+      "state_root" : "0x103ac9406cdc59b89027eb1c9e97f607dd5fdccfa8fb2da4eaeea9d25032add9",
+      "body_root" : "0xada3b1be6d79e8300c701822a4358a8e8d323c74cf16dbd998db63273f032b34"
+    }
+  }
+}

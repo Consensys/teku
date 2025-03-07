@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella {
@@ -59,7 +61,8 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
       final OperationProcessor<ValidatableSyncCommitteeMessage>
           syncCommitteeMessageOperationProcessor,
       final OperationProcessor<SignedBlsToExecutionChange>
-          signedBlsToExecutionChangeOperationProcessor) {
+          signedBlsToExecutionChangeOperationProcessor,
+      final DebugDataDumper debugDataDumper) {
     super(
         fork,
         spec,
@@ -76,7 +79,8 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
         voluntaryExitProcessor,
         signedContributionAndProofOperationProcessor,
         syncCommitteeMessageOperationProcessor,
-        signedBlsToExecutionChangeOperationProcessor);
+        signedBlsToExecutionChangeOperationProcessor,
+        debugDataDumper);
     this.blobSidecarProcessor = blobSidecarProcessor;
   }
 
@@ -86,7 +90,8 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
     addBlobSidecarGossipManager(forkInfo);
   }
 
-  void addBlobSidecarGossipManager(final ForkInfo forkInfo) {
+  @Override
+  public void addBlobSidecarGossipManager(final ForkInfo forkInfo) {
     blobSidecarGossipManager =
         BlobSidecarGossipManager.create(
             recentChainData,
@@ -95,12 +100,13 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            blobSidecarProcessor);
+            blobSidecarProcessor,
+            debugDataDumper);
     addGossipManager(blobSidecarGossipManager);
   }
 
   @Override
-  public void publishBlobSidecar(final BlobSidecar blobSidecar) {
-    blobSidecarGossipManager.publishBlobSidecar(blobSidecar);
+  public SafeFuture<Void> publishBlobSidecar(final BlobSidecar blobSidecar) {
+    return blobSidecarGossipManager.publishBlobSidecar(blobSidecar);
   }
 }

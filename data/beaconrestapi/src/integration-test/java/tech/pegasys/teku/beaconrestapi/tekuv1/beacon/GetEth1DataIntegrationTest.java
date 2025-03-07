@@ -18,11 +18,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.teku.GetEth1DataResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1Data;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -44,10 +44,11 @@ public class GetEth1DataIntegrationTest extends AbstractDataBackedRestAPIIntegra
     when(eth1DataProvider.getEth1Vote(any())).thenReturn(eth1Data);
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
-    GetEth1DataResponse getEth1DataResponse =
-        jsonProvider.jsonToObject(response.body().string(), GetEth1DataResponse.class);
-    assertThat(getEth1DataResponse).isNotNull();
-    assertThat(getEth1DataResponse.data.asInternalEth1Data()).isEqualTo(eth1Data);
+    final JsonNode data = getResponseData(response);
+    assertThat(data.get("deposit_root").asText())
+        .isEqualTo(eth1Data.getDepositRoot().toHexString());
+    assertThat(data.get("deposit_count").asText()).isEqualTo(eth1Data.getDepositCount().toString());
+    assertThat(data.get("block_hash").asText()).isEqualTo(eth1Data.getBlockHash().toHexString());
   }
 
   private Response get() throws IOException {

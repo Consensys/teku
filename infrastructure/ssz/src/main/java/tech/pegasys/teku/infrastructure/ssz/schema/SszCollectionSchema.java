@@ -32,29 +32,33 @@ public interface SszCollectionSchema<
 
   @Override
   default void storeChildNode(
-      TreeNodeStore nodeStore, int maxBranchLevelsSkipped, long gIndex, TreeNode node) {
+      final TreeNodeStore nodeStore,
+      final int maxBranchLevelsSkipped,
+      final long gIndex,
+      final TreeNode node) {
     getElementSchema().storeBackingNodes(nodeStore, maxBranchLevelsSkipped, gIndex, node);
   }
 
   @SuppressWarnings("unchecked")
-  default SszCollectionT of(SszElementT... elements) {
+  default SszCollectionT of(final SszElementT... elements) {
     return createFromElements(List.of(elements));
   }
 
-  @SuppressWarnings("unchecked")
-  default SszCollectionT createFromElements(List<? extends SszElementT> elements) {
+  default SszCollectionT createFromElements(final List<? extends SszElementT> elements) {
+    return createFromBackingNode(createTreeFromElements(elements));
+  }
+
+  default TreeNode createTreeFromElements(final List<? extends SszElementT> elements) {
+    // TODO: probably suboptimal method implementation:
+    // This is a generic implementation which works for both Vector and List but it potentially
+    // could do better if construct the tree directly in List/Vector subclasses
     checkArgument(elements.size() <= getMaxLength(), "Too many elements for this collection type");
     SszMutableComposite<SszElementT> writableCopy = getDefault().createWritableCopy();
     int idx = 0;
     for (SszElementT element : elements) {
       writableCopy.set(idx++, element);
     }
-    return (SszCollectionT) writableCopy.commitChanges();
-  }
-
-  default TreeNode createTreeFromElements(List<SszElementT> elements) {
-    // TODO: suboptimal
-    return createFromElements(elements).getBackingNode();
+    return writableCopy.commitChanges().getBackingNode();
   }
 
   default Collector<SszElementT, ?, SszCollectionT> collector() {

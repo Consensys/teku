@@ -60,7 +60,7 @@ public final class CachingTreeAccessor {
     private final long nodeIndex;
     private final TreeNode node;
 
-    public CachedTreeNode(long nodeIndex, TreeNode node) {
+    public CachedTreeNode(final long nodeIndex, final TreeNode node) {
       this.nodeIndex = nodeIndex;
       this.node = node;
     }

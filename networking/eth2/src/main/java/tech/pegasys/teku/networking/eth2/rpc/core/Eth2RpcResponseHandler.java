@@ -78,7 +78,8 @@ public class Eth2RpcResponseHandler<TResponse, TExpectedResult>
 
   @SuppressWarnings("VoidUsed")
   private static SafeFuture<Void> applyError(
-      SafeFuture<Void> future, AtomicReference<InvalidRpcResponseException> errorCapture) {
+      final SafeFuture<Void> future,
+      final AtomicReference<InvalidRpcResponseException> errorCapture) {
     return future.thenApply(
         res -> {
           InvalidRpcResponseException error = errorCapture.get();
@@ -90,7 +91,8 @@ public class Eth2RpcResponseHandler<TResponse, TExpectedResult>
   }
 
   private static <T> RpcResponseListener<T> createSingleResponseListener(
-      AtomicReference<T> firstResponse, AtomicReference<InvalidRpcResponseException> errorCapture) {
+      final AtomicReference<T> firstResponse,
+      final AtomicReference<InvalidRpcResponseException> errorCapture) {
     return response -> {
       if (!firstResponse.compareAndSet(null, response)) {
         final InvalidRpcResponseException error =
@@ -112,7 +114,7 @@ public class Eth2RpcResponseHandler<TResponse, TExpectedResult>
   }
 
   @Override
-  public void onCompleted(Optional<? extends Throwable> error) {
+  public void onCompleted(final Optional<? extends Throwable> error) {
     error.ifPresentOrElse(completed::completeExceptionally, () -> completed.complete(null));
   }
 

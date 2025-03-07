@@ -35,7 +35,7 @@ class UInt64Serializer implements KvStoreSerializer<UInt64> {
    * @param offset The offset to the UInt64 data.
    * @return The deserialized UInt64 value.
    */
-  public static UInt64 deserialize(final byte[] data, int offset) {
+  public static UInt64 deserialize(final byte[] data, final int offset) {
     return UInt64.fromLongBits(
         Longs.fromBytes(
             data[offset],

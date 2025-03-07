@@ -1,0 +1,113 @@
+{
+  "get" : {
+    "tags" : [ "Validator", "Validator Required Api" ],
+    "operationId" : "getAggregatedAttestationV2",
+    "summary" : "Get aggregated attestation",
+    "description" : "Aggregates all attestations matching given attestation data root, slot and committee index.\nA 503 error must be returned if the block identified by the response\n`beacon_block_root` is optimistic (i.e. the aggregated attestation attests\nto a block that has not been fully verified by an execution engine).\nA 404 error must be returned if no attestation is available for the requested\n`attestation_data_root`.",
+    "parameters" : [ {
+      "name" : "attestation_data_root",
+      "required" : true,
+      "in" : "query",
+      "schema" : {
+        "type" : "string",
+        "description" : "`String` HashTreeRoot of AttestationData that validator wants aggregated.",
+        "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+        "format" : "byte"
+      }
+    }, {
+      "name" : "slot",
+      "required" : true,
+      "in" : "query",
+      "schema" : {
+        "type" : "string",
+        "description" : "`uint64` value representing slot",
+        "example" : "1",
+        "format" : "uint64"
+      }
+    }, {
+      "name" : "committee_index",
+      "required" : true,
+      "in" : "query",
+      "schema" : {
+        "type" : "string",
+        "description" : "`uint64` Committee index to query.",
+        "example" : "1",
+        "format" : "uint64"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "Request successful",
+        "headers" : {
+          "Eth-Consensus-Version": {
+            "description": "Required in response so client can deserialize returned json or ssz data more effectively.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "phase0",
+                "altair",
+                "bellatrix",
+                "capella",
+                "deneb",
+                "electra"
+              ],
+              "example": "phase0"
+            }
+          }
+        },
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetAggregatedAttestationResponseV2"
+            }
+          }
+        }
+      },
+      "404" : {
+        "description" : "Not found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "503" : {
+        "description" : "Service unavailable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

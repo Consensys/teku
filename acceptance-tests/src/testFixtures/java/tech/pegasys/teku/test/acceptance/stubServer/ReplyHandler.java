@@ -23,12 +23,12 @@ import java.nio.charset.StandardCharsets;
 public class ReplyHandler implements HttpHandler {
   SuccessHandler incoming;
 
-  public ReplyHandler(SuccessHandler incoming) {
+  public ReplyHandler(final SuccessHandler incoming) {
     this.incoming = incoming;
   }
 
   @Override
-  public void handle(HttpExchange exchange) throws IOException {
+  public void handle(final HttpExchange exchange) throws IOException {
     String response = incoming.getResponse();
     exchange.getResponseHeaders().add("Content-Type", "application/json");
     exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, response.length());

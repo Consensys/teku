@@ -25,7 +25,8 @@ abstract class AbstractValidatorSource implements ValidatorSource {
   protected final boolean readOnly;
   protected final Optional<DataDirLayout> maybeDataDirLayout;
 
-  protected AbstractValidatorSource(boolean readOnly, Optional<DataDirLayout> maybeDataDirLayout) {
+  protected AbstractValidatorSource(
+      final boolean readOnly, final Optional<DataDirLayout> maybeDataDirLayout) {
     this.readOnly = readOnly;
     this.maybeDataDirLayout = maybeDataDirLayout;
   }

@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 
 public class BlindedBlockBellatrix extends BeaconBlockAltair {
 
-  public BlindedBlockBellatrix(BeaconBlock message) {
+  public BlindedBlockBellatrix(final BeaconBlock message) {
     super(
         message.getSlot(),
         message.getProposerIndex(),
@@ -41,7 +41,7 @@ public class BlindedBlockBellatrix extends BeaconBlockAltair {
   }
 
   @Override
-  public BeaconBlock asInternalBeaconBlock(Spec spec) {
+  public BeaconBlock asInternalBeaconBlock(final Spec spec) {
     final SpecVersion specVersion = spec.atSlot(slot);
     return getBeaconBlockSchema(specVersion)
         .create(

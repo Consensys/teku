@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -33,6 +34,10 @@ public interface BlockContainer extends SszData, SszContainer {
 
   default UInt64 getSlot() {
     return getBlock().getSlot();
+  }
+
+  default Bytes32 getRoot() {
+    return getBlock().getRoot();
   }
 
   default Optional<SszList<SszKZGProof>> getKzgProofs() {

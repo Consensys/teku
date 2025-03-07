@@ -33,14 +33,14 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 
 public class ProtoArrayScoreCalculatorTest {
 
-  private Object2IntMap<Bytes32> indices = new Object2IntOpenHashMap<>();
+  private final Object2IntMap<Bytes32> indices = new Object2IntOpenHashMap<>();
   private List<UInt64> oldBalances = new ArrayList<>();
   private List<UInt64> newBalances = new ArrayList<>();
   private Optional<Bytes32> oldProposerBoostRoot = Optional.empty();
   private Optional<Bytes32> newProposerBoostRoot = Optional.empty();
   private UInt64 oldProposerBoostAmount = ZERO;
   private UInt64 newProposerBoostAmount = ZERO;
-  private VoteUpdater store = createStoreToManipulateVotes();
+  private final VoteUpdater store = createStoreToManipulateVotes();
 
   private Optional<Integer> getIndex(final Bytes32 root) {
     return Optional.ofNullable(indices.get(root));
@@ -581,7 +581,7 @@ public class ProtoArrayScoreCalculatorTest {
     }
   }
 
-  private void votesShouldBeUpdated(VoteUpdater store) {
+  private void votesShouldBeUpdated(final VoteUpdater store) {
     UInt64.rangeClosed(ZERO, store.getHighestVotedValidatorIndex())
         .forEach(
             i -> {

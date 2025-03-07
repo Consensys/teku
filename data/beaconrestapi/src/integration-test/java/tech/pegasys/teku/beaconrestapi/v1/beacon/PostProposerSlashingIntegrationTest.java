@@ -18,16 +18,18 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import okhttp3.Response;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostProposerSlashing;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -43,44 +45,42 @@ public class PostProposerSlashingIntegrationTest extends AbstractDataBackedRestA
 
   @Test
   public void shouldReturnBadRequestWhenRequestBodyIsEmpty() throws Exception {
-    Response response = post(PostProposerSlashing.ROUTE, jsonProvider.objectToJSON(""));
-    Assertions.assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+    checkEmptyBodyToRoute(PostProposerSlashing.ROUTE, SC_BAD_REQUEST);
   }
 
   @Test
   public void shouldReturnBadRequestWhenRequestBodyIsInvalid() throws Exception {
-    Response response =
-        post(PostProposerSlashing.ROUTE, jsonProvider.objectToJSON("{\"foo\": \"bar\"}"));
-    assertThat(response.code()).isEqualTo(400);
+    final Response response = post(PostProposerSlashing.ROUTE, "{\"foo\": \"bar\"}");
+    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
   }
 
   @Test
   public void shouldReturnServerErrorWhenUnexpectedErrorHappens() throws Exception {
-    final tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing slashing =
-        dataStructureUtil.randomProposerSlashing();
-
-    final ProposerSlashing schemaSlashing = new ProposerSlashing(slashing);
+    final ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
 
     doThrow(new RuntimeException()).when(proposerSlashingPool).addLocal(slashing);
 
-    Response response = post(PostProposerSlashing.ROUTE, jsonProvider.objectToJSON(schemaSlashing));
-    assertThat(response.code()).isEqualTo(500);
+    final Response response =
+        post(
+            PostProposerSlashing.ROUTE,
+            JsonUtil.serialize(slashing, slashing.getSchema().getJsonTypeDefinition()));
+
+    assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
   }
 
   @Test
   public void shouldReturnSuccessWhenRequestBodyIsValid() throws Exception {
-    final tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing slashing =
-        dataStructureUtil.randomProposerSlashing();
-
-    final ProposerSlashing schemaSlashing = new ProposerSlashing(slashing);
-
+    final ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(proposerSlashingPool.addLocal(slashing))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
-    Response response = post(PostProposerSlashing.ROUTE, jsonProvider.objectToJSON(schemaSlashing));
+    final Response response =
+        post(
+            PostProposerSlashing.ROUTE,
+            JsonUtil.serialize(slashing, slashing.getSchema().getJsonTypeDefinition()));
 
     verify(proposerSlashingPool).addLocal(slashing);
 
-    assertThat(response.code()).isEqualTo(200);
+    assertThat(response.code()).isEqualTo(SC_OK);
   }
 }

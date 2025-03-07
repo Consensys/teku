@@ -34,13 +34,13 @@ import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigEip7594;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
-import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
 
@@ -51,11 +51,11 @@ public class SimpleSidecarRetrieverTest {
   final DataColumnPeerSearcherStub dataColumnPeerSearcherStub = new DataColumnPeerSearcherStub();
   final TestPeerManager testPeerManager = new TestPeerManager();
 
-  final Spec spec = TestSpecFactory.createMinimalEip7594();
-  final SpecConfigEip7594 config =
-      SpecConfigEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).getConfig());
-  final MiscHelpersEip7594 miscHelpers =
-      MiscHelpersEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).miscHelpers());
+  final Spec spec = TestSpecFactory.createMinimalFulu();
+  final SpecConfigFulu config =
+      SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
+  final MiscHelpersFulu miscHelpers =
+      MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
   final int columnCount = config.getNumberOfColumns();
   final KZG kzg = KZG.getInstance(false);
 
@@ -85,33 +85,33 @@ public class SimpleSidecarRetrieverTest {
     TrustedSetupLoader.loadTrustedSetupForTests(kzg);
   }
 
-  private SignedBeaconBlock createSigned(BeaconBlock block) {
+  private SignedBeaconBlock createSigned(final BeaconBlock block) {
     return dataStructureUtil.signedBlock(block);
   }
 
-  private DataColumnSlotAndIdentifier createId(BeaconBlock block, int colIdx) {
+  private DataColumnSlotAndIdentifier createId(final BeaconBlock block, final int colIdx) {
     return new DataColumnSlotAndIdentifier(
         block.getSlot(), block.getRoot(), UInt64.valueOf(colIdx));
   }
 
-  List<UInt64> nodeCustodyColumns(UInt256 nodeId) {
+  List<UInt64> nodeCustodyColumns(final UInt256 nodeId) {
     return miscHelpers.computeCustodyColumnIndexes(
-        nodeId, custodyCountSupplier.getCustodyCountForPeer(nodeId));
+        nodeId, custodyCountSupplier.getCustodyGroupCountForPeer(nodeId));
   }
 
   Stream<UInt256> craftNodeIds() {
     return IntStream.iterate(0, i -> i + 1).mapToObj(UInt256::valueOf);
   }
 
-  Stream<UInt256> craftNodeIdsCustodyOf(UInt64 custodyColumn) {
+  Stream<UInt256> craftNodeIdsCustodyOf(final UInt64 custodyColumn) {
     return craftNodeIds().filter(nodeId -> nodeCustodyColumns(nodeId).contains(custodyColumn));
   }
 
-  Stream<UInt256> craftNodeIdsNotCustodyOf(UInt64 custodyColumn) {
+  Stream<UInt256> craftNodeIdsNotCustodyOf(final UInt64 custodyColumn) {
     return craftNodeIds().filter(nodeId -> !nodeCustodyColumns(nodeId).contains(custodyColumn));
   }
 
-  private void advanceTimeGradually(Duration delta) {
+  private void advanceTimeGradually(final Duration delta) {
     for (int i = 0; i < delta.toMillis(); i++) {
       stubTimeProvider.advanceTimeBy(Duration.ofMillis(1));
       stubAsyncRunner.executeDueActionsRepeatedly();
@@ -281,7 +281,7 @@ public class SimpleSidecarRetrieverTest {
 
     colIds.forEach(simpleSidecarRetriever::retrieve);
 
-    int peerCustodyCount = custodyCountSupplier.getCustodyCountForPeer(peer.getNodeId());
+    int peerCustodyCount = custodyCountSupplier.getCustodyGroupCountForPeer(peer.getNodeId());
 
     advanceTimeGradually(retrieverRound);
     assertThat(peer.getRequests()).hasSize(peerCustodyCount);

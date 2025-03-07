@@ -38,7 +38,7 @@ public class Deposit extends Container2<Deposit, SszBytes32Vector, DepositData> 
     }
 
     @Override
-    public Deposit createFromBackingNode(TreeNode node) {
+    public Deposit createFromBackingNode(final TreeNode node) {
       return new Deposit(this, node);
     }
   }
@@ -47,15 +47,15 @@ public class Deposit extends Container2<Deposit, SszBytes32Vector, DepositData> 
 
   private static final SszBytes32Vector EMPTY_PROOF = SSZ_SCHEMA.getProofSchema().getDefault();
 
-  private Deposit(DepositSchema type, TreeNode backingNode) {
+  private Deposit(final DepositSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public Deposit(DepositData data) {
+  public Deposit(final DepositData data) {
     this(EMPTY_PROOF, data);
   }
 
-  public Deposit(SszBytes32Vector proof, DepositData data) {
+  public Deposit(final SszBytes32Vector proof, final DepositData data) {
     super(SSZ_SCHEMA, proof, data);
   }
 

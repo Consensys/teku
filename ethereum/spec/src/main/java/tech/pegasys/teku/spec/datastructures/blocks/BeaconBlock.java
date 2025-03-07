@@ -29,17 +29,17 @@ public class BeaconBlock
     extends Container5<BeaconBlock, SszUInt64, SszUInt64, SszBytes32, SszBytes32, BeaconBlockBody>
     implements BeaconBlockSummary, BlockContainer {
 
-  BeaconBlock(final BeaconBlockSchema type, TreeNode backingNode) {
+  BeaconBlock(final BeaconBlockSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public BeaconBlock(
-      BeaconBlockSchema type,
-      UInt64 slot,
-      UInt64 proposerIndex,
-      Bytes32 parentRoot,
-      Bytes32 stateRoot,
-      BeaconBlockBody body) {
+      final BeaconBlockSchema type,
+      final UInt64 slot,
+      final UInt64 proposerIndex,
+      final Bytes32 parentRoot,
+      final Bytes32 stateRoot,
+      final BeaconBlockBody body) {
     super(
         type,
         SszUInt64.of(slot),
@@ -64,7 +64,7 @@ public class BeaconBlock
         genesisSchema.getBeaconBlockBodySchema().createEmpty());
   }
 
-  public BeaconBlock withStateRoot(Bytes32 stateRoot) {
+  public BeaconBlock withStateRoot(final Bytes32 stateRoot) {
     return new BeaconBlock(
         this.getSchema(), getSlot(), getProposerIndex(), getParentRoot(), stateRoot, getBody());
   }

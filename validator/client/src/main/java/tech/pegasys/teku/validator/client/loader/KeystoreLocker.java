@@ -37,7 +37,7 @@ public class KeystoreLocker {
   private static final Logger LOG = LogManager.getLogger();
   private final byte[] processPID = getProcessPID();
 
-  public void lockKeystore(Path keystoreFile) {
+  public void lockKeystore(final Path keystoreFile) {
     Path lockfilePath = Path.of(keystoreFile.toString() + ".lock");
     try {
       if (lockfilePath.toFile().exists()) {

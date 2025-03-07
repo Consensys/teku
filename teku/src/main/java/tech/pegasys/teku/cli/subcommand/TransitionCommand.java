@@ -76,9 +76,9 @@ public class TransitionCommand implements Runnable {
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
   public int blocks(
-      @Mixin InAndOutParams params,
+      @Mixin final InAndOutParams params,
       @Parameters(paramLabel = "block", description = "Files to read blocks from (ssz or hex)")
-          List<String> blockPaths) {
+          final List<String> blockPaths) {
     return processStateTransition(
         params,
         (spec, state) -> {
@@ -110,15 +110,15 @@ public class TransitionCommand implements Runnable {
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
   public int slots(
-      @Mixin InAndOutParams params,
+      @Mixin final InAndOutParams params,
       @Option(
               names = {"--delta", "-d"},
               showDefaultValue = Visibility.ALWAYS,
               fallbackValue = "true",
               description = "to interpret the slot number as a delta from the pre-state")
-          boolean delta,
+          final boolean delta,
       @Parameters(paramLabel = "<number>", description = "Number of slots to process")
-          long number) {
+          final long number) {
     return processStateTransition(
         params,
         (specProvider, state) -> {
@@ -200,7 +200,7 @@ public class TransitionCommand implements Runnable {
       final Spec spec,
       final String path,
       final byte[] hexBlockData,
-      RuntimeException sszSerializationException) {
+      final RuntimeException sszSerializationException) {
     try {
       final Bytes blockData = Bytes.wrap(Hex.decode(hexBlockData));
       return spec.deserializeSignedBeaconBlock(blockData);

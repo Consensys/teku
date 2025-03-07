@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.availability;
 
-import static tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult.notRequired;
 import static tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult.notRequiredResultFuture;
 
-import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -37,12 +35,6 @@ public interface AvailabilityChecker<Data> {
         public SafeFuture<DataAndValidationResult<BlobSidecar>> getAvailabilityCheckResult() {
           return notRequiredResultFuture();
         }
-
-        @Override
-        public DataAndValidationResult<BlobSidecar> validateImmediately(
-            final List<BlobSidecar> dataList) {
-          return notRequired();
-        }
       };
 
   AvailabilityChecker<UInt64> NOOP_DATACOLUMN_SIDECAR =
@@ -56,11 +48,6 @@ public interface AvailabilityChecker<Data> {
         public SafeFuture<DataAndValidationResult<UInt64>> getAvailabilityCheckResult() {
           return notRequiredResultFuture();
         }
-
-        @Override
-        public DataAndValidationResult<UInt64> validateImmediately(final List<UInt64> dataList) {
-          return notRequired();
-        }
       };
 
   /**
@@ -73,7 +60,4 @@ public interface AvailabilityChecker<Data> {
   boolean initiateDataAvailabilityCheck();
 
   SafeFuture<DataAndValidationResult<Data>> getAvailabilityCheckResult();
-
-  /** Perform the data availability check immediately on the provided blob sidecars */
-  DataAndValidationResult<Data> validateImmediately(List<Data> dataList);
 }

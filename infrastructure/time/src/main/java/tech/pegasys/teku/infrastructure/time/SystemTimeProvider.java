@@ -17,6 +17,7 @@ import java.time.Clock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SystemTimeProvider implements TimeProvider {
+  public static final SystemTimeProvider SYSTEM_TIME_PROVIDER = new SystemTimeProvider();
 
   private final Clock clock;
 

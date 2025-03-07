@@ -49,7 +49,7 @@ public class SszUnionTest implements SszDataTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  void getSelector_matchesDataSchema(SszUnion data) {
+  void getSelector_matchesDataSchema(final SszUnion data) {
     int selector = data.getSelector();
     SszSchema<?> expectedValueSchema = data.getSchema().getChildSchema(selector);
 

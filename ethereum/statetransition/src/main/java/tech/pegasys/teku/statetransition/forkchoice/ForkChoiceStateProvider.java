@@ -22,7 +22,8 @@ public class ForkChoiceStateProvider {
   private final EventThread forkChoiceExecutor;
   private final RecentChainData recentChainData;
 
-  public ForkChoiceStateProvider(EventThread forkChoiceExecutor, RecentChainData recentChainData) {
+  public ForkChoiceStateProvider(
+      final EventThread forkChoiceExecutor, final RecentChainData recentChainData) {
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
   }

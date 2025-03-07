@@ -13,9 +13,13 @@
 
 package tech.pegasys.teku.ethereum.executionclient.schema;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes20Deserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes20Serializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexDeserializer;
@@ -45,9 +49,43 @@ public class WithdrawalV1 {
       @JsonProperty("validatorIndex") final UInt64 validatorIndex,
       @JsonProperty("address") final Bytes20 address,
       @JsonProperty("amount") final UInt64 amount) {
+    checkNotNull(index, "index");
+    checkNotNull(validatorIndex, "validatorIndex");
+    checkNotNull(address, "address");
+    checkNotNull(amount, "amount");
     this.index = index;
     this.validatorIndex = validatorIndex;
     this.address = address;
     this.amount = amount;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final WithdrawalV1 that = (WithdrawalV1) o;
+    return Objects.equals(index, that.index)
+        && Objects.equals(validatorIndex, that.validatorIndex)
+        && Objects.equals(address, that.address)
+        && Objects.equals(amount, that.amount);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(index, validatorIndex, address, amount);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("index", index)
+        .add("validatorIndex", validatorIndex)
+        .add("address", address)
+        .add("amount", amount)
+        .toString();
   }
 }

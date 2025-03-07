@@ -37,12 +37,12 @@ public class SnappyFramedCompressor implements Compressor {
     private boolean broken = false;
     private boolean disposed = false;
 
-    public SnappyFramedDecompressor(int uncompressedPayloadSize) {
+    public SnappyFramedDecompressor(final int uncompressedPayloadSize) {
       this.uncompressedPayloadSize = uncompressedPayloadSize;
     }
 
     @Override
-    public Optional<ByteBuf> decodeOneMessage(ByteBuf input) throws CompressionException {
+    public Optional<ByteBuf> decodeOneMessage(final ByteBuf input) throws CompressionException {
       if (broken) {
         throw new CompressionException("Compressed stream is broken");
       }
@@ -129,7 +129,7 @@ public class SnappyFramedCompressor implements Compressor {
   }
 
   @Override
-  public Decompressor createDecompressor(int uncompressedPayloadSize) {
+  public Decompressor createDecompressor(final int uncompressedPayloadSize) {
     return new SnappyFramedDecompressor(uncompressedPayloadSize);
   }
 

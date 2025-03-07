@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
@@ -22,6 +23,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AggregateGossipManager extends AbstractGossipManager<SignedAggregateAndProof> {
@@ -33,7 +35,8 @@ public class AggregateGossipManager extends AbstractGossipManager<SignedAggregat
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<ValidatableAttestation> processor) {
+      final OperationProcessor<ValidatableAttestation> processor,
+      final DebugDataDumper debugDataDumper) {
     super(
         recentChainData,
         GossipTopicName.BEACON_AGGREGATE_AND_PROOF,
@@ -49,8 +52,12 @@ public class AggregateGossipManager extends AbstractGossipManager<SignedAggregat
         spec.atEpoch(forkInfo.getFork().getEpoch())
             .getSchemaDefinitions()
             .getSignedAggregateAndProofSchema(),
+        message -> Optional.of(message.getMessage().getAggregate().getData().getSlot()),
         message -> spec.computeEpochAtSlot(message.getMessage().getAggregate().getData().getSlot()),
-        spec.getNetworkingConfig());
+        spec.getNetworkingConfig(),
+        GossipFailureLogger.createSuppressing(
+            GossipTopicName.BEACON_AGGREGATE_AND_PROOF.toString()),
+        debugDataDumper);
   }
 
   public void onNewAggregate(final ValidatableAttestation validatableAttestation) {

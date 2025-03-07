@@ -15,14 +15,13 @@ package tech.pegasys.teku;
 
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
-import java.security.Security;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.io.JemallocDetector;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 
 public final class Teku {
@@ -30,10 +29,9 @@ public final class Teku {
   static {
     // Disable libsodium in tuweni Hash because the check for it's presence can be very slow.
     System.setProperty("org.apache.tuweni.crypto.useSodium", "false");
-    Security.addProvider(new BouncyCastleProvider());
   }
 
-  public static void main(String[] args) {
+  public static void main(final String[] args) {
     Thread.setDefaultUncaughtExceptionHandler(new TekuDefaultExceptionHandler());
 
     try {
@@ -54,7 +52,7 @@ public final class Teku {
     }
   }
 
-  private static int start(StartAction startAction, final String... args) {
+  private static int start(final StartAction startAction, final String... args) {
     final PrintWriter outputWriter = new PrintWriter(System.out, true, Charset.defaultCharset());
     final PrintWriter errorWriter = new PrintWriter(System.err, true, Charset.defaultCharset());
     final LoggingConfigurator loggingConfigurator = new LoggingConfigurator();
@@ -74,13 +72,14 @@ public final class Teku {
     if (BlstLoader.INSTANCE.isEmpty()) {
       throw new UnsupportedOperationException("BLS native library unavailable for this platform");
     }
+    JemallocDetector.logJemallocPresence();
 
     node.start();
 
     return node;
   }
 
-  static Optional<Node> startFromCLIArgs(String[] cliArgs) throws CLIException {
+  static Optional<Node> startFromCLIArgs(final String[] cliArgs) throws CLIException {
     AtomicReference<Node> nodeRef = new AtomicReference<>();
     int result =
         start((config, validatorClient) -> nodeRef.set(start(config, validatorClient)), cliArgs);
@@ -90,18 +89,18 @@ public final class Teku {
     return Optional.ofNullable(nodeRef.get());
   }
 
-  static BeaconNode startBeaconNode(TekuConfiguration config) {
+  static BeaconNode startBeaconNode(final TekuConfiguration config) {
     return (BeaconNode) start(config, false);
   }
 
-  static ValidatorNode startValidatorNode(TekuConfiguration config) {
+  static ValidatorNode startValidatorNode(final TekuConfiguration config) {
     return (ValidatorNode) start(config, true);
   }
 
   private static class CLIException extends RuntimeException {
     private final int resultCode;
 
-    public CLIException(int resultCode) {
+    public CLIException(final int resultCode) {
       super("Unable to start Teku. Exit code: " + resultCode);
       this.resultCode = resultCode;
     }

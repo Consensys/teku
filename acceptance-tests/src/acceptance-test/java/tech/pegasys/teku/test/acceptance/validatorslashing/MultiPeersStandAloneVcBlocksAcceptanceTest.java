@@ -17,7 +17,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
@@ -39,8 +38,7 @@ public class MultiPeersStandAloneVcBlocksAcceptanceTest
       shouldShutDownWhenOwnedValidatorSlashed_StandAloneVC_MultiplePeers_SlashingThroughBlock_NoSlashingEventsGossip(
           final SlashingEventType slashingEventType) throws Exception {
 
-    final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
-    final UInt64 altairEpoch = UInt64.valueOf(100);
+    final int genesisTime = timeProvider.getTimeInSeconds().plus(30).intValue();
 
     final TekuBeaconNode firstTekuNode =
         createTekuBeaconNode(
@@ -48,25 +46,9 @@ public class MultiPeersStandAloneVcBlocksAcceptanceTest
                 .withGenesisTime(genesisTime)
                 .withNetwork(network)
                 .withRealNetwork()
-                .withAltairEpoch(altairEpoch)
+                .withSubscribeAllSubnetsEnabled()
                 .withInteropValidators(0, 32)
                 .build());
-
-    firstTekuNode.start();
-
-    firstTekuNode.waitForEpochAtOrAbove(2);
-
-    final int slashedValidatorIndex = 34;
-    final BLSKeyPair slashedValidatorKeyPair = getBlsKeyPair(slashedValidatorIndex);
-    final int slotInThirdEpoch =
-        firstTekuNode.getSpec().forMilestone(SpecMilestone.ALTAIR).getSlotsPerEpoch() * 2 + 3;
-
-    postSlashing(
-        firstTekuNode,
-        UInt64.valueOf(slotInThirdEpoch),
-        UInt64.valueOf(slashedValidatorIndex),
-        slashedValidatorKeyPair.getSecretKey(),
-        slashingEventType);
 
     final TekuBeaconNode secondBeaconNode =
         createTekuBeaconNode(
@@ -74,8 +56,7 @@ public class MultiPeersStandAloneVcBlocksAcceptanceTest
                 .withGenesisTime(genesisTime)
                 .withNetwork(network)
                 .withRealNetwork()
-                .withRealNetwork()
-                .withAltairEpoch(altairEpoch)
+                .withSubscribeAllSubnetsEnabled()
                 .withPeers(firstTekuNode)
                 .build());
 
@@ -89,9 +70,22 @@ public class MultiPeersStandAloneVcBlocksAcceptanceTest
                 .withBeaconNodes(secondBeaconNode)
                 .build());
 
+    firstTekuNode.start();
     secondBeaconNode.start();
-
     secondValidatorClient.start();
+
+    firstTekuNode.waitForEpochAtOrAbove(1);
+
+    final int slashedValidatorIndex = 34;
+    final BLSKeyPair slashedValidatorKeyPair = getBlsKeyPair(slashedValidatorIndex);
+    final int slotInSecondEpoch = firstTekuNode.getSpec().getGenesisSpec().getSlotsPerEpoch() + 3;
+
+    postSlashing(
+        firstTekuNode,
+        UInt64.valueOf(slotInSecondEpoch),
+        UInt64.valueOf(slashedValidatorIndex),
+        slashedValidatorKeyPair.getSecretKey(),
+        slashingEventType);
 
     secondValidatorClient.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));

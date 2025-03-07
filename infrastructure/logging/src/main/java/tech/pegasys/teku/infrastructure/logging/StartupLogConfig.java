@@ -119,58 +119,58 @@ public class StartupLogConfig {
           validatorRestApiAllow);
     }
 
-    public Builder network(String network) {
+    public Builder network(final String network) {
       checkNotNull(network);
       this.network = network;
       return this;
     }
 
-    public Builder storageMode(String storageMode) {
+    public Builder storageMode(final String storageMode) {
       checkNotNull(storageMode);
       this.storageMode = storageMode;
       return this;
     }
 
-    public Builder hardwareInfo(HardwareAbstractionLayer hardwareInfo) {
+    public Builder hardwareInfo(final HardwareAbstractionLayer hardwareInfo) {
       checkNotNull(hardwareInfo);
       this.hardwareInfo = hardwareInfo;
       return this;
     }
 
-    public Builder beaconChainRestApiEnabled(boolean beaconChainRestApiEnabled) {
+    public Builder beaconChainRestApiEnabled(final boolean beaconChainRestApiEnabled) {
       this.beaconChainRestApiEnabled = beaconChainRestApiEnabled;
       return this;
     }
 
-    public Builder beaconChainRestApiInterface(String beaconChainRestApiInterface) {
+    public Builder beaconChainRestApiInterface(final String beaconChainRestApiInterface) {
       checkNotNull(beaconChainRestApiInterface);
       this.beaconChainRestApiInterface = beaconChainRestApiInterface;
       return this;
     }
 
-    public Builder beaconChainRestApiPort(int beaconChainRestApiPort) {
+    public Builder beaconChainRestApiPort(final int beaconChainRestApiPort) {
       this.beaconChainRestApiPort = beaconChainRestApiPort;
       return this;
     }
 
-    public Builder beaconChainRestApiAllow(List<String> beaconChainRestApiAllow) {
+    public Builder beaconChainRestApiAllow(final List<String> beaconChainRestApiAllow) {
       checkNotNull(beaconChainRestApiAllow);
       this.beaconChainRestApiAllow = beaconChainRestApiAllow;
       return this;
     }
 
-    public Builder validatorRestApiInterface(String validatorRestApiInterface) {
+    public Builder validatorRestApiInterface(final String validatorRestApiInterface) {
       checkNotNull(validatorRestApiInterface);
       this.validatorRestApiInterface = validatorRestApiInterface;
       return this;
     }
 
-    public Builder validatorRestApiPort(int validatorRestApiPort) {
+    public Builder validatorRestApiPort(final int validatorRestApiPort) {
       this.validatorRestApiPort = validatorRestApiPort;
       return this;
     }
 
-    public Builder validatorRestApiAllow(List<String> validatorRestApiAllow) {
+    public Builder validatorRestApiAllow(final List<String> validatorRestApiAllow) {
       checkNotNull(validatorRestApiAllow);
       this.validatorRestApiAllow = validatorRestApiAllow;
       return this;

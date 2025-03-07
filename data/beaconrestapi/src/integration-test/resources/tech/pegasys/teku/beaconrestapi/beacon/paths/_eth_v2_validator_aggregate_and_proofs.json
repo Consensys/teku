@@ -1,0 +1,76 @@
+{
+  "post" : {
+    "tags" : [ "Validator", "Validator Required Api" ],
+    "operationId" : "publishAggregateAndProofsV2",
+    "summary" : "Publish multiple aggregate and proofs",
+    "description" : "Verifies given aggregate and proofs and publishes it on appropriate gossipsub topic.",
+    "parameters" : [ {
+      "name" : "Eth-Consensus-Version",
+      "required" : true,
+      "in" : "header",
+      "schema" : {
+        "type" : "string",
+        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ],
+        "description" : "Version of the aggregate and proofs being submitted."
+      }
+    } ],
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "title" : "SignedAggregateAndProof",
+              "type" : "object",
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/SignedAggregateAndProofPhase0"
+              }, {
+                "$ref" : "#/components/schemas/SignedAggregateAndProofElectra"
+              } ]
+            }
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Attestations are stored in pool and broadcast on appropriate subnet",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "Invalid request syntax.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "503" : {
+        "description" : "Service unavailable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

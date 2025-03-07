@@ -67,26 +67,26 @@ public class Validator
     }
 
     @Override
-    public Validator createFromBackingNode(TreeNode node) {
+    public Validator createFromBackingNode(final TreeNode node) {
       return new Validator(this, node);
     }
   }
 
   public static final ValidatorSchema SSZ_SCHEMA = new ValidatorSchema();
 
-  private Validator(ValidatorSchema type, TreeNode backingNode) {
+  private Validator(final ValidatorSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public Validator(
-      BLSPublicKey pubkey,
-      Bytes32 withdrawalCredentials,
-      UInt64 effectiveBalance,
-      boolean slashed,
-      UInt64 activationEligibilityEpoch,
-      UInt64 activationEpoch,
-      UInt64 exitEpoch,
-      UInt64 withdrawableEpoch) {
+      final BLSPublicKey pubkey,
+      final Bytes32 withdrawalCredentials,
+      final UInt64 effectiveBalance,
+      final boolean slashed,
+      final UInt64 activationEligibilityEpoch,
+      final UInt64 activationEpoch,
+      final UInt64 exitEpoch,
+      final UInt64 withdrawableEpoch) {
     super(
         SSZ_SCHEMA,
         new SszPublicKey(pubkey),
@@ -100,14 +100,14 @@ public class Validator
   }
 
   public Validator(
-      Bytes48 pubkey,
-      Bytes32 withdrawalCredentials,
-      UInt64 effectiveBalance,
-      boolean slashed,
-      UInt64 activationEligibilityEpoch,
-      UInt64 activationEpoch,
-      UInt64 exitEpoch,
-      UInt64 withdrawableEpoch) {
+      final Bytes48 pubkey,
+      final Bytes32 withdrawalCredentials,
+      final UInt64 effectiveBalance,
+      final boolean slashed,
+      final UInt64 activationEligibilityEpoch,
+      final UInt64 activationEpoch,
+      final UInt64 exitEpoch,
+      final UInt64 withdrawableEpoch) {
     super(
         SSZ_SCHEMA,
         new SszPublicKey(pubkey),
@@ -164,7 +164,7 @@ public class Validator
     return getField7().get();
   }
 
-  public Validator withEffectiveBalance(UInt64 effectiveBalance) {
+  public Validator withEffectiveBalance(final UInt64 effectiveBalance) {
     return new Validator(
         getPubkeyBytes(),
         getWithdrawalCredentials(),
@@ -176,7 +176,7 @@ public class Validator
         getWithdrawableEpoch());
   }
 
-  public Validator withSlashed(boolean slashed) {
+  public Validator withSlashed(final boolean slashed) {
     return new Validator(
         getPubkeyBytes(),
         getWithdrawalCredentials(),
@@ -188,7 +188,7 @@ public class Validator
         getWithdrawableEpoch());
   }
 
-  public Validator withActivationEligibilityEpoch(UInt64 activationEligibilityEpoch) {
+  public Validator withActivationEligibilityEpoch(final UInt64 activationEligibilityEpoch) {
     return new Validator(
         getPubkeyBytes(),
         getWithdrawalCredentials(),
@@ -200,7 +200,7 @@ public class Validator
         getWithdrawableEpoch());
   }
 
-  public Validator withActivationEpoch(UInt64 activationEpoch) {
+  public Validator withActivationEpoch(final UInt64 activationEpoch) {
     return new Validator(
         getPubkeyBytes(),
         getWithdrawalCredentials(),
@@ -212,7 +212,7 @@ public class Validator
         getWithdrawableEpoch());
   }
 
-  public Validator withExitEpoch(UInt64 exitEpoch) {
+  public Validator withExitEpoch(final UInt64 exitEpoch) {
     return new Validator(
         getPubkeyBytes(),
         getWithdrawalCredentials(),
@@ -224,7 +224,7 @@ public class Validator
         getWithdrawableEpoch());
   }
 
-  public Validator withWithdrawableEpoch(UInt64 withdrawableEpoch) {
+  public Validator withWithdrawableEpoch(final UInt64 withdrawableEpoch) {
     return new Validator(
         getPubkeyBytes(),
         getWithdrawalCredentials(),

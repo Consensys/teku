@@ -17,14 +17,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
-import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 
 public class GetForkIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   @BeforeEach
@@ -38,12 +38,14 @@ public class GetForkIntegrationTest extends AbstractDataBackedRestAPIIntegration
     setCurrentSlot(13);
     final Response response = get("head");
     assertThat(response.code()).isEqualTo(SC_OK);
-    final GetStateForkResponse body =
-        jsonProvider.jsonToObject(response.body().string(), GetStateForkResponse.class);
-    final Fork data = body.data;
+    final JsonNode data = getResponseData(response);
 
-    final Fork expected = new Fork(safeJoin(recentChainData.getBestState().get()).getFork());
-    assertThat(expected).isEqualTo(data);
+    final Fork expected = safeJoin(recentChainData.getBestState().get()).getFork();
+    assertThat(data.get("current_version").asText())
+        .isEqualTo(expected.getCurrentVersion().toHexString());
+    assertThat(data.get("previous_version").asText())
+        .isEqualTo(expected.getPreviousVersion().toHexString());
+    assertThat(data.get("epoch").asText()).isEqualTo(expected.getEpoch().toString());
   }
 
   public Response get(final String stateIdString) throws IOException {

@@ -70,7 +70,7 @@ public class SszGenericContainerTestExecutor extends AbstractSszGenericTestExecu
       case "VarTestStruct" -> new VarTestStructSchema();
       case "FixedTestStruct" -> new FixedTestStructSchema();
       case "ComplexTestStruct" -> // Not implemented yet
-      new ComplexTestStructSchema();
+          new ComplexTestStructSchema();
       default -> throw new UnsupportedOperationException("Unsupported container type: " + type);
     };
   }
@@ -91,8 +91,8 @@ public class SszGenericContainerTestExecutor extends AbstractSszGenericTestExecu
   private String format(final Object value) {
     return switch (value) {
       case SszByte sszByte -> Integer.toString(Byte.toUnsignedInt(sszByte.get()));
-      case SszBytes4 sszBytes4 -> Long.toString(
-          sszBytes4.get().getWrappedBytes().toLong(ByteOrder.LITTLE_ENDIAN));
+      case SszBytes4 sszBytes4 ->
+          Long.toString(sszBytes4.get().getWrappedBytes().toLong(ByteOrder.LITTLE_ENDIAN));
       case SszBitlist sszBits -> sszBits.sszSerialize().toHexString();
       case SszByteList sszBytes -> sszBytes.sszSerialize().toHexString();
       case SszBitvector bitvector -> bitvector.sszSerialize().toHexString();

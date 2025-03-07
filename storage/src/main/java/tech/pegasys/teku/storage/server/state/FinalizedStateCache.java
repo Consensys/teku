@@ -60,7 +60,7 @@ public class FinalizedStateCache {
       final Database database,
       final int maximumCacheSize,
       final boolean useSoftReferences,
-      int stateRebuildTimeoutSeconds,
+      final int stateRebuildTimeoutSeconds,
       final long maxRegenerateSlots) {
     final CacheBuilder<UInt64, BeaconState> cacheBuilder =
         CacheBuilder.newBuilder()

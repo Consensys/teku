@@ -175,6 +175,7 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         .put("OPTIMISTIC_TRANSITION_BLOCK_SLOT", getOptimisticTransitionBlockSlot())
         .put("FINALIZED_DEPOSIT_SNAPSHOT", getVariableFinalizedDepositSnapshot())
         .put("EARLIEST_BLOB_SIDECAR_SLOT", getVariableEarliestBlobSidecarSlot())
+        .put("EARLIEST_BLOCK_SLOT", getVariableEarliestBlockSlot())
         .put("FIRST_CUSTODY_INCOMPLETE_SLOT", getVariableFirstCustodyIncompleteSlot())
         .put("FIRST_SAMPLER_INCOMPLETE_SLOT", getVariableFirstSamplerIncompleteSlot())
         .build();

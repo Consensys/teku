@@ -57,7 +57,9 @@ public abstract class AbstractSszCollectionSchema<
   private volatile TreeNode defaultTree;
 
   protected AbstractSszCollectionSchema(
-      long maxLength, SszSchema<SszElementT> elementSchema, SszSchemaHints hints) {
+      final long maxLength,
+      final SszSchema<SszElementT> elementSchema,
+      final SszSchemaHints hints) {
     checkArgument(maxLength >= 0);
     this.maxLength = maxLength;
     this.elementSchema = elementSchema;
@@ -90,7 +92,7 @@ public abstract class AbstractSszCollectionSchema<
   }
 
   @Override
-  public SszSchema<?> getChildSchema(int index) {
+  public SszSchema<?> getChildSchema(final int index) {
     if (index >= maxLength) {
       throw new IndexOutOfBoundsException("Child index " + index + " >= maxLength " + maxLength);
     }
@@ -112,7 +114,7 @@ public abstract class AbstractSszCollectionSchema<
         : elementSchema.getSszFixedPartSize() * 8;
   }
 
-  protected int getVariablePartSize(TreeNode vectorNode, int length) {
+  protected int getVariablePartSize(final TreeNode vectorNode, final int length) {
     if (isFixedSize()) {
       return 0;
     } else {
@@ -135,7 +137,8 @@ public abstract class AbstractSszCollectionSchema<
    * @param vectorNode for a {@link SszVectorSchemaImpl} type - the node itself, for a {@link
    *     SszListSchemaImpl} - the left sibling node of list size node
    */
-  public int sszSerializeVector(TreeNode vectorNode, SszWriter writer, int elementsCount) {
+  public int sszSerializeVector(
+      final TreeNode vectorNode, final SszWriter writer, final int elementsCount) {
     if (getElementSchema().isFixedSize()) {
       return sszSerializeFixedVectorFast(vectorNode, writer, elementsCount);
     } else {
@@ -144,7 +147,7 @@ public abstract class AbstractSszCollectionSchema<
   }
 
   private int sszSerializeFixedVectorFast(
-      TreeNode vectorNode, SszWriter writer, int elementsCount) {
+      final TreeNode vectorNode, final SszWriter writer, final int elementsCount) {
     if (elementsCount == 0) {
       return 0;
     }
@@ -161,7 +164,8 @@ public abstract class AbstractSszCollectionSchema<
     return bytesCnt[0];
   }
 
-  private int sszSerializeVariableVector(TreeNode vectorNode, SszWriter writer, int elementsCount) {
+  private int sszSerializeVariableVector(
+      final TreeNode vectorNode, final SszWriter writer, final int elementsCount) {
     SszSchema<?> elementType = getElementSchema();
     int variableOffset = SSZ_LENGTH_SIZE * elementsCount;
     for (int i = 0; i < elementsCount; i++) {
@@ -177,7 +181,7 @@ public abstract class AbstractSszCollectionSchema<
     return variableOffset;
   }
 
-  protected DeserializedData sszDeserializeVector(SszReader reader) {
+  protected DeserializedData sszDeserializeVector(final SszReader reader) {
     if (getElementSchema().isFixedSize()) {
       Optional<SszSuperNodeHint> sszSuperNodeHint = getHints().getHint(SszSuperNodeHint.class);
       return sszSuperNodeHint
@@ -188,7 +192,8 @@ public abstract class AbstractSszCollectionSchema<
     }
   }
 
-  private DeserializedData sszDeserializeSupernode(SszReader reader, int supernodeDepth) {
+  private DeserializedData sszDeserializeSupernode(
+      final SszReader reader, final int supernodeDepth) {
     SszNodeTemplate template = elementSszSupernodeTemplate.get();
     int sszSize = reader.getAvailableBytes();
     if (sszSize % template.getSszLength() != 0) {
@@ -213,7 +218,7 @@ public abstract class AbstractSszCollectionSchema<
     return new DeserializedData(tree, elementsCount);
   }
 
-  private DeserializedData sszDeserializeFixed(SszReader reader) {
+  private DeserializedData sszDeserializeFixed(final SszReader reader) {
     int bytesSize = reader.getAvailableBytes();
     checkSsz(
         bytesSize % getElementSchema().getSszFixedPartSize() == 0,
@@ -244,7 +249,7 @@ public abstract class AbstractSszCollectionSchema<
       if (childNodes.isEmpty()) {
         lastByte = Optional.empty();
       } else {
-        Bytes lastNodeData = childNodes.get(childNodes.size() - 1).getData();
+        Bytes lastNodeData = childNodes.getLast().getData();
         lastByte = Optional.of(lastNodeData.get(lastNodeData.size() - 1));
       }
       return new DeserializedData(
@@ -262,7 +267,7 @@ public abstract class AbstractSszCollectionSchema<
     }
   }
 
-  private DeserializedData sszDeserializeVariable(SszReader reader) {
+  private DeserializedData sszDeserializeVariable(final SszReader reader) {
     final int endOffset = reader.getAvailableBytes();
     final List<TreeNode> childNodes = new ArrayList<>();
     if (endOffset > 0) {
@@ -295,7 +300,7 @@ public abstract class AbstractSszCollectionSchema<
     return new DeserializedData(TreeUtil.createTree(childNodes, treeDepth()), childNodes.size());
   }
 
-  protected static void checkSsz(boolean condition, String error) {
+  protected static void checkSsz(final boolean condition, final String error) {
     if (!condition) {
       throw new SszDeserializeException(error);
     }
@@ -306,7 +311,7 @@ public abstract class AbstractSszCollectionSchema<
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }
@@ -328,11 +333,12 @@ public abstract class AbstractSszCollectionSchema<
     private final int childrenCount;
     private final Optional<Byte> lastSszByte;
 
-    public DeserializedData(TreeNode dataTree, int childrenCount) {
+    public DeserializedData(final TreeNode dataTree, final int childrenCount) {
       this(dataTree, childrenCount, Optional.empty());
     }
 
-    public DeserializedData(TreeNode dataTree, int childrenCount, Optional<Byte> lastSszByte) {
+    public DeserializedData(
+        final TreeNode dataTree, final int childrenCount, final Optional<Byte> lastSszByte) {
       this.dataTree = dataTree;
       this.childrenCount = childrenCount;
       this.lastSszByte = lastSszByte;

@@ -43,12 +43,12 @@ public class SyncCommitteeDutiesBuilder {
   private boolean executionOptimistic;
   private List<SyncCommitteeDuty> duties;
 
-  public SyncCommitteeDutiesBuilder executionOptimistic(boolean executionOptimistic) {
+  public SyncCommitteeDutiesBuilder executionOptimistic(final boolean executionOptimistic) {
     this.executionOptimistic = executionOptimistic;
     return this;
   }
 
-  public SyncCommitteeDutiesBuilder duties(List<SyncCommitteeDuty> duties) {
+  public SyncCommitteeDutiesBuilder duties(final List<SyncCommitteeDuty> duties) {
     this.duties = duties;
     return this;
   }

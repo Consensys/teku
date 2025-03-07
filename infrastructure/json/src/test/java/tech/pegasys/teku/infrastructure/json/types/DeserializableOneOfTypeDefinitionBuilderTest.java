@@ -27,11 +27,11 @@ public class DeserializableOneOfTypeDefinitionBuilderTest {
           DeserializableOneOfTypeDefinition.object(OneOfTypeTestTypeDefinition.TestType.class)
               .description("meaningful description")
               .withType(
-                  OneOfTypeTestTypeDefinition.TestObjA.isInstance,
+                  OneOfTypeTestTypeDefinition.TestObjA.IS_INSTANCE,
                   s -> s.contains("value1"),
                   TYPE_A)
               .withType(
-                  OneOfTypeTestTypeDefinition.TestObjB.isInstance,
+                  OneOfTypeTestTypeDefinition.TestObjB.IS_INSTANCE,
                   s -> s.contains("value2"),
                   TYPE_B)
               .build();

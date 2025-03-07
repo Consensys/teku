@@ -25,11 +25,12 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Transition
 class MutableBeaconStateAltairImpl extends AbstractMutableBeaconState<BeaconStateAltairImpl>
     implements MutableBeaconStateAltair, BeaconStateCache, ValidatorStatsAltair {
 
-  MutableBeaconStateAltairImpl(BeaconStateAltairImpl backingImmutableView) {
+  MutableBeaconStateAltairImpl(final BeaconStateAltairImpl backingImmutableView) {
     super(backingImmutableView);
   }
 
-  MutableBeaconStateAltairImpl(BeaconStateAltairImpl backingImmutableView, boolean builder) {
+  MutableBeaconStateAltairImpl(
+      final BeaconStateAltairImpl backingImmutableView, final boolean builder) {
     super(backingImmutableView, builder);
   }
 
@@ -40,10 +41,10 @@ class MutableBeaconStateAltairImpl extends AbstractMutableBeaconState<BeaconStat
 
   @Override
   protected BeaconStateAltairImpl createImmutableBeaconState(
-      TreeNode backingNode,
-      IntCache<SszData> viewCache,
-      TransitionCaches transitionCaches,
-      SlotCaches slotCaches) {
+      final TreeNode backingNode,
+      final IntCache<SszData> viewCache,
+      final TransitionCaches transitionCaches,
+      final SlotCaches slotCaches) {
     return new BeaconStateAltairImpl(
         getSchema(), backingNode, viewCache, transitionCaches, slotCaches);
   }
@@ -54,7 +55,7 @@ class MutableBeaconStateAltairImpl extends AbstractMutableBeaconState<BeaconStat
   }
 
   @Override
-  protected void addCustomFields(ToStringHelper stringBuilder) {
+  protected void addCustomFields(final ToStringHelper stringBuilder) {
     BeaconStateAltairImpl.describeCustomFields(stringBuilder, this);
   }
 

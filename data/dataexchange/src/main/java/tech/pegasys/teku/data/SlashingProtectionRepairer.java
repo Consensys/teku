@@ -23,8 +23,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
-import tech.pegasys.teku.api.schema.BLSPubKey;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.PublicKeyException;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.slashinginterchange.SigningHistory;
 import tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
@@ -59,7 +60,7 @@ public class SlashingProtectionRepairer {
 
   private void initialise(final Path slashProtectionPath) {
     this.slashingProtectionPath = slashProtectionPath;
-    File slashingProtectionRecords = slashProtectionPath.toFile();
+    final File slashingProtectionRecords = slashProtectionPath.toFile();
     Arrays.stream(slashingProtectionRecords.listFiles())
         .filter(file -> file.isFile() && file.getName().endsWith(".yml"))
         .forEach(this::readSlashProtectionFile);
@@ -69,9 +70,9 @@ public class SlashingProtectionRepairer {
     final String filePrefix =
         file.getName().substring(0, file.getName().length() - ".yml".length());
     try {
-      BLSPubKey pubkey = BLSPubKey.fromHexString(filePrefix);
+      final BLSPublicKey pubkey = parsePublicKey(filePrefix);
 
-      Optional<ValidatorSigningRecord> maybeRecord =
+      final Optional<ValidatorSigningRecord> maybeRecord =
           syncDataAccessor.read(file.toPath()).map(ValidatorSigningRecord::fromBytes);
       if (maybeRecord.isEmpty() && invalidRecords.add(filePrefix)) {
         log.display(filePrefix + ": Empty slashing protection record");
@@ -81,8 +82,8 @@ public class SlashingProtectionRepairer {
       if (updateAllEnabled) {
         log.display(filePrefix + ": looks valid");
       }
-      ValidatorSigningRecord validatorSigningRecord = maybeRecord.get();
-      signingHistoryList.add(new SigningHistory(pubkey, validatorSigningRecord));
+      final ValidatorSigningRecord validatorSigningRecord = maybeRecord.get();
+      signingHistoryList.add(SigningHistory.createSigningHistory(pubkey, validatorSigningRecord));
 
     } catch (PublicKeyException e) {
       log.display(" --- " + file.getName() + " - invalid public key - ignoring file");
@@ -93,11 +94,20 @@ public class SlashingProtectionRepairer {
     }
   }
 
+  static BLSPublicKey parsePublicKey(final String value) {
+    try {
+      return BLSPublicKey.fromHexString(value);
+    } catch (IllegalArgumentException e) {
+      throw new PublicKeyException(
+          String.format("Public key %s is invalid: %s", value, e.getMessage()), e);
+    }
+  }
+
   public void updateRecords(final UInt64 slot, final UInt64 epoch) {
     invalidRecords.forEach(
         pubkey ->
             writeValidatorSigningRecord(
-                new ValidatorSigningRecord(null, slot, epoch, epoch), pubkey));
+                new ValidatorSigningRecord(Optional.empty(), slot, epoch, epoch), pubkey));
     if (updateAllEnabled) {
       signingHistoryList.forEach(
           (historyRecord) -> updateValidatorSigningRecord(slot, epoch, historyRecord));
@@ -112,7 +122,7 @@ public class SlashingProtectionRepairer {
     final ValidatorSigningRecord updatedRecord =
         updateSigningRecord(slot, epoch, Optional.of(currentRecord));
     if (!currentRecord.equals(updatedRecord)) {
-      writeValidatorSigningRecord(updatedRecord, toDisplayString(historyRecord.pubkey));
+      writeValidatorSigningRecord(updatedRecord, toDisplayString(historyRecord.pubkey()));
     }
   }
 
@@ -127,8 +137,8 @@ public class SlashingProtectionRepairer {
     }
   }
 
-  private String toDisplayString(final BLSPubKey pubkey) {
-    return pubkey.toBytes().toUnprefixedHexString().toLowerCase(Locale.ROOT);
+  private String toDisplayString(final BLSPublicKey pubkey) {
+    return pubkey.toBytesCompressed().toUnprefixedHexString().toLowerCase(Locale.ROOT);
   }
 
   private void displayUpdateErrors() {
@@ -147,7 +157,7 @@ public class SlashingProtectionRepairer {
     if (updateAllEnabled) {
       return signingHistoryList.size() + invalidRecords.size() > 0;
     }
-    return invalidRecords.size() > 0;
+    return !invalidRecords.isEmpty();
   }
 
   static ValidatorSigningRecord updateSigningRecord(
@@ -156,20 +166,18 @@ public class SlashingProtectionRepairer {
       final Optional<ValidatorSigningRecord> maybeRecord) {
     final UInt64 sourceEpoch =
         maybeRecord
-            .map(ValidatorSigningRecord::getAttestationSourceEpoch)
+            .map(ValidatorSigningRecord::attestationSourceEpoch)
             .orElse(attestationEpoch)
             .max(attestationEpoch);
     final UInt64 targetEpoch =
         maybeRecord
-            .map(ValidatorSigningRecord::getAttestationTargetEpoch)
+            .map(ValidatorSigningRecord::attestationTargetEpoch)
             .orElse(attestationEpoch)
             .max(attestationEpoch);
     final UInt64 slot =
-        maybeRecord.map(ValidatorSigningRecord::getBlockSlot).orElse(blockSlot).max(blockSlot);
-    return new ValidatorSigningRecord(
-        maybeRecord.map(ValidatorSigningRecord::getGenesisValidatorsRoot).orElse(null),
-        slot,
-        sourceEpoch,
-        targetEpoch);
+        maybeRecord.map(ValidatorSigningRecord::blockSlot).orElse(blockSlot).max(blockSlot);
+    final Optional<Bytes32> maybeGenesisRoot =
+        maybeRecord.isPresent() ? maybeRecord.get().genesisValidatorsRoot() : Optional.empty();
+    return new ValidatorSigningRecord(maybeGenesisRoot, slot, sourceEpoch, targetEpoch);
   }
 }

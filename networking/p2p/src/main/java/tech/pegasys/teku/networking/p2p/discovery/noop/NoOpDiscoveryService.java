@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.p2p.discovery.noop;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -57,7 +58,7 @@ public class NoOpDiscoveryService implements DiscoveryService {
   }
 
   @Override
-  public Optional<String> getDiscoveryAddress() {
+  public Optional<List<String>> getDiscoveryAddresses() {
     return Optional.empty();
   }
 

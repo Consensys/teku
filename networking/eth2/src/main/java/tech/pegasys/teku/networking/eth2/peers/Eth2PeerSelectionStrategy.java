@@ -107,7 +107,7 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     final List<PeerAddress> selectedPeers = new ArrayList<>();
     shuffler.shuffle(allCandidatePeers);
     while (!allCandidatePeers.isEmpty() && selectedPeers.size() < randomlySelectedPeersToAdd) {
-      final DiscoveryPeer candidate = allCandidatePeers.remove(0);
+      final DiscoveryPeer candidate = allCandidatePeers.removeFirst();
       checkCandidate(candidate, network)
           .ifPresent(
               peerAddress -> {

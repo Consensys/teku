@@ -76,7 +76,7 @@ public class NoopSyncService
   }
 
   @Override
-  public long subscribeToSyncStateChangesAndUpdate(SyncStateSubscriber subscriber) {
+  public long subscribeToSyncStateChangesAndUpdate(final SyncStateSubscriber subscriber) {
     final long subscriptionId = subscribeToSyncStateChanges(subscriber);
     subscriber.onSyncStateChange(getCurrentSyncState());
     return subscriptionId;
@@ -116,7 +116,7 @@ public class NoopSyncService
   }
 
   @Override
-  public void onOptimisticHeadChanged(boolean isSyncingOptimistically) {
+  public void onOptimisticHeadChanged(final boolean isSyncingOptimistically) {
     // No-op
   }
 

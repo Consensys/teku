@@ -26,7 +26,7 @@ public class KzgRetriever {
 
   public static KZG getKzgWithLoadedTrustedSetup(final Spec spec, final String network) {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)
-        || spec.isMilestoneSupported(SpecMilestone.EIP7594)) {
+        || spec.isMilestoneSupported(SpecMilestone.ELECTRA)) {
       return getKzgWithLoadedTrustedSetup(network);
     }
     return KZG.NOOP;

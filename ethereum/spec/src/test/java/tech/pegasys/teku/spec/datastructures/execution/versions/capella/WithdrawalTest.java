@@ -19,15 +19,16 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class WithdrawalTest {
-
-  private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createMinimal(SpecMilestone.CAPELLA));
-  private final WithdrawalSchema withdrawalSchema = Withdrawal.SSZ_SCHEMA;
+  private final Spec spec = TestSpecFactory.createMinimal(SpecMilestone.CAPELLA);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final WithdrawalSchema withdrawalSchema =
+      spec.getGenesisSchemaDefinitions().toVersionCapella().orElseThrow().getWithdrawalSchema();
 
   private final UInt64 index = dataStructureUtil.randomUInt64();
   private final UInt64 validatorIndex = dataStructureUtil.randomUInt64();

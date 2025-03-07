@@ -18,12 +18,11 @@ import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public abstract class AbstractSszPrimitive<C, V extends AbstractSszPrimitive<C, V>>
-    implements SszPrimitive<C, V> {
-  private final AbstractSszPrimitiveSchema<C, V> schema;
+public abstract class AbstractSszPrimitive<C> implements SszPrimitive<C> {
+  private final AbstractSszPrimitiveSchema<C, ?> schema;
   private final C value;
 
-  protected AbstractSszPrimitive(C value, AbstractSszPrimitiveSchema<C, V> schema) {
+  protected AbstractSszPrimitive(final C value, final AbstractSszPrimitiveSchema<C, ?> schema) {
     this.schema = schema;
     this.value = value;
   }
@@ -34,29 +33,24 @@ public abstract class AbstractSszPrimitive<C, V extends AbstractSszPrimitive<C, 
   }
 
   @Override
-  public AbstractSszPrimitiveSchema<C, V> getSchema() {
+  public AbstractSszPrimitiveSchema<C, ?> getSchema() {
     return schema;
   }
 
   @Override
   public TreeNode getBackingNode() {
-    return getSchema().createBackingNode(getThis());
-  }
-
-  @SuppressWarnings("unchecked")
-  protected V getThis() {
-    return (V) this;
+    return getSchema().createBackingNode(this);
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    AbstractSszPrimitive<?, ?> that = (AbstractSszPrimitive<?, ?>) o;
+    AbstractSszPrimitive<?> that = (AbstractSszPrimitive<?>) o;
     return Objects.equals(get(), that.get());
   }
 

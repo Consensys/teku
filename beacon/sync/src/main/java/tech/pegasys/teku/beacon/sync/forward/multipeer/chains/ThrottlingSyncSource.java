@@ -28,7 +28,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class ThrottlingSyncSource implements SyncSource {
@@ -81,6 +81,10 @@ public class ThrottlingSyncSource implements SyncSource {
       LOG.debug("Sending request for {} blocks", count);
       return delegate.requestBlocksByRange(startSlot, count, listener);
     } else {
+      LOG.debug(
+          "Rate limiting request for {} blocks. Retry in {} seconds",
+          count,
+          PEER_REQUEST_DELAY.toSeconds());
       return asyncRunner.runAfterDelay(
           () -> requestBlocksByRange(startSlot, count, listener), PEER_REQUEST_DELAY);
     }
@@ -93,6 +97,10 @@ public class ThrottlingSyncSource implements SyncSource {
       LOG.debug("Sending request for {} blob sidecars", count);
       return delegate.requestBlobSidecarsByRange(startSlot, count, listener);
     } else {
+      LOG.debug(
+          "Rate limiting request for {} blob sidecars. Retry in {} seconds",
+          count,
+          PEER_REQUEST_DELAY.toSeconds());
       return asyncRunner.runAfterDelay(
           () -> requestBlobSidecarsByRange(startSlot, count, listener), PEER_REQUEST_DELAY);
     }

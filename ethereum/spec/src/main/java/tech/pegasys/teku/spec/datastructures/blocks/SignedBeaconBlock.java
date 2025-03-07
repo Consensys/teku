@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock, SszSignature>
     implements BeaconBlockSummary, SignedBlockContainer {
 
-  SignedBeaconBlock(SignedBeaconBlockSchema type, TreeNode backingNode) {
+  SignedBeaconBlock(final SignedBeaconBlockSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 

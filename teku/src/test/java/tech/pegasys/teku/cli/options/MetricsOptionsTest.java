@@ -21,11 +21,15 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.LIBP2P
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.NETWORK;
 
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Stream;
 import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
@@ -46,7 +50,7 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @ParameterizedTest(name = "{0}")
   @EnumSource(TekuMetricCategory.class)
-  public void metricsCategories_shouldAcceptValues(MetricCategory category) {
+  public void metricsCategories_shouldAcceptValues(final MetricCategory category) {
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--metrics-categories", category.toString());
     final MetricsConfig config = tekuConfiguration.metricsConfig();
@@ -55,7 +59,8 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @ParameterizedTest(name = "{0}")
   @EnumSource(StandardMetricCategory.class)
-  public void metricsCategories_shouldAcceptStandardMetricCategories(MetricCategory category) {
+  public void metricsCategories_shouldAcceptStandardMetricCategories(
+      final MetricCategory category) {
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--metrics-categories", category.toString());
     final MetricsConfig config = tekuConfiguration.metricsConfig();
@@ -114,5 +119,34 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
   public void metricsHostAllowlist_shouldDefaultToLocalhost() {
     assertThat(getTekuConfigurationFromArguments().metricsConfig().getMetricsHostAllowlist())
         .containsOnly("localhost", "127.0.0.1");
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("provideArgumentsForShouldSetWarningThresholds")
+  public void shouldSetWarningThresholds(
+      final String option, final Function<MetricsConfig, Integer> configValueFunction) {
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(option, "100");
+    final MetricsConfig config = tekuConfiguration.metricsConfig();
+    assertThat(configValueFunction.apply(config)).isEqualTo(100);
+  }
+
+  private static Stream<Arguments> provideArgumentsForShouldSetWarningThresholds() {
+    return Stream.of(
+        Arguments.of(
+            "--Xmetrics-block-production-timing-tracking-warning-local-threshold",
+            (Function<MetricsConfig, Integer>)
+                MetricsConfig::getBlockProductionPerformanceWarningLocalThreshold),
+        Arguments.of(
+            "--Xmetrics-block-production-timing-tracking-warning-builder-threshold",
+            (Function<MetricsConfig, Integer>)
+                MetricsConfig::getBlockProductionPerformanceWarningBuilderThreshold),
+        Arguments.of(
+            "--Xmetrics-block-publishing-timing-tracking-warning-local-threshold",
+            (Function<MetricsConfig, Integer>)
+                MetricsConfig::getBlockPublishingPerformanceWarningLocalThreshold),
+        Arguments.of(
+            "--Xmetrics-block-publishing-timing-tracking-warning-builder-threshold",
+            (Function<MetricsConfig, Integer>)
+                MetricsConfig::getBlockPublishingPerformanceWarningBuilderThreshold));
   }
 }

@@ -17,8 +17,6 @@ import static tech.pegasys.teku.data.slashinginterchange.Metadata.INTERCHANGE_VE
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -26,7 +24,6 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -34,19 +31,19 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.data.slashinginterchange.SignedAttestation;
 import tech.pegasys.teku.data.slashinginterchange.SignedBlock;
 import tech.pegasys.teku.data.slashinginterchange.SigningHistory;
+import tech.pegasys.teku.data.slashinginterchange.SlashingProtectionInterchangeFormat;
 import tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequiredFieldException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
 
 public class SlashingProtectionImporter {
-  private final JsonProvider jsonProvider = new JsonProvider();
   private final Path slashingProtectionPath;
   private List<SigningHistory> data = new ArrayList<>();
   private Metadata metadata;
@@ -62,33 +59,31 @@ public class SlashingProtectionImporter {
   }
 
   public Optional<String> initialise(final InputStream inputStream) throws IOException {
-    final ObjectMapper jsonMapper = jsonProvider.getObjectMapper();
     try {
-      final JsonNode jsonNode = jsonMapper.readTree(inputStream);
+      final SlashingProtectionInterchangeFormat interchangeFormat =
+          JsonUtil.parse(inputStream, SlashingProtectionInterchangeFormat.getJsonTypeDefinition());
 
-      metadata = jsonMapper.treeToValue(jsonNode.get("metadata"), Metadata.class);
+      metadata = interchangeFormat.metadata();
       if (metadata == null) {
         return Optional.of(
             "Import data does not appear to have metadata information, and cannot be loaded.");
       }
       if (!INTERCHANGE_VERSION.equals(UInt64.valueOf(4))
-          && !INTERCHANGE_VERSION.equals(metadata.interchangeFormatVersion)) {
+          && !INTERCHANGE_VERSION.equals(metadata.interchangeFormatVersion())) {
         return Optional.of(
             String.format(
                 "Import data has unsupported format version  %s. Required version is %s",
-                metadata.interchangeFormatVersion, INTERCHANGE_VERSION));
+                metadata.interchangeFormat(), INTERCHANGE_VERSION));
       }
 
-      data =
-          summariseCompleteInterchangeFormat(
-              Arrays.asList(jsonMapper.treeToValue(jsonNode.get("data"), SigningHistory[].class)));
+      data = summariseCompleteInterchangeFormat(interchangeFormat.data());
 
-    } catch (JsonMappingException e) {
-      String cause = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+    } catch (JsonMappingException | MissingRequiredFieldException e) {
+      final String cause = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
       return Optional.of("Failed to load data. " + cause);
 
-    } catch (JsonParseException e) {
-      String cause = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+    } catch (JsonParseException | IllegalArgumentException e) {
+      final String cause = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
       return Optional.of(String.format("Json does not appear valid. %s", cause));
     }
     return Optional.empty();
@@ -101,27 +96,27 @@ public class SlashingProtectionImporter {
 
   private SigningHistory signingHistoryConverter(final SigningHistory signingHistory) {
     final Optional<UInt64> lastSlot =
-        signingHistory.signedBlocks.stream()
-            .map(SignedBlock::getSlot)
+        signingHistory.signedBlocks().stream()
+            .map(SignedBlock::slot)
             .filter(Objects::nonNull)
             .max(UInt64::compareTo);
     final Optional<UInt64> sourceEpoch =
-        signingHistory.signedAttestations.stream()
-            .map(SignedAttestation::getSourceEpoch)
+        signingHistory.signedAttestations().stream()
+            .map(SignedAttestation::sourceEpoch)
             .filter(Objects::nonNull)
             .max(UInt64::compareTo);
     final Optional<UInt64> targetEpoch =
-        signingHistory.signedAttestations.stream()
-            .map(SignedAttestation::getTargetEpoch)
+        signingHistory.signedAttestations().stream()
+            .map(SignedAttestation::targetEpoch)
             .filter(Objects::nonNull)
             .max(UInt64::compareTo);
     final ValidatorSigningRecord record =
         new ValidatorSigningRecord(
-            metadata.genesisValidatorsRoot,
+            metadata.genesisValidatorsRoot(),
             lastSlot.orElse(UInt64.ZERO),
             sourceEpoch.orElse(ValidatorSigningRecord.NEVER_SIGNED),
             targetEpoch.orElse(ValidatorSigningRecord.NEVER_SIGNED));
-    return new SigningHistory(signingHistory.pubkey, record);
+    return SigningHistory.createSigningHistory(signingHistory.pubkey(), record);
   }
 
   /**
@@ -137,10 +132,10 @@ public class SlashingProtectionImporter {
     data.forEach(
         record -> {
           Optional<String> error = updateLocalRecord(record, statusConsumer);
-          error.ifPresent(errorString -> errors.put(record.pubkey.asBLSPublicKey(), errorString));
+          error.ifPresent(errorString -> errors.put(record.pubkey(), errorString));
         });
     statusConsumer.accept("Updated " + data.size() + " validator slashing protection records");
-    if (errors.size() > 0) {
+    if (!errors.isEmpty()) {
       statusConsumer.accept("There were " + errors.size() + " errors found during import.");
     }
     return errors;
@@ -156,21 +151,24 @@ public class SlashingProtectionImporter {
    */
   public Optional<String> updateSigningRecord(
       final BLSPublicKey publicKey, final Consumer<String> statusConsumer) {
-    final BLSPubKey key = new BLSPubKey(publicKey);
     return data.stream()
-        .filter(signingHistory -> signingHistory.pubkey.equals(key))
+        .filter(signingHistory -> signingHistory.pubkey().equals(publicKey))
         .flatMap(record -> updateLocalRecord(record, statusConsumer).stream())
         .findFirst();
   }
 
   private Optional<String> updateLocalRecord(
       final SigningHistory signingHistory, final Consumer<String> statusConsumer) {
-    String validatorString =
-        signingHistory.pubkey.toBytes().toUnprefixedHexString().toLowerCase(Locale.ROOT);
-    final String hexValidatorPubkey = signingHistory.pubkey.toHexString();
+    final String validatorString =
+        signingHistory
+            .pubkey()
+            .toBytesCompressed()
+            .toUnprefixedHexString()
+            .toLowerCase(Locale.ROOT);
+    final String hexValidatorPubkey = signingHistory.pubkey().toHexString();
 
     statusConsumer.accept("Importing " + validatorString);
-    Path outputFile = slashingProtectionPath.resolve(validatorString + ".yml");
+    final Path outputFile = slashingProtectionPath.resolve(validatorString + ".yml");
     Optional<ValidatorSigningRecord> existingRecord = Optional.empty();
     if (outputFile.toFile().exists()) {
       try {
@@ -181,9 +179,12 @@ public class SlashingProtectionImporter {
       }
     }
     if (existingRecord.isPresent()
-        && existingRecord.get().getGenesisValidatorsRoot() != null
-        && metadata.genesisValidatorsRoot != null
-        && metadata.genesisValidatorsRoot.compareTo(existingRecord.get().getGenesisValidatorsRoot())
+        && existingRecord.get().genesisValidatorsRoot().isPresent()
+        && metadata.genesisValidatorsRoot().isPresent()
+        && metadata
+                .genesisValidatorsRoot()
+                .get()
+                .compareTo(existingRecord.get().genesisValidatorsRoot().get())
             != 0) {
       statusConsumer.accept(
           "Validator "
@@ -196,7 +197,8 @@ public class SlashingProtectionImporter {
       syncDataAccessor.syncedWrite(
           outputFile,
           signingHistory
-              .toValidatorSigningRecord(existingRecord, metadata.genesisValidatorsRoot)
+              .toValidatorSigningRecord(
+                  existingRecord, metadata.genesisValidatorsRoot().orElse(null))
               .toBytes());
     } catch (IOException e) {
       statusConsumer.accept("Validator " + hexValidatorPubkey + " was not updated.");

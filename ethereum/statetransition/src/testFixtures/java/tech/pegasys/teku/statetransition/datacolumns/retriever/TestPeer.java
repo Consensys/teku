@@ -21,7 +21,7 @@ import java.util.Map;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 
 public class TestPeer {
@@ -37,13 +37,13 @@ public class TestPeer {
   private final List<Request> requests = new ArrayList<>();
   private int currentRequestLimit = 1000;
 
-  public TestPeer(AsyncRunner asyncRunner, UInt256 nodeId, Duration latency) {
+  public TestPeer(final AsyncRunner asyncRunner, final UInt256 nodeId, final Duration latency) {
     this.asyncRunner = asyncRunner;
     this.nodeId = nodeId;
     this.latency = latency;
   }
 
-  public void addSidecar(DataColumnSidecar sidecar) {
+  public void addSidecar(final DataColumnSidecar sidecar) {
     availableSidecars.put(DataColumnIdentifier.createFromSidecar(sidecar), sidecar);
   }
 
@@ -60,9 +60,10 @@ public class TestPeer {
                     new DataColumnReqResp.DasPeerDisconnectedException()));
   }
 
-  public SafeFuture<DataColumnSidecar> requestSidecar(DataColumnIdentifier dataColumnIdentifier) {
-    SafeFuture<DataColumnSidecar> promise = new SafeFuture<>();
-    Request request = new Request(dataColumnIdentifier, promise);
+  public SafeFuture<DataColumnSidecar> requestSidecar(
+      final DataColumnIdentifier dataColumnIdentifier) {
+    final SafeFuture<DataColumnSidecar> promise = new SafeFuture<>();
+    final Request request = new Request(dataColumnIdentifier, promise);
     requests.add(request);
     asyncRunner
         .runAfterDelay(
@@ -90,7 +91,7 @@ public class TestPeer {
     return currentRequestLimit;
   }
 
-  public TestPeer currentRequestLimit(int currentRequestLimit) {
+  public TestPeer currentRequestLimit(final int currentRequestLimit) {
     this.currentRequestLimit = currentRequestLimit;
     return this;
   }

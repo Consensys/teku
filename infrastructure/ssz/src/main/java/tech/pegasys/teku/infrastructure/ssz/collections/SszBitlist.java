@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 public interface SszBitlist extends SszPrimitiveList<Boolean, SszBit>, SszBitSet {
 
   static SszBitlist nullableOr(
-      @Nullable SszBitlist bitlist1OrNull, @Nullable SszBitlist bitlist2OrNull) {
+      final @Nullable SszBitlist bitlist1OrNull, final @Nullable SszBitlist bitlist2OrNull) {
     return SszBitlistImpl.nullableOr(bitlist1OrNull, bitlist2OrNull);
   }
 
@@ -81,7 +81,7 @@ public interface SszBitlist extends SszPrimitiveList<Boolean, SszBit>, SszBitSet
   IntStream streamAllSetBits();
 
   @Override
-  default Boolean getElement(int index) {
+  default Boolean getElement(final int index) {
     return getBit(index);
   }
 }

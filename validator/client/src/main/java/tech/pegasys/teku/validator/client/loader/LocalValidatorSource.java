@@ -136,7 +136,8 @@ public class LocalValidatorSource extends AbstractValidatorSource implements Val
   }
 
   @Override
-  public AddValidatorResult addValidator(BLSPublicKey publicKey, Optional<URL> signerUrl) {
+  public AddValidatorResult addValidator(
+      final BLSPublicKey publicKey, final Optional<URL> signerUrl) {
     throw new UnsupportedOperationException();
   }
 

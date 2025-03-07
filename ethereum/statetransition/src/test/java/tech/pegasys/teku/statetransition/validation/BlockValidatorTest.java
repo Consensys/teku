@@ -39,12 +39,12 @@ public class BlockValidatorTest {
   public void shouldExposeGossipValidation() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
 
-    when(blockGossipValidator.validate(eq(block), eq(false)))
+    when(blockGossipValidator.validate(eq(block), eq(true)))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     assertThat(blockValidator.validateGossip(block))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
-    verify(blockGossipValidator).validate(eq(block), eq(false));
+    verify(blockGossipValidator).validate(eq(block), eq(true));
     verifyNoMoreInteractions(blockGossipValidator);
   }
 }

@@ -20,7 +20,7 @@ public interface LocalMessageHandler<I, O> {
   void onIncomingMessage(
       final String protocolId, Optional<Eth2Peer> peer, I message, ResponseCallback<O> callback);
 
-  default Optional<RpcException> validateRequest(String protocolId, I request) {
+  default Optional<RpcException> validateRequest(final String protocolId, final I request) {
     return Optional.empty();
   }
 }

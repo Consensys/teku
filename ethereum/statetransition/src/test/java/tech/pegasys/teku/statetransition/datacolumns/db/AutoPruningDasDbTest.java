@@ -20,7 +20,7 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand;
@@ -28,7 +28,7 @@ import tech.pegasys.teku.statetransition.datacolumns.MinCustodyPeriodSlotCalcula
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class AutoPruningDasDbTest {
-  final Spec spec = TestSpecFactory.createMinimalEip7594();
+  final Spec spec = TestSpecFactory.createMinimalFulu();
   final DasCustodyStand das = DasCustodyStand.builder(spec).build();
   final int custodyPeriodSlots = 10;
   final int custodyPeriodMarginSlots = 2;
@@ -39,7 +39,7 @@ public class AutoPruningDasDbTest {
       new AutoPruningDasDb(
           das.db, minCustodyPeriodSlotCalculator, custodyPeriodMarginSlots, prunePeriodSlots);
 
-  private DataColumnSidecar createSidecar(int slot, int index) {
+  private DataColumnSidecar createSidecar(final int slot, final int index) {
     SignedBeaconBlock block = das.createBlockWithBlobs(slot);
     return das.createSidecar(block, index);
   }

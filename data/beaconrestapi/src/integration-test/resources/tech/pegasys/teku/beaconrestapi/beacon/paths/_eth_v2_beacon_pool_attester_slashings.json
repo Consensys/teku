@@ -1,0 +1,114 @@
+{
+  "get" : {
+    "tags" : [ "Beacon" ],
+    "operationId" : "getPoolAttesterSlashingsV2",
+    "summary" : "Get AttesterSlashings from operations pool",
+    "description" : "Retrieves attester slashings known by the node but not necessarily incorporated into any block.",
+    "responses" : {
+      "200" : {
+        "description" : "Request successful",
+        "headers" : {
+          "Eth-Consensus-Version": {
+            "description": "Required in response so client can deserialize returned json or ssz data more effectively.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "phase0",
+                "altair",
+                "bellatrix",
+                "capella",
+                "deneb",
+                "electra"
+              ],
+              "example": "phase0"
+            }
+          }
+        },
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetPoolAttesterSlashingsV2Response"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "post" : {
+    "tags" : [ "Beacon" ],
+    "operationId" : "submitPoolAttesterSlashingsV2",
+    "summary" : "Submit AttesterSlashing object to node's pool",
+    "description" : "Submits AttesterSlashing object to node's pool. Upon successful validation the node MUST broadcast it to network.",
+    "parameters" : [ {
+      "name" : "Eth-Consensus-Version",
+      "required" : true,
+      "in" : "header",
+      "schema" : {
+        "type" : "string",
+        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ],
+        "description" : "Version of the attester slashing being submitted."
+      }
+    } ],
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "type" : "object",
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/AttesterSlashingElectra"
+            }, {
+              "$ref" : "#/components/schemas/AttesterSlashingPhase0"
+            } ]
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Success",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

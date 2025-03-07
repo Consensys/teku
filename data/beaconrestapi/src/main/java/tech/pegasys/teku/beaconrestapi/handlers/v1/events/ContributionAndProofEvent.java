@@ -17,7 +17,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 
 public class ContributionAndProofEvent extends Event<SignedContributionAndProof> {
 
-  ContributionAndProofEvent(SignedContributionAndProof signedContributionAndProof) {
+  ContributionAndProofEvent(final SignedContributionAndProof signedContributionAndProof) {
     super(
         signedContributionAndProof.getSchema().getJsonTypeDefinition(), signedContributionAndProof);
   }

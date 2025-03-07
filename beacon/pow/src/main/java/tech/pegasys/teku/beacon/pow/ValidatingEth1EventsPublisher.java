@@ -60,7 +60,7 @@ public class ValidatingEth1EventsPublisher extends DelegatingEth1EventsChannel {
   }
 
   @Override
-  public void onInitialDepositTreeSnapshot(DepositTreeSnapshot depositTreeSnapshot) {
+  public void onInitialDepositTreeSnapshot(final DepositTreeSnapshot depositTreeSnapshot) {
     delegate.onInitialDepositTreeSnapshot(depositTreeSnapshot);
   }
 }

@@ -22,7 +22,7 @@ public interface SszMutableRefContainer
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
   // container is heterogeneous by its nature so making unsafe cast here
   // is more convenient and is not less safe
-  default <W extends SszMutableData> W getAnyByRef(int index) {
+  default <W extends SszMutableData> W getAnyByRef(final int index) {
     return (W) getByRef(index);
   }
 }

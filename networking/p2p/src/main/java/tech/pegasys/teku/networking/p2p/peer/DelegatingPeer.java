@@ -61,7 +61,7 @@ public class DelegatingPeer implements Peer {
           TRequest,
           RespHandler extends RpcResponseHandler<?>>
       SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
-          RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
+          final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
           final TRequest request,
           final RespHandler responseHandler) {
     return peer.sendRequest(rpcMethod, request, responseHandler);

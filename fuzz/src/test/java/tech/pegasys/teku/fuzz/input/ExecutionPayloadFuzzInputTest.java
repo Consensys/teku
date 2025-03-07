@@ -14,7 +14,7 @@
 package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ExecutionPayloadFuzzInputTest extends AbstractFuzzInputTest<BeaconBlockBodyFuzzInput> {
@@ -27,8 +27,8 @@ public class ExecutionPayloadFuzzInputTest extends AbstractFuzzInputTest<BeaconB
   @Override
   protected BeaconBlockBodyFuzzInput createInput() {
     final BeaconState state = dataStructureUtil.randomBeaconState();
-    final BeaconBlockBodyCapella beaconBlockBody =
-        BeaconBlockBodyCapella.required(dataStructureUtil.randomBeaconBlockBody());
+    final BeaconBlockBodyElectra beaconBlockBody =
+        BeaconBlockBodyElectra.required(dataStructureUtil.randomBeaconBlockBody());
     return new BeaconBlockBodyFuzzInput(spec, state, beaconBlockBody);
   }
 }

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.slashingprotection;
 
+import static tech.pegasys.teku.infrastructure.time.SystemTimeProvider.SYSTEM_TIME_PROVIDER;
+
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -25,7 +27,6 @@ import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.util.SlashingProtectionCommandUtils;
 import tech.pegasys.teku.data.SlashingProtectionRepairer;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
-import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
@@ -115,7 +116,7 @@ public class RepairCommand implements Runnable {
   }
 
   private UInt64 getComputedSlot(final Optional<AnchorPoint> initialAnchor, final Spec spec) {
-    final TimeProvider timeProvider = new SystemTimeProvider();
+    final TimeProvider timeProvider = SYSTEM_TIME_PROVIDER;
     if (suppliedSlot != null) {
       displaySlotUpdateMessage(suppliedSlot, spec, "WARNING: using a supplied slot");
 

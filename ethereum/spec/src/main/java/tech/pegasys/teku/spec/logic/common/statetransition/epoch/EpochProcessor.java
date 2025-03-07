@@ -18,6 +18,7 @@ import java.util.function.Function;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
@@ -38,7 +39,7 @@ public interface EpochProcessor {
    * @see tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardsAndPenaltiesCalculator
    */
   default RewardAndPenaltyDeltas getRewardAndPenaltyDeltas(
-      BeaconState state, ValidatorStatuses validatorStatuses) {
+      final BeaconState state, final ValidatorStatuses validatorStatuses) {
     return getRewardAndPenaltyDeltas(
         state, validatorStatuses, RewardsAndPenaltiesCalculator::getDeltas);
   }
@@ -67,7 +68,7 @@ public interface EpochProcessor {
   BeaconState processEpoch(BeaconState preState) throws EpochProcessingException;
 
   default void initProgressiveTotalBalancesIfRequired(
-      BeaconState state, TotalBalances totalBalances) {}
+      final BeaconState state, final TotalBalances totalBalances) {}
 
   BlockCheckpoints calculateBlockCheckpoints(BeaconState state);
 
@@ -99,4 +100,10 @@ public interface EpochProcessor {
   void processHistoricalSummariesUpdate(MutableBeaconState state);
 
   void processSyncCommitteeUpdates(MutableBeaconState state);
+
+  void applyPendingDeposits(MutableBeaconState state, PendingDeposit deposit);
+
+  void processPendingDeposits(MutableBeaconState state);
+
+  void processPendingConsolidations(MutableBeaconState state);
 }

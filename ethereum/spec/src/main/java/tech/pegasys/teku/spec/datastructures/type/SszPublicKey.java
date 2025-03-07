@@ -24,17 +24,17 @@ public class SszPublicKey extends SszByteVectorImpl {
 
   private final Supplier<BLSPublicKey> publicKey;
 
-  public SszPublicKey(Bytes48 publicKeyBytes) {
+  public SszPublicKey(final Bytes48 publicKeyBytes) {
     super(SszPublicKeySchema.INSTANCE, publicKeyBytes);
     this.publicKey = Suppliers.memoize(this::createBLSPublicKey);
   }
 
-  public SszPublicKey(BLSPublicKey publicKey) {
+  public SszPublicKey(final BLSPublicKey publicKey) {
     super(SszPublicKeySchema.INSTANCE, publicKey.toBytesCompressed());
     this.publicKey = () -> publicKey;
   }
 
-  SszPublicKey(TreeNode backingNode) {
+  SszPublicKey(final TreeNode backingNode) {
     super(SszPublicKeySchema.INSTANCE, backingNode);
     this.publicKey = Suppliers.memoize(this::createBLSPublicKey);
   }

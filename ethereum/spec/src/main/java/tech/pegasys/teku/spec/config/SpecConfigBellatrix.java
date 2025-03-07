@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SpecConfigBellatrix extends SpecConfigAltair {
 
-  static SpecConfigBellatrix required(SpecConfig specConfig) {
+  static SpecConfigBellatrix required(final SpecConfig specConfig) {
     return specConfig
         .toVersionBellatrix()
         .orElseThrow(

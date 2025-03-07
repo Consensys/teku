@@ -113,7 +113,7 @@ public class SimpleOperationPool<T extends SszData> implements OperationPool<T> 
     validationReasonCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
-            OPERATION_POOL_SIZE_VALIDATION_REASON + metricType,
+            OPERATION_POOL_SIZE_VALIDATION_REASON + metricType + "_total",
             "Total number of attempts to add an operation to the pool, broken down by validation result",
             "result");
   }
@@ -188,7 +188,7 @@ public class SimpleOperationPool<T extends SszData> implements OperationPool<T> 
     return Collections.unmodifiableSet(operations);
   }
 
-  private SafeFuture<InternalValidationResult> add(T item, boolean fromNetwork) {
+  private SafeFuture<InternalValidationResult> add(final T item, final boolean fromNetwork) {
     return operationValidator
         .validateForGossip(item)
         .thenApply(

@@ -16,6 +16,7 @@ package tech.pegasys.teku.test.acceptance.dsl.tools;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Suppliers;
 import java.io.IOException;
 import java.net.URI;
@@ -33,7 +34,6 @@ import org.assertj.core.api.Assertions;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.test.acceptance.dsl.SimpleHttpClient;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
@@ -45,7 +45,7 @@ public class ValidatorKeysApi {
   private static final String REMOTE_KEYS_URL = "/eth/v1/remotekeys";
   public static final String VOLUNTARY_EXIT_URL = "/eth/v1/validator/{pubkey}/voluntary_exit";
 
-  private final JsonProvider jsonProvider = new JsonProvider();
+  private final ObjectMapper objectMapper = new ObjectMapper();
   private final SimpleHttpClient httpClient;
   private final Supplier<URI> validatorUri;
   private final Supplier<String> apiPasswordSupplier;
@@ -63,7 +63,7 @@ public class ValidatorKeysApi {
       final ValidatorKeystores validatorKeystores, final String expectedStatus) throws IOException {
     final Path tempDir = Files.createTempDirectory("validator-keys-api");
     final JsonNode addResult =
-        jsonProvider.getObjectMapper().readTree(addLocalValidators(validatorKeystores, tempDir));
+        objectMapper.readTree(addLocalValidators(validatorKeystores, tempDir));
     assertThat(addResult.get("data").size()).isEqualTo(validatorKeystores.getValidatorCount());
     checkStatus(addResult.get("data"), expectedStatus);
     tempDir.toFile().delete();
@@ -73,7 +73,7 @@ public class ValidatorKeysApi {
       final BLSPublicKey publicKey, final int validatorIndex) throws IOException {
     final UInt64 epoch = UInt64.ONE;
     final String value = getPostVoluntaryExitString(publicKey, Optional.of(epoch));
-    final JsonNode result = jsonProvider.getObjectMapper().readTree(value).get("data");
+    final JsonNode result = objectMapper.readTree(value).get("data");
     final JsonNode message = result.get("message");
     assertThat(message.get("epoch").asText()).isEqualTo(String.valueOf(epoch));
     assertThat(message.get("validator_index").asText()).isEqualTo(String.valueOf(validatorIndex));
@@ -105,21 +105,19 @@ public class ValidatorKeysApi {
   public void addRemoteValidatorsAndExpect(
       final List<BLSPublicKey> expectedKeys, final String signerUrl, final String expectedStatus)
       throws IOException {
-    final JsonNode addResult =
-        jsonProvider.getObjectMapper().readTree(addRemoteValidators(expectedKeys, signerUrl));
+    final JsonNode addResult = objectMapper.readTree(addRemoteValidators(expectedKeys, signerUrl));
     assertThat(addResult.get("data").size()).isEqualTo(expectedKeys.size());
     checkStatus(addResult.get("data"), expectedStatus);
   }
 
   public void removeLocalValidatorAndCheckStatus(
       final BLSPublicKey publicKey, final String expectedStatus) throws IOException {
-    final JsonNode removeResult =
-        jsonProvider.getObjectMapper().readTree(removeLocalValidator(publicKey));
+    final JsonNode removeResult = objectMapper.readTree(removeLocalValidator(publicKey));
     assertThat(removeResult.get("data").size()).isEqualTo(1);
     checkStatus(removeResult.get("data"), expectedStatus);
     if (expectedStatus.equals("deleted") || expectedStatus.equals("not_active")) {
       final JsonNode slashingProtection =
-          jsonProvider.getObjectMapper().readTree(removeResult.get("slashing_protection").asText());
+          objectMapper.readTree(removeResult.get("slashing_protection").asText());
       final JsonNode slashingData = slashingProtection.get("data");
       assertThat(slashingData.size()).isEqualTo(1);
       assertThat(slashingData.get(0).get("pubkey").asText()).isEqualTo(publicKey.toString());
@@ -128,15 +126,14 @@ public class ValidatorKeysApi {
 
   public void removeRemoteValidatorAndCheckStatus(
       final BLSPublicKey publicKey, final String expectedStatus) throws IOException {
-    final JsonNode removeResult =
-        jsonProvider.getObjectMapper().readTree(removeRemoteValidator(publicKey));
+    final JsonNode removeResult = objectMapper.readTree(removeRemoteValidator(publicKey));
     assertThat(removeResult.get("data").size()).isEqualTo(1);
     checkStatus(removeResult.get("data"), expectedStatus);
   }
 
   public void assertLocalValidatorListing(final List<BLSPublicKey> expectedKeys)
       throws IOException {
-    final JsonNode result = jsonProvider.getObjectMapper().readTree(getLocalValidatorListing());
+    final JsonNode result = objectMapper.readTree(getLocalValidatorListing());
     final JsonNode data = result.get("data");
     assertThat(data.isArray()).isTrue();
     final List<String> expectedKeyStrings =
@@ -154,7 +151,7 @@ public class ValidatorKeysApi {
 
   public void assertRemoteValidatorListing(final List<BLSPublicKey> expectedKeys)
       throws IOException {
-    final JsonNode result = jsonProvider.getObjectMapper().readTree(getRemoteValidatorListing());
+    final JsonNode result = objectMapper.readTree(getRemoteValidatorListing());
     final JsonNode data = result.get("data");
     assertThat(data.isArray()).isTrue();
     final List<String> expectedKeyStrings =
@@ -188,8 +185,7 @@ public class ValidatorKeysApi {
       final BLSPublicKey publicKey, final String expectedEthAddress) throws IOException {
 
     final String result =
-        jsonProvider
-            .getObjectMapper()
+        objectMapper
             .readTree(getLocalFeeRecipient(publicKey))
             .get("data")
             .get("ethaddress")
@@ -200,12 +196,7 @@ public class ValidatorKeysApi {
   public void assertValidatorGasLimit(final BLSPublicKey publicKey, final UInt64 expectedGasLimit)
       throws IOException {
     final String result =
-        jsonProvider
-            .getObjectMapper()
-            .readTree(getLocalGasLimit(publicKey))
-            .get("data")
-            .get("gas_limit")
-            .asText();
+        objectMapper.readTree(getLocalGasLimit(publicKey)).get("data").get("gas_limit").asText();
     final UInt64 gasLimit = UInt64.valueOf(result);
     assertThat(gasLimit).isEqualTo(expectedGasLimit);
   }
@@ -232,7 +223,7 @@ public class ValidatorKeysApi {
     final List<String> passwords = validatorKeystores.getPasswords();
 
     final String body =
-        jsonProvider.objectToJSON(Map.of("keystores", keystores, "passwords", passwords));
+        objectMapper.writeValueAsString(Map.of("keystores", keystores, "passwords", passwords));
 
     final String result = httpClient.post(validatorUri.get(), LOCAL_KEYS_URL, body, authHeaders());
     LOG.debug("POST Keys: " + result);
@@ -242,7 +233,8 @@ public class ValidatorKeysApi {
   private void addFeeRecipientToValidator(
       final BLSPublicKey publicKey, final Eth1Address feeRecipient) throws IOException {
 
-    final String body = jsonProvider.objectToJSON(Map.of("ethaddress", feeRecipient.toHexString()));
+    final String body =
+        objectMapper.writeValueAsString(Map.of("ethaddress", feeRecipient.toHexString()));
 
     final String result =
         httpClient.post(validatorUri.get(), getFeeRecipientUrl(publicKey), body, authHeaders());
@@ -252,7 +244,7 @@ public class ValidatorKeysApi {
   private void addGasLimitToValidator(final BLSPublicKey publicKey, final UInt64 gasLimit)
       throws IOException {
 
-    final String body = jsonProvider.objectToJSON(Map.of("gas_limit", gasLimit.toString()));
+    final String body = objectMapper.writeValueAsString(Map.of("gas_limit", gasLimit.toString()));
 
     final String result =
         httpClient.post(validatorUri.get(), getGasLimitUrl(publicKey), body, authHeaders());
@@ -263,10 +255,8 @@ public class ValidatorKeysApi {
       throws IOException {
 
     List<Map<String, String>> requestPayload =
-        publicKeys.stream()
-            .map(k -> remotePostRequestBody(k, signerUrl))
-            .collect(Collectors.toList());
-    final String body = jsonProvider.objectToJSON(Map.of("remote_keys", requestPayload));
+        publicKeys.stream().map(k -> remotePostRequestBody(k, signerUrl)).toList();
+    final String body = objectMapper.writeValueAsString(Map.of("remote_keys", requestPayload));
 
     final String result = httpClient.post(validatorUri.get(), REMOTE_KEYS_URL, body, authHeaders());
     LOG.debug("POST REMOTE Keys: " + result);
@@ -279,7 +269,8 @@ public class ValidatorKeysApi {
   }
 
   private String removeLocalValidator(final BLSPublicKey publicKey) throws IOException {
-    final String body = jsonProvider.objectToJSON(Map.of("pubkeys", List.of(publicKey.toString())));
+    final String body =
+        objectMapper.writeValueAsString(Map.of("pubkeys", List.of(publicKey.toString())));
     final String result =
         httpClient.delete(validatorUri.get(), LOCAL_KEYS_URL, body, authHeaders());
     LOG.debug("DELETE LOCAL Keys: " + result);
@@ -287,7 +278,8 @@ public class ValidatorKeysApi {
   }
 
   private String removeRemoteValidator(final BLSPublicKey publicKey) throws IOException {
-    final String body = jsonProvider.objectToJSON(Map.of("pubkeys", List.of(publicKey.toString())));
+    final String body =
+        objectMapper.writeValueAsString(Map.of("pubkeys", List.of(publicKey.toString())));
     final String result =
         httpClient.delete(validatorUri.get(), REMOTE_KEYS_URL, body, authHeaders());
     LOG.debug("DELETE REMOTE Keys: " + result);

@@ -32,13 +32,13 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class TestSpecInvocationContextProvider implements TestTemplateInvocationContextProvider {
 
   @Override
-  public boolean supportsTestTemplate(ExtensionContext extensionContext) {
+  public boolean supportsTestTemplate(final ExtensionContext extensionContext) {
     return true;
   }
 
   @Override
   public Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(
-      ExtensionContext extensionContext) {
+      final ExtensionContext extensionContext) {
 
     Class<?> clazz = extensionContext.getRequiredTestClass();
     TestSpecContext testSpecContext = clazz.getAnnotation(TestSpecContext.class);
@@ -74,10 +74,10 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
     return invocations.stream();
   }
 
-  private TestTemplateInvocationContext generateContext(SpecContext specContext) {
+  private TestTemplateInvocationContext generateContext(final SpecContext specContext) {
     return new TestTemplateInvocationContext() {
       @Override
-      public String getDisplayName(int invocationIndex) {
+      public String getDisplayName(final int invocationIndex) {
         return specContext.getDisplayName();
       }
 
@@ -97,7 +97,10 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
     private final SpecMilestone specMilestone;
     private final Eth2Network network;
 
-    SpecContext(SpecMilestone specMilestone, Eth2Network network, boolean doNotGenerateSpec) {
+    SpecContext(
+        final SpecMilestone specMilestone,
+        final Eth2Network network,
+        final boolean doNotGenerateSpec) {
       if (doNotGenerateSpec) {
         spec = null;
         dataStructureUtil = null;
@@ -136,24 +139,28 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
       return network;
     }
 
-    public void assumeIsOneOf(SpecMilestone... milestones) {
+    public void assumeIsOneOf(final SpecMilestone... milestones) {
       Assumptions.assumeTrue(List.of(milestones).contains(specMilestone), "Milestone skipped");
     }
 
-    public void assumeIsOneOf(Eth2Network... networks) {
+    public void assumeIsOneOf(final Eth2Network... networks) {
       Assumptions.assumeTrue(List.of(networks).contains(network), "Network skipped");
     }
 
-    public void assumeIsNotOneOf(SpecMilestone... milestones) {
+    public void assumeIsNotOneOf(final SpecMilestone... milestones) {
       Assumptions.assumeFalse(List.of(milestones).contains(specMilestone), "Milestone skipped");
     }
 
-    public void assumeIsNotOneOf(Eth2Network... networks) {
+    public void assumeIsNotOneOf(final Eth2Network... networks) {
       Assumptions.assumeFalse(List.of(networks).contains(network), "Network skipped");
     }
 
-    public void assumeMilestoneActive(SpecMilestone milestone) {
+    public void assumeMilestoneActive(final SpecMilestone milestone) {
       Assumptions.assumeTrue(specMilestone.isGreaterThanOrEqualTo(milestone), "Milestone skipped");
+    }
+
+    public void assumeElectraActive() {
+      assumeMilestoneActive(SpecMilestone.ELECTRA);
     }
 
     public void assumeDenebActive() {
@@ -176,20 +183,20 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
   public static class SpecContextParameterResolver<T> implements ParameterResolver {
     T data;
 
-    public SpecContextParameterResolver(T data) {
+    public SpecContextParameterResolver(final T data) {
       this.data = data;
     }
 
     @Override
     public boolean supportsParameter(
-        ParameterContext parameterContext, ExtensionContext extensionContext)
+        final ParameterContext parameterContext, final ExtensionContext extensionContext)
         throws ParameterResolutionException {
       return parameterContext.getParameter().getType().isInstance(data);
     }
 
     @Override
     public Object resolveParameter(
-        ParameterContext parameterContext, ExtensionContext extensionContext)
+        final ParameterContext parameterContext, final ExtensionContext extensionContext)
         throws ParameterResolutionException {
       return data;
     }

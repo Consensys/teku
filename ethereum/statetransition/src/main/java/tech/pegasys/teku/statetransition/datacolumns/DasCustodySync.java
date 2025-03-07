@@ -31,14 +31,14 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 
 public class DasCustodySync implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger("das-nyota");
 
-  private final UpdatableDataColumnSidecarCustody custody;
+  private final DataColumnSidecarCustody custody;
   private final DataColumnSidecarRetriever retriever;
   private final int maxPendingColumnRequests;
   private final int minPendingColumnRequests;
@@ -51,10 +51,10 @@ public class DasCustodySync implements SlotEventsChannel {
   private final AtomicLong syncedColumnCount = new AtomicLong();
 
   public DasCustodySync(
-      UpdatableDataColumnSidecarCustody custody,
-      DataColumnSidecarRetriever retriever,
-      int maxPendingColumnRequests,
-      int minPendingColumnRequests) {
+      final DataColumnSidecarCustody custody,
+      final DataColumnSidecarRetriever retriever,
+      final int maxPendingColumnRequests,
+      final int minPendingColumnRequests) {
     this.custody = custody;
     this.retriever = retriever;
     this.maxPendingColumnRequests = maxPendingColumnRequests;
@@ -62,11 +62,11 @@ public class DasCustodySync implements SlotEventsChannel {
   }
 
   public DasCustodySync(
-      UpdatableDataColumnSidecarCustody custody, DataColumnSidecarRetriever retriever) {
+      final DataColumnSidecarCustody custody, final DataColumnSidecarRetriever retriever) {
     this(custody, retriever, 10 * 1024, 2 * 1024);
   }
 
-  private void onRequestComplete(PendingRequest request, DataColumnSidecar response) {
+  private void onRequestComplete(final PendingRequest request, final DataColumnSidecar response) {
     custody
         .onNewValidatedDataColumnSidecar(response)
         .thenRun(
@@ -80,13 +80,14 @@ public class DasCustodySync implements SlotEventsChannel {
         .ifExceptionGetsHereRaiseABug();
   }
 
-  private boolean wasCancelledImplicitly(Throwable exception) {
+  private boolean wasCancelledImplicitly(final Throwable exception) {
     return exception instanceof CancellationException
         || (exception instanceof CompletionException
             && exception.getCause() instanceof CancellationException);
   }
 
-  private synchronized void onRequestException(PendingRequest request, Throwable exception) {
+  private synchronized void onRequestException(
+      final PendingRequest request, final Throwable exception) {
     if (wasCancelledImplicitly(exception)) {
       // request was cancelled explicitly here
     } else {
@@ -116,22 +117,22 @@ public class DasCustodySync implements SlotEventsChannel {
                 coolDownTillNextSlot = true;
               }
 
-              Set<DataColumnSlotAndIdentifier> missingColumnsToRequest =
+              final Set<DataColumnSlotAndIdentifier> missingColumnsToRequest =
                   missingColumns.stream()
                       .filter(columnSlotId -> !pendingRequests.containsKey(columnSlotId))
                       .collect(Collectors.toSet());
 
-              Collection<PendingRequest> pendingRequestsToCancel =
+              final Collection<PendingRequest> pendingRequestsToCancel =
                   removeNotMissingPendingRequests(missingColumns);
               pendingRequestsToCancel.forEach(
                   pendingRequest -> pendingRequest.columnPromise().cancel(true));
 
-              for (DataColumnSlotAndIdentifier missingColumn : missingColumnsToRequest) {
+              for (final DataColumnSlotAndIdentifier missingColumn : missingColumnsToRequest) {
                 addPendingRequest(missingColumn);
               }
 
               {
-                Set<UInt64> missingSlots =
+                final Set<UInt64> missingSlots =
                     missingColumnsToRequest.stream()
                         .map(DataColumnSlotAndIdentifier::slot)
                         .collect(Collectors.toSet());
@@ -159,7 +160,7 @@ public class DasCustodySync implements SlotEventsChannel {
   }
 
   private synchronized Collection<PendingRequest> removeNotMissingPendingRequests(
-      Set<DataColumnSlotAndIdentifier> missingColumns) {
+      final Set<DataColumnSlotAndIdentifier> missingColumns) {
     return removeIf(pendingRequests, id -> !missingColumns.contains(id));
   }
 
@@ -170,14 +171,14 @@ public class DasCustodySync implements SlotEventsChannel {
 
   public synchronized void stop() {
     started = false;
-    for (PendingRequest request : pendingRequests.values()) {
+    for (final PendingRequest request : pendingRequests.values()) {
       request.columnPromise.cancel(true);
     }
     pendingRequests.clear();
   }
 
   @Override
-  public void onSlot(UInt64 slot) {
+  public void onSlot(final UInt64 slot) {
     coolDownTillNextSlot = false;
     fillUpIfNeeded();
   }
@@ -185,11 +186,11 @@ public class DasCustodySync implements SlotEventsChannel {
   private record PendingRequest(
       DataColumnSlotAndIdentifier columnId, SafeFuture<DataColumnSidecar> columnPromise) {}
 
-  private static <K, V> List<V> removeIf(Map<K, V> map, Predicate<K> removeFilter) {
-    ArrayList<V> removedValues = new ArrayList<>();
-    Iterator<Map.Entry<K, V>> iterator = map.entrySet().iterator();
+  private static <K, V> List<V> removeIf(final Map<K, V> map, final Predicate<K> removeFilter) {
+    final ArrayList<V> removedValues = new ArrayList<>();
+    final Iterator<Map.Entry<K, V>> iterator = map.entrySet().iterator();
     while (iterator.hasNext()) {
-      Map.Entry<K, V> entry = iterator.next();
+      final Map.Entry<K, V> entry = iterator.next();
       if (removeFilter.test(entry.getKey())) {
         removedValues.add(entry.getValue());
         iterator.remove();

@@ -28,7 +28,8 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigEip7594;
+import tech.pegasys.teku.spec.config.SpecConfigAndParent;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigPhase0;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
@@ -130,14 +131,16 @@ public class SpecConfigBuilder {
 
   private Integer reorgParentWeightThreshold = 160;
 
-  private final BuilderChain<SpecConfig, SpecConfigEip7594> builderChain =
+  private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
+  private final BuilderChain<SpecConfig, SpecConfigFulu> builderChain =
       BuilderChain.create(new AltairBuilder())
           .appendBuilder(new BellatrixBuilder())
           .appendBuilder(new CapellaBuilder())
           .appendBuilder(new DenebBuilder())
-          .appendBuilder(new Eip7594Builder());
+          .appendBuilder(new ElectraBuilder())
+          .appendBuilder(new FuluBuilder());
 
-  public SpecConfig build() {
+  public SpecConfigAndParent<SpecConfigFulu> build() {
     builderChain.addOverridableItemsToRawConfig(
         (key, value) -> {
           if (value != null) {
@@ -145,76 +148,78 @@ public class SpecConfigBuilder {
           }
         });
     validate();
-    final SpecConfig config =
-        new SpecConfigPhase0(
-            rawConfig,
-            eth1FollowDistance,
-            maxCommitteesPerSlot,
-            targetCommitteeSize,
-            maxValidatorsPerCommittee,
-            minPerEpochChurnLimit,
-            churnLimitQuotient,
-            shuffleRoundCount,
-            minGenesisActiveValidatorCount,
-            minGenesisTime,
-            hysteresisQuotient,
-            hysteresisDownwardMultiplier,
-            hysteresisUpwardMultiplier,
-            proportionalSlashingMultiplier,
-            minDepositAmount,
-            maxEffectiveBalance,
-            ejectionBalance,
-            effectiveBalanceIncrement,
-            genesisForkVersion,
-            genesisDelay,
-            secondsPerSlot,
-            minAttestationInclusionDelay,
-            slotsPerEpoch,
-            minSeedLookahead,
-            maxSeedLookahead,
-            minEpochsToInactivityPenalty,
-            epochsPerEth1VotingPeriod,
-            slotsPerHistoricalRoot,
-            minValidatorWithdrawabilityDelay,
-            shardCommitteePeriod,
-            epochsPerHistoricalVector,
-            epochsPerSlashingsVector,
-            historicalRootsLimit,
-            validatorRegistryLimit,
-            baseRewardFactor,
-            whistleblowerRewardQuotient,
-            proposerRewardQuotient,
-            inactivityPenaltyQuotient,
-            minSlashingPenaltyQuotient,
-            maxProposerSlashings,
-            maxAttesterSlashings,
-            maxAttestations,
-            maxDeposits,
-            maxVoluntaryExits,
-            secondsPerEth1Block,
-            safeSlotsToUpdateJustified,
-            proposerScoreBoost,
-            depositChainId,
-            depositNetworkId,
-            depositContractAddress,
-            gossipMaxSize,
-            maxChunkSize,
-            maxRequestBlocks,
-            epochsPerSubnetSubscription,
-            minEpochsForBlockRequests,
-            ttfbTimeout,
-            respTimeout,
-            attestationPropagationSlotRange,
-            maximumGossipClockDisparity,
-            messageDomainInvalidSnappy,
-            messageDomainValidSnappy,
-            subnetsPerNode,
-            attestationSubnetCount,
-            attestationSubnetExtraBits,
-            attestationSubnetPrefixBits,
-            reorgMaxEpochsSinceFinalization,
-            reorgHeadWeightThreshold,
-            reorgParentWeightThreshold);
+    final SpecConfigAndParent<SpecConfig> config =
+        SpecConfigAndParent.of(
+            new SpecConfigPhase0(
+                rawConfig,
+                eth1FollowDistance,
+                maxCommitteesPerSlot,
+                targetCommitteeSize,
+                maxValidatorsPerCommittee,
+                minPerEpochChurnLimit,
+                churnLimitQuotient,
+                shuffleRoundCount,
+                minGenesisActiveValidatorCount,
+                minGenesisTime,
+                hysteresisQuotient,
+                hysteresisDownwardMultiplier,
+                hysteresisUpwardMultiplier,
+                proportionalSlashingMultiplier,
+                minDepositAmount,
+                maxEffectiveBalance,
+                ejectionBalance,
+                effectiveBalanceIncrement,
+                genesisForkVersion,
+                genesisDelay,
+                secondsPerSlot,
+                minAttestationInclusionDelay,
+                slotsPerEpoch,
+                minSeedLookahead,
+                maxSeedLookahead,
+                minEpochsToInactivityPenalty,
+                epochsPerEth1VotingPeriod,
+                slotsPerHistoricalRoot,
+                minValidatorWithdrawabilityDelay,
+                shardCommitteePeriod,
+                epochsPerHistoricalVector,
+                epochsPerSlashingsVector,
+                historicalRootsLimit,
+                validatorRegistryLimit,
+                baseRewardFactor,
+                whistleblowerRewardQuotient,
+                proposerRewardQuotient,
+                inactivityPenaltyQuotient,
+                minSlashingPenaltyQuotient,
+                maxProposerSlashings,
+                maxAttesterSlashings,
+                maxAttestations,
+                maxDeposits,
+                maxVoluntaryExits,
+                secondsPerEth1Block,
+                safeSlotsToUpdateJustified,
+                proposerScoreBoost,
+                depositChainId,
+                depositNetworkId,
+                depositContractAddress,
+                gossipMaxSize,
+                maxChunkSize,
+                maxRequestBlocks,
+                epochsPerSubnetSubscription,
+                minEpochsForBlockRequests,
+                ttfbTimeout,
+                respTimeout,
+                attestationPropagationSlotRange,
+                maximumGossipClockDisparity,
+                messageDomainInvalidSnappy,
+                messageDomainValidSnappy,
+                subnetsPerNode,
+                attestationSubnetCount,
+                attestationSubnetExtraBits,
+                attestationSubnetPrefixBits,
+                reorgMaxEpochsSinceFinalization,
+                reorgHeadWeightThreshold,
+                reorgParentWeightThreshold,
+                maxPerEpochActivationExitChurnLimit));
 
     return builderChain.build(config);
   }
@@ -537,6 +542,13 @@ public class SpecConfigBuilder {
     return this;
   }
 
+  public SpecConfigBuilder maxPerEpochActivationExitChurnLimit(
+      final UInt64 maxPerEpochActivationExitChurnLimit) {
+    checkNotNull(maxPerEpochActivationExitChurnLimit);
+    this.maxPerEpochActivationExitChurnLimit = maxPerEpochActivationExitChurnLimit;
+    return this;
+  }
+
   public SpecConfigBuilder inactivityPenaltyQuotient(final UInt64 inactivityPenaltyQuotient) {
     checkNotNull(inactivityPenaltyQuotient);
     this.inactivityPenaltyQuotient = inactivityPenaltyQuotient;
@@ -727,8 +739,13 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder eip7594Builder(final Consumer<Eip7594Builder> consumer) {
-    builderChain.withBuilder(Eip7594Builder.class, consumer);
+  public SpecConfigBuilder electraBuilder(final Consumer<ElectraBuilder> consumer) {
+    builderChain.withBuilder(ElectraBuilder.class, consumer);
+    return this;
+  }
+
+  public SpecConfigBuilder fuluBuilder(final Consumer<FuluBuilder> consumer) {
+    builderChain.withBuilder(FuluBuilder.class, consumer);
     return this;
   }
 }

@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutablePrimitiveVector;
@@ -30,18 +31,28 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvector {
 
-  public static SszBitvectorImpl ofBits(SszBitvectorSchema<?> schema, int... bits) {
+  public static SszBitvectorImpl ofBits(final SszBitvectorSchema<?> schema, final int... bits) {
     return new SszBitvectorImpl(schema, new BitvectorImpl(schema.getLength(), bits));
+  }
+
+  public static SszBitvector fromBytes(
+      final SszBitvectorSchema<?> schema, final Bytes value, final int size) {
+    return new SszBitvectorImpl(schema, BitvectorImpl.fromBytes(value, size));
+  }
+
+  public static SszBitvector fromHexString(
+      final SszBitvectorSchema<?> schema, final String hexString, final int size) {
+    return fromBytes(schema, Bytes.fromHexString(hexString), size);
   }
 
   private final BitvectorImpl value;
 
-  public SszBitvectorImpl(SszVectorSchema<SszBit, ?> schema, TreeNode backingNode) {
+  public SszBitvectorImpl(final SszVectorSchema<SszBit, ?> schema, final TreeNode backingNode) {
     super(schema, backingNode);
     value = BitvectorImpl.fromBytes(sszSerialize(), size());
   }
 
-  public SszBitvectorImpl(SszBitvectorSchema<?> schema, BitvectorImpl value) {
+  public SszBitvectorImpl(final SszBitvectorSchema<?> schema, final BitvectorImpl value) {
     super(schema, () -> schema.sszDeserializeTree(SszReader.fromBytes(value.serialize())));
     checkNotNull(value);
     this.value = value;
@@ -60,7 +71,7 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
   }
 
   @Override
-  public boolean getBit(int i) {
+  public boolean getBit(final int i) {
     return value.getBit(i);
   }
 
@@ -70,7 +81,7 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
   }
 
   @Override
-  public SszBitvector rightShift(int n) {
+  public SszBitvector rightShift(final int n) {
     return new SszBitvectorImpl(getSchema(), value.rightShift(n));
   }
 
@@ -80,13 +91,28 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
   }
 
   @Override
+  public int getLastSetBitIndex() {
+    return value.getLastSetBitIndex();
+  }
+
+  @Override
   public IntStream streamAllSetBits() {
     return value.streamAllSetBits();
   }
 
   @Override
-  public SszBitvector withBit(int i) {
+  public SszBitvector withBit(final int i) {
     return new SszBitvectorImpl(getSchema(), value.withBit(i));
+  }
+
+  @Override
+  public SszBitvector or(final SszBitvector other) {
+    return new SszBitvectorImpl(getSchema(), value.or(toBitvectorImpl(other)));
+  }
+
+  @Override
+  public SszBitvector and(final SszBitvector other) {
+    return new SszBitvectorImpl(getSchema(), value.and(toBitvectorImpl(other)));
   }
 
   @Override
@@ -107,5 +133,9 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
   @Override
   public String toString() {
     return "SszBitvector{size=" + this.size() + ", " + value.toString() + "}";
+  }
+
+  private BitvectorImpl toBitvectorImpl(final SszBitvector bv) {
+    return ((SszBitvectorImpl) bv).value;
   }
 }

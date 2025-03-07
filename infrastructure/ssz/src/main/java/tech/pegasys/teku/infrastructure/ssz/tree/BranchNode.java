@@ -34,7 +34,7 @@ public interface BranchNode extends TreeNode {
    * @param left Non-null left child
    * @param right Non-null right child
    */
-  static BranchNode create(TreeNode left, TreeNode right) {
+  static BranchNode create(final TreeNode left, final TreeNode right) {
     checkNotNull(left);
     checkNotNull(right);
     return new SimpleBranchNode(left, right);
@@ -69,7 +69,7 @@ public interface BranchNode extends TreeNode {
 
   @NotNull
   @Override
-  default TreeNode get(long target) {
+  default TreeNode get(final long target) {
     checkArgument(target >= 1, "Invalid index: %s", target);
     if (GIndexUtil.gIdxIsSelf(target)) {
       return this;
@@ -83,7 +83,9 @@ public interface BranchNode extends TreeNode {
 
   @Override
   default boolean iterate(
-      long thisGeneralizedIndex, long startGeneralizedIndex, TreeVisitor visitor) {
+      final long thisGeneralizedIndex,
+      final long startGeneralizedIndex,
+      final TreeVisitor visitor) {
 
     if (GIndexUtil.gIdxCompare(thisGeneralizedIndex, startGeneralizedIndex) == NodeRelation.LEFT) {
       return true;
@@ -99,7 +101,7 @@ public interface BranchNode extends TreeNode {
   }
 
   @Override
-  default TreeNode updated(long target, Function<TreeNode, TreeNode> nodeUpdater) {
+  default TreeNode updated(final long target, final Function<TreeNode, TreeNode> nodeUpdater) {
     if (GIndexUtil.gIdxIsSelf(target)) {
       return nodeUpdater.apply(this);
     } else {

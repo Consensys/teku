@@ -35,16 +35,17 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 
 public class GetBlockAttestations extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/blocks/{block_id}/attestations";
   private final ChainDataProvider chainDataProvider;
 
-  public GetBlockAttestations(final DataProvider dataProvider, Spec spec) {
+  public GetBlockAttestations(final DataProvider dataProvider, final Spec spec) {
     this(dataProvider.getChainDataProvider(), spec);
   }
 
-  public GetBlockAttestations(final ChainDataProvider chainDataProvider, Spec spec) {
+  public GetBlockAttestations(final ChainDataProvider chainDataProvider, final Spec spec) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getBlockAttestations")
@@ -54,12 +55,14 @@ public class GetBlockAttestations extends RestApiEndpoint {
             .pathParam(PARAMETER_BLOCK_ID)
             .response(SC_OK, "Request successful", getResponseType(spec))
             .withNotFoundResponse()
+            .withChainDataResponses()
+            .deprecated(true)
             .build());
     this.chainDataProvider = chainDataProvider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final SafeFuture<Optional<ObjectAndMetaData<List<Attestation>>>> future =
         chainDataProvider.getBlockAttestations(request.getPathParameter(PARAMETER_BLOCK_ID));
 
@@ -72,15 +75,18 @@ public class GetBlockAttestations extends RestApiEndpoint {
   }
 
   private static SerializableTypeDefinition<ObjectAndMetaData<List<Attestation>>> getResponseType(
-      Spec spec) {
-    Attestation.AttestationSchema dataSchema =
-        new Attestation.AttestationSchema(spec.getGenesisSpecConfig());
+      final Spec spec) {
+    final AttestationSchema<?> dataSchema =
+        spec.getGenesisSchemaDefinitions().getAttestationSchema();
 
     return SerializableTypeDefinition.<ObjectAndMetaData<List<Attestation>>>object()
         .name("GetBlockAttestationsResponse")
         .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
         .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
-        .withField("data", listOf(dataSchema.getJsonTypeDefinition()), ObjectAndMetaData::getData)
+        .withField(
+            "data",
+            listOf(dataSchema.castTypeToAttestationSchema().getJsonTypeDefinition()),
+            ObjectAndMetaData::getData)
         .build();
   }
 }

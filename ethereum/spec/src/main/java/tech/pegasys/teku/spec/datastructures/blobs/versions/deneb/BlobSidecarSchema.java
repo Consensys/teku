@@ -143,7 +143,7 @@ public class BlobSidecarSchema
   }
 
   @Override
-  public BlobSidecar createFromBackingNode(TreeNode node) {
+  public BlobSidecar createFromBackingNode(final TreeNode node) {
     return new BlobSidecar(this, node);
   }
 }

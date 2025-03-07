@@ -149,7 +149,7 @@ public class LoggingOptions {
       arity = "1")
   private int dbOpAlertThresholdMillis = LoggingConfig.DEFAULT_DB_OP_ALERT_THRESHOLD_MILLIS;
 
-  private boolean containsPath(String file) {
+  private boolean containsPath(final String file) {
     return file.contains(LINUX_SEP) || file.contains(WINDOWS_SEP);
   }
 

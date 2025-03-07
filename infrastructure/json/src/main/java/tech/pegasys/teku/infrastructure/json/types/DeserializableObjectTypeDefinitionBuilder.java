@@ -50,7 +50,7 @@ public class DeserializableObjectTypeDefinitionBuilder<TObject, TBuilder> {
   }
 
   public DeserializableObjectTypeDefinitionBuilder<TObject, TBuilder> initializer(
-      Supplier<TBuilder> initializer) {
+      final Supplier<TBuilder> initializer) {
     this.initializer = initializer;
     return this;
   }

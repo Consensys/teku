@@ -30,16 +30,16 @@ public abstract class AbstractMonitorableEth1Provider implements MonitorableEth1
   protected Result lastCallResult = Result.FAILED;
   protected Result lastValidationResult = Result.FAILED;
 
-  protected AbstractMonitorableEth1Provider(TimeProvider timeProvider) {
+  protected AbstractMonitorableEth1Provider(final TimeProvider timeProvider) {
     this.timeProvider = timeProvider;
   }
 
-  protected synchronized void updateLastValidation(Result result) {
+  protected synchronized void updateLastValidation(final Result result) {
     lastValidationTime = timeProvider.getTimeInSeconds();
     lastValidationResult = result;
   }
 
-  protected synchronized void updateLastCall(Result result) {
+  protected synchronized void updateLastCall(final Result result) {
     lastCallTime = timeProvider.getTimeInSeconds();
     lastCallResult = result;
   }

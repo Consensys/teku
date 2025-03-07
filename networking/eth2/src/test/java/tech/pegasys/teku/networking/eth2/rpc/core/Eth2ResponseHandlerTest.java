@@ -192,14 +192,14 @@ public class Eth2ResponseHandlerTest {
         .hasMessageContaining("Received multiple responses when single response expected");
   }
 
-  private void assertFailedWithDefaultError(Eth2RpcResponseHandler<?, ?> handler) {
+  private void assertFailedWithDefaultError(final Eth2RpcResponseHandler<?, ?> handler) {
     AssertionsForClassTypes.assertThat(handler.getCompletedFuture()).isCompletedExceptionally();
     AssertionsForClassTypes.assertThat(handler.getResult()).isCompletedExceptionally();
     assertThatThrownBy(() -> handler.getCompletedFuture().get()).hasCause(error);
     assertThatThrownBy(() -> handler.getResult().get()).hasCause(error);
   }
 
-  private void assertNotDone(Eth2RpcResponseHandler<?, ?> handler) {
+  private void assertNotDone(final Eth2RpcResponseHandler<?, ?> handler) {
     assertThat(handler.getCompletedFuture()).isNotDone();
     assertThat(handler.getResult()).isNotDone();
   }

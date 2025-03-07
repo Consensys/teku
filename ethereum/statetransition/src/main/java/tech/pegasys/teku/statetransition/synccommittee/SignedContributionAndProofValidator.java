@@ -153,7 +153,7 @@ public class SignedContributionAndProofValidator {
 
   @FormatMethod
   private SafeFuture<InternalValidationResult> futureFailureResult(
-      final String message, Object... args) {
+      final String message, final Object... args) {
     return SafeFuture.completedFuture(reject(message, args));
   }
 
@@ -311,7 +311,8 @@ public class SignedContributionAndProofValidator {
   }
 
   private SourceUniquenessKey getUniquenessKey(
-      final ContributionAndProof contributionAndProof, SyncCommitteeContribution contribution) {
+      final ContributionAndProof contributionAndProof,
+      final SyncCommitteeContribution contribution) {
     return new SourceUniquenessKey(
         contributionAndProof.getAggregatorIndex(),
         contribution.getSlot(),

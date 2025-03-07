@@ -26,7 +26,7 @@ class SimpleLeafNode implements LeafNode, TreeNode {
   private final Bytes data;
   private volatile Bytes32 cachedHash;
 
-  public SimpleLeafNode(Bytes data) {
+  public SimpleLeafNode(final Bytes data) {
     checkArgument(data.size() <= MAX_BYTE_SIZE);
     if (data.size() == MAX_BYTE_SIZE) {
       // if data is Bytes32, it will pass throw with no object creation
@@ -77,7 +77,7 @@ class SimpleLeafNode implements LeafNode, TreeNode {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

@@ -57,6 +57,10 @@ public class Validator {
     return readOnly;
   }
 
+  public GraffitiProvider getGraffitiProvider() {
+    return graffitiProvider;
+  }
+
   @Override
   public String toString() {
     return "Validator{" + "publicKey=" + publicKey + '}';

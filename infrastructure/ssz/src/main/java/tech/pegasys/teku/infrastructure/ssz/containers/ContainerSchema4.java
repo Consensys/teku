@@ -37,34 +37,34 @@ public abstract class ContainerSchema4<
           V2 extends SszData,
           V3 extends SszData>
       ContainerSchema4<C, V0, V1, V2, V3> create(
-          SszSchema<V0> fieldSchema0,
-          SszSchema<V1> fieldSchema1,
-          SszSchema<V2> fieldSchema2,
-          SszSchema<V3> fieldSchema3,
-          BiFunction<ContainerSchema4<C, V0, V1, V2, V3>, TreeNode, C> instanceCtor) {
+          final SszSchema<V0> fieldSchema0,
+          final SszSchema<V1> fieldSchema1,
+          final SszSchema<V2> fieldSchema2,
+          final SszSchema<V3> fieldSchema3,
+          final BiFunction<ContainerSchema4<C, V0, V1, V2, V3>, TreeNode, C> instanceCtor) {
     return new ContainerSchema4<>(fieldSchema0, fieldSchema1, fieldSchema2, fieldSchema3) {
       @Override
-      public C createFromBackingNode(TreeNode node) {
+      public C createFromBackingNode(final TreeNode node) {
         return instanceCtor.apply(this, node);
       }
     };
   }
 
   protected ContainerSchema4(
-      SszSchema<V0> fieldSchema0,
-      SszSchema<V1> fieldSchema1,
-      SszSchema<V2> fieldSchema2,
-      SszSchema<V3> fieldSchema3) {
+      final SszSchema<V0> fieldSchema0,
+      final SszSchema<V1> fieldSchema1,
+      final SszSchema<V2> fieldSchema2,
+      final SszSchema<V3> fieldSchema3) {
 
     super(List.of(fieldSchema0, fieldSchema1, fieldSchema2, fieldSchema3));
   }
 
   protected ContainerSchema4(
-      String containerName,
-      NamedSchema<V0> fieldNamedSchema0,
-      NamedSchema<V1> fieldNamedSchema1,
-      NamedSchema<V2> fieldNamedSchema2,
-      NamedSchema<V3> fieldNamedSchema3) {
+      final String containerName,
+      final NamedSchema<V0> fieldNamedSchema0,
+      final NamedSchema<V1> fieldNamedSchema1,
+      final NamedSchema<V2> fieldNamedSchema2,
+      final NamedSchema<V3> fieldNamedSchema3) {
 
     super(
         containerName,

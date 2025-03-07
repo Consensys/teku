@@ -26,18 +26,19 @@ public class ExternalValidator {
 
   public ExternalValidator() {}
 
-  public ExternalValidator(BLSPublicKey publicKey, Optional<URL> url) {
+  public ExternalValidator(final BLSPublicKey publicKey, final Optional<URL> url) {
     this.publicKey = publicKey;
     this.url = url;
   }
 
-  public ExternalValidator(BLSPublicKey publicKey, Optional<URL> url, boolean readOnly) {
+  public ExternalValidator(
+      final BLSPublicKey publicKey, final Optional<URL> url, final boolean readOnly) {
     this.publicKey = publicKey;
     this.url = url;
     this.readOnly = readOnly;
   }
 
-  public static ExternalValidator create(Validator validator) {
+  public static ExternalValidator create(final Validator validator) {
     return new ExternalValidator(
         validator.getPublicKey(),
         validator.getSigner().getSigningServiceUrl(),
@@ -48,7 +49,7 @@ public class ExternalValidator {
     return publicKey;
   }
 
-  public void setPublicKey(BLSPublicKey publicKey) {
+  public void setPublicKey(final BLSPublicKey publicKey) {
     this.publicKey = publicKey;
   }
 
@@ -56,7 +57,7 @@ public class ExternalValidator {
     return url;
   }
 
-  public void setUrl(Optional<URL> url) {
+  public void setUrl(final Optional<URL> url) {
     this.url = url;
   }
 
@@ -64,12 +65,12 @@ public class ExternalValidator {
     return readOnly;
   }
 
-  public void setReadOnly(boolean readOnly) {
+  public void setReadOnly(final boolean readOnly) {
     this.readOnly = readOnly;
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

@@ -182,7 +182,8 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
         spec,
         validatorConfig.isValidatorClientUseSszBlocksEnabled(),
         validatorConfig.isValidatorClientUsePostValidatorsEndpointEnabled(),
-        asyncRunner);
+        asyncRunner,
+        validatorConfig.isAttestationsV2ApisEnabled());
   }
 
   private static List<? extends RemoteValidatorApiChannel> createFailoverValidatorApiChannel(
@@ -201,7 +202,8 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
                         spec,
                         validatorConfig.isValidatorClientUseSszBlocksEnabled(),
                         validatorConfig.isValidatorClientUsePostValidatorsEndpointEnabled(),
-                        asyncRunner))
+                        asyncRunner,
+                        validatorConfig.isAttestationsV2ApisEnabled()))
             .toList();
 
     if (!remoteBeaconNodeEndpoints.getFailoverEndpoints().isEmpty()) {

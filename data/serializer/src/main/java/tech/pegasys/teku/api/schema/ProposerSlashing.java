@@ -23,7 +23,7 @@ public class ProposerSlashing {
   public final SignedBeaconBlockHeader signed_header_2;
 
   public ProposerSlashing(
-      tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing proposerSlashing) {
+      final tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing proposerSlashing) {
     signed_header_1 = new SignedBeaconBlockHeader(proposerSlashing.getHeader1());
     signed_header_2 = new SignedBeaconBlockHeader(proposerSlashing.getHeader2());
   }
@@ -44,7 +44,7 @@ public class ProposerSlashing {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

@@ -166,7 +166,7 @@ public class EraFile {
   }
 
   private void verifyBlocksWithReferenceState(
-      BeaconState verifiedState, final SignedBeaconBlock previousArchiveLastBlock)
+      final BeaconState verifiedState, final SignedBeaconBlock previousArchiveLastBlock)
       throws IOException {
     currentSlot = blockIndices.getStartSlot();
     Bytes32 lastRoot = Bytes32.ZERO;

@@ -114,7 +114,7 @@ public class BeaconStateCapella extends BeaconStateAltair {
     this.historicalSummaries = historicalSummaries;
   }
 
-  public BeaconStateCapella(BeaconState beaconState) {
+  public BeaconStateCapella(final BeaconState beaconState) {
     super(beaconState);
     final tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella
             .BeaconStateCapella
@@ -151,13 +151,13 @@ public class BeaconStateCapella extends BeaconStateAltair {
 
   protected static void applyCapellaFields(
       final SpecVersion specVersion,
-      MutableBeaconStateCapella state,
-      SyncCommitteeSchema syncCommitteeSchema,
-      ExecutionPayloadHeaderSchemaCapella executionPayloadHeaderSchema,
-      SszListSchema<
+      final MutableBeaconStateCapella state,
+      final SyncCommitteeSchema syncCommitteeSchema,
+      final ExecutionPayloadHeaderSchemaCapella executionPayloadHeaderSchema,
+      final SszListSchema<
               tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary, ?>
           historicalSummariesSchema,
-      BeaconStateCapella instance) {
+      final BeaconStateCapella instance) {
 
     BeaconStateAltair.applyAltairFields(state, syncCommitteeSchema, instance);
 

@@ -137,7 +137,7 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   }
 
   @Override
-  public boolean isFullyValidated(Bytes32 blockRoot) {
+  public boolean isFullyValidated(final Bytes32 blockRoot) {
     return true;
   }
 

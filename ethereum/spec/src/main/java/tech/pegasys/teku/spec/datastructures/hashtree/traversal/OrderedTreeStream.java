@@ -22,18 +22,18 @@ import org.apache.tuweni.bytes.Bytes32;
 
 public class OrderedTreeStream {
   public static Stream<Bytes32> createPreOrderTraversalStream(
-      final Bytes32 rootHash, ChildLookup childLookup) {
+      final Bytes32 rootHash, final ChildLookup childLookup) {
     Iterator<Bytes32> iterator = PreOrderTraversalTreeIterator.create(rootHash, childLookup);
     return iteratorToStream(iterator);
   }
 
   public static Stream<Bytes32> createBreadthFirstStream(
-      final Bytes32 rootHash, ChildLookup childLookup) {
+      final Bytes32 rootHash, final ChildLookup childLookup) {
     Iterator<Bytes32> iterator = BreadthFirstTraversalTreeIterator.create(rootHash, childLookup);
     return iteratorToStream(iterator);
   }
 
-  private static Stream<Bytes32> iteratorToStream(Iterator<Bytes32> iterator) {
+  private static Stream<Bytes32> iteratorToStream(final Iterator<Bytes32> iterator) {
     final Spliterator<Bytes32> split =
         Spliterators.spliteratorUnknownSize(
             iterator,

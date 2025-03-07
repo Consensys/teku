@@ -20,11 +20,11 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSche
 
 public interface SszByteVector extends SszPrimitiveVector<Byte, SszByte> {
 
-  static SszByteVector fromBytes(Bytes byteVector) {
+  static SszByteVector fromBytes(final Bytes byteVector) {
     return SszByteVectorSchema.create(byteVector.size()).fromBytes(byteVector);
   }
 
-  static Bytes32 computeHashTreeRoot(Bytes byteVector) {
+  static Bytes32 computeHashTreeRoot(final Bytes byteVector) {
     return fromBytes(byteVector).hashTreeRoot();
   }
 

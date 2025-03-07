@@ -24,7 +24,7 @@ import java.util.Locale;
 import java.util.Objects;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageAltair;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.eip7594.MetadataMessageEip7594;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.fulu.MetadataMessageFulu;
 
 @Schema(
     description =
@@ -57,23 +57,23 @@ public class Metadata {
   @JsonInclude(JsonInclude.Include.NON_NULL)
   public final String syncCommitteeSubscriptions;
 
-  @JsonProperty("custody_subnet_count")
+  @JsonProperty("custody_group_count")
   @Schema(
       type = "string",
       pattern = PATTERN_UINT8,
-      description = "Uint8 value representing the node's custody subnet count")
-  public final String custodySubnetCount;
+      description = "Uint8 value representing the node's custody group count")
+  public final String custodyGroupCount;
 
   @JsonCreator
   public Metadata(
       @JsonProperty("seq_number") final String sequenceNumber,
       @JsonProperty("attnets") final String attestationSubnetSubscriptions,
       @JsonProperty("syncnets") final String syncCommitteeSubscriptions,
-      @JsonProperty("custody_subnet_count") final String custodySubnetCount) {
+      @JsonProperty("custody_group_count") final String custodyGroupCount) {
     this.sequenceNumber = sequenceNumber;
     this.attestationSubnetSubscriptions = attestationSubnetSubscriptions;
     this.syncCommitteeSubscriptions = syncCommitteeSubscriptions;
-    this.custodySubnetCount = custodySubnetCount;
+    this.custodyGroupCount = custodyGroupCount;
   }
 
   public Metadata(final MetadataMessage metadataMessage) {
@@ -81,15 +81,15 @@ public class Metadata {
     this.attestationSubnetSubscriptions =
         metadataMessage.getAttnets().sszSerialize().toHexString().toLowerCase(Locale.ROOT);
 
-    if (metadataMessage instanceof MetadataMessageEip7594) {
+    if (metadataMessage instanceof MetadataMessageFulu) {
       this.syncCommitteeSubscriptions =
-          ((MetadataMessageEip7594) metadataMessage)
+          ((MetadataMessageFulu) metadataMessage)
               .getSyncnets()
               .sszSerialize()
               .toHexString()
               .toLowerCase(Locale.ROOT);
-      this.custodySubnetCount =
-          ((MetadataMessageEip7594) metadataMessage).getCustodySubnetCount().toString();
+      this.custodyGroupCount =
+          ((MetadataMessageFulu) metadataMessage).getCustodyGroupCount().toString();
     } else if (metadataMessage instanceof MetadataMessageAltair) {
       this.syncCommitteeSubscriptions =
           ((MetadataMessageAltair) metadataMessage)
@@ -97,10 +97,10 @@ public class Metadata {
               .sszSerialize()
               .toHexString()
               .toLowerCase(Locale.ROOT);
-      this.custodySubnetCount = null;
+      this.custodyGroupCount = null;
     } else {
       this.syncCommitteeSubscriptions = null;
-      this.custodySubnetCount = null;
+      this.custodyGroupCount = null;
     }
   }
 
@@ -116,7 +116,7 @@ public class Metadata {
     return Objects.equals(sequenceNumber, metadata.sequenceNumber)
         && Objects.equals(attestationSubnetSubscriptions, metadata.attestationSubnetSubscriptions)
         && Objects.equals(syncCommitteeSubscriptions, metadata.syncCommitteeSubscriptions)
-        && Objects.equals(custodySubnetCount, metadata.custodySubnetCount);
+        && Objects.equals(custodyGroupCount, metadata.custodyGroupCount);
   }
 
   @Override
@@ -125,6 +125,6 @@ public class Metadata {
         sequenceNumber,
         attestationSubnetSubscriptions,
         syncCommitteeSubscriptions,
-        custodySubnetCount);
+        custodyGroupCount);
   }
 }

@@ -54,10 +54,10 @@ public class LibP2PGossipNetwork implements GossipNetwork {
   private final GossipTopicHandlers topicHandlers;
 
   LibP2PGossipNetwork(
-      MetricsSystem metricsSystem,
-      Gossip gossip,
-      PubsubPublisherApi publisher,
-      GossipTopicHandlers topicHandlers) {
+      final MetricsSystem metricsSystem,
+      final Gossip gossip,
+      final PubsubPublisherApi publisher,
+      final GossipTopicHandlers topicHandlers) {
     this.metricsSystem = metricsSystem;
     this.gossip = gossip;
     this.publisher = publisher;

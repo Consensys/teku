@@ -48,7 +48,7 @@ public class GetFinalizedBlockRootIntegrationTest extends AbstractDataBackedRest
     Assertions.assertThat(response.code()).isEqualTo(SC_NOT_FOUND);
   }
 
-  private Response get(UInt64 slot) throws IOException {
+  private Response get(final UInt64 slot) throws IOException {
     return getResponse(GetFinalizedBlockRoot.ROUTE.replace("{slot}", slot.toString()));
   }
 }

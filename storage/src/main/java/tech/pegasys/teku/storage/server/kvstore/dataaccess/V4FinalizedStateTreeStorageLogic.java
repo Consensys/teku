@@ -49,18 +49,18 @@ public class V4FinalizedStateTreeStorageLogic
     this.branchNodeStoredCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.STORAGE_FINALIZED_DB,
-            "state_branch_nodes",
+            "state_branch_nodes_total",
             "Number of finalized state tree branch nodes stored vs skipped",
             "type");
     this.leafNodeStoredCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.STORAGE_FINALIZED_DB,
-            "state_leaf_nodes",
+            "state_leaf_nodes_total",
             "Number of finalized state tree leaf nodes stored");
     statesStoredCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.STORAGE_FINALIZED_DB,
-            "states_stored",
+            "states_stored_total",
             "Number of finalized states stored");
   }
 
@@ -77,6 +77,12 @@ public class V4FinalizedStateTreeStorageLogic
                         new KvStoreTreeNodeSource(db, dbSchema),
                         entry.getValue(),
                         GIndexUtil.SELF_G_INDEX));
+  }
+
+  @Override
+  public Optional<UInt64> getEarliestAvailableFinalizedStateSlot(
+      final KvStoreAccessor db, final SchemaCombinedTreeState dbSchema) {
+    return db.getFirstEntry(dbSchema.getColumnFinalizedStateRootsBySlot()).map(ColumnEntry::getKey);
   }
 
   @Override
@@ -142,11 +148,19 @@ public class V4FinalizedStateTreeStorageLogic
 
     @Override
     public void addReconstructedFinalizedState(
-        KvStoreAccessor db,
-        KvStoreTransaction transaction,
-        SchemaCombinedTreeState schema,
-        BeaconState state) {
+        final KvStoreAccessor db,
+        final KvStoreTransaction transaction,
+        final SchemaCombinedTreeState schema,
+        final BeaconState state) {
       addFinalizedState(db, transaction, schema, state);
+    }
+
+    @Override
+    public void deleteFinalizedState(
+        final KvStoreTransaction transaction,
+        final SchemaCombinedTreeState schema,
+        final UInt64 slot) {
+      throw new RuntimeException("Tree mode does not support deleting finalized states");
     }
 
     @Override

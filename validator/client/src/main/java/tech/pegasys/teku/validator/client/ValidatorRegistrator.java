@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -34,6 +35,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszUtils;
@@ -59,13 +61,14 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private static final Duration RETRY_DELAY = Duration.ofSeconds(30);
+
   private final Map<BLSPublicKey, SignedValidatorRegistration> cachedValidatorRegistrations =
       Maps.newConcurrentMap();
 
-  private final AtomicBoolean firstCallDone = new AtomicBoolean(false);
   private final AtomicBoolean registrationInProgress = new AtomicBoolean(false);
   private final AtomicReference<UInt64> currentEpoch = new AtomicReference<>();
-  private final AtomicReference<UInt64> lastRunEpoch = new AtomicReference<>();
+  private final AtomicReference<UInt64> lastSuccessfulRunEpoch = new AtomicReference<>();
 
   private final Spec spec;
   private final OwnedValidators ownedValidators;
@@ -73,6 +76,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   private final SignedValidatorRegistrationFactory signedValidatorRegistrationFactory;
   private final ValidatorApiChannel validatorApiChannel;
   private final int batchSize;
+  private final AsyncRunner asyncRunner;
 
   public ValidatorRegistrator(
       final Spec spec,
@@ -80,13 +84,15 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       final ProposerConfigPropertiesProvider proposerConfigPropertiesProvider,
       final SignedValidatorRegistrationFactory signedValidatorRegistrationFactory,
       final ValidatorApiChannel validatorApiChannel,
-      final int batchSize) {
+      final int batchSize,
+      final AsyncRunner asyncRunner) {
     this.spec = spec;
     this.ownedValidators = ownedValidators;
     this.proposerConfigPropertiesProvider = proposerConfigPropertiesProvider;
     this.signedValidatorRegistrationFactory = signedValidatorRegistrationFactory;
     this.validatorApiChannel = validatorApiChannel;
     this.batchSize = batchSize;
+    this.asyncRunner = asyncRunner;
   }
 
   @Override
@@ -129,6 +135,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   public void onProposerSlashing(final ProposerSlashing proposerSlashing) {}
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void onUpdatedValidatorStatuses(
       final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
       final boolean possibleMissingEvents) {
@@ -160,7 +167,14 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
                 return registerValidators(newValidators, false);
               }
             })
-        .finish(VALIDATOR_LOGGER::registeringValidatorsFailed);
+        .finish(
+            error -> {
+              VALIDATOR_LOGGER.registeringValidatorsFailed(error);
+              LOG.info("Will retry to register validators in {} seconds", RETRY_DELAY.toSeconds());
+              asyncRunner.runAfterDelay(
+                  () -> onUpdatedValidatorStatuses(newValidatorStatuses, possibleMissingEvents),
+                  RETRY_DELAY);
+            });
   }
 
   public int getNumberOfCachedRegistrations() {
@@ -202,29 +216,31 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   }
 
   private boolean registrationNeedsToBeRun(final boolean possibleMissingEvents) {
-    final boolean isFirstCall = firstCallDone.compareAndSet(false, true);
-    if (isFirstCall || possibleMissingEvents) {
+    if (lastSuccessfulRunEpoch.get() == null || possibleMissingEvents) {
       return true;
     }
 
     return currentEpoch
         .get()
-        .minus(lastRunEpoch.get())
+        .minus(lastSuccessfulRunEpoch.get())
         .isGreaterThanOrEqualTo(Constants.EPOCHS_PER_VALIDATOR_REGISTRATION_SUBMISSION);
   }
 
   private SafeFuture<Void> registerValidators(
-      final List<Validator> validators, final boolean updateLastRunEpoch) {
+      final List<Validator> validators, final boolean updateLastSuccessfulRunEpoch) {
     if (!registrationInProgress.compareAndSet(false, true)) {
       LOG.warn(
           "Validator registration(s) is still in progress. Will skip sending registration(s).");
       return SafeFuture.COMPLETE;
     }
-    if (updateLastRunEpoch) {
-      lastRunEpoch.set(currentEpoch.get());
-    }
 
     return processInBatches(validators)
+        .whenSuccess(
+            () -> {
+              if (updateLastSuccessfulRunEpoch) {
+                lastSuccessfulRunEpoch.set(currentEpoch.get());
+              }
+            })
         .alwaysRun(
             () -> {
               registrationInProgress.set(false);

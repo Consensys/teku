@@ -38,8 +38,8 @@ public interface SszContainerSchema<C extends SszContainer> extends SszComposite
    * constructor
    */
   static <C extends SszContainer> SszContainerSchema<C> create(
-      List<SszSchema<?>> childrenSchemas,
-      BiFunction<SszContainerSchema<C>, TreeNode, C> instanceCtor) {
+      final List<SszSchema<?>> childrenSchemas,
+      final BiFunction<SszContainerSchema<C>, TreeNode, C> instanceCtor) {
     return new AbstractSszContainerSchema<C>(childrenSchemas) {
       @Override
       public C createFromBackingNode(TreeNode node) {
@@ -49,9 +49,9 @@ public interface SszContainerSchema<C extends SszContainer> extends SszComposite
   }
 
   static <C extends SszContainer> SszContainerSchema<C> create(
-      String containerName,
-      List<NamedSchema<?>> childrenSchemas,
-      BiFunction<SszContainerSchema<C>, TreeNode, C> instanceCtor) {
+      final String containerName,
+      final List<NamedSchema<?>> childrenSchemas,
+      final BiFunction<SszContainerSchema<C>, TreeNode, C> instanceCtor) {
     return new AbstractSszContainerSchema<C>(containerName, childrenSchemas) {
       @Override
       public C createFromBackingNode(TreeNode node) {
@@ -74,7 +74,7 @@ public interface SszContainerSchema<C extends SszContainer> extends SszComposite
    * @param fieldName
    * @return The index if it exists, otherwise -1
    */
-  default int getFieldIndex(SszFieldName fieldName) {
+  default int getFieldIndex(final SszFieldName fieldName) {
     return getFieldIndex(fieldName.getSszFieldName());
   }
 
@@ -90,7 +90,7 @@ public interface SszContainerSchema<C extends SszContainer> extends SszComposite
    *
    * @throws IllegalArgumentException if value types doesn't match this scheme field types
    */
-  default C createFromFieldValues(List<? extends SszData> fieldValues) {
+  default C createFromFieldValues(final List<? extends SszData> fieldValues) {
     return createFromBackingNode(createTreeFromFieldValues(fieldValues));
   }
 
@@ -111,7 +111,8 @@ public interface SszContainerSchema<C extends SszContainer> extends SszComposite
   }
 
   @Override
-  default TreeNode loadBackingNodes(TreeNodeSource nodeSource, Bytes32 rootHash, long rootGIndex) {
+  default TreeNode loadBackingNodes(
+      final TreeNodeSource nodeSource, final Bytes32 rootHash, final long rootGIndex) {
     final long lastUsefulGIndex =
         GIndexUtil.gIdxChildGIndex(rootGIndex, maxChunks() - 1, treeDepth());
     return LoadingUtil.loadNodesToDepth(

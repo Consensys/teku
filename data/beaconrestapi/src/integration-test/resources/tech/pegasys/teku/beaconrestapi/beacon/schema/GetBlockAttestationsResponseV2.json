@@ -1,0 +1,31 @@
+{
+  "title" : "GetBlockAttestationsResponseV2",
+  "type" : "object",
+  "required" : [ "execution_optimistic", "finalized", "version", "data" ],
+  "properties" : {
+    "execution_optimistic" : {
+      "type" : "boolean"
+    },
+    "finalized" : {
+      "type" : "boolean"
+    },
+    "version" : {
+      "type" : "string",
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ]
+    },
+    "data" : {
+      "type" : "object",
+      "oneOf" : [ {
+        "type" : "array",
+        "items" : {
+          "$ref" : "#/components/schemas/AttestationElectra"
+        }
+      }, {
+        "type" : "array",
+        "items" : {
+          "$ref" : "#/components/schemas/AttestationPhase0"
+        }
+      } ]
+    }
+  }
+}

@@ -23,12 +23,13 @@ public class SignedValidatorRegistrationsSchema
         SignedValidatorRegistration, SszList<SignedValidatorRegistration>> {
 
   public SignedValidatorRegistrationsSchema(
-      SignedValidatorRegistrationSchema signedValidatorRegistrationSchema, long maxLength) {
+      final SignedValidatorRegistrationSchema signedValidatorRegistrationSchema,
+      final long maxLength) {
     super(signedValidatorRegistrationSchema, maxLength);
   }
 
   @Override
-  public SszList<SignedValidatorRegistration> createFromBackingNode(TreeNode node) {
+  public SszList<SignedValidatorRegistration> createFromBackingNode(final TreeNode node) {
     return new SszListImpl<>(this, node);
   }
 }

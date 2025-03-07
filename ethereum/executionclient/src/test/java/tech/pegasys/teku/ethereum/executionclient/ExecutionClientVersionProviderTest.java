@@ -19,6 +19,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -34,6 +35,9 @@ public class ExecutionClientVersionProviderTest {
   private final ExecutionLayerChannel executionLayerChannel = mock(ExecutionLayerChannel.class);
   private final ExecutionClientVersionChannel publishChannel =
       mock(ExecutionClientVersionChannel.class);
+  private final ClientVersion consensusClientVersion =
+      new ClientVersion(
+          ClientVersion.TEKU_CLIENT_CODE, "teku", "1.0.0", Bytes4.fromHexString("8ddce8bb"));
   private final ClientVersion executionClientVersion =
       new ClientVersion("BU", "besu", "1.0.0", Bytes4.fromHexString("8dba2981"));
 
@@ -44,24 +48,27 @@ public class ExecutionClientVersionProviderTest {
   }
 
   @Test
-  public void pushUnknownExecutionClientVersionInChannel_whenFailed() {
+  public void doesNotPushExecutionClientVersionInChannel_whenFailed() {
     when(executionLayerChannel.engineGetClientVersion(any()))
         .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
 
     new ExecutionClientVersionProvider(
-        executionLayerChannel, publishChannel, ClientVersion.UNKNOWN);
-    verify(publishChannel).onExecutionClientVersion(ClientVersion.UNKNOWN);
+        executionLayerChannel, publishChannel, consensusClientVersion);
+
+    // only called once (on initialization)
+    verify(publishChannel).onExecutionClientVersionNotAvailable();
+    verifyNoMoreInteractions(publishChannel);
   }
 
   @Test
   public void doesNotTryToUpdateExecutionClientVersion_whenElHasNotBeenUnavailable() {
     final ExecutionClientVersionProvider executionClientVersionProvider =
         new ExecutionClientVersionProvider(
-            executionLayerChannel, publishChannel, ClientVersion.UNKNOWN);
+            executionLayerChannel, publishChannel, consensusClientVersion);
 
     executionClientVersionProvider.onAvailabilityUpdated(true);
     // EL called only one time
-    verify(executionLayerChannel).engineGetClientVersion(any());
+    verify(executionLayerChannel).engineGetClientVersion(consensusClientVersion);
     verify(publishChannel).onExecutionClientVersion(executionClientVersion);
   }
 
@@ -69,7 +76,7 @@ public class ExecutionClientVersionProviderTest {
   public void updatesExecutionClientVersion_whenElIsAvailableAfterBeingUnavailable() {
     final ExecutionClientVersionProvider executionClientVersionProvider =
         new ExecutionClientVersionProvider(
-            executionLayerChannel, publishChannel, ClientVersion.UNKNOWN);
+            executionLayerChannel, publishChannel, consensusClientVersion);
 
     verify(publishChannel).onExecutionClientVersion(executionClientVersion);
 
@@ -81,7 +88,7 @@ public class ExecutionClientVersionProviderTest {
     executionClientVersionProvider.onAvailabilityUpdated(false);
     executionClientVersionProvider.onAvailabilityUpdated(true);
     // EL called two times
-    verify(executionLayerChannel, times(2)).engineGetClientVersion(any());
+    verify(executionLayerChannel, times(2)).engineGetClientVersion(consensusClientVersion);
 
     verify(publishChannel).onExecutionClientVersion(updatedExecutionClientVersion);
 
@@ -89,7 +96,7 @@ public class ExecutionClientVersionProviderTest {
     executionClientVersionProvider.onAvailabilityUpdated(true);
 
     // EL called three times
-    verify(executionLayerChannel, times(3)).engineGetClientVersion(any());
+    verify(executionLayerChannel, times(3)).engineGetClientVersion(consensusClientVersion);
 
     // 1st time - executionClientVersion, 2nd time - updatedExecutionClientVersion, 3rd time -
     // ignoring the same
@@ -97,10 +104,10 @@ public class ExecutionClientVersionProviderTest {
   }
 
   @Test
-  public void doesNotPushUnknownVersionInChannel_whenELIsDownInTheMiddle() {
+  public void doesNotPushExecutionClientVersionInChannel_whenELIsDownInTheMiddle() {
     final ExecutionClientVersionProvider executionClientVersionProvider =
         new ExecutionClientVersionProvider(
-            executionLayerChannel, publishChannel, ClientVersion.UNKNOWN);
+            executionLayerChannel, publishChannel, consensusClientVersion);
 
     // Good start
     verify(publishChannel).onExecutionClientVersion(executionClientVersion);
@@ -113,9 +120,11 @@ public class ExecutionClientVersionProviderTest {
     executionClientVersionProvider.onAvailabilityUpdated(false);
     executionClientVersionProvider.onAvailabilityUpdated(true);
     // EL called two times
-    verify(executionLayerChannel, times(2)).engineGetClientVersion(any());
-    // UNKNOWN version is not pushed in the channel
+    verify(executionLayerChannel, times(2)).engineGetClientVersion(consensusClientVersion);
+    // no version is pushed in the channel
     verify(publishChannel, never()).onExecutionClientVersion(any());
+    // non-availability has not been called if EL has been available on initialization
+    verify(publishChannel, never()).onExecutionClientVersionNotAvailable();
 
     // EL is back
     when(executionLayerChannel.engineGetClientVersion(any()))
@@ -124,7 +133,7 @@ public class ExecutionClientVersionProviderTest {
     executionClientVersionProvider.onAvailabilityUpdated(false);
     executionClientVersionProvider.onAvailabilityUpdated(true);
     // EL called 3 times
-    verify(executionLayerChannel, times(3)).engineGetClientVersion(any());
+    verify(executionLayerChannel, times(3)).engineGetClientVersion(consensusClientVersion);
     // Version is the same, not pushed in the channel
     verify(publishChannel, never()).onExecutionClientVersion(any());
   }

@@ -41,7 +41,7 @@ public class StubLabelledOperationTimer extends StubMetric
       final MetricCategory category,
       final String name,
       final String help,
-      Supplier<Long> timeProvider) {
+      final Supplier<Long> timeProvider) {
     super(category, name, help);
     this.timeProvider = timeProvider;
   }

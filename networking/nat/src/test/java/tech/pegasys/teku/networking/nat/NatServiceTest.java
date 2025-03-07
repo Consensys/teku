@@ -26,23 +26,25 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class NatServiceTest {
-  private NatManager natManager = mock(NatManager.class);
-  private Optional<NatManager> maybeNatManager = Optional.of(natManager);
+  private final NatManager natManager = mock(NatManager.class);
+  private final Optional<NatManager> maybeNatManager = Optional.of(natManager);
 
   @Test
   public void shouldRequestPortsBeMappedOnServiceStart() {
-    final NatService natService = new NatService(9000, true, maybeNatManager);
+    final NatService natService = new NatService(9000, Optional.of(9090), true, maybeNatManager);
     when(natManager.start()).thenReturn(SafeFuture.completedFuture(null));
     assertThat(natService.start()).isCompleted();
     verify(natManager).start();
     verify(natManager).requestPortForward(eq(9000), eq(NetworkProtocol.UDP), any());
     verify(natManager).requestPortForward(eq(9000), eq(NetworkProtocol.TCP), any());
+    verify(natManager).requestPortForward(eq(9090), eq(NetworkProtocol.UDP), any());
+    verify(natManager).requestPortForward(eq(9090), eq(NetworkProtocol.TCP), any());
     verifyNoMoreInteractions(natManager);
   }
 
   @Test
   public void shouldShutdownNatManager() {
-    final NatService natService = new NatService(9000, true, maybeNatManager);
+    final NatService natService = new NatService(9000, Optional.empty(), true, maybeNatManager);
     when(natManager.start()).thenReturn(SafeFuture.completedFuture(null));
     assertThat(natService.start()).isCompleted();
 

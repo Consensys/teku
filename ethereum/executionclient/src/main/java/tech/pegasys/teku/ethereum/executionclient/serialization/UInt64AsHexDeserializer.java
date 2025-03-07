@@ -22,7 +22,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class UInt64AsHexDeserializer extends JsonDeserializer<UInt64> {
   @Override
-  public UInt64 deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+  public UInt64 deserialize(final JsonParser p, final DeserializationContext ctxt)
+      throws IOException {
     final String hexValue = p.getValueAsString();
     QuantityChecker.check(hexValue);
     return UInt64.valueOf(Bytes.fromHexStringLenient(hexValue).toUnsignedBigInteger());

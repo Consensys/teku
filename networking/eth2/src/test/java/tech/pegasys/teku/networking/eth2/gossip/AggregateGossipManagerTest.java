@@ -18,10 +18,12 @@ import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -35,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
@@ -59,6 +62,7 @@ public class AggregateGossipManagerTest {
   @BeforeEach
   public void setup() {
     storageSystem.chainUpdater().initializeGenesis();
+    when(topicChannel.gossip(any())).thenReturn(SafeFuture.COMPLETE);
     doReturn(topicChannel)
         .when(gossipNetwork)
         .subscribe(contains(GossipTopicName.BEACON_AGGREGATE_AND_PROOF.toString()), any());
@@ -70,7 +74,8 @@ public class AggregateGossipManagerTest {
             gossipNetwork,
             gossipEncoding,
             forkInfo,
-            processor);
+            processor,
+            DebugDataDumper.NOOP);
     gossipManager.subscribe();
   }
 

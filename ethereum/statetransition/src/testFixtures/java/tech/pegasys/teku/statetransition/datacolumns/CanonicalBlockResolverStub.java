@@ -29,31 +29,31 @@ public class CanonicalBlockResolverStub implements CanonicalBlockResolver {
   private final Map<UInt64, BeaconBlock> chain = new HashMap<>();
 
   private final DataStructureUtil dataStructureUtil;
-  private AtomicLong blockAccessCounter = new AtomicLong();
+  private final AtomicLong blockAccessCounter = new AtomicLong();
 
-  public CanonicalBlockResolverStub(Spec spec) {
-    dataStructureUtil = new DataStructureUtil(0, spec);
+  public CanonicalBlockResolverStub(final Spec spec) {
+    this.dataStructureUtil = new DataStructureUtil(0, spec);
   }
 
-  public BeaconBlock addBlock(int slot, boolean hasBlobs) {
+  public BeaconBlock addBlock(final int slot, final boolean hasBlobs) {
     return addBlock(slot, hasBlobs ? 1 : 0);
   }
 
-  public BeaconBlock addBlock(int slot, int blobCount) {
-    UInt64 slotU = UInt64.valueOf(slot);
-    BeaconBlockBody beaconBlockBody =
+  public BeaconBlock addBlock(final int slot, final int blobCount) {
+    final UInt64 slotU = UInt64.valueOf(slot);
+    final BeaconBlockBody beaconBlockBody =
         dataStructureUtil.randomBeaconBlockBodyWithCommitments(blobCount);
-    BeaconBlock block = dataStructureUtil.randomBeaconBlock(slotU, beaconBlockBody);
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(slotU, beaconBlockBody);
     addBlock(block);
     return block;
   }
 
-  public void addBlock(BeaconBlock block) {
+  public void addBlock(final BeaconBlock block) {
     chain.put(block.getSlot(), block);
   }
 
   @Override
-  public SafeFuture<Optional<BeaconBlock>> getBlockAtSlot(UInt64 slot) {
+  public SafeFuture<Optional<BeaconBlock>> getBlockAtSlot(final UInt64 slot) {
     blockAccessCounter.incrementAndGet();
     return SafeFuture.completedFuture(Optional.ofNullable(chain.get(slot)));
   }

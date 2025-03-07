@@ -27,12 +27,12 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 class DepositDataTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
-  private BLSPublicKey pubkey = dataStructureUtil.randomPublicKey();
-  private Bytes32 withdrawalCredentials = dataStructureUtil.randomBytes32();
-  private UInt64 amount = dataStructureUtil.randomUInt64();
-  private BLSSignature signature = dataStructureUtil.randomSignature();
+  private final BLSPublicKey pubkey = dataStructureUtil.randomPublicKey();
+  private final Bytes32 withdrawalCredentials = dataStructureUtil.randomBytes32();
+  private final UInt64 amount = dataStructureUtil.randomUInt64();
+  private final BLSSignature signature = dataStructureUtil.randomSignature();
 
-  private DepositData depositData =
+  private final DepositData depositData =
       new DepositData(pubkey, withdrawalCredentials, amount, signature);
 
   @Test

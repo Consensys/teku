@@ -88,7 +88,9 @@ public interface TreeNode {
    * endGeneralizedIndexInclusive equal to {@link GIndexUtil#RIGHTMOST_G_INDEX}
    */
   default void iterateRange(
-      long startGeneralizedIndex, long endGeneralizedIndexInclusive, TreeVisitor visitor) {
+      final long startGeneralizedIndex,
+      final long endGeneralizedIndexInclusive,
+      final TreeVisitor visitor) {
     iterate(
         GIndexUtil.SELF_G_INDEX,
         startGeneralizedIndex,
@@ -96,12 +98,12 @@ public interface TreeNode {
   }
 
   /** Iterates all tree nodes in the order Self -> Left subtree -> Right subtree */
-  default void iterateAll(TreeVisitor visitor) {
+  default void iterateAll(final TreeVisitor visitor) {
     iterate(GIndexUtil.SELF_G_INDEX, GIndexUtil.LEFTMOST_G_INDEX, visitor);
   }
 
   /** Iterates all tree nodes in the order Self -> Left subtree -> Right subtree */
-  default void iterateAll(Consumer<TreeNode> simpleVisitor) {
+  default void iterateAll(final Consumer<TreeNode> simpleVisitor) {
     iterateAll(
         (node, __) -> {
           simpleVisitor.accept(node);
@@ -120,7 +122,8 @@ public interface TreeNode {
    * @see #updated(long, TreeNode)
    * @see #updated(long, Function)
    */
-  default TreeNode updated(long generalizedIndex, Function<TreeNode, TreeNode> nodeUpdater) {
+  default TreeNode updated(
+      final long generalizedIndex, final Function<TreeNode, TreeNode> nodeUpdater) {
     TreeNode newNode = nodeUpdater.apply(get(generalizedIndex));
     return updated(
         new TreeUpdates(singletonList(new TreeUpdates.Update(generalizedIndex, newNode))));
@@ -158,7 +161,7 @@ public interface TreeNode {
    * @see #updated(long, TreeNode)
    * @see #updated(long, Function)
    */
-  default TreeNode updated(long generalizedIndex, TreeNode node) {
+  default TreeNode updated(final long generalizedIndex, final TreeNode node) {
     return updated(generalizedIndex, oldNode -> node);
   }
 }

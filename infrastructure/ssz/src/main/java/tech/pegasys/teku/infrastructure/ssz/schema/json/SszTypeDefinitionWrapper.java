@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
 
-public class SszTypeDefinitionWrapper<DataT, SszDataT extends SszPrimitive<DataT, SszDataT>>
+public class SszTypeDefinitionWrapper<DataT, SszDataT extends SszPrimitive<DataT>>
     implements DeserializableTypeDefinition<SszDataT> {
 
   private final SszPrimitiveSchema<DataT, SszDataT> schema;

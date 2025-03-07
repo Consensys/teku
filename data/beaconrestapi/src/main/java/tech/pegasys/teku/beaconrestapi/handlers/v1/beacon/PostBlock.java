@@ -15,8 +15,9 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ETH_CONSENSUS_VERSION_TYPE;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllSupportedMilestones;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.slotBasedSelector;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.headerBasedSelectorWithSlotFallback;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
@@ -70,7 +71,7 @@ public class PostBlock extends AbstractPostBlock {
 
     request.respondAsync(
         validatorDataProvider
-            .submitSignedBlock(requestBody, BroadcastValidationLevel.NOT_REQUIRED)
+            .submitSignedBlock(requestBody, BroadcastValidationLevel.GOSSIP)
             .thenApply(this::processSendSignedBlockResult));
   }
 
@@ -80,10 +81,17 @@ public class PostBlock extends AbstractPostBlock {
         .operationId("publishBlock")
         .summary("Publish a signed block")
         .description(
-            "Submit a signed beacon block to the beacon node to be broadcast and imported."
-                + " After Deneb, this additionally instructs the beacon node to broadcast and import all given blobs."
-                + " The beacon node performs the required validation.")
+            """
+            Instructs the beacon node to broadcast a newly signed beacon block to the beacon network, \
+            to be included in the beacon chain. A success response (20x) indicates that the block \
+            passed gossip validation and was successfully broadcast onto the network. \
+            The beacon node is also expected to integrate the block into the state, but may broadcast it \
+            before doing so, so as to aid timely delivery of the block. Should the block fail full \
+            validation, a separate success response code (202) is used to indicate that the block was \
+            successfully broadcast but failed integration. After Deneb, this additionally instructs \
+            the beacon node to broadcast all given signed blobs.""")
         .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
+        .deprecated(true)
         .requestBodyType(
             getSchemaDefinitionForAllSupportedMilestones(
                 schemaDefinitionCache,
@@ -94,7 +102,8 @@ public class PostBlock extends AbstractPostBlock {
                         .milestoneAtSlot(blockContainer.getSlot())
                         .equals(milestone)),
             context ->
-                slotBasedSelector(
+                headerBasedSelectorWithSlotFallback(
+                    context.getHeaders(),
                     context.getBody(),
                     schemaDefinitionCache,
                     SchemaDefinitions::getSignedBlockContainerSchema),
@@ -109,6 +118,8 @@ public class PostBlock extends AbstractPostBlock {
         .withBadRequestResponse(Optional.of("Unable to parse request body."))
         .response(
             SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing.", HTTP_ERROR_RESPONSE_TYPE)
+        .response(
+            SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
         .build();
   }
 }

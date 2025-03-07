@@ -56,7 +56,7 @@ public class V6DatabaseMetadata {
 
     public SingleDBMetadata() {}
 
-    public SingleDBMetadata(KvStoreConfiguration configuration) {
+    public SingleDBMetadata(final KvStoreConfiguration configuration) {
       this.configuration = configuration;
     }
 
@@ -75,7 +75,7 @@ public class V6DatabaseMetadata {
 
   public V6DatabaseMetadata() {}
 
-  private V6DatabaseMetadata(KvStoreConfiguration singleDbConfiguration) {
+  private V6DatabaseMetadata(final KvStoreConfiguration singleDbConfiguration) {
     this.singleDb = new SingleDBMetadata(singleDbConfiguration);
   }
 

@@ -26,10 +26,9 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
@@ -37,11 +36,13 @@ public class PostAttesterSlashing extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/pool/attester_slashings";
   private final NodeDataProvider nodeDataProvider;
 
-  public PostAttesterSlashing(final DataProvider dataProvider, final Spec spec) {
-    this(dataProvider.getNodeDataProvider(), spec);
+  public PostAttesterSlashing(
+      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
+    this(dataProvider.getNodeDataProvider(), schemaDefinitionCache);
   }
 
-  public PostAttesterSlashing(final NodeDataProvider provider, final Spec spec) {
+  public PostAttesterSlashing(
+      final NodeDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("submitPoolAttesterSlashings")
@@ -49,14 +50,14 @@ public class PostAttesterSlashing extends RestApiEndpoint {
             .description(
                 "Submits attester slashing object to node's pool and if passes validation node MUST broadcast it to network.")
             .tags(TAG_BEACON)
-            .requestBodyType(getRequestType(spec.getGenesisSpecConfig()))
+            .requestBodyType(getRequestType(schemaDefinitionCache))
             .response(SC_OK, "Success")
             .build());
     this.nodeDataProvider = provider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final AttesterSlashing attesterSlashing = request.getRequestBody();
     final SafeFuture<InternalValidationResult> future =
         nodeDataProvider.postAttesterSlashing(attesterSlashing);
@@ -79,12 +80,10 @@ public class PostAttesterSlashing extends RestApiEndpoint {
   }
 
   private static DeserializableTypeDefinition<AttesterSlashing> getRequestType(
-      SpecConfig specConfig) {
-    final IndexedAttestation.IndexedAttestationSchema indexedAttestationSchema =
-        new IndexedAttestation.IndexedAttestationSchema(specConfig);
-    final AttesterSlashing.AttesterSlashingSchema attesterSlashingSchema =
-        new AttesterSlashing.AttesterSlashingSchema(indexedAttestationSchema);
-
-    return attesterSlashingSchema.getJsonTypeDefinition();
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    return schemaDefinitionCache
+        .getSchemaDefinition(SpecMilestone.PHASE0)
+        .getAttesterSlashingSchema()
+        .getJsonTypeDefinition();
   }
 }

@@ -51,6 +51,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -69,14 +70,13 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
-import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.metrics.BeaconNodeRequestLabels;
 import tech.pegasys.teku.validator.remote.FailoverValidatorApiHandler.RequestOutcome;
@@ -584,8 +584,7 @@ class FailoverValidatorApiHandlerTest {
 
     final ValidatorApiChannelRequest<Optional<BlockContainerAndMetaData>> creationRequest =
         apiChannel ->
-            apiChannel.createUnsignedBlock(
-                slot, randaoReveal, Optional.empty(), Optional.of(true), Optional.empty());
+            apiChannel.createUnsignedBlock(slot, randaoReveal, Optional.empty(), Optional.empty());
 
     setupFailures(creationRequest, primaryApiChannel);
     setupSuccesses(creationRequest, Optional.of(blindedBlock), failoverApiChannel1);
@@ -593,7 +592,7 @@ class FailoverValidatorApiHandlerTest {
     SafeFutureAssert.assertThatSafeFuture(creationRequest.run(failoverApiHandler)).isCompleted();
 
     final SignedBeaconBlock blindedSignedBlock =
-        DATA_STRUCTURE_UTIL.randomSignedBlindedBeaconBlock(UInt64.ONE);
+        DATA_STRUCTURE_UTIL.signedBlock(blindedBlock.blockContainer().getBlock());
 
     final ValidatorApiChannelRequest<SendSignedBlockResult> publishingRequest =
         apiChannel ->
@@ -687,7 +686,7 @@ class FailoverValidatorApiHandlerTest {
             "createUnsignedBlock",
             apiChannel ->
                 apiChannel.createUnsignedBlock(
-                    slot, randaoReveal, Optional.empty(), Optional.of(false), Optional.empty()),
+                    slot, randaoReveal, Optional.empty(), Optional.empty()),
             BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD,
             Optional.of(mock(BlockContainerAndMetaData.class))),
         getArguments(
@@ -697,7 +696,7 @@ class FailoverValidatorApiHandlerTest {
             Optional.of(mock(AttestationData.class))),
         getArguments(
             "createAggregate",
-            apiChannel -> apiChannel.createAggregate(slot, randomBytes32),
+            apiChannel -> apiChannel.createAggregate(slot, randomBytes32, Optional.empty()),
             BeaconNodeRequestLabels.CREATE_AGGREGATE_METHOD,
             Optional.of(attestation)),
         getArguments(

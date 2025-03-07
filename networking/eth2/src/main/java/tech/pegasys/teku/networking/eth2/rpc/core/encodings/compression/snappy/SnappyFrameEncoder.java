@@ -47,7 +47,7 @@ public class SnappyFrameEncoder {
   private final Snappy snappy = new Snappy();
   private boolean started;
 
-  public Bytes encode(Bytes in) {
+  public Bytes encode(final Bytes in) {
     ByteBuf inBuf = Unpooled.wrappedBuffer(in.toArrayUnsafe());
     ByteBuf outBuf = Unpooled.buffer(in.size() / 2);
     try {
@@ -61,7 +61,7 @@ public class SnappyFrameEncoder {
     }
   }
 
-  public void encode(ByteBuf in, ByteBuf out) {
+  public void encode(final ByteBuf in, final ByteBuf out) {
     if (!in.isReadable()) {
       return;
     }
@@ -101,14 +101,15 @@ public class SnappyFrameEncoder {
     }
   }
 
-  private static void writeUnencodedChunk(ByteBuf in, ByteBuf out, int dataLength) {
+  private static void writeUnencodedChunk(
+      final ByteBuf in, final ByteBuf out, final int dataLength) {
     out.writeByte(1);
     writeChunkLength(out, dataLength + 4);
     calculateAndWriteChecksum(in, out);
     out.writeBytes(in, dataLength);
   }
 
-  private static void setChunkLength(ByteBuf out, int lengthIdx) {
+  private static void setChunkLength(final ByteBuf out, final int lengthIdx) {
     int chunkLength = out.writerIndex() - lengthIdx - 3;
     if (chunkLength >>> 24 != 0) {
       throw new IllegalArgumentException("compressed data too large: " + chunkLength);
@@ -122,7 +123,7 @@ public class SnappyFrameEncoder {
    * @param out The buffer to write to
    * @param chunkLength The length to write
    */
-  private static void writeChunkLength(ByteBuf out, int chunkLength) {
+  private static void writeChunkLength(final ByteBuf out, final int chunkLength) {
     out.writeMediumLE(chunkLength);
   }
 
@@ -132,7 +133,7 @@ public class SnappyFrameEncoder {
    * @param slice The data to calculate the checksum for
    * @param out The output buffer to write the checksum to
    */
-  private static void calculateAndWriteChecksum(ByteBuf slice, ByteBuf out) {
+  private static void calculateAndWriteChecksum(final ByteBuf slice, final ByteBuf out) {
     out.writeIntLE(calculateChecksum(slice));
   }
 }

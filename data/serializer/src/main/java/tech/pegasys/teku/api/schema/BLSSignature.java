@@ -25,7 +25,7 @@ public class BLSSignature {
 
   private final Bytes bytes;
 
-  public BLSSignature(Bytes bytes) {
+  public BLSSignature(final Bytes bytes) {
     checkArgument(
         bytes.size() == SIZE,
         "Bytes%s should be %s bytes, but was %s bytes.",
@@ -35,7 +35,7 @@ public class BLSSignature {
     this.bytes = bytes;
   }
 
-  public BLSSignature(tech.pegasys.teku.bls.BLSSignature signature) {
+  public BLSSignature(final tech.pegasys.teku.bls.BLSSignature signature) {
     this(signature.toBytesCompressed());
   }
 
@@ -61,7 +61,7 @@ public class BLSSignature {
     return bytes.toString();
   }
 
-  public static BLSSignature fromHexString(String value) {
+  public static BLSSignature fromHexString(final String value) {
     return new BLSSignature(Bytes.fromHexString(value));
   }
 

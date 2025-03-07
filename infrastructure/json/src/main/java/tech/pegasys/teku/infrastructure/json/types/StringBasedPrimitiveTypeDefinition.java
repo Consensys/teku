@@ -34,6 +34,8 @@ public class StringBasedPrimitiveTypeDefinition<T> implements StringValueTypeDef
   private final Optional<String> example;
   private final Optional<String> format;
   private final Optional<String> pattern;
+  private final Optional<Integer> minLength;
+  private final Optional<Integer> maxLength;
 
   private StringBasedPrimitiveTypeDefinition(
       final Optional<String> name,
@@ -43,7 +45,9 @@ public class StringBasedPrimitiveTypeDefinition<T> implements StringValueTypeDef
       final Optional<String> example,
       final Optional<String> description,
       final Optional<String> format,
-      final Optional<String> pattern) {
+      final Optional<String> pattern,
+      final Optional<Integer> minLength,
+      final Optional<Integer> maxLength) {
     this.name = name;
     this.title = title;
     this.objectFromString = objectFromString;
@@ -52,6 +56,8 @@ public class StringBasedPrimitiveTypeDefinition<T> implements StringValueTypeDef
     this.description = description;
     this.format = format;
     this.pattern = pattern;
+    this.minLength = minLength;
+    this.maxLength = maxLength;
   }
 
   @Override
@@ -78,7 +84,9 @@ public class StringBasedPrimitiveTypeDefinition<T> implements StringValueTypeDef
         example,
         Optional.of(description),
         format,
-        pattern);
+        pattern,
+        minLength,
+        maxLength);
   }
 
   @Override
@@ -105,6 +113,12 @@ public class StringBasedPrimitiveTypeDefinition<T> implements StringValueTypeDef
     if (format.isPresent()) {
       gen.writeStringField("format", format.get());
     }
+    if (minLength.isPresent()) {
+      gen.writeNumberField("minLength", minLength.get());
+    }
+    if (maxLength.isPresent()) {
+      gen.writeNumberField("maxLength", maxLength.get());
+    }
     gen.writeEndObject();
   }
 
@@ -117,6 +131,8 @@ public class StringBasedPrimitiveTypeDefinition<T> implements StringValueTypeDef
         .add("example", example)
         .add("format", format)
         .add("pattern", pattern)
+        .add("minLength", minLength)
+        .add("maxLength", maxLength)
         .toString();
   }
 
@@ -144,6 +160,8 @@ public class StringBasedPrimitiveTypeDefinition<T> implements StringValueTypeDef
     private Optional<String> description = Optional.empty();
     private Optional<String> format = Optional.empty();
     private Optional<String> pattern = Optional.empty();
+    private Optional<Integer> minLength = Optional.empty();
+    private Optional<Integer> maxLength = Optional.empty();
 
     public StringTypeBuilder<T> name(final String name) {
       this.name = Optional.of(name);
@@ -185,12 +203,31 @@ public class StringBasedPrimitiveTypeDefinition<T> implements StringValueTypeDef
       return this;
     }
 
+    public StringTypeBuilder<T> minLength(final int minLength) {
+      this.minLength = Optional.of(minLength);
+      return this;
+    }
+
+    public StringTypeBuilder<T> maxLength(final int maxLength) {
+      this.maxLength = Optional.of(maxLength);
+      return this;
+    }
+
     public StringValueTypeDefinition<T> build() {
       checkNotNull(parser, "Must specify parser");
       checkNotNull(formatter, "Must specify formatter");
 
       return new StringBasedPrimitiveTypeDefinition<>(
-          name, title.or(() -> name), parser, formatter, example, description, format, pattern);
+          name,
+          title.or(() -> name),
+          parser,
+          formatter,
+          example,
+          description,
+          format,
+          pattern,
+          minLength,
+          maxLength);
     }
   }
 
@@ -208,11 +245,13 @@ public class StringBasedPrimitiveTypeDefinition<T> implements StringValueTypeDef
         && Objects.equals(description, that.description)
         && Objects.equals(example, that.example)
         && Objects.equals(format, that.format)
-        && Objects.equals(pattern, that.pattern);
+        && Objects.equals(pattern, that.pattern)
+        && Objects.equals(minLength, that.minLength)
+        && Objects.equals(maxLength, that.maxLength);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, title, description, example, format, pattern);
+    return Objects.hash(name, title, description, example, format, pattern, minLength, maxLength);
   }
 }

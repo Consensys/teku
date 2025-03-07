@@ -197,7 +197,7 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldSetDefaultGasLimitIfRegistrationDefaultGasLimitIsSpecified() {
-    final String[] args = {"--Xvalidators-builder-registration-default-gas-limit", "1000"};
+    final String[] args = {"--validators-builder-registration-default-gas-limit", "1000"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(
             config.validatorClient().getValidatorConfig().getBuilderRegistrationDefaultGasLimit())

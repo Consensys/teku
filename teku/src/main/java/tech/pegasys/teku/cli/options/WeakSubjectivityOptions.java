@@ -44,7 +44,7 @@ public class WeakSubjectivityOptions {
       hidden = true)
   private UInt64 suppressWSPeriodChecksUntilEpoch = null;
 
-  public TekuConfiguration.Builder configure(TekuConfiguration.Builder builder) {
+  public TekuConfiguration.Builder configure(final TekuConfiguration.Builder builder) {
     return builder.weakSubjectivity(
         wsBuilder -> {
           getWeakSubjectivityCheckpoint().ifPresent(wsBuilder::weakSubjectivityCheckpoint);

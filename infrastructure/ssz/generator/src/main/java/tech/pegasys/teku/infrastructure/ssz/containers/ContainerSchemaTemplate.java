@@ -31,9 +31,9 @@ public abstract class /*$$TypeClassName*/ ContainerSchemaTemplate /*$$*/<
       /*$$TypeClassName*/ ContainerSchemaTemplate /*$$*/<C, /*$$ViewTypeNames*/ V0, V1 /*$$*/>
           create(
               /*$$FieldsDeclarations*/
-              SszSchema<V0> fieldSchema1,
-              SszSchema<V1> fieldSchema2 /*$$*/,
-              BiFunction<
+              final SszSchema<V0> fieldSchema1,
+              final SszSchema<V1> fieldSchema2 /*$$*/,
+              final BiFunction<
                       /*$$TypeClassName*/ ContainerSchemaTemplate /*$$*/<
                           C, /*$$ViewTypeNames*/ V0, V1 /*$$*/>,
                       TreeNode,
@@ -42,22 +42,23 @@ public abstract class /*$$TypeClassName*/ ContainerSchemaTemplate /*$$*/<
     return new /*$$TypeClassName*/ ContainerSchemaTemplate /*$$*/<>(
         /*$$Fields*/ fieldSchema1, fieldSchema2 /*$$*/) {
       @Override
-      public C createFromBackingNode(TreeNode node) {
+      public C createFromBackingNode(final TreeNode node) {
         return instanceCtor.apply(this, node);
       }
     };
   }
 
   protected /*$$TypeClassName*/ ContainerSchemaTemplate /*$$*/(
-      /*$$FieldsDeclarations*/ SszSchema<V0> fieldSchema1, SszSchema<V1> fieldSchema2 /*$$*/) {
+      /*$$FieldsDeclarations*/ final SszSchema<V0> fieldSchema1,
+      final SszSchema<V1> fieldSchema2 /*$$*/) {
 
     super(List.of(/*$$Fields*/ fieldSchema1, fieldSchema2 /*$$*/));
   }
 
   protected /*$$TypeClassName*/ ContainerSchemaTemplate /*$$*/(
-      String containerName,
-      /*$$NamedFieldsDeclarations*/ NamedSchema<V0> fieldNamedSchema0,
-      NamedSchema<V1> fieldNamedSchema1 /*$$*/) {
+      final String containerName,
+      /*$$NamedFieldsDeclarations*/ final NamedSchema<V0> fieldNamedSchema0,
+      final NamedSchema<V1> fieldNamedSchema1 /*$$*/) {
 
     super(containerName, List.of(/*$$NamedFields*/ fieldNamedSchema0, fieldNamedSchema1 /*$$*/));
   }

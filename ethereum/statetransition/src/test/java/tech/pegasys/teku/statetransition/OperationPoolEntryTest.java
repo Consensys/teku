@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -32,7 +31,7 @@ public class OperationPoolEntryTest {
   private final TestClass b1 = TestClass.of(Bytes4.fromHexString("0xFFFFFF11"));
   private final TestClass b2 = TestClass.of(Bytes4.fromHexString("0xFFFFFF22"));
 
-  private TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1_000_000);
+  private final TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1_000_000);
 
   @Test
   void shouldSortLocalFirst() {
@@ -47,7 +46,7 @@ public class OperationPoolEntryTest {
         .containsExactly(b2, b1, b0);
   }
 
-  private static class TestClass extends AbstractSszPrimitive<Bytes4, SszBytes4>
+  private static class TestClass extends AbstractSszPrimitive<Bytes4>
       implements MessageWithValidatorId {
 
     TestClass(final Bytes4 b) {

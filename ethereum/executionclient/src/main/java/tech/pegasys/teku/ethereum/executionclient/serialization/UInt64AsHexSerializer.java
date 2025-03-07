@@ -22,12 +22,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class UInt64AsHexSerializer extends JsonSerializer<UInt64> {
   @Override
-  public void serialize(UInt64 value, JsonGenerator gen, SerializerProvider serializers)
+  public void serialize(
+      final UInt64 value, final JsonGenerator gen, final SerializerProvider serializers)
       throws IOException {
     gen.writeString(toHexString(value));
   }
 
-  public static String toHexString(UInt64 value) {
+  public static String toHexString(final UInt64 value) {
     return Bytes.ofUnsignedLong(value.longValue()).toQuantityHexString();
   }
 }

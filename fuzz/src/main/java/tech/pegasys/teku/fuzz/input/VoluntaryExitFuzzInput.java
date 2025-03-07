@@ -34,8 +34,8 @@ public class VoluntaryExitFuzzInput
   }
 
   public VoluntaryExitFuzzInput(
-      ContainerSchema2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit> type,
-      TreeNode backingNode) {
+      final ContainerSchema2<VoluntaryExitFuzzInput, BeaconState, SignedVoluntaryExit> type,
+      final TreeNode backingNode) {
     super(type, backingNode);
   }
 

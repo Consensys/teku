@@ -27,7 +27,7 @@ public final class BLSSecretKey {
    * @param bytes Should be in range [0, )
    * @throws IllegalArgumentException if bytes are not in the valid range
    */
-  public static BLSSecretKey fromBytes(Bytes32 bytes) throws IllegalArgumentException {
+  public static BLSSecretKey fromBytes(final Bytes32 bytes) throws IllegalArgumentException {
     if (bytes.compareTo(BLSConstants.CURVE_ORDER_BYTES) >= 0) {
       throw new IllegalArgumentException(
           "Invalid bytes for secret key (0 <= SK < r, where r is "
@@ -39,7 +39,7 @@ public final class BLSSecretKey {
     }
   }
 
-  static BLSSecretKey fromBytesModR(Bytes32 secretKeyBytes) {
+  static BLSSecretKey fromBytesModR(final Bytes32 secretKeyBytes) {
     final Bytes32 keyBytes;
     if (secretKeyBytes.compareTo(BLSConstants.CURVE_ORDER_BYTES) >= 0) {
       BigInteger validSK =
@@ -53,14 +53,14 @@ public final class BLSSecretKey {
     return fromBytes(keyBytes);
   }
 
-  private SecretKey secretKey;
+  private final SecretKey secretKey;
 
   /**
    * Construct from an implementation-specific SecretKey object.
    *
    * @param secretKey An implementation-specific SecretKey
    */
-  public BLSSecretKey(SecretKey secretKey) {
+  public BLSSecretKey(final SecretKey secretKey) {
     this.secretKey = secretKey;
   }
 

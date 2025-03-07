@@ -18,7 +18,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 @FunctionalInterface
 public interface RpcResponseListener<O> {
-  static <T> RpcResponseListener<T> from(Consumer<T> listener) {
+  static <T> RpcResponseListener<T> from(final Consumer<T> listener) {
     return (T response) -> SafeFuture.fromRunnable(() -> listener.accept(response));
   }
 

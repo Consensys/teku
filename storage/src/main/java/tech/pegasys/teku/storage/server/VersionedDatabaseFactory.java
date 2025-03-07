@@ -23,9 +23,12 @@ import java.nio.file.StandardOpenOption;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
 import tech.pegasys.teku.storage.server.leveldb.LevelDbDatabaseFactory;
@@ -45,14 +48,12 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   @VisibleForTesting static final String STORAGE_MODE_PATH = "data-storage-mode.txt";
   @VisibleForTesting static final String METADATA_FILENAME = "metadata.yml";
   @VisibleForTesting static final String NETWORK_FILENAME = "network.yml";
-
   private final MetricsSystem metricsSystem;
   private final File dataDirectory;
   private final int maxKnownNodeCacheSize;
   private final File dbDirectory;
   private final File v5ArchiveDirectory;
   private final File dbVersionFile;
-
   private final File dbStorageModeFile;
   private final StateStorageMode stateStorageMode;
   private final DatabaseVersion createDatabaseVersion;
@@ -60,12 +61,18 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final Eth1Address eth1Address;
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
+  private final SyncDataAccessor dbSettingFileSyncDataAccessor;
+  private final Optional<Eth2Network> maybeNetwork;
 
   public VersionedDatabaseFactory(
-      final MetricsSystem metricsSystem, final Path dataPath, final StorageConfiguration config) {
+      final MetricsSystem metricsSystem,
+      final Path dataPath,
+      final StorageConfiguration config,
+      final Optional<Eth2Network> maybeNetwork) {
 
     this.metricsSystem = metricsSystem;
     this.dataDirectory = dataPath.toFile();
+    this.maybeNetwork = maybeNetwork;
 
     this.createDatabaseVersion = config.getDataStorageCreateDbVersion();
     this.maxKnownNodeCacheSize = config.getMaxKnownNodeCacheSize();
@@ -79,29 +86,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
     this.dbStorageModeFile = this.dataDirectory.toPath().resolve(STORAGE_MODE_PATH).toFile();
 
-    this.stateStorageMode =
-        getStateStorageModeFromConfigOrDisk(Optional.of(config.getDataStorageMode()));
-  }
-
-  private StateStorageMode getStateStorageModeFromConfigOrDisk(
-      final Optional<StateStorageMode> maybeConfiguredStorageMode) {
-    try {
-      final File storageModeFile = this.dataDirectory.toPath().resolve(STORAGE_MODE_PATH).toFile();
-      if (storageModeFile.exists() && maybeConfiguredStorageMode.isPresent()) {
-        final StateStorageMode storageModeFromFile =
-            StateStorageMode.valueOf(Files.readString(storageModeFile.toPath()).trim());
-        if (!storageModeFromFile.equals(maybeConfiguredStorageMode.get())) {
-          LOG.info(
-              "Storage mode that was persisted differs from the command specified option; file: {}, CLI: {}",
-              () -> storageModeFromFile,
-              maybeConfiguredStorageMode::get);
-        }
-      }
-    } catch (IOException e) {
-      LOG.error("Failed to read storage mode file", e);
-    }
-
-    return maybeConfiguredStorageMode.orElse(StateStorageMode.DEFAULT_MODE);
+    dbSettingFileSyncDataAccessor = SyncDataAccessor.create(dataDirectory.toPath());
+    this.stateStorageMode = config.getDataStorageMode();
   }
 
   @Override
@@ -186,7 +172,11 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private Database createV4Database() {
     try {
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(),
+          spec.getGenesisSpecConfig().getGenesisForkVersion(),
+          eth1Address,
+          spec.getGenesisSpecConfig().getDepositChainId(),
+          maybeNetwork);
       return RocksDbDatabaseFactory.createV4(
           metricsSystem,
           KvStoreConfiguration.v4Settings(dbDirectory.toPath()),
@@ -210,7 +200,11 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final V5DatabaseMetadata metaData =
           V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(),
+          spec.getGenesisSpecConfig().getGenesisForkVersion(),
+          eth1Address,
+          spec.getGenesisSpecConfig().getDepositChainId(),
+          maybeNetwork);
       return RocksDbDatabaseFactory.createV4(
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
@@ -253,7 +247,11 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final V5DatabaseMetadata metaData =
           V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());
       DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
+          getNetworkFile(),
+          spec.getGenesisSpecConfig().getGenesisForkVersion(),
+          eth1Address,
+          spec.getGenesisSpecConfig().getDepositChainId(),
+          maybeNetwork);
       return LevelDbDatabaseFactory.createLevelDb(
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
@@ -304,7 +302,11 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         V6DatabaseMetadata.init(getMetadataFile(), V6DatabaseMetadata.singleDBDefault());
 
     DatabaseNetwork.init(
-        getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
+        getNetworkFile(),
+        spec.getGenesisSpecConfig().getGenesisForkVersion(),
+        eth1Address,
+        spec.getGenesisSpecConfig().getDepositChainId(),
+        maybeNetwork);
 
     return metaData.getSingleDbConfiguration().getConfiguration();
   }
@@ -326,7 +328,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     }
   }
 
-  private void createDirectories(DatabaseVersion dbVersion) {
+  private void createDirectories(final DatabaseVersion dbVersion) {
     if (!dbDirectory.mkdirs() && !dbDirectory.isDirectory()) {
       throw DatabaseStorageException.unrecoverable(
           String.format(
@@ -383,7 +385,9 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   private void saveStorageMode(final StateStorageMode storageMode) {
     try {
-      Files.writeString(dbStorageModeFile.toPath(), storageMode.name(), StandardCharsets.UTF_8);
+      dbSettingFileSyncDataAccessor.syncedWrite(
+          dbStorageModeFile.toPath(),
+          Bytes.of(storageMode.name().getBytes(StandardCharsets.UTF_8)));
     } catch (IOException e) {
       throw DatabaseStorageException.unrecoverable(
           "Failed to write database storage mode to file " + dbStorageModeFile.getAbsolutePath(),

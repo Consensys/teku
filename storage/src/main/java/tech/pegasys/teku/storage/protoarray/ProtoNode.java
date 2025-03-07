@@ -89,7 +89,7 @@ public class ProtoNode {
     this.validationStatus = validationStatus;
   }
 
-  public void adjustWeight(long delta) {
+  public void adjustWeight(final long delta) {
     if (delta < 0) {
       UInt64 deltaAbsoluteValue = UInt64.valueOf(Math.abs(delta));
       if (deltaAbsoluteValue.isGreaterThan(weight)) {
@@ -161,7 +161,7 @@ public class ProtoNode {
     checkpoints = checkpoints.realizeNextEpoch();
   }
 
-  public void setParentIndex(Optional<Integer> parentIndex) {
+  public void setParentIndex(final Optional<Integer> parentIndex) {
     this.parentIndex = parentIndex;
   }
 
@@ -169,7 +169,7 @@ public class ProtoNode {
     return bestChildIndex;
   }
 
-  public void setBestChildIndex(Optional<Integer> bestChildIndex) {
+  public void setBestChildIndex(final Optional<Integer> bestChildIndex) {
     this.bestChildIndex = bestChildIndex;
   }
 
@@ -177,7 +177,7 @@ public class ProtoNode {
     return bestDescendantIndex;
   }
 
-  public void setBestDescendantIndex(Optional<Integer> bestDescendantIndex) {
+  public void setBestDescendantIndex(final Optional<Integer> bestDescendantIndex) {
     this.bestDescendantIndex = bestDescendantIndex;
   }
 

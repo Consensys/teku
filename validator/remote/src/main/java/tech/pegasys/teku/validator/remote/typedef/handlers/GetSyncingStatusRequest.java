@@ -23,11 +23,11 @@ import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class GetSyncingStatusRequest extends AbstractTypeDefRequest {
 
-  public GetSyncingStatusRequest(final OkHttpClient okHttpClient, final HttpUrl baseEndpoint) {
+  public GetSyncingStatusRequest(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
     super(baseEndpoint, okHttpClient);
   }
 
-  public SyncingStatus getSyncingStatus() {
+  public SyncingStatus submit() {
     return get(
             GET_SYNCING_STATUS,
             new ResponseHandler<>(ValidatorRequiredApiTypes.SYNCING_STATUS_RESPONSE))

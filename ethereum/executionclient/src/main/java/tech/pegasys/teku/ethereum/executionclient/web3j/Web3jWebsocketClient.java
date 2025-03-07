@@ -76,7 +76,7 @@ class Web3jWebsocketClient extends Web3JClient {
 
   @Override
   public <T> SafeFuture<Response<T>> doRequest(
-      Request<?, ? extends org.web3j.protocol.core.Response<T>> web3jRequest,
+      final Request<?, ? extends org.web3j.protocol.core.Response<T>> web3jRequest,
       final Duration timeout) {
     return tryToConnect()
         .<SafeFuture<Response<T>>>map(SafeFuture::failedFuture)

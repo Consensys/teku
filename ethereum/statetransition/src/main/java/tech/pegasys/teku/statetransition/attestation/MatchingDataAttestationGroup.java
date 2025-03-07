@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -20,16 +21,19 @@ import java.util.Iterator;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggregator;
 
 /**
  * Maintains an aggregated collection of attestations which all share the same {@link
@@ -43,7 +47,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
  * <p>Note that the resulting aggregate will be invalid if attestations with different
  * AttestationData are added.
  */
-class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
+public class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
 
   private final NavigableMap<Integer, Set<ValidatableAttestation>> attestationsByValidatorCount =
       new TreeMap<>(Comparator.reverseOrder()); // Most validators first
@@ -51,35 +55,40 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
   private final Spec spec;
   private Optional<Bytes32> committeeShufflingSeed = Optional.empty();
   private final AttestationData attestationData;
+  private final Optional<Int2IntMap> committeesSize;
 
   /**
    * Tracks which validators were included in attestations at a given slot on the canonical chain.
    *
    * <p>When a reorg occurs we can accurately compute the set of included validators at the common
    * ancestor by removing blocks in slots after the ancestor then recalculating {@link
-   * #includedValidators}. Otherwise we might remove a validator from the included list because it
+   * #includedValidators}. Otherwise, we might remove a validator from the included list because it
    * was in a block moved off the canonical chain even though that validator was also included in an
    * earlier block which is still on the canonical chain.
    *
    * <p>Pruning isn't required for this map because the entire attestation group is dropped by
    * {@link AggregatingAttestationPool} once it is too old to be included in blocks (32 slots).
    */
-  private final NavigableMap<UInt64, SszBitlist> includedValidatorsBySlot = new TreeMap<>();
+  private final NavigableMap<UInt64, AttestationBitsAggregator> includedValidatorsBySlot =
+      new TreeMap<>();
 
   /** Precalculated combined list of included validators across all blocks. */
-  private SszBitlist includedValidators;
+  private AttestationBitsAggregator includedValidators;
 
-  public MatchingDataAttestationGroup(final Spec spec, final AttestationData attestationData) {
+  public MatchingDataAttestationGroup(
+      final Spec spec,
+      final AttestationData attestationData,
+      final Optional<Int2IntMap> committeesSize) {
     this.spec = spec;
     this.attestationData = attestationData;
-    this.includedValidators = createEmptyAggregationBits();
+    this.committeesSize = committeesSize;
+    this.includedValidators = createEmptyAttestationBits();
   }
 
-  private SszBitlist createEmptyAggregationBits() {
-    return spec.atSlot(attestationData.getSlot())
-        .getSchemaDefinitions()
-        .getAttestationSchema()
-        .createEmptyAggregationBits();
+  private AttestationBitsAggregator createEmptyAttestationBits() {
+    return AttestationBitsAggregator.fromEmptyFromAttestationSchema(
+        spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema(),
+        committeesSize);
   }
 
   public AttestationData getAttestationData() {
@@ -94,7 +103,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
    * @return True if the attestation was added, false otherwise
    */
   public boolean add(final ValidatableAttestation attestation) {
-    if (includedValidators.isSuperSetOf(attestation.getAttestation().getAggregationBits())) {
+    if (includedValidators.isSuperSetOf(attestation.getAttestation())) {
       // All attestation bits have already been included on chain
       return false;
     }
@@ -112,6 +121,9 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
    * Iterates through the aggregation of attestations in this group. The iterator attempts to create
    * the minimum number of attestations that include all attestations in the group.
    *
+   * <p>committeeIndex is an optional parameter that enables aggregation over a specified committee
+   * (applies to Electra only)
+   *
    * <p>While it is guaranteed that every validator from an attestation in this group is included in
    * an aggregate produced by this iterator, there is no guarantee that the added attestation
    * instances themselves will be included.
@@ -120,11 +132,31 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
    */
   @Override
   public Iterator<ValidatableAttestation> iterator() {
-    return new AggregatingIterator();
+    return new AggregatingIterator(Optional.empty());
+  }
+
+  public Iterator<ValidatableAttestation> iterator(final Optional<UInt64> committeeIndex) {
+    return new AggregatingIterator(committeeIndex);
   }
 
   public Stream<ValidatableAttestation> stream() {
-    return StreamSupport.stream(spliterator(), false);
+    return StreamSupport.stream(spliterator(Optional.empty()), false);
+  }
+
+  public Stream<ValidatableAttestation> stream(final Optional<UInt64> committeeIndex) {
+    return StreamSupport.stream(spliterator(committeeIndex), false);
+  }
+
+  public Stream<ValidatableAttestation> stream(
+      final Optional<UInt64> committeeIndex, final boolean requiresCommitteeBits) {
+    if (noMatchingAttestations(committeeIndex, requiresCommitteeBits)) {
+      return Stream.empty();
+    }
+    return StreamSupport.stream(spliterator(committeeIndex), false);
+  }
+
+  public Spliterator<ValidatableAttestation> spliterator(final Optional<UInt64> committeeIndex) {
+    return Spliterators.spliteratorUnknownSize(iterator(committeeIndex), 0);
   }
 
   /**
@@ -151,13 +183,21 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
   public int onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
     // Record validators in attestation as seen in this slot
     // Important to do even if the attestation is redundant so we handle re-orgs correctly
-    includedValidatorsBySlot.merge(slot, attestation.getAggregationBits(), SszBitlist::or);
+    includedValidatorsBySlot.compute(
+        slot,
+        (__, attestationBitsCalculator) -> {
+          if (attestationBitsCalculator == null) {
+            return AttestationBitsAggregator.of(attestation, committeesSize);
+          }
+          attestationBitsCalculator.or(attestation);
+          return attestationBitsCalculator;
+        });
 
-    if (includedValidators.isSuperSetOf(attestation.getAggregationBits())) {
+    if (includedValidators.isSuperSetOf(attestation)) {
       // We've already seen and filtered out all of these bits, nothing to do
       return 0;
     }
-    includedValidators = includedValidators.or(attestation.getAggregationBits());
+    includedValidators.or(attestation);
 
     final Collection<Set<ValidatableAttestation>> attestationSets =
         attestationsByValidatorCount.values();
@@ -167,7 +207,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
       for (Iterator<ValidatableAttestation> iterator = candidates.iterator();
           iterator.hasNext(); ) {
         ValidatableAttestation candidate = iterator.next();
-        if (includedValidators.isSuperSetOf(candidate.getAttestation().getAggregationBits())) {
+        if (includedValidators.isSuperSetOf(candidate.getAttestation())) {
           iterator.remove();
           numRemoved++;
         }
@@ -180,7 +220,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
   }
 
   public void onReorg(final UInt64 commonAncestorSlot) {
-    final NavigableMap<UInt64, SszBitlist> removedSlots =
+    final NavigableMap<UInt64, AttestationBitsAggregator> removedSlots =
         includedValidatorsBySlot.tailMap(commonAncestorSlot, false);
     if (removedSlots.isEmpty()) {
       // No relevant attestations in affected slots, so nothing to do.
@@ -189,47 +229,82 @@ class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
     removedSlots.clear();
     // Recalculate totalSeenAggregationBits as validators may have been seen in multiple blocks so
     // can't do a simple remove
-    includedValidators =
-        includedValidatorsBySlot.values().stream()
-            .reduce(createEmptyAggregationBits(), SszBitlist::or);
+    includedValidators = createEmptyAttestationBits();
+    includedValidatorsBySlot.values().forEach(includedValidators::or);
   }
 
   public boolean matchesCommitteeShufflingSeed(final Set<Bytes32> validSeeds) {
     return committeeShufflingSeed.map(validSeeds::contains).orElse(false);
   }
 
+  private boolean noMatchingAttestations(
+      final Optional<UInt64> committeeIndex, final boolean requiresCommitteeBits) {
+    return requiresCommitteeBits != includedValidators.requiresCommitteeBits()
+        || noMatchingPreElectraAttestations(committeeIndex);
+  }
+
+  private boolean noMatchingPreElectraAttestations(final Optional<UInt64> committeeIndex) {
+    return committeeIndex.isPresent()
+        && !includedValidators.requiresCommitteeBits()
+        && !attestationData.getIndex().equals(committeeIndex.get());
+  }
+
   private class AggregatingIterator implements Iterator<ValidatableAttestation> {
-    private SszBitlist includedValidators = MatchingDataAttestationGroup.this.includedValidators;
+
+    private final Optional<UInt64> maybeCommitteeIndex;
+    private final AttestationBitsAggregator includedValidators;
+
+    private Iterator<ValidatableAttestation> remainingAttestations = getRemainingAttestations();
+
+    private AggregatingIterator(final Optional<UInt64> committeeIndex) {
+      this.maybeCommitteeIndex = committeeIndex;
+      includedValidators = MatchingDataAttestationGroup.this.includedValidators.copy();
+    }
 
     @Override
     public boolean hasNext() {
-      return streamRemainingAttestations().findAny().isPresent();
+      if (!remainingAttestations.hasNext()) {
+        remainingAttestations = getRemainingAttestations();
+      }
+      return remainingAttestations.hasNext();
     }
 
     @Override
     public ValidatableAttestation next() {
       final AggregateAttestationBuilder builder =
           new AggregateAttestationBuilder(spec, attestationData);
-      streamRemainingAttestations()
-          .forEach(
-              candidate -> {
-                final SszBitlist candidateAggregationBits =
-                    candidate.getAttestation().getAggregationBits();
-                if (builder.canAggregate(candidate)) {
-                  builder.aggregate(candidate);
-                  includedValidators = includedValidators.or(candidateAggregationBits);
-                }
-              });
+      remainingAttestations.forEachRemaining(
+          candidate -> {
+            if (builder.aggregate(candidate)) {
+              includedValidators.or(candidate.getAttestation());
+            }
+          });
       return builder.buildAggregate();
     }
 
-    public Stream<ValidatableAttestation> streamRemainingAttestations() {
+    public Iterator<ValidatableAttestation> getRemainingAttestations() {
       return attestationsByValidatorCount.values().stream()
           .flatMap(Set::stream)
-          .filter(
-              candidate ->
-                  !includedValidators.isSuperSetOf(
-                      candidate.getAttestation().getAggregationBits()));
+          .filter(this::maybeFilterOnCommitteeIndex)
+          .filter(candidate -> !includedValidators.isSuperSetOf(candidate.getAttestation()))
+          .iterator();
+    }
+
+    /*
+    If we have attestations with committeeBits (Electra) then, if maybeCommitteeIndex is specified, we will consider attestation related to that committee only
+     */
+    private boolean maybeFilterOnCommitteeIndex(final ValidatableAttestation candidate) {
+      final Optional<SszBitvector> maybeCommitteeBits =
+          candidate.getAttestation().getCommitteeBits();
+      if (maybeCommitteeBits.isEmpty() || maybeCommitteeIndex.isEmpty()) {
+        return true;
+      }
+
+      final SszBitvector committeeBits = maybeCommitteeBits.get();
+      if (committeeBits.getBitCount() != 1) {
+        return false;
+      }
+      return committeeBits.isSet(maybeCommitteeIndex.get().intValue());
     }
   }
 }

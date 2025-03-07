@@ -24,16 +24,16 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
 
 public interface SszPrimitiveCollectionSchema<
         ElementT,
-        SszElementT extends SszPrimitive<ElementT, SszElementT>,
+        SszElementT extends SszPrimitive<ElementT>,
         SszCollectionT extends SszPrimitiveCollection<ElementT, SszElementT>>
     extends SszCollectionSchema<SszElementT, SszCollectionT> {
 
   @SuppressWarnings("unchecked")
-  default SszCollectionT of(ElementT... rawElements) {
+  default SszCollectionT of(final ElementT... rawElements) {
     return of(Arrays.asList(rawElements));
   }
 
-  default SszCollectionT of(List<? extends ElementT> rawElements) {
+  default SszCollectionT of(final List<? extends ElementT> rawElements) {
     SszPrimitiveSchema<ElementT, SszElementT> elementSchema = getPrimitiveElementSchema();
     return createFromElements(rawElements.stream().map(elementSchema::boxed).toList());
   }

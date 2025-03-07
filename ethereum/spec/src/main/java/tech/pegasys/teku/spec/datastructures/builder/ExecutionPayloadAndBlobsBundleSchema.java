@@ -13,24 +13,26 @@
 
 package tech.pegasys.teku.spec.datastructures.builder;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOBS_BUNDLE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
+
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class ExecutionPayloadAndBlobsBundleSchema
     extends ContainerSchema2<ExecutionPayloadAndBlobsBundle, ExecutionPayload, BlobsBundle>
     implements BuilderPayloadSchema<ExecutionPayloadAndBlobsBundle> {
 
-  public ExecutionPayloadAndBlobsBundleSchema(
-      final ExecutionPayloadSchema<? extends ExecutionPayload> executionPayloadSchema,
-      final BlobsBundleSchema blobsBundleSchema) {
+  public ExecutionPayloadAndBlobsBundleSchema(final SchemaRegistry schemaRegistry) {
     super(
         "ExecutionPayloadAndBlobsBundle",
         namedSchema(
-            "execution_payload", SszSchema.as(ExecutionPayload.class, executionPayloadSchema)),
-        namedSchema("blobs_bundle", blobsBundleSchema));
+            "execution_payload",
+            SszSchema.as(ExecutionPayload.class, schemaRegistry.get(EXECUTION_PAYLOAD_SCHEMA))),
+        namedSchema("blobs_bundle", schemaRegistry.get(BLOBS_BUNDLE_SCHEMA)));
   }
 
   @Override

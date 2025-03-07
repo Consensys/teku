@@ -50,6 +50,23 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
   }
 
   @Test
+  void shouldFailWithNoValidatorKeysSourceProvidedOnValidatorClient() throws Exception {
+    final TekuBeaconNode beaconNode = createTekuBeaconNode();
+
+    final TekuValidatorNode validatorClient =
+        createValidatorNode(
+            TekuNodeConfigBuilder.createValidatorClient()
+                .withInteropModeDisabled()
+                .withBeaconNodes(beaconNode)
+                .build());
+    beaconNode.start();
+    validatorClient.startWithFailure(
+        "No validator keys source provided, should provide local or remote keys otherwise enable the key-manager"
+            + " api to start the validator client");
+    beaconNode.stop();
+  }
+
+  @Test
   void bn_shouldFailIfValidatorKeyLocked(@TempDir final Path tempDir) throws Exception {
     final String networkName = "swift";
     final ValidatorKeystores initialKeystores =
@@ -145,6 +162,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
             TekuNodeConfigBuilder.createValidatorClient()
                 .withInteropModeDisabled()
                 .withBeaconNodes(beaconNode)
+                .withValidatorApiEnabled()
                 .withExitWhenNoValidatorKeysEnabled(true)
                 .build());
     beaconNode.start();

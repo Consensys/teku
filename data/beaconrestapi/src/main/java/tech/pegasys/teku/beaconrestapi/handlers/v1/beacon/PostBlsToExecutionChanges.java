@@ -75,7 +75,7 @@ public class PostBlsToExecutionChanges extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final List<SignedBlsToExecutionChange> blsToExecutionChanges = request.getRequestBody();
     if (blsToExecutionChanges.size() > MAX_BLS_MESSAGES_PER_REQUEST) {
       final String errorMessage =

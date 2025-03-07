@@ -56,15 +56,16 @@ public class RpcHandler<
         TRequest,
         TRespHandler extends RpcResponseHandler<?>>
     implements ProtocolBinding<Controller<TOutgoingHandler>> {
-  private static final Duration TIMEOUT = Duration.ofSeconds(5);
   private static final Logger LOG = LogManager.getLogger();
 
-  private final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod;
+  private static final Duration STREAM_INITIALIZE_TIMEOUT = Duration.ofSeconds(5);
+
   private final AsyncRunner asyncRunner;
+  private final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod;
 
   public RpcHandler(
       final AsyncRunner asyncRunner,
-      RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod) {
+      final RpcMethod<TOutgoingHandler, TRequest, TRespHandler> rpcMethod) {
     this.asyncRunner = asyncRunner;
     this.rpcMethod = rpcMethod;
   }
@@ -74,8 +75,7 @@ public class RpcHandler<
   }
 
   public SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
-      Connection connection, TRequest request, TRespHandler responseHandler) {
-
+      final Connection connection, final TRequest request, final TRespHandler responseHandler) {
     final Bytes initialPayload;
     try {
       initialPayload = rpcMethod.encodeRequest(request);
@@ -83,11 +83,11 @@ public class RpcHandler<
       return SafeFuture.failedFuture(e);
     }
 
-    Interruptor closeInterruptor =
+    final Interruptor closeInterruptor =
         SafeFuture.createInterruptor(connection.closeFuture(), PeerDisconnectedException::new);
-    Interruptor timeoutInterruptor =
+    final Interruptor timeoutInterruptor =
         SafeFuture.createInterruptor(
-            asyncRunner.getDelayedFuture(TIMEOUT),
+            asyncRunner.getDelayedFuture(STREAM_INITIALIZE_TIMEOUT),
             () ->
                 new StreamTimeoutException(
                     "Timed out waiting to initialize stream for protocol(s): "
@@ -127,7 +127,7 @@ public class RpcHandler<
             });
   }
 
-  private void closeStreamAbruptly(Stream stream) {
+  private void closeStreamAbruptly(final Stream stream) {
     SafeFuture.of(stream.close()).ifExceptionGetsHereRaiseABug();
   }
 
@@ -171,7 +171,7 @@ public class RpcHandler<
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) {
+    public void channelActive(final ChannelHandlerContext ctx) {
       rpcStream = new LibP2PRpcStream(nodeId, p2pChannel, ctx);
       activeFuture.complete(this);
     }
@@ -197,14 +197,14 @@ public class RpcHandler<
       setFullyActive(requestHandler);
     }
 
-    private void setRequestHandler(RpcRequestHandler rpcRequestHandler) {
+    private void setRequestHandler(final RpcRequestHandler rpcRequestHandler) {
       if (this.rpcRequestHandler.isPresent()) {
         throw new IllegalStateException("Attempt to set an already set data handler");
       }
       this.rpcRequestHandler = Optional.of(rpcRequestHandler);
     }
 
-    private void setFullyActive(RpcRequestHandler rpcRequestHandler) {
+    private void setFullyActive(final RpcRequestHandler rpcRequestHandler) {
       activeFuture.finish(
           () -> {
             rpcRequestHandler.active(nodeId, rpcStream);
@@ -226,7 +226,7 @@ public class RpcHandler<
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+    public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
       LOG.error("Unhandled error while processes req/response", cause);
       final IllegalStateException exception = new IllegalStateException("Channel exception", cause);
       activeFuture.completeExceptionally(exception);
@@ -234,12 +234,12 @@ public class RpcHandler<
     }
 
     @Override
-    public void handlerRemoved(ChannelHandlerContext ctx) {
+    public void handlerRemoved(final ChannelHandlerContext ctx) {
       onChannelClosed();
     }
 
     @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+    public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) {
       if (evt instanceof RemoteWriteClosed) {
         onRemoteWriteClosed();
       }

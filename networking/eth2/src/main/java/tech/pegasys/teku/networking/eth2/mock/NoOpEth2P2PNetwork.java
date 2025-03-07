@@ -37,7 +37,7 @@ public class NoOpEth2P2PNetwork extends MockP2PNetwork<Eth2Peer> implements Eth2
   public void onEpoch(final UInt64 epoch) {}
 
   @Override
-  public void onSyncStateChanged(final boolean isInSync, final boolean isOptimistic) {}
+  public void onSyncStateChanged(final boolean isCloseToInSync, final boolean isOptimistic) {}
 
   @Override
   public void subscribeToAttestationSubnetId(final int subnetId) {}
@@ -55,10 +55,10 @@ public class NoOpEth2P2PNetwork extends MockP2PNetwork<Eth2Peer> implements Eth2
   public void unsubscribeFromSyncCommitteeSubnetId(final int subnetId) {}
 
   @Override
-  public void subscribeToDataColumnSidecarSubnetId(int subnetId) {}
+  public void subscribeToDataColumnSidecarSubnetId(final int subnetId) {}
 
   @Override
-  public void unsubscribeFromDataColumnSidecarSubnetId(int subnetId) {}
+  public void unsubscribeFromDataColumnSidecarSubnetId(final int subnetId) {}
 
   @Override
   public MetadataMessage getMetadata() {

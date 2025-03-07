@@ -62,8 +62,7 @@ public class StableSubnetSubscriberTest {
         .getValue()
         .forEach(
             subnetSubscription ->
-                assertThat(subnetSubscription.getUnsubscriptionSlot())
-                    .isEqualTo(unsubscriptionSlot));
+                assertThat(subnetSubscription.unsubscriptionSlot()).isEqualTo(unsubscriptionSlot));
     assertSubnetsAreDistinct(subnetSubscriptions.getValue());
   }
 
@@ -85,7 +84,7 @@ public class StableSubnetSubscriberTest {
         .hasSize(spec.getNetworkingConfig().getSubnetsPerNode());
 
     UInt64 firstUnsubscriptionSlot =
-        firstSubscriptionUpdate.getValue().stream().findFirst().get().getUnsubscriptionSlot();
+        firstSubscriptionUpdate.getValue().stream().findFirst().get().unsubscriptionSlot();
 
     stableSubnetSubscriber.onSlot(firstUnsubscriptionSlot.minus(UInt64.ONE));
 
@@ -99,7 +98,7 @@ public class StableSubnetSubscriberTest {
         .isNotEqualTo(secondSubscriptionUpdate.getValue());
 
     UInt64 secondUnsubscriptionSlot =
-        secondSubscriptionUpdate.getValue().stream().findFirst().get().getUnsubscriptionSlot();
+        secondSubscriptionUpdate.getValue().stream().findFirst().get().unsubscriptionSlot();
 
     assertThat(firstUnsubscriptionSlot).isNotEqualByComparingTo(secondUnsubscriptionSlot);
     assertThat(
@@ -109,11 +108,11 @@ public class StableSubnetSubscriberTest {
         .isEqualTo(UInt64.valueOf(spec.getNetworkingConfig().getEpochsPerSubnetSubscription()));
   }
 
-  private void assertSubnetsAreDistinct(Set<SubnetSubscription> subnetSubscriptions) {
+  private void assertSubnetsAreDistinct(final Set<SubnetSubscription> subnetSubscriptions) {
     IntSet subnetIds =
         IntOpenHashSet.toSet(
             subnetSubscriptions.stream()
-                .map(SubnetSubscription::getSubnetId)
+                .map(SubnetSubscription::subnetId)
                 .mapToInt(Integer::intValue));
     assertThat(subnetSubscriptions).hasSameSizeAs(subnetIds);
   }

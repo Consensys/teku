@@ -16,7 +16,7 @@ package tech.pegasys.teku.infrastructure.ssz.collections;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 
-public interface SszPrimitiveList<ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+public interface SszPrimitiveList<ElementT, SszElementT extends SszPrimitive<ElementT>>
     extends SszPrimitiveCollection<ElementT, SszElementT>, SszList<SszElementT> {
 
   @Override

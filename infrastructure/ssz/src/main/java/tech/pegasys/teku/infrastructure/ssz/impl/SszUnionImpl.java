@@ -29,7 +29,7 @@ public class SszUnionImpl implements SszUnion {
   private final Supplier<SszData> value = Suppliers.memoize(this::createValue);
   private final Supplier<Integer> selector = Suppliers.memoize(this::createSelector);
 
-  public SszUnionImpl(SszUnionSchemaImpl<?> schema, TreeNode backingNode) {
+  public SszUnionImpl(final SszUnionSchemaImpl<?> schema, final TreeNode backingNode) {
     this.schema = schema;
     this.backingNode = backingNode;
   }
@@ -65,7 +65,7 @@ public class SszUnionImpl implements SszUnion {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

@@ -36,7 +36,7 @@ public class SignedValidatorRegistrationSchema
   }
 
   @Override
-  public SignedValidatorRegistration createFromBackingNode(TreeNode node) {
+  public SignedValidatorRegistration createFromBackingNode(final TreeNode node) {
     return new SignedValidatorRegistration(this, node);
   }
 }

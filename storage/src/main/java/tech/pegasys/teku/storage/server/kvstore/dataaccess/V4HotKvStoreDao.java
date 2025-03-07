@@ -223,7 +223,7 @@ public class V4HotKvStoreDao {
     }
 
     @Override
-    public void setWeakSubjectivityCheckpoint(Checkpoint checkpoint) {
+    public void setWeakSubjectivityCheckpoint(final Checkpoint checkpoint) {
       transaction.put(schema.getVariableWeakSubjectivityCheckpoint(), checkpoint);
     }
 
@@ -304,7 +304,7 @@ public class V4HotKvStoreDao {
     }
 
     @Override
-    public void removeDepositsFromBlockEvent(UInt64 blockNumber) {
+    public void removeDepositsFromBlockEvent(final UInt64 blockNumber) {
       transaction.delete(schema.getColumnDepositsFromBlockEvents(), blockNumber);
     }
 

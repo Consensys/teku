@@ -28,8 +28,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigEip7594;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -43,7 +43,7 @@ public class DasLongPollCustodyTest {
   final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(0);
   final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner(stubTimeProvider);
 
-  final Spec spec = TestSpecFactory.createMinimalEip7594();
+  final Spec spec = TestSpecFactory.createMinimalFulu();
   final DataColumnSidecarDB db = new DataColumnSidecarDBStub();
   final Duration dbDelay = ofMillis(5);
   final DelayedDasDb delayedDb = new DelayedDasDb(db, stubAsyncRunner, dbDelay);
@@ -52,9 +52,9 @@ public class DasLongPollCustodyTest {
   final CanonicalBlockResolverStub blockResolver = new CanonicalBlockResolverStub(spec);
   final UInt256 myNodeId = UInt256.ONE;
 
-  final SpecConfigEip7594 config =
-      SpecConfigEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).getConfig());
-  final int subnetCount = config.getDataColumnSidecarSubnetCount();
+  final SpecConfigFulu config =
+      SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
+  final int groupCount = config.getNumberOfCustodyGroups();
 
   final DataColumnSidecarCustodyImpl custodyImpl =
       new DataColumnSidecarCustodyImpl(
@@ -63,12 +63,12 @@ public class DasLongPollCustodyTest {
           dbAccessor,
           MinCustodyPeriodSlotCalculator.createFromSpec(spec),
           myNodeId,
-          subnetCount);
+          groupCount);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
   private final Duration currentSlotTimeout = ofSeconds(3);
   private final DasLongPollCustody custody =
-      new DasLongPollCustody(custodyImpl, stubAsyncRunner, currentSlotTimeout);
+      new DasLongPollCustody(custodyImpl, stubAsyncRunner, __ -> currentSlotTimeout);
 
   private final BeaconBlock block10 = blockResolver.addBlock(10, true);
   private final DataColumnSidecar sidecar10_0 = createSidecar(block10, 0);
@@ -78,15 +78,15 @@ public class DasLongPollCustodyTest {
   private final DataColumnSlotAndIdentifier columnId10_1 =
       DataColumnSlotAndIdentifier.fromDataColumn(sidecar10_1);
 
-  private DataColumnSidecar createSidecar(BeaconBlock block, int column) {
+  private DataColumnSidecar createSidecar(final BeaconBlock block, final int column) {
     return dataStructureUtil.randomDataColumnSidecar(createSigned(block), UInt64.valueOf(column));
   }
 
-  private SignedBeaconBlockHeader createSigned(BeaconBlock block) {
+  private SignedBeaconBlockHeader createSigned(final BeaconBlock block) {
     return dataStructureUtil.signedBlock(block).asHeader();
   }
 
-  private void advanceTimeGradually(Duration delta) {
+  private void advanceTimeGradually(final Duration delta) {
     for (int i = 0; i < delta.toMillis(); i++) {
       stubTimeProvider.advanceTimeBy(ofMillis(1));
       stubAsyncRunner.executeDueActionsRepeatedly();
@@ -97,10 +97,13 @@ public class DasLongPollCustodyTest {
   void testLongPollingColumnRequest() throws Exception {
     SafeFuture<Optional<DataColumnSidecar>> fRet0 =
         custody.getCustodyDataColumnSidecar(columnId10_0);
+    SafeFuture<Boolean> fHas0 = custody.hasCustodyDataColumnSidecar(columnId10_0);
     SafeFuture<Optional<DataColumnSidecar>> fRet0_1 =
         custody.getCustodyDataColumnSidecar(columnId10_0);
+    SafeFuture<Boolean> fHas0_1 = custody.hasCustodyDataColumnSidecar(columnId10_0);
     SafeFuture<Optional<DataColumnSidecar>> fRet1 =
         custody.getCustodyDataColumnSidecar(columnId10_1);
+    SafeFuture<Boolean> fHas1 = custody.hasCustodyDataColumnSidecar(columnId10_1);
 
     advanceTimeGradually(currentSlotTimeout.minus(dbDelay).minus(ofMillis(1)));
 
@@ -115,12 +118,16 @@ public class DasLongPollCustodyTest {
     advanceTimeGradually(dbDelay);
 
     assertThat(fRet0).isCompletedWithValue(Optional.of(sidecar10_0));
+    assertThat(fHas0).isCompletedWithValue(true);
     assertThat(fRet0_1).isCompletedWithValue(Optional.of(sidecar10_0));
+    assertThat(fHas0_1).isCompletedWithValue(true);
     assertThat(fRet1).isNotDone();
+    assertThat(fHas1).isNotDone();
 
     advanceTimeGradually(currentSlotTimeout);
 
     assertThat(fRet1).isCompletedWithValue(Optional.empty());
+    assertThat(fHas1).isCompletedWithValue(false);
   }
 
   @Test
@@ -129,6 +136,7 @@ public class DasLongPollCustodyTest {
     delayedDb.setDelay(ofMillis(10));
     SafeFuture<Optional<DataColumnSidecar>> fRet0 =
         custody.getCustodyDataColumnSidecar(columnId10_0);
+    SafeFuture<Boolean> fHas0 = custody.hasCustodyDataColumnSidecar(columnId10_0);
     advanceTimeGradually(ofMillis(1));
 
     // quicker DB write
@@ -137,6 +145,7 @@ public class DasLongPollCustodyTest {
 
     advanceTimeGradually(ofMillis(10));
     assertThat(fRet0).isCompletedWithValue(Optional.ofNullable(sidecar10_0));
+    assertThat(fHas0).isCompletedWithValue(true);
   }
 
   @Test
@@ -150,9 +159,11 @@ public class DasLongPollCustodyTest {
     delayedDb.setDelay(ofMillis(5));
     SafeFuture<Optional<DataColumnSidecar>> fRet0 =
         custody.getCustodyDataColumnSidecar(columnId10_0);
+    SafeFuture<Boolean> fHas0 = custody.hasCustodyDataColumnSidecar(columnId10_0);
 
     advanceTimeGradually(ofMillis(50));
     assertThat(fRet0).isCompletedWithValue(Optional.ofNullable(sidecar10_0));
+    assertThat(fHas0).isCompletedWithValue(true);
   }
 
   @Test
@@ -163,31 +174,38 @@ public class DasLongPollCustodyTest {
     custody.onSlot(UInt64.valueOf(10));
     SafeFuture<Optional<DataColumnSidecar>> fRet0 =
         custody.getCustodyDataColumnSidecar(columnId10_0);
+    SafeFuture<Boolean> fHas0 = custody.hasCustodyDataColumnSidecar(columnId10_0);
 
     advanceTimeGradually(ofMillis(100));
     assertThat(fRet0).isNotDone();
+    assertThat(fHas0).isNotDone();
 
     advanceTimeGradually(currentSlotTimeout);
     assertThat(fRet0).isCompletedWithValue(Optional.empty());
+    assertThat(fHas0).isCompletedWithValue(false);
   }
 
   @Test
   void testOptionalEmptyIsReturnedOnTimeout() {
     SafeFuture<Optional<DataColumnSidecar>> fRet0 =
         custody.getCustodyDataColumnSidecar(columnId10_0);
+    SafeFuture<Boolean> fHas0 = custody.hasCustodyDataColumnSidecar(columnId10_0);
 
     custody.onSlot(UInt64.valueOf(9));
     advanceTimeGradually(currentSlotTimeout.plusMillis(100));
 
     assertThat(fRet0).isNotDone();
+    assertThat(fHas0).isNotDone();
 
     custody.onSlot(UInt64.valueOf(10));
 
     advanceTimeGradually(currentSlotTimeout.minusMillis(10));
     assertThat(fRet0).isNotDone();
+    assertThat(fHas0).isNotDone();
 
     advanceTimeGradually(Duration.ofMillis(110));
     assertThat(fRet0).isCompletedWithValue(Optional.empty());
+    assertThat(fHas0).isCompletedWithValue(false);
   }
 
   @Test
@@ -197,7 +215,35 @@ public class DasLongPollCustodyTest {
 
     SafeFuture<Optional<DataColumnSidecar>> fRet =
         custody.getCustodyDataColumnSidecar(columnId10_0);
+    SafeFuture<Boolean> fHas0 = custody.hasCustodyDataColumnSidecar(columnId10_0);
     advanceTimeGradually(Duration.ofMillis(20)); // more than db delay
     assertThat(fRet).isCompletedWithValue(Optional.empty());
+    assertThat(fHas0).isCompletedWithValue(false);
+  }
+
+  @Test
+  void testTimeoutOccursForAll() {
+    SafeFuture<Optional<DataColumnSidecar>> fRet0 =
+        custody.getCustodyDataColumnSidecar(columnId10_0);
+    SafeFuture<Boolean> fHas0 = custody.hasCustodyDataColumnSidecar(columnId10_0);
+    SafeFuture<Optional<DataColumnSidecar>> fRet1 =
+        custody.getCustodyDataColumnSidecar(columnId10_0);
+    SafeFuture<Boolean> fHas1 = custody.hasCustodyDataColumnSidecar(columnId10_1);
+
+    custody.onSlot(UInt64.valueOf(9));
+    advanceTimeGradually(currentSlotTimeout.plusMillis(100));
+    custody.onSlot(UInt64.valueOf(10));
+    advanceTimeGradually(currentSlotTimeout.minusMillis(10));
+
+    assertThat(fRet0).isNotDone();
+    assertThat(fHas0).isNotDone();
+    assertThat(fRet1).isNotDone();
+    assertThat(fHas1).isNotDone();
+
+    advanceTimeGradually(Duration.ofMillis(110));
+    assertThat(fRet0).isCompletedWithValue(Optional.empty());
+    assertThat(fHas0).isCompletedWithValue(false);
+    assertThat(fRet1).isCompletedWithValue(Optional.empty());
+    assertThat(fHas1).isCompletedWithValue(false);
   }
 }

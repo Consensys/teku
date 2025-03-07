@@ -32,7 +32,7 @@ import tech.pegasys.teku.bls.BatchSemiAggregate;
 public abstract class AbstractBLS12381Test {
 
   private final List<KeyPair> keys =
-      IntStream.range(0, 8).mapToObj(getBls()::generateKeyPair).collect(Collectors.toList());
+      IntStream.range(0, 8).mapToObj(getBls()::generateKeyPair).toList();
   private final List<List<PublicKey>> pubKeys =
       keys.stream()
           .map(k -> Collections.singletonList(k.getPublicKey()))

@@ -33,11 +33,12 @@ public class HistoricalBatch
     }
 
     @Override
-    public HistoricalBatch createFromBackingNode(TreeNode node) {
+    public HistoricalBatch createFromBackingNode(final TreeNode node) {
       return new HistoricalBatch(this, node);
     }
 
-    public HistoricalBatch create(SszBytes32Vector blockRoots, SszBytes32Vector stateRoots) {
+    public HistoricalBatch create(
+        final SszBytes32Vector blockRoots, final SszBytes32Vector stateRoots) {
       return new HistoricalBatch(this, blockRoots, stateRoots);
     }
 
@@ -50,12 +51,14 @@ public class HistoricalBatch
     }
   }
 
-  private HistoricalBatch(HistoricalBatchSchema type, TreeNode backingNode) {
+  private HistoricalBatch(final HistoricalBatchSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
   private HistoricalBatch(
-      HistoricalBatchSchema type, SszBytes32Vector blockRoots, SszBytes32Vector stateRoots) {
+      final HistoricalBatchSchema type,
+      final SszBytes32Vector blockRoots,
+      final SszBytes32Vector stateRoots) {
     super(type, blockRoots, stateRoots);
   }
 

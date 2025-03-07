@@ -26,7 +26,7 @@ public interface SszCompositeTestBase extends SszDataTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  default void get_childSchemaMatches(SszComposite<?> data) {
+  default void get_childSchemaMatches(final SszComposite<?> data) {
     SszCompositeSchema<?> schema = data.getSchema();
     for (int i = 0; i < data.size(); i++) {
       SszData child = data.get(i);
@@ -39,7 +39,7 @@ public interface SszCompositeTestBase extends SszDataTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  default void get_throwsOutOfBounds(SszComposite<?> data) {
+  default void get_throwsOutOfBounds(final SszComposite<?> data) {
     assertThatThrownBy(() -> data.get(-1)).isInstanceOf(IndexOutOfBoundsException.class);
     assertThatThrownBy(() -> data.get(data.size())).isInstanceOf(IndexOutOfBoundsException.class);
     assertThatThrownBy(
@@ -49,7 +49,7 @@ public interface SszCompositeTestBase extends SszDataTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  default void size_shouldBeLessOrEqualThanMaxLength(SszComposite<?> data) {
+  default void size_shouldBeLessOrEqualThanMaxLength(final SszComposite<?> data) {
     Assertions.assertThat((long) data.size()).isLessThanOrEqualTo(data.getSchema().getMaxLength());
   }
 }

@@ -36,13 +36,13 @@ public class AttesterSlashingValidator implements OperationValidator<AttesterSla
   private final Set<UInt64> seenIndices = LimitedSet.createSynchronized(VALID_VALIDATOR_SET_SIZE);
   private final Spec spec;
 
-  public AttesterSlashingValidator(RecentChainData recentChainData, final Spec spec) {
+  public AttesterSlashingValidator(final RecentChainData recentChainData, final Spec spec) {
     this.recentChainData = recentChainData;
     this.spec = spec;
   }
 
   @Override
-  public SafeFuture<InternalValidationResult> validateForGossip(AttesterSlashing slashing) {
+  public SafeFuture<InternalValidationResult> validateForGossip(final AttesterSlashing slashing) {
     if (!includesUnseenIndexToSlash(slashing.getIntersectingValidatorIndices())) {
       LOG.trace("AttesterSlashingValidator: Slashing is not the first one for any validator.");
       return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
@@ -75,7 +75,7 @@ public class AttesterSlashingValidator implements OperationValidator<AttesterSla
     return spec.validateAttesterSlashing(stateAtBlockSlot, slashing);
   }
 
-  private boolean includesUnseenIndexToSlash(Set<UInt64> intersectingIndices) {
+  private boolean includesUnseenIndexToSlash(final Set<UInt64> intersectingIndices) {
     return !seenIndices.containsAll(intersectingIndices);
   }
 

@@ -76,12 +76,12 @@ public final class RustKZGTest extends KZGAbstractTest {
   }
 
   @Override
-  public void testComputingProofWithIncorrectLengthBlobDoesNotCauseSegfault(String blobHex) {
+  public void testComputingProofWithIncorrectLengthBlobDoesNotCauseSegfault(final String blobHex) {
     // skip, not supported
   }
 
   @Override
-  public void incorrectTrustedSetupFilesShouldThrow(String filename) {
+  public void incorrectTrustedSetupFilesShouldThrow(final String filename) {
     // skip, not supported
   }
 

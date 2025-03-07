@@ -45,6 +45,7 @@ public class BlobSidecarsByRootValidator extends AbstractBlobSidecarsValidator {
           peer, InvalidResponseType.BLOB_SIDECAR_UNEXPECTED_IDENTIFIER);
     }
 
+    verifyInclusionProof(blobSidecar);
     verifyKzg(blobSidecar);
   }
 }

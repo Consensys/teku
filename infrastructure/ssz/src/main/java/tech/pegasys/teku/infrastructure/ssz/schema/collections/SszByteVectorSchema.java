@@ -24,11 +24,11 @@ public interface SszByteVectorSchema<SszVectorT extends SszByteVector>
 
   SszVectorT fromBytes(Bytes bytes);
 
-  static SszByteVectorSchema<SszByteVector> create(int length) {
+  static SszByteVectorSchema<SszByteVector> create(final int length) {
     return new SszByteVectorSchemaImpl<>(SszPrimitiveSchemas.BYTE_SCHEMA, length);
   }
 
-  static SszByteVectorSchema<SszByteVector> createUInt8(int length) {
+  static SszByteVectorSchema<SszByteVector> createUInt8(final int length) {
     return new SszByteVectorSchemaImpl<>(SszPrimitiveSchemas.UINT8_SCHEMA, length);
   }
 }

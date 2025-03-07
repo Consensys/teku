@@ -40,9 +40,13 @@ public class MetricsConfig {
   public static final int DEFAULT_METRICS_PUBLICATION_INTERVAL = 60;
   public static final boolean DEFAULT_BLOCK_PERFORMANCE_ENABLED = true;
   public static final boolean DEFAULT_TICK_PERFORMANCE_ENABLED = false;
+
   public static final boolean DEFAULT_BLOCK_PRODUCTION_AND_PUBLISHING_PERFORMANCE_ENABLED = true;
-  public static final int DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_WARNING_THRESHOLD = 300;
-  public static final int DEFAULT_BLOCK_PUBLISHING_PERFORMANCE_WARNING_THRESHOLD = 1000;
+  public static final int DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_WARNING_LOCAL_THRESHOLD = 600;
+  public static final int DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_WARNING_BUILDER_THRESHOLD = 1000;
+  public static final int DEFAULT_BLOCK_PUBLISHING_PERFORMANCE_WARNING_LOCAL_THRESHOLD = 750;
+  public static final int DEFAULT_BLOCK_PUBLISHING_PERFORMANCE_WARNING_BUILDER_THRESHOLD = 1500;
+
   public static final boolean DEFAULT_BLOB_SIDECARS_STORAGE_COUNTERS_ENABLED = false;
 
   private final boolean metricsEnabled;
@@ -57,8 +61,10 @@ public class MetricsConfig {
   private final boolean tickPerformanceEnabled;
   private final boolean blobSidecarsStorageCountersEnabled;
   private final boolean blockProductionAndPublishingPerformanceEnabled;
-  private final int blockProductionPerformanceWarningThreshold;
-  private final int blockPublishingPerformanceWarningThreshold;
+  private final int blockProductionPerformanceWarningLocalThreshold;
+  private final int blockProductionPerformanceWarningBuilderThreshold;
+  private final int blockPublishingPerformanceWarningLocalThreshold;
+  private final int blockPublishingPerformanceWarningBuilderThreshold;
 
   private MetricsConfig(
       final boolean metricsEnabled,
@@ -73,8 +79,10 @@ public class MetricsConfig {
       final boolean tickPerformanceEnabled,
       final boolean blobSidecarsStorageCountersEnabled,
       final boolean blockProductionAndPublishingPerformanceEnabled,
-      final int blockProductionPerformanceWarningThreshold,
-      final int blockPublishingPerformanceWarningThreshold) {
+      final int blockProductionPerformanceWarningLocalThreshold,
+      final int blockProductionPerformanceWarningBuilderThreshold,
+      final int blockPublishingPerformanceWarningLocalThreshold,
+      final int blockPublishingPerformanceWarningBuilderThreshold) {
     this.metricsEnabled = metricsEnabled;
     this.metricsPort = metricsPort;
     this.metricsInterface = metricsInterface;
@@ -88,8 +96,14 @@ public class MetricsConfig {
     this.blobSidecarsStorageCountersEnabled = blobSidecarsStorageCountersEnabled;
     this.blockProductionAndPublishingPerformanceEnabled =
         blockProductionAndPublishingPerformanceEnabled;
-    this.blockProductionPerformanceWarningThreshold = blockProductionPerformanceWarningThreshold;
-    this.blockPublishingPerformanceWarningThreshold = blockPublishingPerformanceWarningThreshold;
+    this.blockProductionPerformanceWarningLocalThreshold =
+        blockProductionPerformanceWarningLocalThreshold;
+    this.blockProductionPerformanceWarningBuilderThreshold =
+        blockProductionPerformanceWarningBuilderThreshold;
+    this.blockPublishingPerformanceWarningLocalThreshold =
+        blockPublishingPerformanceWarningLocalThreshold;
+    this.blockPublishingPerformanceWarningBuilderThreshold =
+        blockPublishingPerformanceWarningBuilderThreshold;
   }
 
   public static MetricsConfigBuilder builder() {
@@ -136,12 +150,20 @@ public class MetricsConfig {
     return blockProductionAndPublishingPerformanceEnabled;
   }
 
-  public int getBlockProductionPerformanceWarningThreshold() {
-    return blockProductionPerformanceWarningThreshold;
+  public int getBlockProductionPerformanceWarningLocalThreshold() {
+    return blockProductionPerformanceWarningLocalThreshold;
   }
 
-  public int getBlockPublishingPerformanceWarningThreshold() {
-    return blockPublishingPerformanceWarningThreshold;
+  public int getBlockProductionPerformanceWarningBuilderThreshold() {
+    return blockProductionPerformanceWarningBuilderThreshold;
+  }
+
+  public int getBlockPublishingPerformanceWarningLocalThreshold() {
+    return blockPublishingPerformanceWarningLocalThreshold;
+  }
+
+  public int getBlockPublishingPerformanceWarningBuilderThreshold() {
+    return blockPublishingPerformanceWarningBuilderThreshold;
   }
 
   public boolean isTickPerformanceEnabled() {
@@ -165,22 +187,26 @@ public class MetricsConfig {
     private boolean blockPerformanceEnabled = DEFAULT_BLOCK_PERFORMANCE_ENABLED;
     private boolean blockProductionAndPublishingPerformanceEnabled =
         DEFAULT_BLOCK_PRODUCTION_AND_PUBLISHING_PERFORMANCE_ENABLED;
-    private int blockProductionPerformanceWarningThreshold =
-        DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_WARNING_THRESHOLD;
-    private int blockPublishingPerformanceWarningThreshold =
-        DEFAULT_BLOCK_PUBLISHING_PERFORMANCE_WARNING_THRESHOLD;
+    private int blockProductionPerformanceWarningLocalThreshold =
+        DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_WARNING_LOCAL_THRESHOLD;
+    private int blockProductionPerformanceWarningBuilderThreshold =
+        DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_WARNING_BUILDER_THRESHOLD;
+    private int blockPublishingPerformanceWarningLocalThreshold =
+        DEFAULT_BLOCK_PUBLISHING_PERFORMANCE_WARNING_LOCAL_THRESHOLD;
+    private int blockPublishingPerformanceWarningBuilderThreshold =
+        DEFAULT_BLOCK_PUBLISHING_PERFORMANCE_WARNING_BUILDER_THRESHOLD;
     private boolean tickPerformanceEnabled = DEFAULT_TICK_PERFORMANCE_ENABLED;
     private boolean blobSidecarsStorageCountersEnabled =
         DEFAULT_BLOB_SIDECARS_STORAGE_COUNTERS_ENABLED;
 
     private MetricsConfigBuilder() {}
 
-    public MetricsConfigBuilder metricsEnabled(boolean metricsEnabled) {
+    public MetricsConfigBuilder metricsEnabled(final boolean metricsEnabled) {
       this.metricsEnabled = metricsEnabled;
       return this;
     }
 
-    public MetricsConfigBuilder metricsPort(int metricsPort) {
+    public MetricsConfigBuilder metricsPort(final int metricsPort) {
       if (!PortAvailability.isPortValid(metricsPort)) {
         throw new InvalidConfigurationException(
             String.format("Invalid metricsPort: %d", metricsPort));
@@ -189,27 +215,27 @@ public class MetricsConfig {
       return this;
     }
 
-    public MetricsConfigBuilder metricsInterface(String metricsInterface) {
+    public MetricsConfigBuilder metricsInterface(final String metricsInterface) {
       this.metricsInterface = metricsInterface;
       return this;
     }
 
-    public MetricsConfigBuilder metricsCategories(Set<MetricCategory> metricsCategories) {
+    public MetricsConfigBuilder metricsCategories(final Set<MetricCategory> metricsCategories) {
       this.metricsCategories = metricsCategories;
       return this;
     }
 
-    public MetricsConfigBuilder metricsHostAllowlist(List<String> metricsHostAllowlist) {
+    public MetricsConfigBuilder metricsHostAllowlist(final List<String> metricsHostAllowlist) {
       this.metricsHostAllowlist = metricsHostAllowlist;
       return this;
     }
 
-    public MetricsConfigBuilder metricsPublishEndpoint(URL metricsPublishEndpoint) {
+    public MetricsConfigBuilder metricsPublishEndpoint(final URL metricsPublishEndpoint) {
       this.metricsPublishEndpoint = metricsPublishEndpoint;
       return this;
     }
 
-    public MetricsConfigBuilder metricsPublishInterval(int metricsPublishInterval) {
+    public MetricsConfigBuilder metricsPublishInterval(final int metricsPublishInterval) {
       if (metricsPublishInterval < 0) {
         throw new InvalidConfigurationException(
             String.format("Invalid metricsPublishInterval: %d", metricsPublishInterval));
@@ -239,15 +265,31 @@ public class MetricsConfig {
       return this;
     }
 
-    public MetricsConfigBuilder blockProductionPerformanceWarningThreshold(
-        final int blockProductionPerformanceWarningThreshold) {
-      this.blockProductionPerformanceWarningThreshold = blockProductionPerformanceWarningThreshold;
+    public MetricsConfigBuilder blockProductionPerformanceWarningLocalThreshold(
+        final int blockProductionPerformanceWarningLocalThreshold) {
+      this.blockProductionPerformanceWarningLocalThreshold =
+          blockProductionPerformanceWarningLocalThreshold;
       return this;
     }
 
-    public MetricsConfigBuilder blockPublishingPerformanceWarningThreshold(
-        final int blockPublishingPerformanceWarningThreshold) {
-      this.blockPublishingPerformanceWarningThreshold = blockPublishingPerformanceWarningThreshold;
+    public MetricsConfigBuilder blockProductionPerformanceWarningBuilderThreshold(
+        final int blockProductionPerformanceWarningBuilderThreshold) {
+      this.blockProductionPerformanceWarningBuilderThreshold =
+          blockProductionPerformanceWarningBuilderThreshold;
+      return this;
+    }
+
+    public MetricsConfigBuilder blockPublishingPerformanceWarningLocalThreshold(
+        final int blockPublishingPerformanceWarningLocalThreshold) {
+      this.blockPublishingPerformanceWarningLocalThreshold =
+          blockPublishingPerformanceWarningLocalThreshold;
+      return this;
+    }
+
+    public MetricsConfigBuilder blockPublishingPerformanceWarningBuilderThreshold(
+        final int blockPublishingPerformanceWarningBuilderThreshold) {
+      this.blockPublishingPerformanceWarningBuilderThreshold =
+          blockPublishingPerformanceWarningBuilderThreshold;
       return this;
     }
 
@@ -276,8 +318,10 @@ public class MetricsConfig {
           tickPerformanceEnabled,
           blobSidecarsStorageCountersEnabled,
           blockProductionAndPublishingPerformanceEnabled,
-          blockProductionPerformanceWarningThreshold,
-          blockPublishingPerformanceWarningThreshold);
+          blockProductionPerformanceWarningLocalThreshold,
+          blockProductionPerformanceWarningBuilderThreshold,
+          blockPublishingPerformanceWarningLocalThreshold,
+          blockPublishingPerformanceWarningBuilderThreshold);
     }
   }
 }

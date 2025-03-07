@@ -24,17 +24,17 @@ public class MemKeyValueStore<K, V> implements KeyValueStore<K, V> {
   private final Map<K, V> store = new ConcurrentHashMap<>();
 
   @Override
-  public void put(@NotNull K key, @NotNull V value) {
+  public void put(@NotNull final K key, @NotNull final V value) {
     store.put(key, value);
   }
 
   @Override
-  public void remove(@NotNull K key) {
+  public void remove(@NotNull final K key) {
     store.remove(key);
   }
 
   @Override
-  public Optional<V> get(@NotNull K key) {
+  public Optional<V> get(@NotNull final K key) {
     return Optional.ofNullable(store.get(key));
   }
 }

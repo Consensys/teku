@@ -28,11 +28,12 @@ import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigEip7594;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscriptions {
@@ -42,8 +43,9 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
   private final RecentChainData recentChainData;
   private final OperationProcessor<DataColumnSidecar> processor;
   private final ForkInfo forkInfo;
-  private final int subnetCount;
   private final DataColumnSidecarSchema dataColumnSidecarSchema;
+  private final DebugDataDumper debugDataDumper;
+  private final MiscHelpersFulu miscHelpersFulu;
 
   public DataColumnSidecarSubnetSubscriptions(
       final Spec spec,
@@ -52,19 +54,21 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
       final GossipEncoding gossipEncoding,
       final RecentChainData recentChainData,
       final OperationProcessor<DataColumnSidecar> processor,
+      final DebugDataDumper debugDataDumper,
       final ForkInfo forkInfo) {
     super(gossipNetwork, gossipEncoding);
     this.spec = spec;
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.processor = processor;
+    this.debugDataDumper = debugDataDumper;
     this.forkInfo = forkInfo;
-    SpecVersion specVersion = spec.forMilestone(SpecMilestone.EIP7594);
+    final SpecVersion specVersion = spec.forMilestone(SpecMilestone.getHighestMilestone());
     this.dataColumnSidecarSchema =
-        SchemaDefinitionsEip7594.required(specVersion.getSchemaDefinitions())
+        SchemaDefinitionsFulu.required(specVersion.getSchemaDefinitions())
             .getDataColumnSidecarSchema();
-    this.subnetCount =
-        SpecConfigEip7594.required(specVersion.getConfig()).getDataColumnSidecarSubnetCount();
+    this.miscHelpersFulu =
+        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
   }
 
   public SafeFuture<?> gossip(final DataColumnSidecar sidecar) {
@@ -89,6 +93,7 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
         asyncRunner,
         processor,
         gossipEncoding,
+        debugDataDumper,
         forkInfo,
         topicName,
         dataColumnSidecarSchema,
@@ -96,6 +101,6 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
   }
 
   private int computeSubnetForSidecar(final DataColumnSidecar sidecar) {
-    return sidecar.getIndex().mod(subnetCount).intValue();
+    return miscHelpersFulu.computeSubnetForDataColumnSidecar(sidecar.getIndex()).intValue();
   }
 }

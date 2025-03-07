@@ -36,6 +36,7 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
@@ -69,6 +70,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   private final BlockImporter blockImporter;
   private final BlobSidecarManager blobSidecarManager;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
+  private final PendingPool<ValidatableAttestation> pendingAttestations;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final int getStartupTargetPeerCount;
   private final AsyncBLSSignatureVerifier signatureVerifier;
@@ -85,11 +87,12 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
       final StorageUpdateChannel storageUpdateChannel,
-      SyncPreImportBlockChannel syncPreImportBlockChannel,
+      final SyncPreImportBlockChannel syncPreImportBlockChannel,
       final Eth2P2PNetwork p2pNetwork,
       final BlockImporter blockImporter,
       final BlobSidecarManager blobSidecarManager,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
+      final PendingPool<ValidatableAttestation> pendingAttestations,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final int getStartupTargetPeerCount,
       final SignatureVerificationService signatureVerifier,
@@ -109,6 +112,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     this.blockImporter = blockImporter;
     this.blobSidecarManager = blobSidecarManager;
     this.pendingBlocks = pendingBlocks;
+    this.pendingAttestations = pendingAttestations;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.getStartupTargetPeerCount = getStartupTargetPeerCount;
     this.signatureVerifier = signatureVerifier;
@@ -130,6 +134,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
         RecentBlocksFetchService.create(
             asyncRunner,
             pendingBlocks,
+            pendingAttestations,
             blockBlobSidecarsTrackersPool,
             forwardSyncService,
             fetchTaskFactory);

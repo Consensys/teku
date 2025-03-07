@@ -47,5 +47,5 @@ public abstract class SszListSchemaTestBase extends SszCollectionSchemaTestBase 
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  void getChildSchema_shouldThrowIndexOutOfBounds(SszListSchema<?, ?> schema) {}
+  void getChildSchema_shouldThrowIndexOutOfBounds(final SszListSchema<?, ?> schema) {}
 }

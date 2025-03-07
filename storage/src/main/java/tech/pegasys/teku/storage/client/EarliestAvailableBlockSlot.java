@@ -34,9 +34,9 @@ public class EarliestAvailableBlockSlot {
       SafeFuture.completedFuture(Optional.empty());
 
   public EarliestAvailableBlockSlot(
-      StorageQueryChannel historicalChainData,
-      TimeProvider timeProvider,
-      int earliestAvailableBlockSlotFrequency) {
+      final StorageQueryChannel historicalChainData,
+      final TimeProvider timeProvider,
+      final int earliestAvailableBlockSlotFrequency) {
     this.historicalChainData = historicalChainData;
     this.timeProvider = timeProvider;
     this.earliestAvailableBlockSlotFrequency = earliestAvailableBlockSlotFrequency;

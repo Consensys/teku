@@ -54,7 +54,8 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   private Optional<Bytes32> proposerBoostRoot = Optional.empty();
   private UInt64 proposerBoostAmount = UInt64.ZERO;
 
-  private ForkChoiceStrategy(Spec spec, ProtoArray protoArray, List<UInt64> balances) {
+  private ForkChoiceStrategy(
+      final Spec spec, final ProtoArray protoArray, final List<UInt64> balances) {
     this.spec = spec;
     this.protoArray = protoArray;
     this.balances = balances;
@@ -227,7 +228,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   void processAttestation(
-      VoteUpdater voteUpdater, UInt64 validatorIndex, Bytes32 blockRoot, UInt64 targetEpoch) {
+      final VoteUpdater voteUpdater,
+      final UInt64 validatorIndex,
+      final Bytes32 blockRoot,
+      final UInt64 targetEpoch) {
     VoteTracker vote = voteUpdater.getVote(validatorIndex);
     // Not updating anything for equivocated validators
     if (vote.isEquivocating()) {
@@ -240,7 +244,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
-  public void setPruneThreshold(int pruneThreshold) {
+  public void setPruneThreshold(final int pruneThreshold) {
     protoArrayLock.writeLock().lock();
     try {
       protoArray.setPruneThreshold(pruneThreshold);
@@ -259,7 +263,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
-  public boolean contains(Bytes32 blockRoot) {
+  public boolean contains(final Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
       return protoArray.contains(blockRoot);
@@ -269,7 +273,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
-  public Optional<UInt64> blockSlot(Bytes32 blockRoot) {
+  public Optional<UInt64> blockSlot(final Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
       return getProtoNode(blockRoot).map(ProtoNode::getBlockSlot);
@@ -299,7 +303,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
-  public Optional<Bytes32> blockParentRoot(Bytes32 blockRoot) {
+  public Optional<Bytes32> blockParentRoot(final Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
       return getProtoNode(blockRoot).map(ProtoNode::getParentRoot);
@@ -394,7 +398,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
    * @param processor The callback to invoke for each child-parent pair
    */
   @Override
-  public void processHashesInChain(final Bytes32 head, NodeProcessor processor) {
+  public void processHashesInChain(final Bytes32 head, final NodeProcessor processor) {
     processHashesInChainWhile(head, HaltableNodeProcessor.fromNodeProcessor(processor));
   }
 
@@ -407,7 +411,8 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
    *     processing
    */
   @Override
-  public void processHashesInChainWhile(final Bytes32 head, HaltableNodeProcessor nodeProcessor) {
+  public void processHashesInChainWhile(
+      final Bytes32 head, final HaltableNodeProcessor nodeProcessor) {
     protoArrayLock.readLock().lock();
     try {
       final Optional<ProtoNode> startingNode = getProtoNode(head);
@@ -522,13 +527,13 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
 
   @VisibleForTesting
   void processBlock(
-      UInt64 blockSlot,
-      Bytes32 blockRoot,
-      Bytes32 parentRoot,
-      Bytes32 stateRoot,
-      BlockCheckpoints checkpoints,
-      UInt64 executionBlockNumber,
-      Bytes32 executionBlockHash) {
+      final UInt64 blockSlot,
+      final Bytes32 blockRoot,
+      final Bytes32 parentRoot,
+      final Bytes32 stateRoot,
+      final BlockCheckpoints checkpoints,
+      final UInt64 executionBlockNumber,
+      final Bytes32 executionBlockHash) {
     protoArray.onBlock(
         blockSlot,
         blockRoot,
@@ -540,7 +545,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
         spec.isBlockProcessorOptimistic(blockSlot));
   }
 
-  private Optional<ProtoNode> getProtoNode(Bytes32 blockRoot) {
+  private Optional<ProtoNode> getProtoNode(final Bytes32 blockRoot) {
     return protoArray.getProtoNode(blockRoot);
   }
 

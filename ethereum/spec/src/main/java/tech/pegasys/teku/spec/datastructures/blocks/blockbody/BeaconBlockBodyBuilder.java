@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -72,6 +73,12 @@ public interface BeaconBlockBodyBuilder {
   }
 
   BeaconBlockBodyBuilder blobKzgCommitments(SszList<SszKZGCommitment> blobKzgCommitments);
+
+  default boolean supportsExecutionRequests() {
+    return false;
+  }
+
+  BeaconBlockBodyBuilder executionRequests(ExecutionRequests executionRequests);
 
   BeaconBlockBody build();
 }

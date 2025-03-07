@@ -39,38 +39,38 @@ public abstract class ContainerSchema5<
           V3 extends SszData,
           V4 extends SszData>
       ContainerSchema5<C, V0, V1, V2, V3, V4> create(
-          SszSchema<V0> fieldSchema0,
-          SszSchema<V1> fieldSchema1,
-          SszSchema<V2> fieldSchema2,
-          SszSchema<V3> fieldSchema3,
-          SszSchema<V4> fieldSchema4,
-          BiFunction<ContainerSchema5<C, V0, V1, V2, V3, V4>, TreeNode, C> instanceCtor) {
+          final SszSchema<V0> fieldSchema0,
+          final SszSchema<V1> fieldSchema1,
+          final SszSchema<V2> fieldSchema2,
+          final SszSchema<V3> fieldSchema3,
+          final SszSchema<V4> fieldSchema4,
+          final BiFunction<ContainerSchema5<C, V0, V1, V2, V3, V4>, TreeNode, C> instanceCtor) {
     return new ContainerSchema5<>(
         fieldSchema0, fieldSchema1, fieldSchema2, fieldSchema3, fieldSchema4) {
       @Override
-      public C createFromBackingNode(TreeNode node) {
+      public C createFromBackingNode(final TreeNode node) {
         return instanceCtor.apply(this, node);
       }
     };
   }
 
   protected ContainerSchema5(
-      SszSchema<V0> fieldSchema0,
-      SszSchema<V1> fieldSchema1,
-      SszSchema<V2> fieldSchema2,
-      SszSchema<V3> fieldSchema3,
-      SszSchema<V4> fieldSchema4) {
+      final SszSchema<V0> fieldSchema0,
+      final SszSchema<V1> fieldSchema1,
+      final SszSchema<V2> fieldSchema2,
+      final SszSchema<V3> fieldSchema3,
+      final SszSchema<V4> fieldSchema4) {
 
     super(List.of(fieldSchema0, fieldSchema1, fieldSchema2, fieldSchema3, fieldSchema4));
   }
 
   protected ContainerSchema5(
-      String containerName,
-      NamedSchema<V0> fieldNamedSchema0,
-      NamedSchema<V1> fieldNamedSchema1,
-      NamedSchema<V2> fieldNamedSchema2,
-      NamedSchema<V3> fieldNamedSchema3,
-      NamedSchema<V4> fieldNamedSchema4) {
+      final String containerName,
+      final NamedSchema<V0> fieldNamedSchema0,
+      final NamedSchema<V1> fieldNamedSchema1,
+      final NamedSchema<V2> fieldNamedSchema2,
+      final NamedSchema<V3> fieldNamedSchema3,
+      final NamedSchema<V4> fieldNamedSchema4) {
 
     super(
         containerName,

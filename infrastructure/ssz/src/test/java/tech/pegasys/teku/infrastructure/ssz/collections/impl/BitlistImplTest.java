@@ -161,7 +161,7 @@ class BitlistImplTest {
         .hasMessageContaining("marker bit");
   }
 
-  private static BitlistImpl create(int... bits) {
+  private static BitlistImpl create(final int... bits) {
     return new BitlistImpl(18, BITLIST_MAX_SIZE, bits);
   }
 
@@ -195,7 +195,7 @@ class BitlistImplTest {
 
   @ParameterizedTest
   @MethodSource("sszBitlistCases")
-  void testSszMethods(Bytes bitlistSsz) {
+  void testSszMethods(final Bytes bitlistSsz) {
     int length = SszBitlistImpl.sszGetLengthAndValidate(bitlistSsz);
     Bytes truncBytes = SszBitlistImpl.sszTruncateLeadingBit(bitlistSsz, length);
     Bytes bitlistSsz1 = sszAppendLeadingBit(truncBytes, length);
@@ -215,14 +215,14 @@ class BitlistImplTest {
 
   @ParameterizedTest
   @MethodSource("sszInvalidBitlistCases")
-  void testSszMethodsInvalid(Bytes bitlistSsz) {
+  void testSszMethodsInvalid(final Bytes bitlistSsz) {
     assertThatThrownBy(() -> SszBitlistImpl.sszGetLengthAndValidate(bitlistSsz))
         .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> BitlistImpl.fromSszBytes(bitlistSsz, 1024))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
-  public static Bytes sszAppendLeadingBit(Bytes bytes, int length) {
+  public static Bytes sszAppendLeadingBit(final Bytes bytes, final int length) {
     checkArgument(length <= bytes.size() * 8 && length > (bytes.size() - 1) * 8);
     if (length % 8 == 0) {
       return Bytes.wrap(bytes, Bytes.of(1));

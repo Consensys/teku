@@ -36,10 +36,12 @@ public class SszGenericUIntTestExecutor extends AbstractSszGenericTestExecutor {
       case 16 -> UINT16_SCHEMA;
       case 64 -> SszPrimitiveSchemas.UINT64_SCHEMA;
       case 256 -> SszPrimitiveSchemas.UINT256_SCHEMA;
-      case 32, 128 -> throw new TestAbortedException(
-          "UInt type not supported: " + testDefinition.getTestName());
-      default -> throw new UnsupportedOperationException(
-          "No schema for type: " + testDefinition.getTestName());
+      case 32, 128 ->
+          throw new TestAbortedException(
+              "UInt type not supported: " + testDefinition.getTestName());
+      default ->
+          throw new UnsupportedOperationException(
+              "No schema for type: " + testDefinition.getTestName());
     };
   }
 
@@ -50,10 +52,12 @@ public class SszGenericUIntTestExecutor extends AbstractSszGenericTestExecutor {
       case 16 -> SszUInt16.of(Integer.parseInt(value));
       case 64 -> SszUInt64.of(UInt64.valueOf(value));
       case 256 -> SszUInt256.of(UInt256.valueOf(new BigInteger(value)));
-      case 32, 128 -> throw new TestAbortedException(
-          "UInt type not supported: " + testDefinition.getTestName());
-      default -> throw new UnsupportedOperationException(
-          "No parser for type: " + testDefinition.getTestName());
+      case 32, 128 ->
+          throw new TestAbortedException(
+              "UInt type not supported: " + testDefinition.getTestName());
+      default ->
+          throw new UnsupportedOperationException(
+              "No parser for type: " + testDefinition.getTestName());
     };
   }
 }

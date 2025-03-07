@@ -27,7 +27,7 @@ public abstract class AbstractSignedBeaconBlockBlinder implements SignedBeaconBl
   }
 
   @Override
-  public SignedBeaconBlock blind(SignedBeaconBlock signedUnblindedBlock) {
+  public SignedBeaconBlock blind(final SignedBeaconBlock signedUnblindedBlock) {
     final SignedBeaconBlock blindedSignedBeaconBlock =
         signedUnblindedBlock.blind(schemaDefinitions);
     checkState(

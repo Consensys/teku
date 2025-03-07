@@ -1,0 +1,10 @@
+{
+  "signingRoot" : "0x235bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464",
+  "type" : "VALIDATOR_REGISTRATION",
+  "validator_registration" : {
+    "fee_recipient" : "0x367cbd40ac7318427aadb97345a91fa2e965daf3",
+    "gas_limit" : "4669978815449698508",
+    "timestamp" : "4668326327938047084",
+    "pubkey" : "0xb7d6cb9ce7397c33b89ec57de0de383c7c294687b8963f92cc60f59bb1de46c56623cd24c9cc1e407db92d1a79920887"
+  }
+}

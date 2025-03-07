@@ -60,7 +60,7 @@ public class DatabaseMigraterTest {
   }
 
   @Test
-  void shouldSupplyOriginalDatabasePath(@TempDir Path tmpDir) throws IOException {
+  void shouldSupplyOriginalDatabasePath(@TempDir final Path tmpDir) throws IOException {
     final DataDirLayout dataDirLayout = prepareTempDir(tmpDir, "leveldb1");
 
     final DatabaseMigrater migrater = getDatabaseMigrater(dataDirLayout);
@@ -68,7 +68,7 @@ public class DatabaseMigraterTest {
   }
 
   @Test
-  void shouldSupplyNewDatabasePath(@TempDir Path tmpDir) throws IOException {
+  void shouldSupplyNewDatabasePath(@TempDir final Path tmpDir) throws IOException {
     final DataDirLayout dataDirLayout = prepareTempDir(tmpDir, "leveldb1");
 
     final DatabaseMigrater migrater = getDatabaseMigrater(dataDirLayout);
@@ -76,7 +76,7 @@ public class DatabaseMigraterTest {
   }
 
   @Test
-  void shouldCreateNewDatabaseFolderStructure(@TempDir Path tmpDir) throws IOException {
+  void shouldCreateNewDatabaseFolderStructure(@TempDir final Path tmpDir) throws IOException {
     final DataDirLayout dataDirLayout = prepareTempDir(tmpDir, "leveldb1");
     final Path generatedDatabase = tmpDir.resolve("beacon.new");
     final DatabaseMigrater migrater = getDatabaseMigrater(dataDirLayout);
@@ -90,7 +90,7 @@ public class DatabaseMigraterTest {
   }
 
   @Test
-  void shouldOpenDatabases(@TempDir Path tmpDir) throws IOException, DatabaseMigraterError {
+  void shouldOpenDatabases(@TempDir final Path tmpDir) throws IOException, DatabaseMigraterError {
     final DataDirLayout dataDirLayout = prepareTempDir(tmpDir, "5");
     final DatabaseMigrater migrater = getDatabaseMigrater(dataDirLayout);
 
@@ -105,7 +105,8 @@ public class DatabaseMigraterTest {
   }
 
   @Test
-  void shouldSwapActiveDatabase(@TempDir Path tmpDir) throws IOException, DatabaseMigraterError {
+  void shouldSwapActiveDatabase(@TempDir final Path tmpDir)
+      throws IOException, DatabaseMigraterError {
     final DataDirLayout dataDirLayout = prepareTempDir(tmpDir, "5");
     final DatabaseMigrater migrater = getDatabaseMigrater(dataDirLayout);
 
@@ -121,7 +122,7 @@ public class DatabaseMigraterTest {
   }
 
   @Test
-  void shouldCopyColumnData(@TempDir Path tmpDir) throws IOException, DatabaseMigraterError {
+  void shouldCopyColumnData(@TempDir final Path tmpDir) throws IOException, DatabaseMigraterError {
     final DataDirLayout dataDirLayout = prepareTempDir(tmpDir, "5");
     DatabaseMigrater migrater = getDatabaseMigrater(dataDirLayout);
     final BeaconBlockAndState blockAndState = dataStructureUtil.randomBlockAndState(1_000_000);
@@ -140,7 +141,7 @@ public class DatabaseMigraterTest {
   }
 
   @Test
-  void shouldCopyVariablesFromHotDb(@TempDir Path tmpDir) throws Exception {
+  void shouldCopyVariablesFromHotDb(@TempDir final Path tmpDir) throws Exception {
     final DataDirLayout dataDirLayout = prepareTempDir(tmpDir, "5");
     DatabaseMigrater migrater = getDatabaseMigrater(dataDirLayout);
     final UInt64 genesis = dataStructureUtil.randomUInt64();

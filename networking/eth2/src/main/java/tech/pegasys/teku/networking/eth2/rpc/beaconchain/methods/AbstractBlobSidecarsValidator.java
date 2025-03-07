@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
+import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED;
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_KZG_VERIFICATION_FAILED;
 
 import org.apache.logging.log4j.LogManager;
@@ -21,6 +22,7 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 
 public class AbstractBlobSidecarsValidator {
 
@@ -43,6 +45,13 @@ public class AbstractBlobSidecarsValidator {
     }
   }
 
+  protected void verifyInclusionProof(final BlobSidecar blobSidecar) {
+    if (!verifyBlobSidecarInclusionProof(blobSidecar)) {
+      throw new BlobSidecarsResponseInvalidResponseException(
+          peer, BLOB_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
+    }
+  }
+
   private boolean verifyBlobKzgProof(final BlobSidecar blobSidecar) {
     try {
       return spec.atSlot(blobSidecar.getSlot()).miscHelpers().verifyBlobKzgProof(kzg, blobSidecar);
@@ -50,6 +59,19 @@ public class AbstractBlobSidecarsValidator {
       LOG.debug("KZG verification failed for BlobSidecar {}", blobSidecar.toLogString());
       throw new BlobSidecarsResponseInvalidResponseException(
           peer, BLOB_SIDECAR_KZG_VERIFICATION_FAILED, ex);
+    }
+  }
+
+  private boolean verifyBlobSidecarInclusionProof(final BlobSidecar blobSidecar) {
+    try {
+      return MiscHelpersDeneb.required(spec.atSlot(blobSidecar.getSlot()).miscHelpers())
+          .verifyBlobKzgCommitmentInclusionProof(blobSidecar);
+    } catch (final Exception ex) {
+      LOG.debug(
+          "Block inclusion proof verification failed for BlobSidecar {}",
+          blobSidecar.toLogString());
+      throw new BlobSidecarsResponseInvalidResponseException(
+          peer, BLOB_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED, ex);
     }
   }
 }

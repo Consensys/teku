@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.altair;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.Valida
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.AttestationDataValidatorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.OperationValidatorPhase0;
+import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.spec.logic.versions.phase0.util.AttestationUtilPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
@@ -85,7 +87,9 @@ public class SpecLogicAltair extends AbstractSpecLogic {
   }
 
   public static SpecLogicAltair create(
-      final SpecConfigAltair config, final SchemaDefinitionsAltair schemaDefinitions) {
+      final SpecConfigAltair config,
+      final SchemaDefinitionsAltair schemaDefinitions,
+      final TimeProvider timeProvider) {
     // Helpers
     final Predicates predicates = new Predicates(config);
     final MiscHelpersAltair miscHelpers = new MiscHelpersAltair(config);
@@ -110,9 +114,15 @@ public class SpecLogicAltair extends AbstractSpecLogic {
     // execution change
     final AttestationDataValidator attestationDataValidator =
         new AttestationDataValidatorPhase0(config, miscHelpers, beaconStateAccessors);
+    final VoluntaryExitValidator voluntaryExitValidator =
+        new VoluntaryExitValidator(config, predicates, beaconStateAccessors);
     final OperationValidator operationValidator =
         new OperationValidatorPhase0(
-            config, predicates, beaconStateAccessors, attestationDataValidator, attestationUtil);
+            predicates,
+            beaconStateAccessors,
+            attestationDataValidator,
+            attestationUtil,
+            voluntaryExitValidator);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
         new ValidatorStatusFactoryAltair(
             config,
@@ -130,7 +140,8 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             validatorsUtil,
             beaconStateUtil,
             validatorStatusFactory,
-            schemaDefinitions);
+            schemaDefinitions,
+            timeProvider);
     final SyncCommitteeUtil syncCommitteeUtil =
         new SyncCommitteeUtil(
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);

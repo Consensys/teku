@@ -28,7 +28,7 @@ dependencies {
     implementation 'io.swagger.core.v3:swagger-annotations'
     implementation 'io.github.classgraph:classgraph'
     implementation 'io.javalin:javalin'
-    implementation 'org.apache.tuweni:tuweni-units'
+    implementation 'io.tmio:tuweni-units'
     implementation 'org.webjars:swagger-ui'
 
     testImplementation testFixtures(project(':storage'))

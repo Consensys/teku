@@ -34,7 +34,7 @@ public class SignedBeaconBlockUnblinderBellatrix extends AbstractSignedBeaconBlo
 
   @Override
   public void setExecutionPayloadSupplier(
-      Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
+      final Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
     this.executionPayloadFuture = executionPayloadSupplier.get();
   }
 

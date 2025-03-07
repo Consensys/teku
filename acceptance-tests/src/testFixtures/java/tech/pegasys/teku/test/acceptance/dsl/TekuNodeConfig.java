@@ -46,14 +46,14 @@ public class TekuNodeConfig {
   private final Map<String, String> writableMountPoints;
 
   public TekuNodeConfig(
-      Map<String, Object> configMap,
+      final Map<String, Object> configMap,
       final Consumer<SpecConfigBuilder> specConfigModifier,
       final Optional<PrivKey> maybePrivateKey,
       final Optional<PeerId> maybePeerId,
       final Map<String, String> writableMountPoints,
       final Map<String, String> readOnlyMountPoints,
       final List<File> tarballsToCopy,
-      Map<File, String> configFileMap) {
+      final Map<File, String> configFileMap) {
     this.configMap = configMap;
     this.specConfigModifier = specConfigModifier;
     this.maybePrivateKey = maybePrivateKey;

@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.block;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -38,6 +39,8 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFutureSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -52,7 +55,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -79,9 +82,10 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class BlockImporterTest {
+  private final AsyncRunner asyncRunner = mock(AsyncRunner.class);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
-  private final AttestationSchema attestationSchema =
+  private final AttestationSchema<?> attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(8);
   private final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
@@ -113,6 +117,7 @@ public class BlockImporterTest {
 
   private final BlockImporter blockImporter =
       new BlockImporter(
+          asyncRunner,
           spec,
           receivedBlockEventsChannelPublisher,
           recentChainData,
@@ -133,6 +138,15 @@ public class BlockImporterTest {
 
   @BeforeEach
   public void setup() {
+    // prepare a synchronous async runner
+    doAnswer(
+            invocation -> {
+              final ExceptionThrowingFutureSupplier<?> task = invocation.getArgument(0);
+              return SafeFuture.completedFuture(SafeFuture.of(task.get()).join());
+            })
+        .when(asyncRunner)
+        .runAsync((ExceptionThrowingFutureSupplier<?>) any());
+
     otherChain.initializeStorage();
     localChain.initializeStorage();
     when(weakSubjectivityValidator.isBlockValid(any(), any())).thenReturn(true);
@@ -252,7 +266,7 @@ public class BlockImporterTest {
     tx.commit().join();
 
     // Known blocks should report as successfully imported
-    final BlockImportResult result = blockImporter.importBlock(blocks.get(blocks.size() - 1)).get();
+    final BlockImportResult result = blockImporter.importBlock(blocks.getLast()).get();
     assertSuccessfulResult(result, false);
   }
 
@@ -403,6 +417,7 @@ public class BlockImporterTest {
         WeakSubjectivityValidator.lenient(wsConfig);
     final BlockImporter blockImporter =
         new BlockImporter(
+            asyncRunner,
             spec,
             receivedBlockEventsChannelPublisher,
             recentChainData,
@@ -433,6 +448,7 @@ public class BlockImporterTest {
         WeakSubjectivityValidator.lenient(wsConfig);
     final BlockImporter blockImporter =
         new BlockImporter(
+            asyncRunner,
             spec,
             receivedBlockEventsChannelPublisher,
             recentChainData,
@@ -463,6 +479,7 @@ public class BlockImporterTest {
             storageSystem.getMetricsSystem());
     final BlockImporter blockImporter =
         new BlockImporter(
+            asyncRunner,
             spec,
             receivedBlockEventsChannelPublisher,
             storageSystem.recentChainData(),
@@ -508,6 +525,7 @@ public class BlockImporterTest {
             storageSystem.getMetricsSystem());
     final BlockImporter blockImporter =
         new BlockImporter(
+            asyncRunner,
             spec,
             receivedBlockEventsChannelPublisher,
             storageSystem.recentChainData(),
@@ -561,6 +579,7 @@ public class BlockImporterTest {
             storageSystem.getMetricsSystem());
     final BlockImporter blockImporter =
         new BlockImporter(
+            asyncRunner,
             spec,
             receivedBlockEventsChannelPublisher,
             storageSystem.recentChainData(),
@@ -606,6 +625,7 @@ public class BlockImporterTest {
             storageSystem.getMetricsSystem());
     final BlockImporter blockImporter =
         new BlockImporter(
+            asyncRunner,
             spec,
             receivedBlockEventsChannelPublisher,
             storageSystem.recentChainData(),
@@ -639,6 +659,7 @@ public class BlockImporterTest {
             storageSystem.getMetricsSystem());
     final BlockImporter blockImporter =
         new BlockImporter(
+            asyncRunner,
             spec,
             receivedBlockEventsChannelPublisher,
             storageSystem.recentChainData(),
@@ -694,6 +715,7 @@ public class BlockImporterTest {
 
     final BlockImporter blockImporter =
         new BlockImporter(
+            asyncRunner,
             spec,
             receivedBlockEventsChannelPublisher,
             storageSystem.recentChainData(),

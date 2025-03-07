@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
@@ -30,7 +30,7 @@ interface DataColumnSidecarCoreDB {
   SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(UInt64 slot);
 
   default SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(
-      SlotAndBlockRoot blockId) {
+      final SlotAndBlockRoot blockId) {
     return getColumnIdentifiers(blockId.getSlot())
         .thenApply(
             ids ->

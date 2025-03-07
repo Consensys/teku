@@ -31,16 +31,15 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 class BlobSidecarsByRootRequestMessageTest {
 
   final Spec spec = TestSpecFactory.createMinimalDeneb();
+  final BlobSidecarsByRootRequestMessageSchema schema =
+      SchemaDefinitionsDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
+          .getBlobSidecarsByRootRequestMessageSchema();
 
   @Test
   public void shouldRoundTripViaSsz() {
-    final BlobSidecarsByRootRequestMessageSchema blobSidecarsByRootRequestMessageSchema =
-        SchemaDefinitionsDeneb.required(
-                spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
-            .getBlobSidecarsByRootRequestMessageSchema();
     final BlobSidecarsByRootRequestMessage request =
         new BlobSidecarsByRootRequestMessage(
-            blobSidecarsByRootRequestMessageSchema,
+            schema,
             List.of(
                 new BlobIdentifier(
                     Bytes32.fromHexString(
@@ -51,8 +50,7 @@ class BlobSidecarsByRootRequestMessageTest {
                         "0x2222222222222222222222222222222222222222222222222222222222222222"),
                     UInt64.ONE)));
     final Bytes data = request.sszSerialize();
-    final BlobSidecarsByRootRequestMessage result =
-        blobSidecarsByRootRequestMessageSchema.sszDeserialize(data);
+    final BlobSidecarsByRootRequestMessage result = schema.sszDeserialize(data);
     assertThatSszData(result).isEqualByAllMeansTo(request);
   }
 
@@ -67,8 +65,7 @@ class BlobSidecarsByRootRequestMessageTest {
           final SpecConfig config = spec.forMilestone(milestone).getConfig();
           final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
           final int maxRequestBlobSidecars = specConfigDeneb.getMaxRequestBlobSidecars();
-          assertThat(spec.getNetworkingConfig().getMaxRequestBlocks())
-              .isGreaterThanOrEqualTo(maxRequestBlobSidecars);
+          assertThat(schema.getMaxLength()).isGreaterThanOrEqualTo(maxRequestBlobSidecars);
         });
   }
 }

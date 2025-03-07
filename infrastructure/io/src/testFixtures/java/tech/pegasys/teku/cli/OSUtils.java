@@ -33,7 +33,7 @@ public class OSUtils {
   public static final boolean IS_WIN =
       System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
 
-  public static String toOSPath(String nixPath) {
+  public static String toOSPath(final String nixPath) {
     if (IS_WIN) {
       String ret = nixPath.replace('/', '\\');
       if (nixPath.startsWith("/")) {
@@ -45,7 +45,7 @@ public class OSUtils {
     }
   }
 
-  public static void makeNonReadable(Path path) throws IOException {
+  public static void makeNonReadable(final Path path) throws IOException {
     if (IS_WIN) {
       removeAslOwnerPermissions(path, Set.of(AclEntryPermission.READ_DATA));
     } else {
@@ -53,7 +53,7 @@ public class OSUtils {
     }
   }
 
-  public static void makeNonWritable(Path path) throws IOException {
+  public static void makeNonWritable(final Path path) throws IOException {
     if (IS_WIN) {
       removeAslOwnerPermissions(path, Set.of(AclEntryPermission.WRITE_DATA));
     } else {
@@ -65,8 +65,8 @@ public class OSUtils {
     }
   }
 
-  private static void removeAslOwnerPermissions(Path path, Set<AclEntryPermission> permissions)
-      throws IOException {
+  private static void removeAslOwnerPermissions(
+      final Path path, final Set<AclEntryPermission> permissions) throws IOException {
     AclFileAttributeView fileAttributeView =
         Files.getFileAttributeView(path, AclFileAttributeView.class);
 

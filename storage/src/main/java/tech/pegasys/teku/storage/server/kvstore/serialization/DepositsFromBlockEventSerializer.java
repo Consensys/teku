@@ -53,7 +53,7 @@ class DepositsFromBlockEventSerializer implements KvStoreSerializer<DepositsFrom
     return bytes.toArrayUnsafe();
   }
 
-  private Bytes encodeDeposit(Deposit deposit) {
+  private Bytes encodeDeposit(final Deposit deposit) {
     return SSZ.encode(
         depositWriter -> {
           depositWriter.writeFixedBytes(deposit.getPubkey().toBytesCompressed());

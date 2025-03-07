@@ -35,7 +35,8 @@ public class ObolDvtSyncAggregatorSelectionProofProvider
 
   private final ValidatorApiChannel validatorApiChannel;
 
-  public ObolDvtSyncAggregatorSelectionProofProvider(ValidatorApiChannel validatorApiChannel) {
+  public ObolDvtSyncAggregatorSelectionProofProvider(
+      final ValidatorApiChannel validatorApiChannel) {
     this.validatorApiChannel = validatorApiChannel;
   }
 

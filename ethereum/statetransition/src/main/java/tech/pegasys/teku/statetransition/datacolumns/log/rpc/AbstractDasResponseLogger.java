@@ -25,7 +25,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.util.StringifyUtil;
@@ -40,7 +40,10 @@ abstract class AbstractDasResponseLogger<TRequest>
   private final int maxResponseLongStringLength = 512;
 
   public AbstractDasResponseLogger(
-      TimeProvider timeProvider, Direction direction, LoggingPeerId peerId, TRequest request) {
+      final TimeProvider timeProvider,
+      final Direction direction,
+      final LoggingPeerId peerId,
+      final TRequest request) {
     super(timeProvider, direction, peerId, request, DataColumnSlotAndIdentifier::fromDataColumn);
   }
 
@@ -52,7 +55,7 @@ abstract class AbstractDasResponseLogger<TRequest>
   }
 
   protected String responseString(
-      List<DataColumnSlotAndIdentifier> responses, Optional<Throwable> result) {
+      final List<DataColumnSlotAndIdentifier> responses, final Optional<Throwable> result) {
     final String responsesString;
     if (responses.isEmpty()) {
       responsesString = "<empty>";
@@ -71,8 +74,8 @@ abstract class AbstractDasResponseLogger<TRequest>
     }
   }
 
-  protected String columnIdsToString(List<DataColumnSlotAndIdentifier> responses) {
-    String longString = columnIdsToStringLong(responses);
+  protected String columnIdsToString(final List<DataColumnSlotAndIdentifier> responses) {
+    final String longString = columnIdsToStringLong(responses);
     if (longString.length() <= maxResponseLongStringLength) {
       return longString;
     } else {
@@ -80,7 +83,7 @@ abstract class AbstractDasResponseLogger<TRequest>
     }
   }
 
-  protected String columnIdsToStringLong(List<DataColumnSlotAndIdentifier> responses) {
+  protected String columnIdsToStringLong(final List<DataColumnSlotAndIdentifier> responses) {
     return responses.size()
         + " columns: "
         + mapGroupingByBlock(
@@ -90,7 +93,7 @@ abstract class AbstractDasResponseLogger<TRequest>
             .collect(Collectors.joining(", "));
   }
 
-  protected String columnIdsToStringShorter(List<DataColumnSlotAndIdentifier> responses) {
+  protected String columnIdsToStringShorter(final List<DataColumnSlotAndIdentifier> responses) {
 
     return mapGroupingByBlock(
             responses, (blockId, columns) -> blockIdString(blockId) + ": " + columns.size())
@@ -98,8 +101,8 @@ abstract class AbstractDasResponseLogger<TRequest>
   }
 
   protected <R> Stream<R> mapGroupingByBlock(
-      List<DataColumnSlotAndIdentifier> responses,
-      BiFunction<SlotAndBlockRoot, List<DataColumnSlotAndIdentifier>, R> mapper) {
+      final List<DataColumnSlotAndIdentifier> responses,
+      final BiFunction<SlotAndBlockRoot, List<DataColumnSlotAndIdentifier>, R> mapper) {
     SortedMap<SlotAndBlockRoot, List<DataColumnSlotAndIdentifier>> responsesByBlock =
         new TreeMap<>(
             responses.stream()
@@ -108,12 +111,12 @@ abstract class AbstractDasResponseLogger<TRequest>
         .map(entry -> mapper.apply(entry.getKey(), entry.getValue()));
   }
 
-  protected String blockResponsesToString(List<DataColumnSlotAndIdentifier> responses) {
+  protected String blockResponsesToString(final List<DataColumnSlotAndIdentifier> responses) {
     return StringifyUtil.columnIndexesToString(
         responses.stream().map(it -> it.columnIndex().intValue()).toList(), columnCount);
   }
 
-  private static String blockIdString(SlotAndBlockRoot blockId) {
+  private static String blockIdString(final SlotAndBlockRoot blockId) {
     if (blockId.getSlot().equals(UNKNOWN_SLOT)) {
       return blockId.getBlockRoot().toHexString();
     } else {
@@ -125,7 +128,7 @@ abstract class AbstractDasResponseLogger<TRequest>
     }
   }
 
-  private static SlotAndBlockRoot blockIdFromColumnId(DataColumnSlotAndIdentifier columnId) {
+  private static SlotAndBlockRoot blockIdFromColumnId(final DataColumnSlotAndIdentifier columnId) {
     return new SlotAndBlockRoot(columnId.slot(), columnId.blockRoot());
   }
 }

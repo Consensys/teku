@@ -23,7 +23,7 @@ public interface SszByteVectorTestBase extends SszPrimitiveCollectionTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  default void getBytes_shouldReturnAllBytes(SszByteVector vector) {
+  default void getBytes_shouldReturnAllBytes(final SszByteVector vector) {
     Bytes bytes = vector.getBytes();
 
     assertThat(bytes.size()).isEqualTo(vector.size());

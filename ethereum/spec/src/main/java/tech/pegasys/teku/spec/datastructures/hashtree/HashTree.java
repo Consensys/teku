@@ -94,7 +94,7 @@ public class HashTree {
    * @param head The root defining the head of the chain to process
    * @param processor The callback to invoke for each child-parent pair
    */
-  public void processHashesInChain(final Bytes32 head, NodeProcessor processor) {
+  public void processHashesInChain(final Bytes32 head, final NodeProcessor processor) {
     processHashesInChainWhile(head, HaltableNodeProcessor.fromNodeProcessor(processor));
   }
 
@@ -107,7 +107,7 @@ public class HashTree {
    * @return A list of roots in ascending order belonging to the chain defined by {@code head}
    */
   public List<Bytes32> collectChainRoots(
-      final Bytes32 head, Function<Bytes32, Boolean> shouldContinue) {
+      final Bytes32 head, final Function<Bytes32, Boolean> shouldContinue) {
     final Deque<Bytes32> chain = new ArrayDeque<>();
     processHashesInChainWhile(
         head,
@@ -126,7 +126,8 @@ public class HashTree {
    * @param nodeProcessor The callback receiving hashes and determining whether to continue
    *     processing
    */
-  public void processHashesInChainWhile(final Bytes32 head, HaltableNodeProcessor nodeProcessor) {
+  public void processHashesInChainWhile(
+      final Bytes32 head, final HaltableNodeProcessor nodeProcessor) {
     checkArgument(contains(head), "Unknown root supplied: " + head);
 
     Optional<Bytes32> currentRoot = Optional.of(head);
@@ -182,7 +183,7 @@ public class HashTree {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (o == this) {
       return true;
     }
@@ -242,7 +243,7 @@ public class HashTree {
       return this;
     }
 
-    public Builder childAndParentRoots(Map<Bytes32, Bytes32> childToParentMap) {
+    public Builder childAndParentRoots(final Map<Bytes32, Bytes32> childToParentMap) {
       checkNotNull(childToParentMap);
       this.childToParentMap.putAll(childToParentMap);
       return this;

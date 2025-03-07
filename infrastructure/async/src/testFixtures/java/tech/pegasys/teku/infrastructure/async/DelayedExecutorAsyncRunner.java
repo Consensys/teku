@@ -30,7 +30,7 @@ public class DelayedExecutorAsyncRunner implements AsyncRunner {
   private static final Logger LOG = LogManager.getLogger();
   private final ExecutorFactory executorFactory;
 
-  private DelayedExecutorAsyncRunner(ExecutorFactory executorFactory) {
+  private DelayedExecutorAsyncRunner(final ExecutorFactory executorFactory) {
     this.executorFactory = executorFactory;
   }
 
@@ -46,7 +46,7 @@ public class DelayedExecutorAsyncRunner implements AsyncRunner {
 
   @Override
   public <U> SafeFuture<U> runAfterDelay(
-      ExceptionThrowingFutureSupplier<U> action, Duration delay) {
+      final ExceptionThrowingFutureSupplier<U> action, final Duration delay) {
     final Executor executor = getDelayedExecutor(delay.toMillis(), TimeUnit.MILLISECONDS);
     return runAsync(action, executor);
   }
@@ -72,7 +72,7 @@ public class DelayedExecutorAsyncRunner implements AsyncRunner {
     return getDelayedExecutor(-1, TimeUnit.SECONDS);
   }
 
-  private Executor getDelayedExecutor(long delayAmount, TimeUnit delayUnit) {
+  private Executor getDelayedExecutor(final long delayAmount, final TimeUnit delayUnit) {
     return executorFactory.create(delayAmount, delayUnit);
   }
 

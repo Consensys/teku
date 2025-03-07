@@ -21,7 +21,7 @@ public class ProcessedAttestationEvent {
 
   private final Attestation attestation;
 
-  public ProcessedAttestationEvent(Attestation attestation) {
+  public ProcessedAttestationEvent(final Attestation attestation) {
     this.attestation = attestation;
   }
 

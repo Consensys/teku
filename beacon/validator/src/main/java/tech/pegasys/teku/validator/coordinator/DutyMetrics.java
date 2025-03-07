@@ -45,7 +45,7 @@ public class DutyMetrics {
       final RecentChainData recentChainData,
       final MetricsCountersByIntervals attestationTimings,
       final MetricsCountersByIntervals blockTimings,
-      LabelledMetric<OperationTimer> validatorDutyMetric,
+      final LabelledMetric<OperationTimer> validatorDutyMetric,
       final Spec spec) {
     this.timeProvider = timeProvider;
     this.recentChainData = recentChainData;
@@ -64,7 +64,7 @@ public class DutyMetrics {
         MetricsCountersByIntervals.create(
             TekuMetricCategory.VALIDATOR,
             metricsSystem,
-            "attestation_publication_delay",
+            "attestation_publication_delay_total",
             "Counter of attestations published in different time intervals after their due time",
             Collections.emptyList(),
             Map.of(List.of(), List.of(1L, 500L, 1000L, 2000L, 3000L, 4000L, 5000L, 8000L)));
@@ -72,7 +72,7 @@ public class DutyMetrics {
         MetricsCountersByIntervals.create(
             TekuMetricCategory.VALIDATOR,
             metricsSystem,
-            "block_publication_delay",
+            "block_publication_delay_total",
             "Counter of blocks published in different time intervals after their due time",
             Collections.emptyList(),
             Map.of(List.of(), List.of(1L, 500L, 1000L, 2000L, 3000L, 4000L, 5000L, 8000L, 12000L)));

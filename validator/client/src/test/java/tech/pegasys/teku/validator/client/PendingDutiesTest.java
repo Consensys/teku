@@ -245,7 +245,7 @@ class PendingDutiesTest {
 
   private void validateMetrics(final String duty, final long successCount, final long failCount) {
     final StubCounter labelledCounter =
-        metricsSystem.getCounter(TekuMetricCategory.VALIDATOR, "duties_performed");
+        metricsSystem.getCounter(TekuMetricCategory.VALIDATOR, "duties_performed_total");
     assertThat(labelledCounter.getValue(duty, "success")).isEqualTo(successCount);
     assertThat(labelledCounter.getValue(duty, "failed")).isEqualTo(failCount);
   }

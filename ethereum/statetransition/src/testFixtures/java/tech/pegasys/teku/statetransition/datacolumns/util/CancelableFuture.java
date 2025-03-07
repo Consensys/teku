@@ -38,7 +38,7 @@ public class CancelableFuture<U> extends SafeFuture<U> {
     return new CancelableFuture<>();
   }
 
-  private void propagateCancelToThis(SafeFuture<?> downstreamFuture) {
+  private void propagateCancelToThis(final SafeFuture<?> downstreamFuture) {
     downstreamFuture.finish(
         __ -> {
           if (downstreamFuture.isCancelled()) {

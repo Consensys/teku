@@ -22,8 +22,8 @@ public class AttestationRewardsData {
   final List<TotalAttestationReward> totalAttestationRewards;
 
   public AttestationRewardsData(
-      List<IdealAttestationReward> idealAttestationRewards,
-      List<TotalAttestationReward> totalAttestationRewards) {
+      final List<IdealAttestationReward> idealAttestationRewards,
+      final List<TotalAttestationReward> totalAttestationRewards) {
     this.idealAttestationRewards = idealAttestationRewards;
     this.totalAttestationRewards = totalAttestationRewards;
   }
@@ -37,7 +37,7 @@ public class AttestationRewardsData {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

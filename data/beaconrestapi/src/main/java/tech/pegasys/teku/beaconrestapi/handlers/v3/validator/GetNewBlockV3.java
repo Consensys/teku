@@ -19,6 +19,10 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETE
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SKIP_RANDAO_VERIFICATION_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getMultipleSchemaDefinitionFromMilestone;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_CONSENSUS_HEADER_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_HEADER_CONSENSUS_BLOCK_VALUE_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_HEADER_EXECUTION_PAYLOAD_BLINDED_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_HEADER_EXECUTION_PAYLOAD_VALUE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.blockContainerAndMetaDataSszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
@@ -95,13 +99,15 @@ public class GetNewBlockV3 extends RestApiEndpoint {
         .pathParam(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION))
         .queryParamRequired(RANDAO_PARAMETER)
         .queryParam(GRAFFITI_PARAMETER)
-        .queryParam(SKIP_RANDAO_VERIFICATION_PARAMETER)
+        .queryParamAllowsEmpty(SKIP_RANDAO_VERIFICATION_PARAMETER)
         .queryParam(BUILDER_BOOST_FACTOR_PARAMETER)
         .response(
             SC_OK,
             "Request successful",
             getResponseType(schemaDefinitionCache),
-            blockContainerAndMetaDataSszResponseType())
+            blockContainerAndMetaDataSszResponseType(),
+            getHeaders())
+        .withChainDataResponses()
         .build();
   }
 
@@ -192,5 +198,14 @@ public class GetNewBlockV3 extends RestApiEndpoint {
             SpecMilestone.BELLATRIX,
             SchemaDefinitions::getBlindedBlockContainerSchema));
     return schemaGetterList;
+  }
+
+  private static List<SerializableTypeDefinition<?>> getHeaders() {
+    List<SerializableTypeDefinition<?>> headers = new ArrayList<>();
+    headers.add(ETH_CONSENSUS_HEADER_TYPE);
+    headers.add(ETH_HEADER_EXECUTION_PAYLOAD_BLINDED_TYPE);
+    headers.add(ETH_HEADER_EXECUTION_PAYLOAD_VALUE_TYPE);
+    headers.add(ETH_HEADER_CONSENSUS_BLOCK_VALUE_TYPE);
+    return headers;
   }
 }

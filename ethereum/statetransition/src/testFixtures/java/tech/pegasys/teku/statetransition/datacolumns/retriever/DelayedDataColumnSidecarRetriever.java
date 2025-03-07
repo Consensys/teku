@@ -17,7 +17,7 @@ import java.time.Duration;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.util.CancelableFuture;
 
@@ -27,23 +27,31 @@ public class DelayedDataColumnSidecarRetriever implements DataColumnSidecarRetri
   private Duration delay;
 
   public DelayedDataColumnSidecarRetriever(
-      DataColumnSidecarRetriever delegate, AsyncRunner asyncRunner, Duration delay) {
+      final DataColumnSidecarRetriever delegate,
+      final AsyncRunner asyncRunner,
+      final Duration delay) {
     this.delegate = delegate;
     this.asyncRunner = asyncRunner;
     this.delay = delay;
   }
 
-  public void setDelay(Duration delay) {
+  public void setDelay(final Duration delay) {
     this.delay = delay;
   }
 
-  private <T> SafeFuture<T> delay(Supplier<SafeFuture<T>> futSupplier) {
+  private <T> SafeFuture<T> delay(final Supplier<SafeFuture<T>> futSupplier) {
     return CancelableFuture.of(asyncRunner.getDelayedFuture(delay))
         .thenComposeCancelable(true, true, __ -> futSupplier.get());
   }
 
   @Override
-  public SafeFuture<DataColumnSidecar> retrieve(DataColumnSlotAndIdentifier columnId) {
+  public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
     return delay(() -> delegate.retrieve(columnId));
   }
+
+  @Override
+  public void flush() {}
+
+  @Override
+  public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {}
 }

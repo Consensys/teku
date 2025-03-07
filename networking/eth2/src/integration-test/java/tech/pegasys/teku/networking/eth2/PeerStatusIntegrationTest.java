@@ -85,7 +85,7 @@ public class PeerStatusIntegrationTest {
             .recentChainData(recentChainData2)
             .startNetwork();
 
-    waitFor(network1.connect(network1.createPeerAddress(network2.getNodeAddress())));
+    waitFor(network1.connect(network1.createPeerAddress(network2.getNodeAddresses().get(0))));
     waitFor(
         () -> {
           assertThat(network1.getPeerCount()).isEqualTo(1);
@@ -134,7 +134,7 @@ public class PeerStatusIntegrationTest {
             .recentChainData(recentChainData2)
             .startNetwork();
 
-    waitFor(network1.connect(network1.createPeerAddress(network2.getNodeAddress())));
+    waitFor(network1.connect(network1.createPeerAddress(network2.getNodeAddresses().get(0))));
     waitFor(
         () -> {
           assertThat(network1.getPeerCount()).isEqualTo(1);

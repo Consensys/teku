@@ -205,7 +205,7 @@ public class HashTreeTest {
     assertThat(actualHashes).containsExactlyInAnyOrderElementsOf(expectedHashes);
 
     for (List<SignedBeaconBlock> chain : chains) {
-      SignedBeaconBlock lastBlock = chain.get(chain.size() - 1);
+      SignedBeaconBlock lastBlock = chain.getLast();
 
       // All blocks should be available
       for (SignedBeaconBlock block : chain) {
@@ -228,7 +228,7 @@ public class HashTreeTest {
 
   private void validateChildCountsForChain(
       final HashTree tree, final List<SignedBeaconBlock> chain) {
-    final SignedBeaconBlock lastBlock = chain.get(chain.size() - 1);
+    final SignedBeaconBlock lastBlock = chain.getLast();
     for (int i = 0; i < chain.size() - 1; i++) {
       SignedBeaconBlock block = chain.get(i);
       assertThat(tree.countChildren(block.getRoot())).isEqualTo(1);

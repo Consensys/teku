@@ -68,7 +68,7 @@ public class DiscoveryNetworkFactory {
 
     private final List<String> staticPeers = new ArrayList<>();
     private final List<String> bootnodes = new ArrayList<>();
-    private Spec spec = TestSpecFactory.createMinimalPhase0();
+    private final Spec spec = TestSpecFactory.createMinimalPhase0();
 
     private DiscoveryTestNetworkBuilder() {}
 

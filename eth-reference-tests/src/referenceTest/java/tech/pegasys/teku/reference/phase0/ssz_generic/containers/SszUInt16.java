@@ -15,13 +15,13 @@ package tech.pegasys.teku.reference.phase0.ssz_generic.containers;
 
 import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 
-public class SszUInt16 extends AbstractSszPrimitive<Integer, SszUInt16> {
+public class SszUInt16 extends AbstractSszPrimitive<Integer> {
 
-  public static SszUInt16 of(Integer val) {
+  public static SszUInt16 of(final Integer val) {
     return new SszUInt16(val);
   }
 
-  private SszUInt16(Integer val) {
+  private SszUInt16(final Integer val) {
     super(val, UInt16PrimitiveSchema.UINT16_SCHEMA);
   }
 }

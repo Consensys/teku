@@ -42,11 +42,11 @@ public class SubnetSubscriptionService {
     subnetSubscriptions.set(values);
   }
 
-  public synchronized long subscribeToUpdates(ValueObserver<Iterable<Integer>> observer) {
+  public synchronized long subscribeToUpdates(final ValueObserver<Iterable<Integer>> observer) {
     return subnetSubscriptions.subscribe(observer);
   }
 
-  public void unsubscribe(long subscriptionId) {
+  public void unsubscribe(final long subscriptionId) {
     subnetSubscriptions.unsubscribe(subscriptionId);
   }
 

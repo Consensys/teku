@@ -48,7 +48,8 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class SszTestExecutor<T extends SszData> implements TestExecutor {
   private final SchemaProvider<T> sszType;
@@ -186,19 +187,60 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
               "ssz_static/BlobIdentifier",
               new SszTestExecutor<>(schemas -> BlobIdentifier.SSZ_SCHEMA))
 
-          // EIP7594 types
+          // Electra types
+          .put(
+              "ssz_static/ExecutionRequests",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsElectra.required(schemas).getExecutionRequestsSchema()))
+          .put(
+              "ssz_static/DepositRequest",
+              new SszTestExecutor<>(
+                  schemas -> SchemaDefinitionsElectra.required(schemas).getDepositRequestSchema()))
+          .put(
+              "ssz_static/WithdrawalRequest",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsElectra.required(schemas).getWithdrawalRequestSchema()))
+          .put(
+              "ssz_static/ConsolidationRequest",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsElectra.required(schemas).getConsolidationRequestSchema()))
+          .put(
+              "ssz_static/PendingDeposit",
+              new SszTestExecutor<>(
+                  schemas -> SchemaDefinitionsElectra.required(schemas).getPendingDepositSchema()))
+          .put(
+              "ssz_static/PendingConsolidation",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsElectra.required(schemas).getPendingConsolidationSchema()))
+          .put(
+              "ssz_static/PendingPartialWithdrawal",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsElectra.required(schemas)
+                          .getPendingPartialWithdrawalSchema()))
+          .put(
+              "ssz_static/SingleAttestation",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsElectra.required(schemas).getSingleAttestationSchema()))
+
+          // Fulu types
           .put(
               "ssz_static/DataColumnIdentifier",
               new SszTestExecutor<>(schemas -> DataColumnIdentifier.SSZ_SCHEMA))
           .put(
               "ssz_static/DataColumnSidecar",
               new SszTestExecutor<>(
-                  schemas ->
-                      SchemaDefinitionsEip7594.required(schemas).getDataColumnSidecarSchema()))
+                  schemas -> SchemaDefinitionsFulu.required(schemas).getDataColumnSidecarSchema()))
           .put(
               "ssz_static/MatrixEntry",
               new SszTestExecutor<>(
-                  schemas -> SchemaDefinitionsEip7594.required(schemas).getMatrixEntrySchema()))
+                  schemas -> SchemaDefinitionsFulu.required(schemas).getMatrixEntrySchema()))
+
           // Legacy Schemas (Not yet migrated to SchemaDefinitions)
           .put(
               "ssz_static/AttestationData", new SszTestExecutor<>(__ -> AttestationData.SSZ_SCHEMA))

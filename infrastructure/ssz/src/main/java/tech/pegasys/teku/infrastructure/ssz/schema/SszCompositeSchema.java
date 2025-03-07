@@ -60,7 +60,7 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
    * Returns then number of chunks (i.e. leaf nodes) to store {@code elementCount} child elements
    * Returns a number lower than {@code elementCode} only in case of packed basic types collection
    */
-  default int getChunks(int elementCount) {
+  default int getChunks(final int elementCount) {
     return (elementCount - 1) / getElementsPerChunk() + 1;
   }
 
@@ -79,7 +79,7 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
    *
    * @see TreeNode#get(long)
    */
-  default long getChildGeneralizedIndex(long elementIndex) {
+  default long getChildGeneralizedIndex(final long elementIndex) {
     return GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, elementIndex, treeDepth());
   }
 

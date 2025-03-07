@@ -13,11 +13,6 @@
 
 package tech.pegasys.teku.api;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Throwables;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Collection;
@@ -27,36 +22,27 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
-import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
-import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
-import tech.pegasys.teku.api.schema.bellatrix.SignedBlindedBeaconBlockBellatrix;
-import tech.pegasys.teku.api.schema.capella.SignedBeaconBlockCapella;
-import tech.pegasys.teku.api.schema.capella.SignedBlindedBeaconBlockCapella;
-import tech.pegasys.teku.api.schema.deneb.SignedBeaconBlockDeneb;
-import tech.pegasys.teku.api.schema.deneb.SignedBlindedBeaconBlockDeneb;
-import tech.pegasys.teku.api.schema.eip7594.SignedBeaconBlockEip7594;
-import tech.pegasys.teku.api.schema.eip7594.SignedBlindedBeaconBlockEip7594;
-import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
@@ -65,7 +51,6 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
-import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorDataProvider {
@@ -96,19 +81,6 @@ public class ValidatorDataProvider {
     return combinedChainDataClient.isStoreAvailable();
   }
 
-  @Deprecated // This method is used within the blockV1 and blockV2 flow. It will be deprecated in
-  // the future.
-  public SafeFuture<Optional<BlockContainerAndMetaData>> getUnsignedBeaconBlockAtSlot(
-      final UInt64 slot,
-      final BLSSignature randao,
-      final Optional<Bytes32> graffiti,
-      final boolean isBlinded,
-      final Optional<UInt64> requestedBuilderBoostFactor) {
-    checkBlockProducingParameters(slot, randao);
-    return validatorApiChannel.createUnsignedBlock(
-        slot, randao, graffiti, Optional.of(isBlinded), requestedBuilderBoostFactor);
-  }
-
   public SafeFuture<Optional<BlockContainerAndMetaData>> produceBlock(
       final UInt64 slot,
       final BLSSignature randao,
@@ -116,7 +88,7 @@ public class ValidatorDataProvider {
       final Optional<UInt64> requestedBuilderBoostFactor) {
     checkBlockProducingParameters(slot, randao);
     return validatorApiChannel.createUnsignedBlock(
-        slot, randao, graffiti, Optional.empty(), requestedBuilderBoostFactor);
+        slot, randao, graffiti, requestedBuilderBoostFactor);
   }
 
   private void checkBlockProducingParameters(final UInt64 slot, final BLSSignature randao) {
@@ -142,7 +114,7 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<Optional<AttestationData>> createAttestationDataAtSlot(
-      UInt64 slot, int committeeIndex) {
+      final UInt64 slot, final int committeeIndex) {
     if (!isStoreAvailable()) {
       return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
@@ -159,40 +131,9 @@ public class ValidatorDataProvider {
             });
   }
 
-  public SafeFuture<List<SubmitDataError>> submitAttestations(List<Attestation> attestations) {
+  public SafeFuture<List<SubmitDataError>> submitAttestations(
+      final List<Attestation> attestations) {
     return validatorApiChannel.sendSignedAttestations(attestations);
-  }
-
-  public SignedBeaconBlock parseBlock(final JsonProvider jsonProvider, final String jsonBlock)
-      throws JsonProcessingException {
-    final ObjectMapper mapper = jsonProvider.getObjectMapper();
-    final JsonNode jsonNode = mapper.readTree(jsonBlock);
-    final UInt64 slot = mapper.treeToValue(jsonNode.findValue("slot"), UInt64.class);
-    checkNotNull(slot, "Slot was not found in json block");
-    return switch (spec.atSlot(slot).getMilestone()) {
-      case PHASE0 -> mapper.treeToValue(jsonNode, SignedBeaconBlockPhase0.class);
-      case ALTAIR -> mapper.treeToValue(jsonNode, SignedBeaconBlockAltair.class);
-      case BELLATRIX -> mapper.treeToValue(jsonNode, SignedBeaconBlockBellatrix.class);
-      case CAPELLA -> mapper.treeToValue(jsonNode, SignedBeaconBlockCapella.class);
-      case DENEB -> mapper.treeToValue(jsonNode, SignedBeaconBlockDeneb.class);
-      case EIP7594 -> mapper.treeToValue(jsonNode, SignedBeaconBlockEip7594.class);
-    };
-  }
-
-  public SignedBeaconBlock parseBlindedBlock(
-      final JsonProvider jsonProvider, final String jsonBlock) throws JsonProcessingException {
-    final ObjectMapper mapper = jsonProvider.getObjectMapper();
-    final JsonNode jsonNode = mapper.readTree(jsonBlock);
-    final UInt64 slot = mapper.treeToValue(jsonNode.findValue("slot"), UInt64.class);
-    checkNotNull(slot, "Slot was not found in json block");
-    return switch (spec.atSlot(slot).getMilestone()) {
-      case PHASE0 -> mapper.treeToValue(jsonNode, SignedBeaconBlockPhase0.class);
-      case ALTAIR -> mapper.treeToValue(jsonNode, SignedBeaconBlockAltair.class);
-      case BELLATRIX -> mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockBellatrix.class);
-      case CAPELLA -> mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockCapella.class);
-      case DENEB -> mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockDeneb.class);
-      case EIP7594 -> mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockEip7594.class);
-    };
   }
 
   public SafeFuture<ValidatorBlockResult> submitSignedBlock(
@@ -239,8 +180,16 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<Optional<Attestation>> createAggregate(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
-    return validatorApiChannel.createAggregate(slot, attestationHashTreeRoot);
+      final UInt64 slot,
+      final Bytes32 attestationHashTreeRoot,
+      final Optional<UInt64> committeeIndex) {
+    return validatorApiChannel.createAggregate(slot, attestationHashTreeRoot, committeeIndex);
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<Attestation>>> createAggregateAndMetaData(
+      final UInt64 slot, final Bytes32 attestationHashTreeRoot, final UInt64 committeeIndex) {
+    return createAggregate(slot, attestationHashTreeRoot, Optional.of(committeeIndex))
+        .thenApply(maybeAttestation -> maybeAttestation.map(this::lookUpMetadata));
   }
 
   public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
@@ -326,7 +275,7 @@ public class ValidatorDataProvider {
   }
 
   private static ValidatorBlockResult generateSubmitSignedBlockResponse(
-      SendSignedBlockResult result) {
+      final SendSignedBlockResult result) {
     int responseCode;
     Optional<Bytes32> hashRoot = result.getBlockRoot();
     if (result.getRejectionReason().isEmpty()) {
@@ -338,5 +287,14 @@ public class ValidatorDataProvider {
     }
 
     return new ValidatorBlockResult(responseCode, result.getRejectionReason(), hashRoot);
+  }
+
+  private ObjectAndMetaData<Attestation> lookUpMetadata(final Attestation attestation) {
+    return new ObjectAndMetaData<>(
+        attestation,
+        spec.atSlot(attestation.getData().getSlot()).getMilestone(),
+        false,
+        false,
+        false);
   }
 }

@@ -85,7 +85,7 @@ public class SszBitvectorSchemaTest extends SszVectorSchemaTestBase {
     assertThat(schema.ofBits(0, 2)).isEqualTo(schema.ofBits(2, 0));
   }
 
-  private static Bytes rightPad(Bytes bb, int targetLen) {
+  private static Bytes rightPad(final Bytes bb, final int targetLen) {
     return Bytes.wrap(bb, Bytes.wrap(new byte[targetLen - bb.size()]));
   }
 

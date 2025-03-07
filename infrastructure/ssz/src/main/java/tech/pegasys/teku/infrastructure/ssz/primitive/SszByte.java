@@ -17,27 +17,27 @@ import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
 
-public class SszByte extends AbstractSszPrimitive<Byte, SszByte> {
+public class SszByte extends AbstractSszPrimitive<Byte> {
 
   public static final SszByte ZERO = SszByte.of(0);
 
-  public static SszByte of(int value) {
+  public static SszByte of(final int value) {
     return new SszByte((byte) value);
   }
 
-  public static SszByte asUInt8(int value) {
+  public static SszByte asUInt8(final int value) {
     return new SszByte((byte) value, SszPrimitiveSchemas.UINT8_SCHEMA);
   }
 
-  public static SszByte of(byte value) {
+  public static SszByte of(final byte value) {
     return new SszByte(value);
   }
 
-  private SszByte(Byte value) {
+  private SszByte(final Byte value) {
     this(value, SszPrimitiveSchemas.BYTE_SCHEMA);
   }
 
-  private SszByte(Byte value, AbstractSszPrimitiveSchema<Byte, SszByte> schema) {
+  private SszByte(final Byte value, final AbstractSszPrimitiveSchema<Byte, SszByte> schema) {
     super(value, schema);
   }
 }

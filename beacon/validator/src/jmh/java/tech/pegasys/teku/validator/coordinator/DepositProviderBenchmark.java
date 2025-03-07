@@ -68,7 +68,7 @@ public class DepositProviderBenchmark {
       new DepositProvider(
           metricsSystem,
           mock(RecentChainData.class),
-          new Eth1DataCache(metricsSystem, new Eth1VotingPeriod(spec)),
+          new Eth1DataCache(spec, metricsSystem, new Eth1VotingPeriod(spec)),
           mock(StorageUpdateChannel.class),
           mock(Eth1DepositStorageChannel.class),
           spec,

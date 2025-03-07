@@ -25,16 +25,16 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 
 public class SszDataAssert<T extends SszData> extends AbstractAssert<SszDataAssert<T>, T> {
 
-  public static <T extends SszData> SszDataAssert<T> assertThatSszData(T sszData) {
+  public static <T extends SszData> SszDataAssert<T> assertThatSszData(final T sszData) {
     return new SszDataAssert<>(sszData, SszDataAssert.class);
   }
 
-  private SszDataAssert(T t, Class<?> selfType) {
+  private SszDataAssert(final T t, final Class<?> selfType) {
     super(t, selfType);
   }
 
   /** Compares two views by their getters recursively (if views are composite) */
-  public SszDataAssert<T> isEqualByGettersTo(T expected) {
+  public SszDataAssert<T> isEqualByGettersTo(final T expected) {
     List<String> res = compareByGetters(actual, expected);
     if (!res.isEmpty()) {
       String errMessage =
@@ -49,17 +49,17 @@ public class SszDataAssert<T extends SszData> extends AbstractAssert<SszDataAsse
     return this;
   }
 
-  public SszDataAssert<T> isEqualBySszTo(T expected) {
+  public SszDataAssert<T> isEqualBySszTo(final T expected) {
     assertThat(actual.sszSerialize()).isEqualTo(expected.sszSerialize());
     return this;
   }
 
-  public SszDataAssert<T> isEqualByHashTreeRootTo(T expected) {
+  public SszDataAssert<T> isEqualByHashTreeRootTo(final T expected) {
     assertThat(actual.hashTreeRoot()).isEqualTo(expected.hashTreeRoot());
     return this;
   }
 
-  public SszDataAssert<T> isEqualByHashCodeTo(T expected) {
+  public SszDataAssert<T> isEqualByHashCodeTo(final T expected) {
     assertThat(actual.hashCode()).isEqualTo(expected.hashCode());
     return this;
   }
@@ -74,7 +74,7 @@ public class SszDataAssert<T extends SszData> extends AbstractAssert<SszDataAsse
    *   <li>{@link #isEqualByHashTreeRootTo(SszData)}
    * </ul>
    */
-  public SszDataAssert<T> isNotEqualByAllMeansTo(T expected) {
+  public SszDataAssert<T> isNotEqualByAllMeansTo(final T expected) {
     assertNot(() -> isEqualTo(expected), "isEqualTo");
     assertNot(() -> isEqualByGettersTo(expected), "isEqualByGettersTo");
     assertNot(() -> isEqualBySszTo(expected), "isEqualBySszTo");
@@ -93,7 +93,7 @@ public class SszDataAssert<T extends SszData> extends AbstractAssert<SszDataAsse
    *   <li>{@link #isEqualByHashTreeRootTo(SszData)}
    * </ul>
    */
-  public SszDataAssert<T> isEqualByAllMeansTo(T expected) {
+  public SszDataAssert<T> isEqualByAllMeansTo(final T expected) {
     isEqualTo(expected);
     isEqualByHashCodeTo(expected);
     isEqualByGettersTo(expected);
@@ -103,7 +103,7 @@ public class SszDataAssert<T extends SszData> extends AbstractAssert<SszDataAsse
   }
 
   @SuppressWarnings("EmptyCatch")
-  private void assertNot(Runnable assertion, String error) {
+  private void assertNot(final Runnable assertion, final String error) {
     try {
       assertion.run();
       failWithMessage("Expecting negative assertion: " + error);
@@ -111,11 +111,11 @@ public class SszDataAssert<T extends SszData> extends AbstractAssert<SszDataAsse
     }
   }
 
-  public static boolean isEqualByGetters(SszData actual, SszData expected) {
+  public static boolean isEqualByGetters(final SszData actual, final SszData expected) {
     return compareByGetters(actual, expected).isEmpty();
   }
 
-  private static List<String> compareByGetters(SszData actual, SszData expected) {
+  private static List<String> compareByGetters(final SszData actual, final SszData expected) {
     if (!actual.getSchema().equals(expected.getSchema())) {
       return List.of(
           "Schemas don't match. Expected: "
@@ -154,7 +154,7 @@ public class SszDataAssert<T extends SszData> extends AbstractAssert<SszDataAsse
   }
 
   @SuppressWarnings("unchecked")
-  private static <T> List<T> prepend(List<T> list, T... args) {
+  private static <T> List<T> prepend(final List<T> list, final T... args) {
     return Stream.concat(Stream.of(args), list.stream()).collect(Collectors.toList());
   }
 }

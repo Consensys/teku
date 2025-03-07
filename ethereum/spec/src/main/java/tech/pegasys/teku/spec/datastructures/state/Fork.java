@@ -36,18 +36,18 @@ public class Fork extends Container3<Fork, SszBytes4, SszBytes4, SszUInt64> {
     }
 
     @Override
-    public Fork createFromBackingNode(TreeNode node) {
+    public Fork createFromBackingNode(final TreeNode node) {
       return new Fork(this, node);
     }
   }
 
   public static final ForkSchema SSZ_SCHEMA = new ForkSchema();
 
-  private Fork(ForkSchema type, TreeNode backingNode) {
+  private Fork(final ForkSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public Fork(Bytes4 previousVersion, Bytes4 currentVersion, UInt64 epoch) {
+  public Fork(final Bytes4 previousVersion, final Bytes4 currentVersion, final UInt64 epoch) {
     super(
         SSZ_SCHEMA,
         SszBytes4.of(previousVersion),

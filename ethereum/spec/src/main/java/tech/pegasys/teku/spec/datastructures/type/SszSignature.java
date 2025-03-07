@@ -23,12 +23,12 @@ public class SszSignature extends SszByteVectorImpl {
 
   private final Supplier<BLSSignature> signature;
 
-  public SszSignature(BLSSignature signature) {
+  public SszSignature(final BLSSignature signature) {
     super(SszSignatureSchema.INSTANCE, signature.toBytesCompressed());
     this.signature = () -> signature;
   }
 
-  SszSignature(TreeNode backingNode) {
+  SszSignature(final TreeNode backingNode) {
     super(SszSignatureSchema.INSTANCE, backingNode);
     signature = Suppliers.memoize(this::createBLSSignature);
   }

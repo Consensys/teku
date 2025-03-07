@@ -24,11 +24,13 @@ import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -42,13 +44,12 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
-import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class SentryValidatorApiChannel implements ValidatorApiChannel {
@@ -101,16 +102,19 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Optional<PeerCount>> getPeerCount() {
+    return dutiesProviderChannel.getPeerCount();
+  }
+
+  @Override
   public SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<Boolean> requestedBlinded,
       final Optional<UInt64> requestedBuilderBoostFactor) {
     return blockHandlerChannel
         .orElse(dutiesProviderChannel)
-        .createUnsignedBlock(
-            slot, randaoReveal, graffiti, requestedBlinded, requestedBuilderBoostFactor);
+        .createUnsignedBlock(slot, randaoReveal, graffiti, requestedBuilderBoostFactor);
   }
 
   @Override
@@ -121,10 +125,12 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(
-      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
+      final UInt64 slot,
+      final Bytes32 attestationHashTreeRoot,
+      final Optional<UInt64> committeeIndex) {
     return attestationPublisherChannel
         .orElse(dutiesProviderChannel)
-        .createAggregate(slot, attestationHashTreeRoot);
+        .createAggregate(slot, attestationHashTreeRoot, committeeIndex);
   }
 
   @Override
@@ -218,7 +224,7 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorsLiveness(
-      List<UInt64> validatorIndices, UInt64 epoch) {
+      final List<UInt64> validatorIndices, final UInt64 epoch) {
     return dutiesProviderChannel.getValidatorsLiveness(validatorIndices, epoch);
   }
 

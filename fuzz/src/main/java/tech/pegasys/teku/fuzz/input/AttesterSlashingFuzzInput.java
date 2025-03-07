@@ -34,8 +34,8 @@ public class AttesterSlashingFuzzInput
   }
 
   private AttesterSlashingFuzzInput(
-      ContainerSchema2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing> type,
-      TreeNode backingNode) {
+      final ContainerSchema2<AttesterSlashingFuzzInput, BeaconState, AttesterSlashing> type,
+      final TreeNode backingNode) {
     super(type, backingNode);
   }
 

@@ -147,11 +147,11 @@ public class Eth1BlockFetcher {
             error -> LOG.error("Unexpected error while back-filling ETH1 blocks", error));
   }
 
-  private boolean isAboveLowerBound(UInt64 timestamp) {
+  private boolean isAboveLowerBound(final UInt64 timestamp) {
     return timestamp.compareTo(getCacheRangeLowerBound(timeProvider.getTimeInSeconds())) >= 0;
   }
 
-  private UInt64 getCacheRangeLowerBound(UInt64 currentTime) {
+  private UInt64 getCacheRangeLowerBound(final UInt64 currentTime) {
     return currentTime.compareTo(cacheDuration) > 0 ? currentTime.minus(cacheDuration) : ZERO;
   }
 }

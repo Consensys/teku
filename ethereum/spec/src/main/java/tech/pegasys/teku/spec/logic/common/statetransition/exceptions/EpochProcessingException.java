@@ -14,11 +14,11 @@
 package tech.pegasys.teku.spec.logic.common.statetransition.exceptions;
 
 public final class EpochProcessingException extends Exception {
-  public EpochProcessingException(String err) {
+  public EpochProcessingException(final String err) {
     super(err);
   }
 
-  public EpochProcessingException(RuntimeException e) {
+  public EpochProcessingException(final RuntimeException e) {
     super(e);
   }
 }

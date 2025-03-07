@@ -59,7 +59,7 @@ public class DepositTransactionSender {
   }
 
   public SafeFuture<TransactionReceipt> sendDepositTransaction(
-      BLSKeyPair validatorKeyPair,
+      final BLSKeyPair validatorKeyPair,
       final BLSPublicKey withdrawalPublicKey,
       final UInt64 amountInGwei,
       final Consumer<String> commandStdOutput,

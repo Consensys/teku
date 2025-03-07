@@ -24,8 +24,8 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class AggregateAttestationBuilderTest {
@@ -33,7 +33,7 @@ class AggregateAttestationBuilderTest {
   public static final int BITLIST_SIZE = 10;
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final AttestationSchema attestationSchema =
+  private final AttestationSchema<?> attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final AttestationData attestationData = dataStructureUtil.randomAttestationData();
 
@@ -42,19 +42,19 @@ class AggregateAttestationBuilderTest {
 
   @Test
   public void canAggregate_shouldBeTrueForFirstAttestation() {
-    assertThat(builder.canAggregate(createAttestation(1, 2, 3, 4, 5, 6, 7, 8, 9))).isTrue();
+    assertThat(builder.aggregate(createAttestation(1, 2, 3, 4, 5, 6, 7, 8, 9))).isTrue();
   }
 
   @Test
   public void canAggregate_shouldBeTrueWhenValidatorsDoNotOverlap() {
     builder.aggregate(createAttestation(1, 3, 5));
-    assertThat(builder.canAggregate(createAttestation(0, 2, 4))).isTrue();
+    assertThat(builder.aggregate(createAttestation(0, 2, 4))).isTrue();
   }
 
   @Test
   public void canAggregate_shouldBeFalseWhenValidatorsDoOverlap() {
     builder.aggregate(createAttestation(1, 3, 5));
-    assertThat(builder.canAggregate(createAttestation(1, 2, 4))).isFalse();
+    assertThat(builder.aggregate(createAttestation(1, 2, 4))).isFalse();
   }
 
   @Test

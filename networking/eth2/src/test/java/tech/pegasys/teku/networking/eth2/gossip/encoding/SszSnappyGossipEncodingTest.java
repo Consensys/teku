@@ -48,7 +48,10 @@ public class SszSnappyGossipEncodingTest {
       GossipTopics.getTopic(Bytes4.fromHexStringLenient("0x01"), "testing", encoding);
 
   private <T extends SszData> T decode(
-      final String topic, GossipEncoding encoding, Bytes data, SszSchema<T> valueType)
+      final String topic,
+      final GossipEncoding encoding,
+      final Bytes data,
+      final SszSchema<T> valueType)
       throws DecodingException {
     return encoding.decodeMessage(
         encoding

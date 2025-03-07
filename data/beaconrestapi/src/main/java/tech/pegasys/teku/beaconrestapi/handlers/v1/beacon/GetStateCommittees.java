@@ -47,12 +47,12 @@ public class GetStateCommittees extends RestApiEndpoint {
 
   private static final SerializableTypeDefinition<CommitteeAssignment> EPOCH_COMMITTEE_TYPE =
       SerializableTypeDefinition.object(CommitteeAssignment.class)
-          .withField("index", UINT64_TYPE, CommitteeAssignment::getCommitteeIndex)
-          .withField("slot", UINT64_TYPE, CommitteeAssignment::getSlot)
+          .withField("index", UINT64_TYPE, CommitteeAssignment::committeeIndex)
+          .withField("slot", UINT64_TYPE, CommitteeAssignment::slot)
           .withField(
               "validators",
               listOf(UINT64_TYPE),
-              committeeAssignment -> UInt64Util.intToUInt64List(committeeAssignment.getCommittee()))
+              committeeAssignment -> UInt64Util.intToUInt64List(committeeAssignment.committee()))
           .build();
 
   private static final SerializableTypeDefinition<ObjectAndMetaData<List<CommitteeAssignment>>>
@@ -84,12 +84,13 @@ public class GetStateCommittees extends RestApiEndpoint {
             .tags(TAG_BEACON)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final Optional<UInt64> epoch = request.getOptionalQueryParameter(EPOCH_PARAMETER);
     final Optional<UInt64> committeeIndex = request.getOptionalQueryParameter(INDEX_PARAMETER);
     final Optional<UInt64> slot =

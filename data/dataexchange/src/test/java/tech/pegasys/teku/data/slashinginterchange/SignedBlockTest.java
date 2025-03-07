@@ -19,13 +19,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
 
 public class SignedBlockTest {
-  private final JsonProvider jsonProvider = new JsonProvider();
   final UInt64 slot = UInt64.MAX_VALUE;
   final Bytes32 signingRoot =
       Bytes32.fromHexString("0x6e2c5d8a89dfe121a92c8812bea69fe9f84ae48f63aafe34ef7e18c7eac9af70");
@@ -36,15 +36,15 @@ public class SignedBlockTest {
 
   @Test
   public void shouldSerialize() throws JsonProcessingException {
-    final SignedBlock signedBlock = new SignedBlock(slot, signingRoot);
-    String str = jsonProvider.objectToPrettyJSON(signedBlock);
+    final SignedBlock signedBlock = new SignedBlock(slot, Optional.of(signingRoot));
+    final String str = JsonUtil.prettySerialize(signedBlock, SignedBlock.getJsonTypeDefinition());
     assertThat(str).isEqualToNormalizingNewlines(jsonData);
   }
 
   @Test
   public void shouldDeserialize() throws JsonProcessingException {
-    final SignedBlock signedBlock = jsonProvider.jsonToObject(jsonData, SignedBlock.class);
-    assertThat(signedBlock.slot).isEqualTo(slot);
-    assertThat(signedBlock.signingRoot).isEqualTo(signingRoot);
+    final SignedBlock signedBlock = JsonUtil.parse(jsonData, SignedBlock.getJsonTypeDefinition());
+    assertThat(signedBlock.slot()).isEqualTo(slot);
+    assertThat(signedBlock.signingRoot()).contains(signingRoot);
   }
 }

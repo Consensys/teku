@@ -28,8 +28,11 @@ import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions {
@@ -39,7 +42,8 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
   private final RecentChainData recentChainData;
   private final OperationProcessor<ValidatableAttestation> processor;
   private final ForkInfo forkInfo;
-  private final AttestationSchema attestationSchema;
+  private final AttestationSchema<? extends Attestation> attestationSchema;
+  private final DebugDataDumper debugDataDumper;
 
   public AttestationSubnetSubscriptions(
       final Spec spec,
@@ -48,15 +52,23 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
       final GossipEncoding gossipEncoding,
       final RecentChainData recentChainData,
       final OperationProcessor<ValidatableAttestation> processor,
-      final ForkInfo forkInfo) {
+      final ForkInfo forkInfo,
+      final DebugDataDumper debugDataDumper) {
     super(gossipNetwork, gossipEncoding);
     this.spec = spec;
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.processor = processor;
     this.forkInfo = forkInfo;
+    final SchemaDefinitions schemaDefinitions =
+        spec.atEpoch(forkInfo.getFork().getEpoch()).getSchemaDefinitions();
     attestationSchema =
-        spec.atEpoch(forkInfo.getFork().getEpoch()).getSchemaDefinitions().getAttestationSchema();
+        schemaDefinitions
+            .toVersionElectra()
+            .<AttestationSchema<? extends Attestation>>map(
+                SchemaDefinitionsElectra::getSingleAttestationSchema)
+            .orElse(schemaDefinitions.getAttestationSchema());
+    this.debugDataDumper = debugDataDumper;
   }
 
   public SafeFuture<?> gossip(final Attestation attestation) {
@@ -85,6 +97,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
   @Override
   protected Eth2TopicHandler<?> createTopicHandler(final int subnetId) {
     final String topicName = GossipTopicName.getAttestationSubnetTopicName(subnetId);
+
     return SingleAttestationTopicHandler.createHandler(
         recentChainData,
         asyncRunner,
@@ -93,7 +106,8 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
         forkInfo,
         topicName,
         attestationSchema,
-        subnetId);
+        subnetId,
+        debugDataDumper);
   }
 
   private SafeFuture<Optional<Integer>> computeSubnetForAttestation(final Attestation attestation) {
@@ -103,5 +117,10 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
             state ->
                 state.map(
                     s -> recentChainData.getSpec().computeSubnetForAttestation(s, attestation)));
+  }
+
+  @VisibleForTesting
+  AttestationSchema<? extends Attestation> getAttestationSchema() {
+    return attestationSchema;
   }
 }

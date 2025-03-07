@@ -88,18 +88,18 @@ public abstract class AbstractBeaconNodeCommandTest {
         BeaconNodeCommand.LOG_FILE_PREFIX);
   }
 
-  public TekuConfiguration getTekuConfigurationFromArguments(String... arguments) {
+  public TekuConfiguration getTekuConfigurationFromArguments(final String... arguments) {
     beaconNodeCommand.parse(arguments);
     return getResultingTekuConfiguration();
   }
 
-  public LoggingConfig getLoggingConfigurationFromArguments(String... arguments) {
+  public LoggingConfig getLoggingConfigurationFromArguments(final String... arguments) {
     beaconNodeCommand.parse(arguments);
     return getResultingLoggingConfiguration();
   }
 
   public TekuConfiguration getTekuConfigurationFromFile(
-      String resourceFilename, Optional<String> subcommand) {
+      final String resourceFilename, final Optional<String> subcommand) {
     final String configFile = this.getClass().getResource("/" + resourceFilename).getPath();
     final String[] args =
         Stream.concat(subcommand.stream(), Stream.of(CONFIG_FILE_OPTION_NAME, configFile))
@@ -113,7 +113,7 @@ public abstract class AbstractBeaconNodeCommandTest {
     return getTekuConfigurationFromFile(resourceFilename, Optional.empty());
   }
 
-  public LoggingConfig getLoggingConfigFromFile(String resourceFilename) {
+  public LoggingConfig getLoggingConfigFromFile(final String resourceFilename) {
     final String configFile = this.getClass().getResource("/" + resourceFilename).getPath();
     final String[] args = {CONFIG_FILE_OPTION_NAME, configFile};
     beaconNodeCommand.parse(args);

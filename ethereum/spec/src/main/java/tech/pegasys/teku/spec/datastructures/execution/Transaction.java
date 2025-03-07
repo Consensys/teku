@@ -18,7 +18,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class Transaction extends SszByteListImpl {
 
-  Transaction(TransactionSchema schema, TreeNode backingNode) {
+  Transaction(final TransactionSchema schema, final TreeNode backingNode) {
     super(schema, backingNode);
   }
 

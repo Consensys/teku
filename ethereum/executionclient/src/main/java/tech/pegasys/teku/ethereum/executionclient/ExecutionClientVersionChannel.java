@@ -18,5 +18,13 @@ import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 
 public interface ExecutionClientVersionChannel extends VoidReturningChannelInterface {
 
+  /**
+   * Provides an execution {@link ClientVersion} based on <a
+   * href="https://github.com/ethereum/execution-apis/blob/main/src/engine/identification.md#engine_getclientversionv1">engine_getClientVersion</a>.
+   * This method will be called on startup and every time the {@link ClientVersion} changes.
+   */
   void onExecutionClientVersion(ClientVersion executionClientVersion);
+
+  /** Called when engine_getClientVersion method is not available or has failed on startup */
+  void onExecutionClientVersionNotAvailable();
 }

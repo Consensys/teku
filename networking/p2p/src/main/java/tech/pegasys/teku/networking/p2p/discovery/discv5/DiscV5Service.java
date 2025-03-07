@@ -15,7 +15,10 @@ package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
 import static java.util.Collections.emptyList;
 
+import com.google.common.base.Preconditions;
+import java.net.InetSocketAddress;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -38,6 +41,8 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.io.IPVersionResolver;
+import tech.pegasys.teku.infrastructure.io.IPVersionResolver.IPVersion;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
@@ -66,6 +71,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
 
   private final DiscoverySystem discoverySystem;
   private final KeyValueStore<String, Bytes> kvStore;
+  private final boolean supportsIpv6;
   private final List<NodeRecord> bootnodes;
   private volatile Cancellable bootnodeRefreshTask;
 
@@ -83,26 +89,70 @@ public class DiscV5Service extends Service implements DiscoveryService {
     this.localNodePrivateKey = SecretKeyParser.fromLibP2pPrivKey(privateKey);
     this.currentSchemaDefinitionsSupplier = currentSchemaDefinitionsSupplier;
     this.nodeRecordConverter = nodeRecordConverter;
-    final String listenAddress = p2pConfig.getNetworkInterface();
-    final int listenUdpPort = discoConfig.getListenUdpPort();
-    final String advertisedAddress = p2pConfig.getAdvertisedIp();
-    final int advertisedTcpPort = p2pConfig.getAdvertisedPort();
-    final int advertisedUdpPort = discoConfig.getAdvertisedUdpPort();
+    final List<String> networkInterfaces = p2pConfig.getNetworkInterfaces();
+    Preconditions.checkState(
+        networkInterfaces.size() == 1 || networkInterfaces.size() == 2,
+        "The configured network interfaces must be either 1 or 2");
+    if (networkInterfaces.size() == 1) {
+      final String listenAddress = networkInterfaces.get(0);
+      discoverySystemBuilder.listen(listenAddress, discoConfig.getListenUdpPort());
+      this.supportsIpv6 = IPVersionResolver.resolve(listenAddress) == IPVersion.IP_V6;
+    } else {
+      // IPv4 and IPv6 (dual-stack)
+      final InetSocketAddress[] listenAddresses =
+          networkInterfaces.stream()
+              .map(
+                  networkInterface -> {
+                    final int listenUdpPort =
+                        switch (IPVersionResolver.resolve(networkInterface)) {
+                          case IP_V4 -> discoConfig.getListenUdpPort();
+                          case IP_V6 -> discoConfig.getListenUpdPortIpv6();
+                        };
+                    return new InetSocketAddress(networkInterface, listenUdpPort);
+                  })
+              .toArray(InetSocketAddress[]::new);
+      discoverySystemBuilder.listen(listenAddresses);
+      this.supportsIpv6 = true;
+    }
     final UInt64 seqNo =
         kvStore.get(SEQ_NO_STORE_KEY).map(UInt64::fromBytes).orElse(UInt64.ZERO).add(1);
-    final NewAddressHandler maybeUpdateNodeRecordHandler =
-        maybeUpdateNodeRecord(p2pConfig.hasUserExplicitlySetAdvertisedIp(), advertisedTcpPort);
+    final NewAddressHandler maybeUpdateNodeRecordHandler = maybeUpdateNodeRecord(p2pConfig);
     this.bootnodes =
         discoConfig.getBootnodes().stream().map(NodeRecordFactory.DEFAULT::fromEnr).toList();
     final NodeRecordBuilder nodeRecordBuilder =
         new NodeRecordBuilder().secretKey(localNodePrivateKey).seq(seqNo);
-    if (p2pConfig.hasUserExplicitlySetAdvertisedIp()) {
-      nodeRecordBuilder.address(advertisedAddress, advertisedUdpPort, advertisedTcpPort);
+    if (p2pConfig.hasUserExplicitlySetAdvertisedIps()) {
+      final List<String> advertisedIps = p2pConfig.getAdvertisedIps();
+      Preconditions.checkState(
+          advertisedIps.size() == 1 || advertisedIps.size() == 2,
+          "The configured advertised IPs must be either 1 or 2");
+      if (advertisedIps.size() == 1) {
+        nodeRecordBuilder.address(
+            advertisedIps.get(0),
+            discoConfig.getAdvertisedUdpPort(),
+            p2pConfig.getAdvertisedPort());
+      } else {
+        // IPv4 and IPv6 (dual-stack)
+        advertisedIps.forEach(
+            advertisedIp -> {
+              final IPVersion ipVersion = IPVersionResolver.resolve(advertisedIp);
+              final int advertisedUdpPort =
+                  switch (ipVersion) {
+                    case IP_V4 -> discoConfig.getAdvertisedUdpPort();
+                    case IP_V6 -> discoConfig.getAdvertisedUdpPortIpv6();
+                  };
+              final int advertisedTcpPort =
+                  switch (ipVersion) {
+                    case IP_V4 -> p2pConfig.getAdvertisedPort();
+                    case IP_V6 -> p2pConfig.getAdvertisedPortIpv6();
+                  };
+              nodeRecordBuilder.address(advertisedIp, advertisedUdpPort, advertisedTcpPort);
+            });
+      }
     }
     final NodeRecord localNodeRecord = nodeRecordBuilder.build();
     this.discoverySystem =
         discoverySystemBuilder
-            .listen(listenAddress, listenUdpPort)
             .secretKey(localNodePrivateKey)
             .bootnodes(bootnodes)
             .localNodeRecord(localNodeRecord)
@@ -121,19 +171,29 @@ public class DiscV5Service extends Service implements DiscoveryService {
         () -> discoverySystem.getBucketStats().getTotalLiveNodeCount());
   }
 
-  private NewAddressHandler maybeUpdateNodeRecord(
-      boolean userExplicitlySetAdvertisedIpOrPort, final int advertisedTcpPort) {
-    if (userExplicitlySetAdvertisedIpOrPort) {
+  private NewAddressHandler maybeUpdateNodeRecord(final NetworkConfig p2pConfig) {
+    if (p2pConfig.hasUserExplicitlySetAdvertisedIps()) {
       return (oldRecord, newAddress) -> Optional.of(oldRecord);
     } else {
-      return (oldRecord, newAddress) ->
-          Optional.of(
-              oldRecord.withNewAddress(
-                  newAddress, Optional.of(advertisedTcpPort), localNodePrivateKey));
+      return (oldRecord, newAddress) -> {
+        final int newTcpPort;
+        if (p2pConfig.getNetworkInterfaces().size() == 1) {
+          newTcpPort = p2pConfig.getAdvertisedPort();
+        } else {
+          // IPv4 and IPv6 (dual-stack)
+          newTcpPort =
+              switch (IPVersionResolver.resolve(newAddress)) {
+                case IP_V4 -> p2pConfig.getAdvertisedPort();
+                case IP_V6 -> p2pConfig.getAdvertisedPortIpv6();
+              };
+        }
+        return Optional.of(
+            oldRecord.withNewAddress(newAddress, Optional.of(newTcpPort), localNodePrivateKey));
+      };
     }
   }
 
-  private void localNodeRecordUpdated(NodeRecord oldRecord, NodeRecord newRecord) {
+  private void localNodeRecordUpdated(final NodeRecord oldRecord, final NodeRecord newRecord) {
     kvStore.put(SEQ_NO_STORE_KEY, newRecord.getSeq().toBytes());
   }
 
@@ -173,7 +233,10 @@ public class DiscV5Service extends Service implements DiscoveryService {
         currentSchemaDefinitionsSupplier.getSchemaDefinitions();
     return activeNodes()
         .flatMap(
-            node -> nodeRecordConverter.convertToDiscoveryPeer(node, schemaDefinitions).stream());
+            node ->
+                nodeRecordConverter
+                    .convertToDiscoveryPeer(node, supportsIpv6, schemaDefinitions)
+                    .stream());
   }
 
   @Override
@@ -191,7 +254,9 @@ public class DiscV5Service extends Service implements DiscoveryService {
     return foundNodes.stream()
         .flatMap(
             nodeRecord ->
-                nodeRecordConverter.convertToDiscoveryPeer(nodeRecord, schemaDefinitions).stream())
+                nodeRecordConverter
+                    .convertToDiscoveryPeer(nodeRecord, supportsIpv6, schemaDefinitions)
+                    .stream())
         .toList();
   }
 
@@ -206,26 +271,35 @@ public class DiscV5Service extends Service implements DiscoveryService {
   }
 
   @Override
-  public Optional<String> getDiscoveryAddress() {
+  public Optional<List<String>> getDiscoveryAddresses() {
     final NodeRecord nodeRecord = discoverySystem.getLocalNodeRecord();
-    if (nodeRecord.getUdpAddress().isEmpty()) {
+    final List<InetSocketAddress> updAddresses = new ArrayList<>();
+    nodeRecord.getUdpAddress().ifPresent(updAddresses::add);
+    nodeRecord.getUdp6Address().ifPresent(updAddresses::add);
+    if (updAddresses.isEmpty()) {
       return Optional.empty();
     }
-    final DiscoveryPeer discoveryPeer =
-        new DiscoveryPeer(
-            (Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1),
-            nodeRecord.getNodeId(),
-            nodeRecord.getUdpAddress().get(),
-            Optional.empty(),
-            currentSchemaDefinitionsSupplier.getAttnetsENRFieldSchema().getDefault(),
-            currentSchemaDefinitionsSupplier.getSyncnetsENRFieldSchema().getDefault(),
-            Optional.empty());
-
-    return Optional.of(MultiaddrUtil.fromDiscoveryPeerAsUdp(discoveryPeer).toString());
+    final List<String> discoveryAddresses =
+        updAddresses.stream()
+            .map(
+                updAddress -> {
+                  final DiscoveryPeer discoveryPeer =
+                      new DiscoveryPeer(
+                          (Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1),
+                          nodeRecord.getNodeId(),
+                          updAddress,
+                          Optional.empty(),
+                          currentSchemaDefinitionsSupplier.getAttnetsENRFieldSchema().getDefault(),
+                          currentSchemaDefinitionsSupplier.getSyncnetsENRFieldSchema().getDefault(),
+                          Optional.empty());
+                  return MultiaddrUtil.fromDiscoveryPeerAsUdp(discoveryPeer).toString();
+                })
+            .toList();
+    return Optional.of(discoveryAddresses);
   }
 
   @Override
-  public void updateCustomENRField(String fieldName, Bytes value) {
+  public void updateCustomENRField(final String fieldName, final Bytes value) {
     discoverySystem.updateCustomFieldValue(fieldName, value);
   }
 

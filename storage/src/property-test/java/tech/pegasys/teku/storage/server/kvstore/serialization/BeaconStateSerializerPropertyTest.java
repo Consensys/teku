@@ -27,7 +27,7 @@ public class BeaconStateSerializerPropertyTest {
   @Property(tries = 10)
   public boolean roundTrip(
       @ForAll final int seed,
-      @ForAll(supplier = SpecSupplier.class) Spec spec,
+      @ForAll(supplier = SpecSupplier.class) final Spec spec,
       @ForAll @IntRange(max = 1000) final int validatorCount) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final KvStoreSerializer<BeaconState> serializer = createStateSerializer(spec);

@@ -25,13 +25,13 @@ public class SszUInt64ListSchemaImpl<SszListT extends SszUInt64List>
     extends SszPrimitiveListSchemaImpl<UInt64, SszUInt64, SszListT>
     implements SszUInt64ListSchema<SszListT> {
 
-  public SszUInt64ListSchemaImpl(long maxLength) {
+  public SszUInt64ListSchemaImpl(final long maxLength) {
     super(SszPrimitiveSchemas.UINT64_SCHEMA, maxLength);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public SszListT createFromBackingNode(TreeNode node) {
+  public SszListT createFromBackingNode(final TreeNode node) {
     return (SszListT) new SszUInt64ListImpl(this, node);
   }
 }

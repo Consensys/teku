@@ -54,7 +54,7 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
     final Iterator<SubnetSubscription> iterator = subnetSubscriptions.iterator();
     while (iterator.hasNext()) {
       final SubnetSubscription subnetSubscription = iterator.next();
-      if (subnetSubscription.getUnsubscriptionSlot().isGreaterThan(slot)) {
+      if (subnetSubscription.unsubscriptionSlot().isGreaterThan(slot)) {
         break;
       }
       iterator.remove();
@@ -109,7 +109,7 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
       final int subnetId, final UInt64 unsubscriptionSlot) {
     final SubnetSubscription subnetSubscription =
         new SubnetSubscription(subnetId, unsubscriptionSlot);
-    subnetSubscriptions.removeIf(subscription -> subscription.getSubnetId() == subnetId);
+    subnetSubscriptions.removeIf(subscription -> subscription.subnetId() == subnetId);
     subnetSubscriptions.add(subnetSubscription);
     return subnetSubscription;
   }

@@ -26,21 +26,21 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 class DasByRootResponseLogger extends AbstractDasResponseLogger<List<DataColumnIdentifier>> {
 
   public DasByRootResponseLogger(
-      TimeProvider timeProvider,
-      Direction direction,
-      LoggingPeerId peerId,
-      List<DataColumnIdentifier> dataColumnIdentifiers) {
+      final TimeProvider timeProvider,
+      final Direction direction,
+      final LoggingPeerId peerId,
+      final List<DataColumnIdentifier> dataColumnIdentifiers) {
     super(timeProvider, direction, peerId, dataColumnIdentifiers);
   }
 
   @Override
   protected void responseComplete(
-      List<Timestamped<DataColumnSlotAndIdentifier>> responseSummaries,
-      Optional<Throwable> result) {
+      final List<Timestamped<DataColumnSlotAndIdentifier>> responseSummaries,
+      final Optional<Throwable> result) {
 
-    List<DataColumnSlotAndIdentifier> responseSummariesUnboxed =
+    final List<DataColumnSlotAndIdentifier> responseSummariesUnboxed =
         responseSummaries.stream().map(Timestamped::value).toList();
-    long curTime = timeProvider.getTimeInMillis().longValue();
+    final long curTime = timeProvider.getTimeInMillis().longValue();
 
     getLogger()
         .debug(
@@ -61,15 +61,15 @@ class DasByRootResponseLogger extends AbstractDasResponseLogger<List<DataColumnI
     return request.size();
   }
 
-  protected String requestToString(List<DataColumnSlotAndIdentifier> responses) {
-    Map<Bytes32, UInt64> blockRootToSlot =
+  protected String requestToString(final List<DataColumnSlotAndIdentifier> responses) {
+    final Map<Bytes32, UInt64> blockRootToSlot =
         responses.stream()
             .collect(
                 Collectors.toMap(
                     DataColumnSlotAndIdentifier::blockRoot,
                     DataColumnSlotAndIdentifier::slot,
                     (s1, s2) -> s1));
-    List<DataColumnSlotAndIdentifier> idsWithMaybeSlot =
+    final List<DataColumnSlotAndIdentifier> idsWithMaybeSlot =
         request.stream()
             .map(
                 it ->

@@ -30,12 +30,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfigEip7594;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
-import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.util.StringifyUtil;
@@ -45,8 +45,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
   private static final Logger LOG = LogManager.getLogger("das-nyota");
 
   private final UInt256 nodeId;
-  private final int totalCustodySubnetCount;
-  private final UpdatableDataColumnSidecarCustody custody;
+  private final int myTotalCustodyGroups;
+  private final DataColumnSidecarCustody custody;
   private final DataColumnSidecarRetriever retriever;
 
   private final Spec spec;
@@ -57,10 +57,10 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
       final Spec spec,
       final CurrentSlotProvider currentSlotProvider,
       final DataColumnSidecarDbAccessor db,
-      final UpdatableDataColumnSidecarCustody custody,
+      final DataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
       final UInt256 nodeId,
-      final int totalCustodySubnetCount) {
+      final int myTotalCustodyGroups) {
     this.currentSlotProvider = currentSlotProvider;
     checkNotNull(spec);
     checkNotNull(db);
@@ -71,21 +71,21 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
     this.custody = custody;
     this.retriever = retriever;
     this.nodeId = nodeId;
-    this.totalCustodySubnetCount = totalCustodySubnetCount;
+    this.myTotalCustodyGroups = myTotalCustodyGroups;
   }
 
-  private int getColumnCount(UInt64 slot) {
-    return SpecConfigEip7594.required(spec.atSlot(slot).getConfig()).getNumberOfColumns();
+  private int getColumnCount(final UInt64 slot) {
+    return SpecConfigFulu.required(spec.atSlot(slot).getConfig()).getNumberOfColumns();
   }
 
   private List<DataColumnSlotAndIdentifier> calculateSamplingColumnIds(
-      UInt64 slot, Bytes32 blockRoot) {
-    final Optional<MiscHelpersEip7594> maybeMiscHelpers =
-        spec.atSlot(slot).miscHelpers().toVersionEip7594();
+      final UInt64 slot, final Bytes32 blockRoot) {
+    final Optional<MiscHelpersFulu> maybeMiscHelpers =
+        spec.atSlot(slot).miscHelpers().toVersionFulu();
     return maybeMiscHelpers
         .map(
-            miscHelpersEip7594 ->
-                miscHelpersEip7594.computeCustodyColumnIndexes(nodeId, totalCustodySubnetCount))
+            miscHelpersFulu ->
+                miscHelpersFulu.computeCustodyColumnIndexes(nodeId, myTotalCustodyGroups))
         .orElse(Collections.emptyList())
         .stream()
         .map(columnIndex -> new DataColumnSlotAndIdentifier(slot, blockRoot, columnIndex))
@@ -93,21 +93,21 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
   }
 
   private SafeFuture<Optional<DataColumnSlotAndIdentifier>> checkColumnInCustody(
-      DataColumnSlotAndIdentifier columnIdentifier) {
+      final DataColumnSlotAndIdentifier columnIdentifier) {
     return custody
         .hasCustodyDataColumnSidecar(columnIdentifier)
         .thenApply(hasColumn -> hasColumn ? Optional.of(columnIdentifier) : Optional.empty());
   }
 
   private SafeFuture<List<DataColumnSlotAndIdentifier>> maybeHasColumnsInCustody(
-      Collection<DataColumnSlotAndIdentifier> columnIdentifiers) {
+      final Collection<DataColumnSlotAndIdentifier> columnIdentifiers) {
     return SafeFuture.collectAll(columnIdentifiers.stream().map(this::checkColumnInCustody))
         .thenApply(list -> list.stream().flatMap(Optional::stream).toList());
   }
 
   @Override
   public SafeFuture<List<UInt64>> checkDataAvailability(
-      UInt64 slot, Bytes32 blockRoot, Bytes32 parentRoot) {
+      final UInt64 slot, final Bytes32 blockRoot, final Bytes32 parentRoot) {
 
     final Set<DataColumnSlotAndIdentifier> requiredColumnIdentifiers =
         new HashSet<>(calculateSamplingColumnIds(slot, blockRoot));
@@ -118,18 +118,19 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
         slot,
         blockRoot);
 
-    SafeFuture<List<DataColumnSlotAndIdentifier>> columnsInCustodyFuture =
+    final SafeFuture<List<DataColumnSlotAndIdentifier>> columnsInCustodyFuture =
         maybeHasColumnsInCustody(requiredColumnIdentifiers);
 
     return columnsInCustodyFuture.thenCompose(
         columnsInCustodyList -> {
-          Set<DataColumnSlotAndIdentifier> columnsInCustody = new HashSet<>(columnsInCustodyList);
+          final Set<DataColumnSlotAndIdentifier> columnsInCustody =
+              new HashSet<>(columnsInCustodyList);
 
-          Set<DataColumnSlotAndIdentifier> missingColumn =
+          final Set<DataColumnSlotAndIdentifier> missingColumn =
               Sets.difference(requiredColumnIdentifiers, columnsInCustody);
 
           if (LOG.isInfoEnabled()) {
-            List<Integer> existingColumnIndexes =
+            final List<Integer> existingColumnIndexes =
                 Sets.intersection(requiredColumnIdentifiers, columnsInCustody).stream()
                     .map(it -> it.columnIndex().intValue())
                     .sorted()
@@ -144,7 +145,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
                 StringifyUtil.columnIndexesToString(existingColumnIndexes, getColumnCount(slot)));
           }
 
-          SafeFuture<List<DataColumnSidecar>> columnsRetrievedFuture =
+          final SafeFuture<List<DataColumnSidecar>> columnsRetrievedFuture =
               SafeFuture.collectAll(missingColumn.stream().map(retriever::retrieve))
                   .thenPeek(
                       retrievedColumns -> {
@@ -169,28 +170,27 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
         });
   }
 
-  private boolean isEIP7594(BeaconBlock block) {
-    return spec.atSlot(block.getSlot())
-        .getMilestone()
-        .isGreaterThanOrEqualTo(SpecMilestone.EIP7594);
+  @Override
+  public void flush() {
+    retriever.flush();
   }
 
-  private boolean hasBlobs(BeaconBlock block) {
+  private boolean hasBlobs(final BeaconBlock block) {
     return !block.getBody().getOptionalBlobKzgCommitments().orElseThrow().isEmpty();
   }
 
-  private boolean isInCustodyPeriod(BeaconBlock block) {
-    final MiscHelpersEip7594 miscHelpersEip7594 =
-        MiscHelpersEip7594.required(spec.atSlot(block.getSlot()).miscHelpers());
-    UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlotProvider.getCurrentSlot());
-    return miscHelpersEip7594.isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
+  private boolean isInCustodyPeriod(final BeaconBlock block) {
+    final MiscHelpersFulu miscHelpersFulu =
+        MiscHelpersFulu.required(spec.atSlot(block.getSlot()).miscHelpers());
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlotProvider.getCurrentSlot());
+    return miscHelpersFulu.isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
         currentEpoch, spec.computeEpochAtSlot(block.getSlot()));
   }
 
   @Override
-  public SamplingEligibilityStatus checkSamplingEligibility(BeaconBlock block) {
-    if (!isEIP7594(block)) {
-      return SamplingEligibilityStatus.NOT_REQUIRED_BEFORE_EIP7594;
+  public SamplingEligibilityStatus checkSamplingEligibility(final BeaconBlock block) {
+    if (!spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      return SamplingEligibilityStatus.NOT_REQUIRED_BEFORE_FULU;
     } else if (!isInCustodyPeriod(block)) {
       return SamplingEligibilityStatus.NOT_REQUIRED_OLD_EPOCH;
     } else if (!hasBlobs(block)) {
@@ -201,7 +201,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
   }
 
   @Override
-  public void onNewFinalizedCheckpoint(Checkpoint checkpoint, boolean fromOptimisticBlock) {
+  public void onNewFinalizedCheckpoint(
+      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
     db.getFirstSamplerIncompleteSlot()
         .thenCompose(
             maybeSlot ->

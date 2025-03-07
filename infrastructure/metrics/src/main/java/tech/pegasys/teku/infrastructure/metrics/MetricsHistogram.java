@@ -37,9 +37,9 @@ public class MetricsHistogram {
   public MetricsHistogram(
       final MetricsSystem metricsSystem,
       final MetricCategory category,
-      String name,
-      String help,
-      double... buckets) {
+      final String name,
+      final String help,
+      final double... buckets) {
     this.histogram =
         Histogram.build()
             .name(category.getName().toLowerCase(Locale.ROOT) + "_" + name)

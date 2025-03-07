@@ -78,15 +78,20 @@ public class SszGenericBasicVectorTestExecutor extends AbstractSszGenericTestExe
   private SszSchema<?> getElementSchema(final TestDefinition testDefinition) {
     final String elementType = getElementType(testDefinition);
     return switch (elementType) {
-        // bool is not a bit in this case, it's a full one byte boolean which we don't support
+      // bool is not a bit in this case, it's a full one byte boolean which we don't support
       case "bool", "uint8" -> SszPrimitiveSchemas.BYTE_SCHEMA;
       case "uint16" -> UINT16_SCHEMA;
       case "uint64" -> SszPrimitiveSchemas.UINT64_SCHEMA;
       case "uint256" -> SszPrimitiveSchemas.UINT256_SCHEMA;
-      case "uint32", "uint128" -> throw new TestAbortedException(
-          "Element type not supported: " + elementType + " From: " + testDefinition.getTestName());
-      default -> throw new UnsupportedOperationException(
-          "No schema for type: " + testDefinition.getTestName());
+      case "uint32", "uint128" ->
+          throw new TestAbortedException(
+              "Element type not supported: "
+                  + elementType
+                  + " From: "
+                  + testDefinition.getTestName());
+      default ->
+          throw new UnsupportedOperationException(
+              "No schema for type: " + testDefinition.getTestName());
     };
   }
 

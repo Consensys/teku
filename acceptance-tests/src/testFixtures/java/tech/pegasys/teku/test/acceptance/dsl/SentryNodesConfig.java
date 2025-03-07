@@ -14,13 +14,13 @@
 package tech.pegasys.teku.test.acceptance.dsl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import tech.pegasys.teku.provider.JsonProvider;
 
 public class SentryNodesConfig {
 
@@ -37,7 +37,7 @@ public class SentryNodesConfig {
     this.attestationPublisherNodes = attestationPublisherNodes;
   }
 
-  public String toJson(final JsonProvider jsonProvider) throws JsonProcessingException {
+  public String toJson(final ObjectMapper objectMapper) throws JsonProcessingException {
     final HashMap<String, Object> config = new HashMap<>();
 
     final Map<String, Object> beaconNodes = new HashMap<>();
@@ -55,7 +55,7 @@ public class SentryNodesConfig {
 
     config.put("beacon_nodes", beaconNodes);
 
-    return jsonProvider.objectToJSON(config);
+    return objectMapper.writeValueAsString(config);
   }
 
   public static class Builder {
@@ -64,7 +64,7 @@ public class SentryNodesConfig {
     private List<String> blockHandlerNodes = new ArrayList<>();
     private List<String> attestationPublisherNodes = new ArrayList<>();
 
-    public Builder withDutiesProviders(TekuBeaconNode... nodes) {
+    public Builder withDutiesProviders(final TekuBeaconNode... nodes) {
       dutiesProviderNodes =
           Arrays.stream(nodes)
               .map(TekuBeaconNode::getBeaconRestApiUrl)
@@ -72,7 +72,7 @@ public class SentryNodesConfig {
       return this;
     }
 
-    public Builder withBlockHandlers(TekuBeaconNode... nodes) {
+    public Builder withBlockHandlers(final TekuBeaconNode... nodes) {
       blockHandlerNodes =
           Arrays.stream(nodes)
               .map(TekuBeaconNode::getBeaconRestApiUrl)
@@ -80,7 +80,7 @@ public class SentryNodesConfig {
       return this;
     }
 
-    public Builder withAttestationPublisher(TekuBeaconNode... nodes) {
+    public Builder withAttestationPublisher(final TekuBeaconNode... nodes) {
       attestationPublisherNodes =
           Arrays.stream(nodes)
               .map(TekuBeaconNode::getBeaconRestApiUrl)

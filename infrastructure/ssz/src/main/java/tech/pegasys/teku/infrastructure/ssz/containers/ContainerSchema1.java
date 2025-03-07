@@ -26,21 +26,22 @@ public abstract class ContainerSchema1<C extends SszContainer, V0 extends SszDat
     extends AbstractSszContainerSchema<C> {
 
   public static <C extends SszContainer, V0 extends SszData> ContainerSchema1<C, V0> create(
-      SszSchema<V0> fieldSchema0, BiFunction<ContainerSchema1<C, V0>, TreeNode, C> instanceCtor) {
+      final SszSchema<V0> fieldSchema0,
+      final BiFunction<ContainerSchema1<C, V0>, TreeNode, C> instanceCtor) {
     return new ContainerSchema1<>(fieldSchema0) {
       @Override
-      public C createFromBackingNode(TreeNode node) {
+      public C createFromBackingNode(final TreeNode node) {
         return instanceCtor.apply(this, node);
       }
     };
   }
 
-  protected ContainerSchema1(SszSchema<V0> fieldSchema0) {
+  protected ContainerSchema1(final SszSchema<V0> fieldSchema0) {
 
     super(List.of(fieldSchema0));
   }
 
-  protected ContainerSchema1(String containerName, NamedSchema<V0> fieldNamedSchema0) {
+  protected ContainerSchema1(final String containerName, final NamedSchema<V0> fieldNamedSchema0) {
 
     super(containerName, List.of(fieldNamedSchema0));
   }

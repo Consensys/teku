@@ -80,6 +80,7 @@ public class GetStateRandao extends RestApiEndpoint {
         .queryParam(EPOCH_PARAMETER)
         .withNotFoundResponse()
         .response(SC_OK, "Request successful", responseType)
+        .withChainDataResponses()
         .build();
   }
 

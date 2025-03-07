@@ -28,7 +28,7 @@ public interface SszListTestBase extends SszCollectionTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  default void sszSerialize_emptyNonBitListShouldResultInEmptySsz(SszList<?> data) {
+  default void sszSerialize_emptyNonBitListShouldResultInEmptySsz(final SszList<?> data) {
     Assumptions.assumeTrue(data.isEmpty());
     Assumptions.assumeTrue(
         !data.getSchema().getElementSchema().equals(SszPrimitiveSchemas.BIT_SCHEMA));
@@ -37,7 +37,7 @@ public interface SszListTestBase extends SszCollectionTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  default void hashTreeRoot_testEmptyListHash(SszList<?> data) {
+  default void hashTreeRoot_testEmptyListHash(final SszList<?> data) {
     Assumptions.assumeTrue(data.isEmpty());
 
     assertThat(data.hashTreeRoot())

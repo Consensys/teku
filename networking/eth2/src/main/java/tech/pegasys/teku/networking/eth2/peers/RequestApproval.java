@@ -21,7 +21,7 @@ public class RequestApproval {
   private final RequestsKey requestKey;
   private final long objectsCount;
 
-  private RequestApproval(RequestsKey requestKey, long objectsCount) {
+  private RequestApproval(final RequestsKey requestKey, final long objectsCount) {
     this.requestKey = requestKey;
     this.objectsCount = objectsCount;
   }

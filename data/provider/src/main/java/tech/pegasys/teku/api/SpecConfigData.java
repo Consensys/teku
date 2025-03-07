@@ -16,6 +16,8 @@ package tech.pegasys.teku.api;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -24,9 +26,10 @@ import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.constants.ValidatorConstants;
 
 public class SpecConfigData {
+  private static final Logger LOG = LogManager.getLogger();
   private final SpecConfig specConfig;
 
-  public SpecConfigData(SpecConfig specConfig) {
+  public SpecConfigData(final SpecConfig specConfig) {
     this.specConfig = specConfig;
   }
 
@@ -34,7 +37,14 @@ public class SpecConfigData {
     final Map<String, String> configAttributes = new HashMap<>();
     specConfig
         .getRawConfig()
-        .forEach((name, value) -> configAttributes.put(name, ConfigProvider.formatValue(value)));
+        .forEach(
+            (name, value) -> {
+              if (value != null) {
+                configAttributes.put(name, ConfigProvider.formatValue(value));
+              } else {
+                LOG.warn("Config field {} was set to null in runtime configuration", name);
+              }
+            });
 
     configAttributes.put("BLS_WITHDRAWAL_PREFIX", getBlsWithdrawalPrefix().toHexString());
     configAttributes.put("TARGET_AGGREGATORS_PER_COMMITTEE", getTargetAggregatorsPerCommittee());
@@ -129,7 +139,7 @@ public class SpecConfigData {
     return getLegacyAltairConstant(Integer.toString(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT));
   }
 
-  private <T> Optional<T> getLegacyAltairConstant(T value) {
+  private <T> Optional<T> getLegacyAltairConstant(final T value) {
     return specConfig.toVersionAltair().isPresent() ? Optional.of(value) : Optional.empty();
   }
 }

@@ -18,17 +18,17 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 class FlattenStreamHandler<TCol extends AsyncStream<T>, T>
     extends AbstractDelegatingStreamHandler<T, TCol> {
 
-  protected FlattenStreamHandler(AsyncStreamHandler<T> delegate) {
+  protected FlattenStreamHandler(final AsyncStreamHandler<T> delegate) {
     super(delegate);
   }
 
   @Override
-  public SafeFuture<Boolean> onNext(TCol asyncIterator) {
-    SafeFuture<Boolean> ret = new SafeFuture<>();
+  public SafeFuture<Boolean> onNext(final TCol asyncIterator) {
+    final SafeFuture<Boolean> ret = new SafeFuture<>();
     asyncIterator.consume(
         new AsyncStreamHandler<T>() {
           @Override
-          public SafeFuture<Boolean> onNext(T t) {
+          public SafeFuture<Boolean> onNext(final T t) {
             SafeFuture<Boolean> proceedFuture = delegate.onNext(t);
 
             return proceedFuture.thenPeek(
@@ -45,7 +45,7 @@ class FlattenStreamHandler<TCol extends AsyncStream<T>, T>
           }
 
           @Override
-          public void onError(Throwable t) {
+          public void onError(final Throwable t) {
             ret.complete(false);
             delegate.onError(t);
           }

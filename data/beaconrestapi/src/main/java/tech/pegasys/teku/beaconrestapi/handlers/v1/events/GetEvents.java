@@ -79,6 +79,7 @@ public class GetEvents extends RestApiEndpoint {
             .tags(TAG_EVENTS, TAG_VALIDATOR_REQUIRED)
             .queryParam(TOPICS_PARAMETER)
             .response(SC_OK, "Request successful", new EventStreamResponseContentTypeDefinition())
+            .withChainDataResponses()
             .build());
     eventSubscriptionManager =
         new EventSubscriptionManager(
@@ -94,7 +95,7 @@ public class GetEvents extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.startEventStream(eventSubscriptionManager::registerClient);
   }
 }

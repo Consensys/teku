@@ -27,7 +27,7 @@ public class SignedBeaconBlockSerializerPropertyTest {
   @Property
   public boolean roundTrip(
       @ForAll final int seed,
-      @ForAll(supplier = SpecSupplier.class) Spec spec,
+      @ForAll(supplier = SpecSupplier.class) final Spec spec,
       @ForAll @Positive final long slotNum) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
     final KvStoreSerializer<SignedBeaconBlock> serializer = createSignedBlockSerializer(spec);

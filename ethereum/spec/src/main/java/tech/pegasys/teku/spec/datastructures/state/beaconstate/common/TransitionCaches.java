@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ public class TransitionCaches {
   private static final int MAX_ACTIVE_VALIDATORS_CACHE = 8;
   private static final int MAX_BEACON_PROPOSER_INDEX_CACHE = 1;
   private static final int MAX_BEACON_COMMITTEE_CACHE = 64 * 64;
+  private static final int MAX_BEACON_COMMITTEES_SIZE_CACHE = 64;
   private static final int MAX_TOTAL_ACTIVE_BALANCE_CACHE = 2;
   private static final int MAX_COMMITTEE_SHUFFLE_CACHE = 3;
   private static final int MAX_EFFECTIVE_BALANCE_CACHE = 1;
@@ -42,6 +44,7 @@ public class TransitionCaches {
 
   private static final TransitionCaches NO_OP_INSTANCE =
       new TransitionCaches(
+          NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
@@ -74,6 +77,7 @@ public class TransitionCaches {
   private final Cache<UInt64, IntList> activeValidators;
   private final Cache<UInt64, Integer> beaconProposerIndex;
   private final Cache<TekuPair<UInt64, UInt64>, IntList> beaconCommittee;
+  private final Cache<UInt64, Int2IntMap> beaconCommitteesSize;
   private final Cache<UInt64, UInt64> attestersTotalBalance;
   private final Cache<UInt64, UInt64> totalActiveBalance;
   private final Cache<UInt64, BLSPublicKey> validatorsPubKeys;
@@ -91,6 +95,7 @@ public class TransitionCaches {
     activeValidators = LRUCache.create(MAX_ACTIVE_VALIDATORS_CACHE);
     beaconProposerIndex = LRUCache.create(MAX_BEACON_PROPOSER_INDEX_CACHE);
     beaconCommittee = LRUCache.create(MAX_BEACON_COMMITTEE_CACHE);
+    beaconCommitteesSize = LRUCache.create(MAX_BEACON_COMMITTEES_SIZE_CACHE);
     attestersTotalBalance = LRUCache.create(MAX_BEACON_COMMITTEE_CACHE);
     totalActiveBalance = LRUCache.create(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
     validatorsPubKeys = LRUCache.create(Integer.MAX_VALUE - 1);
@@ -103,21 +108,23 @@ public class TransitionCaches {
   }
 
   private TransitionCaches(
-      Cache<UInt64, IntList> activeValidators,
-      Cache<UInt64, Integer> beaconProposerIndex,
-      Cache<TekuPair<UInt64, UInt64>, IntList> beaconCommittee,
-      Cache<UInt64, UInt64> attestersTotalBalance,
-      Cache<UInt64, UInt64> totalActiveBalance,
-      Cache<UInt64, BLSPublicKey> validatorsPubKeys,
-      ValidatorIndexCache validatorIndexCache,
-      Cache<Bytes32, IntList> committeeShuffle,
-      Cache<UInt64, List<UInt64>> effectiveBalances,
-      Cache<UInt64, Map<UInt64, SyncSubcommitteeAssignments>> syncCommitteeCache,
-      Cache<UInt64, UInt64> baseRewardPerIncrement,
-      ProgressiveTotalBalancesUpdates progressiveTotalBalances) {
+      final Cache<UInt64, IntList> activeValidators,
+      final Cache<UInt64, Integer> beaconProposerIndex,
+      final Cache<TekuPair<UInt64, UInt64>, IntList> beaconCommittee,
+      final Cache<UInt64, Int2IntMap> beaconCommitteesSize,
+      final Cache<UInt64, UInt64> attestersTotalBalance,
+      final Cache<UInt64, UInt64> totalActiveBalance,
+      final Cache<UInt64, BLSPublicKey> validatorsPubKeys,
+      final ValidatorIndexCache validatorIndexCache,
+      final Cache<Bytes32, IntList> committeeShuffle,
+      final Cache<UInt64, List<UInt64>> effectiveBalances,
+      final Cache<UInt64, Map<UInt64, SyncSubcommitteeAssignments>> syncCommitteeCache,
+      final Cache<UInt64, UInt64> baseRewardPerIncrement,
+      final ProgressiveTotalBalancesUpdates progressiveTotalBalances) {
     this.activeValidators = activeValidators;
     this.beaconProposerIndex = beaconProposerIndex;
     this.beaconCommittee = beaconCommittee;
+    this.beaconCommitteesSize = beaconCommitteesSize;
     this.attestersTotalBalance = attestersTotalBalance;
     this.totalActiveBalance = totalActiveBalance;
     this.validatorsPubKeys = validatorsPubKeys;
@@ -129,7 +136,7 @@ public class TransitionCaches {
     this.progressiveTotalBalances = progressiveTotalBalances;
   }
 
-  public void setLatestTotalBalances(TotalBalances totalBalances) {
+  public void setLatestTotalBalances(final TotalBalances totalBalances) {
     this.latestTotalBalances = Optional.of(totalBalances);
   }
 
@@ -159,6 +166,11 @@ public class TransitionCaches {
   /** (slot, committeeIndex) -> (committee) cache */
   public Cache<TekuPair<UInt64, UInt64>, IntList> getBeaconCommittee() {
     return beaconCommittee;
+  }
+
+  /** (slot) -> Map(committeeIndex, size of a committee) */
+  public Cache<UInt64, Int2IntMap> getBeaconCommitteesSize() {
+    return beaconCommitteesSize;
   }
 
   /** (slot) -> (total effective balance of attesters in slot) */
@@ -221,6 +233,7 @@ public class TransitionCaches {
         activeValidators.copy(),
         beaconProposerIndex.copy(),
         beaconCommittee.copy(),
+        beaconCommitteesSize.copy(),
         attestersTotalBalance.copy(),
         totalActiveBalance.copy(),
         validatorsPubKeys,

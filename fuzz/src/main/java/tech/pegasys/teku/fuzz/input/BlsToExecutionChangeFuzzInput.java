@@ -31,15 +31,16 @@ public class BlsToExecutionChangeFuzzInput
     return ContainerSchema2.create(
         SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
         spec.getSchemaDefinitions()
-            .toVersionCapella()
+            .toVersionElectra()
             .orElseThrow()
             .getSignedBlsToExecutionChangeSchema(),
         BlsToExecutionChangeFuzzInput::new);
   }
 
   public BlsToExecutionChangeFuzzInput(
-      ContainerSchema2<BlsToExecutionChangeFuzzInput, BeaconState, SignedBlsToExecutionChange> type,
-      TreeNode backingNode) {
+      final ContainerSchema2<BlsToExecutionChangeFuzzInput, BeaconState, SignedBlsToExecutionChange>
+          type,
+      final TreeNode backingNode) {
     super(type, backingNode);
   }
 

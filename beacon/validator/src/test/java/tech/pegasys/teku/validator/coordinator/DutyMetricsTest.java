@@ -45,7 +45,7 @@ class DutyMetricsTest {
 
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
 
-  private DutyMetrics createMetrics(Spec spec) {
+  private DutyMetrics createMetrics(final Spec spec) {
     return new DutyMetrics(
         timeProvider,
         recentChainData,
@@ -64,7 +64,7 @@ class DutyMetricsTest {
   @EnumSource(
       value = Eth2Network.class,
       names = {"MAINNET", "MINIMAL", "GNOSIS"})
-  void shouldRecordDelayWhenAttestationIsPublishedLate(Eth2Network eth2Network) {
+  void shouldRecordDelayWhenAttestationIsPublishedLate(final Eth2Network eth2Network) {
     Spec spec = getSpec(eth2Network);
     DutyMetrics metrics = createMetrics(spec);
 
@@ -82,7 +82,7 @@ class DutyMetricsTest {
   @EnumSource(
       value = Eth2Network.class,
       names = {"MAINNET", "MINIMAL", "GNOSIS"})
-  void shouldRecordZeroDelayWhenAttestationIsPublishedEarly(Eth2Network eth2Network) {
+  void shouldRecordZeroDelayWhenAttestationIsPublishedEarly(final Eth2Network eth2Network) {
     Spec spec = getSpec(eth2Network);
     DutyMetrics metrics = createMetrics(spec);
 
@@ -99,7 +99,7 @@ class DutyMetricsTest {
   @EnumSource(
       value = Eth2Network.class,
       names = {"MAINNET", "MINIMAL", "GNOSIS"})
-  void shouldRecordDelayWhenBlockIsPublishedLate(Eth2Network eth2Network) {
+  void shouldRecordDelayWhenBlockIsPublishedLate(final Eth2Network eth2Network) {
     Spec spec = getSpec(eth2Network);
     DutyMetrics metrics = createMetrics(spec);
 
@@ -117,7 +117,7 @@ class DutyMetricsTest {
   @EnumSource(
       value = Eth2Network.class,
       names = {"MAINNET", "MINIMAL", "GNOSIS"})
-  void shouldRecordZeroDelayWhenBlockIsPublishedEarly(Eth2Network eth2Network) {
+  void shouldRecordZeroDelayWhenBlockIsPublishedEarly(final Eth2Network eth2Network) {
     Spec spec = getSpec(eth2Network);
     DutyMetrics metrics = createMetrics(spec);
 
@@ -130,7 +130,7 @@ class DutyMetricsTest {
     verify(blockTimings).recordValue(0);
   }
 
-  private Spec getSpec(Eth2Network eth2Network) {
+  private Spec getSpec(final Eth2Network eth2Network) {
     return TestSpecFactory.create(SpecMilestone.PHASE0, eth2Network);
   }
 

@@ -46,15 +46,15 @@ class ProtoArrayScoreCalculator {
    * </ul>
    */
   static LongList computeDeltas(
-      VoteUpdater store,
-      int protoArraySize,
-      Function<Bytes32, Optional<Integer>> getIndexByRoot,
-      List<UInt64> oldBalances,
-      List<UInt64> newBalances,
-      Optional<Bytes32> previousProposerBoostRoot,
-      Optional<Bytes32> newProposerBoostRoot,
-      UInt64 previousBoostAmount,
-      UInt64 newBoostAmount) {
+      final VoteUpdater store,
+      final int protoArraySize,
+      final Function<Bytes32, Optional<Integer>> getIndexByRoot,
+      final List<UInt64> oldBalances,
+      final List<UInt64> newBalances,
+      final Optional<Bytes32> previousProposerBoostRoot,
+      final Optional<Bytes32> newProposerBoostRoot,
+      final UInt64 previousBoostAmount,
+      final UInt64 newBoostAmount) {
     LongList deltas = new LongArrayList(Collections.nCopies(protoArraySize, 0L));
 
     UInt64.rangeClosed(UInt64.ZERO, store.getHighestVotedValidatorIndex())

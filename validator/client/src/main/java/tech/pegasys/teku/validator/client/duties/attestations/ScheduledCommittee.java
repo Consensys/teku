@@ -27,32 +27,31 @@ import tech.pegasys.teku.validator.client.Validator;
 
 class ScheduledCommittee {
 
-  private final List<ValidatorWithCommitteePositionAndIndex> validators = new ArrayList<>();
+  private final List<ValidatorWithAttestationDutyInfo> validators = new ArrayList<>();
   private final SafeFuture<Optional<AttestationData>> attestationDataFuture = new SafeFuture<>();
 
   public synchronized void addValidator(
       final Validator validator,
+      final int committeeIndex,
       final int committeePosition,
       final int validatorIndex,
       final int committeeSize) {
     validators.add(
-        new ValidatorWithCommitteePositionAndIndex(
-            validator, committeePosition, validatorIndex, committeeSize));
+        new ValidatorWithAttestationDutyInfo(
+            validator, committeeIndex, committeePosition, validatorIndex, committeeSize));
   }
 
   public synchronized <T> List<SafeFuture<T>> forEach(
-      final Function<ValidatorWithCommitteePositionAndIndex, SafeFuture<T>> action) {
+      final Function<ValidatorWithAttestationDutyInfo, SafeFuture<T>> action) {
     return validators.stream().map(action).toList();
   }
 
-  public List<ValidatorWithCommitteePositionAndIndex> getValidators() {
+  public List<ValidatorWithAttestationDutyInfo> getValidators() {
     return validators;
   }
 
   public Set<BLSPublicKey> getValidatorPublicKeys() {
-    return validators.stream()
-        .map(ValidatorWithCommitteePositionAndIndex::getPublicKey)
-        .collect(toSet());
+    return validators.stream().map(ValidatorWithAttestationDutyInfo::publicKey).collect(toSet());
   }
 
   public SafeFuture<Optional<AttestationData>> getAttestationDataFuture() {

@@ -23,7 +23,7 @@ public class SignedBeaconBlockAltair extends SignedBeaconBlock implements Signed
   private final BeaconBlockAltair message;
 
   public SignedBeaconBlockAltair(
-      tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
+      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
     super(internalBlock);
     this.message = new BeaconBlockAltair(internalBlock.getMessage());
   }

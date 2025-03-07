@@ -19,11 +19,11 @@ import java.util.zip.CRC32C;
 
 class SnappyUtil {
 
-  static int calculateChecksum(ByteBuf data) {
+  static int calculateChecksum(final ByteBuf data) {
     return calculateChecksum(data, data.readerIndex(), data.readableBytes());
   }
 
-  static int calculateChecksum(ByteBuf data, int offset, int length) {
+  static int calculateChecksum(final ByteBuf data, final int offset, final int length) {
     CRC32C crc32 = new CRC32C();
     try {
       for (int i = offset; i < offset + length; i++) {
@@ -35,11 +35,12 @@ class SnappyUtil {
     }
   }
 
-  static int maskChecksum(int checksum) {
+  static int maskChecksum(final int checksum) {
     return (checksum >>> 15 | checksum << 17) + 0xa282ead8;
   }
 
-  static void validateChecksum(int expectedChecksum, ByteBuf data, int offset, int length) {
+  static void validateChecksum(
+      final int expectedChecksum, final ByteBuf data, final int offset, final int length) {
     final int actualChecksum = calculateChecksum(data, offset, length);
     if (actualChecksum != expectedChecksum) {
       throw new DecompressionException(

@@ -24,7 +24,7 @@ public class Eth1RequestException extends RuntimeException {
     super("Some eth1 endpoints threw an Exception or no eth1 endpoints available");
   }
 
-  public static boolean shouldTryWithSmallerRange(Throwable err) {
+  public static boolean shouldTryWithSmallerRange(final Throwable err) {
     return ExceptionUtil.hasCause(
             err,
             SocketTimeoutException.class,

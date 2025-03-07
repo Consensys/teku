@@ -25,7 +25,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszByteListImpl extends SszPrimitiveListImpl<Byte, SszByte> implements SszByteList {
 
-  public SszByteListImpl(SszByteListSchema<?> schema, TreeNode backingTree) {
+  public SszByteListImpl(final SszByteListSchema<?> schema, final TreeNode backingTree) {
     super(schema, backingTree);
   }
 
@@ -37,7 +37,7 @@ public class SszByteListImpl extends SszPrimitiveListImpl<Byte, SszByte> impleme
   }
 
   @Override
-  public Byte getElement(int index) {
+  public Byte getElement(final int index) {
     return elementType.createFromPackedNodeUnboxed(getTreeNode(index), index % elementsPerChunk);
   }
 

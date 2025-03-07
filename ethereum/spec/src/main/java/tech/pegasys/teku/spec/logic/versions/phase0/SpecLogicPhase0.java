@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.phase0;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.spec.logic.versions.phase0.block.BlockProcessorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.helpers.BeaconStateAccessorsPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.AttestationDataValidatorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.OperationValidatorPhase0;
+import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.EpochProcessorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.ValidatorStatusFactoryPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.util.AttestationUtilPhase0;
@@ -77,7 +79,9 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
   }
 
   public static SpecLogicPhase0 create(
-      final SpecConfig config, final SchemaDefinitions schemaDefinitions) {
+      final SpecConfig config,
+      final SchemaDefinitions schemaDefinitions,
+      final TimeProvider timeProvider) {
     // Helpers
     final Predicates predicates = new Predicates(config);
     final MiscHelpers miscHelpers = new MiscHelpers(config);
@@ -100,9 +104,15 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         new AttestationUtilPhase0(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
     final AttestationDataValidator attestationDataValidator =
         new AttestationDataValidatorPhase0(config, miscHelpers, beaconStateAccessors);
+    final VoluntaryExitValidator voluntaryExitValidator =
+        new VoluntaryExitValidator(config, predicates, beaconStateAccessors);
     final OperationValidator operationValidator =
         new OperationValidatorPhase0(
-            config, predicates, beaconStateAccessors, attestationDataValidator, attestationUtil);
+            predicates,
+            beaconStateAccessors,
+            attestationDataValidator,
+            attestationUtil,
+            voluntaryExitValidator);
     final ValidatorStatusFactoryPhase0 validatorStatusFactory =
         new ValidatorStatusFactoryPhase0(
             config, beaconStateUtil, attestationUtil, beaconStateAccessors, predicates);
@@ -115,7 +125,8 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
             validatorsUtil,
             beaconStateUtil,
             validatorStatusFactory,
-            schemaDefinitions);
+            schemaDefinitions,
+            timeProvider);
     final BlockProcessorPhase0 blockProcessor =
         new BlockProcessorPhase0(
             config,

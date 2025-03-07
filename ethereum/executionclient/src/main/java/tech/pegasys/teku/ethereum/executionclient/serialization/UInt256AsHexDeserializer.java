@@ -22,7 +22,8 @@ import org.apache.tuweni.units.bigints.UInt256;
 public class UInt256AsHexDeserializer extends JsonDeserializer<UInt256> {
 
   @Override
-  public UInt256 deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+  public UInt256 deserialize(final JsonParser p, final DeserializationContext ctxt)
+      throws IOException {
     final String hexValue = p.getValueAsString();
     QuantityChecker.check(hexValue);
     return UInt256.fromHexString(hexValue);

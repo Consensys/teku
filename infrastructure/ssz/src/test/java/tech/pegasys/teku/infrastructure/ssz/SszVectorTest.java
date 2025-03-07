@@ -35,7 +35,7 @@ public class SszVectorTest
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  void size_shouldMatchSchemaLength(SszVector<?> data) {
+  void size_shouldMatchSchemaLength(final SszVector<?> data) {
     assertThat(data.size()).isEqualTo(data.getSchema().getLength());
   }
 }

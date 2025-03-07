@@ -217,7 +217,7 @@ public class KeyStoreFilesLocatorTest {
                 tempDir, Path.of("key", "a.json").toString(), Path.of("pass", "a.txt").toString()));
   }
 
-  private void createFolders(final Path tempDir, String... paths) {
+  private void createFolders(final Path tempDir, final String... paths) {
     for (String path : paths) {
       File file = tempDir.resolve(path).toFile();
       if (!file.mkdirs() && !file.isDirectory()) {
@@ -226,7 +226,7 @@ public class KeyStoreFilesLocatorTest {
     }
   }
 
-  private void createFolders(final Path tempDir, Path... paths) {
+  private void createFolders(final Path tempDir, final Path... paths) {
     for (Path path : paths) {
       File file = tempDir.resolve(path).toFile();
       if (!file.mkdirs() && !file.isDirectory()) {
@@ -235,7 +235,7 @@ public class KeyStoreFilesLocatorTest {
     }
   }
 
-  private void createFiles(final Path tempDir, Path... paths) throws IOException {
+  private void createFiles(final Path tempDir, final Path... paths) throws IOException {
     for (Path path : paths) {
       File file = tempDir.resolve(path).toFile();
       assertThat(file.createNewFile()).isTrue();

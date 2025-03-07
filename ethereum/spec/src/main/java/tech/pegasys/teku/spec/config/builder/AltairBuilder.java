@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigAltairImpl;
+import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 
 public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAltair> {
 
@@ -57,22 +58,25 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
   AltairBuilder() {}
 
   @Override
-  public SpecConfigAltair build(final SpecConfig specConfig) {
-    return new SpecConfigAltairImpl(
-        specConfig,
-        inactivityPenaltyQuotientAltair,
-        minSlashingPenaltyQuotientAltair,
-        proportionalSlashingMultiplierAltair,
-        syncCommitteeSize,
-        inactivityScoreBias,
-        inactivityScoreRecoveryRate,
-        epochsPerSyncCommitteePeriod,
-        altairForkVersion,
-        altairForkEpoch,
-        minSyncCommitteeParticipants,
-        updateTimeout,
-        syncCommitteeBranchLength,
-        finalityBranchLength);
+  public SpecConfigAndParent<SpecConfigAltair> build(
+      final SpecConfigAndParent<SpecConfig> specConfigAndParent) {
+    return SpecConfigAndParent.of(
+        new SpecConfigAltairImpl(
+            specConfigAndParent.specConfig(),
+            inactivityPenaltyQuotientAltair,
+            minSlashingPenaltyQuotientAltair,
+            proportionalSlashingMultiplierAltair,
+            syncCommitteeSize,
+            inactivityScoreBias,
+            inactivityScoreRecoveryRate,
+            epochsPerSyncCommitteePeriod,
+            altairForkVersion,
+            altairForkEpoch,
+            minSyncCommitteeParticipants,
+            updateTimeout,
+            syncCommitteeBranchLength,
+            finalityBranchLength),
+        specConfigAndParent);
   }
 
   @Override

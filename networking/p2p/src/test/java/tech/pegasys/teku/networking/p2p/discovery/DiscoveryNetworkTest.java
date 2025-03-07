@@ -22,7 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.DAS_CUSTODY_GROUP_COUNT_ENR_FIELD;
 
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
@@ -282,7 +282,7 @@ class DiscoveryNetworkTest {
 
   @ParameterizedTest
   @MethodSource("provideNodeIds")
-  public void nodeIdMustBeWrappedInUint256(String nodeIdValue) {
+  public void nodeIdMustBeWrappedInUint256(final String nodeIdValue) {
     final Optional<Bytes> nodeId =
         Optional.of(Bytes.wrap(new BigInteger(nodeIdValue).toByteArray()));
     when(discoveryService.getNodeId()).thenReturn(nodeId);
@@ -296,10 +296,10 @@ class DiscoveryNetworkTest {
   public void cscIsCorrectlyEncoded(final String hexString, final Integer csc) {
     discoveryNetwork.setDASTotalCustodySubnetCount(csc);
     verify(discoveryService)
-        .updateCustomENRField(DAS_CUSTODY_SUBNET_COUNT_ENR_FIELD, Bytes.fromHexString(hexString));
+        .updateCustomENRField(DAS_CUSTODY_GROUP_COUNT_ENR_FIELD, Bytes.fromHexString(hexString));
   }
 
-  public DiscoveryPeer createDiscoveryPeer(Optional<EnrForkId> maybeForkId) {
+  public DiscoveryPeer createDiscoveryPeer(final Optional<EnrForkId> maybeForkId) {
     final SszBitvector syncCommitteeSubnets =
         schemaDefinitions.getSyncnetsENRFieldSchema().getDefault();
     return new DiscoveryPeer(

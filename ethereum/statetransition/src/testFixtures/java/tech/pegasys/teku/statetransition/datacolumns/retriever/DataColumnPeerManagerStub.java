@@ -25,12 +25,12 @@ public class DataColumnPeerManagerStub implements DataColumnPeerManager {
   private final List<PeerListener> listeners = new ArrayList<>();
 
   @Override
-  public void addPeerListener(PeerListener listener) {
+  public void addPeerListener(final PeerListener listener) {
     listeners.add(listener);
   }
 
   @Override
-  public void banNode(UInt256 node) {
+  public void banNode(final UInt256 node) {
     bannedNodes.add(node);
   }
 
@@ -38,11 +38,11 @@ public class DataColumnPeerManagerStub implements DataColumnPeerManager {
     return bannedNodes;
   }
 
-  public void addNode(UInt256 nodeId) {
+  public void addNode(final UInt256 nodeId) {
     listeners.forEach(l -> l.peerConnected(nodeId));
   }
 
-  public void removeNode(UInt256 nodeId) {
+  public void removeNode(final UInt256 nodeId) {
     listeners.forEach(l -> l.peerDisconnected(nodeId));
   }
 }

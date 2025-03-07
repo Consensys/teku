@@ -16,11 +16,13 @@ package tech.pegasys.teku.validator.remote.eventsource;
 import static java.util.Collections.emptyMap;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
@@ -28,12 +30,15 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.api.response.v1.EventType;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
+import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 import tech.pegasys.teku.validator.remote.BeaconNodeReadinessManager;
 import tech.pegasys.teku.validator.remote.RemoteValidatorApiChannel;
@@ -67,6 +72,71 @@ public class EventSourceBeaconChainEventAdapterTest {
         initEventSourceBeaconChainEventAdapter(shutdownWhenValidatorSlashedEnabled);
     eventSourceBeaconChainEventAdapter.createEventSource(beaconApiMock);
     verifyEventSourceSubscriptionUrl(httpUrlMock, shutdownWhenValidatorSlashedEnabled);
+  }
+
+  @Test
+  public void performsPrimaryReadinessCheckWhenFailoverNotReadyAndNoOtherFailoversAvailable() {
+    final BeaconNodeReadinessManager beaconNodeReadinessManager =
+        mock(BeaconNodeReadinessManager.class);
+    final RemoteValidatorApiChannel failover = mock(RemoteValidatorApiChannel.class);
+    final EventSourceBeaconChainEventAdapter eventSourceBeaconChainEventAdapter =
+        new EventSourceBeaconChainEventAdapter(
+            beaconNodeReadinessManager,
+            mock(RemoteValidatorApiChannel.class),
+            List.of(failover),
+            mock(OkHttpClient.class),
+            mock(ValidatorLogger.class),
+            mock(BeaconChainEventAdapter.class),
+            mock(ValidatorTimingChannel.class),
+            metricsSystemMock,
+            true,
+            false,
+            mock(Spec.class));
+
+    eventSourceBeaconChainEventAdapter.currentBeaconNodeUsedForEventStreaming = failover;
+
+    eventSourceBeaconChainEventAdapter.onFailoverNodeNotReady(failover);
+
+    verify(beaconNodeReadinessManager).performPrimaryReadinessCheck();
+  }
+
+  @Test
+  public void doNotSwitchToFailoverWhenCurrentBeaconNodeIsReady() {
+    final BeaconNodeReadinessManager beaconNodeReadinessManager =
+        mock(BeaconNodeReadinessManager.class);
+    final RemoteValidatorApiChannel primaryNode = mock(RemoteValidatorApiChannel.class);
+    final RemoteValidatorApiChannel failover1 = mock(RemoteValidatorApiChannel.class);
+    final RemoteValidatorApiChannel failover2 = mock(RemoteValidatorApiChannel.class);
+    final EventSourceBeaconChainEventAdapter eventSourceBeaconChainEventAdapter =
+        new EventSourceBeaconChainEventAdapter(
+            beaconNodeReadinessManager,
+            primaryNode,
+            List.of(failover1, failover2),
+            mock(OkHttpClient.class),
+            mock(ValidatorLogger.class),
+            mock(BeaconChainEventAdapter.class),
+            mock(ValidatorTimingChannel.class),
+            metricsSystemMock,
+            true,
+            false,
+            mock(Spec.class));
+
+    eventSourceBeaconChainEventAdapter.currentBeaconNodeUsedForEventStreaming = failover1;
+
+    when(beaconNodeReadinessManager.getReadinessStatus(failover1))
+        .thenReturn(BeaconNodeReadinessManager.ReadinessStatus.READY);
+    final SafeFuture<SyncingStatus> someFuture = new SafeFuture<>();
+    when(primaryNode.getSyncingStatus()).thenReturn(someFuture);
+    eventSourceBeaconChainEventAdapter.onFailoverNodeNotReady(failover1);
+
+    verify(beaconNodeReadinessManager).getReadinessStatus(failover1);
+    // Shouldn't try failover2 when failover1 is good
+    verify(beaconNodeReadinessManager, never()).getReadinessStatus(failover2);
+    verify(beaconNodeReadinessManager, never()).getReadinessStatusWeight(failover2);
+    verify(beaconNodeReadinessManager, never()).isReady(any());
+
+    // But will try to return to primaryNode when it's possible
+    verify(beaconNodeReadinessManager).performPrimaryReadinessCheck();
   }
 
   private EventSourceBeaconChainEventAdapter initEventSourceBeaconChainEventAdapter(

@@ -62,6 +62,20 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
   }
 
   @Test
+  public void shouldSendEmptyResponseWhenCountIsZero() throws Exception {
+    final Eth2Peer peer = createPeer();
+
+    final SignedBlockAndState block = peerStorage.chainUpdater().advanceChain();
+    peerStorage.chainUpdater().updateBestBlock(block);
+
+    final List<SignedBeaconBlock> blocks = new ArrayList<>();
+    waitFor(
+        peer.requestBlocksByRange(UInt64.ONE, UInt64.ZERO, RpcResponseListener.from(blocks::add)));
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    assertThat(blocks).isEmpty();
+  }
+
+  @Test
   public void shouldRespondWithBlocksFromCanonicalChain() throws Exception {
     final Eth2Peer peer = createPeer();
 
@@ -74,7 +88,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
   }
 
   @Test
-  public void requestBlocksByRangeAfterPeerDisconnectedImmediately() throws Exception {
+  public void requestBlocksByRangeAfterPeerDisconnectedImmediately() {
     final Eth2Peer peer = createPeer();
 
     // Setup chain
@@ -116,7 +130,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
   }
 
   @Test
-  public void requestBlockBySlotAfterPeerDisconnectedImmediately() throws Exception {
+  public void requestBlockBySlotAfterPeerDisconnectedImmediately() {
     final Eth2Peer peer = createPeer();
 
     // Setup chain

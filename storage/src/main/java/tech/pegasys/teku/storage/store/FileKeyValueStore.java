@@ -34,19 +34,19 @@ public class FileKeyValueStore implements KeyValueStore<String, Bytes> {
   private final Path dataDir;
   private final ConcurrentMap<String, Object> keyMutexes = new ConcurrentHashMap<>();
 
-  public FileKeyValueStore(Path dataDir) {
+  public FileKeyValueStore(final Path dataDir) {
     this.dataDir = dataDir;
     this.syncDataAccessor = SyncDataAccessor.create(dataDir);
   }
 
-  private Object keyMutex(String key) {
+  private Object keyMutex(final String key) {
     // there supposed to be a very limited number of keys so
     // we don't clean up the map for the sake of simplicity
     return keyMutexes.computeIfAbsent(key, __ -> new Object());
   }
 
   @Override
-  public void put(@NotNull String key, @NotNull Bytes value) {
+  public void put(final @NotNull String key, final @NotNull Bytes value) {
     Path file = dataDir.resolve(key + ".dat");
     try {
       synchronized (keyMutex(key)) {
@@ -58,7 +58,7 @@ public class FileKeyValueStore implements KeyValueStore<String, Bytes> {
   }
 
   @Override
-  public void remove(@NotNull String key) {
+  public void remove(@NotNull final String key) {
     Path file = dataDir.resolve(key + ".dat");
     synchronized (keyMutex(key)) {
       file.toFile().delete();
@@ -66,7 +66,7 @@ public class FileKeyValueStore implements KeyValueStore<String, Bytes> {
   }
 
   @Override
-  public Optional<Bytes> get(@NotNull String key) {
+  public Optional<Bytes> get(@NotNull final String key) {
     Path file = dataDir.resolve(key + ".dat");
     try {
       synchronized (keyMutex(key)) {

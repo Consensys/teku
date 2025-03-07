@@ -30,7 +30,7 @@ public final class RpcRequestEncoder {
    * @param request the payload of the request
    * @return the encoded RPC message
    */
-  public <T extends SszData> Bytes encodeRequest(T request) {
+  public <T extends SszData> Bytes encodeRequest(final T request) {
     return encoding.encodePayload(request);
   }
 }

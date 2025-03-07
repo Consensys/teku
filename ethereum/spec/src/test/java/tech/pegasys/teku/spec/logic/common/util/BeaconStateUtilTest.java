@@ -17,9 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
-import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -31,7 +29,6 @@ import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@ExtendWith(BouncyCastleExtension.class)
 public class BeaconStateUtilTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -155,9 +152,12 @@ public class BeaconStateUtilTest {
   public void getAttestersTotalEffectiveBalance_shouldCombinedAllCommitteesForSlot() {
     final BeaconStateTestBuilder stateBuilder =
         new BeaconStateTestBuilder(dataStructureUtil).slot(5);
+    int totalEffectiveEth = 0;
     for (int i = 0;
         i < specConfig.getSlotsPerEpoch() * ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE * 2;
         i++) {
+      // the total effective balance includes validators in the range of 16-32 eth
+      totalEffectiveEth += i < 16 ? 0 : Math.min(i, 32);
       stateBuilder.activeValidator(
           UInt64.valueOf(i).times(specConfig.getEffectiveBalanceIncrement()));
     }
@@ -165,9 +165,12 @@ public class BeaconStateUtilTest {
     assertThat(genesisSpec.beaconStateAccessors().getCommitteeCountPerSlot(state, UInt64.ZERO))
         .isGreaterThan(UInt64.ZERO);
 
-    // Randao seed is fixed for state so we know the committee allocations will be the same
+    // Randao seed is fixed for state, so we know the committee allocations will be the same
+    // the Eth in each attestation committee is the total effective eth / slots per epoch
     assertThat(beaconStateUtil.getAttestersTotalEffectiveBalance(state, UInt64.valueOf(0)))
-        .isEqualTo(UInt64.valueOf(4394).times(specConfig.getEffectiveBalanceIncrement()));
+        .isEqualTo(
+            UInt64.valueOf(totalEffectiveEth / specConfig.getSlotsPerEpoch())
+                .times(specConfig.getEffectiveBalanceIncrement()));
 
     assertAttestersBalancesSumToTotalBalancesOverEpoch(state);
   }

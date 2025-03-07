@@ -48,15 +48,6 @@ public class Eth2NetworkConfigurationTest {
   }
 
   @Test
-  void shouldAliasGoerliToPrater() {
-    final Eth2NetworkConfiguration goerliConfig =
-        Eth2NetworkConfiguration.builder("goerli").build();
-    final Eth2NetworkConfiguration praterConfig =
-        Eth2NetworkConfiguration.builder("prater").build();
-    assertThat(goerliConfig).isEqualTo(praterConfig);
-  }
-
-  @Test
   @SuppressWarnings("deprecation")
   public void builder_usingConstantsUrl() {
     final URL url =
@@ -137,13 +128,15 @@ public class Eth2NetworkConfigurationTest {
     return Stream.of(
         Arguments.of(Eth2Network.MAINNET, (NetworkDefinition) b -> b.applyMainnetNetworkDefaults()),
         Arguments.of(Eth2Network.MINIMAL, (NetworkDefinition) b -> b.applyMinimalNetworkDefaults()),
-        Arguments.of(Eth2Network.PRATER, (NetworkDefinition) b -> b.applyPraterNetworkDefaults()),
         Arguments.of(
             Eth2Network.HOLESKY,
             (NetworkDefinition) b -> b.applyNetworkDefaults(Eth2Network.HOLESKY)),
         Arguments.of(
             Eth2Network.SEPOLIA,
             (NetworkDefinition) b -> b.applyNetworkDefaults(Eth2Network.SEPOLIA)),
+        Arguments.of(
+            Eth2Network.EPHEMERY,
+            (NetworkDefinition) b -> b.applyNetworkDefaults(Eth2Network.EPHEMERY)),
         Arguments.of(Eth2Network.SWIFT, (NetworkDefinition) b -> b.applySwiftNetworkDefaults()),
         Arguments.of(
             Eth2Network.LESS_SWIFT, (NetworkDefinition) b -> b.applyLessSwiftNetworkDefaults()),
@@ -151,7 +144,7 @@ public class Eth2NetworkConfigurationTest {
         Arguments.of(Eth2Network.CHIADO, (NetworkDefinition) b -> b.applyChiadoNetworkDefaults()));
   }
 
-  private List<NodeRecord> parseBootnodes(List<String> bootnodes) {
+  private List<NodeRecord> parseBootnodes(final List<String> bootnodes) {
     final NodeRecordFactory nodeRecordFactory = NodeRecordFactory.DEFAULT;
 
     return bootnodes.stream()

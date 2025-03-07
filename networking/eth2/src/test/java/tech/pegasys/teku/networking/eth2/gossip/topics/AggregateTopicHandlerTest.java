@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<ValidatableAttestation> {
@@ -31,7 +32,14 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validata
   @Override
   protected Eth2TopicHandler<?> createHandler() {
     return new AggregateGossipManager(
-            spec, recentChainData, asyncRunner, gossipNetwork, gossipEncoding, forkInfo, processor)
+            spec,
+            recentChainData,
+            asyncRunner,
+            gossipNetwork,
+            gossipEncoding,
+            forkInfo,
+            processor,
+            DebugDataDumper.NOOP)
         .getTopicHandler();
   }
 

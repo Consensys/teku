@@ -11,7 +11,8 @@
         "type" : "string",
         "description" : "Level of validation that must be applied to a block before it is broadcast. Possible values:\n- **`gossip`** (default): lightweight gossip checks only\n- **`consensus`**: full consensus checks, including validation of all signatures and   blocks fields _except_ for the execution payload transactions.\n- **`consensus_and_equivocation`**: the same as `consensus`, with an extra equivocation   check immediately before the block is broadcast. If the block is found to be an\n  equivocation it fails validation.\nIf the block fails the requested level of a validation a 400 status MUST be returned immediately and the block MUST NOT be broadcast to the network.\nIf validation succeeds, the block must still be fully verified before it is incorporated into the state and a 20x status is returned to the caller.",
         "example" : "consensus_and_equivocation",
-        "format" : "string"
+        "format" : "string",
+        "enum" : [ "gossip", "consensus", "consensus_and_equivocation" ]
       }
     }, {
       "name" : "Eth-Consensus-Version",
@@ -19,7 +20,7 @@
       "in" : "header",
       "schema" : {
         "type" : "string",
-        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "eip7594" ],
+        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ],
         "description" : "Version of the block being submitted."
       }
     } ],
@@ -46,8 +47,8 @@
             }, {
               "$ref" : "#/components/schemas/SignedBlockContentsDeneb"
             }, {
-              "$ref" : "#/components/schemas/SignedBlockContentsEip7594"
-            }  ]
+              "$ref" : "#/components/schemas/SignedBlockContentsElectra"
+            } ]
           }
         }
       }
@@ -82,7 +83,7 @@
         }
       },
       "503" : {
-        "description" : "Beacon node is currently syncing.",
+        "description" : "Beacon node is currently syncing and not serving requests",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -90,6 +91,10 @@
             }
           }
         }
+      },
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
       },
       "500" : {
         "description" : "Internal server error",

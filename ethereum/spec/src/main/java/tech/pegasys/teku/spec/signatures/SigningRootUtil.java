@@ -53,7 +53,7 @@ public class SigningRootUtil {
         blockHeader, getDomainForSignBlock(blockHeader.getSlot(), forkInfo));
   }
 
-  private Bytes32 getDomainForSignBlock(UInt64 slot, ForkInfo forkInfo) {
+  private Bytes32 getDomainForSignBlock(final UInt64 slot, final ForkInfo forkInfo) {
     return spec.getDomain(
         Domain.BEACON_PROPOSER,
         spec.computeEpochAtSlot(slot),

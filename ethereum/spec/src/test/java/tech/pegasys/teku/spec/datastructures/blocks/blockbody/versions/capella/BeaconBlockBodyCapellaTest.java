@@ -66,7 +66,7 @@ class BeaconBlockBodyCapellaTest extends AbstractBeaconBlockBodyTest<BeaconBlock
 
   @Override
   protected BlindedBeaconBlockBodyBellatrix createBlindedBlockBody(
-      Consumer<BeaconBlockBodyBuilder> contentProvider) {
+      final Consumer<BeaconBlockBodyBuilder> contentProvider) {
     final BeaconBlockBodyBuilder bodyBuilder = createBeaconBlockBodyBuilder();
     contentProvider.accept(bodyBuilder);
     return bodyBuilder.build().toBlindedVersionCapella().orElseThrow();

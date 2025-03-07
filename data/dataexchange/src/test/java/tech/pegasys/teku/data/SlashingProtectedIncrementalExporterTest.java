@@ -35,7 +35,7 @@ public class SlashingProtectedIncrementalExporterTest {
       "b845089a1457f811bfc000588fbb4e713669be8ce060ea6be3c6ece09afc3794106c91ca73acda5e5457122d58723bed";
 
   @Test
-  public void shouldExportSlashProtection(@TempDir Path tempDir)
+  public void shouldExportSlashProtection(@TempDir final Path tempDir)
       throws IOException, URISyntaxException {
     final Path exportedFile = tempDir.resolve("exportedFile.json").toAbsolutePath();
     final SlashingProtectionIncrementalExporter exporter =
@@ -54,7 +54,7 @@ public class SlashingProtectedIncrementalExporterTest {
   }
 
   @Test
-  void shouldCreateEmptySlashingProtectionDocument(@TempDir Path tempDir) throws IOException {
+  void shouldCreateEmptySlashingProtectionDocument(@TempDir final Path tempDir) throws IOException {
     final SlashingProtectionIncrementalExporter exporter =
         new SlashingProtectionIncrementalExporter(tempDir);
     assertThat(exporter.finalise()).isEqualTo(resourceFileAsString("emptySlashingData.json"));

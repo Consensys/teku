@@ -67,7 +67,7 @@ public class Eth1DataCacheTest {
     when(eth1VotingPeriod.getSpecRangeLowerBound(SLOT, GENESIS_TIME))
         .thenReturn(VOTING_PERIOD_START);
     when(eth1VotingPeriod.getSpecRangeUpperBound(SLOT, GENESIS_TIME)).thenReturn(VOTING_PERIOD_END);
-    eth1DataCache = new Eth1DataCache(metricsSystem, eth1VotingPeriod);
+    eth1DataCache = new Eth1DataCache(spec, metricsSystem, eth1VotingPeriod);
   }
 
   // Add tests for eth1 block with no votes
@@ -216,6 +216,17 @@ public class Eth1DataCacheTest {
   }
 
   @Test
+  void shouldReturnStateEth1Data_ifFormerDepositMechanismHasBeenDisabled() {
+    final Spec spec = mock(Spec.class);
+    eth1DataCache = new Eth1DataCache(spec, new StubMetricsSystem(), eth1VotingPeriod);
+    final BeaconState beaconState = createBeaconStateWithVotes(createEth1Data(STATE_DEPOSIT_COUNT));
+
+    when(spec.isFormerDepositMechanismDisabled(beaconState)).thenReturn(true);
+
+    assertThat(eth1DataCache.getEth1Vote(beaconState)).isEqualTo(beaconState.getEth1Data());
+  }
+
+  @Test
   void shouldPruneOldBlocksWhenNewerOnesReceived() {
     final UInt64 olderBlockTimestamp = ZERO;
     final UInt64 oldBlockTimestamp = olderBlockTimestamp.plus(ONE);
@@ -252,6 +263,24 @@ public class Eth1DataCacheTest {
     assertGaugeValue(Eth1DataCache.VOTES_UNKNOWN_METRIC_NAME, 2);
     assertGaugeValue(Eth1DataCache.VOTES_CURRENT_METRIC_NAME, 3);
     assertGaugeValue(Eth1DataCache.VOTES_BEST_METRIC_NAME, 4);
+  }
+
+  @Test
+  void shouldNotUpdateMetrics_ifFormerDepositMechanismHasBeenDisabled() {
+    final Spec spec = mock(Spec.class);
+    eth1DataCache = new Eth1DataCache(spec, new StubMetricsSystem(), eth1VotingPeriod);
+    final BeaconState beaconState = getStateForMetricsAssertions();
+
+    when(spec.isFormerDepositMechanismDisabled(beaconState)).thenReturn(true);
+
+    eth1DataCache.updateMetrics(beaconState);
+
+    // all gauge values are 0
+    assertGaugeValue(Eth1DataCache.VOTES_TOTAL_METRIC_NAME, 0);
+    assertGaugeValue(Eth1DataCache.VOTES_MAX_METRIC_NAME, 0);
+    assertGaugeValue(Eth1DataCache.VOTES_UNKNOWN_METRIC_NAME, 0);
+    assertGaugeValue(Eth1DataCache.VOTES_CURRENT_METRIC_NAME, 0);
+    assertGaugeValue(Eth1DataCache.VOTES_BEST_METRIC_NAME, 0);
   }
 
   @Test

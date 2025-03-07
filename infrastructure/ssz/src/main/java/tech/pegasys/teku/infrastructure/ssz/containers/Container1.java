@@ -21,15 +21,15 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 public class Container1<C extends Container1<C, V0>, V0 extends SszData>
     extends AbstractSszImmutableContainer {
 
-  protected Container1(ContainerSchema1<C, V0> schema) {
+  protected Container1(final ContainerSchema1<C, V0> schema) {
     super(schema);
   }
 
-  protected Container1(ContainerSchema1<C, V0> schema, TreeNode backingNode) {
+  protected Container1(final ContainerSchema1<C, V0> schema, final TreeNode backingNode) {
     super(schema, backingNode);
   }
 
-  protected Container1(ContainerSchema1<C, V0> schema, V0 arg0) {
+  protected Container1(final ContainerSchema1<C, V0> schema, final V0 arg0) {
     super(schema, arg0);
   }
 

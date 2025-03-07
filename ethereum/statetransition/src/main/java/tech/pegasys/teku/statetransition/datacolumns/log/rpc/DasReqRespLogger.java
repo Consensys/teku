@@ -16,14 +16,14 @@ package tech.pegasys.teku.statetransition.datacolumns.log.rpc;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 
 public interface DasReqRespLogger {
 
   record ByRangeRequest(UInt64 startSlot, int slotCount, List<UInt64> columnIndexes) {}
 
-  static DasReqRespLogger create(TimeProvider timeProvider) {
+  static DasReqRespLogger create(final TimeProvider timeProvider) {
     return new DasReqRespLoggerImpl(timeProvider);
   }
 

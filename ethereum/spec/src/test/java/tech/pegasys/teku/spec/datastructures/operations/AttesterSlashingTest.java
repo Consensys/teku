@@ -20,7 +20,6 @@ import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class AttesterSlashingTest {
@@ -34,7 +33,7 @@ class AttesterSlashingTest {
   private final IndexedAttestation indexedAttestation2 =
       dataStructureUtil.randomIndexedAttestation();
 
-  private AttesterSlashing attesterSlashing =
+  private final AttesterSlashing attesterSlashing =
       attesterSlashingSchema.create(indexedAttestation1, indexedAttestation2);
 
   @Test

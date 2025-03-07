@@ -29,8 +29,8 @@ import tech.pegasys.teku.api.schema.capella.SignedBeaconBlockCapella;
 import tech.pegasys.teku.api.schema.capella.SignedBlindedBeaconBlockCapella;
 import tech.pegasys.teku.api.schema.deneb.SignedBeaconBlockDeneb;
 import tech.pegasys.teku.api.schema.deneb.SignedBlindedBeaconBlockDeneb;
-import tech.pegasys.teku.api.schema.eip7594.SignedBeaconBlockEip7594;
-import tech.pegasys.teku.api.schema.eip7594.SignedBlindedBeaconBlockEip7594;
+import tech.pegasys.teku.api.schema.electra.SignedBeaconBlockElectra;
+import tech.pegasys.teku.api.schema.electra.SignedBlindedBeaconBlockElectra;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.spec.Spec;
@@ -46,7 +46,7 @@ public class SignedBeaconBlock implements SignedBlock {
   }
 
   protected SignedBeaconBlock(
-      tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
+      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
     this.signature = new BLSSignature(internalBlock.getSignature());
     this.message = new BeaconBlock(internalBlock.getMessage());
   }
@@ -60,19 +60,19 @@ public class SignedBeaconBlock implements SignedBlock {
   }
 
   public static SignedBeaconBlock create(
-      tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
+      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
     tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody beaconBlock =
         internalBlock.getMessage().getBody();
 
     return Stream.of(
             () ->
                 beaconBlock
-                    .toBlindedVersionEip7594()
-                    .map(__ -> new SignedBlindedBeaconBlockEip7594(internalBlock)),
+                    .toBlindedVersionElectra()
+                    .map(__ -> new SignedBlindedBeaconBlockElectra(internalBlock)),
             () ->
                 beaconBlock
-                    .toVersionEip7594()
-                    .map(__ -> new SignedBeaconBlockEip7594(internalBlock)),
+                    .toVersionElectra()
+                    .map(__ -> new SignedBeaconBlockElectra(internalBlock)),
             () ->
                 beaconBlock
                     .toBlindedVersionDeneb()
@@ -113,7 +113,7 @@ public class SignedBeaconBlock implements SignedBlock {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

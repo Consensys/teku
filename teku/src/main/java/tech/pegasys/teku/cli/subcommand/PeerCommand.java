@@ -72,13 +72,13 @@ public class PeerCommand {
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
   public void generate(
-      @Mixin PeerGenerationParams params,
+      @Mixin final PeerGenerationParams params,
       @Option(
               names = {"-n", "--number"},
               arity = "1",
               required = true,
               description = "number of peerIDs to generate")
-          int number) {
+          final int number) {
     try {
       validateParamsAndGenerate(params.outputFile, number);
       spec.commandLine().getOut().println("Generated file " + params.outputFile);
@@ -87,7 +87,7 @@ public class PeerCommand {
     }
   }
 
-  void validateParamsAndGenerate(String outputFile, int number) throws IOException {
+  void validateParamsAndGenerate(final String outputFile, final int number) throws IOException {
     try {
       File f = new File(outputFile);
       if (f.exists()) {

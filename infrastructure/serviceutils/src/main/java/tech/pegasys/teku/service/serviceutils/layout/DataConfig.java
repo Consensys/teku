@@ -20,21 +20,23 @@ import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
 public class DataConfig {
 
-  public static Path defaultDataPath() {
-    return Path.of(VersionProvider.defaultStoragePath());
-  }
+  public static final Path DEFAULT_DATA_PATH = Path.of(VersionProvider.defaultStoragePath());
+  public static final boolean DEFAULT_DEBUG_DATA_DUMPING_ENABLED = false;
 
   private final Path dataBasePath;
   private final Optional<Path> beaconDataPath;
   private final Optional<Path> validatorDataPath;
+  private final boolean debugDataDumpingEnabled;
 
   private DataConfig(
       final Path dataBasePath,
       final Optional<Path> beaconDataPath,
-      final Optional<Path> validatorDataPath) {
+      final Optional<Path> validatorDataPath,
+      final boolean debugDataDumpingEnabled) {
     this.dataBasePath = dataBasePath;
     this.beaconDataPath = beaconDataPath;
     this.validatorDataPath = validatorDataPath;
+    this.debugDataDumpingEnabled = debugDataDumpingEnabled;
   }
 
   public static DataConfig.Builder builder() {
@@ -53,26 +55,36 @@ public class DataConfig {
     return validatorDataPath;
   }
 
+  public boolean isDebugDataDumpingEnabled() {
+    return debugDataDumpingEnabled;
+  }
+
   public static final class Builder {
 
-    private Path dataBasePath = defaultDataPath();
+    private Path dataBasePath = DEFAULT_DATA_PATH;
     private Optional<Path> beaconDataPath = Optional.empty();
     private Optional<Path> validatorDataPath = Optional.empty();
+    private boolean debugDataDumpingEnabled = DEFAULT_DEBUG_DATA_DUMPING_ENABLED;
 
     private Builder() {}
 
-    public Builder dataBasePath(Path dataBasePath) {
+    public Builder dataBasePath(final Path dataBasePath) {
       this.dataBasePath = dataBasePath;
       return this;
     }
 
-    public Builder beaconDataPath(Path beaconDataPath) {
+    public Builder beaconDataPath(final Path beaconDataPath) {
       this.beaconDataPath = Optional.ofNullable(beaconDataPath);
       return this;
     }
 
-    public Builder validatorDataPath(Path validatorDataPath) {
+    public Builder validatorDataPath(final Path validatorDataPath) {
       this.validatorDataPath = Optional.ofNullable(validatorDataPath);
+      return this;
+    }
+
+    public Builder debugDataDumpingEnabled(final boolean debugDataDumpingEnabled) {
+      this.debugDataDumpingEnabled = debugDataDumpingEnabled;
       return this;
     }
 
@@ -80,7 +92,8 @@ public class DataConfig {
       if (dataBasePath == null) {
         throw new InvalidConfigurationException("data-base-path must be specified");
       }
-      return new DataConfig(dataBasePath, beaconDataPath, validatorDataPath);
+      return new DataConfig(
+          dataBasePath, beaconDataPath, validatorDataPath, debugDataDumpingEnabled);
     }
   }
 }

@@ -34,7 +34,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 public class SszBitvectorSchemaImpl extends AbstractSszVectorSchema<SszBit, SszBitvector>
     implements SszBitvectorSchema<SszBitvector> {
 
-  public SszBitvectorSchemaImpl(long length) {
+  public SszBitvectorSchemaImpl(final long length) {
     super(SszPrimitiveSchemas.BIT_SCHEMA, length);
     checkArgument(length > 0, "Invalid Bitlist length");
   }
@@ -45,27 +45,27 @@ public class SszBitvectorSchemaImpl extends AbstractSszVectorSchema<SszBit, SszB
   }
 
   @Override
-  public SszBitvector createFromBackingNode(TreeNode node) {
+  public SszBitvector createFromBackingNode(final TreeNode node) {
     return new SszBitvectorImpl(this, node);
   }
 
   @Override
-  public SszBitvector ofBits(int... setBitIndices) {
+  public SszBitvector ofBits(final int... setBitIndices) {
     return SszBitvectorImpl.ofBits(this, setBitIndices);
   }
 
   @Override
-  public SszBitvector createFromElements(List<? extends SszBit> elements) {
+  public SszBitvector createFromElements(final List<? extends SszBit> elements) {
     return ofBits(IntStream.range(0, elements.size()).filter(i -> elements.get(i).get()).toArray());
   }
 
   @Override
-  public int sszSerializeTree(TreeNode node, SszWriter writer) {
+  public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
     return sszSerializeVector(node, writer, getLength());
   }
 
   @Override
-  public TreeNode sszDeserializeTree(SszReader reader) {
+  public TreeNode sszDeserializeTree(final SszReader reader) {
     checkSsz(
         reader.getAvailableBytes() == TreeUtil.bitsCeilToBytes(getLength()),
         "SSZ length doesn't match Bitvector size");

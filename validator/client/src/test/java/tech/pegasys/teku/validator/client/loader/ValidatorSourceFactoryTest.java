@@ -48,7 +48,7 @@ class ValidatorSourceFactoryTest {
   @Test
   void mutableValidatorShouldBeSlashingProtected(@TempDir final Path tempDir) {
     final DataDirLayout dataDirLayout =
-        new SeparateServiceDataDirLayout(tempDir, Optional.empty(), Optional.empty());
+        new SeparateServiceDataDirLayout(tempDir, Optional.empty(), Optional.empty(), false);
     final ValidatorSourceFactory factory =
         new ValidatorSourceFactory(
             spec,

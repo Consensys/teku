@@ -311,7 +311,8 @@ public class LateBlockReorgLogic {
         && forkChoiceUtil.isFinalizationOk(getStore(), slot);
   }
 
-  boolean isMissingData(Optional<SignedBeaconBlock> maybeHead, Optional<UInt64> maybeCurrentSlot) {
+  boolean isMissingData(
+      final Optional<SignedBeaconBlock> maybeHead, final Optional<UInt64> maybeCurrentSlot) {
     if (maybeHead.isEmpty() || maybeCurrentSlot.isEmpty()) {
       LOG.debug(
           "shouldOverrideForkChoiceUpdate head {}, currentSlot {}",

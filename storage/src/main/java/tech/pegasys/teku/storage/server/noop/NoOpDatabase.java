@@ -30,7 +30,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -45,6 +45,7 @@ import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
+import tech.pegasys.teku.storage.archive.DataArchiveWriter;
 import tech.pegasys.teku.storage.server.Database;
 
 public class NoOpDatabase implements Database {
@@ -224,11 +225,20 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public void setFinalizedDepositSnapshot(DepositTreeSnapshot finalizedDepositSnapshot) {}
+  public void setFinalizedDepositSnapshot(final DepositTreeSnapshot finalizedDepositSnapshot) {}
 
   @Override
-  public UInt64 pruneFinalizedBlocks(UInt64 lastSlotToPrune, int pruneLimit) {
+  public UInt64 pruneFinalizedBlocks(
+      final UInt64 lastSlotToPrune, final int pruneLimit, final UInt64 checkpointInitialSlot) {
     return lastSlotToPrune;
+  }
+
+  @Override
+  public Optional<UInt64> pruneFinalizedStates(
+      final Optional<UInt64> lastPrunedSlot,
+      final UInt64 lastSlotToPruneStateFor,
+      final long pruneLimit) {
+    return Optional.of(lastSlotToPruneStateFor);
   }
 
   @Override
@@ -238,7 +248,7 @@ public class NoOpDatabase implements Database {
   public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {}
 
   @Override
-  public void removeDepositsFromBlockEvents(List<UInt64> blockNumbers) {}
+  public void removeDepositsFromBlockEvents(final List<UInt64> blockNumbers) {}
 
   @Override
   public void storeVotes(final Map<UInt64, VoteTracker> votes) {}
@@ -257,9 +267,6 @@ public class NoOpDatabase implements Database {
   public long getNonCanonicalBlobSidecarColumnCount() {
     return 0L;
   }
-
-  @Override
-  public void migrate() {}
 
   @Override
   public Optional<Checkpoint> getAnchor() {
@@ -319,13 +326,18 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public boolean pruneOldestBlobSidecars(final UInt64 lastSlotToPrune, final int pruneLimit) {
+  public boolean pruneOldestBlobSidecars(
+      final UInt64 lastSlotToPrune,
+      final int pruneLimit,
+      final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
     return false;
   }
 
   @Override
   public boolean pruneOldestNonCanonicalBlobSidecars(
-      final UInt64 lastSlotToPrune, final int pruneLimit) {
+      final UInt64 lastSlotToPrune,
+      final int pruneLimit,
+      final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
     return false;
   }
 
@@ -357,16 +369,16 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public void setFirstCustodyIncompleteSlot(UInt64 slot) {}
+  public void setFirstCustodyIncompleteSlot(final UInt64 slot) {}
 
   @Override
-  public void setFirstSamplerIncompleteSlot(UInt64 slot) {}
+  public void setFirstSamplerIncompleteSlot(final UInt64 slot) {}
 
   @Override
-  public void addSidecar(DataColumnSidecar sidecar) {}
+  public void addSidecar(final DataColumnSidecar sidecar) {}
 
   @Override
-  public void pruneAllSidecars(UInt64 tillSlotInclusive) {}
+  public void pruneAllSidecars(final UInt64 tillSlotInclusive) {}
 
   @Override
   public void close() {}

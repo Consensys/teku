@@ -40,35 +40,35 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.M
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.MutableBeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.MutableBeaconStateCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.MutableBeaconStateDeneb;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7594.MutableBeaconStateEip7594;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
 
 public interface MutableBeaconState extends BeaconState, SszMutableRefContainer {
 
   // Versioning
 
-  default void setGenesisTime(UInt64 genesisTime) {
+  default void setGenesisTime(final UInt64 genesisTime) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.GENESIS_TIME);
     set(fieldIndex, SszUInt64.of(genesisTime));
   }
 
-  default void setGenesisValidatorsRoot(Bytes32 genesisValidatorsRoot) {
+  default void setGenesisValidatorsRoot(final Bytes32 genesisValidatorsRoot) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.GENESIS_VALIDATORS_ROOT);
     set(fieldIndex, SszBytes32.of(genesisValidatorsRoot));
   }
 
-  default void setSlot(UInt64 slot) {
+  default void setSlot(final UInt64 slot) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.SLOT);
     set(fieldIndex, SszUInt64.of(slot));
   }
 
-  default void setFork(Fork fork) {
+  default void setFork(final Fork fork) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.FORK);
     set(fieldIndex, fork);
   }
 
   // History
-  default void setLatestBlockHeader(BeaconBlockHeader latestBlockHeader) {
+  default void setLatestBlockHeader(final BeaconBlockHeader latestBlockHeader) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.LATEST_BLOCK_HEADER);
     set(fieldIndex, latestBlockHeader);
   }
@@ -79,7 +79,7 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
     return getAnyByRef(fieldIndex);
   }
 
-  default void setBlockRoots(SszBytes32Vector blockRoots) {
+  default void setBlockRoots(final SszBytes32Vector blockRoots) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.BLOCK_ROOTS);
     set(fieldIndex, blockRoots);
   }
@@ -90,7 +90,7 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
     return getAnyByRef(fieldIndex);
   }
 
-  default void setStateRoots(SszBytes32Vector stateRoots) {
+  default void setStateRoots(final SszBytes32Vector stateRoots) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.STATE_ROOTS);
     set(fieldIndex, stateRoots);
   }
@@ -101,13 +101,13 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
     return getAnyByRef(fieldIndex);
   }
 
-  default void setHistoricalRoots(SszPrimitiveList<Bytes32, SszBytes32> historicalRoots) {
+  default void setHistoricalRoots(final SszPrimitiveList<Bytes32, SszBytes32> historicalRoots) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.HISTORICAL_ROOTS);
     set(fieldIndex, historicalRoots);
   }
 
   // Eth1
-  default void setEth1Data(Eth1Data eth1Data) {
+  default void setEth1Data(final Eth1Data eth1Data) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.ETH1_DATA);
     set(fieldIndex, eth1Data);
   }
@@ -118,12 +118,12 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
     return getAnyByRef(fieldIndex);
   }
 
-  default void setEth1DataVotes(SszList<Eth1Data> eth1DataList) {
+  default void setEth1DataVotes(final SszList<Eth1Data> eth1DataList) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.ETH1_DATA_VOTES);
     set(fieldIndex, eth1DataList);
   }
 
-  default void setEth1DepositIndex(UInt64 eth1DepositIndex) {
+  default void setEth1DepositIndex(final UInt64 eth1DepositIndex) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.ETH1_DEPOSIT_INDEX);
     set(fieldIndex, SszUInt64.of(eth1DepositIndex));
   }
@@ -135,7 +135,7 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
     return getAnyByRef(fieldIndex);
   }
 
-  default void setValidators(SszList<Validator> validators) {
+  default void setValidators(final SszList<Validator> validators) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.VALIDATORS);
     set(fieldIndex, validators);
   }
@@ -146,7 +146,7 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
     return getAnyByRef(fieldIndex);
   }
 
-  default void setBalances(SszUInt64List balances) {
+  default void setBalances(final SszUInt64List balances) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.BALANCES);
     set(fieldIndex, balances);
   }
@@ -157,7 +157,7 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
     return getAnyByRef(fieldIndex);
   }
 
-  default void setRandaoMixes(SszBytes32Vector randaoMixes) {
+  default void setRandaoMixes(final SszBytes32Vector randaoMixes) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.RANDAO_MIXES);
     set(fieldIndex, randaoMixes);
   }
@@ -169,30 +169,30 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
     return getAnyByRef(fieldIndex);
   }
 
-  default void setSlashings(SszPrimitiveVector<UInt64, SszUInt64> slashings) {
+  default void setSlashings(final SszPrimitiveVector<UInt64, SszUInt64> slashings) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.SLASHINGS);
     set(fieldIndex, slashings);
   }
 
   // Finality
-  default void setJustificationBits(SszBitvector justificationBits) {
+  default void setJustificationBits(final SszBitvector justificationBits) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.JUSTIFICATION_BITS);
     set(fieldIndex, justificationBits);
   }
 
-  default void setPreviousJustifiedCheckpoint(Checkpoint previousJustifiedCheckpoint) {
+  default void setPreviousJustifiedCheckpoint(final Checkpoint previousJustifiedCheckpoint) {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_JUSTIFIED_CHECKPOINT);
     set(fieldIndex, previousJustifiedCheckpoint);
   }
 
-  default void setCurrentJustifiedCheckpoint(Checkpoint currentJustifiedCheckpoint) {
+  default void setCurrentJustifiedCheckpoint(final Checkpoint currentJustifiedCheckpoint) {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.CURRENT_JUSTIFIED_CHECKPOINT);
     set(fieldIndex, currentJustifiedCheckpoint);
   }
 
-  default void setFinalizedCheckpoint(Checkpoint finalizedCheckpoint) {
+  default void setFinalizedCheckpoint(final Checkpoint finalizedCheckpoint) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.FINALIZED_CHECKPOINT);
     set(fieldIndex, finalizedCheckpoint);
   }
@@ -220,7 +220,7 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
     return Optional.empty();
   }
 
-  default Optional<MutableBeaconStateEip7594> toMutableVersionEip7594() {
+  default Optional<MutableBeaconStateElectra> toMutableVersionElectra() {
     return Optional.empty();
   }
 }

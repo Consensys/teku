@@ -23,7 +23,7 @@ public class NoopIntCache<V> implements IntCache<V> {
   private NoopIntCache() {}
 
   @Override
-  public V getInt(int key, IntFunction<V> fallback) {
+  public V getInt(final int key, final IntFunction<V> fallback) {
     return fallback.apply(key);
   }
 
@@ -33,13 +33,13 @@ public class NoopIntCache<V> implements IntCache<V> {
   }
 
   @Override
-  public void invalidateInt(int key) {}
+  public void invalidateInt(final int key) {}
 
   @Override
   public void clear() {}
 
   @Override
-  public Optional<V> getCached(Integer key) {
+  public Optional<V> getCached(final Integer key) {
     return Optional.empty();
   }
 }

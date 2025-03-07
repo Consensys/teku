@@ -36,13 +36,13 @@ public interface SszVectorSchema<
   }
 
   static <ElementDataT extends SszData> SszVectorSchema<ElementDataT, ?> create(
-      SszSchema<ElementDataT> elementSchema, long length) {
+      final SszSchema<ElementDataT> elementSchema, final long length) {
     return create(elementSchema, length, SszSchemaHints.none());
   }
 
   @SuppressWarnings("unchecked")
   static <ElementDataT extends SszData> SszVectorSchema<ElementDataT, ?> create(
-      SszSchema<ElementDataT> elementSchema, long length, SszSchemaHints hints) {
+      final SszSchema<ElementDataT> elementSchema, final long length, final SszSchemaHints hints) {
     checkArgument(length > 0 && length <= MAX_VECTOR_LENGTH);
     if (elementSchema instanceof SszPrimitiveSchema) {
       return (SszVectorSchema<ElementDataT, ?>)

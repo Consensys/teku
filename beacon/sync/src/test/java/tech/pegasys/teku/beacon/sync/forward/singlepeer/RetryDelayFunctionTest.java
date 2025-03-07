@@ -42,7 +42,7 @@ public class RetryDelayFunctionTest {
   }
 
   private void assertRetryDelay(
-      RetryDelayFunction retryFn, final int retries, final Duration expectedResult) {
+      final RetryDelayFunction retryFn, final int retries, final Duration expectedResult) {
     assertThat(retryFn.getRetryDelay(retries).toMillis()).isEqualTo(expectedResult.toMillis());
   }
 }

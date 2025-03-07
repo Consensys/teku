@@ -1,0 +1,25 @@
+{
+  "title" : "ConsolidationRequest",
+  "type" : "object",
+  "required" : [ "source_address", "source_pubkey", "target_pubkey" ],
+  "properties" : {
+    "source_address" : {
+      "type" : "string",
+      "pattern" : "^0x[a-fA-F0-9]{2,}$",
+      "description" : "SSZ hexadecimal",
+      "format" : "bytes"
+    },
+    "source_pubkey" : {
+      "type" : "string",
+      "pattern" : "^0x[a-fA-F0-9]{2,}$",
+      "description" : "Bytes48 hexadecimal",
+      "format" : "bytes"
+    },
+    "target_pubkey" : {
+      "type" : "string",
+      "pattern" : "^0x[a-fA-F0-9]{2,}$",
+      "description" : "Bytes48 hexadecimal",
+      "format" : "bytes"
+    }
+  }
+}

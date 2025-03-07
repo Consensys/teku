@@ -78,7 +78,7 @@ public class StubRestApiRequest implements RestApiRequest {
     return cacheLength;
   }
 
-  public <T> void setRequestBody(T requestBody) {
+  public <T> void setRequestBody(final T requestBody) {
     assertThat(this.requestBody).isNull();
     this.requestBody = requestBody;
   }
@@ -223,7 +223,7 @@ public class StubRestApiRequest implements RestApiRequest {
   }
 
   @Override
-  public <T> List<T> getQueryParameterList(ParameterMetadata<T> parameterMetadata) {
+  public <T> List<T> getQueryParameterList(final ParameterMetadata<T> parameterMetadata) {
     if (!this.listQueryParameters.containsKey(parameterMetadata.getName())) {
       return List.of();
     }
@@ -242,14 +242,14 @@ public class StubRestApiRequest implements RestApiRequest {
   }
 
   @Override
-  public <T> Optional<T> getOptionalRequestHeader(ParameterMetadata<T> parameterMetadata) {
+  public <T> Optional<T> getOptionalRequestHeader(final ParameterMetadata<T> parameterMetadata) {
     final Optional<String> param =
         Optional.ofNullable(requestHeaders.get(parameterMetadata.getName()));
     return param.map(p -> parameterMetadata.getType().deserializeFromString(p));
   }
 
   @Override
-  public <T> T getRequestHeader(ParameterMetadata<T> parameterMetadata) {
+  public <T> T getRequestHeader(final ParameterMetadata<T> parameterMetadata) {
     assertThat(this.requestHeaders.containsKey(parameterMetadata.getName())).isTrue();
     final String param = requestHeaders.get(parameterMetadata.getName());
     return parameterMetadata.getType().deserializeFromString(param);
@@ -260,12 +260,12 @@ public class StubRestApiRequest implements RestApiRequest {
     responseHeaders.put(name, value);
   }
 
-  public String getResponseHeaders(String name) {
+  public String getResponseHeaders(final String name) {
     return responseHeaders.get(name);
   }
 
   @Override
-  public void startEventStream(Consumer<SseClient> clientConsumer) {
+  public void startEventStream(final Consumer<SseClient> clientConsumer) {
     throw new UnsupportedOperationException();
   }
 

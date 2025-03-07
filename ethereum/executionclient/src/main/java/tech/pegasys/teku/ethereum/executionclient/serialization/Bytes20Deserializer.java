@@ -22,7 +22,8 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 public class Bytes20Deserializer extends JsonDeserializer<Bytes20> {
 
   @Override
-  public Bytes20 deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+  public Bytes20 deserialize(final JsonParser p, final DeserializationContext ctxt)
+      throws IOException {
     return Bytes20.fromHexString(p.getValueAsString());
   }
 }

@@ -22,7 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.net.URL;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -56,7 +56,8 @@ class MetricsPublisherManagerTest {
     when(metricsConfig.getPublicationInterval()).thenReturn(1);
     when(metricsEndpoint.getMetricsSystem()).thenReturn(prometheusMetricsSystem);
     when(metricsEndpoint.getMetricConfig()).thenReturn(metricsConfig);
-    when(metricsConfig.getMetricsEndpoint()).thenReturn(Optional.of(new URL("http://host.com/")));
+    when(metricsConfig.getMetricsEndpoint())
+        .thenReturn(Optional.of(URI.create("http://host.com/").toURL()));
   }
 
   @Test

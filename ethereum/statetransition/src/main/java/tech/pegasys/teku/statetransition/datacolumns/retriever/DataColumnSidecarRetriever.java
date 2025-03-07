@@ -15,31 +15,12 @@ package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 /** The class which searches for a specific {@link DataColumnSidecar} across nodes in the network */
 public interface DataColumnSidecarRetriever {
-
-  /**
-   * The request may complete with this exception when requested column is no more on our local
-   * canonical chain
-   */
-  class NotOnCanonicalChainException extends RuntimeException {
-    public NotOnCanonicalChainException(String msg) {
-      super(msg);
-    }
-
-    public NotOnCanonicalChainException(
-        DataColumnSlotAndIdentifier columnId, Optional<BeaconBlock> maybeCanonicalBlock) {
-      super(
-          "The column requested is not on local canonical chain: "
-              + columnId
-              + ", canonical block is "
-              + maybeCanonicalBlock.map(BeaconBlock::getRoot));
-    }
-  }
 
   /**
    * Queues the specified sidecar for search
@@ -48,4 +29,34 @@ public interface DataColumnSidecarRetriever {
    *     complete exceptionally when cancelled or with {@link NotOnCanonicalChainException}
    */
   SafeFuture<DataColumnSidecar> retrieve(DataColumnSlotAndIdentifier columnId);
+
+  /**
+   * The {@link #retrieve(DataColumnSlotAndIdentifier)} method may buffer requests and delay
+   * processing them till the next occasion. This method forces all the queued requests to be
+   * processed. However, requests could still be queued in a downstream component if there is a
+   * congestion.
+   */
+  void flush();
+
+  void onNewValidatedSidecar(DataColumnSidecar sidecar);
+
+  /**
+   * The request may complete with this exception when requested column is no more on our local
+   * canonical chain
+   */
+  class NotOnCanonicalChainException extends RuntimeException {
+    public NotOnCanonicalChainException(final String msg) {
+      super(msg);
+    }
+
+    public NotOnCanonicalChainException(
+        final DataColumnSlotAndIdentifier columnId,
+        final Optional<BeaconBlock> maybeCanonicalBlock) {
+      super(
+          "The column requested is not on local canonical chain: "
+              + columnId
+              + ", canonical block is "
+              + maybeCanonicalBlock.map(BeaconBlock::getRoot));
+    }
+  }
 }

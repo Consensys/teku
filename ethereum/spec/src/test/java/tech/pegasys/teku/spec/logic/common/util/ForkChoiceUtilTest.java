@@ -35,6 +35,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -53,7 +54,7 @@ class ForkChoiceUtilTest {
 
   private static final UInt64 GENESIS_TIME = UInt64.valueOf("1591924193");
   private static final UInt64 GENESIS_TIME_MILLIS = GENESIS_TIME.times(1000L);
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final RandomChainBuilder chainBuilder = new RandomChainBuilder(dataStructureUtil);
   private final RandomChainBuilderForkChoiceStrategy forkChoiceStrategy =
@@ -396,7 +397,8 @@ class ForkChoiceUtilTest {
   }
 
   private int getSafeSyncDistance() {
-    return spec.getGenesisSpecConfig()
+    return spec.forMilestone(SpecMilestone.BELLATRIX)
+        .getConfig()
         .toVersionBellatrix()
         .orElseThrow()
         .getSafeSlotsToImportOptimistically();

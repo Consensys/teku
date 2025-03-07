@@ -26,18 +26,21 @@ import tech.pegasys.teku.spec.Spec;
 public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChannel {
   private final Eth2P2PNetwork eth2P2PNetwork;
   private final UInt256 nodeId;
-  private final int totalSubnetCount;
+  private final int totalGroupCount;
   private final Spec spec;
 
   private IntSet currentSubscribedSubnets = IntSet.of();
   private UInt64 lastEpoch = UInt64.MAX_VALUE;
 
   public DataColumnSidecarSubnetBackboneSubscriber(
-      final Spec spec, final Eth2P2PNetwork eth2P2PNetwork, UInt256 nodeId, int totalSubnetCount) {
+      final Spec spec,
+      final Eth2P2PNetwork eth2P2PNetwork,
+      final UInt256 nodeId,
+      final int totalGroupCount) {
     this.spec = spec;
     this.eth2P2PNetwork = eth2P2PNetwork;
     this.nodeId = nodeId;
-    this.totalSubnetCount = totalSubnetCount;
+    this.totalGroupCount = totalGroupCount;
   }
 
   private void subscribeToSubnets(final Collection<Integer> newSubscriptions) {
@@ -62,12 +65,12 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
   private void onEpoch(final UInt64 epoch) {
     spec.atEpoch(epoch)
         .miscHelpers()
-        .toVersionEip7594()
+        .toVersionFulu()
         .ifPresent(
-            eip7594Spec -> {
+            miscHelpersFulu -> {
               List<UInt64> subnets =
-                  eip7594Spec.computeDataColumnSidecarBackboneSubnets(
-                      nodeId, epoch, totalSubnetCount);
+                  miscHelpersFulu.computeDataColumnSidecarBackboneSubnets(
+                      nodeId, epoch, totalGroupCount);
               subscribeToSubnets(subnets.stream().map(UInt64::intValue).toList());
             });
   }

@@ -57,23 +57,23 @@ public class DepositContract extends Contract {
               new TypeReference<DynamicBytes>() {}));
 
   protected DepositContract(
-      String contractAddress,
-      Web3j web3j,
-      TransactionManager transactionManager,
-      ContractGasProvider contractGasProvider) {
+      final String contractAddress,
+      final Web3j web3j,
+      final TransactionManager transactionManager,
+      final ContractGasProvider contractGasProvider) {
     super(BINARY, contractAddress, web3j, transactionManager, contractGasProvider);
   }
 
-  public static EventValuesWithLog staticExtractDepositEventWithLog(Log log) {
+  public static EventValuesWithLog staticExtractDepositEventWithLog(final Log log) {
     return staticExtractEventParametersWithLog(DEPOSITEVENT_EVENT, log);
   }
 
   public RemoteFunctionCall<TransactionReceipt> deposit(
-      byte[] pubkey,
-      byte[] withdrawalCredentials,
-      byte[] signature,
-      byte[] depositDataRoot,
-      BigInteger weiValue) {
+      final byte[] pubkey,
+      final byte[] withdrawalCredentials,
+      final byte[] signature,
+      final byte[] depositDataRoot,
+      final BigInteger weiValue) {
     final Function function =
         new Function(
             FUNC_DEPOSIT,
@@ -87,10 +87,10 @@ public class DepositContract extends Contract {
   }
 
   public static DepositContract load(
-      String contractAddress,
-      Web3j web3j,
-      TransactionManager transactionManager,
-      ContractGasProvider contractGasProvider) {
+      final String contractAddress,
+      final Web3j web3j,
+      final TransactionManager transactionManager,
+      final ContractGasProvider contractGasProvider) {
     return new DepositContract(contractAddress, web3j, transactionManager, contractGasProvider);
   }
 

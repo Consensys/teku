@@ -36,7 +36,7 @@ public class StateTransition {
     this.specProvider = specProvider;
   }
 
-  public BeaconState processSlots(BeaconState preState, UInt64 slot)
+  public BeaconState processSlots(final BeaconState preState, final UInt64 slot)
       throws SlotProcessingException, EpochProcessingException {
     try {
       checkArgument(

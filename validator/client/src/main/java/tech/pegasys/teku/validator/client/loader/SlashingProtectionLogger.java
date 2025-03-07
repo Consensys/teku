@@ -100,7 +100,7 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
   }
 
   private void logLoadedProtectionValidators(
-      List<Pair<Validator, ValidatorSigningRecord>> validatorRecords) {
+      final List<Pair<Validator, ValidatorSigningRecord>> validatorRecords) {
     if (validatorRecords.isEmpty()) {
       return;
     }
@@ -111,7 +111,7 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
   }
 
   private void logOutdatedProtectedValidators(
-      List<Pair<Validator, ValidatorSigningRecord>> validatorRecords) {
+      final List<Pair<Validator, ValidatorSigningRecord>> validatorRecords) {
     if (validatorRecords.isEmpty()) {
       return;
     }
@@ -123,7 +123,7 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
   }
 
   private void filterAndLogNotLoadedProtectionValidators(
-      List<Pair<Validator, Optional<ValidatorSigningRecord>>> validatorRecords) {
+      final List<Pair<Validator, Optional<ValidatorSigningRecord>>> validatorRecords) {
     Set<String> unprotectedValidatorSet =
         validatorRecords.stream()
             .filter(pair -> pair.getRight().isEmpty())
@@ -153,7 +153,7 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
   private Function<ValidatorSigningRecord, Boolean> createOutdatedSigningRecordClassifier(
       final UInt64 currentSlot) {
     return signingRecord -> {
-      final UInt64 attestationTargetEpoch = signingRecord.getAttestationTargetEpoch();
+      final UInt64 attestationTargetEpoch = signingRecord.attestationTargetEpoch();
       return spec.computeEpochAtSlot(currentSlot)
           .minusMinZero(
               Objects.equals(attestationTargetEpoch, NEVER_SIGNED)
@@ -164,29 +164,29 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
   }
 
   @Override
-  public synchronized void onSlot(UInt64 slot) {
+  public synchronized void onSlot(final UInt64 slot) {
     this.currentSlot = Optional.of(slot);
     tryToLog();
   }
 
   @Override
   public void onHeadUpdate(
-      UInt64 slot,
-      Bytes32 previousDutyDependentRoot,
-      Bytes32 currentDutyDependentRoot,
-      Bytes32 headBlockRoot) {}
+      final UInt64 slot,
+      final Bytes32 previousDutyDependentRoot,
+      final Bytes32 currentDutyDependentRoot,
+      final Bytes32 headBlockRoot) {}
 
   @Override
   public void onPossibleMissedEvents() {}
 
   @Override
-  public void onBlockProductionDue(UInt64 slot) {}
+  public void onBlockProductionDue(final UInt64 slot) {}
 
   @Override
-  public void onAttestationCreationDue(UInt64 slot) {}
+  public void onAttestationCreationDue(final UInt64 slot) {}
 
   @Override
-  public void onAttestationAggregationDue(UInt64 slot) {}
+  public void onAttestationAggregationDue(final UInt64 slot) {}
 
   @Override
   public void onValidatorsAdded() {}

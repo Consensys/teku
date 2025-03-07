@@ -67,12 +67,13 @@ public class GetStateValidator extends RestApiEndpoint {
             .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = provider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final SafeFuture<Optional<StateAndMetaData>> future =
         chainDataProvider.getBeaconStateAndMetadata(request.getPathParameter(PARAMETER_STATE_ID));
 

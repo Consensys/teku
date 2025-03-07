@@ -25,7 +25,7 @@ public class TransactionSchema extends SszByteListSchemaImpl<Transaction> {
   }
 
   @Override
-  public Transaction createFromBackingNode(TreeNode node) {
+  public Transaction createFromBackingNode(final TreeNode node) {
     return new Transaction(this, node);
   }
 }

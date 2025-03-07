@@ -49,17 +49,17 @@ public class AttesterDutiesBuilder {
   private Bytes32 dependentRoot;
   private List<AttesterDuty> duties;
 
-  public AttesterDutiesBuilder executionOptimistic(boolean executionOptimistic) {
+  public AttesterDutiesBuilder executionOptimistic(final boolean executionOptimistic) {
     this.executionOptimistic = executionOptimistic;
     return this;
   }
 
-  public AttesterDutiesBuilder dependentRoot(Bytes32 dependentRoot) {
+  public AttesterDutiesBuilder dependentRoot(final Bytes32 dependentRoot) {
     this.dependentRoot = dependentRoot;
     return this;
   }
 
-  public AttesterDutiesBuilder duties(List<AttesterDuty> duties) {
+  public AttesterDutiesBuilder duties(final List<AttesterDuty> duties) {
     this.duties = duties;
     return this;
   }

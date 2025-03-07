@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 public class SignedBuilderBid extends Container2<SignedBuilderBid, BuilderBid, SszSignature>
     implements SszContainer {
 
-  SignedBuilderBid(SignedBuilderBidSchema type, TreeNode backingNode) {
+  SignedBuilderBid(final SignedBuilderBidSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 

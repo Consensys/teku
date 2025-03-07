@@ -55,7 +55,7 @@ public class MergedGenesisAcceptanceTest extends AcceptanceTestBase {
             .withAltairEpoch(UInt64.ZERO)
             .withBellatrixEpoch(UInt64.ZERO)
             .withTotalTerminalDifficulty(0)
-            .genesisPayloadSource(eth1Node)
+            .genesisExecutionPayloadHeaderSource(eth1Node::createGenesisExecutionPayload)
             .validatorKeys(validatorKeys)
             .generate();
     tekuNode =

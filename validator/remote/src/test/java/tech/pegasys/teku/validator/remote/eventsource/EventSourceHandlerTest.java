@@ -24,15 +24,14 @@ import com.launchdarkly.eventsource.MessageEvent;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.EventType;
-import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -42,7 +41,6 @@ class EventSourceHandlerTest {
 
   final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final JsonProvider jsonProvider = new JsonProvider();
   private final ValidatorTimingChannel validatorTimingChannel = mock(ValidatorTimingChannel.class);
   final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
@@ -68,10 +66,12 @@ class EventSourceHandlerTest {
             blockRoot,
             dataStructureUtil.randomBytes32(),
             false,
-            false,
             previousDutyDependentRoot,
-            currentDutyDependentRoot);
-    handler.onMessage(EventType.head.name(), new MessageEvent(jsonProvider.objectToJSON(event)));
+            currentDutyDependentRoot,
+            false);
+    handler.onMessage(
+        EventType.head.name(),
+        new MessageEvent(JsonUtil.serialize(event, HeadEvent.TYPE_DEFINITION)));
 
     verify(validatorTimingChannel)
         .onHeadUpdate(
@@ -84,7 +84,7 @@ class EventSourceHandlerTest {
   void onMessage_shouldHandleAttesterSlashingEvent() throws Exception {
     final IndexedAttestation indexedAttestation1 = dataStructureUtil.randomIndexedAttestation();
     final IndexedAttestation indexedAttestation2 = dataStructureUtil.randomIndexedAttestation();
-    final AttesterSlashing.AttesterSlashingSchema attesterSlashingSchema =
+    final AttesterSlashingSchema attesterSlashingSchema =
         spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema();
     final AttesterSlashing attesterSlashing =
         attesterSlashingSchema.create(indexedAttestation1, indexedAttestation2);
@@ -125,11 +125,12 @@ class EventSourceHandlerTest {
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomBytes32(),
             false,
-            false,
             dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomBytes32());
+            dataStructureUtil.randomBytes32(),
+            false);
     // Head message with a reorg type
-    final MessageEvent messageEvent = new MessageEvent(jsonProvider.objectToJSON(event));
+    final MessageEvent messageEvent =
+        new MessageEvent(JsonUtil.serialize(event, HeadEvent.TYPE_DEFINITION));
     assertDoesNotThrow(() -> handler.onMessage(EventType.chain_reorg.name(), messageEvent));
     verifyNoInteractions(validatorTimingChannel);
   }
@@ -157,11 +158,13 @@ class EventSourceHandlerTest {
             blockRoot,
             dataStructureUtil.randomBytes32(),
             false,
-            false,
             previousDutyDependentRoot,
-            currentDutyDependentRoot);
-    onTimeHandler.onMessage(
-        EventType.head.name(), new MessageEvent(jsonProvider.objectToJSON(event)));
+            currentDutyDependentRoot,
+            false);
+
+    final MessageEvent messageEvent =
+        new MessageEvent(JsonUtil.serialize(event, HeadEvent.TYPE_DEFINITION));
+    onTimeHandler.onMessage(EventType.head.name(), messageEvent);
 
     verify(validatorTimingChannel)
         .onHeadUpdate(

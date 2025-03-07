@@ -40,7 +40,7 @@ public final class FetchResult<T> {
     return new FetchResult<>(Optional.empty(), Status.SUCCESSFUL, Optional.of(result));
   }
 
-  public static <T> FetchResult<T> createSuccessful(final Eth2Peer peer, T result) {
+  public static <T> FetchResult<T> createSuccessful(final Eth2Peer peer, final T result) {
     return new FetchResult<>(Optional.of(peer), Status.SUCCESSFUL, Optional.of(result));
   }
 

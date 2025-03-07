@@ -184,6 +184,10 @@ class MetricRecordingValidatorApiChannelTest {
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomUInt64());
     final UInt64 epoch = dataStructureUtil.randomEpoch();
+    final Function<ValidatorApiChannel, SafeFuture<Optional<Attestation>>> createAggregateMethod =
+        channel ->
+            channel.createAggregate(
+                attestationData.getSlot(), attestationData.hashTreeRoot(), Optional.empty());
     return Stream.of(
         requestDataTest(
             "getGenesisData",
@@ -193,8 +197,7 @@ class MetricRecordingValidatorApiChannelTest {
         requestDataTest(
             "createUnsignedBlock",
             channel ->
-                channel.createUnsignedBlock(
-                    slot, signature, Optional.empty(), Optional.of(false), Optional.empty()),
+                channel.createUnsignedBlock(slot, signature, Optional.empty(), Optional.empty()),
             BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD,
             dataStructureUtil.randomBlockContainerAndMetaData(slot)),
         requestDataTest(
@@ -202,10 +205,8 @@ class MetricRecordingValidatorApiChannelTest {
             channel -> channel.createAttestationData(slot, 4),
             BeaconNodeRequestLabels.CREATE_ATTESTATION_METHOD,
             dataStructureUtil.randomAttestationData()),
-        requestDataTest(
-            "createAggregate",
-            channel ->
-                channel.createAggregate(attestationData.getSlot(), attestationData.hashTreeRoot()),
+        Arguments.of(
+            Named.named("createAggregate", createAggregateMethod),
             BeaconNodeRequestLabels.CREATE_AGGREGATE_METHOD,
             dataStructureUtil.randomAttestation()),
         requestDataTest(

@@ -21,18 +21,18 @@ import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszComposite;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public class SszMutablePrimitiveVectorImpl<
-        ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+public class SszMutablePrimitiveVectorImpl<ElementT, SszElementT extends SszPrimitive<ElementT>>
     extends AbstractSszMutablePrimitiveCollection<ElementT, SszElementT>
     implements SszMutablePrimitiveVector<ElementT, SszElementT> {
 
   @SuppressWarnings("unchecked")
-  public SszMutablePrimitiveVectorImpl(AbstractSszComposite<SszElementT> backingImmutableData) {
+  public SszMutablePrimitiveVectorImpl(
+      final AbstractSszComposite<SszElementT> backingImmutableData) {
     super(backingImmutableData);
   }
 
   @Override
-  protected void checkIndex(int index, boolean set) {
+  protected void checkIndex(final int index, final boolean set) {
     if (index < 0 || index >= size()) {
       throw new IndexOutOfBoundsException(
           "Invalid index " + index + " for vector with size " + size());
@@ -53,7 +53,7 @@ public class SszMutablePrimitiveVectorImpl<
 
   @Override
   protected AbstractSszComposite<SszElementT> createImmutableSszComposite(
-      TreeNode backingNode, IntCache<SszElementT> childrenCache) {
+      final TreeNode backingNode, final IntCache<SszElementT> childrenCache) {
     return new SszPrimitiveVectorImpl<>(getSchema(), backingNode, childrenCache);
   }
 

@@ -36,7 +36,7 @@ public class PostStateValidatorsRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
   }
 
-  public Optional<ObjectAndMetaData<List<StateValidatorData>>> postStateValidators(
+  public Optional<ObjectAndMetaData<List<StateValidatorData>>> submit(
       final List<String> validatorIds) {
     return postJson(
         GET_VALIDATORS,

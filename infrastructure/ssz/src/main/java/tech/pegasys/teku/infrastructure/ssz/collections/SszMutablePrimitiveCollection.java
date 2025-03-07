@@ -17,8 +17,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszMutableComposite;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
 
-public interface SszMutablePrimitiveCollection<
-        ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+public interface SszMutablePrimitiveCollection<ElementT, SszElementT extends SszPrimitive<ElementT>>
     extends SszPrimitiveCollection<ElementT, SszElementT>, SszMutableComposite<SszElementT> {
 
   @SuppressWarnings("unchecked")
@@ -26,12 +25,12 @@ public interface SszMutablePrimitiveCollection<
     return (SszPrimitiveSchema<ElementT, SszElementT>) getSchema().getElementSchema();
   }
 
-  default void setElement(int index, ElementT primitiveValue) {
+  default void setElement(final int index, final ElementT primitiveValue) {
     SszElementT sszData = getPrimitiveElementSchema().boxed(primitiveValue);
     set(index, sszData);
   }
 
-  default void setAllElements(Iterable<ElementT> newChildren) {
+  default void setAllElements(final Iterable<ElementT> newChildren) {
     clear();
     int idx = 0;
     for (ElementT newChild : newChildren) {

@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfigEip7594;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 
 public class DataColumnSidecarsByRangeRequestMessage
     extends Container3<DataColumnSidecarsByRangeRequestMessage, SszUInt64, SszUInt64, SszUInt64List>
@@ -34,14 +34,12 @@ public class DataColumnSidecarsByRangeRequestMessage
       extends ContainerSchema3<
           DataColumnSidecarsByRangeRequestMessage, SszUInt64, SszUInt64, SszUInt64List> {
 
-    public DataColumnSidecarsByRangeRequestMessageSchema(
-        final SpecConfigEip7594 specConfigEip7594) {
+    public DataColumnSidecarsByRangeRequestMessageSchema(final SpecConfigFulu specConfig) {
       super(
           "DataColumnSidecarsByRangeRequestMessage",
           namedSchema("start_slot", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("count", SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedSchema(
-              "columns", SszUInt64ListSchema.create(specConfigEip7594.getNumberOfColumns())));
+          namedSchema("columns", SszUInt64ListSchema.create(specConfig.getNumberOfColumns())));
     }
 
     @Override

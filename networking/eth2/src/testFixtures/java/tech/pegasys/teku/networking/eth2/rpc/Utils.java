@@ -35,7 +35,7 @@ public class Utils {
    * of test {@code ByteBuf}'s which are different combinations of slicing and sticking of the
    * original chunks. Zero-length {@code ByteBuf}s are also mixed up to the resulting lists
    */
-  public static List<List<ByteBuf>> generateTestSlices(Bytes... chunks) {
+  public static List<List<ByteBuf>> generateTestSlices(final Bytes... chunks) {
     int totalLen = Arrays.stream(chunks).mapToInt(Bytes::size).sum();
     List<List<ByteBuf>> splits =
         List.of(
@@ -87,7 +87,7 @@ public class Utils {
    * @param chunks The original chunks
    * @return
    */
-  private static List<Bytes> splitIntoEvenChunks(int chunkSize, Bytes... chunks) {
+  private static List<Bytes> splitIntoEvenChunks(final int chunkSize, final Bytes... chunks) {
     final Bytes allBytes = Bytes.concatenate(chunks);
     final List<Bytes> evenChunks = new ArrayList<>();
     for (int i = 0; i < allBytes.size(); i += chunkSize) {
@@ -97,7 +97,7 @@ public class Utils {
     return evenChunks;
   }
 
-  private static List<List<ByteBuf>> addZeroLenBuffers(List<List<ByteBuf>> bufSets) {
+  private static List<List<ByteBuf>> addZeroLenBuffers(final List<List<ByteBuf>> bufSets) {
     return bufSets.stream()
         .map(
             set ->
@@ -107,7 +107,7 @@ public class Utils {
         .collect(Collectors.toList());
   }
 
-  private static List<ByteBuf> shiftedSlices(int shift, Bytes... chunks) {
+  private static List<ByteBuf> shiftedSlices(final int shift, final Bytes... chunks) {
     AtomicInteger sum = new AtomicInteger(0);
     IntStream pos =
         IntStream.concat(
@@ -121,7 +121,7 @@ public class Utils {
     return slice(toByteBuf(chunks), pos.toArray());
   }
 
-  private static List<ByteBuf> slice(ByteBuf src, int... pos) {
+  private static List<ByteBuf> slice(final ByteBuf src, final int... pos) {
     int[] pos1 =
         Arrays.stream(pos)
             .map(i -> i >= 0 ? i : src.readableBytes() + i)

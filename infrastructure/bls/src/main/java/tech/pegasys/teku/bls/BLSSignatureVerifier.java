@@ -75,7 +75,8 @@ public interface BLSSignatureVerifier {
   boolean verify(List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature);
 
   /** Shortcut to {@link #verify(List, Bytes, BLSSignature)} for non-aggregate case */
-  default boolean verify(BLSPublicKey publicKey, Bytes message, BLSSignature signature) {
+  default boolean verify(
+      final BLSPublicKey publicKey, final Bytes message, final BLSSignature signature) {
     return verify(Collections.singletonList(publicKey), message, signature);
   }
 

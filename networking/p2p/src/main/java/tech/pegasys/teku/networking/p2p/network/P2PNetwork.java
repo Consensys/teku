@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.network;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -82,11 +83,11 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
 
   int getPeerCount();
 
-  String getNodeAddress();
+  List<String> getNodeAddresses();
 
   NodeId getNodeId();
 
-  int getListenPort();
+  List<Integer> getListenPorts();
 
   /**
    * Get the Ethereum Node Record (ENR) for the local node, if one exists.
@@ -97,7 +98,7 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
 
   Optional<UInt256> getDiscoveryNodeId();
 
-  Optional<String> getDiscoveryAddress();
+  Optional<List<String>> getDiscoveryAddresses();
 
   Optional<DiscoveryNetwork<?>> getDiscoveryNetwork();
 

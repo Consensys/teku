@@ -158,7 +158,7 @@ public class StoreConfig {
     }
 
     public Builder earliestAvailableBlockSlotFrequency(
-        int earliestAvailableBlockSlotQueryFrequency) {
+        final int earliestAvailableBlockSlotQueryFrequency) {
       this.earliestAvailableBlockSlotFrequency = earliestAvailableBlockSlotQueryFrequency;
       return this;
     }

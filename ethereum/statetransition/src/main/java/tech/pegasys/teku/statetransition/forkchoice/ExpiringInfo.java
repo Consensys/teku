@@ -18,7 +18,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public abstract class ExpiringInfo {
   private final UInt64 expirySlot;
 
-  ExpiringInfo(UInt64 expirySlot) {
+  ExpiringInfo(final UInt64 expirySlot) {
     this.expirySlot = expirySlot;
   }
 

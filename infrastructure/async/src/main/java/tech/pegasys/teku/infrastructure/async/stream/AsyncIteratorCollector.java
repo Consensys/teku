@@ -22,25 +22,25 @@ class AsyncIteratorCollector<T, A, R> implements AsyncStreamHandler<T> {
 
   private final SafeFuture<R> promise = new SafeFuture<>();
 
-  public AsyncIteratorCollector(Collector<T, A, R> collector) {
+  public AsyncIteratorCollector(final Collector<T, A, R> collector) {
     this.collector = collector;
     this.accumulator = collector.supplier().get();
   }
 
   @Override
-  public SafeFuture<Boolean> onNext(T t) {
+  public SafeFuture<Boolean> onNext(final T t) {
     collector.accumulator().accept(accumulator, t);
     return TRUE_FUTURE;
   }
 
   @Override
   public void onComplete() {
-    R result = collector.finisher().apply(accumulator);
+    final R result = collector.finisher().apply(accumulator);
     promise.complete(result);
   }
 
   @Override
-  public void onError(Throwable t) {
+  public void onError(final Throwable t) {
     promise.completeExceptionally(t);
   }
 

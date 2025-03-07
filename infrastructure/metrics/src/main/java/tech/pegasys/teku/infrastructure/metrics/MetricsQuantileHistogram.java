@@ -212,7 +212,7 @@ public class MetricsQuantileHistogram {
       final String metricName,
       final String quantileLabelValue,
       final List<String> labelValues,
-      double percentile,
+      final double percentile,
       final SynchronizedHistogram histogram) {
     return new MetricFamilySamples.Sample(
         metricName,

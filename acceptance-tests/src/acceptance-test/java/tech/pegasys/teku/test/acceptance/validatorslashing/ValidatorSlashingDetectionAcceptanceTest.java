@@ -47,11 +47,11 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
   final String slashingActionLog =
       "Validator slashing detection is enabled and validator(s) with public key(s) %s detected as slashed. "
           + "Shutting down...";
-  final int shutdownWaitingSeconds = 60;
+  final int shutdownWaitingSeconds = 90;
 
   enum SlashingEventType {
     PROPOSER_SLASHING,
-    ATTESTER_SLASHING;
+    ATTESTER_SLASHING
   }
 
   static Stream<Arguments> getSlashingEventTypes() {
@@ -72,10 +72,10 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
       final SlashingEventType slashingEventType)
       throws IOException {
     switch (slashingEventType) {
-      case ATTESTER_SLASHING -> tekuNode.postAttesterSlashing(
-          slashingSlot, slashedIndex, slashedValidatorSecretKey);
-      case PROPOSER_SLASHING -> tekuNode.postProposerSlashing(
-          slashingSlot, slashedIndex, slashedValidatorSecretKey);
+      case ATTESTER_SLASHING ->
+          tekuNode.postAttesterSlashing(slashingSlot, slashedIndex, slashedValidatorSecretKey);
+      case PROPOSER_SLASHING ->
+          tekuNode.postProposerSlashing(slashingSlot, slashedIndex, slashedValidatorSecretKey);
     }
   }
 }

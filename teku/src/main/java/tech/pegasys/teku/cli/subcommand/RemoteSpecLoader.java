@@ -26,7 +26,6 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuth;
-import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorMinimalTypeDefClient;
 
 class RemoteSpecLoader {
@@ -54,14 +53,15 @@ class RemoteSpecLoader {
     } catch (final Throwable ex) {
       final String errMsg =
           String.format(
-              "Failed to retrieve network spec from beacon node endpoint '%s'.\nDetails: %s",
+              "Failed to retrieve network spec from beacon node endpoint '%s'.\nDetails: %s."
+                  + "\nEnsure local and remote software versions are up-to-date.",
               apiClient.getBaseEndpoint(), ex.getMessage());
       throw new InvalidConfigurationException(errMsg, ex);
     }
   }
 
-  static OkHttpValidatorRestApiClient createApiClient(final URI endpoint) {
-    return createApiClients(List.of(endpoint)).get(0);
+  static OkHttpValidatorMinimalTypeDefClient createTypeDefClient(final URI endpoint) {
+    return createTypeDefClients(List.of(endpoint)).get(0);
   }
 
   private static Spec getSpecWithFailovers(
@@ -100,24 +100,6 @@ class RemoteSpecLoader {
     SubCommandLogger.SUB_COMMAND_LOG.error(ex.getMessage());
   }
 
-  private static List<OkHttpValidatorRestApiClient> createApiClients(
-      final List<URI> baseEndpoints) {
-    final OkHttpClient.Builder httpClientBuilder =
-        new OkHttpClient.Builder().readTimeout(30, TimeUnit.SECONDS);
-    List<HttpUrl> apiEndpoints = baseEndpoints.stream().map(HttpUrl::get).toList();
-    if (apiEndpoints.size() > 1) {
-      OkHttpClientAuth.addAuthInterceptorForMultipleEndpoints(apiEndpoints, httpClientBuilder);
-    } else {
-      OkHttpClientAuth.addAuthInterceptor(apiEndpoints.get(0), httpClientBuilder);
-    }
-    // Strip any authentication info from the URL(s) to ensure it doesn't get logged.
-    apiEndpoints = stripAuthentication(apiEndpoints);
-    final OkHttpClient okHttpClient = httpClientBuilder.build();
-    return apiEndpoints.stream()
-        .map(apiEndpoint -> new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient))
-        .toList();
-  }
-
   private static List<OkHttpValidatorMinimalTypeDefClient> createTypeDefClients(
       final List<URI> baseEndpoints) {
     final OkHttpClient.Builder httpClientBuilder =
@@ -132,7 +114,7 @@ class RemoteSpecLoader {
     apiEndpoints = stripAuthentication(apiEndpoints);
     final OkHttpClient okHttpClient = httpClientBuilder.build();
     return apiEndpoints.stream()
-        .map(apiEndpoint -> new OkHttpValidatorMinimalTypeDefClient(okHttpClient, apiEndpoint))
+        .map(apiEndpoint -> new OkHttpValidatorMinimalTypeDefClient(apiEndpoint, okHttpClient))
         .toList();
   }
 

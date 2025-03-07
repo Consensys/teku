@@ -51,12 +51,15 @@ public abstract class AbstractSszListSchema<
   private final SszLengthBounds sszLengthBounds;
   private final DeserializableTypeDefinition<SszListT> jsonTypeDefinition;
 
-  protected AbstractSszListSchema(SszSchema<ElementDataT> elementSchema, long maxLength) {
+  protected AbstractSszListSchema(
+      final SszSchema<ElementDataT> elementSchema, final long maxLength) {
     this(elementSchema, maxLength, SszSchemaHints.none());
   }
 
   protected AbstractSszListSchema(
-      SszSchema<ElementDataT> elementSchema, long maxLength, SszSchemaHints hints) {
+      final SszSchema<ElementDataT> elementSchema,
+      final long maxLength,
+      final SszSchemaHints hints) {
     super(maxLength, elementSchema, hints);
     this.compatibleVectorSchema =
         new SszVectorSchemaImpl<>(elementSchema, getMaxLength(), true, getHints());
@@ -71,7 +74,7 @@ public abstract class AbstractSszListSchema<
     return createTree(getCompatibleVectorSchema().getDefaultTree(), 0);
   }
 
-  protected TreeNode createTree(TreeNode dataNode, int length) {
+  protected TreeNode createTree(final TreeNode dataNode, final int length) {
     return BranchNode.create(dataNode, toLengthNode(length));
   }
 
@@ -88,7 +91,7 @@ public abstract class AbstractSszListSchema<
   }
 
   @Override
-  public long getChildGeneralizedIndex(long elementIndex) {
+  public long getChildGeneralizedIndex(final long elementIndex) {
     return GIndexUtil.gIdxCompose(
         GIndexUtil.LEFT_CHILD_G_INDEX, super.getChildGeneralizedIndex(elementIndex));
   }
@@ -99,7 +102,7 @@ public abstract class AbstractSszListSchema<
   }
 
   @Override
-  public int getSszVariablePartSize(TreeNode node) {
+  public int getSszVariablePartSize(final TreeNode node) {
     int length = getLength(node);
     SszSchema<?> elementSchema = getElementSchema();
     if (elementSchema.isFixedSize()) {
@@ -121,7 +124,7 @@ public abstract class AbstractSszListSchema<
   }
 
   @Override
-  public int sszSerializeTree(TreeNode node, SszWriter writer) {
+  public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
     int elementsCount = getLength(node);
     if (getElementSchema().equals(SszPrimitiveSchemas.BIT_SCHEMA)) {
       throw new UnsupportedOperationException(
@@ -133,7 +136,7 @@ public abstract class AbstractSszListSchema<
   }
 
   @Override
-  public TreeNode sszDeserializeTree(SszReader reader) {
+  public TreeNode sszDeserializeTree(final SszReader reader) {
     if (getElementSchema().equals(SszPrimitiveSchemas.BIT_SCHEMA)) {
       throw new UnsupportedOperationException(
           "BitlistImpl deserialization is only supported by SszBitlistSchema");
@@ -277,24 +280,24 @@ public abstract class AbstractSszListSchema<
     return BranchNode.create(vectorNode, toLengthNode(length));
   }
 
-  private static TreeNode toLengthNode(int length) {
+  private static TreeNode toLengthNode(final int length) {
     return length == 0
         ? LeafNode.ZERO_LEAVES[8]
         : LeafNode.create(Bytes.ofUnsignedLong(length, ByteOrder.LITTLE_ENDIAN));
   }
 
-  private static long fromLengthNode(TreeNode lengthNode) {
+  private static long fromLengthNode(final TreeNode lengthNode) {
     assert lengthNode instanceof LeafNode;
     return ((LeafNode) lengthNode).getData().toLong(ByteOrder.LITTLE_ENDIAN);
   }
 
-  protected static int getLength(TreeNode listNode) {
+  protected static int getLength(final TreeNode listNode) {
     long longLength = fromLengthNode(listNode.get(GIndexUtil.RIGHT_CHILD_G_INDEX));
     assert longLength < Integer.MAX_VALUE;
     return (int) longLength;
   }
 
-  protected static TreeNode getVectorNode(TreeNode listNode) {
+  protected static TreeNode getVectorNode(final TreeNode listNode) {
     return listNode.get(GIndexUtil.LEFT_CHILD_G_INDEX);
   }
 
@@ -323,7 +326,7 @@ public abstract class AbstractSszListSchema<
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

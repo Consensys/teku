@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
+import tech.pegasys.teku.storage.archive.nooparchive.DataArchiveNoopWriter;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -392,7 +393,9 @@ class StoreTest extends AbstractStoreTest {
                 maybeEarliestBlobSidecarSlot.isPresent()
                     && maybeEarliestBlobSidecarSlot.get().equals(UInt64.ZERO));
 
-    storageSystem.database().pruneOldestBlobSidecars(UInt64.valueOf(5), 5);
+    storageSystem
+        .database()
+        .pruneOldestBlobSidecars(UInt64.valueOf(5), 3, new DataArchiveNoopWriter<>());
 
     assertThat(store.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValueMatching(
@@ -402,9 +405,9 @@ class StoreTest extends AbstractStoreTest {
   }
 
   private void setProtoNodeDataForBlock(
-      SignedBlockAndState blockAndState,
-      BlockCheckpoints headCheckpoint,
-      BlockCheckpoints parentCheckpoint) {
+      final SignedBlockAndState blockAndState,
+      final BlockCheckpoints headCheckpoint,
+      final BlockCheckpoints parentCheckpoint) {
     final Bytes32 root = blockAndState.getRoot();
     final Bytes32 parentRoot = blockAndState.getParentRoot();
     final ProtoNodeData protoNodeData =
@@ -434,7 +437,7 @@ class StoreTest extends AbstractStoreTest {
   }
 
   private void setProtoNodeDataForBlock(
-      SignedBlockAndState blockAndState, final UInt64 headValue, final UInt64 parentValue) {
+      final SignedBlockAndState blockAndState, final UInt64 headValue, final UInt64 parentValue) {
     final Bytes32 root = blockAndState.getRoot();
     final Bytes32 parentRoot = blockAndState.getParentRoot();
     final ProtoNodeData protoNodeData =

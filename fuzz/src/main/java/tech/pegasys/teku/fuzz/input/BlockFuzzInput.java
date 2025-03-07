@@ -35,7 +35,8 @@ public class BlockFuzzInput extends Container2<BlockFuzzInput, BeaconState, Sign
   }
 
   private BlockFuzzInput(
-      ContainerSchema2<BlockFuzzInput, BeaconState, SignedBeaconBlock> type, TreeNode backingNode) {
+      final ContainerSchema2<BlockFuzzInput, BeaconState, SignedBeaconBlock> type,
+      final TreeNode backingNode) {
     super(type, backingNode);
   }
 

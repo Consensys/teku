@@ -30,15 +30,15 @@ public class AttestationPerformance {
   final int correctHeadBlockCount;
 
   public AttestationPerformance(
-      UInt64 epoch,
-      int numberOfExpectedAttestations,
-      int numberOfProducedAttestations,
-      int numberOfIncludedAttestations,
-      int inclusionDistanceMax,
-      int inclusionDistanceMin,
-      double inclusionDistanceAverage,
-      int correctTargetCount,
-      int correctHeadBlockCount) {
+      final UInt64 epoch,
+      final int numberOfExpectedAttestations,
+      final int numberOfProducedAttestations,
+      final int numberOfIncludedAttestations,
+      final int inclusionDistanceMax,
+      final int inclusionDistanceMin,
+      final double inclusionDistanceAverage,
+      final int correctTargetCount,
+      final int correctHeadBlockCount) {
     this.epoch = epoch;
     this.numberOfExpectedAttestations = numberOfExpectedAttestations;
     this.numberOfProducedAttestations = numberOfProducedAttestations;
@@ -50,12 +50,13 @@ public class AttestationPerformance {
     this.correctHeadBlockCount = correctHeadBlockCount;
   }
 
-  public static AttestationPerformance empty(UInt64 epoch, int numberOfExpectedAttestations) {
+  public static AttestationPerformance empty(
+      final UInt64 epoch, final int numberOfExpectedAttestations) {
     return new AttestationPerformance(epoch, numberOfExpectedAttestations, 0, 0, 0, 0, 0, 0, 0);
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

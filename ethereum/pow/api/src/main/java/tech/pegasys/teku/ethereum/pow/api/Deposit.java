@@ -30,11 +30,11 @@ public class Deposit {
   private final UInt64 merkle_tree_index;
 
   public Deposit(
-      BLSPublicKey pubkey,
-      Bytes32 withdrawal_credentials,
-      BLSSignature signature,
-      UInt64 amount,
-      UInt64 merkle_tree_index) {
+      final BLSPublicKey pubkey,
+      final Bytes32 withdrawal_credentials,
+      final BLSSignature signature,
+      final UInt64 amount,
+      final UInt64 merkle_tree_index) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.signature = signature;

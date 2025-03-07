@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.debug;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllSupportedMilestones;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_CONSENSUS_HEADER_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -65,14 +66,16 @@ public class GetState extends RestApiEndpoint {
                 SC_OK,
                 "Request successful",
                 getResponseType(schemaDefinitionCache),
-                sszResponseType())
+                sszResponseType(),
+                ETH_CONSENSUS_HEADER_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final SafeFuture<Optional<StateAndMetaData>> future =
         chainDataProvider.getBeaconStateAndMetadata(request.getPathParameter(PARAMETER_STATE_ID));
 
@@ -91,7 +94,7 @@ public class GetState extends RestApiEndpoint {
   }
 
   private static SerializableTypeDefinition<StateAndMetaData> getResponseType(
-      SchemaDefinitionCache schemaDefinitionCache) {
+      final SchemaDefinitionCache schemaDefinitionCache) {
     return SerializableTypeDefinition.<StateAndMetaData>object()
         .name("GetStateV2Response")
         .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)

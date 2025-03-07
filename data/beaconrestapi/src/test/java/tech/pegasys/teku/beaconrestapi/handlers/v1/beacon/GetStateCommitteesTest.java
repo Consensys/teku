@@ -80,7 +80,7 @@ public class GetStateCommitteesTest extends AbstractMigratedBeaconHandlerWithCha
 
   @ParameterizedTest
   @ValueSource(strings = {"index", "slot", "epoch"})
-  public void shouldFailIfEpochInvalid(String queryParam) {
+  public void shouldFailIfEpochInvalid(final String queryParam) {
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
             .metadata(handler.getMetadata())

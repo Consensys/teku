@@ -23,11 +23,11 @@ public interface SszUnionSchema<SszUnionT extends SszUnion> extends SszSchema<Ss
   int SELECTOR_SIZE_BYTES = 1;
   int NONE_VALUE_SELECTOR = 0;
 
-  static SszUnionSchema<SszUnion> create(SszSchema<?>... childrenSchemas) {
+  static SszUnionSchema<SszUnion> create(final SszSchema<?>... childrenSchemas) {
     return create(Arrays.asList(childrenSchemas));
   }
 
-  static SszUnionSchema<SszUnion> create(List<SszSchema<?>> childrenSchemas) {
+  static SszUnionSchema<SszUnion> create(final List<SszSchema<?>> childrenSchemas) {
     return SszUnionSchemaImpl.createGenericSchema(childrenSchemas);
   }
 
@@ -38,7 +38,7 @@ public interface SszUnionSchema<SszUnionT extends SszUnion> extends SszSchema<Ss
    *
    * @throws IndexOutOfBoundsException if selector >= getTypesCount
    */
-  default SszSchema<?> getChildSchema(int selector) {
+  default SszSchema<?> getChildSchema(final int selector) {
     return getChildrenSchemas().get(selector);
   }
 

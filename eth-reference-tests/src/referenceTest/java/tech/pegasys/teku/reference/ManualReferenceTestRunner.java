@@ -42,7 +42,7 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
    *
    * <p>May be overridden by the ENV_TEST_TYPE environment variable.
    */
-  private static final String TEST_TYPE = "fork_choice";
+  private static final String TEST_TYPE = "";
 
   /**
    * Filter test to run to those from the specified spec. One of general, minimal or mainnet

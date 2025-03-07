@@ -24,11 +24,12 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 public class SszBytes32VectorImpl extends SszPrimitiveVectorImpl<Bytes32, SszBytes32>
     implements SszBytes32Vector {
 
-  public SszBytes32VectorImpl(SszCompositeSchema<?> schema, Supplier<TreeNode> lazyBackingNode) {
+  public SszBytes32VectorImpl(
+      final SszCompositeSchema<?> schema, final Supplier<TreeNode> lazyBackingNode) {
     super(schema, lazyBackingNode);
   }
 
-  public SszBytes32VectorImpl(SszCompositeSchema<?> schema, TreeNode backingNode) {
+  public SszBytes32VectorImpl(final SszCompositeSchema<?> schema, final TreeNode backingNode) {
     super(schema, backingNode);
   }
 

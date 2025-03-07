@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -21,6 +23,7 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockGossipManager extends AbstractGossipManager<SignedBeaconBlock> {
@@ -32,7 +35,8 @@ public class BlockGossipManager extends AbstractGossipManager<SignedBeaconBlock>
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<SignedBeaconBlock> processor) {
+      final OperationProcessor<SignedBeaconBlock> processor,
+      final DebugDataDumper debugDataDumper) {
     super(
         recentChainData,
         GossipTopicName.BEACON_BLOCK,
@@ -44,12 +48,15 @@ public class BlockGossipManager extends AbstractGossipManager<SignedBeaconBlock>
         spec.atEpoch(forkInfo.getFork().getEpoch())
             .getSchemaDefinitions()
             .getSignedBeaconBlockSchema(),
+        block -> Optional.of(block.getSlot()),
         block -> spec.computeEpochAtSlot(block.getSlot()),
-        spec.getNetworkingConfig());
+        spec.getNetworkingConfig(),
+        GossipFailureLogger.createNonSuppressing(GossipTopicName.BEACON_BLOCK.toString()),
+        debugDataDumper);
   }
 
-  public void publishBlock(final SignedBeaconBlock message) {
-    publishMessage(message);
+  public SafeFuture<Void> publishBlock(final SignedBeaconBlock message) {
+    return publishMessageWithFeedback(message);
   }
 
   @Override

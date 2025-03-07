@@ -85,7 +85,7 @@ public class FileKeyValueStoreTest {
     checkAllBytesEqual(finalVal.get());
   }
 
-  private static void checkAllBytesEqual(Bytes bb) {
+  private static void checkAllBytesEqual(final Bytes bb) {
     byte b = bb.get(0);
     for (int i = 1; i < bb.size(); i++) {
       if (bb.get(i) != b) {

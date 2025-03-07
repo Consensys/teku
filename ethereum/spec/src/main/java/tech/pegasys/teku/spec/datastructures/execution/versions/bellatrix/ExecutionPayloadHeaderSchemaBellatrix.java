@@ -128,7 +128,7 @@ public class ExecutionPayloadHeaderSchemaBellatrix
   }
 
   @Override
-  public ExecutionPayloadHeaderBellatrix createFromBackingNode(TreeNode node) {
+  public ExecutionPayloadHeaderBellatrix createFromBackingNode(final TreeNode node) {
     return new ExecutionPayloadHeaderBellatrix(this, node);
   }
 
@@ -148,5 +148,10 @@ public class ExecutionPayloadHeaderSchemaBellatrix
 
   public SszByteListSchema<?> getExtraDataSchema() {
     return (SszByteListSchema<?>) getFieldSchema10();
+  }
+
+  @Override
+  public ExecutionPayloadHeaderSchemaBellatrix toVersionBellatrixRequired() {
+    return this;
   }
 }

@@ -20,12 +20,12 @@ class FutureAsyncIteratorImpl<T> extends AsyncIterator<T> {
 
   private final SafeFuture<T> future;
 
-  FutureAsyncIteratorImpl(CompletionStage<T> future) {
+  FutureAsyncIteratorImpl(final CompletionStage<T> future) {
     this.future = SafeFuture.of(future);
   }
 
   @Override
-  public void iterate(AsyncStreamHandler<T> callback) {
+  public void iterate(final AsyncStreamHandler<T> callback) {
     future.finish(
         succ -> callback.onNext(succ).finish(__ -> callback.onComplete(), callback::onError),
         callback::onError);

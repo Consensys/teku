@@ -31,7 +31,8 @@ public interface MutableBeaconStateBellatrix
                     "Expected a bellatrix state but got: " + state.getClass().getSimpleName()));
   }
 
-  default void setLatestExecutionPayloadHeader(ExecutionPayloadHeader executionPayloadHeader) {
+  default void setLatestExecutionPayloadHeader(
+      final ExecutionPayloadHeader executionPayloadHeader) {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER);
     set(fieldIndex, executionPayloadHeader);
@@ -48,7 +49,7 @@ public interface MutableBeaconStateBellatrix
   @Override
   default <E1 extends Exception, E2 extends Exception, E3 extends Exception>
       BeaconStateBellatrix updatedBellatrix(
-          Mutator<MutableBeaconStateBellatrix, E1, E2, E3> mutator) throws E1, E2, E3 {
+          final Mutator<MutableBeaconStateBellatrix, E1, E2, E3> mutator) throws E1, E2, E3 {
     throw new UnsupportedOperationException();
   }
 }

@@ -22,7 +22,7 @@ public interface SlashingRiskAction {
 
   void perform(final List<BLSPublicKey> doppelgangers);
 
-  default void perform(BLSPublicKey pubKey) {
+  default void perform(final BLSPublicKey pubKey) {
     perform(List.of(pubKey));
   }
 

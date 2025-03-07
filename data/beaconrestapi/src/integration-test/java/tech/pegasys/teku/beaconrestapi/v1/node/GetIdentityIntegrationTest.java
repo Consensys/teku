@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -24,9 +25,6 @@ import java.util.Optional;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.node.Identity;
-import tech.pegasys.teku.api.response.v1.node.IdentityResponse;
-import tech.pegasys.teku.api.schema.Metadata;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -48,8 +46,8 @@ public class GetIdentityIntegrationTest extends AbstractDataBackedRestAPIIntegra
   void setup() {
     when(eth2P2PNetwork.getNodeId()).thenReturn(node1);
     when(eth2P2PNetwork.getEnr()).thenReturn(Optional.of(enr));
-    when(eth2P2PNetwork.getNodeAddress()).thenReturn(address);
-    when(eth2P2PNetwork.getDiscoveryAddress()).thenReturn(Optional.of(discoveryAddress));
+    when(eth2P2PNetwork.getNodeAddresses()).thenReturn(List.of(address));
+    when(eth2P2PNetwork.getDiscoveryAddresses()).thenReturn(Optional.of(List.of(discoveryAddress)));
   }
 
   @Test
@@ -62,18 +60,10 @@ public class GetIdentityIntegrationTest extends AbstractDataBackedRestAPIIntegra
 
     when(eth2P2PNetwork.getMetadata()).thenReturn(metadataMessage);
 
-    final Response response = get();
+    final Response response = getResponse(GetIdentity.ROUTE);
     assertThat(response.code()).isEqualTo(SC_OK);
-    final IdentityResponse identityResponse =
-        jsonProvider.jsonToObject(response.body().string(), IdentityResponse.class);
-    assertThat(identityResponse.data)
-        .isEqualTo(
-            new Identity(
-                node1.toBase58(),
-                enr,
-                List.of(address),
-                List.of(discoveryAddress),
-                new Metadata(metadataMessage)));
+    checkResponseData(
+        response, "{\"seq_number\":\"4666673844721362956\",\"attnets\":\"0x0288000000000000\"}");
   }
 
   @Test
@@ -87,23 +77,16 @@ public class GetIdentityIntegrationTest extends AbstractDataBackedRestAPIIntegra
 
     when(eth2P2PNetwork.getMetadata()).thenReturn(metadataMessage);
 
-    final Response response = get();
+    final Response response = getResponse(GetIdentity.ROUTE);
     assertThat(response.code()).isEqualTo(SC_OK);
-    final IdentityResponse identityResponse =
-        jsonProvider.jsonToObject(response.body().string(), IdentityResponse.class);
-    assertThat(identityResponse.data)
-        .isEqualTo(
-            new Identity(
-                node1.toBase58(),
-                enr,
-                List.of(address),
-                List.of(discoveryAddress),
-                new Metadata(metadataMessage)));
+    checkResponseData(
+        response,
+        "{\"seq_number\":\"4666673844721362956\",\"attnets\":\"0x0288000000000000\",\"syncnets\":\"0x0f\"}");
   }
 
   @Test
-  public void shouldReturnNetworkIdentityEip7594() throws Exception {
-    startRestAPIAtGenesis(SpecMilestone.EIP7594);
+  public void shouldReturnNetworkIdentityFulu() throws Exception {
+    startRestAPIAtGenesis(SpecMilestone.FULU);
 
     final MetadataMessage metadataMessage =
         spec.getGenesisSchemaDefinitions()
@@ -112,21 +95,21 @@ public class GetIdentityIntegrationTest extends AbstractDataBackedRestAPIIntegra
 
     when(eth2P2PNetwork.getMetadata()).thenReturn(metadataMessage);
 
-    final Response response = get();
+    final Response response = getResponse(GetIdentity.ROUTE);
     assertThat(response.code()).isEqualTo(SC_OK);
-    final IdentityResponse identityResponse =
-        jsonProvider.jsonToObject(response.body().string(), IdentityResponse.class);
-    assertThat(identityResponse.data)
-        .isEqualTo(
-            new Identity(
-                node1.toBase58(),
-                enr,
-                List.of(address),
-                List.of(discoveryAddress),
-                new Metadata(metadataMessage)));
+    checkResponseData(
+        response,
+        "{\"seq_number\":\"4666673844721362956\",\"attnets\":\"0x0288000000000000\",\"syncnets\":\"0x0f\"}");
   }
 
-  private Response get() throws IOException {
-    return getResponse(GetIdentity.ROUTE);
+  private void checkResponseData(final Response response, final String metadata)
+      throws IOException {
+    final JsonNode data = getResponseData(response);
+
+    assertThat(data.get("peer_id").asText()).isEqualTo(node1.toBase58());
+    assertThat(data.get("enr").asText()).isEqualTo(enr);
+    assertThat(data.get("p2p_addresses").get(0).asText()).isEqualTo(address);
+    assertThat(data.get("discovery_addresses").get(0).asText()).isEqualTo(discoveryAddress);
+    assertThat(data.get("metadata").toString()).isEqualTo(metadata);
   }
 }

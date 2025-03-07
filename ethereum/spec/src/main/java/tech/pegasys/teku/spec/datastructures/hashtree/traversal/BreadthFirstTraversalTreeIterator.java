@@ -23,12 +23,12 @@ class BreadthFirstTraversalTreeIterator implements Iterator<Bytes32> {
   private final Deque<Bytes32> remainingNodes = new ArrayDeque<>();
   private final ChildLookup childLookup;
 
-  private BreadthFirstTraversalTreeIterator(final Bytes32 rootHash, ChildLookup childLookup) {
+  private BreadthFirstTraversalTreeIterator(final Bytes32 rootHash, final ChildLookup childLookup) {
     this.childLookup = childLookup;
     remainingNodes.push(rootHash);
   }
 
-  public static Iterator<Bytes32> create(final Bytes32 rootNode, ChildLookup childLookup) {
+  public static Iterator<Bytes32> create(final Bytes32 rootNode, final ChildLookup childLookup) {
     return new BreadthFirstTraversalTreeIterator(rootNode, childLookup);
   }
 

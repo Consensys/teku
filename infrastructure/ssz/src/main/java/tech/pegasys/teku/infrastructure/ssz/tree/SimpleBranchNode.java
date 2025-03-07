@@ -23,7 +23,7 @@ class SimpleBranchNode implements BranchNode, TreeNode {
   private final TreeNode right;
   private volatile Bytes32 cachedHash = null;
 
-  public SimpleBranchNode(TreeNode left, TreeNode right) {
+  public SimpleBranchNode(final TreeNode left, final TreeNode right) {
     this.left = left;
     this.right = right;
   }
@@ -39,7 +39,7 @@ class SimpleBranchNode implements BranchNode, TreeNode {
   }
 
   @Override
-  public BranchNode rebind(boolean left, TreeNode newNode) {
+  public BranchNode rebind(final boolean left, final TreeNode newNode) {
     return left ? new SimpleBranchNode(newNode, right()) : new SimpleBranchNode(left(), newNode);
   }
 

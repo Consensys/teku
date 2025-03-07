@@ -73,9 +73,9 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
@@ -96,6 +96,7 @@ import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
@@ -118,7 +119,7 @@ class ForkChoiceTest {
   private final AvailabilityChecker<BlobSidecar> blobSidecarsAvailabilityChecker =
       mock(AvailabilityChecker.class);
 
-  private AttestationSchema attestationSchema;
+  private AttestationSchema<?> attestationSchema;
   private StorageSystem storageSystem;
   private ChainBuilder chainBuilder;
   private SignedBlockAndState genesis;
@@ -132,6 +133,7 @@ class ForkChoiceTest {
       mock(BlockBroadcastValidator.class);
   private final MergeTransitionBlockValidator transitionBlockValidator =
       mock(MergeTransitionBlockValidator.class);
+  private final DebugDataDumper debugDataDumper = mock(DebugDataDumper.class);
 
   private final InlineEventThread eventThread = new InlineEventThread();
 
@@ -169,6 +171,7 @@ class ForkChoiceTest {
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
+            debugDataDumper,
             metricsSystem);
 
     // Starting and mocks
@@ -289,8 +292,7 @@ class ForkChoiceTest {
   void onBlock_consensusValidationShouldNotResolveWhenEarlyFails() {
     setupWithSpec(TestSpecFactory.createMinimalDeneb());
     final List<SignedBlockAndState> signedBlockAndStates = chainBuilder.generateBlocksUpToSlot(2);
-    final SignedBlockAndState wrongBlockAndState =
-        signedBlockAndStates.get(signedBlockAndStates.size() - 1);
+    final SignedBlockAndState wrongBlockAndState = signedBlockAndStates.getLast();
 
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(wrongBlockAndState.getSlot());
 
@@ -308,11 +310,17 @@ class ForkChoiceTest {
 
     final BlockProcessor blockProcessor = mock(BlockProcessor.class);
     when(spec.getBlockProcessor(blockAndState.getSlot())).thenReturn(blockProcessor);
+    final Exception blockException = new StateTransitionException("error!");
     when(blockProcessor.processAndValidateBlock(any(), any(), any(), any()))
-        .thenThrow(new StateTransitionException("error!"));
+        .thenThrow(blockException);
 
     importBlockAndAssertFailure(blockAndState, FailureReason.FAILED_STATE_TRANSITION);
 
+    verify(debugDataDumper)
+        .saveInvalidBlock(
+            eq(blockAndState.getBlock()),
+            eq(FailureReason.FAILED_STATE_TRANSITION.toString()),
+            eq(Optional.of(blockException)));
     verify(blockBroadcastValidator, never()).onConsensusValidationSucceeded();
   }
 
@@ -329,7 +337,7 @@ class ForkChoiceTest {
     // let's prepare a mocked EL with lazy newPayload
     executionLayer = mock(ExecutionLayerChannelStub.class);
     final SafeFuture<PayloadStatus> payloadStatusSafeFuture = new SafeFuture<>();
-    when(executionLayer.engineNewPayload(any())).thenReturn(payloadStatusSafeFuture);
+    when(executionLayer.engineNewPayload(any(), any())).thenReturn(payloadStatusSafeFuture);
 
     // let's import a valid consensus block
     final SafeFuture<BlockImportResult> importResult =
@@ -342,8 +350,9 @@ class ForkChoiceTest {
 
     // resolve with a failure
     payloadStatusSafeFuture.complete(PayloadStatus.invalid(Optional.empty(), Optional.empty()));
-
     assertBlockImportFailure(importResult, FailureReason.FAILED_STATE_TRANSITION);
+    verify(debugDataDumper)
+        .saveInvalidBlock(any(), eq(FailureReason.FAILED_STATE_TRANSITION.toString()), any());
   }
 
   @Test
@@ -409,7 +418,7 @@ class ForkChoiceTest {
   @ParameterizedTest
   @MethodSource("provideArgumentsForShouldReorg")
   void onBlock_shouldReorgWhenProposerWeightingMakesForkBestChain(
-      long advanceTimeSlotMillis, boolean shouldReorg) {
+      final long advanceTimeSlotMillis, final boolean shouldReorg) {
     storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(2));
     final Spec spec = TestSpecFactory.createMinimalBellatrix();
     forkChoice =
@@ -424,6 +433,7 @@ class ForkChoiceTest {
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
+            DebugDataDumper.NOOP,
             metricsSystem);
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
@@ -743,6 +753,11 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().setCurrentSlot(slotToImport.increment());
     importBlockAndAssertFailure(
         chainBuilder.generateNextBlock(), FailureReason.FAILED_STATE_TRANSITION);
+    verify(debugDataDumper)
+        .saveInvalidBlock(
+            eq(chainBuilder.getLatestBlockAndState().getBlock()),
+            eq(FailureReason.FAILED_STATE_TRANSITION.toString()),
+            any());
   }
 
   @Test
@@ -779,7 +794,11 @@ class ForkChoiceTest {
     SignedBlockAndState invalidBlock = chainBuilder.generateNextBlock();
     importBlockAndAssertFailure(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
     assertThat(forkChoice.processHead(invalidBlock.getSlot())).isCompleted();
-
+    verify(debugDataDumper)
+        .saveInvalidBlock(
+            eq(invalidBlock.getBlock()),
+            eq(FailureReason.FAILED_STATE_TRANSITION.toString()),
+            any());
     assertHeadIsOptimistic(maybeValidBlock);
     assertThat(forkChoiceStrategy.getChainHeads().get(0).getRoot())
         .isEqualTo(maybeValidBlock.getRoot());
@@ -1178,7 +1197,7 @@ class ForkChoiceTest {
     importBlock(epoch2Block);
   }
 
-  private UInt64 prepFinalizeEpoch(long epoch) {
+  private UInt64 prepFinalizeEpoch(final long epoch) {
     final ChainUpdater chainUpdater = storageSystem.chainUpdater();
     final UInt64 epochPlus2StartSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(epoch).plus(2));
 
@@ -1389,7 +1408,7 @@ class ForkChoiceTest {
   }
 
   private Answer<Void> getOnForkChoiceUpdatedResultAnswer(
-      Optional<ForkChoiceUpdatedResult> result) {
+      final Optional<ForkChoiceUpdatedResult> result) {
     return invocation -> {
       result.ifPresent(
           forkChoiceUpdatedResult ->

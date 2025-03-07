@@ -26,6 +26,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.xerial.snappy.Snappy;
 import org.yaml.snakeyaml.LoaderOptions;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
@@ -85,7 +86,7 @@ public class TestDataUtils {
       throws IOException {
     final Path path = testDefinition.getTestDirectory().resolve(fileName);
     try (final InputStream in = Files.newInputStream(path)) {
-      return new ObjectMapper(YAML_FACTORY).readerFor(type).readValue(in);
+      return new ObjectMapper(YAML_FACTORY).readValue(in, type);
     }
   }
 
@@ -98,6 +99,17 @@ public class TestDataUtils {
     try (final YAMLParser in = YAML_FACTORY.createParser(Files.newInputStream(path))) {
       in.nextToken();
       return type.deserialize(in);
+    }
+  }
+
+  public static <T> T loadJson(
+      final TestDefinition testDefinition,
+      final String fileName,
+      final DeserializableTypeDefinition<T> type)
+      throws IOException {
+    final Path path = testDefinition.getTestDirectory().resolve(fileName);
+    try (final InputStream in = Files.newInputStream(path)) {
+      return JsonUtil.parse(in, type);
     }
   }
 }

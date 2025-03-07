@@ -504,7 +504,7 @@ public class DoppelgangerDetectorTest {
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(doppelgangers);
   }
 
-  private Stream<String> toAbbreviatedKeys(Set<BLSPublicKey> pubKeys) {
+  private Stream<String> toAbbreviatedKeys(final Set<BLSPublicKey> pubKeys) {
     return pubKeys.stream().map(BLSPublicKey::toAbbreviatedString);
   }
 }

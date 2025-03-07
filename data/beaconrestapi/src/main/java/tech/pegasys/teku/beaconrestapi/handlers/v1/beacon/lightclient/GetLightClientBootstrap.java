@@ -67,12 +67,13 @@ public class GetLightClientBootstrap extends RestApiEndpoint {
             .withNotFoundResponse()
             .withNotAcceptedResponse()
             .withNotImplementedResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final Bytes32 blockRoot = request.getPathParameter(BLOCK_ROOT_PARAMETER);
     final SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> future =
         chainDataProvider.getLightClientBoostrap(blockRoot);
@@ -92,7 +93,7 @@ public class GetLightClientBootstrap extends RestApiEndpoint {
   }
 
   private static SerializableTypeDefinition<ObjectAndMetaData<LightClientBootstrap>>
-      getResponseType(SchemaDefinitionCache schemaDefinitionCache) {
+      getResponseType(final SchemaDefinitionCache schemaDefinitionCache) {
     final SerializableTypeDefinition<LightClientBootstrap> lightClientBootstrapType =
         SchemaDefinitionsAltair.required(
                 schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ALTAIR))

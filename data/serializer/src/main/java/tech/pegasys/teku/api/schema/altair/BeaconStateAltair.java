@@ -137,9 +137,9 @@ public class BeaconStateAltair extends BeaconState implements State {
   }
 
   public static void applyAltairFields(
-      MutableBeaconStateAltair state,
-      SyncCommitteeSchema syncCommitteeSchema,
-      BeaconStateAltair instance) {
+      final MutableBeaconStateAltair state,
+      final SyncCommitteeSchema syncCommitteeSchema,
+      final BeaconStateAltair instance) {
     final SszList<SszByte> previousEpochParticipation =
         state
             .getPreviousEpochParticipation()

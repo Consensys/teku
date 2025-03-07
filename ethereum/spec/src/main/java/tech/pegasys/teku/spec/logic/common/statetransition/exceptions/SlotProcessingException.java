@@ -14,11 +14,11 @@
 package tech.pegasys.teku.spec.logic.common.statetransition.exceptions;
 
 public final class SlotProcessingException extends Exception {
-  public SlotProcessingException(String err) {
+  public SlotProcessingException(final String err) {
     super(err);
   }
 
-  public SlotProcessingException(Exception e) {
+  public SlotProcessingException(final Exception e) {
     super(e);
   }
 }

@@ -60,11 +60,11 @@ public abstract class AbstractSelectorFactory<T> {
     }
   }
 
-  public T stateRootSelector(Bytes32 stateRoot) {
+  public T stateRootSelector(final Bytes32 stateRoot) {
     throw new UnsupportedOperationException();
   }
 
-  public T blockRootSelector(Bytes32 blockRoot) {
+  public T blockRootSelector(final Bytes32 blockRoot) {
     throw new UnsupportedOperationException();
   }
 
@@ -84,7 +84,7 @@ public abstract class AbstractSelectorFactory<T> {
     throw new UnsupportedOperationException();
   }
 
-  public T slotSelector(UInt64 slot) {
+  public T slotSelector(final UInt64 slot) {
     throw new UnsupportedOperationException();
   }
 

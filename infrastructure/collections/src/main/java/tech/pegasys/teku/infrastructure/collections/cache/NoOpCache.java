@@ -43,12 +43,12 @@ public class NoOpCache<K, V> implements Cache<K, V> {
    * @return expected value result for provided key
    */
   @Override
-  public V get(K key, Function<K, V> fallback) {
+  public V get(final K key, final Function<K, V> fallback) {
     return fallback.apply(key);
   }
 
   @Override
-  public Optional<V> getCached(K key) {
+  public Optional<V> getCached(final K key) {
     return Optional.empty();
   }
 
@@ -58,10 +58,10 @@ public class NoOpCache<K, V> implements Cache<K, V> {
   }
 
   @Override
-  public void invalidate(K key) {}
+  public void invalidate(final K key) {}
 
   @Override
-  public void invalidateWithNewValue(K key, V newValue) {}
+  public void invalidateWithNewValue(final K key, final V newValue) {}
 
   @Override
   public void clear() {}

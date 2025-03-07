@@ -40,7 +40,8 @@ public class BlockHeaderFuzzInput
   }
 
   private BlockHeaderFuzzInput(
-      ContainerSchema2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> type, TreeNode backingNode) {
+      final ContainerSchema2<BlockHeaderFuzzInput, BeaconState, BeaconBlock> type,
+      final TreeNode backingNode) {
     super(type, backingNode);
   }
 

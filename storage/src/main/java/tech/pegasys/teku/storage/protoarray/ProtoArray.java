@@ -117,7 +117,7 @@ public class ProtoArray {
     return nodes;
   }
 
-  public void setPruneThreshold(int pruneThreshold) {
+  public void setPruneThreshold(final int pruneThreshold) {
     this.pruneThreshold = pruneThreshold;
   }
 
@@ -126,14 +126,14 @@ public class ProtoArray {
    * genesis block.
    */
   public void onBlock(
-      UInt64 blockSlot,
-      Bytes32 blockRoot,
-      Bytes32 parentRoot,
-      Bytes32 stateRoot,
-      BlockCheckpoints checkpoints,
-      UInt64 executionBlockNumber,
-      Bytes32 executionBlockHash,
-      boolean optimisticallyProcessed) {
+      final UInt64 blockSlot,
+      final Bytes32 blockRoot,
+      final Bytes32 parentRoot,
+      final Bytes32 stateRoot,
+      final BlockCheckpoints checkpoints,
+      final UInt64 executionBlockNumber,
+      final Bytes32 executionBlockHash,
+      final boolean optimisticallyProcessed) {
     if (indices.contains(blockRoot)) {
       return;
     }
@@ -442,7 +442,7 @@ public class ProtoArray {
    *   <li>The number of nodes in `this` is at least `this.pruneThreshold`.
    * </ul>
    */
-  public void maybePrune(Bytes32 finalizedRoot) {
+  public void maybePrune(final Bytes32 finalizedRoot) {
     int finalizedIndex =
         indices
             .get(finalizedRoot)
@@ -520,7 +520,7 @@ public class ProtoArray {
    * </ul>
    */
   @SuppressWarnings("StatementWithEmptyBody")
-  private void maybeUpdateBestChildAndDescendant(int parentIndex, int childIndex) {
+  private void maybeUpdateBestChildAndDescendant(final int parentIndex, final int childIndex) {
     ProtoNode child = getNodeByIndex(childIndex);
     ProtoNode parent = getNodeByIndex(parentIndex);
 
@@ -582,14 +582,14 @@ public class ProtoArray {
   }
 
   /** Helper for maybeUpdateBestChildAndDescendant */
-  private void changeToChild(ProtoNode parent, int childIndex) {
+  private void changeToChild(final ProtoNode parent, final int childIndex) {
     ProtoNode child = getNodeByIndex(childIndex);
     parent.setBestChildIndex(Optional.of(childIndex));
     parent.setBestDescendantIndex(Optional.of(child.getBestDescendantIndex().orElse(childIndex)));
   }
 
   /** Helper for maybeUpdateBestChildAndDescendant */
-  private void changeToNone(ProtoNode parent) {
+  private void changeToNone(final ProtoNode parent) {
     parent.setBestChildIndex(Optional.empty());
     parent.setBestDescendantIndex(Optional.empty());
   }
@@ -617,7 +617,7 @@ public class ProtoArray {
    * <p>Any node that has a different finalized or justified epoch should not be viable for the
    * head.
    */
-  public boolean nodeIsViableForHead(ProtoNode node) {
+  public boolean nodeIsViableForHead(final ProtoNode node) {
     if (node.isInvalid()) {
       return false;
     }

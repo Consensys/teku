@@ -38,10 +38,9 @@ import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -103,6 +102,7 @@ public abstract class AttestationUtil {
 
     final IndexedAttestationSchema indexedAttestationSchema =
         schemaDefinitions.getIndexedAttestationSchema();
+
     return indexedAttestationSchema.create(
         attestingIndices.stream()
             .sorted()
@@ -122,15 +122,14 @@ public abstract class AttestationUtil {
    * @see
    *     <a>https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#get_attesting_indices</a>
    */
-  public IntList getAttestingIndices(
-      final BeaconState state, final AttestationContainer attestation) {
-    return IntList.of(streamAttestingIndices(state, attestation).toArray());
+  public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
+    return IntList.of(
+        streamAttestingIndices(state, attestation.getData(), attestation.getAggregationBits())
+            .toArray());
   }
 
   public IntStream streamAttestingIndices(
-      final BeaconState state, final AttestationContainer attestation) {
-    final AttestationData data = attestation.getData();
-    final SszBitlist aggregationBits = attestation.getAggregationBits();
+      final BeaconState state, final AttestationData data, final SszBitlist aggregationBits) {
     final IntList committee =
         beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
     checkArgument(
@@ -188,7 +187,7 @@ public abstract class AttestationUtil {
         .thenApply(
             result -> {
               if (result.isSuccessful()) {
-                attestation.saveCommitteeShufflingSeed(state);
+                attestation.saveCommitteeShufflingSeedAndCommitteesSize(state);
                 attestation.setValidIndexedAttestation();
               }
               return result;
@@ -253,24 +252,39 @@ public abstract class AttestationUtil {
           AttestationProcessingResult.invalid("Attesting indices include non-existent validator"));
     }
 
-    final BLSSignature signature = indexedAttestation.getSignature();
+    return validateAttestationDataSignature(
+        fork,
+        state,
+        pubkeys,
+        indexedAttestation.getSignature(),
+        indexedAttestation.getData(),
+        signatureVerifier);
+  }
+
+  protected SafeFuture<AttestationProcessingResult> validateAttestationDataSignature(
+      final Fork fork,
+      final BeaconState state,
+      final List<BLSPublicKey> publicKeys,
+      final BLSSignature signature,
+      final AttestationData attestationData,
+      final AsyncBLSSignatureVerifier signatureVerifier) {
+
     final Bytes32 domain =
         beaconStateAccessors.getDomain(
             Domain.BEACON_ATTESTER,
-            indexedAttestation.getData().getTarget().getEpoch(),
+            attestationData.getTarget().getEpoch(),
             fork,
             state.getGenesisValidatorsRoot());
-    final Bytes signingRoot = miscHelpers.computeSigningRoot(indexedAttestation.getData(), domain);
+    final Bytes signingRoot = miscHelpers.computeSigningRoot(attestationData, domain);
 
     return signatureVerifier
-        .verify(pubkeys, signingRoot, signature)
+        .verify(publicKeys, signingRoot, signature)
         .thenApply(
             isValidSignature -> {
               if (isValidSignature) {
                 return AttestationProcessingResult.SUCCESSFUL;
               } else {
-                LOG.debug(
-                    "AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
+                LOG.debug("AttestationUtil.validateAttestationDataSignature: Verify signature");
                 return AttestationProcessingResult.invalid("Signature is invalid");
               }
             });

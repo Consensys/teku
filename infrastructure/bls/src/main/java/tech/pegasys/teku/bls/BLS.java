@@ -41,13 +41,14 @@ public class BLS {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  @SuppressWarnings("NonFinalStaticField")
   private static BLS12381 blsImpl;
 
   static {
     resetBlsImplementation();
   }
 
-  public static void setBlsImplementation(BLS12381 blsImpl) {
+  public static void setBlsImplementation(final BLS12381 blsImpl) {
     BLS.blsImpl = blsImpl;
   }
 
@@ -73,7 +74,7 @@ public class BLS {
    * @param message The message to sign, not null
    * @return The Signature, not null
    */
-  public static BLSSignature sign(BLSSecretKey secretKey, Bytes message) {
+  public static BLSSignature sign(final BLSSecretKey secretKey, final Bytes message) {
     return new BLSSignature(secretKey.getSecretKey().sign(message));
   }
 
@@ -87,7 +88,8 @@ public class BLS {
    * @param signature The signature, not null
    * @return True if the verification is successful, false otherwise.
    */
-  public static boolean verify(BLSPublicKey publicKey, Bytes message, BLSSignature signature) {
+  public static boolean verify(
+      final BLSPublicKey publicKey, final Bytes message, final BLSSignature signature) {
     if (BLSConstants.verificationDisabled) {
       LOG.warn("Skipping bls verification.");
       return true;
@@ -112,7 +114,7 @@ public class BLS {
    * @return the aggregated signature
    * @throws BlsException if any of supplied signatures is invalid
    */
-  public static BLSSignature aggregate(List<BLSSignature> signatures) throws BlsException {
+  public static BLSSignature aggregate(final List<BLSSignature> signatures) throws BlsException {
     try {
       checkArgument(signatures.size() > 0, "Aggregating zero signatures is invalid.");
       return new BLSSignature(
@@ -140,7 +142,9 @@ public class BLS {
    * @return True if the verification is successful, false otherwise
    */
   public static boolean aggregateVerify(
-      List<BLSPublicKey> publicKeys, List<Bytes> messages, BLSSignature signature) {
+      final List<BLSPublicKey> publicKeys,
+      final List<Bytes> messages,
+      final BLSSignature signature) {
     try {
       checkArgument(
           publicKeys.size() == messages.size(),
@@ -179,7 +183,7 @@ public class BLS {
    * @return True if the verification is successful, false otherwise
    */
   public static boolean fastAggregateVerify(
-      List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
+      final List<BLSPublicKey> publicKeys, final Bytes message, final BLSSignature signature) {
     if (BLSConstants.verificationDisabled) {
       LOG.warn("Skipping bls verification.");
       return true;
@@ -224,7 +228,9 @@ public class BLS {
    * @return True if the verification is successful, false otherwise
    */
   public static boolean batchVerify(
-      List<List<BLSPublicKey>> publicKeys, List<Bytes> messages, List<BLSSignature> signatures) {
+      final List<List<BLSPublicKey>> publicKeys,
+      final List<Bytes> messages,
+      final List<BLSSignature> signatures) {
     try {
       checkArgument(
           publicKeys.size() == messages.size() && publicKeys.size() == signatures.size(),
@@ -267,11 +273,11 @@ public class BLS {
    * @return True if the verification is successful, false otherwise
    */
   public static boolean batchVerify(
-      List<List<BLSPublicKey>> publicKeys,
-      List<Bytes> messages,
-      List<BLSSignature> signatures,
-      boolean doublePairing,
-      boolean parallel) {
+      final List<List<BLSPublicKey>> publicKeys,
+      final List<Bytes> messages,
+      final List<BLSSignature> signatures,
+      final boolean doublePairing,
+      final boolean parallel) {
     if (BLSConstants.verificationDisabled) {
       LOG.warn("Skipping bls verification.");
       return true;
@@ -345,7 +351,10 @@ public class BLS {
    *     #completeBatchVerify(List)}
    */
   public static BatchSemiAggregate prepareBatchVerify(
-      int index, List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
+      final int index,
+      final List<BLSPublicKey> publicKeys,
+      final Bytes message,
+      final BLSSignature signature) {
     try {
       return getBlsImpl()
           .prepareBatchVerify(
@@ -366,13 +375,13 @@ public class BLS {
    * #prepareBatchVerify(int, List, Bytes, BLSSignature)}
    */
   private static BatchSemiAggregate prepareBatchVerify2(
-      int index,
-      List<BLSPublicKey> publicKeys1,
-      Bytes message1,
-      BLSSignature signature1,
-      List<BLSPublicKey> publicKeys2,
-      Bytes message2,
-      BLSSignature signature2) {
+      final int index,
+      final List<BLSPublicKey> publicKeys1,
+      final Bytes message1,
+      final BLSSignature signature1,
+      final List<BLSPublicKey> publicKeys2,
+      final Bytes message2,
+      final BLSSignature signature2) {
     try {
       return getBlsImpl()
           .prepareBatchVerify2(
@@ -395,7 +404,7 @@ public class BLS {
    *
    * @return True if the verification is successful, false otherwise
    */
-  public static boolean completeBatchVerify(List<BatchSemiAggregate> preparedSignatures) {
+  public static boolean completeBatchVerify(final List<BatchSemiAggregate> preparedSignatures) {
     if (BLSConstants.verificationDisabled) {
       LOG.warn("Skipping bls verification.");
       return true;
@@ -415,7 +424,8 @@ public class BLS {
    * @param dst domain separation tag (DST), not null
    * @return The Signature, not null
    */
-  public static BLSSignature sign(BLSSecretKey secretKey, Bytes message, String dst) {
+  public static BLSSignature sign(
+      final BLSSecretKey secretKey, final Bytes message, final String dst) {
     return new BLSSignature(secretKey.getSecretKey().sign(message, dst));
   }
 
@@ -429,7 +439,10 @@ public class BLS {
    * @return True if the verification is successful, false otherwise.
    */
   public static boolean verify(
-      BLSPublicKey publicKey, Bytes message, BLSSignature signature, String dst) {
+      final BLSPublicKey publicKey,
+      final Bytes message,
+      final BLSSignature signature,
+      final String dst) {
     if (BLSConstants.verificationDisabled) {
       LOG.warn("Skipping bls verification.");
       return true;

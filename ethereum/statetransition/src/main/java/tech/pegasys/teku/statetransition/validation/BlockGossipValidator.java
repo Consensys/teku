@@ -47,7 +47,7 @@ public class BlockGossipValidator {
   private final GossipValidationHelper gossipValidationHelper;
   private final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher;
 
-  private final Map<SlotAndProposer, Bytes32> receivedValidBlockInfoSet =
+  private final Map<SlotAndProposer, Bytes32> receivedValidBlockRoots =
       LimitedMap.createNonSynchronized(VALID_BLOCK_SET_SIZE);
 
   public BlockGossipValidator(
@@ -63,12 +63,12 @@ public class BlockGossipValidator {
    * Perform gossip validation on a block.
    *
    * @param block the block to validate
-   * @param isLocallyProduced whether the block was produced locally or received from gossip. The
-   *     locally produced flow applies only during broadcast validation.
+   * @param markAsReceived whether to mark the block as received if it is valid (required for the
+   *     equivocation check)
    */
   public SafeFuture<InternalValidationResult> validate(
-      final SignedBeaconBlock block, final boolean isLocallyProduced) {
-    return internalValidate(block, isLocallyProduced)
+      final SignedBeaconBlock block, final boolean markAsReceived) {
+    return internalValidate(block, markAsReceived)
         .thenPeek(
             result -> {
               if (result.isAccept()) {
@@ -78,7 +78,7 @@ public class BlockGossipValidator {
   }
 
   private SafeFuture<InternalValidationResult> internalValidate(
-      final SignedBeaconBlock block, final boolean isLocallyProduced) {
+      final SignedBeaconBlock block, final boolean markAsReceived) {
 
     if (gossipValidationHelper.isSlotFinalized(block.getSlot())) {
       LOG.trace("BlockValidator: Block is too old. It will be dropped");
@@ -86,7 +86,8 @@ public class BlockGossipValidator {
     }
 
     final InternalValidationResult intermediateValidationResult =
-        equivocationCheckResultToInternalValidationResult(performBlockEquivocationCheck(block));
+        equivocationCheckResultToInternalValidationResult(
+            performBlockEquivocationCheck(false, block));
 
     if (!intermediateValidationResult.isAccept()) {
       return completedFuture(intermediateValidationResult);
@@ -165,16 +166,8 @@ public class BlockGossipValidator {
                 return reject("Block signature is invalid");
               }
 
-              // We want to add blocks in the infoSet only when they come from gossip.
-              // When dealing with locally produced block, we only want to check them against seen
-              // block coming from gossip because we may have to do two equivocation checks if
-              // BroadcastValidationLevel.CONSENSUS_EQUIVOCATION is used (one at the beginning of
-              // the blocks import,
-              // another after consensus validation)
               final EquivocationCheckResult secondEquivocationCheckResult =
-                  isLocallyProduced
-                      ? performBlockEquivocationCheck(false, block)
-                      : performBlockEquivocationCheck(true, block);
+                  performBlockEquivocationCheck(markAsReceived, block);
 
               return equivocationCheckResultToInternalValidationResult(
                   secondEquivocationCheckResult);
@@ -185,37 +178,34 @@ public class BlockGossipValidator {
       final EquivocationCheckResult equivocationCheckResult) {
     return switch (equivocationCheckResult) {
       case FIRST_BLOCK_FOR_SLOT_PROPOSER -> InternalValidationResult.ACCEPT;
-      case EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER -> ignore(
-          IGNORE_EQUIVOCATION_DETECTED, "Equivocating block detected. It will be dropped.");
-      case BLOCK_ALREADY_SEEN_FOR_SLOT_PROPOSER -> ignore(
-          IGNORE_ALREADY_SEEN,
-          "Block is not the first with valid signature for its slot. It will be dropped.");
+      case EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER ->
+          ignore(IGNORE_EQUIVOCATION_DETECTED, "Equivocating block detected. It will be dropped.");
+      case BLOCK_ALREADY_SEEN_FOR_SLOT_PROPOSER ->
+          ignore(
+              IGNORE_ALREADY_SEEN,
+              "Block is not the first with valid signature for its slot. It will be dropped.");
     };
   }
 
-  private synchronized EquivocationCheckResult performBlockEquivocationCheck(
-      final boolean add, final SignedBeaconBlock block) {
+  synchronized EquivocationCheckResult performBlockEquivocationCheck(
+      final boolean markAsReceived, final SignedBeaconBlock block) {
     final SlotAndProposer slotAndProposer = new SlotAndProposer(block);
-
-    final Optional<Bytes32> maybePreviouslySeenBlockRoot =
-        Optional.ofNullable(receivedValidBlockInfoSet.get(slotAndProposer));
-
-    if (maybePreviouslySeenBlockRoot.isEmpty()) {
-      if (add) {
-        receivedValidBlockInfoSet.put(slotAndProposer, block.getRoot());
-      }
-      return FIRST_BLOCK_FOR_SLOT_PROPOSER;
-    }
-
-    if (maybePreviouslySeenBlockRoot.get().equals(block.getRoot())) {
-      return BLOCK_ALREADY_SEEN_FOR_SLOT_PROPOSER;
-    }
-
-    return EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER;
-  }
-
-  EquivocationCheckResult performBlockEquivocationCheck(final SignedBeaconBlock block) {
-    return performBlockEquivocationCheck(false, block);
+    final Bytes32 blockRoot = block.getRoot();
+    return Optional.ofNullable(receivedValidBlockRoots.get(slotAndProposer))
+        .map(
+            previouslySeenBlockRoot -> {
+              if (previouslySeenBlockRoot.equals(blockRoot)) {
+                return BLOCK_ALREADY_SEEN_FOR_SLOT_PROPOSER;
+              }
+              return EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER;
+            })
+        .orElseGet(
+            () -> {
+              if (markAsReceived) {
+                receivedValidBlockRoots.put(slotAndProposer, blockRoot);
+              }
+              return FIRST_BLOCK_FOR_SLOT_PROPOSER;
+            });
   }
 
   public enum EquivocationCheckResult {

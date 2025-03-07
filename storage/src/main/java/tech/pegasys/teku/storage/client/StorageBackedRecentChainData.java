@@ -169,7 +169,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
   }
 
   private SafeFuture<RecentChainData> processStoreFuture(
-      SafeFuture<Optional<OnDiskStoreData>> storeFuture) {
+      final SafeFuture<Optional<OnDiskStoreData>> storeFuture) {
     return storeFuture.thenApply(
         maybeData -> {
           if (maybeData.isEmpty()) {

@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -40,6 +41,11 @@ public class OneOfTest {
       block -> spec.atSlot(block.getSlot()).getMilestone().equals(SpecMilestone.ALTAIR);
   private final Predicate<BeaconBlock> isBellatrix =
       block -> spec.atSlot(block.getSlot()).getMilestone().equals(SpecMilestone.BELLATRIX);
+
+  private final SerializableTypeDefinition<String> type1 =
+      SerializableTypeDefinition.object(String.class).name("Type1").build();
+  private final SerializableTypeDefinition<String> type2 =
+      SerializableTypeDefinition.object(String.class).name("Type2").build();
 
   @SuppressWarnings("unchecked")
   @Test
@@ -68,7 +74,7 @@ public class OneOfTest {
             .build();
 
     final String openApiType = JsonUtil.serialize(schema::serializeOpenApiType);
-    Map<String, Object> parsed = JsonTestUtil.parse(openApiType);
+    final Map<String, Object> parsed = JsonTestUtil.parse(openApiType);
 
     List<Map<String, String>> oneOfList = (List<Map<String, String>>) parsed.get("oneOf");
     assertThat(oneOfList.stream().flatMap(z -> z.values().stream()).collect(Collectors.toList()))
@@ -76,6 +82,25 @@ public class OneOfTest {
             "#/components/schemas/BeaconBlockPhase0",
             "#/components/schemas/BeaconBlockAltair",
             "#/components/schemas/BeaconBlockBellatrix");
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  void shouldDeDuplicateList() throws Exception {
+
+    final SerializableOneOfTypeDefinition<String> schema =
+        new SerializableOneOfTypeDefinitionBuilder<String>()
+            .title("TYPES")
+            .withType(String::isEmpty, type1)
+            .withType(String::isEmpty, type1)
+            .withType(String::isEmpty, type2)
+            .build();
+
+    final String openApiType = JsonUtil.serialize(schema::serializeOpenApiType);
+    final Map<String, Object> parsed = JsonTestUtil.parse(openApiType);
+    final List<Map<String, String>> oneOfList = (List<Map<String, String>>) parsed.get("oneOf");
+    assertThat(oneOfList.stream().flatMap(z -> z.values().stream()).collect(Collectors.toList()))
+        .containsExactly("#/components/schemas/Type1", "#/components/schemas/Type2");
   }
 
   @SuppressWarnings("unchecked")
@@ -112,6 +137,6 @@ public class OneOfTest {
         .containsOnly(
             "#/components/schemas/BeaconBlockPhase0",
             "#/components/schemas/BeaconBlockAltair",
-            "#/components/schemas/BlindedBlockBellatrix");
+            "#/components/schemas/BlindedBeaconBlockBellatrix");
   }
 }

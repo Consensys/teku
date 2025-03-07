@@ -35,7 +35,7 @@ class BlstPublicKey implements PublicKey {
 
   private static final BlstPublicKey INFINITE_PUBLIC_KEY = fromBytes(INFINITY_COMPRESSED_BYTES);
 
-  public static BlstPublicKey fromBytes(Bytes48 compressed) {
+  public static BlstPublicKey fromBytes(final Bytes48 compressed) {
     try {
       P1_Affine ecPoint = new P1_Affine(compressed.toArrayUnsafe());
       return new BlstPublicKey(ecPoint);
@@ -44,7 +44,7 @@ class BlstPublicKey implements PublicKey {
     }
   }
 
-  static BlstPublicKey fromPublicKey(PublicKey publicKey) {
+  static BlstPublicKey fromPublicKey(final PublicKey publicKey) {
     if (publicKey instanceof BlstPublicKey) {
       return (BlstPublicKey) publicKey;
     } else {
@@ -52,7 +52,7 @@ class BlstPublicKey implements PublicKey {
     }
   }
 
-  public static BlstPublicKey aggregate(List<BlstPublicKey> publicKeys) {
+  public static BlstPublicKey aggregate(final List<BlstPublicKey> publicKeys) {
     checkArgument(publicKeys.size() > 0);
 
     P1 sum = new P1();
@@ -74,7 +74,7 @@ class BlstPublicKey implements PublicKey {
   private final Supplier<Boolean> isInfinity = Suppliers.memoize(this::checkForInfinity);
   private final Supplier<Boolean> isInGroup = Suppliers.memoize(this::checkGroupMembership);
 
-  public BlstPublicKey(P1_Affine ecPoint) {
+  public BlstPublicKey(final P1_Affine ecPoint) {
     this.ecPoint = ecPoint;
   }
 
@@ -118,7 +118,7 @@ class BlstPublicKey implements PublicKey {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

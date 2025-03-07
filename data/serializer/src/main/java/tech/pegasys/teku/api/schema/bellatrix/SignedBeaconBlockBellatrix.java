@@ -23,7 +23,7 @@ public class SignedBeaconBlockBellatrix extends SignedBeaconBlock implements Sig
   private final BeaconBlockBellatrix message;
 
   public SignedBeaconBlockBellatrix(
-      tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
+      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
     super(internalBlock);
     this.message = new BeaconBlockBellatrix(internalBlock.getMessage());
   }

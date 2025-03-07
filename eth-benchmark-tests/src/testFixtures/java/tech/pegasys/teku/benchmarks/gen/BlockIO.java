@@ -42,7 +42,7 @@ public class BlockIO {
     private final ObjectInputStream inputStream;
     private final Spec spec;
 
-    Reader(ObjectInputStream inputStream, final Spec spec) {
+    Reader(final ObjectInputStream inputStream, final Spec spec) {
       this.inputStream = inputStream;
       this.spec = spec;
     }
@@ -71,7 +71,7 @@ public class BlockIO {
     }
 
     @SuppressWarnings("EmptyCatch")
-    public List<SignedBeaconBlock> readAll(int limit) {
+    public List<SignedBeaconBlock> readAll(final int limit) {
       try {
         return StreamSupport.stream(spliterator(), false).limit(limit).collect(Collectors.toList());
       } finally {
@@ -86,7 +86,7 @@ public class BlockIO {
   public static class Writer implements AutoCloseable, Consumer<SignedBeaconBlock> {
     private final ObjectOutputStream outputStream;
 
-    Writer(ObjectOutputStream outputStream) {
+    Writer(final ObjectOutputStream outputStream) {
       this.outputStream = outputStream;
     }
 
@@ -96,7 +96,7 @@ public class BlockIO {
     }
 
     @Override
-    public void accept(SignedBeaconBlock block) {
+    public void accept(final SignedBeaconBlock block) {
       try {
         Bytes bytes = block.sszSerialize();
         outputStream.writeInt(bytes.size());
@@ -108,7 +108,7 @@ public class BlockIO {
     }
   }
 
-  public static Writer createFileWriter(String outFile) {
+  public static Writer createFileWriter(final String outFile) {
     try {
       return new Writer(
           new ObjectOutputStream(new GZIPOutputStream(new FileOutputStream(outFile))));
@@ -117,7 +117,7 @@ public class BlockIO {
     }
   }
 
-  public static Reader createResourceReader(Spec spec, String resourcePath) {
+  public static Reader createResourceReader(final Spec spec, final String resourcePath) {
     try {
       return createReader(
           spec, BlockIO.class.getResourceAsStream(resourcePath), resourcePath.endsWith(".gz"));
@@ -126,7 +126,7 @@ public class BlockIO {
     }
   }
 
-  public static Reader createFileReader(Spec spec, String inFile) {
+  public static Reader createFileReader(final Spec spec, final String inFile) {
     try {
       return createReader(spec, new FileInputStream(inFile), inFile.endsWith(".gz"));
     } catch (FileNotFoundException e) {
@@ -134,7 +134,8 @@ public class BlockIO {
     }
   }
 
-  public static Reader createReader(Spec spec, InputStream inputStream, boolean gzipped) {
+  public static Reader createReader(
+      final Spec spec, final InputStream inputStream, final boolean gzipped) {
     try {
       return new Reader(
           new ObjectInputStream(gzipped ? new GZIPInputStream(inputStream) : inputStream), spec);

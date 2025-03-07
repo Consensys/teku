@@ -21,7 +21,7 @@ public interface SszVectorTestBase extends SszCollectionTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  default <C extends SszData> void size_shouldBeEqualToSchemaLength(SszVector<C> data) {
+  default <C extends SszData> void size_shouldBeEqualToSchemaLength(final SszVector<C> data) {
     Assertions.assertThat(data.size()).isEqualTo(data.getSchema().getLength());
   }
 }

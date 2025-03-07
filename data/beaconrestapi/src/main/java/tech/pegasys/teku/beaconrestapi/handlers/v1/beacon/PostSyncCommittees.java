@@ -67,12 +67,13 @@ public class PostSyncCommittees extends RestApiEndpoint {
                 SC_BAD_REQUEST,
                 "Errors with one or more sync committee signatures",
                 getBadRequestResponseTypes())
+            .withChainDataResponses()
             .build());
     this.provider = provider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final List<SyncCommitteeMessage> messages = request.getRequestBody();
     final SafeFuture<List<SubmitDataError>> future = provider.submitCommitteeSignatures(messages);
 

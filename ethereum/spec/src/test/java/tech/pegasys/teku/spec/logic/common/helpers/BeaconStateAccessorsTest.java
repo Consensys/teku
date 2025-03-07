@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -128,6 +129,32 @@ public class BeaconStateAccessorsTest {
 
     final UInt64 oldSlot = epochSlot.minus(ONE);
     assertDoesNotThrow(() -> beaconStateAccessors.getBeaconCommittee(state, oldSlot, ONE));
+  }
+
+  @Test
+  public void getBeaconCommitteesSize_stateIsTooOld() {
+    final UInt64 epoch = ONE;
+    final UInt64 epochSlot = spec.computeStartSlotAtEpoch(epoch);
+    final BeaconState state = dataStructureUtil.randomBeaconState(epochSlot);
+
+    final UInt64 outOfRangeSlot = spec.computeStartSlotAtEpoch(epoch.plus(2));
+    assertThatThrownBy(() -> beaconStateAccessors.getBeaconCommitteesSize(state, outOfRangeSlot))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            "Committee information must be derived from a state no older than the previous epoch");
+  }
+
+  @Test
+  public void getBeaconCommitteesSize_hasTheSizeOfTheCommitteeCount() {
+    final BeaconState state = dataStructureUtil.randomBeaconState();
+    final UInt64 epoch = spec.computeEpochAtSlot(state.getSlot());
+
+    final Int2IntMap committeesSize =
+        beaconStateAccessors.getBeaconCommitteesSize(state, state.getSlot());
+
+    final UInt64 committeeCount = beaconStateAccessors.getCommitteeCountPerSlot(state, epoch);
+
+    assertThat(committeesSize).hasSize(committeeCount.intValue());
   }
 
   @Test

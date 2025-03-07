@@ -182,7 +182,7 @@ public class FallbackAwareEth1ProviderTest {
     final SafeFuture<EthBlock.Block> blockByHash =
         fallbackAwareEth1Provider.getGuaranteedEth1Block("");
 
-    // we expect a delayed action after all nodes has been contacted
+    // we expect a delayed action after all nodes have been contacted
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     verify(node1, atLeastOnce()).getEth1Block("");
     verify(node2, atLeastOnce()).getEth1Block("");
@@ -318,7 +318,7 @@ public class FallbackAwareEth1ProviderTest {
   }
 
   private static SafeFuture<List<EthLog.LogResult<?>>> failingProviderGetLogsWithError(
-      Throwable error) {
+      final Throwable error) {
     final SafeFuture<List<EthLog.LogResult<?>>> logListSafeFuture = new SafeFuture<>();
     logListSafeFuture.completeExceptionally(error);
     return logListSafeFuture;

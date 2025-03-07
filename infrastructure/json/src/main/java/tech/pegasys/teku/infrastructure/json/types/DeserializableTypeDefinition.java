@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.infrastructure.json.types;
 
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
+
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -47,7 +48,7 @@ public interface DeserializableTypeDefinition<TObject> extends SerializableTypeD
   }
 
   static DeserializableTypeDefinition<Map<String, String>> mapOfStrings() {
-    return mapOf(CoreTypes.STRING_TYPE, CoreTypes.STRING_TYPE, TreeMap::new);
+    return mapOf(STRING_TYPE, STRING_TYPE, TreeMap::new);
   }
 
   static <TKey, TValue> DeserializableTypeDefinition<Map<TKey, TValue>> mapOf(
@@ -57,21 +58,14 @@ public interface DeserializableTypeDefinition<TObject> extends SerializableTypeD
     return new DeserializableMapTypeDefinition<>(keyType, valueType, mapConstructor);
   }
 
-  static <TObject extends Enum<TObject>> DeserializableTypeDefinition<TObject> enumOf(
+  static <TObject extends Enum<TObject>> EnumTypeDefinition<TObject> enumOf(
       final Class<TObject> itemType) {
-    return new EnumTypeDefinition<>(itemType);
+    return new EnumTypeDefinition.EnumTypeBuilder<>(itemType, false).build();
   }
 
-  static <TObject extends Enum<TObject>> DeserializableTypeDefinition<TObject> enumOf(
-      final Class<TObject> itemType, final Function<TObject, String> serializer) {
-    return new EnumTypeDefinition<>(itemType, serializer);
-  }
-
-  static <TObject extends Enum<TObject>> DeserializableTypeDefinition<TObject> enumOf(
-      final Class<TObject> itemType,
-      final Function<TObject, String> serializer,
-      final Set<TObject> excludedEnumerations) {
-    return new EnumTypeDefinition<>(itemType, serializer, excludedEnumerations);
+  static <TObject extends Enum<TObject>> EnumTypeDefinition<TObject> enumOf(
+      final Class<TObject> itemType, final boolean forceLowercase) {
+    return new EnumTypeDefinition.EnumTypeBuilder<>(itemType, forceLowercase).build();
   }
 
   static <TObject> DeserializableObjectTypeDefinitionBuilder<TObject, TObject> object(

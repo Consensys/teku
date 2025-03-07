@@ -48,7 +48,7 @@ public class SyncCommitteeDutyLoader
       final ChainHeadTracker chainHeadTracker,
       final ForkProvider forkProvider,
       final MetricsSystem metricsSystem,
-      boolean useDvtEndpoint) {
+      final boolean useDvtEndpoint) {
     super(validators, validatorIndexProvider);
     this.spec = spec;
     this.validatorApiChannel = validatorApiChannel;

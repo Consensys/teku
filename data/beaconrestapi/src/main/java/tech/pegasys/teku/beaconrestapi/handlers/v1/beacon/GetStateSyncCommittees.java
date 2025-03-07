@@ -78,12 +78,13 @@ public class GetStateSyncCommittees extends RestApiEndpoint {
             .queryParam(EPOCH_PARAMETER)
             .response(HttpStatusCodes.SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final Optional<UInt64> epoch = request.getOptionalQueryParameter(EPOCH_PARAMETER);
     final SafeFuture<Optional<ObjectAndMetaData<StateSyncCommitteesData>>> future =
         chainDataProvider.getStateSyncCommittees(

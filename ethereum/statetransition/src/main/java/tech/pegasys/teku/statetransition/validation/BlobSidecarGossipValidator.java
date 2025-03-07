@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -63,7 +64,7 @@ public class BlobSidecarGossipValidator {
       final MiscHelpersDeneb miscHelpersDeneb,
       final KZG kzg) {
 
-    final Optional<Integer> maybeMaxBlobsPerBlock = spec.getMaxBlobsPerBlock();
+    final Optional<Integer> maybeMaxBlobsPerBlock = spec.getMaxBlobsPerBlockForHighestMilestone();
 
     final int validInfoSize = VALID_BLOCK_SET_SIZE * maybeMaxBlobsPerBlock.orElse(1);
     // It's not fatal if we miss something and we don't need finalized data
@@ -119,7 +120,10 @@ public class BlobSidecarGossipValidator {
      * [REJECT] The sidecar's index is consistent with `MAX_BLOBS_PER_BLOCK` -- i.e. `blob_sidecar.index < MAX_BLOBS_PER_BLOCK`.
      */
     final Optional<Integer> maxBlobsPerBlockAtSlot =
-        spec.getMaxBlobsPerBlock(blobSidecar.getSlot());
+        spec.atSlot(blobSidecar.getSlot())
+            .getConfig()
+            .toVersionDeneb()
+            .map(SpecConfigDeneb::getMaxBlobsPerBlock);
     if (maxBlobsPerBlockAtSlot.isEmpty()) {
       return completedFuture(reject("BlobSidecar's slot is pre-Deneb"));
     }
@@ -209,7 +213,7 @@ public class BlobSidecarGossipValidator {
     /*
      * [REJECT] The sidecar's inclusion proof is valid as verified by `verify_blob_sidecar_inclusion_proof(blob_sidecar)`.
      */
-    if (!miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)) {
+    if (!miscHelpersDeneb.verifyBlobKzgCommitmentInclusionProof(blobSidecar)) {
       return completedFuture(reject("BlobSidecar inclusion proof validation failed"));
     }
 
@@ -251,8 +255,7 @@ public class BlobSidecarGossipValidator {
                * [REJECT] The proposer signature of `blob_sidecar.signed_block_header`, is valid
                * with respect to the `block_header.proposer_index` pubkey.
                */
-              if (!verifyBlockHeaderSignature(
-                  postState, blobSidecar.getSignedBeaconBlockHeader())) {
+              if (!verifyBlockHeaderSignature(postState, blobSidecar)) {
                 return reject("BlobSidecar block header signature is invalid.");
               }
 
@@ -262,11 +265,7 @@ public class BlobSidecarGossipValidator {
                * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, blob_sidecar.index)
                *  with valid header signature, sidecar inclusion proof, and kzg proof.
                */
-              if (!receivedValidBlobSidecarInfoSet.add(
-                  new SlotProposerIndexAndBlobIndex(
-                      blockHeader.getSlot(),
-                      blockHeader.getProposerIndex(),
-                      blobSidecar.getIndex()))) {
+              if (!markForEquivocation(blockHeader, blobSidecar.getIndex())) {
                 return ignore(
                     "BlobSidecar is not the first valid for its slot and index. It will be dropped.");
               }
@@ -277,13 +276,26 @@ public class BlobSidecarGossipValidator {
             });
   }
 
+  private boolean markForEquivocation(final BeaconBlockHeader blockHeader, final UInt64 index) {
+    return receivedValidBlobSidecarInfoSet.add(
+        new SlotProposerIndexAndBlobIndex(
+            blockHeader.getSlot(), blockHeader.getProposerIndex(), index));
+  }
+
+  public boolean markForEquivocation(final BlobSidecar blobSidecar) {
+    return markForEquivocation(
+        blobSidecar.getSignedBeaconBlockHeader().getMessage(), blobSidecar.getIndex());
+  }
+
   private SafeFuture<InternalValidationResult> validateBlobSidecarWithKnownValidHeader(
       final BlobSidecar blobSidecar, final BeaconBlockHeader blockHeader) {
+
+    blobSidecar.markSignatureAsValidated();
 
     /*
      * [REJECT] The sidecar's inclusion proof is valid as verified by `verify_blob_sidecar_inclusion_proof(blob_sidecar)`.
      */
-    if (!miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)) {
+    if (!miscHelpersDeneb.verifyBlobKzgCommitmentInclusionProof(blobSidecar)) {
       return completedFuture(reject("BlobSidecar inclusion proof validation failed"));
     }
 
@@ -310,9 +322,7 @@ public class BlobSidecarGossipValidator {
      * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, blob_sidecar.index)
      *  with valid header signature, sidecar inclusion proof, and kzg proof.
      */
-    if (!receivedValidBlobSidecarInfoSet.add(
-        new SlotProposerIndexAndBlobIndex(
-            blockHeader.getSlot(), blockHeader.getProposerIndex(), blobSidecar.getIndex()))) {
+    if (!markForEquivocation(blockHeader, blobSidecar.getIndex())) {
       return SafeFuture.completedFuture(
           ignore("BlobSidecar is not the first valid for its slot and index. It will be dropped."));
     }
@@ -321,7 +331,8 @@ public class BlobSidecarGossipValidator {
   }
 
   private boolean verifyBlockHeaderSignature(
-      final BeaconState state, final SignedBeaconBlockHeader signedBlockHeader) {
+      final BeaconState state, final BlobSidecar blobSidecar) {
+    final SignedBeaconBlockHeader signedBlockHeader = blobSidecar.getSignedBeaconBlockHeader();
     final Bytes32 domain =
         spec.getDomain(
             Domain.BEACON_PROPOSER,
@@ -330,11 +341,18 @@ public class BlobSidecarGossipValidator {
             state.getGenesisValidatorsRoot());
     final Bytes signingRoot = spec.computeSigningRoot(signedBlockHeader.getMessage(), domain);
 
-    return gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
-        signingRoot,
-        signedBlockHeader.getMessage().getProposerIndex(),
-        signedBlockHeader.getSignature(),
-        state);
+    final boolean result =
+        gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
+            signingRoot,
+            signedBlockHeader.getMessage().getProposerIndex(),
+            signedBlockHeader.getSignature(),
+            state);
+
+    if (result) {
+      blobSidecar.markSignatureAsValidated();
+    }
+
+    return result;
   }
 
   private boolean isFirstValidForSlotProposerIndexAndBlobIndex(

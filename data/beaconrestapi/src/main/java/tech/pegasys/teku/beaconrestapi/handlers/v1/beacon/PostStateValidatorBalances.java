@@ -51,12 +51,13 @@ public class PostStateValidatorBalances extends RestApiEndpoint {
             .requestBodyType(DeserializableTypeDefinition.listOf(STRING_TYPE))
             .response(SC_OK, "Request successful", GetStateValidatorBalances.RESPONSE_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final Optional<List<String>> validators = request.getOptionalRequestBody();
 
     final SafeFuture<Optional<ObjectAndMetaData<List<StateValidatorBalanceData>>>> future =

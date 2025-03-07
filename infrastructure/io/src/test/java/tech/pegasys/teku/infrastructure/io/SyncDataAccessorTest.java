@@ -33,7 +33,7 @@ public class SyncDataAccessorTest {
 
   @Test
   public void shouldThrowInvalidConfigurationExceptionWhenDirectoryNotWritable(
-      @TempDir Path tempDir) throws IOException {
+      @TempDir final Path tempDir) throws IOException {
 
     OSUtils.makeNonWritable(tempDir);
     assumeThat(tempDir.toFile().canWrite()).describedAs("Directory %s writable").isFalse();
@@ -44,8 +44,8 @@ public class SyncDataAccessorTest {
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
-  public void shouldWriteAndOverwriteFileContent(final boolean useAtomicMove, @TempDir Path tempDir)
-      throws IOException {
+  public void shouldWriteAndOverwriteFileContent(
+      final boolean useAtomicMove, @TempDir final Path tempDir) throws IOException {
     final Path filePath = Paths.get(tempDir.toString() + "/myfile.tmp");
     assertThat(Files.exists(filePath)).isFalse();
     final SyncDataAccessor syncDataAccessor = new SyncDataAccessor(useAtomicMove);

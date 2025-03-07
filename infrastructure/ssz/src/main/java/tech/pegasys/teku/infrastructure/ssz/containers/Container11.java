@@ -33,29 +33,30 @@ public class Container11<
         V10 extends SszData>
     extends AbstractSszImmutableContainer {
 
-  protected Container11(ContainerSchema11<C, V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10> schema) {
+  protected Container11(
+      final ContainerSchema11<C, V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10> schema) {
     super(schema);
   }
 
   protected Container11(
-      ContainerSchema11<C, V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10> schema,
-      TreeNode backingNode) {
+      final ContainerSchema11<C, V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10> schema,
+      final TreeNode backingNode) {
     super(schema, backingNode);
   }
 
   protected Container11(
-      ContainerSchema11<C, V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10> schema,
-      V0 arg0,
-      V1 arg1,
-      V2 arg2,
-      V3 arg3,
-      V4 arg4,
-      V5 arg5,
-      V6 arg6,
-      V7 arg7,
-      V8 arg8,
-      V9 arg9,
-      V10 arg10) {
+      final ContainerSchema11<C, V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10> schema,
+      final V0 arg0,
+      final V1 arg1,
+      final V2 arg2,
+      final V3 arg3,
+      final V4 arg4,
+      final V5 arg5,
+      final V6 arg6,
+      final V7 arg7,
+      final V8 arg8,
+      final V9 arg9,
+      final V10 arg10) {
     super(schema, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
   }
 

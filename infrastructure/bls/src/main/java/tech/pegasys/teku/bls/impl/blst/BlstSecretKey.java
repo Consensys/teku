@@ -24,7 +24,7 @@ import tech.pegasys.teku.bls.impl.Signature;
 class BlstSecretKey implements SecretKey {
   static final BlstSecretKey ZERO_SK = BlstSecretKey.fromBytesRaw(Bytes32.ZERO);
 
-  public static BlstSecretKey fromBytes(Bytes32 bytes) {
+  public static BlstSecretKey fromBytes(final Bytes32 bytes) {
     if (bytes.isZero()) {
       return ZERO_SK;
     } else {
@@ -32,13 +32,13 @@ class BlstSecretKey implements SecretKey {
     }
   }
 
-  private static BlstSecretKey fromBytesRaw(Bytes32 bytes) {
+  private static BlstSecretKey fromBytesRaw(final Bytes32 bytes) {
     supranational.blst.SecretKey secretKey = new supranational.blst.SecretKey();
     secretKey.from_bendian(bytes.toArrayUnsafe());
     return new BlstSecretKey(secretKey);
   }
 
-  public static BlstSecretKey generateNew(Random random) {
+  public static BlstSecretKey generateNew(final Random random) {
     byte[] ikm = new byte[128];
     random.nextBytes(ikm);
     supranational.blst.SecretKey sk = new supranational.blst.SecretKey();
@@ -48,7 +48,7 @@ class BlstSecretKey implements SecretKey {
 
   private final supranational.blst.SecretKey secretKey;
 
-  public BlstSecretKey(supranational.blst.SecretKey secretKey) {
+  public BlstSecretKey(final supranational.blst.SecretKey secretKey) {
     this.secretKey = secretKey;
   }
 
@@ -62,12 +62,12 @@ class BlstSecretKey implements SecretKey {
   }
 
   @Override
-  public Signature sign(Bytes message) {
+  public Signature sign(final Bytes message) {
     return BlstBLS12381.sign(this, message);
   }
 
   @Override
-  public Signature sign(Bytes message, String dst) {
+  public Signature sign(final Bytes message, final String dst) {
     return BlstBLS12381.sign(this, message, dst);
   }
 
@@ -93,7 +93,7 @@ class BlstSecretKey implements SecretKey {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

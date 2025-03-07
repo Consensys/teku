@@ -189,13 +189,12 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {"-X"};
 
     beaconNodeCommand.parse(args);
-    String str = getCommandLineOutput();
 
-    final Pattern p = Pattern.compile("--[^X][^ ]+");
-    final Matcher matcher = p.matcher(str);
+    final Pattern p = Pattern.compile("--[^X][^ ]+=");
+    final Matcher matcher = p.matcher(getCommandLineOutput());
     final List<String> errors = new ArrayList<>();
     while (matcher.find()) {
-      MatchResult current = matcher.toMatchResult();
+      final MatchResult current = matcher.toMatchResult();
       LOG.debug("found {} at position {}", current.group().trim(), current.start());
       errors.add(current.group().trim());
     }
@@ -240,12 +239,13 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   private Stream<OptionSpec> addSubCommandOptions(
-      final CommandLine commandLine, Stream<OptionSpec> stream) {
+      final CommandLine commandLine, final Stream<OptionSpec> stream) {
+    Stream<OptionSpec> mutableStream = stream;
     for (CommandLine subCommand : commandLine.getSubcommands().values()) {
-      stream = Stream.concat(stream, subCommand.getCommandSpec().options().stream());
-      stream = addSubCommandOptions(subCommand, stream);
+      mutableStream = Stream.concat(mutableStream, subCommand.getCommandSpec().options().stream());
+      mutableStream = addSubCommandOptions(subCommand, mutableStream);
     }
-    return stream;
+    return mutableStream;
   }
 
   @Test

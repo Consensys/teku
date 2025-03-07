@@ -34,7 +34,7 @@ public class BlobSchema extends SszByteVectorSchemaImpl<Blob> {
   }
 
   @Override
-  public Blob createFromBackingNode(TreeNode node) {
+  public Blob createFromBackingNode(final TreeNode node) {
     return new Blob(this, node);
   }
 }

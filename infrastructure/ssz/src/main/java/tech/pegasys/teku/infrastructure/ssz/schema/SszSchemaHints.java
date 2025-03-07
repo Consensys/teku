@@ -45,7 +45,7 @@ public class SszSchemaHints {
   public static final class SszSuperNodeHint extends SszSchemaHint {
     private final int depth;
 
-    public SszSuperNodeHint(int depth) {
+    public SszSuperNodeHint(final int depth) {
       this.depth = depth;
     }
 
@@ -54,7 +54,7 @@ public class SszSchemaHints {
     }
   }
 
-  public static SszSchemaHints of(SszSchemaHint... hints) {
+  public static SszSchemaHints of(final SszSchemaHint... hints) {
     return new SszSchemaHints(Arrays.asList(hints));
   }
 
@@ -62,18 +62,18 @@ public class SszSchemaHints {
     return of();
   }
 
-  public static SszSchemaHints sszSuperNode(int superNodeDepth) {
+  public static SszSchemaHints sszSuperNode(final int superNodeDepth) {
     return of(new SszSuperNodeHint(superNodeDepth));
   }
 
   private final List<SszSchemaHint> hints;
 
-  private SszSchemaHints(List<SszSchemaHint> hints) {
+  private SszSchemaHints(final List<SszSchemaHint> hints) {
     this.hints = hints;
   }
 
   @SuppressWarnings("unchecked")
-  public <C extends SszSchemaHint> Optional<C> getHint(Class<C> hintClass) {
+  public <C extends SszSchemaHint> Optional<C> getHint(final Class<C> hintClass) {
     return (Optional<C>) hints.stream().filter(h -> h.getClass() == hintClass).findFirst();
   }
 }

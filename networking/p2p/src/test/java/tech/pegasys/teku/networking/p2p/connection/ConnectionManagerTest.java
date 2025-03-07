@@ -431,17 +431,17 @@ class ConnectionManagerTest {
     advanceTimeByWarmupSearchInterval();
     verify(discoveryService, times(3)).searchForPeers();
 
-    timeProvider.advanceTimeBySeconds(ConnectionManager.DISCOVERY_INTERVAL.getSeconds());
+    timeProvider.advanceTimeBySeconds(ConnectionManager.DISCOVERY_INTERVAL.toSeconds());
     asyncRunner.executeDueActionsRepeatedly();
     verify(discoveryService, times(4)).searchForPeers();
 
-    timeProvider.advanceTimeBySeconds(ConnectionManager.DISCOVERY_INTERVAL.getSeconds());
+    timeProvider.advanceTimeBySeconds(ConnectionManager.DISCOVERY_INTERVAL.toSeconds());
     asyncRunner.executeDueActionsRepeatedly();
     verify(discoveryService, times(5)).searchForPeers();
   }
 
   private void advanceTimeByWarmupSearchInterval() {
-    timeProvider.advanceTimeBySeconds(ConnectionManager.WARMUP_DISCOVERY_INTERVAL.getSeconds());
+    timeProvider.advanceTimeBySeconds(ConnectionManager.WARMUP_DISCOVERY_INTERVAL.toSeconds());
     asyncRunner.executeDueActionsRepeatedly();
   }
 

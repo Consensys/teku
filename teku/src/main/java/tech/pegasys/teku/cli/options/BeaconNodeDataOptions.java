@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.service.serviceutils.layout.DataConfig.DEFAULT_DEBUG_DATA_DUMPING_ENABLED;
 import static tech.pegasys.teku.storage.server.StorageConfiguration.DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS;
 
 import java.nio.file.Path;
@@ -53,6 +54,37 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
               + "This option is ignored if --data-storage-mode is set to PRUNE",
       arity = "1")
   private long dataStorageFrequency = StorageConfiguration.DEFAULT_STORAGE_FREQUENCY;
+
+  @CommandLine.Option(
+      names = {"--Xdata-storage-archive-finalized-states-retained"},
+      paramLabel = "<INTEGER>",
+      description =
+          "Sets the period of retained finalized states in disk, in slots. "
+              + "This option is ignored if --data-storage-mode is set to PRUNE or MINIMAL",
+      arity = "1",
+      hidden = true)
+  private long dataStorageRetainedSlots = StorageConfiguration.DEFAULT_STORAGE_RETAINED_SLOTS;
+
+  @CommandLine.Option(
+      names = {"--Xdata-storage-state-pruning-interval"},
+      hidden = true,
+      paramLabel = "<INTEGER>",
+      description = "Interval in seconds between finalized state pruning",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1")
+  private long statePruningIntervalSeconds =
+      StorageConfiguration.DEFAULT_STATE_PRUNING_INTERVAL.toSeconds();
+
+  @CommandLine.Option(
+      names = {"--Xdata-storage-state-pruning-limit"},
+      hidden = true,
+      paramLabel = "<INTEGER>",
+      description = "Maximum number of finalized states that can be pruned in each pruning session",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1")
+  private int statePruningLimit = StorageConfiguration.DEFAULT_STATE_PRUNING_LIMIT;
 
   @CommandLine.Option(
       names = {"--Xdata-storage-create-db-version"},
@@ -132,11 +164,22 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       names = {"--Xdata-storage-blobs-pruning-limit"},
       hidden = true,
       paramLabel = "<INTEGER>",
-      description = "Maximum number of blob sidecars that can be pruned in each pruning session",
+      description =
+          "Maximum number of blocks of blob sidecars that can be pruned in each pruning session",
       fallbackValue = "true",
       showDefaultValue = Visibility.ALWAYS,
       arity = "0..1")
   private int blobsPruningLimit = StorageConfiguration.DEFAULT_BLOBS_PRUNING_LIMIT;
+
+  @CommandLine.Option(
+      names = {"--Xdata-storage-blobs-archive-path"},
+      hidden = true,
+      paramLabel = "<STRING>",
+      description = "Path to write pruned blobs",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1")
+  private String blobsArchivePath = null;
 
   @Option(
       names = {"--Xdata-storage-state-rebuild-timeout-seconds"},
@@ -147,9 +190,22 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       arity = "1")
   private int stateRebuildTimeoutSeconds = DEFAULT_STATE_REBUILD_TIMEOUT_SECONDS;
 
+  @Option(
+      names = {"--Xdebug-data-dumping-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Enable saving objects to files that cause problems when processing, for example rejected blocks or invalid gossip.\n Default: <data-base-path>/debug",
+      fallbackValue = "true",
+      hidden = true,
+      arity = "0..1")
+  private boolean debugDataDumpingEnabled = DEFAULT_DEBUG_DATA_DUMPING_ENABLED;
+
   @Override
   protected DataConfig.Builder configureDataConfig(final DataConfig.Builder config) {
-    return super.configureDataConfig(config).beaconDataPath(dataBeaconPath);
+    return super.configureDataConfig(config)
+        .beaconDataPath(dataBeaconPath)
+        .debugDataDumpingEnabled(debugDataDumpingEnabled);
   }
 
   @Override
@@ -166,7 +222,11 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .blockPruningLimit(blockPruningLimit)
                 .stateRebuildTimeoutSeconds(stateRebuildTimeoutSeconds)
                 .blobsPruningInterval(Duration.ofSeconds(blobsPruningIntervalSeconds))
-                .blobsPruningLimit(blobsPruningLimit));
+                .blobsPruningLimit(blobsPruningLimit)
+                .blobsArchivePath(blobsArchivePath)
+                .retainedSlots(dataStorageRetainedSlots)
+                .statePruningInterval(Duration.ofSeconds(statePruningIntervalSeconds))
+                .statePruningLimit(statePruningLimit));
     builder.sync(
         b ->
             b.fetchAllHistoricBlocks(dataStorageMode.storesAllBlocks())

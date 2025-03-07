@@ -29,7 +29,7 @@ public class LengthPrefixedEncoding implements RpcEncoding {
   private static final RpcByteBufDecoder<EmptyMessage> EMPTY_MESSAGE_DECODER =
       new RpcByteBufDecoder<>() {
         @Override
-        public Optional<EmptyMessage> decodeOneMessage(ByteBuf input) {
+        public Optional<EmptyMessage> decodeOneMessage(final ByteBuf input) {
           return Optional.of(EmptyMessage.EMPTY_MESSAGE);
         }
 
@@ -77,7 +77,7 @@ public class LengthPrefixedEncoding implements RpcEncoding {
   }
 
   @Override
-  public <T extends SszData> RpcByteBufDecoder<T> createDecoder(SszSchema<T> payloadType) {
+  public <T extends SszData> RpcByteBufDecoder<T> createDecoder(final SszSchema<T> payloadType) {
     if (payloadType.equals(EmptyMessage.SSZ_SCHEMA)) {
       return getEmptyMessageDecoder();
     } else {

@@ -73,7 +73,7 @@ public class BeaconStateInvariants {
   }
 
   @SuppressWarnings("ReferenceComparison")
-  static boolean equals(BeaconState state, Object obj) {
+  static boolean equals(final BeaconState state, final Object obj) {
     if (Objects.isNull(obj)) {
       return false;
     }
@@ -90,11 +90,11 @@ public class BeaconStateInvariants {
     return state.hashTreeRoot().equals(other.hashTreeRoot());
   }
 
-  static int hashCode(BeaconState state) {
+  static int hashCode(final BeaconState state) {
     return state.hashTreeRoot().slice(0, 4).toInt();
   }
 
-  static String toString(BeaconState state, final Consumer<ToStringHelper> modifier) {
+  static String toString(final BeaconState state, final Consumer<ToStringHelper> modifier) {
     final ToStringHelper builder =
         MoreObjects.toStringHelper(state)
             .add("genesis_time", state.getGenesisTime())

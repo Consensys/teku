@@ -19,22 +19,29 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.type.CollectionType;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import okhttp3.Response;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlsToExecutionChanges;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -52,8 +59,8 @@ public class GetBlsToExecutionChangesIntegrationTest
 
   @Test
   void getBlsToExecutionChangesFromPoolReturnsOk() throws IOException {
-    final Set<SignedBlsToExecutionChange> expectedOperations =
-        Set.of(
+    final List<SignedBlsToExecutionChange> expectedOperations =
+        List.of(
             dataStructureUtil.randomSignedBlsToExecutionChange(),
             dataStructureUtil.randomSignedBlsToExecutionChange(),
             dataStructureUtil.randomSignedBlsToExecutionChange());
@@ -66,10 +73,7 @@ public class GetBlsToExecutionChangesIntegrationTest
     Response response = getResponse(GetBlsToExecutionChanges.ROUTE);
 
     assertThat(response.code()).isEqualTo(SC_OK);
-
-    final List<SignedBlsToExecutionChange> operationsInResponse = readListFromResponse(response);
-    assertThat(operationsInResponse).hasSize(expectedOperations.size());
-    assertThat(operationsInResponse).hasSameElementsAs(expectedOperations);
+    checkResponseContainsExactly(getResponseData(response), expectedOperations);
   }
 
   @Test
@@ -87,26 +91,34 @@ public class GetBlsToExecutionChangesIntegrationTest
         getResponse(GetBlsToExecutionChanges.ROUTE, Map.of("locally_submitted", "true"));
 
     assertThat(response.code()).isEqualTo(SC_OK);
-    final List<SignedBlsToExecutionChange> operationsInResponse = readListFromResponse(response);
-    assertThat(operationsInResponse).hasSize(1);
-    assertThat(operationsInResponse).containsExactly(localChange);
+    checkResponseContainsExactly(getResponseData(response), List.of(localChange));
   }
 
-  private List<SignedBlsToExecutionChange> readListFromResponse(final Response response)
-      throws IOException {
-    final JsonNode body = jsonProvider.jsonToObject(response.body().string(), JsonNode.class);
-    final CollectionType collectionType =
-        jsonProvider
-            .getObjectMapper()
-            .getTypeFactory()
-            .constructCollectionType(
-                List.class, tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange.class);
+  private void checkResponseContainsExactly(
+      final JsonNode data, final List<SignedBlsToExecutionChange> blsChanges) {
+    assertThat(data.size()).isEqualTo(blsChanges.size());
 
-    final List<tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange> data =
-        jsonProvider.getObjectMapper().treeToValue(body.get("data"), collectionType);
-
-    return data.stream()
-        .map(op -> op.asInternalSignedBlsToExecutionChange(spec.getGenesisSpec()))
-        .collect(Collectors.toList());
+    final BlsToExecutionChangeSchema blsToExecutionChangeSchema =
+        SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+            .getBlsToExecutionChangeSchema();
+    final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema =
+        SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+            .getSignedBlsToExecutionChangeSchema();
+    final List<SignedBlsToExecutionChange> response = new ArrayList<>();
+    for (int i = 0; i < blsChanges.size(); i++) {
+      final BlsToExecutionChange message =
+          blsToExecutionChangeSchema.create(
+              UInt64.valueOf(data.get(i).get("message").get("validator_index").asText()),
+              BLSPublicKey.fromHexString(
+                  data.get(i).get("message").get("from_bls_pubkey").asText()),
+              Bytes20.fromHexString(
+                  data.get(i).get("message").get("to_execution_address").asText()));
+      response.add(
+          signedBlsToExecutionChangeSchema.create(
+              message,
+              BLSSignature.fromBytesCompressed(
+                  Bytes.fromHexString(data.get(i).get("signature").asText()))));
+    }
+    assertThat(response).hasSameElementsAs(blsChanges);
   }
 }

@@ -71,13 +71,13 @@ class MixinSectionOptionRendererTest {
     private String configFile;
 
     @ArgGroup(heading = "%nActual Arg Group", multiplicity = "0..1")
-    private TestArgGroup argGroup = new TestArgGroup();
+    private final TestArgGroup argGroup = new TestArgGroup();
 
     @Mixin(name = "First Mixin")
-    private Mixin1 mixin1 = new Mixin1();
+    private final Mixin1 mixin1 = new Mixin1();
 
     @Mixin(name = "Second Mixin")
-    private AllHiddenOptions allHiddenOptions = new AllHiddenOptions();
+    private final AllHiddenOptions allHiddenOptions = new AllHiddenOptions();
   }
 
   private static class Mixin1 {

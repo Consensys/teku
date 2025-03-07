@@ -44,10 +44,9 @@ import tech.pegasys.teku.networking.eth2.rpc.core.methods.VersionedEth2RpcMethod
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.config.SpecConfigEip7594;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage.BeaconBlocksByRangeRequestMessageSchema;
@@ -66,7 +65,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -140,8 +139,8 @@ public class BeaconChainMethods {
       final RpcEncoding rpcEncoding,
       final DasReqRespLogger dasLogger) {
     return new BeaconChainMethods(
-        createStatus(spec, asyncRunner, statusMessageFactory, peerLookup, rpcEncoding),
-        createGoodBye(spec, asyncRunner, metricsSystem, peerLookup, rpcEncoding),
+        createStatus(asyncRunner, statusMessageFactory, peerLookup, rpcEncoding),
+        createGoodBye(asyncRunner, metricsSystem, peerLookup, rpcEncoding),
         createBeaconBlocksByRoot(
             spec, metricsSystem, asyncRunner, recentChainData, peerLookup, rpcEncoding),
         createBeaconBlocksByRange(
@@ -188,11 +187,10 @@ public class BeaconChainMethods {
             recentChainData,
             dasLogger),
         createMetadata(spec, asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding),
-        createPing(spec, asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding));
+        createPing(asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding));
   }
 
   private static Eth2RpcMethod<StatusMessage, StatusMessage> createStatus(
-      final Spec spec,
       final AsyncRunner asyncRunner,
       final StatusMessageFactory statusMessageFactory,
       final PeerLookup peerLookup,
@@ -209,12 +207,10 @@ public class BeaconChainMethods {
         true,
         contextCodec,
         statusHandler,
-        peerLookup,
-        spec.getNetworkingConfig());
+        peerLookup);
   }
 
   private static Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> createGoodBye(
-      final Spec spec,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final PeerLookup peerLookup,
@@ -231,8 +227,7 @@ public class BeaconChainMethods {
         false,
         contextCodec,
         goodbyeHandler,
-        peerLookup,
-        spec.getNetworkingConfig());
+        peerLookup);
   }
 
   private static Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock>
@@ -265,8 +260,7 @@ public class BeaconChainMethods {
                 expectResponseToRequest,
                 forkDigestContextCodec,
                 beaconBlocksByRootHandler,
-                peerLookup,
-                spec.getNetworkingConfig());
+                peerLookup);
 
     return VersionedEth2RpcMethod.create(
         rpcEncoding, requestType, expectResponseToRequest, List.of(v2Method));
@@ -303,8 +297,7 @@ public class BeaconChainMethods {
                 expectResponseToRequest,
                 forkDigestContextCodec,
                 beaconBlocksByRangeHandler,
-                peerLookup,
-                spec.getNetworkingConfig());
+                peerLookup);
 
     return VersionedEth2RpcMethod.create(
         rpcEncoding, requestType, expectResponseToRequest, List.of(v2Method));
@@ -327,8 +320,7 @@ public class BeaconChainMethods {
         RpcContextCodec.forkDigest(spec, recentChainData, ForkDigestPayloadContext.BLOB_SIDECAR);
 
     final BlobSidecarsByRootMessageHandler blobSidecarsByRootHandler =
-        new BlobSidecarsByRootMessageHandler(
-            spec, getSpecConfigDeneb(spec), metricsSystem, combinedChainDataClient);
+        new BlobSidecarsByRootMessageHandler(spec, metricsSystem, combinedChainDataClient);
     final BlobSidecarsByRootRequestMessageSchema blobSidecarsByRootRequestMessageSchema =
         SchemaDefinitionsDeneb.required(
                 spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
@@ -344,8 +336,7 @@ public class BeaconChainMethods {
             true,
             forkDigestContextCodec,
             blobSidecarsByRootHandler,
-            peerLookup,
-            spec.getNetworkingConfig()));
+            peerLookup));
   }
 
   private static Optional<Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar>>
@@ -369,8 +360,7 @@ public class BeaconChainMethods {
         RpcContextCodec.forkDigest(spec, recentChainData, ForkDigestPayloadContext.BLOB_SIDECAR);
 
     final BlobSidecarsByRangeMessageHandler blobSidecarsByRangeHandler =
-        new BlobSidecarsByRangeMessageHandler(
-            spec, getSpecConfigDeneb(spec), metricsSystem, combinedChainDataClient);
+        new BlobSidecarsByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(
@@ -382,8 +372,7 @@ public class BeaconChainMethods {
             true,
             forkDigestContextCodec,
             blobSidecarsByRangeHandler,
-            peerLookup,
-            spec.getNetworkingConfig()));
+            peerLookup));
   }
 
   private static Optional<Eth2RpcMethod<DataColumnSidecarsByRootRequestMessage, DataColumnSidecar>>
@@ -397,7 +386,7 @@ public class BeaconChainMethods {
           final RpcEncoding rpcEncoding,
           final RecentChainData recentChainData,
           final DasReqRespLogger dasLogger) {
-    if (!spec.isMilestoneSupported(SpecMilestone.EIP7594)) {
+    if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
       return Optional.empty();
     }
 
@@ -410,8 +399,8 @@ public class BeaconChainMethods {
             spec, metricsSystem, combinedChainDataClient, dataColumnSidecarCustody, dasLogger);
     final DataColumnSidecarsByRootRequestMessageSchema
         dataColumnSidecarsByRootRequestMessageSchema =
-            SchemaDefinitionsEip7594.required(
-                    spec.forMilestone(SpecMilestone.EIP7594).getSchemaDefinitions())
+            SchemaDefinitionsFulu.required(
+                    spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions())
                 .getDataColumnSidecarsByRootRequestMessageSchema();
 
     return Optional.of(
@@ -424,8 +413,7 @@ public class BeaconChainMethods {
             true,
             forkDigestContextCodec,
             dataColumnSidecarsByRootMessageHandler,
-            peerLookup,
-            spec.getNetworkingConfig()));
+            peerLookup));
   }
 
   private static Optional<Eth2RpcMethod<DataColumnSidecarsByRangeRequestMessage, DataColumnSidecar>>
@@ -439,14 +427,14 @@ public class BeaconChainMethods {
           final RecentChainData recentChainData,
           final DasReqRespLogger dasLogger) {
 
-    if (!spec.isMilestoneSupported(SpecMilestone.EIP7594)) {
+    if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
       return Optional.empty();
     }
 
     final DataColumnSidecarsByRangeRequestMessage.DataColumnSidecarsByRangeRequestMessageSchema
         requestType =
-            SchemaDefinitionsEip7594.required(
-                    spec.forMilestone(SpecMilestone.EIP7594).getSchemaDefinitions())
+            SchemaDefinitionsFulu.required(
+                    spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions())
                 .getDataColumnSidecarsByRangeRequestMessageSchema();
 
     final RpcContextCodec<Bytes4, DataColumnSidecar> forkDigestContextCodec =
@@ -455,7 +443,7 @@ public class BeaconChainMethods {
 
     final DataColumnSidecarsByRangeMessageHandler dataColumnSidecarsByRangeMessageHandler =
         new DataColumnSidecarsByRangeMessageHandler(
-            spec, getSpecConfigEip7594(spec), metricsSystem, combinedChainDataClient, dasLogger);
+            spec, getSpecConfigFulu(spec), metricsSystem, combinedChainDataClient, dasLogger);
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(
@@ -467,8 +455,7 @@ public class BeaconChainMethods {
             true,
             forkDigestContextCodec,
             dataColumnSidecarsByRangeMessageHandler,
-            peerLookup,
-            spec.getNetworkingConfig()));
+            peerLookup));
   }
 
   private static Eth2RpcMethod<EmptyMessage, MetadataMessage> createMetadata(
@@ -500,21 +487,20 @@ public class BeaconChainMethods {
             expectResponse,
             phase0ContextCodec,
             messageHandler,
-            peerLookup,
-            spec.getNetworkingConfig());
+            peerLookup);
 
     final List<SingleProtocolEth2RpcMethod<EmptyMessage, MetadataMessage>> versionedMethods =
         new ArrayList<>();
 
-    if (spec.isMilestoneSupported(SpecMilestone.EIP7594)) {
-      final SszSchema<MetadataMessage> eip7594MetadataSchema =
+    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      final SszSchema<MetadataMessage> fuluMetadataSchema =
           SszSchema.as(
               MetadataMessage.class,
-              spec.forMilestone(SpecMilestone.EIP7594)
-                  .getSchemaDefinitions()
+              SchemaDefinitionsFulu.required(
+                      spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions())
                   .getMetadataMessageSchema());
-      final RpcContextCodec<?, MetadataMessage> eip7594ContextCodec =
-          RpcContextCodec.noop(eip7594MetadataSchema);
+      final RpcContextCodec<?, MetadataMessage> fuluContextCodec =
+          RpcContextCodec.noop(fuluMetadataSchema);
 
       final SingleProtocolEth2RpcMethod<EmptyMessage, MetadataMessage> v3Method =
           new SingleProtocolEth2RpcMethod<>(
@@ -524,10 +510,9 @@ public class BeaconChainMethods {
               rpcEncoding,
               requestType,
               expectResponse,
-              eip7594ContextCodec,
+              fuluContextCodec,
               messageHandler,
-              peerLookup,
-              spec.getNetworkingConfig());
+              peerLookup);
       versionedMethods.add(v3Method);
     }
 
@@ -551,8 +536,7 @@ public class BeaconChainMethods {
               expectResponse,
               altairContextCodec,
               messageHandler,
-              peerLookup,
-              spec.getNetworkingConfig());
+              peerLookup);
       versionedMethods.add(v2Method);
       versionedMethods.add(v1Method);
       return VersionedEth2RpcMethod.create(
@@ -563,7 +547,6 @@ public class BeaconChainMethods {
   }
 
   private static Eth2RpcMethod<PingMessage, PingMessage> createPing(
-      final Spec spec,
       final AsyncRunner asyncRunner,
       final MetadataMessagesFactory metadataMessagesFactory,
       final PeerLookup peerLookup,
@@ -580,16 +563,11 @@ public class BeaconChainMethods {
         true,
         contextCodec,
         statusHandler,
-        peerLookup,
-        spec.getNetworkingConfig());
+        peerLookup);
   }
 
-  private static SpecConfigDeneb getSpecConfigDeneb(final Spec spec) {
-    return SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig());
-  }
-
-  private static SpecConfigEip7594 getSpecConfigEip7594(final Spec spec) {
-    return SpecConfigEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).getConfig());
+  private static SpecConfigFulu getSpecConfigFulu(final Spec spec) {
+    return SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
   }
 
   public Collection<RpcMethod<?, ?, ?>> all() {

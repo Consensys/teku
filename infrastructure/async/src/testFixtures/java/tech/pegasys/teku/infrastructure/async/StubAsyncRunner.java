@@ -62,7 +62,7 @@ public class StubAsyncRunner implements AsyncRunner {
 
   @Override
   public <U> SafeFuture<U> runAfterDelay(
-      ExceptionThrowingFutureSupplier<U> action, Duration delay) {
+      final ExceptionThrowingFutureSupplier<U> action, final Duration delay) {
     return schedule(action, timeProvider.getTimeInMillis().longValue() + delay.toMillis());
   }
 
@@ -77,7 +77,7 @@ public class StubAsyncRunner implements AsyncRunner {
     actionsToExecute.forEach(Task::run);
   }
 
-  public void executeQueuedActions(int limit) {
+  public void executeQueuedActions(final int limit) {
     final List<Task> actionsToExecute = new ArrayList<>();
     for (int i = 0; i < limit && !queuedActions.isEmpty(); i++) {
       actionsToExecute.add(queuedActions.remove());

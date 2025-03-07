@@ -24,11 +24,11 @@ public interface SszByteListSchema<SszListT extends SszByteList>
 
   SszListT fromBytes(Bytes bytes);
 
-  static SszByteListSchema<SszByteList> create(long maxLength) {
+  static SszByteListSchema<SszByteList> create(final long maxLength) {
     return new SszByteListSchemaImpl<>(SszPrimitiveSchemas.BYTE_SCHEMA, maxLength);
   }
 
-  static SszByteListSchema<SszByteList> createUInt8(long maxLength) {
+  static SszByteListSchema<SszByteList> createUInt8(final long maxLength) {
     return new SszByteListSchemaImpl<>(SszPrimitiveSchemas.UINT8_SCHEMA, maxLength);
   }
 }

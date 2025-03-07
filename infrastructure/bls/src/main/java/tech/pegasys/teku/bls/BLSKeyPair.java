@@ -40,7 +40,7 @@ public final class BLSKeyPair {
    * @param publicKey a BLS public key
    * @param secretKey a BLS secret key
    */
-  public BLSKeyPair(BLSPublicKey publicKey, BLSSecretKey secretKey) {
+  public BLSKeyPair(final BLSPublicKey publicKey, final BLSSecretKey secretKey) {
     this.publicKey = publicKey;
     this.secretKey = secretKey;
   }
@@ -50,7 +50,7 @@ public final class BLSKeyPair {
    *
    * @param secretKey a BLS secret key
    */
-  public BLSKeyPair(BLSSecretKey secretKey) {
+  public BLSKeyPair(final BLSSecretKey secretKey) {
     this(new BLSPublicKey(secretKey), secretKey);
   }
 
@@ -59,7 +59,7 @@ public final class BLSKeyPair {
    *
    * @param keyPair an implementation-specific key pair
    */
-  private BLSKeyPair(KeyPair keyPair) {
+  private BLSKeyPair(final KeyPair keyPair) {
     this(new BLSPublicKey(keyPair.getPublicKey()), new BLSSecretKey(keyPair.getSecretKey()));
   }
 

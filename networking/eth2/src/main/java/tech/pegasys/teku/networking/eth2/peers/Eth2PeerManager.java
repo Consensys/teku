@@ -42,7 +42,6 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -53,6 +52,8 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private static final Logger LOG = LogManager.getLogger();
+
+  private static final Duration STATUS_RECEIVED_TIMEOUT = Duration.ofSeconds(10);
 
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
@@ -69,7 +70,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private final int eth2RpcOutstandingPingThreshold;
 
   private final Duration eth2StatusUpdateInterval;
-  private final SpecConfig specConfig;
 
   Eth2PeerManager(
       final Spec spec,
@@ -106,7 +106,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     this.eth2RpcPingInterval = eth2RpcPingInterval;
     this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
     this.eth2StatusUpdateInterval = eth2StatusUpdateInterval;
-    this.specConfig = spec.getGenesisSpecConfig();
   }
 
   public static Eth2PeerManager create(
@@ -128,12 +127,12 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final Spec spec,
       final KZG kzg,
       final DiscoveryNodeIdExtractor discoveryNodeIdExtractor,
-      final Optional<UInt64> custodySubnetCount,
+      final Optional<UInt64> custodyGroupCount,
       final DasReqRespLogger dasLogger) {
 
     final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
 
-    custodySubnetCount.ifPresent(metadataMessagesFactory::updateCustodySubnetCount);
+    custodyGroupCount.ifPresent(metadataMessagesFactory::updateCustodyGroupCount);
     attestationSubnetService.subscribeToUpdates(
         metadataMessagesFactory::updateAttestationSubnetIds);
     syncCommitteeSubnetService.subscribeToUpdates(
@@ -173,7 +172,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     return metadataMessagesFactory.createMetadataMessage(schema);
   }
 
-  private void setUpPeriodicTasksForPeer(Eth2Peer peer) {
+  private void setUpPeriodicTasksForPeer(final Eth2Peer peer) {
     Cancellable periodicStatusUpdateTask = periodicallyUpdatePeerStatus(peer);
     Cancellable periodicPingTask = periodicallyPingPeer(peer);
     peer.subscribeDisconnect(
@@ -183,7 +182,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         });
   }
 
-  Cancellable periodicallyUpdatePeerStatus(Eth2Peer peer) {
+  Cancellable periodicallyUpdatePeerStatus(final Eth2Peer peer) {
     return asyncRunner.runWithFixedDelay(
         () ->
             peer.sendStatus()
@@ -194,7 +193,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         err -> LOG.debug("Exception calling runnable for updating peer status.", err));
   }
 
-  Cancellable periodicallyPingPeer(Eth2Peer peer) {
+  Cancellable periodicallyPingPeer(final Eth2Peer peer) {
     return asyncRunner.runWithFixedDelay(
         () -> sendPeriodicPing(peer),
         eth2RpcPingInterval,
@@ -251,7 +250,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                     .ifExceptionGetsHereRaiseABug();
               }
             },
-            Duration.ofSeconds(specConfig.getRespTimeout()))
+            STATUS_RECEIVED_TIMEOUT)
         .finish(
             () -> {},
             error -> {
@@ -263,7 +262,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   }
 
   @VisibleForTesting
-  void sendPeriodicPing(Eth2Peer peer) {
+  void sendPeriodicPing(final Eth2Peer peer) {
     if (peer.getUnansweredPingCount() >= eth2RpcOutstandingPingThreshold) {
       LOG.debug("Disconnecting the peer {} due to PING timeout.", peer.getId());
       peer.disconnectCleanly(DisconnectReason.UNRESPONSIVE).ifExceptionGetsHereRaiseABug();
@@ -306,11 +305,11 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
    * @return the peer corresponding to this node id.
    */
   @Override
-  public Optional<Eth2Peer> getConnectedPeer(NodeId nodeId) {
+  public Optional<Eth2Peer> getConnectedPeer(final NodeId nodeId) {
     return Optional.ofNullable(connectedPeerMap.get(nodeId));
   }
 
-  public Optional<Eth2Peer> getPeer(NodeId peerId) {
+  public Optional<Eth2Peer> getPeer(final NodeId peerId) {
     return Optional.ofNullable(connectedPeerMap.get(peerId)).filter(this::peerIsReady);
   }
 
@@ -318,7 +317,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     return connectedPeerMap.values().stream().filter(this::peerIsReady);
   }
 
-  private boolean peerIsReady(Eth2Peer peer) {
+  private boolean peerIsReady(final Eth2Peer peer) {
     return peer.hasStatus();
   }
 

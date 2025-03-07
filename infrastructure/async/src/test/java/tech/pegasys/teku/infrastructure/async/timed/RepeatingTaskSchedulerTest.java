@@ -40,7 +40,7 @@ class RepeatingTaskSchedulerTest {
 
   @ParameterizedTest
   @EnumSource(SchedulerType.class)
-  void shouldExecuteEventImmediatelyWhenAlreadyDue(SchedulerType type) {
+  void shouldExecuteEventImmediatelyWhenAlreadyDue(final SchedulerType type) {
     scheduleRepeatingEvent(type, getTime(type), UInt64.valueOf(12), action);
     verify(action).execute(getTime(type), getTime(type));
   }
@@ -48,7 +48,7 @@ class RepeatingTaskSchedulerTest {
   @ParameterizedTest
   @EnumSource(SchedulerType.class)
   void shouldExecuteEventImmediatelyMultipleTimesWhenMultipleRepeatsAreAlreadyDue(
-      SchedulerType type) {
+      final SchedulerType type) {
     scheduleRepeatingEvent(type, getTime(type).minus(24), UInt64.valueOf(12), action);
     verify(action).execute(getTime(type).minus(24), getTime(type));
     verify(action).execute(getTime(type).minus(12), getTime(type));
@@ -57,7 +57,7 @@ class RepeatingTaskSchedulerTest {
 
   @ParameterizedTest
   @EnumSource(SchedulerType.class)
-  void shouldDelayExecutionUntilEventIsDue(SchedulerType type) {
+  void shouldDelayExecutionUntilEventIsDue(final SchedulerType type) {
     scheduleRepeatingEvent(type, getTime(type).plus(100), UInt64.valueOf(12), action);
 
     asyncRunner.executeDueActionsRepeatedly();
@@ -75,7 +75,7 @@ class RepeatingTaskSchedulerTest {
 
   @ParameterizedTest
   @EnumSource(SchedulerType.class)
-  void shouldExecuteEventAgainAfterRepeatPeriod(SchedulerType type) {
+  void shouldExecuteEventAgainAfterRepeatPeriod(final SchedulerType type) {
     final UInt64 repeatPeriod = UInt64.valueOf(12);
     // Action executes immediately
     scheduleRepeatingEvent(type, getTime(type), repeatPeriod, action);
@@ -89,7 +89,7 @@ class RepeatingTaskSchedulerTest {
 
   @ParameterizedTest
   @EnumSource(SchedulerType.class)
-  void shouldInterleaveMultipleRepeatingEvents(SchedulerType type) {
+  void shouldInterleaveMultipleRepeatingEvents(final SchedulerType type) {
     final RepeatingTask secondAction = mock(RepeatingTask.class);
     scheduleRepeatingEvent(type, getTime(type), UInt64.valueOf(6), action);
     scheduleRepeatingEvent(type, getTime(type), UInt64.valueOf(5), secondAction);
@@ -114,7 +114,7 @@ class RepeatingTaskSchedulerTest {
 
   @ParameterizedTest
   @EnumSource(SchedulerType.class)
-  void shouldReportScheduledAndActualExecutionTimeWhenTaskIsDelayed(SchedulerType type) {
+  void shouldReportScheduledAndActualExecutionTimeWhenTaskIsDelayed(final SchedulerType type) {
     final UInt64 scheduledTime = getTime(type).minus(5);
     scheduleRepeatingEvent(type, scheduledTime, UInt64.valueOf(10), action);
 
@@ -123,10 +123,10 @@ class RepeatingTaskSchedulerTest {
   }
 
   private void scheduleRepeatingEvent(
-      SchedulerType schedulerType,
-      UInt64 initialInvocationTime,
-      UInt64 repeatingPeriod,
-      RepeatingTask task) {
+      final SchedulerType schedulerType,
+      final UInt64 initialInvocationTime,
+      final UInt64 repeatingPeriod,
+      final RepeatingTask task) {
     if (schedulerType == SchedulerType.SECONDS) {
       eventQueue.scheduleRepeatingEvent(initialInvocationTime, repeatingPeriod, task);
     } else {
@@ -134,13 +134,13 @@ class RepeatingTaskSchedulerTest {
     }
   }
 
-  private UInt64 getTime(SchedulerType schedulerType) {
+  private UInt64 getTime(final SchedulerType schedulerType) {
     return schedulerType == SchedulerType.SECONDS
         ? timeProvider.getTimeInSeconds()
         : timeProvider.getTimeInMillis();
   }
 
-  private void advanceTimeBy(SchedulerType schedulerType, long time) {
+  private void advanceTimeBy(final SchedulerType schedulerType, final long time) {
     if (schedulerType == SchedulerType.SECONDS) {
       timeProvider.advanceTimeBySeconds(time);
     } else {

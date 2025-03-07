@@ -22,11 +22,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 
 class Eth1VotingPeriodTest {
 
-  final SpecConfig specConfig =
+  final SpecConfigAndParent<? extends SpecConfig> specConfig =
       SpecConfigLoader.loadConfig(
           "minimal",
           b ->

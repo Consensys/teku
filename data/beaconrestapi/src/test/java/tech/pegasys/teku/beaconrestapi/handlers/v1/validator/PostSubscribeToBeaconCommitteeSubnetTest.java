@@ -18,7 +18,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRequestBodyFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
@@ -31,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionData;
 
 class PostSubscribeToBeaconCommitteeSubnetTest extends AbstractMigratedBeaconHandlerTest {
 
@@ -43,9 +46,8 @@ class PostSubscribeToBeaconCommitteeSubnetTest extends AbstractMigratedBeaconHan
   @Test
   public void shouldReturnSuccessWhenSubscriptionToBeaconCommitteeIsSuccessful()
       throws JsonProcessingException {
-    final PostSubscribeToBeaconCommitteeSubnet.CommitteeSubscriptionData data =
-        new PostSubscribeToBeaconCommitteeSubnet.CommitteeSubscriptionData(
-            1, 1, UInt64.ONE, UInt64.ONE, false);
+    final CommitteeSubscriptionData data =
+        new CommitteeSubscriptionData(1, 1, UInt64.ONE, UInt64.ONE, false);
 
     request.setRequestBody(List.of(data));
 
@@ -61,10 +63,7 @@ class PostSubscribeToBeaconCommitteeSubnetTest extends AbstractMigratedBeaconHan
         "[{\"validator_index\":\"1\",\"committee_index\":\"1\",\"committees_at_slot\":\"1\","
             + "\"slot\":\"1\",\"is_aggregator\":true}]";
     assertThat(getRequestBodyFromMetadata(handler, data))
-        .isEqualTo(
-            List.of(
-                new PostSubscribeToBeaconCommitteeSubnet.CommitteeSubscriptionData(
-                    1, 1, UInt64.ONE, UInt64.ONE, true)));
+        .isEqualTo(List.of(new CommitteeSubscriptionData(1, 1, UInt64.ONE, UInt64.ONE, true)));
   }
 
   @Test
@@ -80,5 +79,15 @@ class PostSubscribeToBeaconCommitteeSubnetTest extends AbstractMigratedBeaconHan
   @Test
   void metadata_shouldHandle200() {
     verifyMetadataEmptyResponse(handler, SC_OK);
+  }
+
+  @Test
+  void metadata_shouldHandle204() {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
+  }
+
+  @Test
+  void metadata_shouldHandle503() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_SERVICE_UNAVAILABLE);
   }
 }

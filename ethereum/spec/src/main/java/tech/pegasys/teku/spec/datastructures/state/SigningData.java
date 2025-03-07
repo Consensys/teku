@@ -33,18 +33,18 @@ public class SigningData extends Container2<SigningData, SszBytes32, SszBytes32>
     }
 
     @Override
-    public SigningData createFromBackingNode(TreeNode node) {
+    public SigningData createFromBackingNode(final TreeNode node) {
       return new SigningData(this, node);
     }
   }
 
   public static final SigningDataSchema SSZ_SCHEMA = new SigningDataSchema();
 
-  private SigningData(SigningDataSchema type, TreeNode backingNode) {
+  private SigningData(final SigningDataSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public SigningData(Bytes32 objectRoot, Bytes32 domain) {
+  public SigningData(final Bytes32 objectRoot, final Bytes32 domain) {
     super(SSZ_SCHEMA, SszBytes32.of(objectRoot), SszBytes32.of(domain));
   }
 

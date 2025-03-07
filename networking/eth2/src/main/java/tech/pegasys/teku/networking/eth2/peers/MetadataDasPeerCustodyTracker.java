@@ -26,18 +26,18 @@ public class MetadataDasPeerCustodyTracker
   private final Map<UInt256, Integer> connectedPeerSubnetCount = new ConcurrentHashMap<>();
 
   @Override
-  public void onConnected(Eth2Peer peer) {
+  public void onConnected(final Eth2Peer peer) {
     peer.subscribeDisconnect((__, ___) -> peerDisconnected(peer));
     peer.subscribeMetadataUpdates(this::onPeerMetadataUpdate);
   }
 
-  private void peerDisconnected(Eth2Peer peer) {
+  private void peerDisconnected(final Eth2Peer peer) {
     connectedPeerSubnetCount.remove(peer.getDiscoveryNodeId().orElseThrow());
   }
 
-  private void onPeerMetadataUpdate(Eth2Peer peer, MetadataMessage metadata) {
+  private void onPeerMetadataUpdate(final Eth2Peer peer, final MetadataMessage metadata) {
     metadata
-        .getOptionalCustodySubnetCount()
+        .getOptionalCustodyGroupCount()
         .ifPresent(
             subnetCount ->
                 connectedPeerSubnetCount.put(
@@ -45,7 +45,7 @@ public class MetadataDasPeerCustodyTracker
   }
 
   @Override
-  public int getCustodyCountForPeer(UInt256 nodeId) {
+  public int getCustodyGroupCountForPeer(final UInt256 nodeId) {
     return connectedPeerSubnetCount.getOrDefault(nodeId, 0);
   }
 }

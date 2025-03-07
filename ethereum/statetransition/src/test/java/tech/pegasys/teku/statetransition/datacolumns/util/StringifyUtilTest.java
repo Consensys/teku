@@ -33,9 +33,9 @@ public class StringifyUtilTest {
     }
   }
 
-  static int maxIndexesLen = 128;
+  static final int MAX_INDEXES_LEN = 128;
 
-  static List<TestCase> testCases =
+  static final List<TestCase> TEST_CASES =
       List.of(
           new TestCase(IntStream.empty(), "[]"),
           new TestCase(range(0, 128), "[all]"),
@@ -57,14 +57,14 @@ public class StringifyUtilTest {
               "[10..13,15,17,19..97,99]"));
 
   private static Stream<Arguments> provideTestCaseParameters() {
-    return testCases.stream().map(Arguments::of);
+    return TEST_CASES.stream().map(Arguments::of);
   }
 
   @ParameterizedTest
   @MethodSource("provideTestCaseParameters")
-  void columnIndexesToString_test(TestCase testCase) {
+  void columnIndexesToString_test(final TestCase testCase) {
     List<Integer> idxList = testCase.indexes.boxed().toList();
-    String s = StringifyUtil.columnIndexesToString(idxList, maxIndexesLen);
+    String s = StringifyUtil.columnIndexesToString(idxList, MAX_INDEXES_LEN);
     System.out.println(s);
     assertThat(s).isEqualTo("(len: " + idxList.size() + ") " + testCase.expectedString);
   }

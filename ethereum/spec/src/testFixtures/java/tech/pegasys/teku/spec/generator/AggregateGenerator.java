@@ -122,7 +122,7 @@ public class AggregateGenerator {
         final Attestation aggregate) {
       final List<Integer> beaconCommittee =
           spec.getBeaconCommittee(
-              stateAtSlot, aggregate.getData().getSlot(), aggregate.getData().getIndex());
+              stateAtSlot, aggregate.getData().getSlot(), aggregate.getFirstCommitteeIndex());
       for (int validatorIndex : beaconCommittee) {
         final Optional<BLSSignature> maybeSelectionProof =
             createValidSelectionProof(validatorIndex, stateAtSlot, aggregate);
@@ -164,7 +164,7 @@ public class AggregateGenerator {
         final UInt64 slot, final UInt64 committeeIndex) {
       return attestationGenerator
           .streamAttestations(blockAndState, slot)
-          .filter(attestation -> attestation.getData().getIndex().equals(committeeIndex))
+          .filter(attestation -> attestation.getFirstCommitteeIndex().equals(committeeIndex))
           .findFirst()
           .orElseThrow();
     }
@@ -172,7 +172,7 @@ public class AggregateGenerator {
     private Optional<BLSSignature> createValidSelectionProof(
         final int validatorIndex, final BeaconState state, final Attestation attestation) {
       final UInt64 slot = attestation.getData().getSlot();
-      final UInt64 committeeIndex = attestation.getData().getIndex();
+      final UInt64 committeeIndex = attestation.getFirstCommitteeIndex();
       final SpecVersion specVersion = spec.atSlot(slot);
       final List<Integer> beaconCommittee = spec.getBeaconCommittee(state, slot, committeeIndex);
       final int aggregatorModulo =

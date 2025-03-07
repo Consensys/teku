@@ -30,10 +30,10 @@ public class ValidatorKeystoreGenerator {
   private final Path passwordsOutputPath;
 
   public ValidatorKeystoreGenerator(
-      String validatorKeyPassword,
-      Path keysOutputPath,
-      Path passwordsOutputPath,
-      Consumer<String> commandOutput) {
+      final String validatorKeyPassword,
+      final Path keysOutputPath,
+      final Path passwordsOutputPath,
+      final Consumer<String> commandOutput) {
     // Withdrawal key password is unnecessary for this mode of running.
     this.encryptedKeystoreWriter =
         new EncryptedKeystoreWriter(
@@ -67,7 +67,7 @@ public class ValidatorKeystoreGenerator {
     }
   }
 
-  public void createDirectory(Path directoryPath) {
+  public void createDirectory(final Path directoryPath) {
     try {
       Files.createDirectories(directoryPath);
     } catch (IOException e) {

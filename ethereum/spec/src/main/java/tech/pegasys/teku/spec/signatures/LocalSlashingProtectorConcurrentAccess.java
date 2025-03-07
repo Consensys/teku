@@ -112,7 +112,7 @@ public class LocalSlashingProtectorConcurrentAccess implements SlashingProtector
         getValidatorSigningRecordFromFile(publicKey);
     return new LocalSlashingProtectionRecord(
         slashingProtectedPath,
-        maybeRecord.orElse(new ValidatorSigningRecord(genesisValidatorsRoot)),
+        maybeRecord.orElse(ValidatorSigningRecord.emptySigningRecord(genesisValidatorsRoot)),
         new ReentrantLock());
   }
 

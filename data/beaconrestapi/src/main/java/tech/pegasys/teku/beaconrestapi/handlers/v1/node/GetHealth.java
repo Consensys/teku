@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SYNCING_PARAMETER;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_PARTIAL_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
@@ -55,6 +56,8 @@ public class GetHealth extends RestApiEndpoint {
             .response(SC_OK, "Node is ready")
             .response(SC_PARTIAL_CONTENT, "Node is syncing but can serve incomplete data")
             .response(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues")
+            .response(
+                SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
             .withBadRequestResponse(Optional.of("Invalid syncing status code"))
             .build());
     this.syncProvider = syncProvider;
@@ -62,7 +65,7 @@ public class GetHealth extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
     if (!chainDataProvider.isStoreAvailable() || syncProvider.getRejectedExecutionCount() > 0) {
       request.respondWithCode(SC_SERVICE_UNAVAILABLE);

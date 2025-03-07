@@ -20,7 +20,7 @@ public class ExceptionUtil {
 
   @SuppressWarnings("unchecked")
   public static <T extends Throwable> Optional<T> getCause(
-      final Throwable err, Class<? extends T> targetType) {
+      final Throwable err, final Class<? extends T> targetType) {
     return ExceptionUtils.getThrowableList(err).stream()
         .filter(targetType::isInstance)
         .map(e -> (T) e)
@@ -28,7 +28,7 @@ public class ExceptionUtil {
   }
 
   public static <T extends Throwable> boolean hasCause(
-      final Throwable err, Class<? extends T> targetType) {
+      final Throwable err, final Class<? extends T> targetType) {
     return getCause(err, targetType).isPresent();
   }
 

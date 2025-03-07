@@ -18,14 +18,19 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.signatures.DeletableSigner;
 import tech.pegasys.teku.validator.api.GraffitiProvider;
+import tech.pegasys.teku.validator.api.UpdatableGraffitiProvider;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.loader.ValidatorSource.ValidatorProvider;
 
@@ -43,7 +48,9 @@ public class MultithreadedValidatorLoader {
   public static void loadValidators(
       final OwnedValidators ownedValidators,
       final Map<BLSPublicKey, ValidatorProvider> providers,
-      final GraffitiProvider graffitiProvider) {
+      final GraffitiProvider defaultGraffitiProvider,
+      final Function<BLSPublicKey, Optional<Bytes32>> updatableGraffitiProvider,
+      final Optional<DataDirLayout> maybeDataDirLayout) {
     final int totalValidatorCount = providers.size();
     STATUS_LOG.loadingValidators(totalValidatorCount);
 
@@ -57,9 +64,18 @@ public class MultithreadedValidatorLoader {
                   provider ->
                       executorService.submit(
                           () -> {
+                            final BLSPublicKey publicKey = provider.getPublicKey();
+                            final GraffitiProvider graffitiProvider =
+                                maybeDataDirLayout
+                                    .<GraffitiProvider>map(
+                                        dataDirLayout ->
+                                            new UpdatableGraffitiProvider(
+                                                () -> updatableGraffitiProvider.apply(publicKey),
+                                                defaultGraffitiProvider))
+                                    .orElse(defaultGraffitiProvider);
                             final Validator validator =
                                 new Validator(
-                                    provider.getPublicKey(),
+                                    publicKey,
                                     new DeletableSigner(provider.createSigner()),
                                     graffitiProvider,
                                     provider.isReadOnly());

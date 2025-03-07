@@ -17,11 +17,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_VALIDATOR_EXECUTOR_THREADS;
 
 import com.google.common.io.Resources;
+import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
@@ -37,9 +41,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void networkOption_ShouldFail_IfSpecifiedOnParentCommand() {
     final String[] argsNetworkOptOnParent =
-        new String[] {
-          "--network", "auto", "vc",
-        };
+        new String[] {"--network", "auto", "vc", "--validator-keys=keys:pass"};
     int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
     assertThat(parseResult).isEqualTo(2);
     String cmdOutput = getCommandLineOutput();
@@ -51,7 +53,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   void loggingOptions_shouldUseLoggingOptionsFromBeforeSubcommand() {
     final LoggingConfig config =
         getLoggingConfigurationFromArguments(
-            "--log-destination=console", "vc", "--network=mainnet");
+            "--log-destination=console", "vc", "--network=mainnet", "--validator-keys=keys:pass");
     assertThat(config.getDestination()).isEqualTo(LoggingDestination.CONSOLE);
   }
 
@@ -59,7 +61,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   void loggingOptions_shouldUseLoggingOptionsFromAfterSubcommand() {
     final LoggingConfig config =
         getLoggingConfigurationFromArguments(
-            "vc", "--network=mainnet", "--log-destination=console");
+            "vc", "--validator-keys=keys:pass", "--network=mainnet", "--log-destination=console");
     assertThat(config.getDestination()).isEqualTo(LoggingDestination.CONSOLE);
   }
 
@@ -77,7 +79,12 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
     final String sentryConfigPath = pathFor("sentry_node_config.json");
     final String[] argsWithSentryConfig =
         new String[] {
-          "vc", "--network", "minimal", "--sentry-config-file", sentryConfigPath,
+          "vc",
+          "--network",
+          "minimal",
+          "--validator-keys=keys:pass",
+          "--sentry-config-file",
+          sentryConfigPath,
         };
 
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(argsWithSentryConfig);
@@ -89,9 +96,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void sentryConfigOption_emptyConfigWhenMissingSentryConfigFileParam() {
     final String[] argsWithoutSentryConfig =
-        new String[] {
-          "vc", "--network", "minimal",
-        };
+        new String[] {"vc", "--network", "minimal", "--validator-keys=keys:pass"};
 
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(argsWithoutSentryConfig);
 
@@ -103,7 +108,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   public void sentryConfigOption_shouldFailWhenOptionIsMissingRequiredFileNameParam() {
     final String[] argsWithSentryConfigMissingParam =
         new String[] {
-          "vc", "--network", "minimal", "--sentry-config-file",
+          "vc", "--network", "minimal", "--validator-keys=keys:pass", "--sentry-config-file",
         };
 
     int parseResult = beaconNodeCommand.parse(argsWithSentryConfigMissingParam);
@@ -119,6 +124,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
       "vc",
       "--network",
       "minimal",
+      "--validator-keys=keys:pass",
       "--beacon-node-api-endpoint",
       "http://127.0.0.1:1234",
       "--sentry-config-file",
@@ -141,7 +147,12 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
     final URI expectedBeaconNodeApiEndpoint = URI.create("http://duties:5051");
 
     final String[] args = {
-      "vc", "--network", "minimal", "--sentry-config-file", pathFor("sentry_node_config.json")
+      "vc",
+      "--network",
+      "minimal",
+      "--validator-keys=keys:pass",
+      "--sentry-config-file",
+      pathFor("sentry_node_config.json")
     };
 
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
@@ -153,7 +164,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void doppelgangerDetectionShouldBeDisabledByDefault() {
 
-    final String[] args = {"vc", "--network", "minimal"};
+    final String[] args = {"vc", "--network", "minimal", "--validator-keys=keys:pass"};
 
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
 
@@ -165,7 +176,12 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   public void shouldEnableDoppelgangerDetection() {
 
     final String[] args = {
-      "vc", "--network", "minimal", "--doppelganger-detection-enabled", "true"
+      "vc",
+      "--network",
+      "minimal",
+      "--validator-keys=keys:pass",
+      "--doppelganger-detection-enabled",
+      "true"
     };
 
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
@@ -177,7 +193,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void clientExecutorThreadsShouldBeDefaultValue() {
 
-    final String[] args = {"vc", "--network", "minimal"};
+    final String[] args = {"vc", "--network", "minimal", "--validator-keys=keys:pass"};
 
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
 
@@ -190,7 +206,12 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   public void clientExecutorThreadsShouldBeSetValue() {
 
     final String[] args = {
-      "vc", "--network", "minimal", "--Xvalidator-client-executor-threads", "1000"
+      "vc",
+      "--validator-keys=keys:pass",
+      "--network",
+      "minimal",
+      "--Xvalidator-client-executor-threads",
+      "1000"
     };
 
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
@@ -202,7 +223,12 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void clientExecutorThreadsShouldThrowOverLimit() {
     final String[] args = {
-      "vc", "--network", "minimal", "--Xvalidator-client-executor-threads", "6000"
+      "vc",
+      "--network",
+      "minimal",
+      "--validator-keys=keys:pass",
+      "--Xvalidator-client-executor-threads",
+      "6000"
     };
 
     int parseResult = beaconNodeCommand.parse(args);
@@ -215,7 +241,9 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldSetUseObolDvtSelectionsEndpoint() {
-    final String[] args = {"vc", "--network", "minimal", "--Xobol-dvt-integration-enabled"};
+    final String[] args = {
+      "vc", "--network", "minimal", "--validator-keys=keys:pass", "--Xobol-dvt-integration-enabled"
+    };
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
 
     assertThat(config.validatorClient().getValidatorConfig().isDvtSelectionsEndpointEnabled())
@@ -224,10 +252,53 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldNotUseObolDvtSelectionsEndpointByDefault() {
-    final String[] args = {"vc", "--network", "minimal"};
+    final String[] args = {"vc", "--network", "minimal", "--validator-keys=keys:pass"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.validatorClient().getValidatorConfig().isDvtSelectionsEndpointEnabled())
         .isFalse();
+  }
+
+  @Test
+  public void shouldFail_IfNoValidatorKeysSourceProvided() {
+    final String[] argsNetworkOptOnParent = new String[] {"vc", "--network", "minimal"};
+    int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
+    assertThat(parseResult).isEqualTo(2);
+    String cmdOutput = getCommandLineOutput();
+    assertThat(cmdOutput)
+        .contains(
+            "No validator keys source provided, should provide local or remote keys otherwise enable the key-manager"
+                + " api to start the validator client");
+  }
+
+  @Test
+  public void shouldNotFail_IfNoLocalValidatorKeys_ValidatorRestApiEnabled(
+      @TempDir final Path tempPath) throws IOException {
+    AssertionsForClassTypes.assertThat(tempPath.resolve("keystore").toFile().createNewFile())
+        .isTrue();
+    AssertionsForClassTypes.assertThat(tempPath.resolve("pass").toFile().createNewFile()).isTrue();
+    final String[] argsNetworkOptOnParent =
+        new String[] {
+          "vc",
+          "--network",
+          "minimal",
+          "--validator-api-enabled=true",
+          "--validator-api-keystore-file",
+          tempPath.resolve("keystore").toString(),
+          "--validator-api-keystore-password-file",
+          tempPath.resolve("pass").toString()
+        };
+    int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
+    assertThat(parseResult).isEqualTo(0);
+  }
+
+  @Test
+  public void shouldNotFail_IfNoLocalValidatorKeys_ExternalSignerUrlProvided() {
+    final String[] argsNetworkOptOnParent =
+        new String[] {
+          "vc", "--network", "minimal", "--validators-external-signer-url=http://localhost"
+        };
+    int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
+    assertThat(parseResult).isEqualTo(0);
   }
 
   private String pathFor(final String filename) {

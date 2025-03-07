@@ -35,7 +35,7 @@ public class SyncCommitteeSelectionsRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
   }
 
-  public Optional<List<SyncCommitteeSelectionProof>> getSelectionProof(
+  public Optional<List<SyncCommitteeSelectionProof>> submit(
       final List<SyncCommitteeSelectionProof> validatorsPartialProof) {
     return postJson(
         ValidatorApiMethod.SYNC_COMMITTEE_SELECTIONS,

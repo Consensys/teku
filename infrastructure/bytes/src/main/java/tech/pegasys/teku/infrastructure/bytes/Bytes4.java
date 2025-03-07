@@ -26,16 +26,16 @@ public class Bytes4 {
 
   private final Bytes bytes;
 
-  public Bytes4(Bytes bytes) {
+  public Bytes4(final Bytes bytes) {
     checkArgument(bytes.size() == 4, "Bytes4 should be 4 bytes, but was %s bytes.", bytes.size());
     this.bytes = bytes;
   }
 
-  public static Bytes4 fromHexString(String value) {
+  public static Bytes4 fromHexString(final String value) {
     return new Bytes4(Bytes.fromHexString(value));
   }
 
-  public static Bytes4 fromHexStringLenient(String value) {
+  public static Bytes4 fromHexStringLenient(final String value) {
     return new Bytes4(Bytes.fromHexStringLenient(value, 4));
   }
 
@@ -50,7 +50,7 @@ public class Bytes4 {
    * @return A {@link Bytes4} that exposes the left-padded bytes of {@code value}.
    * @throws IllegalArgumentException if {@code value.size() > 4}.
    */
-  public static Bytes4 leftPad(Bytes value) {
+  public static Bytes4 leftPad(final Bytes value) {
     checkNotNull(value);
     if (value instanceof Bytes4) {
       return (Bytes4) value;
@@ -68,7 +68,7 @@ public class Bytes4 {
    * @return A {@link Bytes4} that exposes the right-padded bytes of {@code value}.
    * @throws IllegalArgumentException if {@code value.size() > 4}.
    */
-  public static Bytes4 rightPad(Bytes value) {
+  public static Bytes4 rightPad(final Bytes value) {
     checkNotNull(value);
     if (value instanceof Bytes4) {
       return (Bytes4) value;

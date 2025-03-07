@@ -26,7 +26,7 @@ public class SyncStateChangeEvent extends Event<String> {
           .withField("sync_state", STRING_TYPE, Function.identity())
           .build();
 
-  SyncStateChangeEvent(String syncState) {
+  SyncStateChangeEvent(final String syncState) {
     super(SYNC_STATE_CHANGE_EVENT_TYPE, syncState);
   }
 }

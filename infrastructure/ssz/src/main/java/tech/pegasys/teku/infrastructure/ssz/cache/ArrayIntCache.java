@@ -35,22 +35,22 @@ public final class ArrayIntCache<V> implements IntCache<V> {
     this(DEFAULT_INITIAL_CACHE_SIZE);
   }
 
-  public ArrayIntCache(int initialSize) {
+  public ArrayIntCache(final int initialSize) {
     this.initSize = initialSize;
     this.values = createArray(initialSize);
   }
 
-  private ArrayIntCache(V[] values, int initSize) {
+  private ArrayIntCache(final V[] values, final int initSize) {
     this.values = values;
     this.initSize = initSize;
   }
 
   @SuppressWarnings("unchecked")
-  private V[] createArray(int size) {
+  private V[] createArray(final int size) {
     return (V[]) new Object[size];
   }
 
-  private V[] extend(int index) {
+  private V[] extend(final int index) {
     V[] valuesLocal = this.values;
     int newSize = valuesLocal.length;
     if (index >= newSize) {
@@ -65,7 +65,7 @@ public final class ArrayIntCache<V> implements IntCache<V> {
   }
 
   @Override
-  public V getInt(int key, IntFunction<V> fallback) {
+  public V getInt(final int key, final IntFunction<V> fallback) {
     V[] valuesLocal = this.values;
     V val = key >= valuesLocal.length ? null : valuesLocal[key];
     if (val == null) {
@@ -76,7 +76,7 @@ public final class ArrayIntCache<V> implements IntCache<V> {
   }
 
   @Override
-  public Optional<V> getCached(Integer key) {
+  public Optional<V> getCached(final Integer key) {
     V[] valuesLocal = this.values;
     return key >= valuesLocal.length ? Optional.empty() : Optional.ofNullable(valuesLocal[key]);
   }
@@ -95,12 +95,12 @@ public final class ArrayIntCache<V> implements IntCache<V> {
   }
 
   @Override
-  public void invalidateWithNewValueInt(int key, V newValue) {
+  public void invalidateWithNewValueInt(final int key, final V newValue) {
     extend(key)[key] = newValue;
   }
 
   @Override
-  public void invalidateInt(int key) {
+  public void invalidateInt(final int key) {
     V[] valuesLocal = this.values;
     if (key < valuesLocal.length) {
       valuesLocal[key] = null;

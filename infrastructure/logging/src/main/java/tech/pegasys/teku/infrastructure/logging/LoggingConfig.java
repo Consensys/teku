@@ -187,23 +187,23 @@ public class LoggingConfig {
           "LoggingConfig error: dbOpAlertThreshold must be a positive value");
     }
 
-    public LoggingConfigBuilder logLevel(Level logLevel) {
+    public LoggingConfigBuilder logLevel(final Level logLevel) {
       this.logLevel = Optional.ofNullable(logLevel);
       return this;
     }
 
-    public LoggingConfigBuilder colorEnabled(boolean colorEnabled) {
+    public LoggingConfigBuilder colorEnabled(final boolean colorEnabled) {
       this.colorEnabled = colorEnabled;
       return this;
     }
 
-    public LoggingConfigBuilder includeEventsEnabled(boolean includeEventsEnabled) {
+    public LoggingConfigBuilder includeEventsEnabled(final boolean includeEventsEnabled) {
       this.includeEventsEnabled = includeEventsEnabled;
       return this;
     }
 
     public LoggingConfigBuilder includeValidatorDutiesEnabled(
-        boolean includeValidatorDutiesEnabled) {
+        final boolean includeValidatorDutiesEnabled) {
       this.includeValidatorDutiesEnabled = includeValidatorDutiesEnabled;
       return this;
     }
@@ -213,47 +213,47 @@ public class LoggingConfig {
       return this;
     }
 
-    public LoggingConfigBuilder destination(LoggingDestination destination) {
+    public LoggingConfigBuilder destination(final LoggingDestination destination) {
       this.destination = destination;
       return this;
     }
 
-    public LoggingConfigBuilder dataDirectory(String dataDirectory) {
+    public LoggingConfigBuilder dataDirectory(final String dataDirectory) {
       this.dataDirectory = dataDirectory;
       return this;
     }
 
-    public LoggingConfigBuilder logDirectory(String logDirectory) {
+    public LoggingConfigBuilder logDirectory(final String logDirectory) {
       this.logDirectory = logDirectory;
       return this;
     }
 
-    public LoggingConfigBuilder logFileNamePrefix(String logFileNamePrefix) {
+    public LoggingConfigBuilder logFileNamePrefix(final String logFileNamePrefix) {
       this.logFileNamePrefix = logFileNamePrefix;
       return this;
     }
 
-    public LoggingConfigBuilder logFileName(String logFileName) {
+    public LoggingConfigBuilder logFileName(final String logFileName) {
       this.logFileName = logFileName;
       return this;
     }
 
-    public LoggingConfigBuilder logFileNamePattern(String logFileNamePattern) {
+    public LoggingConfigBuilder logFileNamePattern(final String logFileNamePattern) {
       this.logFileNamePattern = logFileNamePattern;
       return this;
     }
 
-    public LoggingConfigBuilder logPath(String logPath) {
+    public LoggingConfigBuilder logPath(final String logPath) {
       this.logPath = logPath;
       return this;
     }
 
-    public LoggingConfigBuilder logPathPattern(String logPathPattern) {
+    public LoggingConfigBuilder logPathPattern(final String logPathPattern) {
       this.logPathPattern = logPathPattern;
       return this;
     }
 
-    public LoggingConfigBuilder dbOpAlertThresholdMillis(int dbOpAlertThresholdMillis) {
+    public LoggingConfigBuilder dbOpAlertThresholdMillis(final int dbOpAlertThresholdMillis) {
       this.dbOpAlertThresholdMillis = dbOpAlertThresholdMillis;
       return this;
     }

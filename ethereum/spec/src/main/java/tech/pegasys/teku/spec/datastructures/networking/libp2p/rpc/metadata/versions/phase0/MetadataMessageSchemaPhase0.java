@@ -38,7 +38,7 @@ public class MetadataMessageSchemaPhase0
   }
 
   @Override
-  public MetadataMessagePhase0 createFromBackingNode(TreeNode node) {
+  public MetadataMessagePhase0 createFromBackingNode(final TreeNode node) {
     return new MetadataMessagePhase0(this, node);
   }
 

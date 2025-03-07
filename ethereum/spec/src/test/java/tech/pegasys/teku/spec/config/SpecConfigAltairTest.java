@@ -26,9 +26,9 @@ public class SpecConfigAltairTest {
   @Test
   public void equals_mainnet() {
     SpecConfigAltair configA =
-        SpecConfigLoader.loadConfig("mainnet").toVersionAltair().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionAltair().orElseThrow();
     SpecConfigAltair configB =
-        SpecConfigLoader.loadConfig("mainnet").toVersionAltair().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionAltair().orElseThrow();
 
     assertThat(configA).isEqualTo(configB);
     assertThat(configA.hashCode()).isEqualTo(configB.hashCode());
@@ -36,7 +36,7 @@ public class SpecConfigAltairTest {
 
   @Test
   public void equals_sameRandomValues() {
-    SpecConfig phase0 = SpecConfigLoader.loadConfig("mainnet");
+    SpecConfig phase0 = SpecConfigLoader.loadConfig("mainnet").specConfig();
     SpecConfigAltair configA = createRandomAltairConfig(phase0, 1);
     SpecConfigAltair configB = createRandomAltairConfig(phase0, 1);
 
@@ -46,7 +46,7 @@ public class SpecConfigAltairTest {
 
   @Test
   public void equals_differentRandomValues() {
-    SpecConfig phase0 = SpecConfigLoader.loadConfig("mainnet");
+    SpecConfig phase0 = SpecConfigLoader.loadConfig("mainnet").specConfig();
     SpecConfigAltair configA = createRandomAltairConfig(phase0, 1);
     SpecConfigAltair configB = createRandomAltairConfig(phase0, 2);
 
@@ -56,8 +56,9 @@ public class SpecConfigAltairTest {
 
   @Test
   public void equals_phase0ConfigDiffer() {
-    SpecConfig phase0A = SpecConfigLoader.loadConfig("swift", b -> {});
-    SpecConfig phase0B = SpecConfigLoader.loadConfig("swift", b -> b.maxValidatorsPerCommittee(1));
+    SpecConfig phase0A = SpecConfigLoader.loadConfig("swift", b -> {}).specConfig();
+    SpecConfig phase0B =
+        SpecConfigLoader.loadConfig("swift", b -> b.maxValidatorsPerCommittee(1)).specConfig();
 
     SpecConfigAltair configA = createRandomAltairConfig(phase0A, 1);
     SpecConfigAltair configB = createRandomAltairConfig(phase0B, 1);

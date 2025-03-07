@@ -98,7 +98,9 @@ public class RewardCalculator {
   }
 
   public SyncCommitteeRewardData getSyncCommitteeRewardData(
-      Set<String> validators, BlockAndMetaData blockAndMetadata, BeaconState state) {
+      final Set<String> validators,
+      final BlockAndMetaData blockAndMetadata,
+      final BeaconState state) {
     final BeaconBlock block = blockAndMetadata.getData().getMessage();
     if (!spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
       throw new BadRequestException(

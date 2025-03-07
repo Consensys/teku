@@ -54,7 +54,7 @@ class PendingDuties {
     dutiesPerformedCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.VALIDATOR,
-            "duties_performed",
+            "duties_performed_total",
             "Count of the failed duties, by duty type",
             "type",
             "result");

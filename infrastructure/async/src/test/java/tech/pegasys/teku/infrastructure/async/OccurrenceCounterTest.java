@@ -71,7 +71,7 @@ class OccurrenceCounterTest {
     }
   }
 
-  void incrementAllSlots(int value) {
+  void incrementAllSlots(final int value) {
     for (int i = 0; i < 10; i++) {
       for (int j = 0; j < value; j++) {
         counter.increment();

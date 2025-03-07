@@ -559,11 +559,11 @@ public class WeakSubjectivityValidatorTest {
     return block;
   }
 
-  private void mockForkChoice(SignedBeaconBlock... blocks) {
+  private void mockForkChoice(final SignedBeaconBlock... blocks) {
     mockForkChoice(Arrays.asList(blocks));
   }
 
-  private void mockForkChoice(List<SignedBeaconBlock> blocks) {
+  private void mockForkChoice(final List<SignedBeaconBlock> blocks) {
     for (SignedBeaconBlock block : blocks) {
       when(forkChoiceStrategy.blockSlot(block.getRoot())).thenReturn(Optional.of(block.getSlot()));
       when(forkChoiceStrategy.blockParentRoot(block.getRoot()))

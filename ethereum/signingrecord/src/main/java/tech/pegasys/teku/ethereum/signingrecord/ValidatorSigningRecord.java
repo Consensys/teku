@@ -31,32 +31,18 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
  * <p>For attestations, the last source epoch and target epoch are recorded. An attestation may only
  * be signed if source >= previousSource AND target > previousTarget
  */
-public class ValidatorSigningRecord {
+public record ValidatorSigningRecord(
+    Optional<Bytes32> genesisValidatorsRoot,
+    UInt64 blockSlot,
+    UInt64 attestationSourceEpoch,
+    UInt64 attestationTargetEpoch) {
   private static final Logger LOG = LogManager.getLogger();
 
   public static final UInt64 NEVER_SIGNED = null;
 
-  private final Bytes32 genesisValidatorsRoot;
-
-  private final UInt64 blockSlot;
-
-  private final UInt64 attestationSourceEpoch;
-
-  private final UInt64 attestationTargetEpoch;
-
-  public ValidatorSigningRecord(final Bytes32 genesisValidatorsRoot) {
-    this(genesisValidatorsRoot, UInt64.ZERO, NEVER_SIGNED, NEVER_SIGNED);
-  }
-
-  public ValidatorSigningRecord(
-      final Bytes32 genesisValidatorsRoot,
-      final UInt64 blockSlot,
-      final UInt64 attestationSourceEpoch,
-      final UInt64 attestationTargetEpoch) {
-    this.genesisValidatorsRoot = genesisValidatorsRoot;
-    this.blockSlot = blockSlot;
-    this.attestationSourceEpoch = attestationSourceEpoch;
-    this.attestationTargetEpoch = attestationTargetEpoch;
+  public static ValidatorSigningRecord emptySigningRecord(final Bytes32 genesisValidatorsRoot) {
+    return new ValidatorSigningRecord(
+        Optional.ofNullable(genesisValidatorsRoot), UInt64.ZERO, NEVER_SIGNED, NEVER_SIGNED);
   }
 
   public static boolean isNeverSigned(final UInt64 value) {
@@ -81,20 +67,22 @@ public class ValidatorSigningRecord {
    */
   public Optional<ValidatorSigningRecord> maySignBlock(
       final Bytes32 genesisValidatorsRoot, final UInt64 slot) {
-    if (this.genesisValidatorsRoot != null
-        && !this.genesisValidatorsRoot.equals(genesisValidatorsRoot)) {
+    if (this.genesisValidatorsRoot.isPresent()
+        && !this.genesisValidatorsRoot.get().equals(genesisValidatorsRoot)) {
       LOG.error(
-          "Refusing to sign block because validator signing record is from the wrong chain. Expected genesis validators root "
-              + this.genesisValidatorsRoot
-              + " but attempting to sign for "
-              + genesisValidatorsRoot);
+          "Refusing to sign block because validator signing record is from the wrong chain. Expected genesis validators root {} but attempting to sign for {}",
+          this.genesisValidatorsRoot.get(),
+          genesisValidatorsRoot);
       return Optional.empty();
     }
     // We never allow signing a block at slot 0 because we shouldn't be signing the genesis block.
     if (blockSlot.compareTo(slot) < 0) {
       return Optional.of(
           new ValidatorSigningRecord(
-              genesisValidatorsRoot, slot, attestationSourceEpoch, attestationTargetEpoch));
+              Optional.ofNullable(genesisValidatorsRoot),
+              slot,
+              attestationSourceEpoch,
+              attestationTargetEpoch));
     }
     return Optional.empty();
   }
@@ -110,13 +98,13 @@ public class ValidatorSigningRecord {
    */
   public Optional<ValidatorSigningRecord> maySignAttestation(
       final Bytes32 genesisValidatorsRoot, final UInt64 sourceEpoch, final UInt64 targetEpoch) {
-    if (this.genesisValidatorsRoot != null
-        && !this.genesisValidatorsRoot.equals(genesisValidatorsRoot)) {
+    if (this.genesisValidatorsRoot.isPresent()
+        && !this.genesisValidatorsRoot.get().equals(genesisValidatorsRoot)) {
       LOG.error(
-          "Refusing to sign attestation because validator signing record is from the wrong chain. Expected genesis validators root "
-              + this.genesisValidatorsRoot
-              + " but attempting to sign for "
-              + genesisValidatorsRoot);
+          "Refusing to sign attestation because validator signing record is from the wrong chain. "
+              + "Expected genesis validators root {}  but attempting to sign for {}",
+          this.genesisValidatorsRoot.get(),
+          genesisValidatorsRoot);
       return Optional.empty();
     }
 
@@ -124,7 +112,8 @@ public class ValidatorSigningRecord {
     boolean targetEpochIsSafe = isSafeTargetEpoch(targetEpoch);
     if (sourceEpochIsSafe && targetEpochIsSafe) {
       return Optional.of(
-          new ValidatorSigningRecord(genesisValidatorsRoot, blockSlot, sourceEpoch, targetEpoch));
+          new ValidatorSigningRecord(
+              Optional.ofNullable(genesisValidatorsRoot), blockSlot, sourceEpoch, targetEpoch));
     } else {
       LOG.error(
           "Refusing to sign attestation:  source epoch ({}) is {}, target epoch ({}) is {}.  "
@@ -148,20 +137,26 @@ public class ValidatorSigningRecord {
     return isNeverSigned(attestationTargetEpoch) || attestationTargetEpoch.isLessThan(targetEpoch);
   }
 
-  public Bytes32 getGenesisValidatorsRoot() {
-    return genesisValidatorsRoot;
+  @Override
+  public String toString() {
+    final String genesisValidatorsRootString =
+        genesisValidatorsRoot.isPresent() ? genesisValidatorsRoot.get().toString() : "EMPTY";
+    return MoreObjects.toStringHelper(this)
+        .add("genesisValidatorsRoot", genesisValidatorsRootString)
+        .add("blockSlot", blockSlot)
+        .add("attestationSourceEpoch", attestationSourceEpoch)
+        .add("attestationTargetEpoch", attestationTargetEpoch)
+        .toString();
   }
 
-  public UInt64 getBlockSlot() {
-    return blockSlot;
-  }
-
-  public UInt64 getAttestationSourceEpoch() {
-    return attestationSourceEpoch;
-  }
-
-  public UInt64 getAttestationTargetEpoch() {
-    return attestationTargetEpoch;
+  public boolean genesisValidatorsRootIsEqualTo(
+      final Optional<Bytes32> maybeGenesisValidatorsRoot) {
+    if (maybeGenesisValidatorsRoot.isPresent() && genesisValidatorsRoot.isPresent()) {
+      return maybeGenesisValidatorsRoot.get().equals(genesisValidatorsRoot.get());
+    } else if (maybeGenesisValidatorsRoot.isEmpty() && genesisValidatorsRoot.isEmpty()) {
+      return true;
+    }
+    return false;
   }
 
   @Override
@@ -173,24 +168,9 @@ public class ValidatorSigningRecord {
       return false;
     }
     final ValidatorSigningRecord that = (ValidatorSigningRecord) o;
-    return Objects.equals(genesisValidatorsRoot, that.genesisValidatorsRoot)
+    return genesisValidatorsRootIsEqualTo(that.genesisValidatorsRoot)
         && Objects.equals(blockSlot, that.blockSlot)
         && Objects.equals(attestationSourceEpoch, that.attestationSourceEpoch)
         && Objects.equals(attestationTargetEpoch, that.attestationTargetEpoch);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(
-        genesisValidatorsRoot, blockSlot, attestationSourceEpoch, attestationTargetEpoch);
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("blockSlot", blockSlot)
-        .add("attestationSourceEpoch", attestationSourceEpoch)
-        .add("attestationTargetEpoch", attestationTargetEpoch)
-        .toString();
   }
 }

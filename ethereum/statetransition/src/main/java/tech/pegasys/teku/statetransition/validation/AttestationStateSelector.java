@@ -42,7 +42,7 @@ public class AttestationStateSelector {
   private final LabelledMetric<Counter> appliedSelectorRule;
 
   public AttestationStateSelector(
-      final Spec spec, final RecentChainData recentChainData, MetricsSystem metricsSystem) {
+      final Spec spec, final RecentChainData recentChainData, final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.recentChainData = recentChainData;
 

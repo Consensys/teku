@@ -15,63 +15,58 @@ package tech.pegasys.teku.data.slashinginterchange;
 
 import static tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord.isNeverSigned;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.schema.BLSPubKey;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class SigningHistory {
-  @JsonProperty("pubkey")
-  public final BLSPubKey pubkey;
+public record SigningHistory(
+    BLSPublicKey pubkey,
+    List<SignedBlock> signedBlocks,
+    List<SignedAttestation> signedAttestations) {
 
-  @JsonProperty("signed_blocks")
-  public final List<SignedBlock> signedBlocks;
+  public static final DeserializableTypeDefinition<BLSPublicKey> PUBKEY_TYPE =
+      DeserializableTypeDefinition.string(BLSPublicKey.class)
+          .formatter(BLSPublicKey::toHexString)
+          .parser(BLSPublicKey::fromHexString)
+          .build();
 
-  @JsonProperty("signed_attestations")
-  public final List<SignedAttestation> signedAttestations;
-
-  @JsonCreator
-  public SigningHistory(
-      @JsonProperty("pubkey") final BLSPubKey pubkey,
-      @JsonProperty("signed_blocks") final List<SignedBlock> signedBlocks,
-      @JsonProperty("signed_attestations") final List<SignedAttestation> signedAttestations) {
-    this.pubkey = pubkey;
-    this.signedBlocks = signedBlocks;
-    this.signedAttestations = signedAttestations;
-  }
-
-  public SigningHistory(final BLSPubKey pubkey, final ValidatorSigningRecord record) {
-    this.pubkey = pubkey;
-    this.signedBlocks = new ArrayList<>();
-    signedBlocks.add(new SignedBlock(record.getBlockSlot(), null));
-    this.signedAttestations = new ArrayList<>();
-    if (!isNeverSigned(record.getAttestationSourceEpoch())
-        || !isNeverSigned(record.getAttestationTargetEpoch())) {
-      signedAttestations.add(
+  public static SigningHistory createSigningHistory(
+      final BLSPublicKey pubkey, final ValidatorSigningRecord record) {
+    final List<SignedBlock> blocks = new ArrayList<>();
+    final List<SignedAttestation> attestations = new ArrayList<>();
+    blocks.add(new SignedBlock(record.blockSlot(), Optional.empty()));
+    if (!isNeverSigned(record.attestationSourceEpoch())
+        || !isNeverSigned(record.attestationTargetEpoch())) {
+      attestations.add(
           new SignedAttestation(
-              record.getAttestationSourceEpoch(), record.getAttestationTargetEpoch(), null));
+              record.attestationSourceEpoch(), record.attestationTargetEpoch(), Optional.empty()));
     }
+    return new SigningHistory(pubkey, blocks, attestations);
   }
 
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final SigningHistory that = (SigningHistory) o;
-    return Objects.equals(pubkey, that.pubkey)
-        && Objects.equals(signedBlocks, that.signedBlocks)
-        && Objects.equals(signedAttestations, that.signedAttestations);
+  public static DeserializableTypeDefinition<SigningHistory> getJsonTypeDefinition() {
+    return DeserializableTypeDefinition.object(SigningHistory.class, SigningHistoryBuilder.class)
+        .initializer(SigningHistoryBuilder::new)
+        .finisher(SigningHistoryBuilder::build)
+        .withField("pubkey", PUBKEY_TYPE, SigningHistory::pubkey, SigningHistoryBuilder::pubkey)
+        .withField(
+            "signed_blocks",
+            DeserializableTypeDefinition.listOf(SignedBlock.getJsonTypeDefinition()),
+            SigningHistory::signedBlocks,
+            SigningHistoryBuilder::signedBlocks)
+        .withField(
+            "signed_attestations",
+            DeserializableTypeDefinition.listOf(SignedAttestation.getJsonTypeDefinition()),
+            SigningHistory::signedAttestations,
+            SigningHistoryBuilder::signedAttestations)
+        .build();
   }
 
   @Override
@@ -83,29 +78,24 @@ public class SigningHistory {
         .toString();
   }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(pubkey, signedBlocks, signedAttestations);
-  }
-
   public ValidatorSigningRecord toValidatorSigningRecord(
       final Optional<ValidatorSigningRecord> maybeRecord, final Bytes32 genesisValidatorsRoot) {
 
     final UInt64 lastSignedBlockSlot =
         signedBlocks.stream()
-            .map(SignedBlock::getSlot)
+            .map(SignedBlock::slot)
             .filter(Objects::nonNull)
             .max(UInt64::compareTo)
             .orElse(UInt64.ZERO);
     final UInt64 lastSignedAttestationSourceEpoch =
         signedAttestations.stream()
-            .map(SignedAttestation::getSourceEpoch)
+            .map(SignedAttestation::sourceEpoch)
             .filter(Objects::nonNull)
             .max(UInt64::compareTo)
             .orElse(null);
     final UInt64 lastSignedAttestationTargetEpoch =
         signedAttestations.stream()
-            .map(SignedAttestation::getTargetEpoch)
+            .map(SignedAttestation::targetEpoch)
             .filter(Objects::nonNull)
             .max(UInt64::compareTo)
             .orElse(null);
@@ -113,13 +103,13 @@ public class SigningHistory {
     if (maybeRecord.isPresent()) {
       final ValidatorSigningRecord record = maybeRecord.get();
       return new ValidatorSigningRecord(
-          genesisValidatorsRoot,
-          record.getBlockSlot().max(lastSignedBlockSlot),
-          nullSafeMax(record.getAttestationSourceEpoch(), lastSignedAttestationSourceEpoch),
-          nullSafeMax(record.getAttestationTargetEpoch(), lastSignedAttestationTargetEpoch));
+          Optional.ofNullable(genesisValidatorsRoot),
+          record.blockSlot().max(lastSignedBlockSlot),
+          nullSafeMax(record.attestationSourceEpoch(), lastSignedAttestationSourceEpoch),
+          nullSafeMax(record.attestationTargetEpoch(), lastSignedAttestationTargetEpoch));
     }
     return new ValidatorSigningRecord(
-        genesisValidatorsRoot,
+        Optional.ofNullable(genesisValidatorsRoot),
         lastSignedBlockSlot,
         lastSignedAttestationSourceEpoch,
         lastSignedAttestationTargetEpoch);
@@ -132,5 +122,30 @@ public class SigningHistory {
       return a;
     }
     return a.max(b);
+  }
+
+  static class SigningHistoryBuilder {
+    BLSPublicKey pubkey;
+    List<SignedBlock> signedBlocks;
+    List<SignedAttestation> signedAttestations;
+
+    SigningHistoryBuilder pubkey(final BLSPublicKey pubkey) {
+      this.pubkey = pubkey;
+      return this;
+    }
+
+    SigningHistoryBuilder signedBlocks(final List<SignedBlock> signedBlocks) {
+      this.signedBlocks = signedBlocks;
+      return this;
+    }
+
+    SigningHistoryBuilder signedAttestations(final List<SignedAttestation> signedAttestations) {
+      this.signedAttestations = signedAttestations;
+      return this;
+    }
+
+    SigningHistory build() {
+      return new SigningHistory(pubkey, signedBlocks, signedAttestations);
+    }
   }
 }

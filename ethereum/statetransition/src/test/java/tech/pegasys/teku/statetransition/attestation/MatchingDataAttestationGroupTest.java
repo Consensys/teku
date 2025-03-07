@@ -14,42 +14,65 @@
 package tech.pegasys.teku.statetransition.attestation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggregateAttestations;
 
-import org.junit.jupiter.api.Test;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import java.util.Optional;
+import java.util.function.Supplier;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+@TestSpecContext(milestone = {PHASE0, ELECTRA})
 class MatchingDataAttestationGroupTest {
   private static final UInt64 SLOT = UInt64.valueOf(1234);
-  private final Spec spec = TestSpecFactory.createDefault();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final AttestationSchema attestationSchema =
-      spec.getGenesisSchemaDefinitions().getAttestationSchema();
-  private final AttestationData attestationData = dataStructureUtil.randomAttestationData(SLOT);
 
-  private final MatchingDataAttestationGroup group =
-      new MatchingDataAttestationGroup(spec, attestationData);
+  private Spec spec;
+  private DataStructureUtil dataStructureUtil;
+  private AttestationSchema<?> attestationSchema;
 
-  @Test
+  private AttestationData attestationData;
+
+  private MatchingDataAttestationGroup group;
+  private Int2IntMap committeeSizes;
+
+  @BeforeEach
+  public void setUp(final SpecContext specContext) {
+    spec = specContext.getSpec();
+    attestationSchema = spec.getGenesisSchemaDefinitions().getAttestationSchema();
+    dataStructureUtil = specContext.getDataStructureUtil();
+    attestationData = dataStructureUtil.randomAttestationData(SLOT);
+    committeeSizes = new Int2IntOpenHashMap();
+    committeeSizes.put(0, 10);
+    committeeSizes.put(1, 10);
+    group = new MatchingDataAttestationGroup(spec, attestationData, Optional.of(committeeSizes));
+  }
+
+  @TestTemplate
   public void isEmpty_shouldBeEmptyInitially() {
     assertThat(group.isEmpty()).isTrue();
   }
 
-  @Test
+  @TestTemplate
   public void isEmpty_shouldNotBeEmptyWhenAnAttestationIsAdded() {
     addAttestation(1);
     assertThat(group.isEmpty()).isFalse();
   }
 
-  @Test
+  @TestTemplate
   public void isEmpty_shouldBeEmptyAfterAttestationRemoved() {
     final Attestation attestation = addAttestation(1).getAttestation();
     int numRemoved = group.onAttestationIncludedInBlock(UInt64.ZERO, attestation);
@@ -58,7 +81,7 @@ class MatchingDataAttestationGroupTest {
     assertThat(numRemoved).isEqualTo(1);
   }
 
-  @Test
+  @TestTemplate
   public void remove_shouldRemoveAttestationEvenWhenInstanceIsDifferent() {
     final Attestation attestation = addAttestation(1).getAttestation();
     final Attestation copy = attestationSchema.sszDeserialize(attestation.sszSerialize());
@@ -69,7 +92,7 @@ class MatchingDataAttestationGroupTest {
     assertThat(numRemoved).isEqualTo(1);
   }
 
-  @Test
+  @TestTemplate
   public void remove_multipleCallsToRemoveShouldAggregate() {
     // Create attestations that will be removed
     final ValidatableAttestation attestation1 = createAttestation(1);
@@ -86,7 +109,7 @@ class MatchingDataAttestationGroupTest {
     assertThat(group.stream()).containsExactly(attestation3);
   }
 
-  @Test
+  @TestTemplate
   public void remove_shouldRemoveAttestationsThatAreAggregatedIntoRemovedAttestation() {
     final ValidatableAttestation attestation1 = addAttestation(1);
     final ValidatableAttestation attestation2 = addAttestation(2);
@@ -101,7 +124,7 @@ class MatchingDataAttestationGroupTest {
     assertThat(numRemoved).isEqualTo(2); // the one attestation is still there, and we've removed 2.
   }
 
-  @Test
+  @TestTemplate
   public void add_shouldIgnoreAttestationWhoseBitsHaveAllBeenRemoved() {
     // Create attestations that will be removed
     final ValidatableAttestation attestation1 = createAttestation(1);
@@ -118,7 +141,23 @@ class MatchingDataAttestationGroupTest {
     assertThat(group.stream()).isEmpty();
   }
 
-  @Test
+  @TestTemplate
+  public void add_shouldAggregateAttestationsFromSameCommittee(final SpecContext specContext) {
+    specContext.assumeElectraActive();
+    final ValidatableAttestation attestation1 = addAttestation(Optional.of(0), 1);
+    final ValidatableAttestation attestation2 = addAttestation(Optional.of(1), 2);
+    final ValidatableAttestation attestation3 = addAttestation(Optional.of(1), 3);
+
+    assertThat(group.stream(Optional.of(UInt64.ZERO))).containsExactly(attestation1);
+
+    final Attestation expected =
+        aggregateAttestations(attestation2.getAttestation(), attestation3.getAttestation());
+
+    assertThat(group.stream(Optional.of(UInt64.ONE)))
+        .containsExactly(ValidatableAttestation.from(spec, expected));
+  }
+
+  @TestTemplate
   public void add_shouldIgnoreDuplicateAttestations() {
     final ValidatableAttestation attestation = addAttestation(1);
     final ValidatableAttestation copy =
@@ -129,7 +168,7 @@ class MatchingDataAttestationGroupTest {
     assertThat(group.stream()).containsExactly(attestation);
   }
 
-  @Test
+  @TestTemplate
   public void iterator_shouldAggregateAttestationsWhereValidatorsDoNotOverlap() {
     final ValidatableAttestation attestation1 = addAttestation(1);
     final ValidatableAttestation attestation2 = addAttestation(2);
@@ -139,7 +178,7 @@ class MatchingDataAttestationGroupTest {
     assertThat(group).containsExactlyInAnyOrder(ValidatableAttestation.from(spec, expected));
   }
 
-  @Test
+  @TestTemplate
   public void iterator_shouldAggregateAttestationsWithMoreValidatorsFirst() {
     final ValidatableAttestation bigAttestation = addAttestation(1, 3, 5, 7);
     final ValidatableAttestation mediumAttestation = addAttestation(3, 5, 9);
@@ -154,7 +193,7 @@ class MatchingDataAttestationGroupTest {
             mediumAttestation);
   }
 
-  @Test
+  @TestTemplate
   public void iterator_shouldNotAggregateAttestationsWhenValidatorsOverlap() {
     final ValidatableAttestation attestation1 = addAttestation(1, 2, 5);
     final ValidatableAttestation attestation2 = addAttestation(1, 2, 3);
@@ -162,7 +201,7 @@ class MatchingDataAttestationGroupTest {
     assertThat(group).containsExactlyInAnyOrder(attestation1, attestation2);
   }
 
-  @Test
+  @TestTemplate
   public void iterator_shouldOmitAttestationsThatAreAlreadyIncludedInTheAggregate() {
     final ValidatableAttestation aggregate = addAttestation(1, 2, 3);
     addAttestation(2);
@@ -170,7 +209,7 @@ class MatchingDataAttestationGroupTest {
     assertThat(group).containsExactly(aggregate);
   }
 
-  @Test
+  @TestTemplate
   void iterator_shouldOmitAttestationsThatOverlapWithFirstAttestationAndAreRedundantWithCombined() {
     // First aggregate created will have validators 1,2,3,4 which makes the 2,4 attestation
     // redundant, but iteration will have already passed it before it becomes redundant
@@ -184,7 +223,7 @@ class MatchingDataAttestationGroupTest {
                 spec, aggregateAttestations(useful1.getAttestation(), useful2.getAttestation())));
   }
 
-  @Test
+  @TestTemplate
   void onAttestationIncludedInBlock_shouldRemoveAttestationsMadeRedundant() {
     final ValidatableAttestation attestation1 = addAttestation(1, 2, 3, 4);
     final ValidatableAttestation attestation2 = addAttestation(1, 5, 7);
@@ -200,7 +239,7 @@ class MatchingDataAttestationGroupTest {
     assertThat(group).isEmpty();
   }
 
-  @Test
+  @TestTemplate
   void onAttestationIncludedInBlock_shouldNotRemoveAttestationsWithAdditionalValidators() {
     final ValidatableAttestation attestation1 = addAttestation(1, 2, 3, 4);
     final ValidatableAttestation attestation2 = addAttestation(1, 5, 7);
@@ -217,7 +256,7 @@ class MatchingDataAttestationGroupTest {
     assertThat(group).containsExactly(attestation2);
   }
 
-  @Test
+  @TestTemplate
   void onAttestationIncludedInBlock_shouldNotAddAttestationsAlreadySeenInBlocks() {
     group.onAttestationIncludedInBlock(
         UInt64.valueOf(1), createAttestation(1, 2, 3, 4, 5, 6).getAttestation());
@@ -228,7 +267,7 @@ class MatchingDataAttestationGroupTest {
     assertThat(group.add(createAttestation(2, 3))).isFalse();
   }
 
-  @Test
+  @TestTemplate
   void onReorg_shouldAllowReadingAttestationsThatAreNoLongerRedundant() {
     final ValidatableAttestation attestation = createAttestation(3, 4);
 
@@ -247,7 +286,7 @@ class MatchingDataAttestationGroupTest {
     assertThat(group).containsExactly(attestation);
   }
 
-  @Test
+  @TestTemplate
   void onReorg_shouldNotAllowReadingAttestationsThatAreStillRedundant() {
     final ValidatableAttestation attestation1 = createAttestation(3, 4);
     final ValidatableAttestation attestation2 = createAttestation(1, 2, 3, 4);
@@ -273,7 +312,7 @@ class MatchingDataAttestationGroupTest {
     assertThat(group).containsExactly(attestation2);
   }
 
-  @Test
+  @TestTemplate
   public void size() {
     assertThat(group.size()).isEqualTo(0);
     final ValidatableAttestation attestation1 = addAttestation(1);
@@ -295,18 +334,67 @@ class MatchingDataAttestationGroupTest {
   }
 
   private ValidatableAttestation addAttestation(final int... validators) {
-    final ValidatableAttestation attestation = createAttestation(validators);
+    return addAttestation(Optional.empty(), validators);
+  }
+
+  private ValidatableAttestation addAttestation(
+      final Optional<Integer> committeeIndex, final int... validators) {
+    final ValidatableAttestation attestation = createAttestation(committeeIndex, validators);
     final boolean added = group.add(attestation);
     assertThat(added).isTrue();
     return attestation;
   }
 
   private ValidatableAttestation createAttestation(final int... validators) {
+    return createAttestation(Optional.empty(), validators);
+  }
+
+  private ValidatableAttestation createAttestation(
+      final Optional<Integer> committeeIndex, final int... validators) {
     final SszBitlist aggregationBits =
         attestationSchema.getAggregationBitsSchema().ofBits(10, validators);
-    return ValidatableAttestation.from(
-        spec,
+    final boolean isElectra = spec.atSlot(SLOT).getMilestone().isGreaterThanOrEqualTo(ELECTRA);
+    final Supplier<SszBitvector> committeeBits;
+    final Optional<Attestation> singleAttestation;
+    final int resolvedCommitteeIndex = committeeIndex.orElse(0);
+
+    if (validators.length == 1 && isElectra) {
+      singleAttestation =
+          Optional.of(
+              spec.getGenesisSchemaDefinitions()
+                  .toVersionElectra()
+                  .orElseThrow()
+                  .getSingleAttestationSchema()
+                  .create(
+                      UInt64.valueOf(resolvedCommitteeIndex),
+                      UInt64.valueOf(validators[0]),
+                      attestationData,
+                      dataStructureUtil.randomSignature()));
+    } else {
+      singleAttestation = Optional.empty();
+    }
+
+    if (spec.atSlot(SLOT).getMilestone().isGreaterThanOrEqualTo(ELECTRA)) {
+      committeeBits =
+          () ->
+              attestationSchema
+                  .getCommitteeBitsSchema()
+                  .orElseThrow()
+                  .ofBits(resolvedCommitteeIndex);
+    } else {
+      committeeBits = () -> null;
+    }
+
+    final Attestation attestation =
         attestationSchema.create(
-            aggregationBits, attestationData, dataStructureUtil.randomSignature()));
+            aggregationBits, attestationData, dataStructureUtil.randomSignature(), committeeBits);
+
+    final ValidatableAttestation validatableAttestation =
+        ValidatableAttestation.from(spec, singleAttestation.orElse(attestation), committeeSizes);
+
+    singleAttestation.ifPresent(
+        __ -> validatableAttestation.convertToAggregatedFormatFromSingleAttestation(attestation));
+
+    return validatableAttestation;
   }
 }

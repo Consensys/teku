@@ -75,7 +75,8 @@ public class SerializableOneOfTypeDefinition<TObject>
     }
     gen.writeStringField("type", "object");
     gen.writeArrayFieldStart("oneOf");
-    for (SerializableTypeDefinition<? extends TObject> t : types.values()) {
+    for (SerializableTypeDefinition<? extends TObject> t :
+        types.values().stream().distinct().toList()) {
       t.serializeOpenApiTypeOrReference(gen);
     }
     gen.writeEndArray();
@@ -84,7 +85,7 @@ public class SerializableOneOfTypeDefinition<TObject>
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
-  public void serialize(TObject value, final JsonGenerator gen) throws IOException {
+  public void serialize(final TObject value, final JsonGenerator gen) throws IOException {
     SerializableTypeDefinition typeDefinition = null;
     // entryset
     for (Predicate<TObject> predicate : types.keySet()) {

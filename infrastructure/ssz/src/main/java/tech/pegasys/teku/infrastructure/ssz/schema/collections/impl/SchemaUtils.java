@@ -22,12 +22,12 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 
 class SchemaUtils {
 
-  public static TreeNode createTreeFromBytes(Bytes bytes, int treeDepth) {
+  public static TreeNode createTreeFromBytes(final Bytes bytes, final int treeDepth) {
     return TreeUtil.createTree(
         split(bytes, LeafNode.MAX_BYTE_SIZE).stream().map(LeafNode::create).toList(), treeDepth);
   }
 
-  public static List<Bytes> split(Bytes bytes, int chunkSize) {
+  public static List<Bytes> split(final Bytes bytes, final int chunkSize) {
     List<Bytes> ret = new ArrayList<>();
     int off = 0;
     int size = bytes.size();

@@ -25,7 +25,7 @@ public class HttpErrorResponse {
   private final int code;
   private final String message;
 
-  public static HttpErrorResponse badRequest(String message) {
+  public static HttpErrorResponse badRequest(final String message) {
     return new HttpErrorResponse(SC_BAD_REQUEST, message);
   }
 

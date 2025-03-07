@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -50,10 +49,9 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
   public boolean initiateDataAvailabilityCheck() {
     LOG.info("Starting data availability check for slot {}", block.getSlot());
     switch (dataAvailabilitySampler.checkSamplingEligibility(block.getMessage())) {
-      case NOT_REQUIRED_BEFORE_EIP7594 -> {
+      case NOT_REQUIRED_BEFORE_FULU -> {
         validationResult.complete(DataAndValidationResult.notRequired());
-        LOG.info(
-            "Availability check for slot {} NOT_REQUIRED, EIP7594 not started", block.getSlot());
+        LOG.info("Availability check for slot {} NOT_REQUIRED, Fulu not started", block.getSlot());
       }
       case NOT_REQUIRED_OLD_EPOCH -> {
         validationResult.complete(DataAndValidationResult.notRequired());
@@ -64,13 +62,16 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
         LOG.info(
             "Availability check for slot {} NOT_REQUIRED, kzg commitments empty", block.getSlot());
       }
-      default -> dataAvailabilitySampler
-          .checkDataAvailability(block.getSlot(), block.getRoot(), block.getParentRoot())
-          .finish(
-              sampleIndexes ->
-                  validationResult.complete(DataAndValidationResult.validResult(sampleIndexes)),
-              throwable ->
-                  validationResult.complete(DataAndValidationResult.notAvailable(throwable)));
+      default -> {
+        dataAvailabilitySampler
+            .checkDataAvailability(block.getSlot(), block.getRoot(), block.getParentRoot())
+            .finish(
+                sampleIndexes ->
+                    validationResult.complete(DataAndValidationResult.validResult(sampleIndexes)),
+                throwable ->
+                    validationResult.complete(DataAndValidationResult.notAvailable(throwable)));
+        dataAvailabilitySampler.flush();
+      }
     }
     return true;
   }
@@ -78,10 +79,5 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
   @Override
   public SafeFuture<DataAndValidationResult<UInt64>> getAvailabilityCheckResult() {
     return validationResult;
-  }
-
-  @Override
-  public DataAndValidationResult<UInt64> validateImmediately(List<UInt64> dataColumnSidecars) {
-    return DataAndValidationResult.validResult(dataColumnSidecars);
   }
 }

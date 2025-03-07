@@ -14,11 +14,14 @@
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import okhttp3.mockwebserver.MockResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
@@ -31,17 +34,24 @@ public class GetSyncingStatusRequestTest extends AbstractTypeDefRequestTestBase 
 
   @BeforeEach
   void setupRequest() {
-    request = new GetSyncingStatusRequest(okHttpClient, mockWebServer.url("/"));
+    request = new GetSyncingStatusRequest(mockWebServer.url("/"), okHttpClient);
   }
 
   @TestTemplate
-  public void getSyncingStatus_setsElOfflineToEmptyIfFieldDoesNotExist() {
+  public void setsElOfflineToEmptyIfFieldDoesNotExist() {
     final String mockResponse = readResource("responses/syncing_no_el_offline.json");
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
 
-    final SyncingStatus syncingStatus = request.getSyncingStatus();
+    final SyncingStatus syncingStatus = request.submit();
 
     assertThat(syncingStatus.isElOffline()).isNotNull().isEmpty();
+  }
+
+  @TestTemplate
+  void handle500() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
+    assertThatThrownBy(() -> request.submit())
+        .isInstanceOf(RemoteServiceNotAvailableException.class);
   }
 }

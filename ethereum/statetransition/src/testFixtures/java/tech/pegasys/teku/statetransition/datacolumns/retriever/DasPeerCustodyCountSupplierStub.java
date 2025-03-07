@@ -21,16 +21,16 @@ public class DasPeerCustodyCountSupplierStub implements DasPeerCustodyCountSuppl
   private final int defaultCount;
   private final Map<UInt256, Integer> customCounts = new HashMap<>();
 
-  public DasPeerCustodyCountSupplierStub(int defaultCount) {
+  public DasPeerCustodyCountSupplierStub(final int defaultCount) {
     this.defaultCount = defaultCount;
   }
 
   @Override
-  public int getCustodyCountForPeer(UInt256 nodeId) {
+  public int getCustodyGroupCountForPeer(final UInt256 nodeId) {
     return customCounts.getOrDefault(nodeId, defaultCount);
   }
 
-  public void setCustomCount(UInt256 nodeId, int count) {
+  public void setCustomCount(final UInt256 nodeId, final int count) {
     customCounts.put(nodeId, count);
   }
 }

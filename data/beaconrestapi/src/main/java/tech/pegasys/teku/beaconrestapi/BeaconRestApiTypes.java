@@ -61,14 +61,18 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
+import java.util.EnumSet;
 import java.util.Locale;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StatusParameter;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.EnumTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
@@ -76,7 +80,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 
 public class BeaconRestApiTypes {
   private static final StringValueTypeDefinition<StatusParameter> STATUS_VALUE =
@@ -141,10 +147,10 @@ public class BeaconRestApiTypes {
           SIGNATURE_TYPE.withDescription(
               "`BLSSignature Hex` BLS12-381 signature for the current epoch."));
 
-  public static final ParameterMetadata<Boolean> SKIP_RANDAO_VERIFICATION_PARAMETER =
+  public static final ParameterMetadata<String> SKIP_RANDAO_VERIFICATION_PARAMETER =
       new ParameterMetadata<>(
           RestApiConstants.SKIP_RANDAO_VERIFICATION,
-          BOOLEAN_TYPE.withDescription(SKIP_RANDAO_VERIFICATION_PARAM_DESCRIPTION));
+          CoreTypes.flag(SKIP_RANDAO_VERIFICATION_PARAM_DESCRIPTION));
 
   public static final ParameterMetadata<UInt64> BUILDER_BOOST_FACTOR_PARAMETER =
       new ParameterMetadata<>(
@@ -205,8 +211,12 @@ public class BeaconRestApiTypes {
           TOPICS,
           CoreTypes.string(
               "Event types to subscribe to."
-                  + " Available values include: [`head`, `finalized_checkpoint`, `chain_reorg`, `block`, "
-                  + "`attestation`, `voluntary_exit`, `contribution_and_proof`, `blob_sidecar`]\n\n",
+                  + " Supported event types: ["
+                  + EnumSet.allOf(EventType.class).stream()
+                      .map(val -> "`" + val.toString() + "`")
+                      .sorted()
+                      .collect(Collectors.joining(", "))
+                  + "]",
               "head"));
 
   public static final SerializableTypeDefinition<Bytes32> ROOT_TYPE =
@@ -236,15 +246,12 @@ public class BeaconRestApiTypes {
           CoreTypes.UINT64_TYPE.withDescription(
               "Array of indices for data column sidecars to request for in the specified block. Returns all data column sidecars in the block if not specified."));
 
-  private static final StringValueTypeDefinition<BroadcastValidationParameter>
-      BROADCAST_VALIDATION_VALUE =
-          DeserializableTypeDefinition.string(BroadcastValidationParameter.class)
-              .formatter(BroadcastValidationParameter::toString)
-              .parser(BroadcastValidationParameter::valueOf)
-              .example("consensus_and_equivocation")
-              .description(PARAM_BROADCAST_VALIDATION_DESCRIPTION)
-              .format("string")
-              .build();
+  private static final EnumTypeDefinition<BroadcastValidationParameter> BROADCAST_VALIDATION_VALUE =
+      new EnumTypeDefinition.EnumTypeBuilder<>(BroadcastValidationParameter.class)
+          .example("consensus_and_equivocation")
+          .description(PARAM_BROADCAST_VALIDATION_DESCRIPTION)
+          .format("string")
+          .build();
 
   public static final ParameterMetadata<BroadcastValidationParameter>
       PARAMETER_BROADCAST_VALIDATION =
@@ -252,6 +259,22 @@ public class BeaconRestApiTypes {
 
   public static final ParameterMetadata<SpecMilestone> ETH_CONSENSUS_VERSION_TYPE =
       new ParameterMetadata<>(HEADER_CONSENSUS_VERSION, MILESTONE_TYPE);
+
+  public static DeserializableTypeDefinition<Attestation> electraAttestationTypeDef(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    return schemaDefinitionCache
+        .getSchemaDefinition(SpecMilestone.ELECTRA)
+        .getAttestationSchema()
+        .getJsonTypeDefinition();
+  }
+
+  public static DeserializableTypeDefinition<Attestation> phase0AttestationTypeDef(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    return schemaDefinitionCache
+        .getSchemaDefinition(SpecMilestone.PHASE0)
+        .getAttestationSchema()
+        .getJsonTypeDefinition();
+  }
 
   @SuppressWarnings("JavaCase")
   public enum BroadcastValidationParameter {

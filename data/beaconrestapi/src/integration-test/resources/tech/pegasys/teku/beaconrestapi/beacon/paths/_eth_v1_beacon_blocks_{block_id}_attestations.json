@@ -4,6 +4,7 @@
     "operationId" : "getBlockAttestations",
     "summary" : "Get block attestations",
     "description" : "Retrieves attestations included in requested block.",
+    "deprecated" : true,
     "parameters" : [ {
       "name" : "block_id",
       "required" : true,
@@ -34,6 +35,20 @@
             }
           }
         }
+      },
+      "503" : {
+        "description" : "Service unavailable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
       },
       "400" : {
         "description" : "The request could not be processed, check the response for more information.",

@@ -4,18 +4,16 @@
 
 ## Current Releases
 
-For information on changes in released versions of Teku, see
-the [releases page](https://github.com/Consensys/teku/releases).
-
 ## Unreleased Changes
 
 ### Breaking Changes
+`--Xvalidators-builder-registration-default-gas-limit` is removed in favour of `--validators-builder-registration-default-gas-limit`
 
 ### Additions and Improvements
-- Increased the executor queue default maximum size to 40_000 (previously 20_000), and other queues to 10_000 (previously 5_000). If you have custom settings for these queues, check to ensure they're still required.
-- Added `peers_direction_current` libp2p metric to track the number of peers by direction (inbound and outbound).
-- Deposit tree snapshots will be loaded from database as a default unless custom snapshot has been provided.
-- Added hidden option `--Xdeposit-contract-logs-syncing-enabled` to allow disabling the syncing of the deposit contract logs from the EL. This is useful when running a non-validating node. It is advisable to be used alongside with `--Xeth1-missing-deposits-event-logging-enabled=false` to avoid unnecessary logging of missing deposits.
-- Updated the bootnodes for Chiado and Gnosis networks
+- Default the gas limit to 36 million for externally produced blocks
+- Optimized blobs validation pipeline
+- Remove delay when fetching blobs from the local EL on block arrival
 
 ### Bug Fixes
+- Fix `--version` command output [#8960](https://github.com/Consensys/teku/issues/8960)
+- Fix issue (introduced in `24.12.1`) with peer stability when the upperbound is set to a high number

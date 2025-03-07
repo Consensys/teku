@@ -55,6 +55,11 @@ public class ValidatorBuilder {
     return this;
   }
 
+  public ValidatorBuilder withRandomCompoundingWithdrawalCredentials() {
+    this.withdrawalCredentials = dataStructureUtil.randomCompoundingWithdrawalCredentials();
+    return this;
+  }
+
   public ValidatorBuilder withRandomBlsWithdrawalCredentials() {
     this.withdrawalCredentials = dataStructureUtil.randomBlsWithdrawalCredentials();
     return this;

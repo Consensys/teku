@@ -31,7 +31,8 @@ public class SpecConfigAssertions {
     assertAllFieldsSet(config, SpecConfigBellatrix.class);
   }
 
-  static void assertAllFieldsSet(final SpecConfig config, Class<?> targetConfig) throws Exception {
+  static void assertAllFieldsSet(final SpecConfig config, final Class<?> targetConfig)
+      throws Exception {
     for (Method method : listGetters(targetConfig)) {
       final Object value = method.invoke(config);
       assertThat(value).describedAs(method.getName().substring(3)).isNotNull();
@@ -43,6 +44,7 @@ public class SpecConfigAssertions {
         .filter(m -> Modifier.isPublic(m.getModifiers()))
         .filter(m -> m.getParameterTypes().length == 0)
         .filter(m -> m.getName().startsWith("get"))
+        .filter(m -> !m.getName().endsWith("InEffect"))
         .collect(Collectors.toList());
   }
 }

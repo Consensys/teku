@@ -27,7 +27,7 @@ public class SszSignatureSchema extends SszByteVectorSchemaImpl<SszSignature> {
   }
 
   @Override
-  public SszSignature createFromBackingNode(TreeNode node) {
+  public SszSignature createFromBackingNode(final TreeNode node) {
     return new SszSignature(node);
   }
 }

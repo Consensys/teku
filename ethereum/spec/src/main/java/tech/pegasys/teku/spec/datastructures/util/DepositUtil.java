@@ -27,7 +27,7 @@ public class DepositUtil {
     this.spec = spec;
   }
 
-  public DepositWithIndex convertDepositEventToOperationDeposit(Deposit event) {
+  public DepositWithIndex convertDepositEventToOperationDeposit(final Deposit event) {
     checkArgument(
         event.getAmount().isGreaterThanOrEqualTo(spec.getGenesisSpecConfig().getMinDepositAmount()),
         "Deposit amount too low");
@@ -37,6 +37,8 @@ public class DepositUtil {
             event.getWithdrawal_credentials(),
             event.getAmount(),
             event.getSignature());
-    return new DepositWithIndex(data, event.getMerkle_tree_index());
+    return new DepositWithIndex(
+        new tech.pegasys.teku.spec.datastructures.operations.Deposit(data),
+        event.getMerkle_tree_index());
   }
 }

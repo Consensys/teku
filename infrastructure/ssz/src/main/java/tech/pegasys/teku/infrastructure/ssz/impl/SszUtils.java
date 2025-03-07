@@ -32,24 +32,26 @@ import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
 public class SszUtils {
 
   public static <C, V extends SszData> SszList<V> toSszList(
-      SszSchema<? extends SszList<V>> type, Iterable<C> list, Function<C, V> converter) {
+      final SszSchema<? extends SszList<V>> type,
+      final Iterable<C> list,
+      final Function<C, V> converter) {
     return toSszList(type, Streams.stream(list).map(converter).toList());
   }
 
   public static <V extends SszData> SszList<V> toSszList(
-      SszSchema<? extends SszList<V>> type, Iterable<V> list) {
+      final SszSchema<? extends SszList<V>> type, final Iterable<V> list) {
     SszMutableList<V> ret = type.getDefault().createWritableCopy();
     list.forEach(ret::append);
     return ret.commitChanges();
   }
 
   public static <C, V extends SszData> SszVector<V> toSszVector(
-      SszVectorSchema<V, ?> type, Iterable<C> list, Function<C, V> converter) {
+      final SszVectorSchema<V, ?> type, final Iterable<C> list, final Function<C, V> converter) {
     return toSszVector(type, Streams.stream(list).map(converter).toList());
   }
 
   public static <V extends SszData> SszVector<V> toSszVector(
-      SszVectorSchema<V, ?> type, Iterable<V> list) {
+      final SszVectorSchema<V, ?> type, final Iterable<V> list) {
     SszMutableVector<V> ret = type.getDefault().createWritableCopy();
     int idx = 0;
     for (V v : list) {
@@ -62,12 +64,13 @@ public class SszUtils {
     return ret.commitChanges();
   }
 
-  public static SszList<SszByte> toSszByteList(SszListSchema<SszByte, ?> type, Bytes bytes) {
+  public static SszList<SszByte> toSszByteList(
+      final SszListSchema<SszByte, ?> type, final Bytes bytes) {
     return type.sszDeserialize(SszReader.fromBytes(bytes));
   }
 
   /** Retrieve bytes from vector of bytes to a {@link Bytes} instance */
-  public static Bytes getAllBytes(SszCollection<SszByte> vector) {
+  public static Bytes getAllBytes(final SszCollection<SszByte> vector) {
     return vector.sszSerialize();
   }
 }

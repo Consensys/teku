@@ -625,7 +625,7 @@ class UInt64Test {
 
   @ParameterizedTest
   @MethodSource("rangeNumbers")
-  void range_shouldCreateStreamIncludingStartAndExcludingEnd(int from, int to) {
+  void range_shouldCreateStreamIncludingStartAndExcludingEnd(final int from, final int to) {
     assertThat(UInt64.range(UInt64.valueOf(from), UInt64.valueOf(to)))
         .containsExactlyElementsOf(
             IntStream.range(from, to).mapToObj(UInt64::valueOf).collect(toList()));

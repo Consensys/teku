@@ -16,17 +16,15 @@ package tech.pegasys.teku.beaconrestapi.v1.beacon;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorBalancesResponse;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidatorBalances;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetStateValidatorBalancesIntegrationTest
     extends AbstractDataBackedRestAPIIntegrationTest {
@@ -40,32 +38,28 @@ public class GetStateValidatorBalancesIntegrationTest
   public void queryFiltersCanRemoveAllResults() throws IOException {
     final Response response = get("head", Map.of("id", "1024000"));
     assertThat(response.code()).isEqualTo(SC_OK);
-    final GetStateValidatorBalancesResponse body =
-        jsonProvider.jsonToObject(
-            response.body().string(), GetStateValidatorBalancesResponse.class);
-    assertThat(body.data).isEmpty();
+    final JsonNode data = getResponseData(response);
+    assertThat(data).isEmpty();
   }
 
   @Test
   public void queryFiltersCanFilterOnValidatorId() throws IOException {
     final Response response = get("genesis", Map.of("id", "1,16"));
     assertThat(response.code()).isEqualTo(SC_OK);
-    final GetStateValidatorBalancesResponse body =
-        jsonProvider.jsonToObject(
-            response.body().string(), GetStateValidatorBalancesResponse.class);
-    assertThat(body.data)
-        .containsExactly(
-            new ValidatorBalanceResponse(UInt64.valueOf(1), specConfig.getMaxEffectiveBalance()));
+
+    final JsonNode data = getResponseData(response);
+    assertThat(data.get(0).get("index").asInt()).isEqualTo(1);
+    assertThat(data.get(0).get("balance").asLong())
+        .isEqualTo(specConfig.getMaxEffectiveBalance().longValue());
+    assertThat(data.size()).isEqualTo(1);
   }
 
   @Test
   public void shouldReturnAllBalancesWithoutQueryParameter() throws IOException {
     final Response response = get("finalized", Collections.emptyMap());
     assertThat(response.code()).isEqualTo(SC_OK);
-    final GetStateValidatorBalancesResponse body =
-        jsonProvider.jsonToObject(
-            response.body().string(), GetStateValidatorBalancesResponse.class);
-    assertThat(body.data).hasSize(16);
+    final JsonNode data = getResponseData(response);
+    assertThat(data).hasSize(16);
   }
 
   public Response get(final String stateIdString, final Map<String, String> query)

@@ -16,7 +16,7 @@ package tech.pegasys.teku.validator.client.signer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
-import static tech.pegasys.teku.validator.client.signer.ExternalSignerTestUtil.createForkInfo;
+import static tech.pegasys.teku.validator.client.signer.ExternalSigner.FORK_INFO;
 import static tech.pegasys.teku.validator.client.signer.ExternalSignerTestUtil.validateMetrics;
 import static tech.pegasys.teku.validator.client.signer.ExternalSignerTestUtil.verifySignRequest;
 
@@ -36,6 +36,9 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Contribu
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
+import tech.pegasys.teku.validator.api.signer.SignType;
+import tech.pegasys.teku.validator.api.signer.SyncAggregatorSelectionDataWrapper;
+import tech.pegasys.teku.validator.api.signer.SyncCommitteeMessageWrapper;
 
 public class ExternalSignerAltairIntegrationTest extends AbstractExternalSignerIntegrationTest {
 
@@ -79,10 +82,13 @@ public class ExternalSignerAltairIntegrationTest extends AbstractExternalSignerI
         new SigningRequestBody(
             signingRootUtil.signingRootForSignBlock(block, forkInfo),
             externalSignerBlockRequestProvider.getSignType(),
-            externalSignerBlockRequestProvider.getBlockMetadata(
-                Map.of("fork_info", createForkInfo(forkInfo))));
+            externalSignerBlockRequestProvider.getBlockMetadata(Map.of("fork_info", forkInfo)));
 
-    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
+    verifySignRequest(
+        client,
+        KEYPAIR.getPublicKey().toString(),
+        signingRequestBody,
+        getSpec().getGenesisSchemaDefinitions());
 
     validateMetrics(metricsSystem, 1, 0, 0);
   }
@@ -109,12 +115,16 @@ public class ExternalSignerAltairIntegrationTest extends AbstractExternalSignerI
             expectedSigningRoot,
             SignType.SYNC_COMMITTEE_MESSAGE,
             Map.of(
-                "fork_info",
-                createForkInfo(forkInfo),
+                FORK_INFO,
+                forkInfo,
                 "sync_committee_message",
-                Map.of("beacon_block_root", beaconBlockRoot, "slot", slot)));
+                new SyncCommitteeMessageWrapper(beaconBlockRoot, slot)));
 
-    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
+    verifySignRequest(
+        client,
+        KEYPAIR.getPublicKey().toString(),
+        signingRequestBody,
+        getSpec().getGenesisSchemaDefinitions());
 
     validateMetrics(metricsSystem, 1, 0, 0);
   }
@@ -139,16 +149,17 @@ public class ExternalSignerAltairIntegrationTest extends AbstractExternalSignerI
             expectedSigningRoot,
             SignType.SYNC_COMMITTEE_SELECTION_PROOF,
             Map.of(
-                "fork_info",
-                createForkInfo(forkInfo),
-                "sync_aggregator_selection_data",
-                Map.of(
-                    "slot",
-                    selectionData.getSlot(),
-                    "subcommittee_index",
-                    selectionData.getSubcommitteeIndex())));
+                FORK_INFO,
+                forkInfo,
+                SignType.SYNC_AGGREGATOR_SELECTION_DATA.getName(),
+                new SyncAggregatorSelectionDataWrapper(
+                    selectionData.getSlot(), selectionData.getSubcommitteeIndex())));
 
-    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
+    verifySignRequest(
+        client,
+        KEYPAIR.getPublicKey().toString(),
+        signingRequestBody,
+        getSpec().getGenesisSchemaDefinitions());
 
     validateMetrics(metricsSystem, 1, 0, 0);
   }
@@ -172,14 +183,13 @@ public class ExternalSignerAltairIntegrationTest extends AbstractExternalSignerI
         new SigningRequestBody(
             expectedSigningRoot,
             SignType.SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF,
-            Map.of(
-                "fork_info",
-                createForkInfo(forkInfo),
-                "contribution_and_proof",
-                new tech.pegasys.teku.api.schema.altair.ContributionAndProof(
-                    contributionAndProof)));
+            Map.of(FORK_INFO, forkInfo, "contribution_and_proof", contributionAndProof));
 
-    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
+    verifySignRequest(
+        client,
+        KEYPAIR.getPublicKey().toString(),
+        signingRequestBody,
+        getSpec().getGenesisSchemaDefinitions());
 
     validateMetrics(metricsSystem, 1, 0, 0);
   }

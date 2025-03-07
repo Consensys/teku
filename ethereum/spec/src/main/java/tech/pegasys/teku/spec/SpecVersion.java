@@ -13,28 +13,35 @@
 
 package tech.pegasys.teku.spec;
 
+import static tech.pegasys.teku.infrastructure.time.SystemTimeProvider.SYSTEM_TIME_PROVIDER;
+
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.config.SpecConfigEip7594;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.logic.DelegatingSpecLogic;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.versions.altair.SpecLogicAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.SpecLogicBellatrix;
 import tech.pegasys.teku.spec.logic.versions.capella.SpecLogicCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.SpecLogicDeneb;
-import tech.pegasys.teku.spec.logic.versions.eip7594.SpecLogicEip7594;
+import tech.pegasys.teku.spec.logic.versions.electra.SpecLogicElectra;
+import tech.pegasys.teku.spec.logic.versions.fulu.SpecLogicFulu;
 import tech.pegasys.teku.spec.logic.versions.phase0.SpecLogicPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsPhase0;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 public class SpecVersion extends DelegatingSpecLogic {
   private final SpecMilestone milestone;
@@ -53,51 +60,110 @@ public class SpecVersion extends DelegatingSpecLogic {
   }
 
   public static Optional<SpecVersion> create(
-      final SpecMilestone milestone, final SpecConfig specConfig) {
+      final SpecMilestone milestone,
+      final SpecConfig specConfig,
+      final SchemaRegistryBuilder schemaRegistryBuilder) {
+
     return switch (milestone) {
-      case PHASE0 -> Optional.of(createPhase0(specConfig));
-      case ALTAIR -> specConfig.toVersionAltair().map(SpecVersion::createAltair);
-      case BELLATRIX -> specConfig.toVersionBellatrix().map(SpecVersion::createBellatrix);
-      case CAPELLA -> specConfig.toVersionCapella().map(SpecVersion::createCapella);
-      case DENEB -> specConfig.toVersionDeneb().map(SpecVersion::createDeneb);
-      case EIP7594 -> specConfig.toVersionEip7594().map(SpecVersion::createEip7594);
+      case PHASE0 -> Optional.of(createPhase0(specConfig, schemaRegistryBuilder));
+      case ALTAIR ->
+          specConfig
+              .toVersionAltair()
+              .map(specConfigAltair -> createAltair(specConfigAltair, schemaRegistryBuilder));
+      case BELLATRIX ->
+          specConfig
+              .toVersionBellatrix()
+              .map(
+                  specConfigBellatrix ->
+                      createBellatrix(specConfigBellatrix, schemaRegistryBuilder));
+      case CAPELLA ->
+          specConfig
+              .toVersionCapella()
+              .map(specConfigCapella -> createCapella(specConfigCapella, schemaRegistryBuilder));
+      case DENEB ->
+          specConfig
+              .toVersionDeneb()
+              .map(specConfigDeneb -> createDeneb(specConfigDeneb, schemaRegistryBuilder));
+      case ELECTRA ->
+          specConfig
+              .toVersionElectra()
+              .map(specConfigElectra -> createElectra(specConfigElectra, schemaRegistryBuilder));
+      case FULU ->
+          specConfig
+              .toVersionFulu()
+              .map(specConfigFulu -> createFulu(specConfigFulu, schemaRegistryBuilder));
     };
   }
 
-  static SpecVersion createPhase0(final SpecConfig specConfig) {
-    final SchemaDefinitions schemaDefinitions = new SchemaDefinitionsPhase0(specConfig);
-    final SpecLogic specLogic = SpecLogicPhase0.create(specConfig, schemaDefinitions);
+  static SpecVersion createPhase0(
+      final SpecConfig specConfig, final SchemaRegistryBuilder schemaRegistryBuilder) {
+    final SchemaRegistry schemaRegistry =
+        schemaRegistryBuilder.build(SpecMilestone.PHASE0, specConfig);
+    final SchemaDefinitions schemaDefinitions = new SchemaDefinitionsPhase0(schemaRegistry);
+    final SpecLogic specLogic =
+        SpecLogicPhase0.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
     return new SpecVersion(SpecMilestone.PHASE0, specConfig, schemaDefinitions, specLogic);
   }
 
-  static SpecVersion createAltair(final SpecConfigAltair specConfig) {
-    final SchemaDefinitionsAltair schemaDefinitions = new SchemaDefinitionsAltair(specConfig);
-    final SpecLogic specLogic = SpecLogicAltair.create(specConfig, schemaDefinitions);
+  static SpecVersion createAltair(
+      final SpecConfigAltair specConfig, final SchemaRegistryBuilder schemaRegistryBuilder) {
+    final SchemaRegistry schemaRegistry =
+        schemaRegistryBuilder.build(SpecMilestone.ALTAIR, specConfig);
+    final SchemaDefinitionsAltair schemaDefinitions = new SchemaDefinitionsAltair(schemaRegistry);
+    final SpecLogic specLogic =
+        SpecLogicAltair.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
     return new SpecVersion(SpecMilestone.ALTAIR, specConfig, schemaDefinitions, specLogic);
   }
 
-  static SpecVersion createBellatrix(final SpecConfigBellatrix specConfig) {
-    final SchemaDefinitionsBellatrix schemaDefinitions = new SchemaDefinitionsBellatrix(specConfig);
-    final SpecLogic specLogic = SpecLogicBellatrix.create(specConfig, schemaDefinitions);
+  static SpecVersion createBellatrix(
+      final SpecConfigBellatrix specConfig, final SchemaRegistryBuilder schemaRegistryBuilder) {
+    final SchemaRegistry schemaRegistry =
+        schemaRegistryBuilder.build(SpecMilestone.BELLATRIX, specConfig);
+    final SchemaDefinitionsBellatrix schemaDefinitions =
+        new SchemaDefinitionsBellatrix(schemaRegistry);
+    final SpecLogic specLogic =
+        SpecLogicBellatrix.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
     return new SpecVersion(SpecMilestone.BELLATRIX, specConfig, schemaDefinitions, specLogic);
   }
 
-  static SpecVersion createCapella(final SpecConfigCapella specConfig) {
-    final SchemaDefinitionsCapella schemaDefinitions = new SchemaDefinitionsCapella(specConfig);
-    final SpecLogicCapella specLogic = SpecLogicCapella.create(specConfig, schemaDefinitions);
+  static SpecVersion createCapella(
+      final SpecConfigCapella specConfig, final SchemaRegistryBuilder schemaRegistryBuilder) {
+    final SchemaRegistry schemaRegistry =
+        schemaRegistryBuilder.build(SpecMilestone.CAPELLA, specConfig);
+    final SchemaDefinitionsCapella schemaDefinitions = new SchemaDefinitionsCapella(schemaRegistry);
+    final SpecLogicCapella specLogic =
+        SpecLogicCapella.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
     return new SpecVersion(SpecMilestone.CAPELLA, specConfig, schemaDefinitions, specLogic);
   }
 
-  static SpecVersion createDeneb(final SpecConfigDeneb specConfig) {
-    final SchemaDefinitionsDeneb schemaDefinitions = new SchemaDefinitionsDeneb(specConfig);
-    final SpecLogicDeneb specLogic = SpecLogicDeneb.create(specConfig, schemaDefinitions);
+  static SpecVersion createDeneb(
+      final SpecConfigDeneb specConfig, final SchemaRegistryBuilder schemaRegistryBuilder) {
+    final SchemaRegistry schemaRegistry =
+        schemaRegistryBuilder.build(SpecMilestone.DENEB, specConfig);
+    final SchemaDefinitionsDeneb schemaDefinitions = new SchemaDefinitionsDeneb(schemaRegistry);
+    final SpecLogicDeneb specLogic =
+        SpecLogicDeneb.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
     return new SpecVersion(SpecMilestone.DENEB, specConfig, schemaDefinitions, specLogic);
   }
 
-  static SpecVersion createEip7594(final SpecConfigEip7594 specConfig) {
-    final SchemaDefinitionsEip7594 schemaDefinitions = new SchemaDefinitionsEip7594(specConfig);
-    final SpecLogicEip7594 specLogic = SpecLogicEip7594.create(specConfig, schemaDefinitions);
-    return new SpecVersion(SpecMilestone.EIP7594, specConfig, schemaDefinitions, specLogic);
+  static SpecVersion createElectra(
+      final SpecConfigElectra specConfig, final SchemaRegistryBuilder schemaRegistryBuilder) {
+    final SchemaRegistry schemaRegistry =
+        schemaRegistryBuilder.build(SpecMilestone.ELECTRA, specConfig);
+    final SchemaDefinitionsElectra schemaDefinitions = new SchemaDefinitionsElectra(schemaRegistry);
+    final SpecLogicElectra specLogic =
+        SpecLogicElectra.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
+    return new SpecVersion(SpecMilestone.ELECTRA, specConfig, schemaDefinitions, specLogic);
+  }
+
+  static SpecVersion createFulu(
+      final SpecConfigFulu specConfig, final SchemaRegistryBuilder schemaRegistryBuilder) {
+    final SchemaRegistry schemaRegistry =
+        schemaRegistryBuilder.build(SpecMilestone.FULU, specConfig);
+    final SchemaDefinitionsFulu schemaDefinitions = new SchemaDefinitionsFulu(schemaRegistry);
+    final SpecLogicFulu specLogic =
+        SpecLogicFulu.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
+    return new SpecVersion(SpecMilestone.FULU, specConfig, schemaDefinitions, specLogic);
   }
 
   public SpecMilestone getMilestone() {

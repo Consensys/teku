@@ -29,7 +29,7 @@ public interface BeaconStateDeneb extends BeaconStateCapella {
   }
 
   static void describeCustomDenebFields(
-      MoreObjects.ToStringHelper stringBuilder, BeaconStateCapella state) {
+      final MoreObjects.ToStringHelper stringBuilder, final BeaconStateCapella state) {
     BeaconStateCapella.describeCustomCapellaFields(stringBuilder, state);
     // no new fields
   }

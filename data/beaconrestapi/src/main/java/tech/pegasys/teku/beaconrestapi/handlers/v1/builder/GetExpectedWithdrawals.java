@@ -74,12 +74,13 @@ public class GetExpectedWithdrawals extends RestApiEndpoint {
             .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
             .withNotFoundResponse()
             .withNotImplementedResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final SafeFuture<Optional<ObjectAndMetaData<List<Withdrawal>>>> future =
         chainDataProvider.getExpectedWithdrawals(
             request.getPathParameter(PARAMETER_STATE_ID),

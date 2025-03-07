@@ -25,7 +25,7 @@ public class BaseMetricData {
   @JsonProperty("process")
   private final String process;
 
-  public BaseMetricData(long timestamp, String process) {
+  public BaseMetricData(final long timestamp, final String process) {
     this.timestamp = timestamp;
     this.process = process;
   }

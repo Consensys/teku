@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
       SpecMilestone.BELLATRIX,
       SpecMilestone.CAPELLA,
       SpecMilestone.DENEB,
-      SpecMilestone.EIP7594
+      SpecMilestone.ELECTRA
     })
 class BlindBlockUtilTest {
 

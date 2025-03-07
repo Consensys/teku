@@ -13,52 +13,39 @@
 
 package tech.pegasys.teku.spec.datastructures.validator;
 
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
+
 import com.google.common.base.MoreObjects;
 import java.util.Comparator;
-import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class SubnetSubscription implements Comparable<SubnetSubscription> {
+public record SubnetSubscription(int subnetId, UInt64 unsubscriptionSlot)
+    implements Comparable<SubnetSubscription> {
 
-  private final int subnetId;
-  private final UInt64 unsubscriptionSlot;
-
-  public SubnetSubscription(int subnetId, UInt64 unsubscriptionSlot) {
-    this.subnetId = subnetId;
-    this.unsubscriptionSlot = unsubscriptionSlot;
-  }
-
-  public int getSubnetId() {
-    return subnetId;
-  }
-
-  public UInt64 getUnsubscriptionSlot() {
-    return unsubscriptionSlot;
-  }
+  public static final DeserializableTypeDefinition<SubnetSubscription> SSZ_DATA =
+      DeserializableTypeDefinition.object(SubnetSubscription.class, SubnetSubscriptionBuilder.class)
+          .initializer(SubnetSubscriptionBuilder::new)
+          .withField(
+              "subnet_id",
+              INTEGER_TYPE,
+              SubnetSubscription::subnetId,
+              SubnetSubscriptionBuilder::subnetId)
+          .withField(
+              "unsubscription_slot",
+              UINT64_TYPE,
+              SubnetSubscription::unsubscriptionSlot,
+              SubnetSubscriptionBuilder::unsubscriptionSlot)
+          .finisher(SubnetSubscriptionBuilder::build)
+          .build();
 
   @Override
   public int compareTo(@NotNull final SubnetSubscription o) {
-    return Comparator.comparing(SubnetSubscription::getUnsubscriptionSlot)
-        .thenComparing(SubnetSubscription::getSubnetId)
+    return Comparator.comparing(SubnetSubscription::unsubscriptionSlot)
+        .thenComparing(SubnetSubscription::subnetId)
         .compare(this, o);
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final SubnetSubscription that = (SubnetSubscription) o;
-    return subnetId == that.subnetId && Objects.equals(unsubscriptionSlot, that.unsubscriptionSlot);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(subnetId, unsubscriptionSlot);
   }
 
   @Override
@@ -67,5 +54,26 @@ public class SubnetSubscription implements Comparable<SubnetSubscription> {
         .add("subnetId", subnetId)
         .add("unsubscriptionSlot", unsubscriptionSlot)
         .toString();
+  }
+
+  static class SubnetSubscriptionBuilder {
+    private int subnetId;
+    private UInt64 unsubscriptionSlot;
+
+    SubnetSubscriptionBuilder() {}
+
+    public SubnetSubscriptionBuilder subnetId(final int subnetId) {
+      this.subnetId = subnetId;
+      return this;
+    }
+
+    public SubnetSubscriptionBuilder unsubscriptionSlot(final UInt64 unsubscriptionSlot) {
+      this.unsubscriptionSlot = unsubscriptionSlot;
+      return this;
+    }
+
+    SubnetSubscription build() {
+      return new SubnetSubscription(subnetId, unsubscriptionSlot);
+    }
   }
 }

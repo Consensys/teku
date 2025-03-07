@@ -19,9 +19,9 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 
 public class RemoteMetricsServiceStub {
-  private HttpServer server;
+  private final HttpServer server;
 
-  public RemoteMetricsServiceStub(InetSocketAddress inetSocketAddress) throws IOException {
+  public RemoteMetricsServiceStub(final InetSocketAddress inetSocketAddress) throws IOException {
     server = HttpServer.create(inetSocketAddress, 0);
   }
 
@@ -36,7 +36,7 @@ public class RemoteMetricsServiceStub {
     }
   }
 
-  public void registerHandler(String uriToHandle, HttpHandler httpHandler) {
+  public void registerHandler(final String uriToHandle, final HttpHandler httpHandler) {
     server.createContext(uriToHandle, httpHandler);
   }
 }

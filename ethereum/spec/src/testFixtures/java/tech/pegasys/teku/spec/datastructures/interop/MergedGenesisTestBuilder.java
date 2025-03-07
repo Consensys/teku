@@ -43,7 +43,7 @@ public class MergedGenesisTestBuilder {
             genesisConfigOptions,
             MiningParameters.MINING_DISABLED,
             badBlockManager,
-            true,
+            false,
             metricsSystem);
     final GenesisState genesisState = GenesisState.fromConfig(configFile, protocolSchedule);
     final Block genesisBlock = genesisState.getBlock();
@@ -67,12 +67,16 @@ public class MergedGenesisTestBuilder {
                 .stateRoot(header.getStateRoot())
                 .feeRecipient(new Bytes20(header.getCoinbase()))
                 .parentHash(header.getParentHash())
+                .transactionsRoot(headerSchema.getHeaderOfDefaultPayload().getTransactionsRoot())
+                // New in Capella
                 .withdrawalsRoot(
                     () ->
                         headerSchema
                             .getHeaderOfDefaultPayload()
                             .getOptionalWithdrawalsRoot()
                             .orElseThrow())
-                .transactionsRoot(headerSchema.getHeaderOfDefaultPayload().getTransactionsRoot()));
+                // New in Deneb
+                .blobGasUsed(() -> UInt64.ZERO)
+                .excessBlobGas(() -> UInt64.ZERO));
   }
 }

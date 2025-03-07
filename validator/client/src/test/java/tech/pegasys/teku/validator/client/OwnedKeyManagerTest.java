@@ -494,7 +494,7 @@ class OwnedKeyManagerTest {
             doppelgangerPublicKey.toAbbreviatedString()));
   }
 
-  private String getKeystore(String fileName) throws IOException, URISyntaxException {
+  private String getKeystore(final String fileName) throws IOException, URISyntaxException {
     final URL resource = Resources.getResource(fileName);
     FileInputStream fis = new FileInputStream(new File(resource.toURI()));
     return IOUtils.toString(fis, "UTF-8");

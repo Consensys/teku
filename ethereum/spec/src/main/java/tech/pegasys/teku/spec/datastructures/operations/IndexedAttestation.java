@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,51 +16,17 @@ package tech.pegasys.teku.spec.datastructures.operations;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
-import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
 public class IndexedAttestation
     extends Container3<IndexedAttestation, SszUInt64List, AttestationData, SszSignature> {
 
-  public static class IndexedAttestationSchema
-      extends ContainerSchema3<IndexedAttestation, SszUInt64List, AttestationData, SszSignature> {
-
-    public IndexedAttestationSchema(final SpecConfig config) {
-      super(
-          "IndexedAttestation",
-          namedSchema(
-              "attesting_indices",
-              SszUInt64ListSchema.create(config.getMaxValidatorsPerCommittee())),
-          namedSchema("data", AttestationData.SSZ_SCHEMA),
-          namedSchema("signature", SszSignatureSchema.INSTANCE));
-    }
-
-    public SszUInt64ListSchema<?> getAttestingIndicesSchema() {
-      return (SszUInt64ListSchema<?>) super.getFieldSchema0();
-    }
-
-    @Override
-    public IndexedAttestation createFromBackingNode(TreeNode node) {
-      return new IndexedAttestation(this, node);
-    }
-
-    public IndexedAttestation create(
-        final SszUInt64List attestingIndices,
-        final AttestationData data,
-        final BLSSignature signature) {
-      return new IndexedAttestation(this, attestingIndices, data, signature);
-    }
-  }
-
-  private IndexedAttestation(IndexedAttestationSchema type, TreeNode backingNode) {
+  IndexedAttestation(final IndexedAttestationSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  private IndexedAttestation(
+  IndexedAttestation(
       final IndexedAttestationSchema schema,
       final SszUInt64List attestingIndices,
       final AttestationData data,

@@ -26,11 +26,11 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 class ForkTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
-  private Bytes4 previousVersion = new Bytes4(Bytes.of(1, 2, 3, 4));
-  private Bytes4 currentVersion = new Bytes4(Bytes.of(5, 6, 7, 8));
-  private UInt64 epoch = dataStructureUtil.randomUInt64();
+  private final Bytes4 previousVersion = new Bytes4(Bytes.of(1, 2, 3, 4));
+  private final Bytes4 currentVersion = new Bytes4(Bytes.of(5, 6, 7, 8));
+  private final UInt64 epoch = dataStructureUtil.randomUInt64();
 
-  private Fork fork = new Fork(previousVersion, currentVersion, epoch);
+  private final Fork fork = new Fork(previousVersion, currentVersion, epoch);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {

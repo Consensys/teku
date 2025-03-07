@@ -24,7 +24,7 @@ public interface SszCollectionTestBase extends SszCompositeTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  default void size_matchesReturnedData(SszCollection<?> data) {
+  default void size_matchesReturnedData(final SszCollection<?> data) {
     assertThat(data.asList()).hasSize(data.size());
     assertThat(data.stream()).hasSize(data.size());
     assertThat(data).hasSize(data.size());
@@ -32,13 +32,13 @@ public interface SszCollectionTestBase extends SszCompositeTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  default <C extends SszData> void stream_returnsSameData(SszCollection<C> data) {
+  default <C extends SszData> void stream_returnsSameData(final SszCollection<C> data) {
     assertThat(data.stream()).containsExactlyElementsOf(data);
   }
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  default <C extends SszData> void asList_returnsSameData(SszCollection<C> data) {
+  default <C extends SszData> void asList_returnsSameData(final SszCollection<C> data) {
     List<C> list = data.asList();
     assertThat(list.size()).isEqualTo(data.size());
     for (int i = 0; i < list.size(); i++) {
@@ -48,7 +48,7 @@ public interface SszCollectionTestBase extends SszCompositeTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  default <C extends SszData> void asList_isUnmodifiable(SszCollection<C> data) {
+  default <C extends SszData> void asList_isUnmodifiable(final SszCollection<C> data) {
     List<C> list = data.asList();
     C newElement = data.getSchema().getElementSchema().getDefault();
     assertThatThrownBy(() -> list.add(newElement))

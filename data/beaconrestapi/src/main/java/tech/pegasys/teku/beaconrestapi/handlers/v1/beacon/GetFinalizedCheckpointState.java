@@ -38,11 +38,11 @@ public class GetFinalizedCheckpointState extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/checkpoint/finalized_state";
   private final ChainDataProvider chainDataProvider;
 
-  public GetFinalizedCheckpointState(final DataProvider dataProvider, Spec spec) {
+  public GetFinalizedCheckpointState(final DataProvider dataProvider, final Spec spec) {
     this(dataProvider.getChainDataProvider(), spec);
   }
 
-  public GetFinalizedCheckpointState(final ChainDataProvider chainDataProvider, Spec spec) {
+  public GetFinalizedCheckpointState(final ChainDataProvider chainDataProvider, final Spec spec) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getFinalizedCheckpointState")
@@ -59,12 +59,13 @@ public class GetFinalizedCheckpointState extends RestApiEndpoint {
                         spec.getForkSchedule()
                             .getSpecMilestoneAtSlot(((BeaconState) beaconState).getSlot())))
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final SafeFuture<Optional<StateAndMetaData>> future =
         chainDataProvider.getBeaconStateAndMetadata("finalized");
 

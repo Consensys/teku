@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class PredicatesTest {
+
   private Predicates predicates;
   private static final Spec SPEC = TestSpecFactory.createMainnet(SpecMilestone.CAPELLA);
   private static final SpecConfigCapella SPEC_CONFIG_CAPELLA =
@@ -44,6 +46,38 @@ public class PredicatesTest {
   @BeforeEach
   public void before() {
     this.predicates = new Predicates(SPEC_CONFIG_CAPELLA);
+  }
+
+  @ParameterizedTest
+  @MethodSource("getExecutionAddressUncheckedArgs")
+  public void getExecutionAddressUnchecked(final Validator validator) {
+    final Eth1Address executionAddress =
+        Predicates.getExecutionAddressUnchecked(validator.getWithdrawalCredentials());
+    assertThat(executionAddress)
+        .isEqualTo(Eth1Address.fromBytes(validator.getWithdrawalCredentials().slice(12)));
+  }
+
+  private static Stream<Arguments> getExecutionAddressUncheckedArgs() {
+    final Bytes32 eth1WithdrawalCredentials = DATA_STRUCTURE_UTIL.randomEth1WithdrawalCredentials();
+    final Bytes32 compoundingWithdrawalCredentials =
+        DATA_STRUCTURE_UTIL.randomCompoundingWithdrawalCredentials();
+    // Even though it does not make sense to extract Eth1 address from blsWithdrawalCredentials, the
+    // method does not check for it so it will return the last 20 bytes of "anything".
+    final Bytes32 blsWithdrawalCredentials = DATA_STRUCTURE_UTIL.randomBlsWithdrawalCredentials();
+
+    return Stream.of(
+        Arguments.of(
+            DATA_STRUCTURE_UTIL
+                .randomValidator()
+                .withWithdrawalCredentials(eth1WithdrawalCredentials)),
+        Arguments.of(
+            DATA_STRUCTURE_UTIL
+                .randomValidator()
+                .withWithdrawalCredentials(compoundingWithdrawalCredentials)),
+        Arguments.of(
+            DATA_STRUCTURE_UTIL
+                .randomValidator()
+                .withWithdrawalCredentials(blsWithdrawalCredentials)));
   }
 
   @Test
@@ -74,7 +108,7 @@ public class PredicatesTest {
       final UInt64 withdrawableEpoch,
       final UInt64 balance,
       final UInt64 epoch,
-      boolean expectedValue) {
+      final boolean expectedValue) {
 
     final Validator validator =
         DATA_STRUCTURE_UTIL
@@ -143,7 +177,7 @@ public class PredicatesTest {
       final Bytes32 withdrawalCredentials,
       final UInt64 effectiveBalance,
       final UInt64 balance,
-      boolean expectedValue) {
+      final boolean expectedValue) {
 
     final Validator validator =
         DATA_STRUCTURE_UTIL

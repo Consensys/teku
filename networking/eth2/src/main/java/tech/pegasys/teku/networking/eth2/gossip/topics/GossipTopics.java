@@ -21,6 +21,7 @@ import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 
 /**
@@ -75,17 +76,20 @@ public class GossipTopics {
   public static Set<String> getAllDataColumnSidecarSubnetTopics(
       final GossipEncoding gossipEncoding, final Bytes4 forkDigest, final Spec spec) {
 
-    return spec.getNetworkingConfigEip7594()
+    return spec.getNumberOfDataColumnSubnets()
         .map(
-            eip7594NetworkConfig ->
-                IntStream.range(0, eip7594NetworkConfig.getDataColumnSidecarSubnetCount())
+            subnetCount ->
+                IntStream.range(0, subnetCount)
                     .mapToObj(i -> getDataColumnSidecarSubnetTopic(forkDigest, i, gossipEncoding))
                     .collect(Collectors.toSet()))
         .orElse(Collections.emptySet());
   }
 
   public static Set<String> getAllTopics(
-      final GossipEncoding gossipEncoding, final Bytes4 forkDigest, final Spec spec) {
+      final GossipEncoding gossipEncoding,
+      final Bytes4 forkDigest,
+      final Spec spec,
+      final SpecMilestone specMilestone) {
     final Set<String> topics = new HashSet<>();
 
     for (int i = 0; i < spec.getNetworkingConfig().getAttestationSubnetCount(); i++) {
@@ -94,11 +98,13 @@ public class GossipTopics {
     for (int i = 0; i < NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT; i++) {
       topics.add(getSyncCommitteeSubnetTopic(forkDigest, i, gossipEncoding));
     }
-    if (spec.getNetworkingConfigDeneb().isPresent()) {
-      for (int i = 0; i < spec.getNetworkingConfigDeneb().get().getBlobSidecarSubnetCount(); i++) {
-        topics.add(getBlobSidecarSubnetTopic(forkDigest, i, gossipEncoding));
-      }
-    }
+    spec.forMilestone(specMilestone)
+        .getConfig()
+        .toVersionDeneb()
+        .ifPresent(
+            config ->
+                addBlobSidecarSubnetTopics(
+                    config.getBlobSidecarSubnetCount(), topics, forkDigest, gossipEncoding));
 
     topics.addAll(getAllDataColumnSidecarSubnetTopics(gossipEncoding, forkDigest, spec));
 
@@ -121,5 +127,15 @@ public class GossipTopics {
     final String forkDigest = topic.substring(beginIndex, endIndex);
 
     return Bytes4.fromHexString(forkDigest);
+  }
+
+  private static void addBlobSidecarSubnetTopics(
+      final int blobSidecarSubnetCount,
+      final Set<String> topics,
+      final Bytes4 forkDigest,
+      final GossipEncoding gossipEncoding) {
+    for (int i = 0; i < blobSidecarSubnetCount; i++) {
+      topics.add(getBlobSidecarSubnetTopic(forkDigest, i, gossipEncoding));
+    }
   }
 }

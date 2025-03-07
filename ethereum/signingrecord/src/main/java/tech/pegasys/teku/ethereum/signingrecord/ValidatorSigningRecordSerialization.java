@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.node.NumericNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.data.yaml.YamlProvider;
@@ -67,13 +68,13 @@ public class ValidatorSigningRecordSerialization {
         final SerializerProvider serializers)
         throws IOException {
       gen.writeStartObject();
-      if (value.getGenesisValidatorsRoot() != null) {
+      if (value.genesisValidatorsRoot().isPresent()) {
         gen.writeStringField(
-            GENESIS_VALIDATORS_ROOT_FIELD_NAME, value.getGenesisValidatorsRoot().toHexString());
+            GENESIS_VALIDATORS_ROOT_FIELD_NAME, value.genesisValidatorsRoot().get().toHexString());
       }
-      writeUInt64(gen, BLOCK_SLOT_FIELD_NAME, value.getBlockSlot());
-      writeUInt64(gen, SOURCE_EPOCH_FIELD_NAME, value.getAttestationSourceEpoch());
-      writeUInt64(gen, TARGET_EPOCH_FIELD_NAME, value.getAttestationTargetEpoch());
+      writeUInt64(gen, BLOCK_SLOT_FIELD_NAME, value.blockSlot());
+      writeUInt64(gen, SOURCE_EPOCH_FIELD_NAME, value.attestationSourceEpoch());
+      writeUInt64(gen, TARGET_EPOCH_FIELD_NAME, value.attestationTargetEpoch());
       gen.writeEndObject();
     }
 
@@ -98,7 +99,10 @@ public class ValidatorSigningRecordSerialization {
       final UInt64 attestationSourceEpoch = getUInt64(node, SOURCE_EPOCH_FIELD_NAME);
       final UInt64 attestationTargetEpoch = getUInt64(node, TARGET_EPOCH_FIELD_NAME);
       return new ValidatorSigningRecord(
-          genesisValidatorsRoot, blockSlot, attestationSourceEpoch, attestationTargetEpoch);
+          Optional.ofNullable(genesisValidatorsRoot),
+          blockSlot,
+          attestationSourceEpoch,
+          attestationTargetEpoch);
     }
 
     private Bytes32 getBytes32(final TreeNode node, final String fieldName) {

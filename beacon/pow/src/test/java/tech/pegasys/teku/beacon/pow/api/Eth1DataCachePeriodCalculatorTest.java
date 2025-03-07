@@ -21,7 +21,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 
 class Eth1DataCachePeriodCalculatorTest {
-  private final SpecConfig config = SpecConfigLoader.loadConfig("minimal");
+  private final SpecConfig config = SpecConfigLoader.loadConfig("minimal").specConfig();
 
   @Test
   void shouldCalculateCachePeriodForMinimalConstantsFromFollowDistance() {

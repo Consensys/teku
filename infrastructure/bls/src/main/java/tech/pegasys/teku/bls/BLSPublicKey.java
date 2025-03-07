@@ -48,13 +48,13 @@ public final class BLSPublicKey {
    * @param publicKeys The list of public keys to aggregate
    * @return PublicKey The public key
    */
-  public static BLSPublicKey aggregate(List<BLSPublicKey> publicKeys) {
+  public static BLSPublicKey aggregate(final List<BLSPublicKey> publicKeys) {
     return new BLSPublicKey(
         BLS.getBlsImpl()
             .aggregatePublicKeys(publicKeys.stream().map(BLSPublicKey::getPublicKey).toList()));
   }
 
-  public static BLSPublicKey fromSSZBytes(Bytes bytes) {
+  public static BLSPublicKey fromSSZBytes(final Bytes bytes) {
     checkArgument(
         bytes.size() == SSZ_BLS_PUBKEY_SIZE,
         "Expected " + SSZ_BLS_PUBKEY_SIZE + " bytes but received %s.",
@@ -76,11 +76,12 @@ public final class BLSPublicKey {
    *     but throw on later usage. Use {@link BLSPublicKey#fromBytesCompressedValidate(Bytes48)} if
    *     need to immediately ensure input validity
    */
-  public static BLSPublicKey fromBytesCompressed(Bytes48 bytes) throws IllegalArgumentException {
+  public static BLSPublicKey fromBytesCompressed(final Bytes48 bytes)
+      throws IllegalArgumentException {
     return new BLSPublicKey(bytes);
   }
 
-  public static BLSPublicKey fromBytesCompressedValidate(Bytes48 bytes)
+  public static BLSPublicKey fromBytesCompressedValidate(final Bytes48 bytes)
       throws IllegalArgumentException {
     BLSPublicKey ret = new BLSPublicKey(bytes);
     ret.getPublicKey().forceValidation();
@@ -99,7 +100,7 @@ public final class BLSPublicKey {
    *
    * @param secretKey A BLSSecretKey
    */
-  public BLSPublicKey(BLSSecretKey secretKey) {
+  public BLSPublicKey(final BLSSecretKey secretKey) {
     this(secretKey.getSecretKey().derivePublicKey());
   }
 
@@ -108,17 +109,18 @@ public final class BLSPublicKey {
    *
    * @param publicKey An implementation-specific PublicKey
    */
-  BLSPublicKey(PublicKey publicKey) {
+  BLSPublicKey(final PublicKey publicKey) {
     this(() -> publicKey, Suppliers.memoize(publicKey::toBytesCompressed));
   }
 
-  BLSPublicKey(Bytes48 bytesCompressed) {
+  BLSPublicKey(final Bytes48 bytesCompressed) {
     this(
         Suppliers.memoize(() -> BLS.getBlsImpl().publicKeyFromCompressed(bytesCompressed)),
         () -> bytesCompressed);
   }
 
-  private BLSPublicKey(Supplier<PublicKey> publicKey, Supplier<Bytes48> bytesCompressed) {
+  private BLSPublicKey(
+      final Supplier<PublicKey> publicKey, final Supplier<Bytes48> bytesCompressed) {
     this.publicKey = publicKey;
     this.bytesCompressed = bytesCompressed;
   }
@@ -162,7 +164,7 @@ public final class BLSPublicKey {
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(final Object obj) {
     if (Objects.isNull(obj)) {
       return false;
     }

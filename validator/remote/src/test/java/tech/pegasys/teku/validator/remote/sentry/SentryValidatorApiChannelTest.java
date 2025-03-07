@@ -124,15 +124,11 @@ class SentryValidatorApiChannelTest {
   @Test
   void createUnsignedBlockShouldUseBlockHandlerChannelWhenAvailable() {
     sentryValidatorApiChannel.createUnsignedBlock(
-        UInt64.ZERO, BLSSignature.empty(), Optional.empty(), Optional.of(false), Optional.of(ONE));
+        UInt64.ZERO, BLSSignature.empty(), Optional.empty(), Optional.of(ONE));
 
     verify(blockHandlerChannel)
         .createUnsignedBlock(
-            eq(UInt64.ZERO),
-            eq(BLSSignature.empty()),
-            eq(Optional.empty()),
-            eq(Optional.of(false)),
-            eq(Optional.of(ONE)));
+            eq(UInt64.ZERO), eq(BLSSignature.empty()), eq(Optional.empty()), eq(Optional.of(ONE)));
     verifyNoInteractions(dutiesProviderChannel);
     verifyNoInteractions(attestationPublisherChannel);
   }
@@ -144,15 +140,11 @@ class SentryValidatorApiChannelTest {
             dutiesProviderChannel, Optional.empty(), Optional.of(attestationPublisherChannel));
 
     sentryValidatorApiChannel.createUnsignedBlock(
-        UInt64.ZERO, BLSSignature.empty(), Optional.empty(), Optional.of(false), Optional.of(ONE));
+        UInt64.ZERO, BLSSignature.empty(), Optional.empty(), Optional.of(ONE));
 
     verify(dutiesProviderChannel)
         .createUnsignedBlock(
-            eq(UInt64.ZERO),
-            eq(BLSSignature.empty()),
-            eq(Optional.empty()),
-            eq(Optional.of(false)),
-            eq(Optional.of(ONE)));
+            eq(UInt64.ZERO), eq(BLSSignature.empty()), eq(Optional.empty()), eq(Optional.of(ONE)));
     verifyNoInteractions(blockHandlerChannel);
     verifyNoInteractions(attestationPublisherChannel);
   }
@@ -168,9 +160,10 @@ class SentryValidatorApiChannelTest {
 
   @Test
   void createAggregateShouldUseAttestationPublisherChannelWhenAvailable() {
-    sentryValidatorApiChannel.createAggregate(UInt64.ZERO, Bytes32.ZERO);
+    sentryValidatorApiChannel.createAggregate(UInt64.ZERO, Bytes32.ZERO, Optional.of(ONE));
 
-    verify(attestationPublisherChannel).createAggregate(eq(UInt64.ZERO), eq(Bytes32.ZERO));
+    verify(attestationPublisherChannel)
+        .createAggregate(eq(UInt64.ZERO), eq(Bytes32.ZERO), eq(Optional.of(ONE)));
     verifyNoInteractions(blockHandlerChannel);
     verifyNoInteractions(dutiesProviderChannel);
   }
@@ -181,9 +174,10 @@ class SentryValidatorApiChannelTest {
         new SentryValidatorApiChannel(
             dutiesProviderChannel, Optional.of(blockHandlerChannel), Optional.empty());
 
-    sentryValidatorApiChannel.createAggregate(UInt64.ZERO, Bytes32.ZERO);
+    sentryValidatorApiChannel.createAggregate(UInt64.ZERO, Bytes32.ZERO, Optional.of(ONE));
 
-    verify(dutiesProviderChannel).createAggregate(eq(UInt64.ZERO), eq(Bytes32.ZERO));
+    verify(dutiesProviderChannel)
+        .createAggregate(eq(UInt64.ZERO), eq(Bytes32.ZERO), eq(Optional.of(ONE)));
     verifyNoInteractions(blockHandlerChannel);
     verifyNoInteractions(attestationPublisherChannel);
   }

@@ -59,7 +59,7 @@ class CKZG4844Utils {
     return flattenBytes(g2Points, BYTES_PER_G2 * g2Points.size());
   }
 
-  static List<Bytes> bytesChunked(Bytes bytes, int chunkSize) {
+  static List<Bytes> bytesChunked(final Bytes bytes, final int chunkSize) {
     if (bytes.size() % chunkSize != 0) {
       throw new IllegalArgumentException("Invalid bytes size: " + bytes.size());
     }

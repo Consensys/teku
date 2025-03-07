@@ -4,6 +4,7 @@
     "operationId" : "getPoolAttesterSlashings",
     "summary" : "Get AttesterSlashings from operations pool",
     "description" : "Retrieves attester slashings known by the node but not necessarily incorporated into any block.",
+  "deprecated" : true,
     "responses" : {
       "200" : {
         "description" : "Request successful",
@@ -46,7 +47,7 @@
       "content" : {
         "application/json" : {
           "schema" : {
-            "$ref" : "#/components/schemas/AttesterSlashing"
+            "$ref" : "#/components/schemas/AttesterSlashingPhase0"
           }
         }
       }

@@ -25,10 +25,10 @@ public class BlockPerformance {
   final int numberOfProducedBlocks;
 
   public BlockPerformance(
-      UInt64 epoch,
-      int numberOfExpectedBlocks,
-      int numberOfIncludedBlocks,
-      int numberOfProducedBlocks) {
+      final UInt64 epoch,
+      final int numberOfExpectedBlocks,
+      final int numberOfIncludedBlocks,
+      final int numberOfProducedBlocks) {
     this.epoch = epoch;
     this.numberOfExpectedBlocks = numberOfExpectedBlocks;
     this.numberOfIncludedBlocks = numberOfIncludedBlocks;
@@ -36,7 +36,7 @@ public class BlockPerformance {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

@@ -32,7 +32,7 @@ public class Checkpoint {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 root;
 
-  public Checkpoint(tech.pegasys.teku.spec.datastructures.state.Checkpoint checkpoint) {
+  public Checkpoint(final tech.pegasys.teku.spec.datastructures.state.Checkpoint checkpoint) {
     this.epoch = checkpoint.getEpoch();
     this.root = checkpoint.getRoot();
   }
@@ -49,7 +49,7 @@ public class Checkpoint {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

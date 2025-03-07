@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionclient.schema;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -37,20 +39,20 @@ public class ExecutionPayloadV1 extends ExecutionPayloadCommon {
   public final List<Bytes> transactions;
 
   public ExecutionPayloadV1(
-      @JsonProperty("parentHash") Bytes32 parentHash,
-      @JsonProperty("feeRecipient") Bytes20 feeRecipient,
-      @JsonProperty("stateRoot") Bytes32 stateRoot,
-      @JsonProperty("receiptsRoot") Bytes32 receiptsRoot,
-      @JsonProperty("logsBloom") Bytes logsBloom,
-      @JsonProperty("prevRandao") Bytes32 prevRandao,
-      @JsonProperty("blockNumber") UInt64 blockNumber,
-      @JsonProperty("gasLimit") UInt64 gasLimit,
-      @JsonProperty("gasUsed") UInt64 gasUsed,
-      @JsonProperty("timestamp") UInt64 timestamp,
-      @JsonProperty("extraData") Bytes extraData,
-      @JsonProperty("baseFeePerGas") UInt256 baseFeePerGas,
-      @JsonProperty("blockHash") Bytes32 blockHash,
-      @JsonProperty("transactions") List<Bytes> transactions) {
+      final @JsonProperty("parentHash") Bytes32 parentHash,
+      final @JsonProperty("feeRecipient") Bytes20 feeRecipient,
+      final @JsonProperty("stateRoot") Bytes32 stateRoot,
+      final @JsonProperty("receiptsRoot") Bytes32 receiptsRoot,
+      final @JsonProperty("logsBloom") Bytes logsBloom,
+      final @JsonProperty("prevRandao") Bytes32 prevRandao,
+      final @JsonProperty("blockNumber") UInt64 blockNumber,
+      final @JsonProperty("gasLimit") UInt64 gasLimit,
+      final @JsonProperty("gasUsed") UInt64 gasUsed,
+      final @JsonProperty("timestamp") UInt64 timestamp,
+      final @JsonProperty("extraData") Bytes extraData,
+      final @JsonProperty("baseFeePerGas") UInt256 baseFeePerGas,
+      final @JsonProperty("blockHash") Bytes32 blockHash,
+      final @JsonProperty("transactions") List<Bytes> transactions) {
     super(
         parentHash,
         feeRecipient,
@@ -65,11 +67,12 @@ public class ExecutionPayloadV1 extends ExecutionPayloadCommon {
         extraData,
         baseFeePerGas,
         blockHash);
-    this.transactions = transactions != null ? transactions : List.of();
+    checkNotNull(transactions, "transactions");
+    this.transactions = transactions;
   }
 
   public ExecutionPayload asInternalExecutionPayload(
-      ExecutionPayloadSchema<?> executionPayloadSchema) {
+      final ExecutionPayloadSchema<?> executionPayloadSchema) {
     return executionPayloadSchema.createExecutionPayload(
         builder -> applyToBuilder(executionPayloadSchema, builder));
   }
@@ -94,7 +97,8 @@ public class ExecutionPayloadV1 extends ExecutionPayloadCommon {
         .transactions(transactions);
   }
 
-  public static ExecutionPayloadV1 fromInternalExecutionPayload(ExecutionPayload executionPayload) {
+  public static ExecutionPayloadV1 fromInternalExecutionPayload(
+      final ExecutionPayload executionPayload) {
     return new ExecutionPayloadV1(
         executionPayload.getParentHash(),
         executionPayload.getFeeRecipient(),
@@ -109,7 +113,11 @@ public class ExecutionPayloadV1 extends ExecutionPayloadCommon {
         executionPayload.getExtraData(),
         executionPayload.getBaseFeePerGas(),
         executionPayload.getBlockHash(),
-        executionPayload.getTransactions().stream().map(SszByteListImpl::getBytes).toList());
+        getTransactions(executionPayload));
+  }
+
+  public static List<Bytes> getTransactions(final ExecutionPayload executionPayload) {
+    return executionPayload.getTransactions().stream().map(SszByteListImpl::getBytes).toList();
   }
 
   @Override

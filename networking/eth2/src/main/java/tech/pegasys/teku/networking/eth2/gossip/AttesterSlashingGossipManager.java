@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
@@ -21,6 +22,7 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttesterSlashingGossipManager extends AbstractGossipManager<AttesterSlashing> {
@@ -32,7 +34,8 @@ public class AttesterSlashingGossipManager extends AbstractGossipManager<Atteste
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<AttesterSlashing> processor) {
+      final OperationProcessor<AttesterSlashing> processor,
+      final DebugDataDumper debugDataDumper) {
     super(
         recentChainData,
         GossipTopicName.ATTESTER_SLASHING,
@@ -44,8 +47,11 @@ public class AttesterSlashingGossipManager extends AbstractGossipManager<Atteste
         spec.atEpoch(forkInfo.getFork().getEpoch())
             .getSchemaDefinitions()
             .getAttesterSlashingSchema(),
+        message -> Optional.of(message.getAttestation1().getData().getSlot()),
         message -> spec.computeEpochAtSlot(message.getAttestation1().getData().getSlot()),
-        spec.getNetworkingConfig());
+        spec.getNetworkingConfig(),
+        GossipFailureLogger.createNonSuppressing(GossipTopicName.ATTESTER_SLASHING.toString()),
+        debugDataDumper);
   }
 
   public void publishAttesterSlashing(final AttesterSlashing message) {

@@ -55,6 +55,7 @@ public class GetStateRoot extends AbstractGetSimpleDataFromState {
             .pathParam(PARAMETER_STATE_ID)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build(),
         chainDataProvider);
   }

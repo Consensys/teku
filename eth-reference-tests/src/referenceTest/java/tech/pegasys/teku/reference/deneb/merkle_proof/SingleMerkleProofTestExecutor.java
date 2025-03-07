@@ -32,12 +32,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.config.SpecConfigEip7594;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
-import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class SingleMerkleProofTestExecutor implements TestExecutor {
   private static final Pattern TEST_NAME_PATTERN = Pattern.compile("(.+)/(.+)");
@@ -93,7 +94,7 @@ public class SingleMerkleProofTestExecutor implements TestExecutor {
     // Deneb
     if (proofType.startsWith("blob_kzg_commitment_merkle_proof")) {
       runBlobKzgCommitmentMerkleProofTest(testDefinition, data, beaconBlockBody);
-      // EIP-7594
+      // Fulu
     } else if (proofType.startsWith("blob_kzg_commitments_merkle_proof")) {
       runBlobKzgCommitmentsMerkleProofTest(testDefinition, data, beaconBlockBody);
     } else {
@@ -155,12 +156,12 @@ public class SingleMerkleProofTestExecutor implements TestExecutor {
                 beaconBlockBody.hashTreeRoot()))
         .isTrue();
 
-    // Verify 2 MiscHelpersEip7594 helpers
-    final MiscHelpersEip7594 miscHelpersEip7594 =
-        MiscHelpersEip7594.required(testDefinition.getSpec().getGenesisSpec().miscHelpers());
-    assertThat(miscHelpersEip7594.getBlockBodyKzgCommitmentsGeneralizedIndex())
+    // Verify 2 MiscHelpersFulu helpers
+    final MiscHelpersFulu miscHelpersFulu =
+        MiscHelpersFulu.required(testDefinition.getSpec().getGenesisSpec().miscHelpers());
+    assertThat(miscHelpersFulu.getBlockBodyKzgCommitmentsGeneralizedIndex())
         .isEqualTo(data.leafIndex);
-    assertThat(miscHelpersEip7594.computeDataColumnKzgCommitmentsInclusionProof(beaconBlockBody))
+    assertThat(miscHelpersFulu.computeDataColumnKzgCommitmentsInclusionProof(beaconBlockBody))
         .isEqualTo(data.branch.stream().map(Bytes32::fromHexString).toList());
   }
 
@@ -186,11 +187,7 @@ public class SingleMerkleProofTestExecutor implements TestExecutor {
   private SszBytes32Vector createKzgCommitmentsMerkleProofBranchFromData(
       final TestDefinition testDefinition, final List<String> branch) {
     final SszBytes32VectorSchema<?> kzgCommitmentsInclusionProofSchema =
-        testDefinition
-            .getSpec()
-            .getGenesisSchemaDefinitions()
-            .toVersionEip7594()
-            .orElseThrow()
+        SchemaDefinitionsFulu.required(testDefinition.getSpec().getGenesisSchemaDefinitions())
             .getDataColumnSidecarSchema()
             .getKzgCommitmentsInclusionProofSchema();
     return kzgCommitmentsInclusionProofSchema.createFromElements(
@@ -198,7 +195,7 @@ public class SingleMerkleProofTestExecutor implements TestExecutor {
   }
 
   private int getKzgCommitmentsInclusionProofDepth(final TestDefinition testDefinition) {
-    return SpecConfigEip7594.required(testDefinition.getSpec().getGenesisSpecConfig())
+    return SpecConfigFulu.required(testDefinition.getSpec().getGenesisSpecConfig())
         .getKzgCommitmentsInclusionProofDepth()
         .intValue();
   }

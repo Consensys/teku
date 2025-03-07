@@ -271,6 +271,34 @@ public class TekuConfiguration {
         }
       }
 
+      if (syncConfig.isReconstructHistoricStatesEnabled()) {
+        if (storageConfiguration.getRetainedSlots() > 0) {
+          throw new InvalidConfigurationException(
+              "Cannot reconstruct historic states with state pruning enabled");
+        }
+      }
+
+      if (storageConfiguration.getRetainedSlots() > 0) {
+        if (!storageConfiguration.getDataStorageMode().storesFinalizedStates()) {
+          throw new InvalidConfigurationException(
+              "Cannot enable state pruning without using ARCHIVE data storage mode");
+        }
+      }
+
+      if (syncConfig.isReconstructHistoricStatesEnabled()) {
+        if (storageConfiguration.getRetainedSlots() > 0) {
+          throw new InvalidConfigurationException(
+              "Cannot reconstruct historic states with state pruning enabled");
+        }
+      }
+
+      if (storageConfiguration.getRetainedSlots() > 0
+          && storageConfiguration.getRetainedSlots()
+              < storageConfiguration.getDataStorageFrequency()) {
+        throw new InvalidConfigurationException(
+            "Frequency of storing finalized states must be less than or equal to the number of retained slots");
+      }
+
       return new TekuConfiguration(
           eth2NetworkConfiguration,
           spec,
@@ -386,7 +414,7 @@ public class TekuConfiguration {
     }
 
     public Builder beaconChainControllerFactory(
-        BeaconChainControllerFactory beaconChainControllerFactory) {
+        final BeaconChainControllerFactory beaconChainControllerFactory) {
       this.beaconChainControllerFactory = beaconChainControllerFactory;
       return this;
     }

@@ -23,24 +23,21 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.MatrixEntry;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
-import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 
@@ -49,8 +46,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
 
   private final DataColumnSidecarRetriever delegate;
   private final KZG kzg;
-  private final MiscHelpersEip7594 specHelpers;
-  private final SchemaDefinitionsEip7594 schemaDefinitions;
+  private final MiscHelpersFulu specHelpers;
   private final CanonicalBlockResolver blockResolver;
   private final DataColumnSidecarDbAccessor sidecarDB;
   private final AsyncRunner asyncRunner;
@@ -63,20 +59,18 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   private final Map<UInt64, RecoveryEntry> recoveryBySlot = new ConcurrentHashMap<>();
 
   public RecoveringSidecarRetriever(
-      DataColumnSidecarRetriever delegate,
-      KZG kzg,
-      MiscHelpersEip7594 specHelpers,
-      SchemaDefinitionsEip7594 schemaDefinitionsEip7594,
-      CanonicalBlockResolver blockResolver,
-      DataColumnSidecarDbAccessor sidecarDB,
-      AsyncRunner asyncRunner,
-      Duration recoverInitiationTimeout,
-      int columnCount,
+      final DataColumnSidecarRetriever delegate,
+      final KZG kzg,
+      final MiscHelpersFulu specHelpers,
+      final CanonicalBlockResolver blockResolver,
+      final DataColumnSidecarDbAccessor sidecarDB,
+      final AsyncRunner asyncRunner,
+      final Duration recoverInitiationTimeout,
+      final int columnCount,
       final MetricsSystem metricsSystem) {
     this.delegate = delegate;
     this.kzg = kzg;
     this.specHelpers = specHelpers;
-    this.schemaDefinitions = schemaDefinitionsEip7594;
     this.blockResolver = blockResolver;
     this.sidecarDB = sidecarDB;
     this.asyncRunner = asyncRunner;
@@ -97,8 +91,8 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   }
 
   @Override
-  public SafeFuture<DataColumnSidecar> retrieve(DataColumnSlotAndIdentifier columnId) {
-    SafeFuture<DataColumnSidecar> promise = delegate.retrieve(columnId);
+  public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
+    final SafeFuture<DataColumnSidecar> promise = delegate.retrieve(columnId);
     // TODO we probably need a better heuristics to submit requests for recovery
     asyncRunner
         .runAfterDelay(
@@ -112,9 +106,19 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     return promise;
   }
 
+  @Override
+  public void flush() {
+    delegate.flush();
+  }
+
+  @Override
+  public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {
+    delegate.onNewValidatedSidecar(sidecar);
+  }
+
   @VisibleForTesting
   void maybeInitiateRecovery(
-      DataColumnSlotAndIdentifier columnId, SafeFuture<DataColumnSidecar> promise) {
+      final DataColumnSlotAndIdentifier columnId, final SafeFuture<DataColumnSidecar> promise) {
     blockResolver
         .getBlockAtSlot(columnId.slot())
         .thenPeek(
@@ -177,14 +181,14 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     return recoveryEntry;
   }
 
-  private synchronized void recoveryComplete(RecoveryEntry entry) {
+  private synchronized void recoveryComplete(final RecoveryEntry entry) {
     LOG.trace("Recovery complete for entry {}", entry);
   }
 
   private class RecoveryEntry {
     private final BeaconBlock block;
     private final KZG kzg;
-    private final MiscHelpersEip7594 specHelpers;
+    private final MiscHelpersFulu specHelpers;
 
     private final Map<UInt64, DataColumnSidecar> existingSidecarsByColIdx = new HashMap<>();
     private final Map<UInt64, List<SafeFuture<DataColumnSidecar>>> promisesByColIdx =
@@ -193,13 +197,15 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     private boolean recovered = false;
     private boolean cancelled = false;
 
-    public RecoveryEntry(BeaconBlock block, KZG kzg, MiscHelpersEip7594 specHelpers) {
+    public RecoveryEntry(
+        final BeaconBlock block, final KZG kzg, final MiscHelpersFulu specHelpers) {
       this.block = block;
       this.kzg = kzg;
       this.specHelpers = specHelpers;
     }
 
-    public synchronized void addRequest(UInt64 columnIndex, SafeFuture<DataColumnSidecar> promise) {
+    public synchronized void addRequest(
+        final UInt64 columnIndex, final SafeFuture<DataColumnSidecar> promise) {
       if (recovered) {
         promise.completeAsync(existingSidecarsByColIdx.get(columnIndex), asyncRunner);
       } else {
@@ -208,7 +214,8 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
       }
     }
 
-    private void handleRequestCancel(UInt64 columnIndex, SafeFuture<DataColumnSidecar> request) {
+    private void handleRequestCancel(
+        final UInt64 columnIndex, final SafeFuture<DataColumnSidecar> request) {
       request.finish(
           __ -> {
             if (request.isCancelled()) {
@@ -217,15 +224,15 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
           });
     }
 
-    private synchronized void onRequestCancel(UInt64 columnIndex) {
-      List<SafeFuture<DataColumnSidecar>> promises = promisesByColIdx.remove(columnIndex);
+    private synchronized void onRequestCancel(final UInt64 columnIndex) {
+      final List<SafeFuture<DataColumnSidecar>> promises = promisesByColIdx.remove(columnIndex);
       promises.stream().filter(p -> !p.isDone()).forEach(promise -> promise.cancel(true));
       if (promisesByColIdx.isEmpty()) {
         cancel();
       }
     }
 
-    public synchronized void addSidecar(DataColumnSidecar sidecar) {
+    public synchronized void addSidecar(final DataColumnSidecar sidecar) {
       if (!recovered && sidecar.getBlockRoot().equals(block.getRoot())) {
         existingSidecarsByColIdx.put(sidecar.getIndex(), sidecar);
         if (existingSidecarsByColIdx.size() >= recoverColumnCount) {
@@ -244,12 +251,10 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
 
     private void recoveryComplete() {
       recovered = true;
-      int totalPromises = promisesByColIdx.values().stream().mapToInt(List::size).sum();
-      totalDataAvailabilityReconstructedColumns.inc(totalPromises);
       LOG.info(
           "[nyota] Recovery: completed for the slot {}, requests complete: {}",
           block.getSlot(),
-          totalPromises);
+          promisesByColIdx.values().stream().mapToInt(List::size).sum());
 
       promisesByColIdx.forEach(
           (key, value) -> {
@@ -298,52 +303,13 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     }
 
     private void recover() {
-      List<List<MatrixEntry>> columnBlobEntries =
-          existingSidecarsByColIdx.values().stream()
-              .map(
-                  sideCar ->
-                      IntStream.range(0, sideCar.getDataColumn().size())
-                          .mapToObj(
-                              rowIndex ->
-                                  schemaDefinitions
-                                      .getMatrixEntrySchema()
-                                      .create(
-                                          sideCar.getDataColumn().get(rowIndex),
-                                          sideCar.getSszKZGProofs().get(rowIndex).getKZGProof(),
-                                          sideCar.getIndex(),
-                                          UInt64.valueOf(rowIndex)))
-                          .toList())
-              .toList();
-      List<List<MatrixEntry>> blobColumnEntries = transpose(columnBlobEntries);
-      List<List<MatrixEntry>> extendedMatrix = specHelpers.recoverMatrix(blobColumnEntries, kzg);
-      DataColumnSidecar anyExistingSidecar =
-          existingSidecarsByColIdx.values().stream().findFirst().orElseThrow();
-      SignedBeaconBlockHeader signedBeaconBlockHeader =
-          anyExistingSidecar.getSignedBeaconBlockHeader();
-      List<DataColumnSidecar> recoveredSidecars =
-          specHelpers.constructDataColumnSidecars(block, signedBeaconBlockHeader, extendedMatrix);
-      Map<UInt64, DataColumnSidecar> recoveredSidecarsAsMap =
+      final List<DataColumnSidecar> recoveredSidecars =
+          specHelpers.reconstructAllDataColumnSidecars(
+              block, existingSidecarsByColIdx.values(), kzg);
+      final Map<UInt64, DataColumnSidecar> recoveredSidecarsAsMap =
           recoveredSidecars.stream()
               .collect(Collectors.toUnmodifiableMap(DataColumnSidecar::getIndex, i -> i));
       existingSidecarsByColIdx.putAll(recoveredSidecarsAsMap);
     }
-  }
-
-  private static <T> List<List<T>> transpose(List<List<T>> matrix) {
-    int rowCount = matrix.size();
-    int colCount = matrix.get(0).size();
-    List<List<T>> ret =
-        Stream.generate(() -> (List<T>) new ArrayList<T>(rowCount)).limit(colCount).toList();
-
-    for (int row = 0; row < rowCount; row++) {
-      if (matrix.get(row).size() != colCount) {
-        throw new IllegalArgumentException("Different number columns in the matrix");
-      }
-      for (int col = 0; col < colCount; col++) {
-        T val = matrix.get(row).get(col);
-        ret.get(col).add(row, val);
-      }
-    }
-    return ret;
   }
 }

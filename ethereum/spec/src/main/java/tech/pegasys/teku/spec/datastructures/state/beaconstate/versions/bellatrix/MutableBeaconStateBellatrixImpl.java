@@ -28,11 +28,12 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.V
 class MutableBeaconStateBellatrixImpl extends AbstractMutableBeaconState<BeaconStateBellatrixImpl>
     implements MutableBeaconStateBellatrix, BeaconStateCache, ValidatorStatsAltair {
 
-  MutableBeaconStateBellatrixImpl(BeaconStateBellatrixImpl backingImmutableView) {
+  MutableBeaconStateBellatrixImpl(final BeaconStateBellatrixImpl backingImmutableView) {
     super(backingImmutableView);
   }
 
-  MutableBeaconStateBellatrixImpl(BeaconStateBellatrixImpl backingImmutableView, boolean builder) {
+  MutableBeaconStateBellatrixImpl(
+      final BeaconStateBellatrixImpl backingImmutableView, final boolean builder) {
     super(backingImmutableView, builder);
   }
 
@@ -43,10 +44,10 @@ class MutableBeaconStateBellatrixImpl extends AbstractMutableBeaconState<BeaconS
 
   @Override
   protected BeaconStateBellatrixImpl createImmutableBeaconState(
-      TreeNode backingNode,
-      IntCache<SszData> viewCache,
-      TransitionCaches transitionCaches,
-      SlotCaches slotCaches) {
+      final TreeNode backingNode,
+      final IntCache<SszData> viewCache,
+      final TransitionCaches transitionCaches,
+      final SlotCaches slotCaches) {
     return new BeaconStateBellatrixImpl(
         getSchema(), backingNode, viewCache, transitionCaches, slotCaches);
   }
@@ -58,12 +59,12 @@ class MutableBeaconStateBellatrixImpl extends AbstractMutableBeaconState<BeaconS
 
   @Override
   public <E1 extends Exception, E2 extends Exception, E3 extends Exception> BeaconState updated(
-      Mutator<MutableBeaconState, E1, E2, E3> mutator) {
+      final Mutator<MutableBeaconState, E1, E2, E3> mutator) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  protected void addCustomFields(ToStringHelper stringBuilder) {
+  protected void addCustomFields(final ToStringHelper stringBuilder) {
     BeaconStateBellatrix.describeCustomBellatrixFields(stringBuilder, this);
   }
 

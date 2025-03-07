@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ethereum.executionclient.web3j;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -270,6 +271,40 @@ public class Web3JClientTest {
 
     Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
     verifyNoInteractions(executionClientEventsPublisher);
+  }
+
+  @ParameterizedTest
+  @MethodSource("getClientInstances")
+  void shouldDecodeJsonRpcErrorCodesCorrectly(final ClientFactory clientFactory) throws Exception {
+    final Web3JClient client = clientFactory.create(eventLog, executionClientEventsPublisher);
+    Request<Void, VoidResponse> request = createRequest(client);
+
+    // Create a response with a specific JSON-RPC error
+    VoidResponse errorResponse = new VoidResponse();
+    Error rpcError =
+        new Error(
+            JsonRpcErrorCodes.INVALID_PARAMS.getErrorCode(),
+            "engine_newPayload method has been called with invalid parameters");
+    errorResponse.setError(rpcError);
+
+    when(client.getWeb3jService().sendAsync(request, VoidResponse.class))
+        .thenReturn(SafeFuture.completedFuture(errorResponse));
+
+    final SafeFuture<Response<Void>> result = client.doRequest(request, DEFAULT_TIMEOUT);
+    Waiter.waitFor(result);
+
+    SafeFutureAssert.assertThatSafeFuture(result).isCompleted();
+    final Response<Void> response = SafeFutureAssert.safeJoin(result);
+
+    assertThat(response.getErrorMessage())
+        .isEqualTo(
+            String.format(
+                "JSON-RPC error: %s (%d): %s",
+                JsonRpcErrorCodes.INVALID_PARAMS.getDescription(),
+                JsonRpcErrorCodes.INVALID_PARAMS.getErrorCode(),
+                "engine_newPayload method has been called with invalid parameters"));
+
+    verify(eventLog).executionClientRequestFailed(any(Exception.class), eq(false));
   }
 
   private static Request<Void, VoidResponse> createRequest(final Web3JClient client) {

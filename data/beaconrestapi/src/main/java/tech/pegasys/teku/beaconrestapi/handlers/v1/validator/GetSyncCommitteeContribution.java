@@ -72,7 +72,7 @@ public class GetSyncCommitteeContribution extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final UInt64 slot =
         request.getQueryParameter(SLOT_PARAMETER.withDescription(SLOT_QUERY_DESCRIPTION));
     final Bytes32 blockRoot = request.getQueryParameter(BEACON_BLOCK_ROOT_PARAMETER);

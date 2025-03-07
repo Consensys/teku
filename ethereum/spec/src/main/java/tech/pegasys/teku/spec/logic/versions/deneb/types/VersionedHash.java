@@ -26,7 +26,7 @@ public class VersionedHash {
   final Bytes version;
   final Bytes value;
 
-  private VersionedHash(Bytes version, Bytes value) {
+  private VersionedHash(final Bytes version, final Bytes value) {
     this.version = version;
     this.value = value;
   }
@@ -58,7 +58,7 @@ public class VersionedHash {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

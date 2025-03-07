@@ -48,7 +48,7 @@ public class ExecutionPayloadHeaderCapellaImpl
     implements ExecutionPayloadHeaderCapella {
 
   protected ExecutionPayloadHeaderCapellaImpl(
-      ContainerSchema15<
+      final ContainerSchema15<
               ExecutionPayloadHeaderCapellaImpl,
               SszBytes32,
               SszByteVector,
@@ -66,27 +66,27 @@ public class ExecutionPayloadHeaderCapellaImpl
               SszBytes32,
               SszBytes32>
           schema,
-      TreeNode backingTree) {
+      final TreeNode backingTree) {
     super(schema, backingTree);
   }
 
   public ExecutionPayloadHeaderCapellaImpl(
-      ExecutionPayloadHeaderSchemaCapella schema,
-      SszBytes32 parentHash,
-      SszByteVector feeRecipient,
-      SszBytes32 stateRoot,
-      SszBytes32 receiptsRoot,
-      SszByteVector logsBloom,
-      SszBytes32 prevRandao,
-      SszUInt64 blockNumber,
-      SszUInt64 gasLimit,
-      SszUInt64 gasUsed,
-      SszUInt64 timestamp,
-      SszByteList extraData,
-      SszUInt256 baseFeePerGas,
-      SszBytes32 blockHash,
-      SszBytes32 transactionsRoot,
-      SszBytes32 withdrawalsRoot) {
+      final ExecutionPayloadHeaderSchemaCapella schema,
+      final SszBytes32 parentHash,
+      final SszByteVector feeRecipient,
+      final SszBytes32 stateRoot,
+      final SszBytes32 receiptsRoot,
+      final SszByteVector logsBloom,
+      final SszBytes32 prevRandao,
+      final SszUInt64 blockNumber,
+      final SszUInt64 gasLimit,
+      final SszUInt64 gasUsed,
+      final SszUInt64 timestamp,
+      final SszByteList extraData,
+      final SszUInt256 baseFeePerGas,
+      final SszBytes32 blockHash,
+      final SszBytes32 transactionsRoot,
+      final SszBytes32 withdrawalsRoot) {
     super(
         schema,
         parentHash,

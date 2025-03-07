@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_HEADER_SCHEMA;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -24,13 +25,13 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSche
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateSchemaBellatrix
     extends AbstractBeaconStateSchema<BeaconStateBellatrix, MutableBeaconStateBellatrix> {
@@ -38,25 +39,26 @@ public class BeaconStateSchemaBellatrix
   public static final int LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX = 24;
 
   @VisibleForTesting
-  BeaconStateSchemaBellatrix(final SpecConfig specConfig) {
-    super("BeaconStateBellatrix", getUniqueFields(specConfig), specConfig);
+  BeaconStateSchemaBellatrix(final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    super("BeaconStateBellatrix", getUniqueFields(specConfig, schemaRegistry), specConfig);
   }
 
-  public static BeaconStateSchemaBellatrix create(final SpecConfig specConfig) {
-    return new BeaconStateSchemaBellatrix(specConfig);
+  public static BeaconStateSchemaBellatrix create(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    return new BeaconStateSchemaBellatrix(specConfig, schemaRegistry);
   }
 
-  public static List<SszField> getUniqueFields(final SpecConfig specConfig) {
-    final SszField latestExecutionPayloadHeaderField =
-        new SszField(
-            LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
-            BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
-            () ->
-                new ExecutionPayloadHeaderSchemaBellatrix(
-                    SpecConfigBellatrix.required(specConfig)));
+  public static List<SszField> getUniqueFields(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    final List<SszField> newFields =
+        List.of(
+            new SszField(
+                LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
+                BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
+                () -> schemaRegistry.get(EXECUTION_PAYLOAD_HEADER_SCHEMA)));
+
     return Stream.concat(
-            BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
-            Stream.of(latestExecutionPayloadHeaderField))
+            BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(), newFields.stream())
         .toList();
   }
 
@@ -101,7 +103,7 @@ public class BeaconStateSchemaBellatrix
   }
 
   @Override
-  public BeaconStateBellatrix createFromBackingNode(TreeNode node) {
+  public BeaconStateBellatrix createFromBackingNode(final TreeNode node) {
     return new BeaconStateBellatrixImpl(this, node);
   }
 

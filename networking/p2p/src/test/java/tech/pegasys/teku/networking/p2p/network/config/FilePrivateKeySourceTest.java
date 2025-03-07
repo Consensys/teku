@@ -27,7 +27,7 @@ import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 class FilePrivateKeySourceTest {
 
   @Test
-  void shouldCreateKeyAndSaveToFile(@TempDir Path tempDir) throws IOException {
+  void shouldCreateKeyAndSaveToFile(@TempDir final Path tempDir) throws IOException {
     final Path file = tempDir.resolve("file.txt");
     final PrivateKeySource privateKeySource = new FilePrivateKeySource(file.toString());
     final Bytes generatedBytes = privateKeySource.getOrGeneratePrivateKeyBytes();
@@ -37,7 +37,7 @@ class FilePrivateKeySourceTest {
   }
 
   @Test
-  void shouldGetKeyFromSavedTextFile(@TempDir Path tempDir) throws IOException {
+  void shouldGetKeyFromSavedTextFile(@TempDir final Path tempDir) throws IOException {
     final Path file = tempDir.resolve("file.txt");
     final Bytes privateKey = Bytes.wrap(PrivateKeyGenerator.generate().bytes());
     Files.writeString(file, privateKey.toHexString());
@@ -47,7 +47,7 @@ class FilePrivateKeySourceTest {
   }
 
   @Test
-  void shouldGetKeyFromBinaryFile(@TempDir Path tempDir) throws IOException {
+  void shouldGetKeyFromBinaryFile(@TempDir final Path tempDir) throws IOException {
     final Path file = tempDir.resolve("file.dat");
     final Bytes privateKey = Bytes.wrap(PrivateKeyGenerator.generate().bytes());
     Files.write(file, privateKey.toArray());
@@ -57,7 +57,7 @@ class FilePrivateKeySourceTest {
   }
 
   @Test
-  void shouldThrowExceptionIfInvalidFileName(@TempDir Path tempDir) {
+  void shouldThrowExceptionIfInvalidFileName(@TempDir final Path tempDir) {
     final PrivateKeySource privateKeySource =
         new FilePrivateKeySource(tempDir + "/invalid file name!!\0");
     assertThatThrownBy(privateKeySource::getOrGeneratePrivateKeyBytes)
@@ -66,7 +66,7 @@ class FilePrivateKeySourceTest {
   }
 
   @Test
-  void shouldThrowExceptionIfProvideDirectory(@TempDir Path tempDir) {
+  void shouldThrowExceptionIfProvideDirectory(@TempDir final Path tempDir) {
     final PrivateKeySource privateKeySource = new FilePrivateKeySource(tempDir.toString());
     assertThatThrownBy(privateKeySource::getOrGeneratePrivateKeyBytes)
         .isInstanceOf(RuntimeException.class)

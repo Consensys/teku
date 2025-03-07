@@ -42,8 +42,8 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailableException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfigEip7594;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
@@ -53,7 +53,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
  * <a
- * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/_features/eip7594/p2p-interface.md#datacolumnsidecarsbyrange-v1">DataColumnSidecarsByRange
+ * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/fulu/p2p-interface.md#datacolumnsidecarsbyrange-v1">DataColumnSidecarsByRange
  * v1</a>
  */
 public class DataColumnSidecarsByRangeMessageHandler
@@ -63,7 +63,7 @@ public class DataColumnSidecarsByRangeMessageHandler
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final SpecConfigEip7594 specConfigEip7594;
+  private final SpecConfigFulu specConfigFulu;
   private final CombinedChainDataClient combinedChainDataClient;
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalDataColumnSidecarsRequestedCounter;
@@ -71,12 +71,12 @@ public class DataColumnSidecarsByRangeMessageHandler
 
   public DataColumnSidecarsByRangeMessageHandler(
       final Spec spec,
-      final SpecConfigEip7594 specConfigEip7594,
+      final SpecConfigFulu specConfigFulu,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient,
       final DasReqRespLogger dasLogger) {
     this.spec = spec;
-    this.specConfigEip7594 = specConfigEip7594;
+    this.specConfigFulu = specConfigFulu;
     this.combinedChainDataClient = combinedChainDataClient;
     requestCounter =
         metricsSystem.createLabelledCounter(
@@ -115,14 +115,14 @@ public class DataColumnSidecarsByRangeMessageHandler
 
     final int requestedCount = message.getMaximumResponseChunks();
 
-    if (requestedCount > specConfigEip7594.getMaxRequestDataColumnSidecars()) {
+    if (requestedCount > specConfigFulu.getMaxRequestDataColumnSidecars()) {
       requestCounter.labels("count_too_big").inc();
       responseCallbackWithLogging.completeWithErrorResponse(
           new RpcException(
               INVALID_REQUEST_CODE,
               String.format(
                   "Only a maximum of %s blob sidecars can be requested per request. Requested: %s",
-                  specConfigEip7594.getMaxRequestDataColumnSidecars(), requestedCount)));
+                  specConfigFulu.getMaxRequestDataColumnSidecars(), requestedCount)));
       return;
     }
 
@@ -175,7 +175,7 @@ public class DataColumnSidecarsByRangeMessageHandler
               final RequestState initialState =
                   new RequestState(
                       responseCallbackWithLogging,
-                      specConfigEip7594.getMaxRequestDataColumnSidecars(),
+                      specConfigFulu.getMaxRequestDataColumnSidecars(),
                       startSlot,
                       endSlot,
                       columns,
@@ -298,7 +298,11 @@ public class DataColumnSidecarsByRangeMessageHandler
             .getDataColumnIdentifiers(startSlot, endSlot, maxRequestDataColumnSidecars)
             .thenCompose(
                 keys -> {
-                  dataColumnSidecarKeysIterator = Optional.of(keys.iterator());
+                  dataColumnSidecarKeysIterator =
+                      Optional.of(
+                          keys.stream()
+                              .filter(key -> columns.contains(key.columnIndex()))
+                              .iterator());
                   return getNextDataColumnSidecar(dataColumnSidecarKeysIterator.get());
                 });
       } else {
@@ -311,11 +315,6 @@ public class DataColumnSidecarsByRangeMessageHandler
       if (dataColumnSidecarIdentifiers.hasNext()) {
         final DataColumnSlotAndIdentifier columnSlotAndIdentifier =
             dataColumnSidecarIdentifiers.next();
-
-        // Column that was not requested. TODO: get identifiers only for requested columns from DB
-        if (!columns.contains(columnSlotAndIdentifier.columnIndex())) {
-          return getNextDataColumnSidecar(dataColumnSidecarIdentifiers);
-        }
 
         if (finalizedSlot.isGreaterThanOrEqualTo(columnSlotAndIdentifier.slot())) {
           return combinedChainDataClient.getSidecar(columnSlotAndIdentifier);

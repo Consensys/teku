@@ -14,18 +14,18 @@
 package tech.pegasys.teku.networking.eth2.rpc;
 
 public class IntRange {
-  public static IntRange ofLength(int startIndex, int length) {
+  public static IntRange ofLength(final int startIndex, final int length) {
     return new IntRange(startIndex, length);
   }
 
-  public static IntRange ofIndices(int startIndex, int endIndex) {
+  public static IntRange ofIndices(final int startIndex, final int endIndex) {
     return new IntRange(startIndex, endIndex - startIndex);
   }
 
   private final int startIndex;
   private final int length;
 
-  public IntRange(int startIndex, int length) {
+  public IntRange(final int startIndex, final int length) {
     this.startIndex = startIndex;
     this.length = length;
   }

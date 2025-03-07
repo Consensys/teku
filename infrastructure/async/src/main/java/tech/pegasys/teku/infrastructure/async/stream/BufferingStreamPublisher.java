@@ -21,7 +21,7 @@ class BufferingStreamPublisher<T> extends AsyncIterator<T> implements AsyncStrea
 
   private boolean isDone = false;
 
-  BufferingStreamPublisher(int maxBufferSize) {
+  BufferingStreamPublisher(final int maxBufferSize) {
     this.eventQueue = new LimitedAsyncQueue<>(maxBufferSize);
   }
 
@@ -50,7 +50,7 @@ class BufferingStreamPublisher<T> extends AsyncIterator<T> implements AsyncStrea
     }
   }
 
-  private synchronized void putNext(Event<T> event) {
+  private synchronized void putNext(final Event<T> event) {
     if (isDone) {
       throw new IllegalStateException("Stream has been done already");
     }
@@ -63,7 +63,7 @@ class BufferingStreamPublisher<T> extends AsyncIterator<T> implements AsyncStrea
   }
 
   @Override
-  void iterate(AsyncStreamHandler<T> delegate) {
+  void iterate(final AsyncStreamHandler<T> delegate) {
     SafeFuture.asyncDoWhile(
             () ->
                 takeNext()
@@ -87,7 +87,7 @@ class BufferingStreamPublisher<T> extends AsyncIterator<T> implements AsyncStrea
   }
 
   @Override
-  public SafeFuture<Boolean> onNext(T t) {
+  public SafeFuture<Boolean> onNext(final T t) {
     SafeFuture<Boolean> ret = new SafeFuture<>();
     try {
       putNext(new ItemEvent<>(t, ret));
@@ -103,7 +103,7 @@ class BufferingStreamPublisher<T> extends AsyncIterator<T> implements AsyncStrea
   }
 
   @Override
-  public synchronized void onError(Throwable t) {
+  public synchronized void onError(final Throwable t) {
     putNext(new ErrorEvent<>(t));
   }
 }

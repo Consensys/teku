@@ -33,7 +33,8 @@ public class DepositFuzzInput extends Container2<DepositFuzzInput, BeaconState, 
   }
 
   public DepositFuzzInput(
-      ContainerSchema2<DepositFuzzInput, BeaconState, Deposit> type, TreeNode backingNode) {
+      final ContainerSchema2<DepositFuzzInput, BeaconState, Deposit> type,
+      final TreeNode backingNode) {
     super(type, backingNode);
   }
 

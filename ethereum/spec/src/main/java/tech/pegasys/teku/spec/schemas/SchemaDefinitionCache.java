@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 public class SchemaDefinitionCache {
   private final Spec spec;
@@ -46,7 +47,10 @@ public class SchemaDefinitionCache {
     if (specVersion != null) {
       return specVersion.getSchemaDefinitions();
     }
-    return SpecVersion.create(milestone, spec.getGenesisSpecConfig())
+    return SpecVersion.create(
+            milestone,
+            spec.getSpecConfigAndParent().forMilestone(milestone),
+            SchemaRegistryBuilder.create())
         .orElseThrow(
             () ->
                 new IllegalArgumentException(

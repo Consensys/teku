@@ -16,10 +16,10 @@ package tech.pegasys.teku.beaconrestapi.v1.node;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.node.VersionResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
 
@@ -30,9 +30,8 @@ public class GetVersionIntegrationTest extends AbstractDataBackedRestAPIIntegrat
     startRestAPIAtGenesis();
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
-    final VersionResponse versionResponse =
-        jsonProvider.jsonToObject(response.body().string(), VersionResponse.class);
-    assertThat(versionResponse.data.version).startsWith("teku/");
+    final JsonNode data = getResponseData(response);
+    assertThat(data.get("version").asText()).startsWith("teku/");
   }
 
   private Response get() throws IOException {

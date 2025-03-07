@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.common.statetransition.results;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
+@SuppressWarnings("ClassInitializationDeadlock")
 public interface BlockImportResult {
   BlockImportResult FAILED_BLOCK_IS_FROM_FUTURE =
       new FailedBlockImportResult(FailureReason.BLOCK_IS_FROM_FUTURE, Optional.empty());

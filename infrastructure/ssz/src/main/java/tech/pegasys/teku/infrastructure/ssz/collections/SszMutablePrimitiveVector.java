@@ -16,8 +16,7 @@ package tech.pegasys.teku.infrastructure.ssz.collections;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableVector;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 
-public interface SszMutablePrimitiveVector<
-        ElementT, SszElementT extends SszPrimitive<ElementT, SszElementT>>
+public interface SszMutablePrimitiveVector<ElementT, SszElementT extends SszPrimitive<ElementT>>
     extends SszMutablePrimitiveCollection<ElementT, SszElementT>,
         SszMutableVector<SszElementT>,
         SszPrimitiveVector<ElementT, SszElementT> {

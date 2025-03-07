@@ -56,9 +56,10 @@ class Eth1DepositManagerTest {
   private static final int MIN_GENESIS_BLOCK_TIMESTAMP = 10_000;
   private final SpecConfig config =
       SpecConfigLoader.loadConfig(
-          "minimal",
-          builder ->
-              builder.minGenesisTime(UInt64.valueOf(10_300)).genesisDelay(UInt64.valueOf(300)));
+              "minimal",
+              builder ->
+                  builder.minGenesisTime(UInt64.valueOf(10_300)).genesisDelay(UInt64.valueOf(300)))
+          .specConfig();
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 

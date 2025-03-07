@@ -110,7 +110,7 @@ public class SignedBlsToExecutionChangeValidator
 
   @SuppressWarnings("FormatStringAnnotation")
   private SafeFuture<InternalValidationResult> validateBlsMessage(
-      BeaconState state, BlsToExecutionChange operation) {
+      final BeaconState state, final BlsToExecutionChange operation) {
     return spec.validateBlsToExecutionChange(state, timeProvider.getTimeInSeconds(), operation)
         .map(reason -> reject(reason.describe()))
         .map(SafeFuture::completedFuture)
@@ -118,7 +118,7 @@ public class SignedBlsToExecutionChangeValidator
   }
 
   private SafeFuture<InternalValidationResult> validateBlsMessageSignature(
-      BeaconState state, SignedBlsToExecutionChange operation) {
+      final BeaconState state, final SignedBlsToExecutionChange operation) {
     return spec.atSlot(state.getSlot())
         .operationSignatureVerifier()
         .verifyBlsToExecutionChangeSignatureAsync(state, operation, blsSignatureVerifier)

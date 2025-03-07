@@ -18,6 +18,7 @@ import tech.pegasys.teku.api.schema.altair.BeaconBlockAltair;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.capella.BeaconBlockCapella;
 import tech.pegasys.teku.api.schema.deneb.BeaconBlockDeneb;
+import tech.pegasys.teku.api.schema.electra.BeaconBlockElectra;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 
 @Schema(
@@ -26,6 +27,7 @@ import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
       BeaconBlockAltair.class,
       BeaconBlockBellatrix.class,
       BeaconBlockCapella.class,
-      BeaconBlockDeneb.class
+      BeaconBlockDeneb.class,
+      BeaconBlockElectra.class
     })
 public interface UnsignedBlock {}

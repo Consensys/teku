@@ -50,7 +50,7 @@ public class SszSuperNode implements TreeNode, LeafDataNode {
   private final Bytes ssz;
   private volatile Bytes32 cachedHash;
 
-  public SszSuperNode(int depth, SszNodeTemplate elementTemplate, Bytes ssz) {
+  public SszSuperNode(final int depth, final SszNodeTemplate elementTemplate, final Bytes ssz) {
     this.depth = depth;
     this.elementTemplate = elementTemplate;
     this.ssz = ssz;
@@ -112,7 +112,7 @@ public class SszSuperNode implements TreeNode, LeafDataNode {
 
   @NotNull
   @Override
-  public TreeNode get(long generalizedIndex) {
+  public TreeNode get(final long generalizedIndex) {
     if (GIndexUtil.gIdxIsSelf(generalizedIndex)) {
       return this;
     }
@@ -135,7 +135,9 @@ public class SszSuperNode implements TreeNode, LeafDataNode {
 
   @Override
   public boolean iterate(
-      long thisGeneralizedIndex, long startGeneralizedIndex, TreeVisitor visitor) {
+      final long thisGeneralizedIndex,
+      final long startGeneralizedIndex,
+      final TreeVisitor visitor) {
     if (GIndexUtil.gIdxCompare(thisGeneralizedIndex, startGeneralizedIndex) == NodeRelation.LEFT) {
       return true;
     } else {

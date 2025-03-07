@@ -27,11 +27,12 @@ public class MutableBeaconStateCapellaImpl
     extends AbstractMutableBeaconState<BeaconStateCapellaImpl>
     implements MutableBeaconStateCapella, BeaconStateCache, ValidatorStatsAltair {
 
-  MutableBeaconStateCapellaImpl(BeaconStateCapellaImpl backingImmutableView) {
+  MutableBeaconStateCapellaImpl(final BeaconStateCapellaImpl backingImmutableView) {
     super(backingImmutableView);
   }
 
-  MutableBeaconStateCapellaImpl(BeaconStateCapellaImpl backingImmutableView, boolean builder) {
+  MutableBeaconStateCapellaImpl(
+      final BeaconStateCapellaImpl backingImmutableView, final boolean builder) {
     super(backingImmutableView, builder);
   }
 

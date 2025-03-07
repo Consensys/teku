@@ -45,8 +45,8 @@ import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationLis
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof.SignedAggregateAndProofSchema;
@@ -66,7 +66,7 @@ import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 class AttestationManagerTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final AttestationSchema attestationSchema =
+  private final AttestationSchema<?> attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final SignedAggregateAndProofSchema aggregateSchema =
       spec.getGenesisSchemaDefinitions().getSignedAggregateAndProofSchema();

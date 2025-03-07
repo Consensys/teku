@@ -29,14 +29,16 @@ public interface SszListSchema<ElementDataT extends SszData, SszListT extends Ss
 
   static <ElementDataT extends SszData>
       SszListSchema<ElementDataT, ? extends SszList<ElementDataT>> create(
-          SszSchema<ElementDataT> elementSchema, long maxLength) {
+          final SszSchema<ElementDataT> elementSchema, final long maxLength) {
     return create(elementSchema, maxLength, SszSchemaHints.none());
   }
 
   @SuppressWarnings("unchecked")
   static <ElementDataT extends SszData>
       SszListSchema<ElementDataT, ? extends SszList<ElementDataT>> create(
-          SszSchema<ElementDataT> elementSchema, long maxLength, SszSchemaHints hints) {
+          final SszSchema<ElementDataT> elementSchema,
+          final long maxLength,
+          final SszSchemaHints hints) {
     checkArgument(maxLength >= 0 && maxLength <= MAX_LIST_MAX_LENGTH);
     if (elementSchema instanceof SszPrimitiveSchema) {
       return (SszListSchema<ElementDataT, ?>)

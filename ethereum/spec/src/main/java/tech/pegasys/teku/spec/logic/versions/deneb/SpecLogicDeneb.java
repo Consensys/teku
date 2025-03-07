@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.deneb;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -43,6 +44,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.operations.validation.AttestationDataValidatorDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.AttestationUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
+import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class SpecLogicDeneb extends AbstractSpecLogic {
@@ -90,7 +92,9 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
   }
 
   public static SpecLogicDeneb create(
-      final SpecConfigDeneb config, final SchemaDefinitionsDeneb schemaDefinitions) {
+      final SpecConfigDeneb config,
+      final SchemaDefinitionsDeneb schemaDefinitions,
+      final TimeProvider timeProvider) {
     // Helpers
     final Predicates predicates = new Predicates(config);
     final MiscHelpersDeneb miscHelpers =
@@ -114,9 +118,15 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
         new AttestationUtilDeneb(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
     final AttestationDataValidator attestationDataValidator =
         new AttestationDataValidatorDeneb(config, miscHelpers, beaconStateAccessors);
+    final VoluntaryExitValidator voluntaryExitValidator =
+        new VoluntaryExitValidator(config, predicates, beaconStateAccessors);
     final OperationValidator operationValidator =
         new OperationValidatorCapella(
-            config, predicates, beaconStateAccessors, attestationDataValidator, attestationUtil);
+            predicates,
+            beaconStateAccessors,
+            attestationDataValidator,
+            attestationUtil,
+            voluntaryExitValidator);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
         new ValidatorStatusFactoryAltair(
             config,
@@ -134,7 +144,8 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
             validatorsUtil,
             beaconStateUtil,
             validatorStatusFactory,
-            schemaDefinitions);
+            schemaDefinitions,
+            timeProvider);
     final SyncCommitteeUtil syncCommitteeUtil =
         new SyncCommitteeUtil(
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);

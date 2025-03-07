@@ -73,12 +73,13 @@ public class GetBlockRewards extends RestApiEndpoint {
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
             .withInternalErrorResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     request.respondAsync(
         chainDataProvider
             .getBlockRewardsFromBlockId(request.getPathParameter(PARAMETER_BLOCK_ID))

@@ -44,7 +44,5 @@ public interface Eth2RpcMethod<TRequest extends RpcRequest & SszData, TResponse 
 
   @Override
   Eth2OutgoingRequestHandler<TRequest, TResponse> createOutgoingRequestHandler(
-      String protocolId,
-      final TRequest request,
-      Eth2RpcResponseHandler<TResponse, ?> responseHandler);
+      String protocolId, TRequest request, Eth2RpcResponseHandler<TResponse, ?> responseHandler);
 }

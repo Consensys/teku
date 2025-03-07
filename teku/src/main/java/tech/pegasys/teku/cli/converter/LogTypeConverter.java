@@ -20,7 +20,7 @@ import picocli.CommandLine.ITypeConverter;
 
 public class LogTypeConverter implements ITypeConverter<Level> {
   @Override
-  public Level convert(String value) {
+  public Level convert(final String value) {
     switch (value.toUpperCase(Locale.ROOT)) {
       case "OFF":
         return Level.OFF;

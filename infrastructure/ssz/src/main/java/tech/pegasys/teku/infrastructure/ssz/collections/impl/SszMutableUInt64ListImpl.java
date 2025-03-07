@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class SszMutableUInt64ListImpl extends SszMutablePrimitiveListImpl<UInt64, SszUInt64>
     implements SszMutableUInt64List {
 
-  public SszMutableUInt64ListImpl(SszUInt64ListImpl backingImmutableData) {
+  public SszMutableUInt64ListImpl(final SszUInt64ListImpl backingImmutableData) {
     super(backingImmutableData);
   }
 
@@ -35,7 +35,7 @@ public class SszMutableUInt64ListImpl extends SszMutablePrimitiveListImpl<UInt64
 
   @Override
   protected SszUInt64ListImpl createImmutableSszComposite(
-      TreeNode backingNode, IntCache<SszUInt64> childrenCache) {
+      final TreeNode backingNode, final IntCache<SszUInt64> childrenCache) {
     return new SszUInt64ListImpl(getSchema(), backingNode, childrenCache);
   }
 

@@ -124,7 +124,7 @@ public class SyncStateTracker extends Service
   }
 
   @Override
-  public boolean unsubscribeFromSyncStateChanges(long subscriberId) {
+  public boolean unsubscribeFromSyncStateChanges(final long subscriberId) {
     return subscribers.unsubscribe(subscriberId);
   }
 

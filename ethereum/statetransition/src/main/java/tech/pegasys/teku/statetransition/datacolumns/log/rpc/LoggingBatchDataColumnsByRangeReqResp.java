@@ -17,7 +17,7 @@ import java.util.List;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRangeReqResp;
 
 public class LoggingBatchDataColumnsByRangeReqResp implements BatchDataColumnsByRangeReqResp {
@@ -26,15 +26,18 @@ public class LoggingBatchDataColumnsByRangeReqResp implements BatchDataColumnsBy
   private final DasReqRespLogger logger;
 
   public LoggingBatchDataColumnsByRangeReqResp(
-      BatchDataColumnsByRangeReqResp delegate, DasReqRespLogger logger) {
+      final BatchDataColumnsByRangeReqResp delegate, final DasReqRespLogger logger) {
     this.delegate = delegate;
     this.logger = logger;
   }
 
   @Override
   public AsyncStream<DataColumnSidecar> requestDataColumnSidecarsByRange(
-      UInt256 nodeId, UInt64 startSlot, int slotCount, List<UInt64> columnIndexes) {
-    ReqRespResponseLogger<DataColumnSidecar> responseLogger =
+      final UInt256 nodeId,
+      final UInt64 startSlot,
+      final int slotCount,
+      final List<UInt64> columnIndexes) {
+    final ReqRespResponseLogger<DataColumnSidecar> responseLogger =
         logger
             .getDataColumnSidecarsByRangeLogger()
             .onOutboundRequest(
@@ -46,7 +49,7 @@ public class LoggingBatchDataColumnsByRangeReqResp implements BatchDataColumnsBy
   }
 
   @Override
-  public int getCurrentRequestLimit(UInt256 nodeId) {
+  public int getCurrentRequestLimit(final UInt256 nodeId) {
     return delegate.getCurrentRequestLimit(nodeId);
   }
 }

@@ -23,6 +23,7 @@ import tech.pegasys.teku.beacon.sync.gossip.AbstractFetchService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -37,6 +38,7 @@ public class RecentBlocksFetchService
 
   private final ForwardSync forwardSync;
   private final PendingPool<SignedBeaconBlock> pendingBlockPool;
+  private final PendingPool<ValidatableAttestation> pendingAttestationsPool;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final FetchTaskFactory fetchTaskFactory;
   private final Subscribers<BlockSubscriber> blockSubscribers = Subscribers.create(true);
@@ -44,6 +46,7 @@ public class RecentBlocksFetchService
   RecentBlocksFetchService(
       final AsyncRunner asyncRunner,
       final PendingPool<SignedBeaconBlock> pendingBlockPool,
+      final PendingPool<ValidatableAttestation> pendingAttestationsPool,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory,
@@ -51,6 +54,7 @@ public class RecentBlocksFetchService
     super(asyncRunner, maxConcurrentRequests);
     this.forwardSync = forwardSync;
     this.pendingBlockPool = pendingBlockPool;
+    this.pendingAttestationsPool = pendingAttestationsPool;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.fetchTaskFactory = fetchTaskFactory;
   }
@@ -58,12 +62,14 @@ public class RecentBlocksFetchService
   public static RecentBlocksFetchService create(
       final AsyncRunner asyncRunner,
       final PendingPool<SignedBeaconBlock> pendingBlocksPool,
+      final PendingPool<ValidatableAttestation> pendingAttestations,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory) {
     return new RecentBlocksFetchService(
         asyncRunner,
         pendingBlocksPool,
+        pendingAttestations,
         blockBlobSidecarsTrackersPool,
         forwardSync,
         fetchTaskFactory,
@@ -137,6 +143,8 @@ public class RecentBlocksFetchService
   }
 
   private void setupSubscribers() {
+    pendingAttestationsPool.subscribeRequiredBlockRoot(this::requestRecentBlock);
+    pendingAttestationsPool.subscribeRequiredBlockRootDropped(this::cancelRecentBlockRequest);
     pendingBlockPool.subscribeRequiredBlockRoot(this::requestRecentBlock);
     pendingBlockPool.subscribeRequiredBlockRootDropped(this::cancelRecentBlockRequest);
     blockBlobSidecarsTrackersPool.subscribeRequiredBlockRoot(this::requestRecentBlock);

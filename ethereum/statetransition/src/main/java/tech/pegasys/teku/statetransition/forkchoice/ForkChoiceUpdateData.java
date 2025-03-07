@@ -196,7 +196,7 @@ public class ForkChoiceUpdateData {
     return Optional.of(forkChoiceUpdatedResult);
   }
 
-  private void logSendForkChoiceUpdatedComplete(Optional<Bytes8> payloadId) {
+  private void logSendForkChoiceUpdatedComplete(final Optional<Bytes8> payloadId) {
     if (LOG.isDebugEnabled()) {
       LOG.debug(
           "send - forkChoiceUpdated returned payload id {} for {}, {}",

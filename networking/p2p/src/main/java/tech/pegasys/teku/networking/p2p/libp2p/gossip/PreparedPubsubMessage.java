@@ -38,7 +38,8 @@ public class PreparedPubsubMessage extends AbstractPubsubMessage {
   private final PreparedGossipMessage preparedMessage;
   private final Supplier<WBytes> cachedMessageId;
 
-  public PreparedPubsubMessage(Message protobufMessage, PreparedGossipMessage preparedMessage) {
+  public PreparedPubsubMessage(
+      final Message protobufMessage, final PreparedGossipMessage preparedMessage) {
     this.protobufMessage = protobufMessage;
     this.preparedMessage = preparedMessage;
     cachedMessageId =

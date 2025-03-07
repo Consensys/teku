@@ -32,7 +32,7 @@ public class GetStateValidatorsRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
   }
 
-  public Optional<ObjectAndMetaData<List<StateValidatorData>>> getStateValidators(
+  public Optional<ObjectAndMetaData<List<StateValidatorData>>> submit(
       final List<String> validatorIds) {
     return get(
         GET_VALIDATORS,

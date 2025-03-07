@@ -46,7 +46,6 @@ public class DepositSnapshotFileLoader {
   public static final Map<Eth2Network, String> DEFAULT_SNAPSHOT_RESOURCE_PATHS =
       Map.of(
           Eth2Network.GNOSIS, "gnosis.ssz",
-          Eth2Network.PRATER, "goerli.ssz",
           Eth2Network.MAINNET, "mainnet.ssz",
           Eth2Network.SEPOLIA, "sepolia.ssz",
           Eth2Network.LUKSO, "lukso.ssz",
@@ -80,7 +79,7 @@ public class DepositSnapshotFileLoader {
               "Deposit tree snapshot loaded from " + sanitizedUrl + " is not a correct snapshot",
               e);
         } else {
-          LOG.warn("Failed to load deposit tree snapshot from " + sanitizedUrl, e);
+          LOG.warn("Failed to load deposit tree snapshot from " + sanitizedUrl, e.getMessage());
         }
 
         if (isRequired) {
@@ -98,7 +97,9 @@ public class DepositSnapshotFileLoader {
         ResourceLoader.urlOrFile("application/octet-stream, application/json")
             .loadBytes(path)
             .orElseThrow(
-                () -> new FileNotFoundException(String.format("File '%s' not found", path)));
+                () ->
+                    new FileNotFoundException(
+                        String.format("Failed to load deposit tree snapshot from %s", path)));
 
     try {
       return parseSszDepositSnapshotTreeData(snapshotData);

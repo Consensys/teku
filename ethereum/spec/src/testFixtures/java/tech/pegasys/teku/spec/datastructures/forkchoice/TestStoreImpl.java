@@ -188,22 +188,22 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
 
   // Prunable methods
   @Override
-  public Optional<BeaconState> getBlockStateIfAvailable(Bytes32 blockRoot) {
+  public Optional<BeaconState> getBlockStateIfAvailable(final Bytes32 blockRoot) {
     return Optional.ofNullable(getBlockState(blockRoot));
   }
 
   @Override
-  public Optional<SignedBeaconBlock> getBlockIfAvailable(Bytes32 blockRoot) {
+  public Optional<SignedBeaconBlock> getBlockIfAvailable(final Bytes32 blockRoot) {
     return Optional.ofNullable(getSignedBlock(blockRoot));
   }
 
   @Override
-  public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(Bytes32 blockRoot) {
+  public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(final Bytes32 blockRoot) {
     return SafeFuture.completedFuture(getBlockIfAvailable(blockRoot));
   }
 
   @Override
-  public SafeFuture<Optional<SignedBlockAndState>> retrieveBlockAndState(Bytes32 blockRoot) {
+  public SafeFuture<Optional<SignedBlockAndState>> retrieveBlockAndState(final Bytes32 blockRoot) {
     return SafeFuture.completedFuture(getBlockAndState(blockRoot));
   }
 
@@ -214,12 +214,12 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> retrieveBlockState(Bytes32 blockRoot) {
+  public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {
     return SafeFuture.completedFuture(getBlockStateIfAvailable(blockRoot));
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint) {
+  public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {
     return SafeFuture.completedFuture(getCheckpointState(checkpoint));
   }
 
@@ -257,10 +257,10 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public void computeBalanceThresholds(BeaconState justifiedState) {}
+  public void computeBalanceThresholds(final BeaconState justifiedState) {}
 
   @Override
-  public Optional<Boolean> isFfgCompetitive(Bytes32 headRoot, Bytes32 parentRoot) {
+  public Optional<Boolean> isFfgCompetitive(final Bytes32 headRoot, final Bytes32 parentRoot) {
     return Optional.empty();
   }
 
@@ -353,7 +353,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public void putVote(UInt64 validatorIndex, VoteTracker vote) {
+  public void putVote(final UInt64 validatorIndex, final VoteTracker vote) {
     votes.put(validatorIndex, vote);
   }
 

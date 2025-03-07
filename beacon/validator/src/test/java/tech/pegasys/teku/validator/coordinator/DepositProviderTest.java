@@ -46,11 +46,11 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
-import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
 import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -129,7 +129,7 @@ public class DepositProviderTest {
     mockDepositsFromEth1Block(0, 10);
     mockDepositsFromEth1Block(10, 20);
 
-    SszList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
+    List<DepositWithIndex> deposits = depositProvider.getDepositsWithIndex(state, randomEth1Data);
     assertThat(deposits).hasSize(15);
     checkThatDepositProofIsValid(deposits);
   }
@@ -154,9 +154,11 @@ public class DepositProviderTest {
             .collect(SszListSchema.create(Eth1Data.SSZ_SCHEMA, 32).collector());
     state = state.updated(mutableState -> mutableState.setEth1DataVotes(et1hDataVotes));
 
-    SszList<Deposit> deposits = depositProvider.getDeposits(state, newEth1Data);
+    List<DepositWithIndex> deposits = depositProvider.getDepositsWithIndex(state, newEth1Data);
     assertThat(deposits).hasSize(25);
     checkThatDepositProofIsValid(deposits);
+    assertThat(deposits.stream().map(DepositWithIndex::deposit))
+        .containsExactlyElementsOf(depositProvider.getDeposits(state, newEth1Data));
   }
 
   @Test
@@ -168,9 +170,45 @@ public class DepositProviderTest {
     mockDepositsFromEth1Block(0, 10);
     mockDepositsFromEth1Block(10, 20);
 
-    SszList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
+    List<DepositWithIndex> deposits = depositProvider.getDepositsWithIndex(state, randomEth1Data);
     assertThat(deposits).hasSize(10);
     checkThatDepositProofIsValid(deposits);
+    assertThat(deposits.stream().map(DepositWithIndex::deposit))
+        .containsExactlyElementsOf(depositProvider.getDeposits(state, randomEth1Data));
+  }
+
+  @Test
+  void noDepositsIncludedIfFormerDepositMechanismHasBeenDisabled() {
+    setup(16, SpecMilestone.ELECTRA);
+    updateStateEth1DepositIndex(5);
+    updateStateDepositRequestsStartIndex(5);
+
+    final SszList<Deposit> deposits = depositProvider.getDeposits(state, randomEth1Data);
+
+    assertThat(deposits).isEmpty();
+  }
+
+  @Test
+  void getsRemainingEth1PendingDepositsIfElectraIsEnabled() {
+    setup(16, SpecMilestone.ELECTRA);
+    updateStateEth1DepositIndex(5);
+    updateStateEth1DataDepositCount(20);
+    // 16th deposit is using the new mechanism
+    updateStateDepositRequestsStartIndex(16);
+
+    mockDepositsFromEth1Block(0, 10);
+    mockDepositsFromEth1Block(10, 20);
+
+    final List<DepositWithIndex> deposits =
+        depositProvider.getDepositsWithIndex(state, randomEth1Data);
+
+    // the pending Eth1 deposits (deposit_requests_start_index - eth1_deposit_index)
+    // we need to process eth1_deposit_index deposit (5) up to 16 (exclusive) so 11 is the
+    // expected size
+    assertThat(deposits).hasSize(11);
+    checkThatDepositProofIsValid(deposits);
+    assertThat(deposits.stream().map(DepositWithIndex::deposit))
+        .containsExactlyElementsOf(depositProvider.getDeposits(state, randomEth1Data));
   }
 
   @Test
@@ -217,7 +255,11 @@ public class DepositProviderTest {
     depositProvider.onDepositsFromBlock(event);
 
     depositMerkleTree.add(
-        depositUtil.convertDepositEventToOperationDeposit(deposit).getData().hashTreeRoot());
+        depositUtil
+            .convertDepositEventToOperationDeposit(deposit)
+            .deposit()
+            .getData()
+            .hashTreeRoot());
     verify(eth1DataCache)
         .onBlockWithDeposit(
             event.getBlockNumber(),
@@ -271,6 +313,21 @@ public class DepositProviderTest {
     depositProvider.onSlot(UInt64.ONE);
 
     verify(eventLogger).eth1DepositDataNotAvailable(UInt64.valueOf(9), UInt64.valueOf(10));
+  }
+
+  @Test
+  void
+      shouldNotLogAnEventOnSlotIfFormerDepositMechanismIsDisabled_EvenIfAllDepositsRequiredForStateNotAvailable() {
+    setup(1, SpecMilestone.ELECTRA);
+    mockDepositsFromEth1Block(0, 8);
+    updateStateEth1DepositIndex(5);
+    updateStateDepositRequestsStartIndex(5);
+    updateStateEth1DataDepositCount(10);
+    when(recentChainData.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
+
+    depositProvider.onSlot(UInt64.ONE);
+
+    verifyNoInteractions(eventLogger);
   }
 
   @Test
@@ -435,35 +492,34 @@ public class DepositProviderTest {
         .isEqualTo(UInt64.valueOf(30));
   }
 
-  private void checkThatDepositProofIsValid(SszList<Deposit> deposits) {
+  private void checkThatDepositProofIsValid(final List<DepositWithIndex> depositsWithIndex) {
     final SpecVersion genesisSpec = spec.getGenesisSpec();
-    deposits.forEach(
-        deposit ->
+    depositsWithIndex.forEach(
+        depositWithIndex ->
             assertThat(
                     genesisSpec
                         .predicates()
                         .isValidMerkleBranch(
-                            deposit.getData().hashTreeRoot(),
-                            deposit.getProof(),
+                            depositWithIndex.deposit().getData().hashTreeRoot(),
+                            depositWithIndex.deposit().getProof(),
                             genesisSpec.getConfig().getDepositContractTreeDepth() + 1,
-                            ((DepositWithIndex) deposit).getIndex().intValue(),
+                            depositWithIndex.index().intValue(),
                             depositMerkleTree.getRoot()))
                 .withFailMessage("Expected proof to be valid but was not")
                 .isTrue());
   }
 
-  private void createDepositEvents(int n) {
+  private void createDepositEvents(final int n) {
     allSeenDepositsList =
         IntStream.range(0, n)
             .mapToObj(i -> dataStructureUtil.randomDepositEvent(UInt64.valueOf(i)))
             .collect(Collectors.toList());
   }
 
-  private void mockDepositsFromEth1Block(int startIndex, int n) {
+  private void mockDepositsFromEth1Block(final int startIndex, final int n) {
     allSeenDepositsList.subList(startIndex, n).stream()
         .map(depositUtil::convertDepositEventToOperationDeposit)
-        .map(Deposit::getData)
-        .map(DepositData::hashTreeRoot)
+        .map(depositWithIndex -> depositWithIndex.deposit().getData().hashTreeRoot())
         .forEachOrdered(depositMerkleTree::add);
 
     DepositsFromBlockEvent depositsFromBlockEvent = mock(DepositsFromBlockEvent.class);
@@ -473,11 +529,11 @@ public class DepositProviderTest {
     depositProvider.onDepositsFromBlock(depositsFromBlockEvent);
   }
 
-  private void updateStateEth1Data(Eth1Data eth1Data) {
+  private void updateStateEth1Data(final Eth1Data eth1Data) {
     state = state.updated(mutableState -> mutableState.setEth1Data(eth1Data));
   }
 
-  private void updateStateEth1DataDepositCount(int n) {
+  private void updateStateEth1DataDepositCount(final int n) {
     final Eth1Data eth1Data =
         new Eth1Data(
             dataStructureUtil.randomBytes32(),
@@ -486,7 +542,15 @@ public class DepositProviderTest {
     updateStateEth1Data(eth1Data);
   }
 
-  private void updateStateEth1DepositIndex(int n) {
+  private void updateStateEth1DepositIndex(final int n) {
     state = state.updated(mutableState -> mutableState.setEth1DepositIndex(UInt64.valueOf(n)));
+  }
+
+  private void updateStateDepositRequestsStartIndex(final int n) {
+    state =
+        state.updated(
+            mutableState ->
+                MutableBeaconStateElectra.required(mutableState)
+                    .setDepositRequestsStartIndex(UInt64.valueOf(n)));
   }
 }

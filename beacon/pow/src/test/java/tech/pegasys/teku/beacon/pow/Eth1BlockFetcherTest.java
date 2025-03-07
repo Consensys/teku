@@ -200,7 +200,7 @@ class Eth1BlockFetcherTest {
     blockFetcher.fetch(BigInteger.valueOf(6), BigInteger.valueOf(6));
     verifyNoMoreInteractions(eth1Provider);
 
-    // When block 5 complete, it should request block 6
+    // When block 5 is complete, it should request block 6
     block5Future.complete(Optional.of(block5));
     verify(eth1Provider).getEth1Block(UInt64.valueOf(6));
     verifyNoMoreInteractions(eth1Provider);

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.data.publisher;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Throwables;
 import java.io.File;
 import java.io.IOException;
@@ -30,7 +31,6 @@ import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 
 public class MetricsPublisherManager extends Service {
@@ -39,7 +39,7 @@ public class MetricsPublisherManager extends Service {
   private final long intervalBetweenPublications;
   private final AsyncRunnerFactory asyncRunnerFactory;
   private final MetricsDataFactory metricsDataFactory;
-  private final JsonProvider jsonProvider = new JsonProvider();
+  private final ObjectMapper objectMapper = new ObjectMapper();
   private final Optional<HttpUrl> metricsUrl;
 
   private final MetricsPublisher metricsPublisher;
@@ -86,7 +86,7 @@ public class MetricsPublisherManager extends Service {
   private void publishMetrics() throws IOException {
     List<BaseMetricData> clientData = metricsDataFactory.getMetricData();
     if (!clientData.isEmpty()) {
-      metricsPublisher.publishMetrics(jsonProvider.objectToJSON(clientData));
+      metricsPublisher.publishMetrics(objectMapper.writeValueAsString(clientData));
     }
   }
 

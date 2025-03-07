@@ -27,7 +27,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -68,6 +68,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   Optional<UInt64> getEarliestFinalizedBlockSlot();
 
   Optional<SignedBeaconBlock> getEarliestFinalizedBlock();
+
+  Optional<UInt64> getEarliestFinalizedStateSlot();
 
   Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(UInt64 slot);
 
@@ -249,9 +251,13 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
 
+    void deleteFinalizedState(final UInt64 slot);
+
     void addReconstructedFinalizedState(final Bytes32 blockRoot, final BeaconState state);
 
     void addFinalizedStateRoot(final Bytes32 stateRoot, final UInt64 slot);
+
+    void deleteFinalizedStateRoot(final Bytes32 stateRoot);
 
     void setOptimisticTransitionBlockSlot(final Optional<UInt64> transitionBlockSlot);
 
@@ -268,6 +274,10 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void removeNonCanonicalBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
     void setEarliestBlobSidecarSlot(UInt64 slot);
+
+    void setEarliestBlockSlot(UInt64 slot);
+
+    void deleteEarliestBlockSlot();
 
     void setFirstCustodyIncompleteSlot(UInt64 slot);
 

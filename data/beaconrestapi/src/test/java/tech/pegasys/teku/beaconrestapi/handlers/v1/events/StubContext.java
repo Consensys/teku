@@ -109,7 +109,7 @@ public class StubContext implements Context {
   }
 
   @Override
-  public <T> T appData(@NotNull Key<T> key) {
+  public <T> T appData(@NotNull final Key<T> key) {
     return null;
   }
 
@@ -121,7 +121,7 @@ public class StubContext implements Context {
 
   @NotNull
   @Override
-  public Context minSizeForCompression(int i) {
+  public Context minSizeForCompression(final int i) {
     return null;
   }
 
@@ -138,10 +138,15 @@ public class StubContext implements Context {
   }
 
   @Override
-  public <T> T with(@NotNull Class<? extends ContextPlugin<?, T>> aClass) {
+  public <T> T with(@NotNull final Class<? extends ContextPlugin<?, T>> aClass) {
     return null;
   }
 
   @Override
-  public void writeJsonStream(@NotNull Stream<?> stream) {}
+  public void writeJsonStream(@NotNull final Stream<?> stream) {}
+
+  @Override
+  public boolean strictContentTypes() {
+    return false;
+  }
 }

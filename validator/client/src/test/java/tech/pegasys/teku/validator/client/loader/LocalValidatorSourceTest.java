@@ -216,7 +216,7 @@ class LocalValidatorSourceTest {
   }
 
   @Test
-  void shouldAddValidatorIfNotReadOnlySource(@TempDir Path tempDir) throws IOException {
+  void shouldAddValidatorIfNotReadOnlySource(@TempDir final Path tempDir) throws IOException {
     final AddValidatorResult result =
         getResultFromAddingValidator(
             tempDir, "pbkdf2TestVector.json", EXPECTED_PASSWORD, PBKDF2_PUBKEY);
@@ -225,7 +225,7 @@ class LocalValidatorSourceTest {
   }
 
   @Test
-  void shouldDetectDuplicatesOnAddValidator(@TempDir Path tempDir) throws IOException {
+  void shouldDetectDuplicatesOnAddValidator(@TempDir final Path tempDir) throws IOException {
     final AddValidatorResult result =
         getResultFromAddingValidator(
             tempDir, "pbkdf2TestVector.json", EXPECTED_PASSWORD, PBKDF2_PUBKEY);
@@ -239,7 +239,8 @@ class LocalValidatorSourceTest {
   }
 
   @Test
-  void shouldErrorIfPasswordIsIncorrectOnAddValidator(@TempDir Path tempDir) throws IOException {
+  void shouldErrorIfPasswordIsIncorrectOnAddValidator(@TempDir final Path tempDir)
+      throws IOException {
     final AddValidatorResult result =
         getResultFromAddingValidator(
             tempDir, "pbkdf2TestVector.json", "zz", dataStructureUtil.randomPublicKey());

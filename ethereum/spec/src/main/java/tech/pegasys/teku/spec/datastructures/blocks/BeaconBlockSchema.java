@@ -43,7 +43,7 @@ public class BeaconBlockSchema
   }
 
   @Override
-  public BeaconBlock createFromBackingNode(TreeNode node) {
+  public BeaconBlock createFromBackingNode(final TreeNode node) {
     return new BeaconBlock(this, node);
   }
 

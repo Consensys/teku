@@ -24,12 +24,12 @@ import tech.pegasys.teku.infrastructure.json.JsonUtil;
 
 public class ByteTypeDefinitionPropertyTest {
   @Property
-  void roundTrip(@ForAll Byte value) throws JsonProcessingException {
+  void roundTrip(@ForAll final Byte value) throws JsonProcessingException {
     assertRoundTrip(value, CoreTypes.BYTE_TYPE);
   }
 
   @Property
-  void shouldRejectInvalidRange(@ForAll int value) throws JsonProcessingException {
+  void shouldRejectInvalidRange(@ForAll final int value) throws JsonProcessingException {
     final String serialized = "\"" + Integer.toHexString(value) + "\"";
     if (value >= 0 && value <= 255) {
       assertThat(JsonUtil.parse(serialized, CoreTypes.BYTE_TYPE)).isEqualTo((byte) value);

@@ -13,55 +13,39 @@
 
 package tech.pegasys.teku.data.slashinginterchange;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
+
 import com.google.common.base.MoreObjects;
-import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class SignedAttestation {
-  @JsonProperty("source_epoch")
-  public final UInt64 sourceEpoch;
+public record SignedAttestation(
+    UInt64 sourceEpoch, UInt64 targetEpoch, Optional<Bytes32> signingRoot) {
 
-  @JsonProperty("target_epoch")
-  public final UInt64 targetEpoch;
-
-  @JsonProperty("signing_root")
-  public final Bytes32 signingRoot;
-
-  @JsonCreator
-  public SignedAttestation(
-      @JsonProperty("source_epoch") final UInt64 sourceEpoch,
-      @JsonProperty("target_epoch") final UInt64 targetEpoch,
-      @JsonProperty("signing_root") final Bytes32 signingRoot) {
-    this.sourceEpoch = sourceEpoch;
-    this.targetEpoch = targetEpoch;
-    this.signingRoot = signingRoot;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final SignedAttestation that = (SignedAttestation) o;
-    return Objects.equals(sourceEpoch, that.sourceEpoch)
-        && Objects.equals(targetEpoch, that.targetEpoch)
-        && Objects.equals(signingRoot, that.signingRoot);
-  }
-
-  public UInt64 getSourceEpoch() {
-    return sourceEpoch;
-  }
-
-  public UInt64 getTargetEpoch() {
-    return targetEpoch;
+  public static DeserializableTypeDefinition<SignedAttestation> getJsonTypeDefinition() {
+    return DeserializableTypeDefinition.object(
+            SignedAttestation.class, SignedAttestationBuilder.class)
+        .initializer(SignedAttestationBuilder::new)
+        .finisher(SignedAttestationBuilder::build)
+        .withField(
+            "source_epoch",
+            UINT64_TYPE,
+            SignedAttestation::sourceEpoch,
+            SignedAttestationBuilder::sourceEpoch)
+        .withField(
+            "target_epoch",
+            UINT64_TYPE,
+            SignedAttestation::targetEpoch,
+            SignedAttestationBuilder::targetEpoch)
+        .withOptionalField(
+            "signing_root",
+            BYTES32_TYPE,
+            SignedAttestation::signingRoot,
+            SignedAttestationBuilder::signingRoot)
+        .build();
   }
 
   @Override
@@ -73,8 +57,28 @@ public class SignedAttestation {
         .toString();
   }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(sourceEpoch, targetEpoch, signingRoot);
+  static class SignedAttestationBuilder {
+    UInt64 sourceEpoch;
+    UInt64 targetEpoch;
+    Optional<Bytes32> signingRoot = Optional.empty();
+
+    SignedAttestationBuilder sourceEpoch(final UInt64 sourceEpoch) {
+      this.sourceEpoch = sourceEpoch;
+      return this;
+    }
+
+    SignedAttestationBuilder targetEpoch(final UInt64 targetEpoch) {
+      this.targetEpoch = targetEpoch;
+      return this;
+    }
+
+    SignedAttestationBuilder signingRoot(final Optional<Bytes32> signingRoot) {
+      this.signingRoot = signingRoot;
+      return this;
+    }
+
+    SignedAttestation build() {
+      return new SignedAttestation(sourceEpoch, targetEpoch, signingRoot);
+    }
   }
 }

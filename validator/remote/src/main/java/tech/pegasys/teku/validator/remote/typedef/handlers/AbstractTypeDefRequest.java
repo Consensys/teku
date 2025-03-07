@@ -120,13 +120,36 @@ public abstract class AbstractTypeDefRequest {
       final TObject requestBodyObj,
       final SerializableTypeDefinition<TObject> objectTypeDefinition,
       final ResponseHandler<T> responseHandler) {
+    return postJson(
+        apiMethod,
+        urlParams,
+        emptyMap(),
+        emptyMap(),
+        requestBodyObj,
+        objectTypeDefinition,
+        responseHandler);
+  }
+
+  protected <T, TObject> Optional<T> postJson(
+      final ValidatorApiMethod apiMethod,
+      final Map<String, String> urlParams,
+      final Map<String, String> queryParams,
+      final Map<String, String> headers,
+      final TObject requestBodyObj,
+      final SerializableTypeDefinition<TObject> objectTypeDefinition,
+      final ResponseHandler<T> responseHandler) {
     final HttpUrl.Builder httpUrlBuilder = urlBuilder(apiMethod, urlParams);
+    if (queryParams != null && !queryParams.isEmpty()) {
+      queryParams.forEach(httpUrlBuilder::addQueryParameter);
+    }
     final String requestBody;
     final Request request;
     try {
+      final Request.Builder builder = requestBuilder();
+      headers.forEach(builder::addHeader);
       requestBody = JsonUtil.serialize(requestBodyObj, objectTypeDefinition);
       request =
-          requestBuilder()
+          builder
               .url(httpUrlBuilder.build())
               .post(RequestBody.create(requestBody, APPLICATION_JSON))
               .build();
@@ -142,7 +165,20 @@ public abstract class AbstractTypeDefRequest {
       final Map<String, String> headers,
       final byte[] objectBytes,
       final ResponseHandler<T> responseHandler) {
+    return postOctetStream(apiMethod, urlParams, emptyMap(), headers, objectBytes, responseHandler);
+  }
+
+  protected <T> Optional<T> postOctetStream(
+      final ValidatorApiMethod apiMethod,
+      final Map<String, String> urlParams,
+      final Map<String, String> queryParams,
+      final Map<String, String> headers,
+      final byte[] objectBytes,
+      final ResponseHandler<T> responseHandler) {
     final HttpUrl.Builder httpUrlBuilder = urlBuilder(apiMethod, urlParams);
+    if (queryParams != null && !queryParams.isEmpty()) {
+      queryParams.forEach(httpUrlBuilder::addQueryParameter);
+    }
     final Request.Builder builder = requestBuilder();
     headers.forEach(builder::addHeader);
     final Request request =

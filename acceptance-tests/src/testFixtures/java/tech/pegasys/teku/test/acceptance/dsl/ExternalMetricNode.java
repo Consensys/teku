@@ -16,7 +16,6 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import java.net.URI;
@@ -42,7 +41,7 @@ public class ExternalMetricNode extends Node {
 
   private boolean started = false;
 
-  private ExternalMetricNode(Network network, ImageFromDockerfile image) {
+  private ExternalMetricNode(final Network network, final ImageFromDockerfile image) {
     super(network, image, LOG);
     container.withWorkingDirectory(WORKING_DIRECTORY).withExposedPorts(STUB_PORT);
   }
@@ -71,8 +70,7 @@ public class ExternalMetricNode extends Node {
   private List<Map<String, Object>> getPublishedObjects() throws URISyntaxException, IOException {
     String response = getResponse();
     LOG.debug("Metric data was published " + response);
-    final ObjectMapper mapper = JSON_PROVIDER.getObjectMapper();
-    JsonNode node = mapper.readTree(response);
+    JsonNode node = OBJECT_MAPPER.readTree(response);
     final List<Map<String, Object>> result = new ArrayList<>();
     assertThat(node.isArray()).isTrue();
     for (JsonNode child : ImmutableList.copyOf(node.elements())) {

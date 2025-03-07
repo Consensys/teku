@@ -105,7 +105,7 @@ public interface KZG {
 
   KZGProof computeBlobKzgProof(Bytes blob, KZGCommitment kzgCommitment) throws KZGException;
 
-  // EIP-7594 methods
+  // Fulu PeerDAS methods
 
   List<KZGCellAndProof> computeCellsAndProofs(Bytes blob);
 

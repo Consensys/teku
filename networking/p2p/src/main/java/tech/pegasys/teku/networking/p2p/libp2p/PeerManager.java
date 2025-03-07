@@ -63,7 +63,7 @@ public class PeerManager implements ConnectionHandler {
       final ReputationManager reputationManager,
       final List<PeerHandler> peerHandlers,
       final List<? extends RpcHandler<?, ?, ?>> rpcHandlers,
-      Function<PeerId, Double> peerScoreFunction) {
+      final Function<PeerId, Double> peerScoreFunction) {
     this.reputationManager = reputationManager;
     this.peerHandlers = peerHandlers;
     this.rpcHandlers = rpcHandlers;
@@ -157,12 +157,12 @@ public class PeerManager implements ConnectionHandler {
         : SafeFuture.failedFuture(error);
   }
 
-  public Optional<Peer> getPeer(NodeId id) {
+  public Optional<Peer> getPeer(final NodeId id) {
     return Optional.ofNullable(connectedPeerMap.get(id));
   }
 
   @VisibleForTesting
-  void onConnectedPeer(Peer peer) {
+  void onConnectedPeer(final Peer peer) {
     final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getId(), peer) == null;
     if (wasAdded) {
       LOG.debug("onConnectedPeer() {}", peer.getId());

@@ -22,7 +22,8 @@ import org.apache.tuweni.bytes.Bytes;
 public class BytesDeserializer extends JsonDeserializer<Bytes> {
 
   @Override
-  public Bytes deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+  public Bytes deserialize(final JsonParser p, final DeserializationContext ctxt)
+      throws IOException {
     return Bytes.fromHexString(p.getValueAsString());
   }
 }

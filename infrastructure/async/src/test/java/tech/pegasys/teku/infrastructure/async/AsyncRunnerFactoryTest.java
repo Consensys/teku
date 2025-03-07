@@ -19,11 +19,14 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class AsyncRunnerFactoryTest {
 
-  private AsyncRunnerFactory asyncRunnerFactory =
+  private final AsyncRunnerFactory asyncRunnerFactory =
       new AsyncRunnerFactory() {
         @Override
         public AsyncRunner create(
-            String name, int maxThreads, int maxQueueSize, int threadPriority) {
+            final String name,
+            final int maxThreads,
+            final int maxQueueSize,
+            final int threadPriority) {
           return null;
         }
 
@@ -33,7 +36,7 @@ class AsyncRunnerFactoryTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"correctname", "correctNAME", "correct_name", "correct_name__"})
-  public void mustAcceptValidMetricNames(String asyncRunnerName) {
+  public void mustAcceptValidMetricNames(final String asyncRunnerName) {
     asyncRunnerFactory.validateAsyncRunnerName(asyncRunnerName);
   }
 
@@ -47,7 +50,7 @@ class AsyncRunnerFactoryTest {
         "$incorrect_name",
         "incorrect-name"
       })
-  public void mustRejectInvalidMetricNames(String asyncRunnerName) {
+  public void mustRejectInvalidMetricNames(final String asyncRunnerName) {
     Assertions.assertThrows(
         IllegalArgumentException.class,
         () -> asyncRunnerFactory.validateAsyncRunnerName(asyncRunnerName));

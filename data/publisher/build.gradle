@@ -4,7 +4,6 @@ dependencies {
     implementation project (':infrastructure:metrics')
     implementation project (':infrastructure:version')
     implementation project (':infrastructure:time')
-    implementation project (':data:serializer')
     implementation project (':infrastructure:serviceutils')
     implementation project (':infrastructure:http')
 

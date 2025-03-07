@@ -32,7 +32,7 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -46,66 +46,83 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
+@TestSpecContext(milestone = {SpecMilestone.DENEB, SpecMilestone.ELECTRA})
 public class BlobSidecarsByRootMessageHandlerTest {
 
   private final UInt64 genesisTime = UInt64.valueOf(1982239L);
-  private final UInt64 denebForkEpoch = UInt64.valueOf(1);
-
-  private final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
-  private final SpecConfigDeneb specConfigDeneb =
-      SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig());
-  private final int maxChunkSize = spec.getNetworkingConfig().getMaxChunkSize();
-  private final BlobSidecarsByRootRequestMessageSchema messageSchema =
-      SchemaDefinitionsDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
-          .getBlobSidecarsByRootRequestMessageSchema();
-  private final RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(maxChunkSize);
-
-  private final String protocolId =
-      BeaconChainMethodIds.getBlobSidecarsByRootMethodId(1, rpcEncoding);
-
-  private final UInt64 denebFirstSlot = spec.computeStartSlotAtEpoch(denebForkEpoch);
-
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-
+  private final UInt64 currentForkEpoch = UInt64.valueOf(1);
+  private BlobSidecarsByRootRequestMessageSchema messageSchema;
   private final ArgumentCaptor<BlobSidecar> blobSidecarCaptor =
       ArgumentCaptor.forClass(BlobSidecar.class);
-
   private final ArgumentCaptor<RpcException> rpcExceptionCaptor =
       ArgumentCaptor.forClass(RpcException.class);
+  private final Optional<RequestApproval> allowedObjectsRequest =
+      Optional.of(
+          new RequestApproval.RequestApprovalBuilder().objectsCount(100).timeSeconds(ZERO).build());
 
   @SuppressWarnings("unchecked")
   private final ResponseCallback<BlobSidecar> callback = mock(ResponseCallback.class);
 
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
+  private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final UpdatableStore store = mock(UpdatableStore.class);
-
   private final Eth2Peer peer = mock(Eth2Peer.class);
-
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-
-  private final BlobSidecarsByRootMessageHandler handler =
-      new BlobSidecarsByRootMessageHandler(
-          spec, specConfigDeneb, metricsSystem, combinedChainDataClient);
-
-  private final Optional<RequestApproval> allowedObjectsRequest =
-      Optional.of(
-          new RequestApproval.RequestApprovalBuilder().objectsCount(100).timeSeconds(ZERO).build());
+  private String protocolId;
+  private UInt64 currentForkFirstSlot;
+  private DataStructureUtil dataStructureUtil;
+  private BlobSidecarsByRootMessageHandler handler;
+  private SpecMilestone specMilestone;
+  private Spec spec;
 
   @BeforeEach
-  public void setup() {
+  public void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
+    specMilestone = specContext.getSpecMilestone();
+    spec =
+        switch (specContext.getSpecMilestone()) {
+          case PHASE0 -> throw new IllegalArgumentException("Phase0 is an unsupported milestone");
+          case ALTAIR -> throw new IllegalArgumentException("Altair is an unsupported milestone");
+          case BELLATRIX ->
+              throw new IllegalArgumentException("Bellatrix is an unsupported milestone");
+          case CAPELLA -> throw new IllegalArgumentException("Capella is an unsupported milestone");
+          case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(currentForkEpoch);
+          case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(currentForkEpoch);
+          case FULU -> TestSpecFactory.createMinimalWithFuluForkEpoch(currentForkEpoch);
+        };
+    dataStructureUtil = new DataStructureUtil(spec);
+    messageSchema =
+        specMilestone.equals(SpecMilestone.DENEB)
+            ? spec.atEpoch(currentForkEpoch)
+                .getSchemaDefinitions()
+                .toVersionDeneb()
+                .orElseThrow()
+                .getBlobSidecarsByRootRequestMessageSchema()
+            : spec.atEpoch(currentForkEpoch)
+                .getSchemaDefinitions()
+                .toVersionElectra()
+                .orElseThrow()
+                .getBlobSidecarsByRootRequestMessageSchema();
+    currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
+    final int maxChunkSize = spec.getNetworkingConfig().getMaxChunkSize();
+    final RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(maxChunkSize);
+    protocolId = BeaconChainMethodIds.getBlobSidecarsByRootMethodId(1, rpcEncoding);
+    handler = new BlobSidecarsByRootMessageHandler(spec, metricsSystem, combinedChainDataClient);
+
     when(peer.approveRequest()).thenReturn(true);
     when(peer.approveBlobSidecarsRequest(eq(callback), anyLong()))
         .thenReturn(allowedObjectsRequest);
@@ -113,11 +130,12 @@ public class BlobSidecarsByRootMessageHandlerTest {
     when(combinedChainDataClient.getBlockByBlockRoot(any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(dataStructureUtil.randomSignedBeaconBlock(denebFirstSlot))));
+                Optional.of(dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot))));
     // deneb fork epoch is finalized
     when(combinedChainDataClient.getFinalizedBlock())
-        .thenReturn(Optional.of(dataStructureUtil.randomSignedBeaconBlock(denebFirstSlot)));
+        .thenReturn(Optional.of(dataStructureUtil.randomSignedBeaconBlock(currentForkFirstSlot)));
     when(combinedChainDataClient.getStore()).thenReturn(store);
+    when(combinedChainDataClient.getRecentChainData()).thenReturn(recentChainData);
     when(callback.respond(any())).thenReturn(SafeFuture.COMPLETE);
 
     // mock store
@@ -126,12 +144,16 @@ public class BlobSidecarsByRootMessageHandlerTest {
     when(store.getTimeSeconds())
         .thenReturn(
             spec.getSlotStartTime(
-                denebForkEpoch.increment().times(spec.getSlotsPerEpoch(ZERO)), genesisTime));
+                currentForkEpoch.increment().times(spec.getSlotsPerEpoch(ZERO)), genesisTime));
   }
 
-  @Test
+  @TestTemplate
   public void validateRequest_shouldNotAllowRequestLargerThanMaximumAllowed() {
-    final int maxRequestBlobSidecars = specConfigDeneb.getMaxRequestBlobSidecars();
+    final int maxRequestBlobSidecars =
+        SpecConfigDeneb.required(spec.forMilestone(specMilestone).getConfig())
+            .getMaxRequestBlobSidecars();
+    when(recentChainData.getCurrentEpoch())
+        .thenReturn(Optional.of(dataStructureUtil.randomEpoch()));
     final BlobSidecarsByRootRequestMessage request =
         new BlobSidecarsByRootRequestMessage(
             messageSchema, dataStructureUtil.randomBlobIdentifiers(maxRequestBlobSidecars + 1));
@@ -156,7 +178,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     assertThat(countTooBigCount).isOne();
   }
 
-  @Test
+  @TestTemplate
   public void shouldNotSendBlobSidecarsIfPeerIsRateLimited() {
 
     when(peer.approveBlobSidecarsRequest(callback, 5)).thenReturn(Optional.empty());
@@ -182,7 +204,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     verifyNoInteractions(callback);
   }
 
-  @Test
+  @TestTemplate
   public void shouldSendAvailableOnlyResources() {
     final List<BlobIdentifier> blobIdentifiers = prepareBlobIdentifiers(4);
 
@@ -223,7 +245,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
         .containsExactlyInAnyOrderElementsOf(blobIdentifiersBlockRoots);
   }
 
-  @Test
+  @TestTemplate
   public void
       shouldSendResourceUnavailableIfBlockRootReferencesBlockEarlierThanTheMinimumRequestEpoch() {
     final List<BlobIdentifier> blobIdentifiers = prepareBlobIdentifiers(3);
@@ -260,11 +282,11 @@ public class BlobSidecarsByRootMessageHandlerTest {
     assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
     assertThat(rpcException.getErrorMessageString())
         .isEqualTo(
-            "Block root (%s) references a block earlier than the minimum_request_epoch",
+            "BlobSidecarsByRoot: block root (%s) references a block outside of allowed request range: 1",
             blobIdentifiers.get(0).getBlockRoot());
   }
 
-  @Test
+  @TestTemplate
   public void
       shouldSendResourceUnavailableIfBlobSidecarBlockRootReferencesBlockEarlierThanTheMinimumRequestEpoch() {
     final List<BlobIdentifier> blobIdentifiers = prepareBlobIdentifiers(3);
@@ -297,11 +319,11 @@ public class BlobSidecarsByRootMessageHandlerTest {
     assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
     assertThat(rpcException.getErrorMessageString())
         .isEqualTo(
-            "Block root (%s) references a block earlier than the minimum_request_epoch",
+            "BlobSidecarsByRoot: block root (%s) references a block outside of allowed request range: 1",
             blobIdentifiers.get(0).getBlockRoot());
   }
 
-  @Test
+  @TestTemplate
   public void shouldSendToPeerRequestedBlobSidecars() {
     final List<BlobIdentifier> blobIdentifiers = prepareBlobIdentifiers(5);
 

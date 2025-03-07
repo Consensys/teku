@@ -22,7 +22,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_PRECONDIT
 import static tech.pegasys.teku.validator.client.signer.ExternalSigner.slashableAttestationMessage;
 import static tech.pegasys.teku.validator.client.signer.ExternalSigner.slashableBlockMessage;
 import static tech.pegasys.teku.validator.client.signer.ExternalSigner.slashableGenericMessage;
-import static tech.pegasys.teku.validator.client.signer.ExternalSignerTestUtil.createForkInfo;
 import static tech.pegasys.teku.validator.client.signer.ExternalSignerTestUtil.validateMetrics;
 import static tech.pegasys.teku.validator.client.signer.ExternalSignerTestUtil.verifySignRequest;
 
@@ -40,6 +39,9 @@ import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
+import tech.pegasys.teku.validator.api.signer.AggregationSlotWrapper;
+import tech.pegasys.teku.validator.api.signer.RandaoRevealWrapper;
+import tech.pegasys.teku.validator.api.signer.SignType;
 
 public class ExternalSignerIntegrationTest extends AbstractExternalSignerIntegrationTest {
 
@@ -141,10 +143,13 @@ public class ExternalSignerIntegrationTest extends AbstractExternalSignerIntegra
         new SigningRequestBody(
             signingRootUtil.signingRootForSignBlock(block, forkInfo),
             externalSignerBlockRequestProvider.getSignType(),
-            externalSignerBlockRequestProvider.getBlockMetadata(
-                Map.of("fork_info", createForkInfo(forkInfo))));
+            externalSignerBlockRequestProvider.getBlockMetadata(Map.of("fork_info", forkInfo)));
 
-    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
+    verifySignRequest(
+        client,
+        KEYPAIR.getPublicKey().toString(),
+        signingRequestBody,
+        getSpec().getGenesisSchemaDefinitions());
 
     validateMetrics(metricsSystem, 1, 0, 0);
   }
@@ -166,13 +171,13 @@ public class ExternalSignerIntegrationTest extends AbstractExternalSignerIntegra
         new SigningRequestBody(
             signingRootUtil.signingRootForSignAttestationData(attestationData, forkInfo),
             SignType.ATTESTATION,
-            Map.of(
-                "fork_info",
-                createForkInfo(forkInfo),
-                "attestation",
-                new tech.pegasys.teku.api.schema.AttestationData(attestationData)));
+            Map.of("fork_info", forkInfo, "attestation", attestationData));
 
-    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
+    verifySignRequest(
+        client,
+        KEYPAIR.getPublicKey().toString(),
+        signingRequestBody,
+        getSpec().getGenesisSchemaDefinitions());
 
     validateMetrics(metricsSystem, 1, 0, 0);
   }
@@ -193,8 +198,12 @@ public class ExternalSignerIntegrationTest extends AbstractExternalSignerIntegra
         new SigningRequestBody(
             signingRootUtil.signingRootForRandaoReveal(epoch, forkInfo),
             SignType.RANDAO_REVEAL,
-            Map.of("fork_info", createForkInfo(forkInfo), "randao_reveal", Map.of("epoch", epoch)));
-    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
+            Map.of("fork_info", forkInfo, "randao_reveal", new RandaoRevealWrapper(epoch)));
+    verifySignRequest(
+        client,
+        KEYPAIR.getPublicKey().toString(),
+        signingRequestBody,
+        getSpec().getGenesisSchemaDefinitions());
 
     validateMetrics(metricsSystem, 1, 0, 0);
   }
@@ -216,9 +225,12 @@ public class ExternalSignerIntegrationTest extends AbstractExternalSignerIntegra
         new SigningRequestBody(
             signingRootUtil.signingRootForSignAggregationSlot(slot, forkInfo),
             SignType.AGGREGATION_SLOT,
-            Map.of(
-                "fork_info", createForkInfo(forkInfo), "aggregation_slot", Map.of("slot", slot)));
-    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
+            Map.of("fork_info", forkInfo, "aggregation_slot", new AggregationSlotWrapper(slot)));
+    verifySignRequest(
+        client,
+        KEYPAIR.getPublicKey().toString(),
+        signingRequestBody,
+        getSpec().getGenesisSchemaDefinitions());
     validateMetrics(metricsSystem, 1, 0, 0);
   }
 
@@ -240,12 +252,12 @@ public class ExternalSignerIntegrationTest extends AbstractExternalSignerIntegra
         new SigningRequestBody(
             signingRootUtil.signingRootForSignAggregateAndProof(aggregateAndProof, forkInfo),
             SignType.AGGREGATE_AND_PROOF,
-            Map.of(
-                "fork_info",
-                createForkInfo(forkInfo),
-                "aggregate_and_proof",
-                new tech.pegasys.teku.api.schema.AggregateAndProof(aggregateAndProof)));
-    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
+            Map.of("fork_info", forkInfo, "aggregate_and_proof", aggregateAndProof));
+    verifySignRequest(
+        client,
+        KEYPAIR.getPublicKey().toString(),
+        signingRequestBody,
+        getSpec().getGenesisSchemaDefinitions());
     validateMetrics(metricsSystem, 1, 0, 0);
   }
 
@@ -264,12 +276,12 @@ public class ExternalSignerIntegrationTest extends AbstractExternalSignerIntegra
         new SigningRequestBody(
             signingRootUtil.signingRootForSignVoluntaryExit(voluntaryExit, forkInfo),
             SignType.VOLUNTARY_EXIT,
-            Map.of(
-                "fork_info",
-                createForkInfo(forkInfo),
-                "voluntary_exit",
-                new tech.pegasys.teku.api.schema.VoluntaryExit(voluntaryExit)));
-    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
+            Map.of("fork_info", forkInfo, "voluntary_exit", voluntaryExit));
+    verifySignRequest(
+        client,
+        KEYPAIR.getPublicKey().toString(),
+        signingRequestBody,
+        getSpec().getGenesisSchemaDefinitions());
     validateMetrics(metricsSystem, 1, 0, 0);
   }
 
@@ -290,18 +302,12 @@ public class ExternalSignerIntegrationTest extends AbstractExternalSignerIntegra
         new SigningRequestBody(
             signingRootUtil.signingRootForValidatorRegistration(validatorRegistration),
             SignType.VALIDATOR_REGISTRATION,
-            Map.of(
-                "validator_registration",
-                Map.of(
-                    "fee_recipient",
-                    validatorRegistration.getFeeRecipient().toHexString(),
-                    "gas_limit",
-                    validatorRegistration.getGasLimit(),
-                    "timestamp",
-                    validatorRegistration.getTimestamp(),
-                    "pubkey",
-                    validatorRegistration.getPublicKey().toString())));
-    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
+            Map.of(SignType.VALIDATOR_REGISTRATION.getName(), validatorRegistration));
+    verifySignRequest(
+        client,
+        KEYPAIR.getPublicKey().toString(),
+        signingRequestBody,
+        getSpec().getGenesisSchemaDefinitions());
     validateMetrics(metricsSystem, 1, 0, 0);
   }
 }

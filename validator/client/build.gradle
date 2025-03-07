@@ -4,7 +4,6 @@ dependencies {
   implementation project(':infrastructure:crypto')
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:io')
-  implementation project(':infrastructure:json')
   implementation project(':infrastructure:metrics')
   implementation project(':infrastructure:http')
   implementation project(':ethereum:json-types')
@@ -28,7 +27,7 @@ dependencies {
   implementation project(':infrastructure:bls-keystore')
   implementation project(':infrastructure:subscribers')
 
-  implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'io.tmio:tuweni-bytes'
   implementation 'commons-io:commons-io'
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'

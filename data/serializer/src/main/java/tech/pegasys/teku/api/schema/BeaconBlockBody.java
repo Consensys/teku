@@ -66,7 +66,7 @@ public class BeaconBlockBody {
   }
 
   public BeaconBlockBody(
-      tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
     this.randao_reveal = new BLSSignature(body.getRandaoReveal().toSSZBytes());
     this.eth1_data = new Eth1Data(body.getEth1Data());
     this.graffiti = body.getGraffiti();
@@ -137,7 +137,7 @@ public class BeaconBlockBody {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }

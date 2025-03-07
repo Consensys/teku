@@ -115,7 +115,8 @@ public class DeletableSigner implements Signer {
     return delegate.getSigningServiceUrl();
   }
 
-  private SafeFuture<BLSSignature> sign(ExceptionThrowingFutureSupplier<BLSSignature> supplier) {
+  private SafeFuture<BLSSignature> sign(
+      final ExceptionThrowingFutureSupplier<BLSSignature> supplier) {
     readLock.lock();
     final SafeFuture<BLSSignature> future =
         deleted ? SafeFuture.failedFuture(new SignerNotActiveException()) : SafeFuture.of(supplier);

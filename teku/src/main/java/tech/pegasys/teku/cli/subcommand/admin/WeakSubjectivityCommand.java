@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.subcommand.admin;
 
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
+import java.util.Optional;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
@@ -115,7 +116,8 @@ public class WeakSubjectivityCommand implements Runnable {
             StorageConfiguration.builder()
                 .eth1DepositContract(networkConfiguration.getEth1DepositContractAddress())
                 .specProvider(spec)
-                .build());
+                .build(),
+            Optional.empty());
     return databaseFactory.createDatabase();
   }
 

@@ -60,12 +60,13 @@ public class GetBlockRoot extends RestApiEndpoint {
             .pathParam(PARAMETER_BLOCK_ID)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> future =
         chainDataProvider.getBlockRoot(request.getPathParameter(PARAMETER_BLOCK_ID));
 

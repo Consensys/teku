@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -52,6 +53,18 @@ public class SszOptionalSchemaTest extends SszSchemaTestBase {
 
   public static Stream<SszSchema<?>> testContainerOptionalSchemas() {
     return Stream.of(ContainerWithOptionals.SSZ_SCHEMA);
+  }
+
+  @Test
+  void verifySszLengthBounds() {
+    assertThat(SszOptionalSchema.create(SszPrimitiveSchemas.BIT_SCHEMA).getSszLengthBounds())
+        .matches(bound -> bound.getMinBytes() == 0)
+        .matches(bound -> bound.getMaxBytes() == 2)
+        .matches(bound -> bound.getMaxBits() == 9);
+
+    assertThat(SszOptionalSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA).getSszLengthBounds())
+        .matches(bound -> bound.getMinBytes() == 0)
+        .matches(bound -> bound.getMaxBytes() == 33);
   }
 
   @Override

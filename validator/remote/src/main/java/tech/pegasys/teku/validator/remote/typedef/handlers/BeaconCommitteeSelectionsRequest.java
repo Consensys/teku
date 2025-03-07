@@ -35,7 +35,7 @@ public class BeaconCommitteeSelectionsRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
   }
 
-  public Optional<List<BeaconCommitteeSelectionProof>> getSelectionProof(
+  public Optional<List<BeaconCommitteeSelectionProof>> submit(
       final List<BeaconCommitteeSelectionProof> validatorsPartialProof) {
     return postJson(
         ValidatorApiMethod.BEACON_COMMITTEE_SELECTIONS,

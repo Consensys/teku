@@ -155,9 +155,9 @@ public class SyncCommitteeUtil {
   }
 
   public int getCurrentSyncCommitteeParticipantValidatorIndex(
-      final BeaconStateAltair state, final int commiteeIndex) {
+      final BeaconStateAltair state, final int committeeIndex) {
     final BLSPublicKey uncachedPubkey =
-        state.getCurrentSyncCommittee().getPubkeys().get(commiteeIndex).getBLSPublicKey();
+        state.getCurrentSyncCommittee().getPubkeys().get(committeeIndex).getBLSPublicKey();
     return validatorsUtil
         .getValidatorIndex(state, uncachedPubkey)
         .orElseThrow(

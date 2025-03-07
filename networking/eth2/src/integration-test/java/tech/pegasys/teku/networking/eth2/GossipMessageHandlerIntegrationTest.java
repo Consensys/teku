@@ -27,6 +27,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
@@ -44,7 +46,7 @@ import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class GossipMessageHandlerIntegrationTest {
-
+  private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(3);
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
@@ -371,6 +373,7 @@ public class GossipMessageHandlerIntegrationTest {
       throws Exception {
     return NodeManager.create(
         spec,
+        asyncRunner,
         networkFactory,
         validatorKeys,
         c -> {

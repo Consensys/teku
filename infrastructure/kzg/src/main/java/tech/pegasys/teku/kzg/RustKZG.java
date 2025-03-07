@@ -34,7 +34,9 @@ final class RustKZG implements KZG {
   private static final Logger LOG = LogManager.getLogger();
   private static final int NUMBER_OF_THREADS = 1;
 
+  @SuppressWarnings("NonFinalStaticField")
   private static RustKZG instance;
+
   private LibEthKZG library;
   private boolean initialized;
 
@@ -101,7 +103,7 @@ final class RustKZG implements KZG {
   }
 
   @Override
-  public List<KZGCellAndProof> computeCellsAndProofs(Bytes blob) {
+  public List<KZGCellAndProof> computeCellsAndProofs(final Bytes blob) {
     final CellsAndProofs cellsAndProofs = library.computeCellsAndKZGProofs(blob.toArrayUnsafe());
     final Stream<KZGCell> kzgCellStream =
         Arrays.stream(cellsAndProofs.getCells()).map(Bytes::wrap).map(KZGCell::new);
@@ -114,9 +116,9 @@ final class RustKZG implements KZG {
 
   @Override
   public boolean verifyCellProofBatch(
-      List<KZGCommitment> commitments,
-      List<KZGCellWithColumnId> cellWithIdList,
-      List<KZGProof> proofs) {
+      final List<KZGCommitment> commitments,
+      final List<KZGCellWithColumnId> cellWithIdList,
+      final List<KZGProof> proofs) {
     return library.verifyCellKZGProofBatch(
         commitments.stream().map(KZGCommitment::toArrayUnsafe).toArray(byte[][]::new),
         cellWithIdList.stream()
@@ -129,9 +131,9 @@ final class RustKZG implements KZG {
   }
 
   @Override
-  public List<KZGCellAndProof> recoverCellsAndProofs(List<KZGCellWithColumnId> cells) {
-    long[] cellIds = cells.stream().mapToLong(c -> c.columnId().id().longValue()).toArray();
-    byte[][] cellBytes =
+  public List<KZGCellAndProof> recoverCellsAndProofs(final List<KZGCellWithColumnId> cells) {
+    final long[] cellIds = cells.stream().mapToLong(c -> c.columnId().id().longValue()).toArray();
+    final byte[][] cellBytes =
         cells.stream().map(c -> c.cell().bytes().toArrayUnsafe()).toArray(byte[][]::new);
     final CellsAndProofs cellsAndProofs = library.recoverCellsAndKZGProofs(cellIds, cellBytes);
     final byte[][] recoveredCells = cellsAndProofs.getCells();

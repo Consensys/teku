@@ -34,15 +34,15 @@ public class FinalityCheckpointsResponse {
 
   @JsonCreator
   public FinalityCheckpointsResponse(
-      @JsonProperty("previous_justified") Checkpoint previous_justified,
-      @JsonProperty("current_justified") Checkpoint current_justified,
-      @JsonProperty("finalized") Checkpoint finalized) {
+      final @JsonProperty("previous_justified") Checkpoint previous_justified,
+      final @JsonProperty("current_justified") Checkpoint current_justified,
+      final @JsonProperty("finalized") Checkpoint finalized) {
     this.previous_justified = previous_justified;
     this.current_justified = current_justified;
     this.finalized = finalized;
   }
 
-  public static FinalityCheckpointsResponse fromState(BeaconState state) {
+  public static FinalityCheckpointsResponse fromState(final BeaconState state) {
     if (state.getFinalizedCheckpoint().getEpoch().equals(UInt64.ZERO)) {
       return new FinalityCheckpointsResponse(Checkpoint.EMPTY, Checkpoint.EMPTY, Checkpoint.EMPTY);
     }

@@ -19,11 +19,13 @@ import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
+import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withLabelValueSubstring;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withNameEqualsTo;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withValueGreaterThan;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
 import java.io.File;
@@ -31,16 +33,14 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,48 +49,35 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.ThrowingConsumer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.EventType;
-import tech.pegasys.teku.api.response.v1.HeadEvent;
-import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
-import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorResponse;
-import tech.pegasys.teku.api.response.v1.node.SyncingResponse;
-import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
-import tech.pegasys.teku.api.response.v1.validator.ValidatorLiveness;
-import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
-import tech.pegasys.teku.api.schema.AttestationData;
-import tech.pegasys.teku.api.schema.AttesterSlashing;
-import tech.pegasys.teku.api.schema.BLSSignature;
-import tech.pegasys.teku.api.schema.BeaconBlockHeader;
-import tech.pegasys.teku.api.schema.Checkpoint;
-import tech.pegasys.teku.api.schema.IndexedAttestation;
-import tech.pegasys.teku.api.schema.ProposerSlashing;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.SignedBeaconBlockHeader;
-import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
-import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
-import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
-import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.ethereum.json.types.SharedApiTypes;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.generator.BlsToExecutionChangeGenerator;
@@ -139,22 +126,13 @@ public class TekuBeaconNode extends TekuNode {
   }
 
   public void waitForContributionAndProofEvent() {
-    waitForContributionAndProofEvent(proof -> true);
-  }
-
-  public void waitForContributionAndProofEvent(
-      final Predicate<SignedContributionAndProof> condition) {
     waitFor(
-        () -> {
-          final List<SignedContributionAndProof> events = getContributionAndProofEvents();
-          assertThat(events.stream().filter(condition).findAny())
-              .describedAs(
-                  "Did not find contribution and proof event matching condition in %s", events)
-              .isPresent();
-        });
+        () ->
+            assertThat(countContributionAndProofEvents() > 0L)
+                .describedAs("Did not find contribution and proof events"));
   }
 
-  private List<SignedContributionAndProof> getContributionAndProofEvents() {
+  private long countContributionAndProofEvents() {
     return maybeEventStreamListener
         .map(
             eventStreamListener ->
@@ -164,21 +142,8 @@ public class TekuBeaconNode extends TekuNode {
                             packedMessage
                                 .getEvent()
                                 .equals(EventType.contribution_and_proof.name()))
-                    .map(this::optionalProof)
-                    .flatMap(Optional::stream)
-                    .collect(Collectors.toList()))
-        .orElse(Collections.emptyList());
-  }
-
-  private Optional<SignedContributionAndProof> optionalProof(
-      final Eth2EventHandler.PackedMessage packedMessage) {
-    try {
-      return Optional.of(
-          JSON_PROVIDER.jsonToObject(
-              packedMessage.getMessageEvent().getData(), SignedContributionAndProof.class));
-    } catch (JsonProcessingException e) {
-      return Optional.empty();
-    }
+                    .count())
+        .orElse(0L);
   }
 
   public void waitForGenesis() {
@@ -210,9 +175,9 @@ public class TekuBeaconNode extends TekuNode {
   private Optional<UInt64> getSlotFromHeadEvent(
       final Eth2EventHandler.PackedMessage packedMessage) {
     try {
-      return Optional.of(
-          JSON_PROVIDER.jsonToObject(packedMessage.getMessageEvent().getData(), HeadEvent.class)
-              .slot);
+      final JsonNode node = OBJECT_MAPPER.readTree(packedMessage.getMessageEvent().getData());
+      final UInt64 slot = UInt64.valueOf(node.get("slot").asText());
+      return Optional.of(slot);
     } catch (JsonProcessingException e) {
       LOG.error("Failed to process head event", e);
       return Optional.empty();
@@ -220,7 +185,7 @@ public class TekuBeaconNode extends TekuNode {
   }
 
   public void checkValidatorLiveness(
-      final int epoch, final int totalValidatorCount, ValidatorLivenessExpectation... args)
+      final int epoch, final int totalValidatorCount, final ValidatorLivenessExpectation... args)
       throws IOException {
     final List<UInt64> validators = new ArrayList<>();
     for (UInt64 i = UInt64.ZERO; i.isLessThan(totalValidatorCount); i = i.increment()) {
@@ -234,18 +199,21 @@ public class TekuBeaconNode extends TekuNode {
   }
 
   private Object2BooleanMap<UInt64> getValidatorLivenessAtEpoch(
-      final UInt64 epoch, List<UInt64> validators) throws IOException {
+      final UInt64 epoch, final List<UInt64> validators) throws IOException {
 
     final String response =
         httpClient.post(
             getRestApiUrl(),
             getValidatorLivenessUrl(epoch),
-            JSON_PROVIDER.objectToJSON(validators));
-    final PostValidatorLivenessResponse livenessResponse =
-        JSON_PROVIDER.jsonToObject(response, PostValidatorLivenessResponse.class);
+            OBJECT_MAPPER.writeValueAsString(validators.stream().map(UInt64::toString).toList()));
+    final DeserializableTypeDefinition<List<ValidatorLivenessAtEpoch>> type =
+        SharedApiTypes.withDataWrapper(
+            "listOfLiveness", listOf(ValidatorLivenessAtEpoch.getJsonTypeDefinition()));
+
+    final List<ValidatorLivenessAtEpoch> livenessResponse = JsonUtil.parse(response, type);
     final Object2BooleanMap<UInt64> output = new Object2BooleanOpenHashMap<UInt64>();
-    for (ValidatorLiveness entry : livenessResponse.data) {
-      output.put(entry.index, entry.isLive);
+    for (ValidatorLivenessAtEpoch entry : livenessResponse) {
+      output.put(entry.index(), entry.isLive());
     }
     return output;
   }
@@ -258,14 +226,17 @@ public class TekuBeaconNode extends TekuNode {
         randomSignedBeaconBlockHeader(slot, index, secretKey, signingRootUtil, forkInfo);
     final SignedBeaconBlockHeader header2 =
         randomSignedBeaconBlockHeader(slot, index, secretKey, signingRootUtil, forkInfo);
-    final ProposerSlashing proposerSlashing = new ProposerSlashing(header1, header2);
-    final String body = JSON_PROVIDER.objectToJSON(proposerSlashing);
+    LOG.debug("Inserting proposer slashing for index {} at slot {}", index, slot);
+    final String body =
+        JsonUtil.serialize(
+            new ProposerSlashing(header1, header2),
+            ProposerSlashing.SSZ_SCHEMA.getJsonTypeDefinition());
     httpClient.post(getRestApiUrl(), POST_PROPOSER_SLASHING_URL, body);
   }
 
   private ForkInfo getForkInfo(final UInt64 slot) throws IOException {
     final Fork fork = spec.getForkSchedule().getFork(spec.computeEpochAtSlot(slot));
-    final Bytes32 genesisValidatorRoot = fetchGenesis().getGenesisValidatorsRoot();
+    final Bytes32 genesisValidatorRoot = getGenesisValidatorsRoot();
     return new ForkInfo(fork, genesisValidatorRoot);
   }
 
@@ -283,12 +254,18 @@ public class TekuBeaconNode extends TekuNode {
         randomIndexedAttestation(
             slashingSlot, slashedIndex, slashedValidatorSecretKey, signingRootUtil, forkInfo);
     final AttesterSlashing attesterSlashing =
-        new AttesterSlashing(indexedAttestation1, indexedAttestation2);
-    final String body = JSON_PROVIDER.objectToJSON(attesterSlashing);
+        spec.getGenesisSchemaDefinitions()
+            .getAttesterSlashingSchema()
+            .create(indexedAttestation1, indexedAttestation2);
+    LOG.debug("Inserting attester slashing for index {} at slot {}", slashedIndex, slashingSlot);
+    final String body =
+        JsonUtil.serialize(
+            attesterSlashing,
+            spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema().getJsonTypeDefinition());
     httpClient.post(getRestApiUrl(), POST_ATTESTER_SLASHING_URL, body);
   }
 
-  private static IndexedAttestation randomIndexedAttestation(
+  private IndexedAttestation randomIndexedAttestation(
       final UInt64 slot,
       final UInt64 index,
       final BLSSecretKey secretKey,
@@ -301,13 +278,18 @@ public class TekuBeaconNode extends TekuNode {
             Bytes32.random(),
             new Checkpoint(UInt64.valueOf(1), Bytes32.random()),
             new Checkpoint(UInt64.valueOf(2), Bytes32.random()));
+
     final BLSSignature blsSignature1 =
-        new BLSSignature(
-            BLS.sign(
-                secretKey,
-                signingRootUtil.signingRootForSignAttestationData(
-                    attestationData.asInternalAttestationData(), forkInfo)));
-    return new IndexedAttestation(List.of(index), attestationData, blsSignature1);
+        BLS.sign(
+            secretKey,
+            signingRootUtil.signingRootForSignAttestationData(attestationData, forkInfo));
+
+    final IndexedAttestationSchema schema =
+        spec.getGenesisSchemaDefinitions().getIndexedAttestationSchema();
+    return schema.create(
+        Stream.of(index).collect(schema.getAttestingIndicesSchema().collectorUnboxed()),
+        attestationData,
+        blsSignature1);
   }
 
   private SignedBeaconBlockHeader randomSignedBeaconBlockHeader(
@@ -320,10 +302,9 @@ public class TekuBeaconNode extends TekuNode {
         new BeaconBlockHeader(slot, index, Bytes32.random(), Bytes32.random(), Bytes32.random());
 
     final Bytes blockHeaderSigningRoot =
-        signingRootUtil.signingRootForSignBlockHeader(
-            beaconBlockHeader.asInternalBeaconBlockHeader(), forkInfo);
-    final BLSSignature blsSignature = new BLSSignature(BLS.sign(secretKey, blockHeaderSigningRoot));
-    return new SignedBeaconBlockHeader(beaconBlockHeader, blsSignature);
+        signingRootUtil.signingRootForSignBlockHeader(beaconBlockHeader, forkInfo);
+    return new SignedBeaconBlockHeader(
+        beaconBlockHeader, BLS.sign(secretKey, blockHeaderSigningRoot));
   }
 
   public void submitBlsToExecutionChange(
@@ -342,7 +323,7 @@ public class TekuBeaconNode extends TekuNode {
                 UInt64.valueOf(currentEpoch));
 
     final DeserializableTypeDefinition<List<SignedBlsToExecutionChange>> jsonTypeDefinition =
-        DeserializableTypeDefinition.listOf(
+        listOf(
             SchemaDefinitionsCapella.required(
                     spec.atEpoch(UInt64.valueOf(currentEpoch)).getSchemaDefinitions())
                 .getSignedBlsToExecutionChangeSchema()
@@ -352,7 +333,7 @@ public class TekuBeaconNode extends TekuNode {
     httpClient.post(getRestApiUrl(), "/eth/v1/beacon/pool/bls_to_execution_changes", body);
   }
 
-  public void waitForBlsToExecutionChangeEventForValidator(int validatorIndex) {
+  public void waitForBlsToExecutionChangeEventForValidator(final int validatorIndex) {
     if (maybeEventStreamListener.isEmpty()) {
       fail(
           "Must start listening to events before waiting for them... Try calling TekuNode.startEventListener(..)!");
@@ -366,18 +347,32 @@ public class TekuBeaconNode extends TekuNode {
 
     waitFor(
         () -> {
-          final List<tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange>
-              blsToExecutionChanges =
-                  getEventsOfTypeFromEventStream(
-                      EventType.bls_to_execution_change, this::mapBlsToExecutionChangeFromEvent);
-          assertThat(blsToExecutionChanges.stream())
-              .anyMatch(m -> UInt64.valueOf(validatorIndex).equals(m.message.validatorIndex));
+          final List<Integer> blsToExecutionChanges =
+              getEventsOfTypeFromEventStream(
+                  EventType.bls_to_execution_change, this::getValidatorIdsFromBlsChange);
+          assertThat(blsToExecutionChanges.stream()).anyMatch(m -> validatorIndex == m);
         });
   }
 
-  private SyncingResponse fetchSyncStatus() throws IOException {
-    String syncingData = httpClient.get(getRestApiUrl(), "/eth/v1/node/syncing");
-    return JSON_PROVIDER.jsonToObject(syncingData, SyncingResponse.class);
+  private JsonNode fetchSyncingStatus() throws IOException {
+    final String syncingData = httpClient.get(getRestApiUrl(), "/eth/v1/node/syncing");
+    return OBJECT_MAPPER.readTree(syncingData).get("data");
+  }
+
+  private boolean getStatusElOffline() throws IOException {
+    try {
+      return fetchSyncingStatus().get("el_offline").asBoolean();
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private boolean getStatusIsSyncing() throws IOException {
+    try {
+      return fetchSyncingStatus().get("is_syncing").asBoolean();
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private <T> List<T> getEventsOfTypeFromEventStream(
@@ -392,15 +387,12 @@ public class TekuBeaconNode extends TekuNode {
         .orElseGet(List::of);
   }
 
-  private tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange
-      mapBlsToExecutionChangeFromEvent(final Eth2EventHandler.PackedMessage packedMessage) {
+  private Integer getValidatorIdsFromBlsChange(final PackedMessage packedMessage) {
     try {
-      return JSON_PROVIDER.jsonToObject(
-          packedMessage.getMessageEvent().getData(),
-          tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange.class);
+      final JsonNode jsonNode = OBJECT_MAPPER.readTree(packedMessage.getMessageEvent().getData());
+      return jsonNode.get("message").get("validator_index").asInt();
     } catch (JsonProcessingException e) {
-      LOG.error("Failed to process bls_to_execution_change event", e);
-      return null;
+      throw new RuntimeException(e);
     }
   }
 
@@ -412,24 +404,30 @@ public class TekuBeaconNode extends TekuNode {
     waitFor(() -> assertThat(fetchGenesisTime()).isEqualTo(expectedGenesisTime));
   }
 
-  private GenesisData fetchGenesis() throws IOException {
-    String genesisTime = httpClient.get(getRestApiUrl(), "/eth/v1/beacon/genesis");
-    final GetGenesisResponse response =
-        JSON_PROVIDER.jsonToObject(genesisTime, GetGenesisResponse.class);
-    return response.data;
+  public Bytes32 getGenesisValidatorsRoot() throws IOException {
+    try {
+      return Bytes32.fromHexString(fetchGenesis().get("genesis_validators_root").asText());
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private JsonNode fetchGenesis() throws IOException {
+    final String syncingData = httpClient.get(getRestApiUrl(), "/eth/v1/beacon/genesis");
+    return OBJECT_MAPPER.readTree(syncingData).get("data");
   }
 
   private UInt64 fetchGenesisTime() throws IOException {
-    return fetchGenesis().genesisTime;
+    try {
+      return UInt64.valueOf(fetchGenesis().get("genesis_time").asText());
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public UInt64 getGenesisTime() throws IOException {
     waitForGenesis();
     return fetchGenesisTime();
-  }
-
-  public Bytes32 getGenesisValidatorsRoot() throws IOException {
-    return fetchGenesis().getGenesisValidatorsRoot();
   }
 
   public void waitForNewBlock() {
@@ -446,11 +444,11 @@ public class TekuBeaconNode extends TekuNode {
   }
 
   public void waitForNewFinalization() {
-    UInt64 startingFinalizedEpoch = waitForChainHead().finalized.epoch;
+    final UInt64 startingFinalizedEpoch = getFinalizedEpoch().orElse(UInt64.ZERO);
     LOG.debug("Wait for finalized block");
     waitFor(
         () ->
-            assertThat(fetchStateFinalityCheckpoints().orElseThrow().finalized.epoch)
+            assertThat(getFinalizedEpoch().orElse(UInt64.ZERO))
                 .isNotEqualTo(startingFinalizedEpoch),
         9,
         MINUTES);
@@ -465,32 +463,31 @@ public class TekuBeaconNode extends TekuNode {
 
     waitFor(
         () -> {
-          final Optional<SignedBlock> block = fetchHeadBlock();
+          final Optional<SignedBeaconBlock> block = fetchHeadBlock();
           assertThat(block).isPresent();
-          assertThat(block.get()).isInstanceOf(SignedBeaconBlockBellatrix.class);
-
-          final SignedBeaconBlockBellatrix bellatrixBlock =
-              (SignedBeaconBlockBellatrix) block.get();
-          final ExecutionPayload executionPayload =
-              bellatrixBlock
-                  .getMessage()
-                  .getBody()
-                  .executionPayload
-                  .asInternalExecutionPayload(spec, bellatrixBlock.getMessage().slot);
-          assertThat(executionPayload.isDefault()).describedAs("Is default payload").isFalse();
-          LOG.debug(
-              "Non default execution payload found at slot " + bellatrixBlock.getMessage().slot);
+          checkExecutionPayloadInBlock(block.get());
         },
         5,
         MINUTES);
   }
 
-  public void waitForBlockSatisfying(final ThrowingConsumer<? super SignedBlock> assertions) {
+  private void checkExecutionPayloadInBlock(final SignedBeaconBlock signedBlock) {
+    final BeaconBlock beaconBlock = signedBlock.getMessage();
+    final UInt64 slot = beaconBlock.getSlot();
+    final Optional<ExecutionPayload> maybeExecutionPayload =
+        beaconBlock.getBody().getOptionalExecutionPayload();
+
+    assertThat(maybeExecutionPayload).isPresent();
+    assertThat(maybeExecutionPayload.get().isDefault()).describedAs("Is default payload").isFalse();
+    LOG.debug("Non default execution payload found at slot " + slot);
+  }
+
+  public void waitForBlockSatisfying(final ThrowingConsumer<? super SignedBeaconBlock> assertions) {
     LOG.debug("Wait for a block satisfying certain assertions");
 
     waitFor(
         () -> {
-          final Optional<SignedBlock> block = fetchHeadBlock();
+          final Optional<SignedBeaconBlock> block = fetchHeadBlock();
           assertThat(block).isPresent();
           assertThat(block.get()).satisfies(assertions);
         },
@@ -518,19 +515,20 @@ public class TekuBeaconNode extends TekuNode {
     LOG.debug("Wait for full sync committee aggregates");
     waitFor(
         () -> {
-          final Optional<SignedBlock> block = fetchHeadBlock();
-          assertThat(block).isPresent();
-          assertThat(block.get()).isInstanceOf(SignedBeaconBlockAltair.class);
+          final Optional<SignedBeaconBlock> maybeBlock = fetchHeadBlock();
+          assertThat(maybeBlock).isPresent();
+          final SignedBeaconBlock block = maybeBlock.get();
 
-          final SignedBeaconBlockAltair altairBlock = (SignedBeaconBlockAltair) block.get();
-          final int syncCommitteeSize = spec.getSyncCommitteeSize(altairBlock.getMessage().slot);
-          final SszBitvectorSchema<SszBitvector> syncCommitteeSchema =
-              SszBitvectorSchema.create(syncCommitteeSize);
+          final int syncCommitteeSize = spec.getSyncCommitteeSize(block.getMessage().getSlot());
 
-          final Bytes syncCommitteeBits =
-              altairBlock.getMessage().getBody().syncAggregate.syncCommitteeBits;
-          final int actualSyncBitCount =
-              syncCommitteeSchema.sszDeserialize(syncCommitteeBits).getBitCount();
+          final SszBitvector syncCommitteeBits =
+              block
+                  .getMessage()
+                  .getBody()
+                  .getOptionalSyncAggregate()
+                  .orElseThrow()
+                  .getSyncCommitteeBits();
+          final int actualSyncBitCount = syncCommitteeBits.getBitCount();
           final double percentageOfBitsSet =
               actualSyncBitCount == syncCommitteeSize
                   ? 1.0
@@ -580,49 +578,67 @@ public class TekuBeaconNode extends TekuNode {
     if (result.isEmpty()) {
       return Optional.empty();
     }
-
-    final GetBlockRootResponse response =
-        JSON_PROVIDER.jsonToObject(result, GetBlockRootResponse.class);
-
-    return Optional.of(Pair.of(response.data.root, response.execution_optimistic));
+    final JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
+    final Bytes32 root = Bytes32.fromHexString(jsonNode.get("data").get("root").asText());
+    final boolean executionOptimistic = jsonNode.get("execution_optimistic").asBoolean();
+    return Optional.of(Pair.of(root, executionOptimistic));
   }
 
   private Optional<Bytes32> fetchBeaconHeadRoot() throws IOException {
     return fetchBeaconHeadRootData().map(Pair::getLeft);
   }
 
-  private FinalityCheckpointsResponse waitForChainHead() {
-    LOG.debug("Waiting for chain head");
-    final AtomicReference<FinalityCheckpointsResponse> chainHead = new AtomicReference<>(null);
-    waitFor(
-        () -> {
-          final Optional<FinalityCheckpointsResponse> fetchCheckpoints =
-              fetchStateFinalityCheckpoints();
-          assertThat(fetchCheckpoints).isPresent();
-          chainHead.set(fetchCheckpoints.get());
-        });
-    LOG.debug("Retrieved chain head: {}", chainHead.get());
-    return chainHead.get();
-  }
+  private Optional<UInt64> getFinalizedEpoch() {
+    try {
+      final String result =
+          httpClient.get(getRestApiUrl(), "/eth/v1/beacon/states/head/finality_checkpoints");
+      if (result.isEmpty()) {
+        return Optional.empty();
+      }
 
-  private Optional<FinalityCheckpointsResponse> fetchStateFinalityCheckpoints() throws IOException {
-    final String result =
-        httpClient.get(getRestApiUrl(), "/eth/v1/beacon/states/head/finality_checkpoints");
-    if (result.isEmpty()) {
+      final JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
+      final UInt64 finalizedEpoch =
+          UInt64.valueOf(jsonNode.get("data").get("finalized").get("epoch").asText());
+      return Optional.of(finalizedEpoch);
+    } catch (final IOException e) {
+      LOG.error("Failed to fetch finalized epoch", e);
       return Optional.empty();
     }
-    final GetStateFinalityCheckpointsResponse response =
-        JSON_PROVIDER.jsonToObject(result, GetStateFinalityCheckpointsResponse.class);
-    return Optional.of(response.data);
   }
 
-  private Optional<SignedBlock> fetchHeadBlock() throws IOException {
+  private Optional<SignedBeaconBlock> fetchHeadBlock() throws IOException {
     final String blockId = "head";
     final String result = httpClient.get(getRestApiUrl(), "/eth/v2/beacon/blocks/" + blockId);
     if (result.isEmpty()) {
       return Optional.empty();
     } else {
-      return Optional.of(JSON_PROVIDER.jsonToObject(result, GetBlockResponseV2.class).data);
+      JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
+      final UInt64 slot = UInt64.valueOf(jsonNode.get("data").get("message").get("slot").asText());
+      final DeserializableTypeDefinition<SignedBeaconBlock> jsonTypeDefinition =
+          SharedApiTypes.withDataWrapper(
+              "block",
+              spec.atSlot(slot)
+                  .getSchemaDefinitions()
+                  .getSignedBeaconBlockSchema()
+                  .getJsonTypeDefinition());
+      return Optional.of(JsonUtil.parse(result, jsonTypeDefinition));
+    }
+  }
+
+  public Optional<SignedBeaconBlock> getBlockAtSlot(final UInt64 slot) throws IOException {
+    final Optional<String> result =
+        httpClient.getOptional(getRestApiUrl(), "/eth/v2/beacon/blocks/" + slot);
+    if (result.isEmpty()) {
+      return Optional.empty();
+    } else {
+      final DeserializableTypeDefinition<SignedBeaconBlock> jsonTypeDefinition =
+          SharedApiTypes.withDataWrapper(
+              "block",
+              spec.atSlot(slot)
+                  .getSchemaDefinitions()
+                  .getSignedBeaconBlockSchema()
+                  .getJsonTypeDefinition());
+      return Optional.of(JsonUtil.parse(result.get(), jsonTypeDefinition));
     }
   }
 
@@ -643,22 +659,28 @@ public class TekuBeaconNode extends TekuNode {
     }
   }
 
-  private Optional<Validator> fetchValidator(final int validatorId) throws IOException {
+  private Optional<Bytes32> fetchValidatorWithdrawalCredentials(final int validatorId)
+      throws IOException {
     final String result =
-        httpClient.get(
-            getRestApiUrl(),
-            "/eth/v1/beacon/states/head/validators/" + validatorId,
-            Map.of("Accept", "application/octet-stream"));
+        httpClient.get(getRestApiUrl(), "/eth/v1/beacon/states/head/validators/" + validatorId);
     if (result.isEmpty()) {
       return Optional.empty();
     } else {
-      final GetStateValidatorResponse response =
-          JSON_PROVIDER.jsonToObject(result, GetStateValidatorResponse.class);
-      return Optional.of(response.data.validator.asInternalValidator());
+      final JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
+      return Optional.of(
+          Bytes32.fromHexString(
+              jsonNode.get("data").get("validator").get("withdrawal_credentials").asText()));
     }
   }
 
-  public void waitForValidators(int numberOfValidators) {
+  public int getDataColumnSidecarCount(final String blockId) throws IOException {
+    final String result =
+        httpClient.get(getRestApiUrl(), "/eth/v1/beacon/data_column_sidecars/" + blockId);
+    final JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
+    return jsonNode.get("data").size();
+  }
+
+  public void waitForValidators(final int numberOfValidators) {
     waitFor(
         () -> {
           Optional<BeaconState> maybeState = fetchHeadState();
@@ -672,18 +694,17 @@ public class TekuBeaconNode extends TekuNode {
       final int validatorIndex, final Eth1Address executionAddress) {
     waitFor(
         () -> {
-          final Optional<Validator> maybeValidator = fetchValidator(validatorIndex);
-          assertThat(maybeValidator).isPresent();
-          Validator validator = maybeValidator.get();
-          final Bytes32 withdrawalCredentials = validator.getWithdrawalCredentials();
-          assertThat(withdrawalCredentials)
+          final Optional<Bytes32> maybeWithdrawalCredentials =
+              fetchValidatorWithdrawalCredentials(validatorIndex);
+          assertThat(maybeWithdrawalCredentials).isPresent();
+          assertThat(maybeWithdrawalCredentials.get())
               .isEqualTo(
                   BlockProcessorCapella.getWithdrawalAddressFromEth1Address(executionAddress));
         });
   }
 
   public void waitForAttestationBeingGossiped(
-      int validatorSeparationIndex, int totalValidatorCount) {
+      final int validatorSeparationIndex, final int totalValidatorCount) {
     List<UInt64> node1Validators =
         IntStream.range(0, validatorSeparationIndex).mapToObj(UInt64::valueOf).toList();
     List<UInt64> node2Validators =
@@ -692,22 +713,22 @@ public class TekuBeaconNode extends TekuNode {
             .toList();
     waitFor(
         () -> {
-          final Optional<SignedBlock> maybeBlock = fetchHeadBlock();
+          final Optional<SignedBeaconBlock> maybeBlock = fetchHeadBlock();
           final Optional<BeaconState> maybeState = fetchHeadState();
           assertThat(maybeBlock).isPresent();
           assertThat(maybeState).isPresent();
-          SignedBeaconBlock block = (SignedBeaconBlock) maybeBlock.get();
+          final SignedBeaconBlock block = maybeBlock.get();
           BeaconState state = maybeState.get();
 
           // Check that the fetched block and state are in sync
           assertThat(state.getLatestBlockHeader().getParentRoot())
-              .isEqualTo(block.getMessage().parent_root);
+              .isEqualTo(block.getMessage().getParentRoot());
 
-          UInt64 proposerIndex = block.getMessage().proposer_index;
+          UInt64 proposerIndex = block.getMessage().getProposerIndex();
 
           Set<UInt64> attesterIndicesInAttestations =
-              block.getMessage().getBody().attestations.stream()
-                  .map(a -> spec.getAttestingIndices(state, a.asInternalAttestation(spec)))
+              block.getMessage().getBody().getAttestations().stream()
+                  .map(a -> spec.getAttestingIndices(state, a))
                   .flatMap(Collection::stream)
                   .map(UInt64::valueOf)
                   .collect(toSet());
@@ -769,14 +790,14 @@ public class TekuBeaconNode extends TekuNode {
   }
 
   public void expectNodeNotSyncing() throws IOException {
-    assertThat(fetchSyncStatus().data.isSyncing).isFalse();
+    assertThat(getStatusIsSyncing()).isFalse();
   }
 
   public void expectElOffline() throws IOException {
-    assertThat(fetchSyncStatus().data.elOffline).isTrue();
+    assertThat(getStatusElOffline()).isTrue();
   }
 
   public void expectElOnline() throws IOException {
-    assertThat(fetchSyncStatus().data.elOffline).isFalse();
+    assertThat(getStatusElOffline()).isFalse();
   }
 }

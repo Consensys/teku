@@ -27,7 +27,7 @@ public interface SszMutableVector<ElementType extends SszData>
    *
    * @param value The value to set
    */
-  default void setAll(ElementType value) {
+  default void setAll(final ElementType value) {
     setAll(value, 0, size());
   }
 

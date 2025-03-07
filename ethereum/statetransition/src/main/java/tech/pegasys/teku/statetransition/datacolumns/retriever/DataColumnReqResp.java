@@ -15,16 +15,10 @@ package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 
 public interface DataColumnReqResp {
-
-  class DataColumnReqRespException extends RuntimeException {}
-
-  class DasColumnNotAvailableException extends DataColumnReqRespException {}
-
-  class DasPeerDisconnectedException extends DataColumnReqRespException {}
 
   SafeFuture<DataColumnSidecar> requestDataColumnSidecar(
       UInt256 nodeId, DataColumnIdentifier columnIdentifier);
@@ -32,4 +26,10 @@ public interface DataColumnReqResp {
   void flush();
 
   int getCurrentRequestLimit(UInt256 nodeId);
+
+  class DataColumnReqRespException extends RuntimeException {}
+
+  class DasColumnNotAvailableException extends DataColumnReqRespException {}
+
+  class DasPeerDisconnectedException extends DataColumnReqRespException {}
 }

@@ -19,14 +19,9 @@ import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeD
 import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_BYTES4_TYPE_DEFINITION;
 import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_NONE_TYPE_DEFINITION;
 import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_UINT256_TYPE_DEFINITION;
-import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.SSZ_UINT64_TYPE_DEFINITION;
 
-import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.MutableBytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -39,6 +34,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszNone;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszUInt64Schema;
 import tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.infrastructure.ssz.tree.LeafDataNode;
@@ -52,18 +48,18 @@ public final class SszPrimitiveSchemas {
   public static final AbstractSszPrimitiveSchema<Void, SszNone> NONE_SCHEMA =
       new AbstractSszPrimitiveSchema<>(0) {
         @Override
-        public Void createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+        public Void createFromLeafBackingNode(final LeafDataNode node, final int internalIndex) {
           return null;
         }
 
         @Override
         protected TreeNode updateBackingNode(
-            TreeNode srcNode, int internalIndex, SszData newValue) {
+            final TreeNode srcNode, final int internalIndex, final SszData newValue) {
           return srcNode;
         }
 
         @Override
-        public SszNone boxed(Void rawValue) {
+        public SszNone boxed(final Void rawValue) {
           return SszNone.INSTANCE;
         }
 
@@ -86,12 +82,13 @@ public final class SszPrimitiveSchemas {
   public static final AbstractSszPrimitiveSchema<Boolean, SszBit> BIT_SCHEMA =
       new AbstractSszPrimitiveSchema<>(1) {
         @Override
-        public Boolean createFromLeafBackingNode(LeafDataNode node, int idx) {
+        public Boolean createFromLeafBackingNode(final LeafDataNode node, final int idx) {
           return (node.getData().get(idx / 8) & (1 << (idx % 8))) != 0;
         }
 
         @Override
-        public TreeNode updateBackingNode(TreeNode srcNode, int idx, SszData newValue) {
+        public TreeNode updateBackingNode(
+            final TreeNode srcNode, final int idx, final SszData newValue) {
           int byteIndex = idx / 8;
           int bitIndex = idx % 8;
           Bytes originalBytes = ((LeafNode) srcNode).getData();
@@ -107,7 +104,7 @@ public final class SszPrimitiveSchemas {
         }
 
         @Override
-        public SszBit boxed(Boolean rawValue) {
+        public SszBit boxed(final Boolean rawValue) {
           return SszBit.of(rawValue);
         }
 
@@ -162,103 +159,33 @@ public final class SszPrimitiveSchemas {
         }
       };
 
+  ;
+
   public static final AbstractSszPrimitiveSchema<UInt64, SszUInt64> UINT64_SCHEMA =
-      new AbstractSszPrimitiveSchema<>(64) {
+      new AbstractSszUInt64Schema<>() {
         @Override
-        public UInt64 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
-          Bytes leafNodeBytes = node.getData();
-          try {
-            Bytes elementBytes = leafNodeBytes.slice(internalIndex * 8, 8);
-            return UInt64.fromLongBits(elementBytes.toLong(ByteOrder.LITTLE_ENDIAN));
-          } catch (Exception e) {
-            // additional info to track down the bug https://github.com/PegaSysEng/teku/issues/2579
-            String info =
-                "Refer to https://github.com/PegaSysEng/teku/issues/2579 if see this exception. ";
-            info += "internalIndex = " + internalIndex;
-            info += ", leafNodeBytes: " + leafNodeBytes.getClass().getSimpleName();
-            try {
-              info += ", leafNodeBytes = " + leafNodeBytes.copy();
-            } catch (Exception ex) {
-              info += "(" + ex + ")";
-            }
-            try {
-              info += ", leafNodeBytes[] = " + Arrays.toString(leafNodeBytes.toArray());
-            } catch (Exception ex) {
-              info += "(" + ex + ")";
-            }
-            throw new RuntimeException(info, e);
-          }
-        }
-
-        @Override
-        public TreeNode updateBackingNode(TreeNode srcNode, int index, SszData newValue) {
-          Bytes uintBytes =
-              Bytes.ofUnsignedLong(((SszUInt64) newValue).longValue(), ByteOrder.LITTLE_ENDIAN);
-          Bytes curVal = ((LeafNode) srcNode).getData();
-          Bytes newBytes = updateExtending(curVal, index * 8, uintBytes);
-          return LeafNode.create(newBytes);
-        }
-
-        @Override
-        public TreeNode updatePackedNode(
-            TreeNode srcNode, List<PackedNodeUpdate<UInt64, SszUInt64>> updates) {
-          if (updates.size() == 4) {
-            byte[] data = new byte[32];
-            for (int i = 0; i < 4; i++) {
-              long longValue = updates.get(i).getNewValue().longValue();
-              int off = i * 8;
-              data[off + 0] = (byte) longValue;
-              data[off + 1] = (byte) (longValue >> 8);
-              data[off + 2] = (byte) (longValue >> 16);
-              data[off + 3] = (byte) (longValue >> 24);
-              data[off + 4] = (byte) (longValue >> 32);
-              data[off + 5] = (byte) (longValue >> 40);
-              data[off + 6] = (byte) (longValue >> 48);
-              data[off + 7] = (byte) (longValue >> 56);
-            }
-            return LeafNode.create(Bytes.wrap(data));
-          } else {
-            return super.updatePackedNode(srcNode, updates);
-          }
-        }
-
-        @Override
-        public SszUInt64 boxed(UInt64 rawValue) {
+        public SszUInt64 boxed(final UInt64 rawValue) {
           return SszUInt64.of(rawValue);
-        }
-
-        @Override
-        public TreeNode getDefaultTree() {
-          return LeafNode.ZERO_LEAVES[8];
-        }
-
-        @Override
-        public DeserializableTypeDefinition<SszUInt64> getJsonTypeDefinition() {
-          return SSZ_UINT64_TYPE_DEFINITION;
-        }
-
-        @Override
-        public String toString() {
-          return "UInt64";
         }
       };
 
   public static final AbstractSszPrimitiveSchema<UInt256, SszUInt256> UINT256_SCHEMA =
       new AbstractSszPrimitiveSchema<>(256) {
         @Override
-        public UInt256 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+        public UInt256 createFromLeafBackingNode(final LeafDataNode node, final int internalIndex) {
           // reverse() is due to LE -> BE conversion
           return UInt256.fromBytes(node.getData().reverse());
         }
 
         @Override
-        public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue) {
+        public TreeNode updateBackingNode(
+            final TreeNode srcNode, final int internalIndex, final SszData newValue) {
           // reverse() is due to BE -> LE conversion
           return LeafNode.create(((SszUInt256) newValue).get().toBytes().reverse());
         }
 
         @Override
-        public SszUInt256 boxed(UInt256 rawValue) {
+        public SszUInt256 boxed(final UInt256 rawValue) {
           return SszUInt256.of(rawValue);
         }
 
@@ -281,12 +208,13 @@ public final class SszPrimitiveSchemas {
   public static final AbstractSszPrimitiveSchema<Bytes4, SszBytes4> BYTES4_SCHEMA =
       new AbstractSszPrimitiveSchema<>(32) {
         @Override
-        public Bytes4 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+        public Bytes4 createFromLeafBackingNode(final LeafDataNode node, final int internalIndex) {
           return new Bytes4(node.getData().slice(internalIndex * 4, 4));
         }
 
         @Override
-        public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue) {
+        public TreeNode updateBackingNode(
+            final TreeNode srcNode, final int internalIndex, final SszData newValue) {
           checkArgument(
               internalIndex >= 0 && internalIndex < 8, "Invalid internal index: %s", internalIndex);
           Bytes bytes = ((SszBytes4) newValue).get().getWrappedBytes();
@@ -296,7 +224,7 @@ public final class SszPrimitiveSchemas {
         }
 
         @Override
-        public SszBytes4 boxed(Bytes4 rawValue) {
+        public SszBytes4 boxed(final Bytes4 rawValue) {
           return SszBytes4.of(rawValue);
         }
 
@@ -319,17 +247,18 @@ public final class SszPrimitiveSchemas {
   public static final AbstractSszPrimitiveSchema<Bytes32, SszBytes32> BYTES32_SCHEMA =
       new AbstractSszPrimitiveSchema<>(256) {
         @Override
-        public Bytes32 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+        public Bytes32 createFromLeafBackingNode(final LeafDataNode node, final int internalIndex) {
           return node.hashTreeRoot();
         }
 
         @Override
-        public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue) {
+        public TreeNode updateBackingNode(
+            final TreeNode srcNode, final int internalIndex, final SszData newValue) {
           return LeafNode.create(((SszBytes32) newValue).get());
         }
 
         @Override
-        public SszBytes32 boxed(Bytes32 rawValue) {
+        public SszBytes32 boxed(final Bytes32 rawValue) {
           return SszBytes32.of(rawValue);
         }
 
@@ -349,22 +278,6 @@ public final class SszPrimitiveSchemas {
         }
       };
 
-  private static Bytes updateExtending(Bytes origBytes, int origOff, Bytes newBytes) {
-    if (origOff == origBytes.size()) {
-      return Bytes.wrap(origBytes, newBytes);
-    } else {
-      final MutableBytes dest;
-      if (origOff + newBytes.size() > origBytes.size()) {
-        dest = MutableBytes.create(origOff + newBytes.size());
-        origBytes.copyTo(dest, 0);
-      } else {
-        dest = origBytes.mutableCopy();
-      }
-      newBytes.copyTo(dest, origOff);
-      return dest;
-    }
-  }
-
   abstract static class SszByteSchema extends AbstractSszPrimitiveSchema<Byte, SszByte> {
 
     private SszByteSchema() {
@@ -372,12 +285,13 @@ public final class SszPrimitiveSchemas {
     }
 
     @Override
-    public Byte createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+    public Byte createFromLeafBackingNode(final LeafDataNode node, final int internalIndex) {
       return node.getData().get(internalIndex);
     }
 
     @Override
-    public TreeNode updateBackingNode(TreeNode srcNode, int index, SszData newValue) {
+    public TreeNode updateBackingNode(
+        final TreeNode srcNode, final int index, final SszData newValue) {
       byte aByte = ((SszByte) newValue).get();
       Bytes curVal = ((LeafNode) srcNode).getData();
       Bytes newBytes = updateExtending(curVal, index, Bytes.of(aByte));
@@ -385,7 +299,7 @@ public final class SszPrimitiveSchemas {
     }
 
     @Override
-    public SszByte boxed(Byte rawValue) {
+    public SszByte boxed(final Byte rawValue) {
       return SszByte.of(rawValue);
     }
 

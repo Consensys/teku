@@ -36,16 +36,16 @@ public class BeaconStateCapellaImpl extends AbstractBeaconState<MutableBeaconSta
   }
 
   BeaconStateCapellaImpl(
-      SszCompositeSchema<?> type,
-      TreeNode backingNode,
-      IntCache<SszData> cache,
-      TransitionCaches transitionCaches,
-      SlotCaches slotCaches) {
+      final SszCompositeSchema<?> type,
+      final TreeNode backingNode,
+      final IntCache<SszData> cache,
+      final TransitionCaches transitionCaches,
+      final SlotCaches slotCaches) {
     super(type, backingNode, cache, transitionCaches, slotCaches);
   }
 
   BeaconStateCapellaImpl(
-      AbstractSszContainerSchema<? extends SszContainer> type, TreeNode backingNode) {
+      final AbstractSszContainerSchema<? extends SszContainer> type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -60,7 +60,7 @@ public class BeaconStateCapellaImpl extends AbstractBeaconState<MutableBeaconSta
   }
 
   @Override
-  protected void describeCustomFields(MoreObjects.ToStringHelper stringBuilder) {
+  protected void describeCustomFields(final MoreObjects.ToStringHelper stringBuilder) {
     BeaconStateCapella.describeCustomCapellaFields(stringBuilder, this);
   }
 }

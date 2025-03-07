@@ -34,8 +34,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -85,7 +85,7 @@ public class ProposersDataManager implements SlotEventsChannel {
   }
 
   @Override
-  public void onSlot(UInt64 slot) {
+  public void onSlot(final UInt64 slot) {
     // do clean up in the middle of the epoch
     final int slotsPerEpoch = spec.getSlotsPerEpoch(slot);
     final UInt64 slotInCurrentEpoch = slot.mod(slotsPerEpoch).plus(UInt64.ONE);
@@ -145,8 +145,8 @@ public class ProposersDataManager implements SlotEventsChannel {
     preparedProposers.forEach(
         proposer ->
             preparedProposerInfoByValidatorIndex.put(
-                proposer.getValidatorIndex(),
-                new PreparedProposerInfo(expirySlot, proposer.getFeeRecipient())));
+                proposer.validatorIndex(),
+                new PreparedProposerInfo(expirySlot, proposer.feeRecipient())));
   }
 
   private void updateValidatorRegistrationCache(

@@ -38,7 +38,7 @@ public class SignedBeaconBlockSchema
   }
 
   @Override
-  public SignedBeaconBlock createFromBackingNode(TreeNode node) {
+  public SignedBeaconBlock createFromBackingNode(final TreeNode node) {
     return new SignedBeaconBlock(this, node);
   }
 

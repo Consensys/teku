@@ -78,7 +78,7 @@ public class ConnectionManager extends Service {
     final LabelledMetric<Counter> connectionAttemptCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.NETWORK,
-            "peer_connection_attempt_count",
+            "peer_connection_attempt_count_total",
             "Total number of outbound connection attempts made",
             "status");
     attemptedConnectionCounter = connectionAttemptCounter.labels("attempted");
@@ -258,7 +258,7 @@ public class ConnectionManager extends Service {
     peerPredicates.add(predicate);
   }
 
-  private boolean isPeerValid(DiscoveryPeer peer) {
+  private boolean isPeerValid(final DiscoveryPeer peer) {
     return !peer.getNodeAddress().getAddress().isAnyLocalAddress()
         && peerPredicates.stream().allMatch(predicate -> predicate.test(peer));
   }

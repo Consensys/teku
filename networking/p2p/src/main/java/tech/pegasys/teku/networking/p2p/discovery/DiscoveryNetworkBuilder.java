@@ -125,64 +125,64 @@ public class DiscoveryNetworkBuilder {
     return discoveryService;
   }
 
-  public DiscoveryNetworkBuilder metricsSystem(MetricsSystem metricsSystem) {
+  public DiscoveryNetworkBuilder metricsSystem(final MetricsSystem metricsSystem) {
     this.metricsSystem = metricsSystem;
     return this;
   }
 
-  public DiscoveryNetworkBuilder asyncRunner(AsyncRunner asyncRunner) {
+  public DiscoveryNetworkBuilder asyncRunner(final AsyncRunner asyncRunner) {
     this.asyncRunner = asyncRunner;
     return this;
   }
 
-  public DiscoveryNetworkBuilder kvStore(KeyValueStore<String, Bytes> kvStore) {
+  public DiscoveryNetworkBuilder kvStore(final KeyValueStore<String, Bytes> kvStore) {
     this.kvStore = kvStore;
     return this;
   }
 
-  public DiscoveryNetworkBuilder p2pNetwork(P2PNetwork<?> p2pNetwork) {
+  public DiscoveryNetworkBuilder p2pNetwork(final P2PNetwork<?> p2pNetwork) {
     this.p2pNetwork = p2pNetwork;
     return this;
   }
 
-  public DiscoveryNetworkBuilder peerPools(PeerPools peerPools) {
+  public DiscoveryNetworkBuilder peerPools(final PeerPools peerPools) {
     this.peerPools = peerPools;
     return this;
   }
 
   public DiscoveryNetworkBuilder peerSelectionStrategy(
-      PeerSelectionStrategy peerSelectionStrategy) {
+      final PeerSelectionStrategy peerSelectionStrategy) {
     this.peerSelectionStrategy = peerSelectionStrategy;
     return this;
   }
 
-  public DiscoveryNetworkBuilder discoveryConfig(DiscoveryConfig discoveryConfig) {
+  public DiscoveryNetworkBuilder discoveryConfig(final DiscoveryConfig discoveryConfig) {
     this.discoveryConfig = discoveryConfig;
     return this;
   }
 
-  public DiscoveryNetworkBuilder p2pConfig(NetworkConfig p2pConfig) {
+  public DiscoveryNetworkBuilder p2pConfig(final NetworkConfig p2pConfig) {
     this.p2pConfig = p2pConfig;
     return this;
   }
 
-  public DiscoveryNetworkBuilder spec(Spec spec) {
+  public DiscoveryNetworkBuilder spec(final Spec spec) {
     this.spec = spec;
     return this;
   }
 
   public DiscoveryNetworkBuilder currentSchemaDefinitionsSupplier(
-      SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier) {
+      final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier) {
     this.currentSchemaDefinitionsSupplier = currentSchemaDefinitionsSupplier;
     return this;
   }
 
-  public DiscoveryNetworkBuilder discoveryService(DiscoveryService discoveryService) {
+  public DiscoveryNetworkBuilder discoveryService(final DiscoveryService discoveryService) {
     this.discoveryService = discoveryService;
     return this;
   }
 
-  public DiscoveryNetworkBuilder connectionManager(ConnectionManager connectionManager) {
+  public DiscoveryNetworkBuilder connectionManager(final ConnectionManager connectionManager) {
     this.connectionManager = connectionManager;
     return this;
   }

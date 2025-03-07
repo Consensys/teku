@@ -17,7 +17,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil.NodeRelation;
 
 class TillIndexVisitor implements TreeVisitor {
 
-  static TreeVisitor create(TreeVisitor delegate, long tillGeneralizedIndex) {
+  static TreeVisitor create(final TreeVisitor delegate, final long tillGeneralizedIndex) {
     return new TillIndexVisitor(delegate, tillGeneralizedIndex, true);
   }
 
@@ -25,14 +25,15 @@ class TillIndexVisitor implements TreeVisitor {
   private final long tillGIndex;
   private final boolean inclusive;
 
-  public TillIndexVisitor(TreeVisitor delegate, long tillGIndex, boolean inclusive) {
+  public TillIndexVisitor(
+      final TreeVisitor delegate, final long tillGIndex, final boolean inclusive) {
     this.delegate = delegate;
     this.tillGIndex = tillGIndex;
     this.inclusive = inclusive;
   }
 
   @Override
-  public boolean visit(TreeNode node, long generalizedIndex) {
+  public boolean visit(final TreeNode node, final long generalizedIndex) {
     NodeRelation compareRes = GIndexUtil.gIdxCompare(generalizedIndex, tillGIndex);
     if (inclusive && compareRes == NodeRelation.RIGHT) {
       return false;

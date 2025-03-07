@@ -31,7 +31,7 @@ public final class BlstSemiAggregate implements BatchSemiAggregate {
     ctx = null;
   }
 
-  BlstSemiAggregate(Pairing ctx) {
+  BlstSemiAggregate(final Pairing ctx) {
     checkNotNull(ctx);
     this.ctx = ctx;
   }
@@ -47,7 +47,7 @@ public final class BlstSemiAggregate implements BatchSemiAggregate {
     return ctx != null;
   }
 
-  void mergeWith(BlstSemiAggregate other) {
+  void mergeWith(final BlstSemiAggregate other) {
     if (other.isValid()) {
       BLST_ERROR ret = getCtx().merge(other.getCtx());
       if (ret != BLST_ERROR.BLST_SUCCESS) {

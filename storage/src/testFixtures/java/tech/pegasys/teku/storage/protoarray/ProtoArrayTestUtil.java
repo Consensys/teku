@@ -27,16 +27,16 @@ import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 public class ProtoArrayTestUtil {
 
   // Gives a deterministic hash for a given integer
-  public static Bytes32 getHash(int i) {
+  public static Bytes32 getHash(final int i) {
     return MathHelpers.uintToBytes32(Integer.toUnsignedLong(i + 1));
   }
 
   public static ForkChoiceStrategy createProtoArrayForkChoiceStrategy(
-      Spec spec,
-      Bytes32 finalizedBlockRoot,
-      UInt64 finalizedBlockSlot,
-      UInt64 finalizedCheckpointEpoch,
-      UInt64 justifiedCheckpointEpoch) {
+      final Spec spec,
+      final Bytes32 finalizedBlockRoot,
+      final UInt64 finalizedBlockSlot,
+      final UInt64 finalizedCheckpointEpoch,
+      final UInt64 justifiedCheckpointEpoch) {
 
     final ProtoArray protoArray =
         ProtoArray.builder()

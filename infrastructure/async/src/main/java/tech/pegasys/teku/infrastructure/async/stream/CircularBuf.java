@@ -23,19 +23,19 @@ class CircularBuf<C> {
   final ArrayDeque<C> buf;
   final int maxSize;
 
-  public CircularBuf(int maxSize) {
+  public CircularBuf(final int maxSize) {
     buf = new ArrayDeque<>(maxSize);
     this.maxSize = maxSize;
   }
 
-  public void add(C t) {
+  public void add(final C t) {
     if (buf.size() == maxSize) {
       buf.removeFirst();
     }
     buf.add(t);
   }
 
-  public static <T> Collector<T, ?, List<T>> createCollector(int count) {
+  public static <T> Collector<T, ?, List<T>> createCollector(final int count) {
     return Collector.<T, CircularBuf<T>, List<T>>of(
         () -> new CircularBuf<T>(count),
         CircularBuf::add,

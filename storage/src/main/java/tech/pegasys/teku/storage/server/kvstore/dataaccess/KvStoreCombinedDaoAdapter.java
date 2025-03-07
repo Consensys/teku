@@ -29,7 +29,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -167,6 +167,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   @Override
   public Optional<SignedBeaconBlock> getEarliestFinalizedBlock() {
     return finalizedDao.getEarliestFinalizedBlock();
+  }
+
+  @Override
+  public Optional<UInt64> getEarliestFinalizedStateSlot() {
+    return finalizedDao.getEarliestFinalizedStateSlot();
   }
 
   @Override
@@ -589,13 +594,23 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void addReconstructedFinalizedState(Bytes32 blockRoot, BeaconState state) {
+    public void deleteFinalizedState(final UInt64 slot) {
+      finalizedUpdater.deleteFinalizedState(slot);
+    }
+
+    @Override
+    public void addReconstructedFinalizedState(final Bytes32 blockRoot, final BeaconState state) {
       finalizedUpdater.addReconstructedFinalizedState(blockRoot, state);
     }
 
     @Override
     public void addFinalizedStateRoot(final Bytes32 stateRoot, final UInt64 slot) {
       finalizedUpdater.addFinalizedStateRoot(stateRoot, slot);
+    }
+
+    @Override
+    public void deleteFinalizedStateRoot(final Bytes32 stateRoot) {
+      finalizedUpdater.deleteFinalizedStateRoot(stateRoot);
     }
 
     @Override
@@ -606,6 +621,16 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void setEarliestBlobSidecarSlot(final UInt64 slot) {
       finalizedUpdater.setEarliestBlobSidecarSlot(slot);
+    }
+
+    @Override
+    public void setEarliestBlockSlot(final UInt64 slot) {
+      finalizedUpdater.setEarliestBlockSlot(slot);
+    }
+
+    @Override
+    public void deleteEarliestBlockSlot() {
+      finalizedUpdater.deleteEarliestBlockSlot();
     }
 
     @Override

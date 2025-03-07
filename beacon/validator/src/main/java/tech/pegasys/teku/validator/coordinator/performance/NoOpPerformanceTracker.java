@@ -15,7 +15,7 @@ package tech.pegasys.teku.validator.coordinator.performance;
 
 import it.unimi.dsi.fastutil.ints.IntSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 
@@ -28,7 +28,7 @@ public class NoOpPerformanceTracker implements PerformanceTracker {
   public void saveProducedAttestation(final Attestation attestation) {}
 
   @Override
-  public void saveProducedBlock(final SignedBeaconBlock block) {}
+  public void saveProducedBlock(final SlotAndBlockRoot slotAndBlockRoot) {}
 
   @Override
   public void reportBlockProductionAttempt(final UInt64 epoch) {}

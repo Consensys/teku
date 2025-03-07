@@ -51,7 +51,7 @@ public interface BLS12381 {
    * @param seed to seed the key pair generation
    * @return a new random key pair
    */
-  default KeyPair generateKeyPair(long seed) {
+  default KeyPair generateKeyPair(final long seed) {
     return generateKeyPair(new Random(seed));
   }
 
@@ -149,7 +149,7 @@ public interface BLS12381 {
    */
   boolean completeBatchVerify(List<? extends BatchSemiAggregate> preparedList);
 
-  default Signature randomSignature(int seed) {
+  default Signature randomSignature(final int seed) {
     KeyPair keyPair = generateKeyPair(seed);
     byte[] message = "Hello, world!".getBytes(UTF_8);
     return keyPair.getSecretKey().sign(Bytes.wrap(message));

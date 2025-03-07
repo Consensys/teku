@@ -61,7 +61,7 @@ public class DeserializableMapTypeDefinition<TKey, TValue>
       t = p.nextToken();
     }
     for (; t == JsonToken.FIELD_NAME; t = p.nextToken()) {
-      final String fieldName = p.getCurrentName();
+      final String fieldName = p.currentName();
       p.nextToken();
       final TValue fieldValue = valueType.deserialize(p);
       result.put(keyType.deserializeFromString(fieldName), fieldValue);

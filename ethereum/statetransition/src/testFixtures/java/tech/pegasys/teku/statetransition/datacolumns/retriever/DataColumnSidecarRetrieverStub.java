@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 public class DataColumnSidecarRetrieverStub implements DataColumnSidecarRetriever {
@@ -29,8 +29,8 @@ public class DataColumnSidecarRetrieverStub implements DataColumnSidecarRetrieve
   public List<RetrieveRequest> requests = new ArrayList<>();
   private final Map<DataColumnSlotAndIdentifier, DataColumnSidecar> readySidecars = new HashMap<>();
 
-  public void addReadyColumnSidecar(DataColumnSidecar sidecar) {
-    DataColumnSlotAndIdentifier colId = DataColumnSlotAndIdentifier.fromDataColumn(sidecar);
+  public void addReadyColumnSidecar(final DataColumnSidecar sidecar) {
+    final DataColumnSlotAndIdentifier colId = DataColumnSlotAndIdentifier.fromDataColumn(sidecar);
     readySidecars.put(colId, sidecar);
     requests.stream()
         .filter(req -> req.columnId.equals(colId))
@@ -38,13 +38,19 @@ public class DataColumnSidecarRetrieverStub implements DataColumnSidecarRetrieve
   }
 
   @Override
-  public SafeFuture<DataColumnSidecar> retrieve(DataColumnSlotAndIdentifier columnId) {
-    RetrieveRequest request = new RetrieveRequest(columnId, new SafeFuture<>());
+  public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
+    final RetrieveRequest request = new RetrieveRequest(columnId, new SafeFuture<>());
     requests.add(request);
-    DataColumnSidecar maybeSidecar = readySidecars.get(columnId);
+    final DataColumnSidecar maybeSidecar = readySidecars.get(columnId);
     if (maybeSidecar != null) {
       request.promise.complete(maybeSidecar);
     }
     return request.promise;
   }
+
+  @Override
+  public void flush() {}
+
+  @Override
+  public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {}
 }

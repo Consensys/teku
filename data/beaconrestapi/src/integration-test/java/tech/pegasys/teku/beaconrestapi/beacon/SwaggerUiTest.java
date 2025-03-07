@@ -63,7 +63,7 @@ public class SwaggerUiTest extends AbstractDataBackedRestAPIIntegrationTest {
     assertThat(response.body().string()).contains(JSON_SCHEMA_PATH);
   }
 
-  private void checkPath(String path) {
+  private void checkPath(final String path) {
     try {
       Response response = getResponse(path);
       assertThat(response.code()).as("Check deep link (%s)", path).isEqualTo(200);
@@ -72,7 +72,7 @@ public class SwaggerUiTest extends AbstractDataBackedRestAPIIntegrationTest {
     }
   }
 
-  private static Set<String> findAssets(String url) throws IOException {
+  private static Set<String> findAssets(final String url) throws IOException {
 
     Set<String> links = new HashSet<>();
 

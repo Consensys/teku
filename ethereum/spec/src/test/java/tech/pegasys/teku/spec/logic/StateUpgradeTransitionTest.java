@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.logic;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -31,14 +30,14 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
-import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip7594.BeaconStateEip7594;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 
@@ -48,7 +47,7 @@ import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
       SpecMilestone.BELLATRIX,
       SpecMilestone.CAPELLA,
       SpecMilestone.DENEB,
-      SpecMilestone.EIP7594
+      SpecMilestone.ELECTRA
     },
     doNotGenerateSpec = true)
 public class StateUpgradeTransitionTest {
@@ -65,7 +64,7 @@ public class StateUpgradeTransitionTest {
   private Class<? extends BeaconState> afterBeaconStateClass;
 
   @BeforeEach
-  public void setup(SpecContext specContext) {
+  public void setup(final SpecContext specContext) {
     final Spec spec =
         switch (specContext.getSpecMilestone()) {
           case PHASE0 -> throw new IllegalArgumentException("Phase0 is an unsupported milestone");
@@ -89,10 +88,15 @@ public class StateUpgradeTransitionTest {
             afterBeaconStateClass = BeaconStateDeneb.class;
             yield TestSpecFactory.createMinimalWithDenebForkEpoch(milestoneTransitionEpoch);
           }
-          case EIP7594 -> {
+          case ELECTRA -> {
             beforeBeaconStateClass = BeaconStateDeneb.class;
-            afterBeaconStateClass = BeaconStateEip7594.class;
-            yield TestSpecFactory.createMinimalWithEip7594ForkEpoch(milestoneTransitionEpoch);
+            afterBeaconStateClass = BeaconStateElectra.class;
+            yield TestSpecFactory.createMinimalWithElectraForkEpoch(milestoneTransitionEpoch);
+          }
+          case FULU -> {
+            beforeBeaconStateClass = BeaconStateElectra.class;
+            afterBeaconStateClass = BeaconStateElectra.class;
+            yield TestSpecFactory.createMinimalWithElectraForkEpoch(milestoneTransitionEpoch);
           }
         };
 
@@ -135,12 +139,7 @@ public class StateUpgradeTransitionTest {
         new MockStartDepositGenerator(spec, new DepositGenerator(spec, true))
             .createDeposits(VALIDATOR_KEYS, spec.getGenesisSpecConfig().getMaxEffectiveBalance());
 
-    final List<DepositWithIndex> deposits = new ArrayList<>();
-    for (int index = 0; index < initialDepositData.size(); index++) {
-      final DepositData data = initialDepositData.get(index);
-      DepositWithIndex deposit = new DepositWithIndex(data, UInt64.valueOf(index));
-      deposits.add(deposit);
-    }
+    final List<Deposit> deposits = initialDepositData.stream().map(Deposit::new).toList();
     final BeaconState initialState =
         spec.initializeBeaconStateFromEth1(Bytes32.ZERO, UInt64.ZERO, deposits, Optional.empty());
     return initialState.updated(state -> state.setGenesisTime(UInt64.ZERO));

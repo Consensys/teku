@@ -31,14 +31,13 @@ import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigEip7594;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.eip7594.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
-import tech.pegasys.teku.spec.logic.versions.eip7594.helpers.MiscHelpersEip7594;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7594;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDBStub;
@@ -49,19 +48,16 @@ import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAcces
 public class RecoveringSidecarRetrieverTest {
 
   final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner();
-  final Spec spec = TestSpecFactory.createMinimalEip7594();
+  final Spec spec = TestSpecFactory.createMinimalFulu();
   final DataColumnSidecarDB db = new DataColumnSidecarDBStub();
   final DataColumnSidecarDbAccessor dbAccessor =
       DataColumnSidecarDbAccessor.builder(db).spec(spec).build();
   final CanonicalBlockResolverStub blockResolver = new CanonicalBlockResolverStub(spec);
 
-  final SpecConfigEip7594 config =
-      SpecConfigEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).getConfig());
-  final MiscHelpersEip7594 miscHelpers =
-      MiscHelpersEip7594.required(spec.forMilestone(SpecMilestone.EIP7594).miscHelpers());
-  final SchemaDefinitionsEip7594 schemaDefinitions =
-      SchemaDefinitionsEip7594.required(
-          spec.forMilestone(SpecMilestone.EIP7594).getSchemaDefinitions());
+  final SpecConfigFulu config =
+      SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
+  final MiscHelpersFulu miscHelpers =
+      MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
   final int columnCount = config.getNumberOfColumns();
   final KZG kzg = KZG.getInstance(false);
   private final MetricsSystem metricsSystemStub = new StubMetricsSystem();
@@ -72,11 +68,11 @@ public class RecoveringSidecarRetrieverTest {
     TrustedSetupLoader.loadTrustedSetupForTests(kzg);
   }
 
-  private SignedBeaconBlock createSigned(BeaconBlock block) {
+  private SignedBeaconBlock createSigned(final BeaconBlock block) {
     return dataStructureUtil.signedBlock(block);
   }
 
-  private DataColumnSlotAndIdentifier createId(BeaconBlock block, int colIdx) {
+  private DataColumnSlotAndIdentifier createId(final BeaconBlock block, final int colIdx) {
     return new DataColumnSlotAndIdentifier(
         block.getSlot(), block.getRoot(), UInt64.valueOf(colIdx));
   }
@@ -92,7 +88,6 @@ public class RecoveringSidecarRetrieverTest {
             delegateRetriever,
             kzg,
             miscHelpers,
-            schemaDefinitions,
             blockResolver,
             dbAccessor,
             stubAsyncRunner,
@@ -149,7 +144,6 @@ public class RecoveringSidecarRetrieverTest {
             delegateRetriever,
             kzg,
             miscHelpers,
-            schemaDefinitions,
             blockResolver,
             dbAccessor,
             stubAsyncRunner,
@@ -203,7 +197,6 @@ public class RecoveringSidecarRetrieverTest {
             delegateRetriever,
             kzg,
             miscHelpers,
-            schemaDefinitions,
             blockResolver,
             dbAccessor,
             stubAsyncRunner,

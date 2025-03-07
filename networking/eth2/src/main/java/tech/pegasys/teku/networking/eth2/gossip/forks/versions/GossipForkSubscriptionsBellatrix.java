@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsBellatrix extends GossipForkSubscriptionsAltair {
@@ -48,7 +49,8 @@ public class GossipForkSubscriptionsBellatrix extends GossipForkSubscriptionsAlt
       final OperationProcessor<SignedContributionAndProof>
           signedContributionAndProofOperationProcessor,
       final OperationProcessor<ValidatableSyncCommitteeMessage>
-          syncCommitteeMessageOperationProcessor) {
+          syncCommitteeMessageOperationProcessor,
+      final DebugDataDumper debugDataDumper) {
     super(
         fork,
         spec,
@@ -64,6 +66,7 @@ public class GossipForkSubscriptionsBellatrix extends GossipForkSubscriptionsAlt
         proposerSlashingProcessor,
         voluntaryExitProcessor,
         signedContributionAndProofOperationProcessor,
-        syncCommitteeMessageOperationProcessor);
+        syncCommitteeMessageOperationProcessor,
+        debugDataDumper);
   }
 }

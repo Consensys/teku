@@ -25,7 +25,7 @@ public class SignedBlindedBeaconBlockCapella extends SignedBeaconBlock implement
   private final BlindedBlockCapella message;
 
   public SignedBlindedBeaconBlockCapella(
-      tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
+      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
     super(internalBlock);
     checkArgument(
         internalBlock.getMessage().getBody().isBlinded(), "requires a signed blinded beacon block");

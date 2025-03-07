@@ -74,7 +74,7 @@ public class VersionProvider {
   }
 
   static String defaultStoragePathForNormalizedOS(
-      final String detectedOS, Map<String, String> env) {
+      final String detectedOS, final Map<String, String> env) {
     if (detectedOS.equals("windows")) {
       return env.get(ENV_LOCALAPPDATA) + "\\teku";
     } else if (detectedOS.equals("osx")) {

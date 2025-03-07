@@ -26,7 +26,10 @@ public class PowBlock {
   private final UInt64 blockTimestamp;
 
   public PowBlock(
-      Bytes32 blockHash, Bytes32 parentHash, UInt256 totalDifficulty, UInt64 blockTimestamp) {
+      final Bytes32 blockHash,
+      final Bytes32 parentHash,
+      final UInt256 totalDifficulty,
+      final UInt64 blockTimestamp) {
     this.blockHash = blockHash;
     this.parentHash = parentHash;
     this.totalDifficulty = totalDifficulty;

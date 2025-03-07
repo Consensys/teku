@@ -47,6 +47,7 @@ public class GetGenesis extends RestApiEndpoint {
             .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
             .response(SC_OK, "Request successful", GET_GENESIS_API_DATA_TYPE)
             .response(SC_NOT_FOUND, "Chain genesis info is not yet known")
+            .withChainDataResponses()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
@@ -59,7 +60,7 @@ public class GetGenesis extends RestApiEndpoint {
   }
 
   @Override
-  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final Optional<GenesisData> maybeData = getGenesisData();
     if (maybeData.isEmpty()) {
       request.respondWithCode(SC_NOT_FOUND);

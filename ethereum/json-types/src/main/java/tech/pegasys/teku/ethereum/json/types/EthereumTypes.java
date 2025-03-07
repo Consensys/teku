@@ -13,19 +13,29 @@
 
 package tech.pegasys.teku.ethereum.json.types;
 
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_BLOCK_VALUE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_VALUE;
+
+import java.math.BigInteger;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
+import tech.pegasys.teku.infrastructure.json.types.BooleanHeaderTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.EnumHeaderTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.EnumTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.StringBasedHeaderTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
@@ -37,15 +47,6 @@ import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class EthereumTypes {
-
-  public static final DeserializableTypeDefinition<Eth1Address> ETH1ADDRESS_TYPE =
-      DeserializableTypeDefinition.string(Eth1Address.class)
-          .formatter(Eth1Address::toHexString)
-          .parser(Eth1Address::fromHexString)
-          .example("0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6")
-          .description("Hex encoded deposit contract address with 0x prefix")
-          .format("byte")
-          .build();
 
   public static final StringValueTypeDefinition<BLSSignature> SIGNATURE_TYPE =
       DeserializableTypeDefinition.string(BLSSignature.class)
@@ -94,15 +95,47 @@ public class EthereumTypes {
 
   public static final StringValueTypeDefinition<SpecMilestone> MILESTONE_TYPE =
       new EnumTypeDefinition<>(
-          SpecMilestone.class,
-          milestone -> {
-            // FIXME: remove me, bad hack to make Kurtosis working
-            if (milestone.equals(SpecMilestone.EIP7594)) {
-              return "deneb";
-            }
-            return milestone.name().toLowerCase(Locale.ROOT);
-          },
-          Set.of());
+          SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT), Set.of());
+
+  public static final EnumHeaderTypeDefinition<SpecMilestone> ETH_CONSENSUS_HEADER_TYPE =
+      new EnumHeaderTypeDefinition.EnumTypeHeaderDefinitionBuilder<>(
+              SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT))
+          .title(HEADER_CONSENSUS_VERSION)
+          .required(true)
+          .description(
+              "Required in response so client can deserialize returned json or ssz data more effectively.")
+          .example("phase0")
+          .build();
+
+  public static final BooleanHeaderTypeDefinition ETH_HEADER_EXECUTION_PAYLOAD_BLINDED_TYPE =
+      new BooleanHeaderTypeDefinition(
+          HEADER_EXECUTION_PAYLOAD_BLINDED,
+          Optional.of(true),
+          "Required in response so client can deserialize returned json or ssz data to the correct object.");
+
+  public static final StringBasedHeaderTypeDefinition<UInt256>
+      ETH_HEADER_EXECUTION_PAYLOAD_VALUE_TYPE =
+          new StringBasedHeaderTypeDefinition.Builder<UInt256>()
+              .title(HEADER_EXECUTION_PAYLOAD_VALUE)
+              .description(
+                  "Execution payload value in Wei. Required in response so client can determine relative value of execution payloads.")
+              .formatter(value -> value.toBigInteger().toString(10))
+              .parser(value -> UInt256.valueOf(new BigInteger(value, 10)))
+              .example("1")
+              .required(true)
+              .build();
+
+  public static final StringBasedHeaderTypeDefinition<UInt256>
+      ETH_HEADER_CONSENSUS_BLOCK_VALUE_TYPE =
+          new StringBasedHeaderTypeDefinition.Builder<UInt256>()
+              .title(HEADER_CONSENSUS_BLOCK_VALUE)
+              .description(
+                  "Consensus rewards paid to the proposer for this block, in Wei. Required in response so client can determine relative value of consensus blocks.")
+              .formatter(value -> value.toBigInteger().toString(10))
+              .parser(value -> UInt256.valueOf(new BigInteger(value, 10)))
+              .example("1")
+              .required(true)
+              .build();
 
   public static <X extends SszData, T extends ObjectAndMetaData<X>>
       ResponseContentTypeDefinition<? extends T> sszResponseType() {
@@ -128,7 +161,7 @@ public class EthereumTypes {
   private static <T extends SszData> Map<String, String> getSszHeaders(
       final Function<T, SpecMilestone> milestoneSelector, final T value) {
     return Map.of(
-        RestApiConstants.HEADER_CONSENSUS_VERSION,
+        HEADER_CONSENSUS_VERSION,
         Version.fromMilestone(milestoneSelector.apply(value)).name(),
         RestApiConstants.HEADER_CONTENT_DISPOSITION,
         getSszFilename(value));

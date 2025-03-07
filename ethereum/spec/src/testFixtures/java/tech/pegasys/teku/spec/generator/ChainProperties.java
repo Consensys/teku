@@ -32,7 +32,7 @@ public class ChainProperties {
    * @param slot The slot we want to finalize.
    * @return The earliest epoch that can be finalized at this slot.
    */
-  public UInt64 computeBestEpochFinalizableAtSlot(long slot) {
+  public UInt64 computeBestEpochFinalizableAtSlot(final long slot) {
     return computeBestEpochFinalizableAtSlot(UInt64.valueOf(slot));
   }
 
@@ -44,7 +44,7 @@ public class ChainProperties {
    * @param slot The slot we want to finalize.
    * @return The earliest epoch that can be finalized at this slot.
    */
-  public UInt64 computeBestEpochFinalizableAtSlot(UInt64 slot) {
+  public UInt64 computeBestEpochFinalizableAtSlot(final UInt64 slot) {
     final UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
     final UInt64 startSlotAtCurrentEpoch = spec.computeStartSlotAtEpoch(currentEpoch);
     return startSlotAtCurrentEpoch.equals(slot) ? currentEpoch : currentEpoch.plus(UInt64.ONE);

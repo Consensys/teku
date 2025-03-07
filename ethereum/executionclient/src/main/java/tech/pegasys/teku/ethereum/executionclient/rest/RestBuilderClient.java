@@ -39,13 +39,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class RestBuilderClient implements BuilderClient {
@@ -65,13 +65,13 @@ public class RestBuilderClient implements BuilderClient {
       cachedBuilderApiSignedBuilderBidResponseType = new ConcurrentHashMap<>();
 
   private final RestClient restClient;
-  private final SchemaDefinitionCache schemaDefinitionCache;
+  private final Spec spec;
   private final boolean setUserAgentHeader;
 
   public RestBuilderClient(
       final RestClient restClient, final Spec spec, final boolean setUserAgentHeader) {
     this.restClient = restClient;
-    this.schemaDefinitionCache = new SchemaDefinitionCache(spec);
+    this.spec = spec;
     this.setUserAgentHeader = setUserAgentHeader;
   }
 
@@ -109,7 +109,8 @@ public class RestBuilderClient implements BuilderClient {
     urlParams.put("parent_hash", parentHash.toHexString());
     urlParams.put("pubkey", pubKey.toBytesCompressed().toHexString());
 
-    final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(slot);
+    final SpecVersion specVersion = spec.atSlot(slot);
+    final SpecMilestone milestone = specVersion.getMilestone();
 
     final DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBid>>
         responseTypeDefinition =
@@ -117,7 +118,7 @@ public class RestBuilderClient implements BuilderClient {
                 milestone,
                 __ -> {
                   final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
-                      getSchemaDefinitionsBellatrix(milestone);
+                      getSchemaDefinitionsBellatrix(specVersion);
                   final SignedBuilderBidSchema signedBuilderBidSchema =
                       schemaDefinitionsBellatrix.getSignedBuilderBidSchema();
                   return BuilderApiResponse.createTypeDefinition(
@@ -146,10 +147,10 @@ public class RestBuilderClient implements BuilderClient {
       final SignedBeaconBlock signedBlindedBeaconBlock) {
 
     final UInt64 blockSlot = signedBlindedBeaconBlock.getSlot();
-    final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(blockSlot);
-
+    final SpecVersion specVersion = spec.atSlot(blockSlot);
+    final SpecMilestone milestone = specVersion.getMilestone();
     final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
-        getSchemaDefinitionsBellatrix(milestone);
+        getSchemaDefinitionsBellatrix(specVersion);
 
     final DeserializableTypeDefinition<SignedBeaconBlock> requestTypeDefinition =
         schemaDefinitionsBellatrix.getSignedBlindedBeaconBlockSchema().getJsonTypeDefinition();
@@ -195,15 +196,14 @@ public class RestBuilderClient implements BuilderClient {
     return builderApiResponse.getData();
   }
 
-  private SchemaDefinitionsBellatrix getSchemaDefinitionsBellatrix(
-      final SpecMilestone specMilestone) {
-    return schemaDefinitionCache
-        .getSchemaDefinition(specMilestone)
+  private SchemaDefinitionsBellatrix getSchemaDefinitionsBellatrix(final SpecVersion specVersion) {
+    return specVersion
+        .getSchemaDefinitions()
         .toVersionBellatrix()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    specMilestone
+                    specVersion.getMilestone()
                         + " is not a supported milestone for the builder rest api. Milestones >= Bellatrix are supported."));
   }
 }

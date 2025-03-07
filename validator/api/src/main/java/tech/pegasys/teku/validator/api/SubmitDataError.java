@@ -16,49 +16,19 @@ package tech.pegasys.teku.validator.api;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
-import java.util.Objects;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class SubmitDataError {
-  private final UInt64 index;
-  private final String message;
+public record SubmitDataError(UInt64 index, String message) {
 
-  public SubmitDataError(final UInt64 index, final String message) {
-    this.index = index;
-    this.message = message;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final SubmitDataError that = (SubmitDataError) o;
-    return Objects.equals(index, that.index) && Objects.equals(message, that.message);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(index, message);
-  }
-
-  public UInt64 getIndex() {
-    return index;
-  }
-
-  public String getMessage() {
-    return message;
-  }
-
-  public static SerializableTypeDefinition<SubmitDataError> getJsonTypeDefinition() {
-    return SerializableTypeDefinition.object(SubmitDataError.class)
+  public static DeserializableTypeDefinition<SubmitDataError> getJsonTypeDefinition() {
+    return DeserializableTypeDefinition.object(SubmitDataError.class, SubmitDataErrorBuilder.class)
         .name("SubmitDataError")
-        .withField("index", UINT64_TYPE, SubmitDataError::getIndex)
-        .withField("message", STRING_TYPE, SubmitDataError::getMessage)
+        .initializer(SubmitDataErrorBuilder::new)
+        .finisher(SubmitDataErrorBuilder::build)
+        .withField("index", UINT64_TYPE, SubmitDataError::index, SubmitDataErrorBuilder::index)
+        .withField(
+            "message", STRING_TYPE, SubmitDataError::message, SubmitDataErrorBuilder::message)
         .build();
   }
 

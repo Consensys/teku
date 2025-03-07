@@ -29,7 +29,7 @@ class LoggingWeakSubjectivityViolationPolicy implements WeakSubjectivityViolatio
   private final WeakSubjectivityLogger wsLogger;
 
   public LoggingWeakSubjectivityViolationPolicy(
-      final WeakSubjectivityLogger wsLogger, Level level) {
+      final WeakSubjectivityLogger wsLogger, final Level level) {
     this.level = level;
     this.wsLogger = wsLogger;
   }
@@ -51,7 +51,7 @@ class LoggingWeakSubjectivityViolationPolicy implements WeakSubjectivityViolatio
 
   @Override
   public void onChainInconsistentWithWeakSubjectivityCheckpoint(
-      Checkpoint wsCheckpoint, Bytes32 blockRoot, final UInt64 blockSlot) {
+      final Checkpoint wsCheckpoint, final Bytes32 blockRoot, final UInt64 blockSlot) {
     wsLogger.chainInconsistentWithWeakSubjectivityCheckpoint(
         level, blockRoot, blockSlot, wsCheckpoint.getRoot(), wsCheckpoint.getEpoch());
   }

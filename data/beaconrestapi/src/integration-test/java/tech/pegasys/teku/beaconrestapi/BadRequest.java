@@ -21,7 +21,8 @@ public class BadRequest {
   private final String message;
 
   @JsonCreator
-  public BadRequest(@JsonProperty("code") Integer code, @JsonProperty("message") String message) {
+  public BadRequest(
+      @JsonProperty("code") final Integer code, @JsonProperty("message") final String message) {
     this.code = code;
     this.message = message;
   }
