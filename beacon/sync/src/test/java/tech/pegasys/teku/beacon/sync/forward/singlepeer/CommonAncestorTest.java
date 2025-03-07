@@ -32,10 +32,11 @@ import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 
 public class CommonAncestorTest extends AbstractSyncTest {
 
+  private final int maxHeadDistance = 2;
   private final CommonAncestor commonAncestor =
       new CommonAncestor(recentChainData, 4, OptionalInt.empty());
   private final CommonAncestor commonAncestorWithMaxHeadDistance =
-      new CommonAncestor(recentChainData, 4, OptionalInt.of(2));
+      new CommonAncestor(recentChainData, 4, OptionalInt.of(maxHeadDistance));
 
   @Test
   void shouldNotSearchCommonAncestorWithoutSufficientLocalData() {
