@@ -110,14 +110,13 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
                 int destinationStart = aggregatedCommitteeBitsStartingPositions.get(committeeIndex);
 
                 SszBitlist source1 = null, maybeSource2 = null;
-                int source1StartingPosition, source2StartingPosition;
 
-                source1StartingPosition =
+                int source1StartingPosition =
                     committeeBitsStartingPositions.getOrDefault(committeeIndex, -1);
                 if (source1StartingPosition != -1) {
                   source1 = aggregationBits;
                 }
-                source2StartingPosition =
+                int source2StartingPosition =
                     otherCommitteeBitsStartingPositions.getOrDefault(committeeIndex, -1);
                 if (source2StartingPosition != -1) {
                   if (source1 != null) {
