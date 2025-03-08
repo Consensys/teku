@@ -117,6 +117,12 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
         .add(attestation);
   }
 
+  public Stream<Attestation> streamAttestations() {
+    return attestationsByValidatorCount.values().stream()
+        .flatMap(Set::stream)
+        .map(ValidatableAttestation::getUnconvertedAttestation);
+  }
+
   /**
    * Iterates through the aggregation of attestations in this group. The iterator attempts to create
    * the minimum number of attestations that include all attestations in the group.

@@ -15,6 +15,10 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +26,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
@@ -72,6 +78,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 
 public class BlockOperationSelectorFactory {
+  private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
   private final AggregatingAttestationPool attestationPool;
   private final OperationPool<AttesterSlashing> attesterSlashingPool;
@@ -123,9 +130,35 @@ public class BlockOperationSelectorFactory {
     return bodyBuilder -> {
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
+      SafeFuture.of(
+              SafeFuture.runAsync(() -> attestationPool.dumpAttestations(blockSlotState.getSlot())))
+          .finish(
+              () -> LOG.info("Attestation pool dumped."), err -> LOG.error("Failed to dump.", err));
+
+      final long start = System.currentTimeMillis();
       final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
               blockSlotState, new AttestationForkChecker(spec, blockSlotState));
+      final long time = System.currentTimeMillis() - start;
+      if (time > 2000) {
+        LOG.info(
+            "Attestation pool took {}ms to get attestations for block at slot {}. dumping.",
+            time,
+            blockSlotState.getSlot());
+        SafeFuture.of(
+                SafeFuture.runAsync(
+                    () -> {
+                      try (OutputStream os =
+                          new FileOutputStream(
+                              "/tmp/blockSlotState " + blockSlotState.getSlot() + ".ssz")) {
+                        blockSlotState.sszSerialize(os);
+                      } catch (final IOException e) {
+                        throw new UncheckedIOException(e);
+                      }
+                    }))
+            .finish(
+                () -> LOG.info("State dump completed."), err -> LOG.error("Failed to dump.", err));
+      }
 
       // Collect slashings to include
       final Set<UInt64> exitedValidators = new HashSet<>();
