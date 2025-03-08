@@ -36,7 +36,10 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
    * schema is the same for any index For heterogeneous structures (like Container) each child has
    * individual schema
    *
-   * @throws IndexOutOfBoundsException if index >= getMaxLength
+   * @throws IndexOutOfBoundsException if index >= getMaxLength for all schemas except Profile
+   *     (stable container). A Profile can have more schemas than the actual maxLength, so for those
+   *     schemas the exception will be thrown when index is >= than number of defined children
+   *     schema.
    */
   SszSchema<?> getChildSchema(int index);
 

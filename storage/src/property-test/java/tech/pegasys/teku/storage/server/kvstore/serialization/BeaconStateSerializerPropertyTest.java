@@ -24,7 +24,7 @@ import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BeaconStateSerializerPropertyTest {
-  @Property(tries = 10)
+  @Property(tries = 20)
   public boolean roundTrip(
       @ForAll final int seed,
       @ForAll(supplier = SpecSupplier.class) final Spec spec,
