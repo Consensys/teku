@@ -54,6 +54,7 @@ public abstract class Eth2ReferenceTestCase {
           .put("light_client/single_merkle_proof", TestExecutor.IGNORE_TESTS)
           .put("light_client/sync", TestExecutor.IGNORE_TESTS)
           .put("light_client/update_ranking", TestExecutor.IGNORE_TESTS)
+          .put("light_client/data_collection", TestExecutor.IGNORE_TESTS)
           .build();
 
   private static final ImmutableMap<String, TestExecutor> PHASE_0_TEST_TYPES =
@@ -83,6 +84,14 @@ public abstract class Eth2ReferenceTestCase {
           .build();
 
   private static final ImmutableMap<String, TestExecutor> DENEB_TEST_TYPES =
+      ImmutableMap.<String, TestExecutor>builder()
+          .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
+          .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
+          .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
+          .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
+          .build();
+
+  private static final ImmutableMap<String, TestExecutor> ELECTRA_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)

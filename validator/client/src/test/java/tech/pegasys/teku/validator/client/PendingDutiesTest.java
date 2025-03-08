@@ -31,7 +31,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.metrics.StubCounter;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -244,9 +243,13 @@ class PendingDutiesTest {
   }
 
   private void validateMetrics(final String duty, final long successCount, final long failCount) {
-    final StubCounter labelledCounter =
-        metricsSystem.getCounter(TekuMetricCategory.VALIDATOR, "duties_performed_total");
-    assertThat(labelledCounter.getValue(duty, "success")).isEqualTo(successCount);
-    assertThat(labelledCounter.getValue(duty, "failed")).isEqualTo(failCount);
+    final long labelledCounterSuccess =
+        metricsSystem.getCounterValue(
+            TekuMetricCategory.VALIDATOR, "duties_performed_total", duty, "success");
+    final long labelledCounterFailed =
+        metricsSystem.getCounterValue(
+            TekuMetricCategory.VALIDATOR, "duties_performed_total", duty, "failed");
+    assertThat(labelledCounterSuccess).isEqualTo(successCount);
+    assertThat(labelledCounterFailed).isEqualTo(failCount);
   }
 }

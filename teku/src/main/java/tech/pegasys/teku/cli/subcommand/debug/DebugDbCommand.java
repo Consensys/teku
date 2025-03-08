@@ -306,6 +306,40 @@ public class DebugDbCommand implements Runnable {
   }
 
   @Command(
+      name = "get-variables",
+      description = "Check variable values",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int getVariables(
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions,
+      @Option(
+              names = {"--filter"},
+              description = "Only get variables that match a given filter.")
+          final String filter)
+      throws Exception {
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
+      final Map<String, Optional<String>> variables = database.getVariables();
+      variables
+          .keySet()
+          .forEach(
+              k -> {
+                if (filter == null || k.contains(filter)) {
+                  System.out.printf("%-30s: %s\n", k, variables.get(k).orElse("EMPTY"));
+                }
+              });
+    }
+    return 0;
+  }
+
+  @Command(
       name = "validate-block-history",
       description = "Validate the chain of finalized blocks via parent references",
       mixinStandardHelpOptions = true,
@@ -409,6 +443,37 @@ public class DebugDbCommand implements Runnable {
       }
     }
     System.out.println("Wrote " + index + " blocks to " + outputFile.toAbsolutePath());
+    return 0;
+  }
+
+  @Command(
+      name = "get-hot-block-slot-to-root",
+      description = "Writes all the slots and roots of stored hot blocks, will be in hash order.",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int getHotBlockSlotToRoot(
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions)
+      throws Exception {
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions);
+        final Stream<Map.Entry<Bytes, Bytes>> hotBlockStream = database.streamHotBlocksAsSsz()) {
+      for (final Iterator<Map.Entry<Bytes, Bytes>> hotBlockIterator = hotBlockStream.iterator();
+          hotBlockIterator.hasNext(); ) {
+        final Map.Entry<Bytes, Bytes> rootAndHotBlock = hotBlockIterator.next();
+        final Bytes32 hotBlockRoot = Bytes32.wrap(rootAndHotBlock.getKey());
+        final Optional<SignedBeaconBlock> hotBlock = database.getHotBlock(hotBlockRoot);
+        System.out.println(
+            String.format(
+                "%s, %s", hotBlock.orElseThrow().getSlot().toString(), hotBlockRoot.toHexString()));
+      }
+    }
     return 0;
   }
 

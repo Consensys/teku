@@ -108,8 +108,7 @@ public class SpecConfigBuilder {
   private Eth1Address depositContractAddress;
 
   // Networking
-  private Integer gossipMaxSize;
-  private Integer maxChunkSize;
+  private Integer maxPayloadSize;
   private Integer maxRequestBlocks;
   private Integer epochsPerSubnetSubscription;
   private Integer ttfbTimeout;
@@ -147,6 +146,18 @@ public class SpecConfigBuilder {
             rawConfig.put(key, value);
           }
         });
+
+    if (maxPayloadSize == null && rawConfig.containsKey("GOSSIP_MAX_SIZE")) {
+      try {
+        // for compatibility, add this constant if its missing but we got GOSSIP_MAX_SIZE
+        // both need to be able to initialize due to renamed global config constant.
+        final String gossipMaxSize = (String) rawConfig.get("GOSSIP_MAX_SIZE");
+        rawConfig.put("MAX_PAYLOAD_SIZE", gossipMaxSize);
+        maxPayloadSize(Integer.parseInt(gossipMaxSize));
+      } catch (NumberFormatException e) {
+        LOG.error("Failed to parse GOSSIP_MAX_SIZE", e);
+      }
+    }
     validate();
     final SpecConfigAndParent<SpecConfig> config =
         SpecConfigAndParent.of(
@@ -201,8 +212,7 @@ public class SpecConfigBuilder {
                 depositChainId,
                 depositNetworkId,
                 depositContractAddress,
-                gossipMaxSize,
-                maxChunkSize,
+                maxPayloadSize,
                 maxRequestBlocks,
                 epochsPerSubnetSubscription,
                 minEpochsForBlockRequests,
@@ -275,8 +285,7 @@ public class SpecConfigBuilder {
     constants.put("depositNetworkId", depositNetworkId);
     constants.put("depositContractAddress", depositContractAddress);
 
-    constants.put("gossipMaxSize", gossipMaxSize);
-    constants.put("maxChunkSize", maxChunkSize);
+    constants.put("maxPayloadSize", maxPayloadSize);
     constants.put("maxRequestBlocks", maxRequestBlocks);
     constants.put("epochsPerSubnetSubscription", epochsPerSubnetSubscription);
     constants.put("minEpochsForBlockRequests", minEpochsForBlockRequests);
@@ -627,13 +636,8 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder gossipMaxSize(final Integer gossipMaxSize) {
-    this.gossipMaxSize = gossipMaxSize;
-    return this;
-  }
-
-  public SpecConfigBuilder maxChunkSize(final Integer maxChunkSize) {
-    this.maxChunkSize = maxChunkSize;
+  public SpecConfigBuilder maxPayloadSize(final Integer maxPayloadSize) {
+    this.maxPayloadSize = maxPayloadSize;
     return this;
   }
 

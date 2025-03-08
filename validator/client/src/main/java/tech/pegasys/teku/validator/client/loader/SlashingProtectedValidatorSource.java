@@ -90,8 +90,6 @@ public class SlashingProtectedValidatorSource implements ValidatorSource {
 
     @Override
     public Signer createSigner() {
-      // TODO: Consider caching these to guarantee we can't possible use different
-      // `SlashingProtectedSigner` instances with the same key
       return new SlashingProtectedSigner(
           getPublicKey(), slashingProtector, delegate.createSigner());
     }

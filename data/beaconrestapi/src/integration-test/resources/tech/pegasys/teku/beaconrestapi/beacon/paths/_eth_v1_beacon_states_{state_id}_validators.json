@@ -21,8 +21,7 @@
         "items" : {
           "type" : "string",
           "description" : "Either hex encoded public key (with 0x prefix) or validator index"
-        },
-        "minItems" : "1"
+        }
       }
     }, {
       "name" : "status",
@@ -34,8 +33,7 @@
           "description" : "valid values:   pending_initialized,   pending_queued,   active_ongoing,   active_exiting,   active_slashed,   exited_unslashed,   exited_slashed,   withdrawal_possible,   withdrawal_done,   active,   pending,   exited,   withdrawal",
           "example" : "active_ongoing",
           "format" : "string"
-        },
-        "minItems" : "1"
+        }
       }
     } ],
     "responses" : {

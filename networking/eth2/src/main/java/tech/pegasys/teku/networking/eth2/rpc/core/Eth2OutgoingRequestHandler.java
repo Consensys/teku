@@ -60,7 +60,6 @@ public class Eth2OutgoingRequestHandler<
   private final AsyncRunner asyncRunner;
   private final int maximumResponseChunks;
   private final Eth2RpcResponseHandler<TResponse, ?> responseHandler;
-  private final ResponseStream<TResponse> responseStream;
 
   private final AsyncRunner timeoutRunner;
   private final AtomicInteger currentChunkCount = new AtomicInteger(0);
@@ -84,7 +83,6 @@ public class Eth2OutgoingRequestHandler<
     this.timeoutRunner = timeoutRunner;
     this.maximumResponseChunks = request.getMaximumResponseChunks();
     this.responseHandler = responseHandler;
-    responseStream = new ResponseStream<>(responseHandler);
     this.responseDecoder = responseDecoder;
     this.shouldReceiveResponse = shouldReceiveResponse;
     this.protocolId = protocolId;
@@ -153,7 +151,7 @@ public class Eth2OutgoingRequestHandler<
                 () ->
                     new AsyncResponseProcessor<>(
                         asyncRunner,
-                        responseStream,
+                        responseHandler,
                         throwable -> abortRequest(rpcStream, throwable))));
   }
 
@@ -213,11 +211,11 @@ public class Eth2OutgoingRequestHandler<
         .thenAccept(
             (__) -> {
               try {
-                responseStream.completeSuccessfully();
+                responseHandler.onCompleted();
                 LOG.trace("Complete request");
               } catch (final Throwable t) {
                 LOG.error("Encountered error while completing outgoing request", t);
-                responseStream.completeWithError(t);
+                responseHandler.onCompleted(t);
               }
             })
         .exceptionally(
@@ -246,7 +244,7 @@ public class Eth2OutgoingRequestHandler<
     } finally {
       getResponseProcessor(rpcStream)
           .finishProcessing()
-          .always(() -> responseStream.completeWithError(error));
+          .always(() -> responseHandler.onCompleted(error));
     }
   }
 

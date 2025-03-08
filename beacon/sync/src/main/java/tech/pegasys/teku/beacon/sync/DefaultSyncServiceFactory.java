@@ -201,6 +201,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               syncConfig.getForwardSyncBatchSize(),
               syncConfig.getForwardSyncMaxPendingBatches(),
               syncConfig.getForwardSyncMaxBlocksPerMinute(),
+              syncConfig.getForwardSyncMaxBlobSidecarsPerMinute(),
               spec);
     } else {
       LOG.info("Using single peer sync");

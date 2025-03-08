@@ -21,7 +21,9 @@ public class DeserializableListTypeDefinition<T>
     extends DeserializableArrayTypeDefinition<T, List<T>> {
 
   public DeserializableListTypeDefinition(
-      final DeserializableTypeDefinition<T> itemType, final Optional<Integer> minItems) {
-    super(itemType, Function.identity(), minItems);
+      final DeserializableTypeDefinition<T> itemType,
+      final Optional<Integer> minItems,
+      final Optional<Integer> maxItems) {
+    super(itemType, Function.identity(), minItems, maxItems);
   }
 }

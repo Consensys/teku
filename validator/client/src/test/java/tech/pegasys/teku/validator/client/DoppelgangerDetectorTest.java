@@ -125,7 +125,7 @@ public class DoppelgangerDetectorTest {
     asyncRunner.executeQueuedActions();
     Set<String> pubKeysStrings = toAbbreviatedKeys(pubKeys).collect(Collectors.toSet());
     verify(statusLog).doppelgangerDetectionStart(pubKeysStrings);
-    verify(statusLog).doppelgangerCheck(0, pubKeysStrings);
+    verify(statusLog).doppelgangerCheck(UInt64.ZERO, pubKeysStrings);
     verify(statusLog).doppelgangerDetectionEnd(pubKeysStrings, new HashMap<>());
     assertThat(doppelgangerDetectorFuture).isCompletedWithValue(Map.ofEntries());
   }
@@ -152,7 +152,7 @@ public class DoppelgangerDetectorTest {
     asyncRunner.executeQueuedActions();
     Set<String> pubKeysStrings = toAbbreviatedKeys(pubKeys).collect(Collectors.toSet());
     verify(statusLog).doppelgangerDetectionStart(pubKeysStrings);
-    verify(statusLog).doppelgangerCheck(0, pubKeysStrings);
+    verify(statusLog).doppelgangerCheck(UInt64.ZERO, pubKeysStrings);
     logCaptor.assertFatalLog(doppelgangerDetectedLog);
     Map<UInt64, BLSPublicKey> doppelgangers =
         Map.ofEntries(Map.entry(UInt64.valueOf(1), pubKey1), Map.entry(UInt64.valueOf(3), pubKey3));
@@ -182,8 +182,8 @@ public class DoppelgangerDetectorTest {
     asyncRunner.executeUntilDone();
     verify(statusLog).doppelgangerDetectionStart(Set.of(pubKey1.toAbbreviatedString()));
     verify(statusLog).doppelgangerDetectionStart(Set.of(pubKey2.toAbbreviatedString()));
-    verify(statusLog).doppelgangerCheck(0, Set.of(pubKey1.toAbbreviatedString()));
-    verify(statusLog).doppelgangerCheck(0, Set.of(pubKey2.toAbbreviatedString()));
+    verify(statusLog).doppelgangerCheck(UInt64.ZERO, Set.of(pubKey1.toAbbreviatedString()));
+    verify(statusLog).doppelgangerCheck(UInt64.ZERO, Set.of(pubKey2.toAbbreviatedString()));
     verify(statusLog)
         .doppelgangerDetectionEnd(Set.of(pubKey1.toAbbreviatedString()), new HashMap<>());
     verify(statusLog)
@@ -211,8 +211,8 @@ public class DoppelgangerDetectorTest {
     asyncRunner.executeQueuedActions();
     verify(statusLog).doppelgangerDetectionStart(Set.of(pubKey1.toAbbreviatedString()));
     verify(statusLog).doppelgangerDetectionStart(Set.of(pubKey3.toAbbreviatedString()));
-    verify(statusLog).doppelgangerCheck(0, Set.of(pubKey1.toAbbreviatedString()));
-    verify(statusLog).doppelgangerCheck(0, Set.of(pubKey3.toAbbreviatedString()));
+    verify(statusLog).doppelgangerCheck(UInt64.ZERO, Set.of(pubKey1.toAbbreviatedString()));
+    verify(statusLog).doppelgangerCheck(UInt64.ZERO, Set.of(pubKey3.toAbbreviatedString()));
     logCaptor.assertMessagesInOrder(Level.FATAL, doppelgangerDetectedLog, doppelgangerDetectedLog);
     Map<UInt64, BLSPublicKey> firstlyDetectedDoppelgangers =
         Map.ofEntries(Map.entry(UInt64.valueOf(1), pubKey1));
@@ -310,7 +310,7 @@ public class DoppelgangerDetectorTest {
     asyncRunner.executeQueuedActions();
     Set<String> pubKeysStrings = toAbbreviatedKeys(pubKeys).collect(Collectors.toSet());
     verify(statusLog).doppelgangerDetectionStart(pubKeysStrings);
-    verify(statusLog).doppelgangerCheck(0, pubKeysStrings);
+    verify(statusLog).doppelgangerCheck(UInt64.ZERO, pubKeysStrings);
     Optional<String> errorLog =
         logCaptor.getErrorLogs().stream()
             .filter(s -> s.contains("Unable to get validators indices"))
@@ -337,7 +337,7 @@ public class DoppelgangerDetectorTest {
     asyncRunner.executeQueuedActions();
     Set<String> pubKeysStrings = toAbbreviatedKeys(pubKeys).collect(Collectors.toSet());
     verify(statusLog).doppelgangerDetectionStart(pubKeysStrings);
-    verify(statusLog).doppelgangerCheck(0, pubKeysStrings);
+    verify(statusLog).doppelgangerCheck(UInt64.ZERO, pubKeysStrings);
     Optional<String> errorLog =
         logCaptor.getErrorLogs().stream()
             .filter(s -> s.contains("Unable to get validators liveness"))
@@ -363,7 +363,7 @@ public class DoppelgangerDetectorTest {
     asyncRunner.executeQueuedActions();
     Set<String> pubKeysStrings = toAbbreviatedKeys(pubKeys).collect(Collectors.toSet());
     verify(statusLog).doppelgangerDetectionStart(pubKeysStrings);
-    verify(statusLog).doppelgangerCheck(0, pubKeysStrings);
+    verify(statusLog).doppelgangerCheck(UInt64.ZERO, pubKeysStrings);
     Optional<String> noIndicesLog =
         logCaptor.getInfoLogs().stream()
             .filter(s -> s.startsWith("Skipping validators doppelgangers"))
@@ -396,7 +396,7 @@ public class DoppelgangerDetectorTest {
     asyncRunner.executeQueuedActions();
     Set<String> pubKeysStrings = toAbbreviatedKeys(pubKeys).collect(Collectors.toSet());
     verify(statusLog).doppelgangerDetectionStart(pubKeysStrings);
-    verify(statusLog).doppelgangerCheck(0, pubKeysStrings);
+    verify(statusLog).doppelgangerCheck(UInt64.ZERO, pubKeysStrings);
     final String noIndex =
         String.format(
             "Skipping doppelganger check for public keys %s. No associated indices found. Public keys are inactive",
@@ -445,7 +445,7 @@ public class DoppelgangerDetectorTest {
     asyncRunner.executeQueuedActions();
     Set<String> pubKeysStrings = toAbbreviatedKeys(pubKeys).collect(Collectors.toSet());
     verify(statusLog).doppelgangerDetectionStart(pubKeysStrings);
-    verify(statusLog, times(1)).doppelgangerCheck(currentEpoch.longValue(), pubKeysStrings);
+    verify(statusLog, times(1)).doppelgangerCheck(currentEpoch, pubKeysStrings);
     logCaptor.assertFatalLog(doppelgangerDetectedLog);
     Map<UInt64, BLSPublicKey> doppelgangers =
         Map.ofEntries(Map.entry(UInt64.valueOf(1), pubKey1), Map.entry(UInt64.valueOf(3), pubKey3));
@@ -491,9 +491,8 @@ public class DoppelgangerDetectorTest {
     asyncRunner.executeQueuedActions();
     Set<String> pubKeysStrings = toAbbreviatedKeys(pubKeys).collect(Collectors.toSet());
     verify(statusLog).doppelgangerDetectionStart(pubKeysStrings);
-    verify(statusLog, times(1))
-        .doppelgangerCheck(currentEpoch.minus(1).longValue(), pubKeysStrings);
-    verify(statusLog, times(1)).doppelgangerCheck(currentEpoch.longValue(), pubKeysStrings);
+    verify(statusLog, times(1)).doppelgangerCheck(currentEpoch.minus(1), pubKeysStrings);
+    verify(statusLog, times(1)).doppelgangerCheck(currentEpoch, pubKeysStrings);
     logCaptor.assertFatalLog(doppelgangerDetectedLog);
     Map<UInt64, BLSPublicKey> doppelgangers =
         Map.ofEntries(Map.entry(UInt64.valueOf(1), pubKey1), Map.entry(UInt64.valueOf(3), pubKey3));

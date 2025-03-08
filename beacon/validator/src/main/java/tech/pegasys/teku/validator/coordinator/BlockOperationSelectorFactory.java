@@ -57,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
@@ -146,7 +147,7 @@ public class BlockOperationSelectorFactory {
       final SszList<SignedVoluntaryExit> voluntaryExits =
           voluntaryExitPool.getItemsForBlock(
               blockSlotState,
-              exit -> !exitedValidators.contains(exit.getMessage().getValidatorIndex()),
+              exit -> voluntaryExitPredicate(blockSlotState, exitedValidators, exit),
               exit -> exitedValidators.add(exit.getMessage().getValidatorIndex()));
 
       bodyBuilder
@@ -202,6 +203,25 @@ public class BlockOperationSelectorFactory {
 
       return blockProductionComplete;
     };
+  }
+
+  private boolean voluntaryExitPredicate(
+      final BeaconState blockSlotState,
+      final Set<UInt64> exitedValidators,
+      final SignedVoluntaryExit exit) {
+    final UInt64 validatorIndex = exit.getMessage().getValidatorIndex();
+    if (exitedValidators.contains(validatorIndex)) {
+      return false;
+    }
+    // if there is  a pending withdrawal, the exit is not valid for inclusion in a block.
+    return blockSlotState
+        .toVersionElectra()
+        .map(
+            beaconStateElectra ->
+                beaconStateElectra.getPendingPartialWithdrawals().stream()
+                    .map(PendingPartialWithdrawal::getValidatorIndex)
+                    .noneMatch(index -> index == validatorIndex.intValue()))
+        .orElse(true);
   }
 
   private SafeFuture<Void> setExecutionData(

@@ -158,7 +158,7 @@ class EngineGetPayloadV4Test {
       final BlobsBundle blobsBundle,
       final List<Bytes> encodedExecutionRequests) {
     return SafeFuture.completedFuture(
-        new Response<>(
+        Response.fromPayloadReceivedAsJson(
             new GetPayloadV4Response(
                 ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload),
                 blockValue,
@@ -169,6 +169,6 @@ class EngineGetPayloadV4Test {
 
   private SafeFuture<Response<GetPayloadV4Response>> dummyFailedResponse(
       final String errorMessage) {
-    return SafeFuture.completedFuture(Response.withErrorMessage(errorMessage));
+    return SafeFuture.completedFuture(Response.fromErrorMessage(errorMessage));
   }
 }

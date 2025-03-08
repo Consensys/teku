@@ -33,6 +33,11 @@ public interface BeaconBlockBodyElectra extends BeaconBlockBodyDeneb {
   ExecutionRequests getExecutionRequests();
 
   @Override
+  default Optional<ExecutionRequests> getOptionalExecutionRequests() {
+    return Optional.of(getExecutionRequests());
+  }
+
+  @Override
   default Optional<BeaconBlockBodyElectra> toVersionElectra() {
     return Optional.of(this);
   }

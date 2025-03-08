@@ -1,10 +1,9 @@
 import com.github.jk1.license.filter.LicenseBundleNormalizer
+import groovy.json.JsonSlurper
 import tech.pegasys.internal.license.reporter.GroupedLicenseHtmlRenderer
 import tech.pegasys.teku.depcheck.DepCheckPlugin
 
 import java.text.SimpleDateFormat
-
-import groovy.json.JsonSlurper
 
 import static tech.pegasys.teku.repackage.Repackage.repackage
 
@@ -22,10 +21,10 @@ buildscript {
 }
 
 plugins {
-  id 'com.diffplug.spotless' version '6.25.0'
-  id 'com.github.ben-manes.versions' version '0.51.0'
+  id 'com.diffplug.spotless' version '7.0.2'
+  id 'com.github.ben-manes.versions' version '0.52.0'
   id 'com.github.jk1.dependency-license-report' version '2.9'
-  id 'io.spring.dependency-management' version '1.1.6'
+  id 'io.spring.dependency-management' version '1.1.7'
   id 'net.ltgt.errorprone' version '4.1.0' apply false
   id 'de.undercouch.download' version '5.6.0'
   id 'org.ajoberstar.grgit' version '5.3.0'
@@ -325,7 +324,7 @@ allprojects {
 }
 
 def nightly = System.getenv("NIGHTLY") != null
-def refTestVersion = nightly ? "nightly" : "v1.5.0-beta.0"
+def refTestVersion = nightly ? "nightly" : "v1.5.0-beta.1"
 def blsRefTestVersion = 'v0.1.2'
 def slashingProtectionInterchangeRefTestVersion = 'v5.3.0'
 def refTestBaseUrl = 'https://github.com/ethereum/consensus-spec-tests/releases/download'

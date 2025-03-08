@@ -3,14 +3,16 @@ dependencies {
 
     implementation project(':infrastructure:exceptions')
     implementation project(':infrastructure:io')
+    implementation project(':infrastructure:time')
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
-    implementation 'io.prometheus:simpleclient'
     implementation 'io.vertx:vertx-core'
     implementation 'io.vertx:vertx-web'
     implementation 'io.tmio:tuweni-units'
     implementation 'org.hdrhistogram:HdrHistogram'
     implementation 'org.hyperledger.besu.internal:metrics-core'
 
+    testFixturesApi 'com.google.guava:guava'
     testFixturesApi 'org.hyperledger.besu:plugin-api'
+    testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
 }

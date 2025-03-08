@@ -23,14 +23,25 @@ import java.util.stream.Collectors;
 import org.hyperledger.besu.metrics.ObservableMetricsSystem;
 import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class MetricsCountersByIntervalsTest {
   private static final TekuMetricCategory CATEGORY = TekuMetricCategory.BEACON;
-  private final ObservableMetricsSystem metricsSystem =
-      new PrometheusMetricsSystem(Set.of(CATEGORY), true);
-
   private static final String COUNTER_NAME = "metric_counter";
+
+  private ObservableMetricsSystem metricsSystem;
+
+  @BeforeEach
+  void setup() {
+    metricsSystem = new PrometheusMetricsSystem(Set.of(CATEGORY), true);
+  }
+
+  @AfterEach
+  void cleanup() {
+    metricsSystem.shutdown();
+  }
 
   @Test
   void shouldCountWithDefault() {
@@ -72,27 +83,27 @@ public class MetricsCountersByIntervalsTest {
     final Map<List<String>, Object> values =
         metricsSystem
             .streamObservations(CATEGORY)
-            .filter(ob -> ob.getMetricName().equals(COUNTER_NAME))
-            .filter(ob -> !ob.getLabels().contains("created"))
-            .collect(Collectors.toMap(Observation::getLabels, Observation::getValue));
+            .filter(ob -> ob.metricName().equals(COUNTER_NAME))
+            .filter(ob -> !ob.labels().contains("created"))
+            .collect(Collectors.toMap(Observation::labels, Observation::value));
 
     assertThat(values)
         .containsOnly(
             // fallback
-            entry(List.of("unknownLabelVal", "unknownLabelVal", "[0,∞)"), 100d),
+            entry(List.of("[0,∞)", "unknownLabelVal", "unknownLabelVal"), 100d),
 
             // first rule
-            entry(List.of("label1Val1", "label2UnknownVal", "[0,10)"), 9d),
-            entry(List.of("label1Val1", "label2UnknownVal", "[10,50)"), 40d),
-            entry(List.of("label1Val1", "label2UnknownVal", "[50,80)"), 30d),
-            entry(List.of("label1Val1", "label2UnknownVal", "[80,∞)"), 21d),
+            entry(List.of("[0,10)", "label1Val1", "label2UnknownVal"), 9d),
+            entry(List.of("[10,50)", "label1Val1", "label2UnknownVal"), 40d),
+            entry(List.of("[50,80)", "label1Val1", "label2UnknownVal"), 30d),
+            entry(List.of("[80,∞)", "label1Val1", "label2UnknownVal"), 21d),
             // second rule
-            entry(List.of("label1Val2", "label2UnknownVal", "[0,50)"), 49d),
-            entry(List.of("label1Val2", "label2UnknownVal", "[50,∞)"), 51d),
+            entry(List.of("[0,50)", "label1Val2", "label2UnknownVal"), 49d),
+            entry(List.of("[50,∞)", "label1Val2", "label2UnknownVal"), 51d),
 
             // third rule
-            entry(List.of("label1Val2", "label2Val", "[0,80)"), 79d),
-            entry(List.of("label1Val2", "label2Val", "[80,∞)"), 21d));
+            entry(List.of("[0,80)", "label1Val2", "label2Val"), 79d),
+            entry(List.of("[80,∞)", "label1Val2", "label2Val"), 21d));
   }
 
   @Test
@@ -117,11 +128,11 @@ public class MetricsCountersByIntervalsTest {
     final Map<List<String>, Object> values =
         metricsSystem
             .streamObservations(CATEGORY)
-            .filter(ob -> ob.getMetricName().equals(COUNTER_NAME))
-            .filter(ob -> !ob.getLabels().contains("created"))
-            .collect(Collectors.toMap(Observation::getLabels, Observation::getValue));
+            .filter(ob -> ob.metricName().equals(COUNTER_NAME))
+            .filter(ob -> !ob.labels().contains("created"))
+            .collect(Collectors.toMap(Observation::labels, Observation::value));
 
-    assertThat(values).containsOnly(entry(List.of("label1Val1", "label2UnknownVal", "[0,∞)"), 1d));
+    assertThat(values).containsOnly(entry(List.of("[0,∞)", "label1Val1", "label2UnknownVal"), 1d));
   }
 
   @Test
@@ -142,10 +153,10 @@ public class MetricsCountersByIntervalsTest {
     final Map<List<String>, Object> values =
         metricsSystem
             .streamObservations(CATEGORY)
-            .filter(ob -> ob.getMetricName().equals(COUNTER_NAME))
-            .filter(ob -> !ob.getLabels().contains("created"))
-            .collect(Collectors.toMap(Observation::getLabels, Observation::getValue));
+            .filter(ob -> ob.metricName().equals(COUNTER_NAME))
+            .filter(ob -> !ob.labels().contains("created"))
+            .collect(Collectors.toMap(Observation::labels, Observation::value));
 
-    assertThat(values).containsOnly(entry(List.of("a", "b", "[0,∞)"), 0d));
+    assertThat(values).containsOnly(entry(List.of("[0,∞)", "a", "b"), 0d));
   }
 }

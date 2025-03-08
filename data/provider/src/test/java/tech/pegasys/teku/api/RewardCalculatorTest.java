@@ -209,7 +209,9 @@ public class RewardCalculatorTest {
   @Test
   void calculateSyncCommitteeRewards_shouldNotChangeValuesWhenAggregateEmpty() {
     final SyncCommitteeRewardData data = mock(SyncCommitteeRewardData.class);
-    assertThat(calculator.calculateSyncCommitteeRewards(Map.of(1, 1), 1L, Optional.empty(), data))
+    assertThat(
+            calculator.calculateSyncCommitteeRewards(
+                Map.of(1, 1), UInt64.ONE, Optional.empty(), data))
         .isEqualTo(data);
     verifyNoMoreInteractions(data);
   }
@@ -222,7 +224,7 @@ public class RewardCalculatorTest {
     final SyncAggregate aggregate = data.randomSyncAggregate(1);
     assertThat(
             calculator.calculateSyncCommitteeRewards(
-                Map.of(1, 1, 2, 2), 1L, Optional.of(aggregate), rewardData))
+                Map.of(1, 1, 2, 2), UInt64.ONE, Optional.of(aggregate), rewardData))
         .isEqualTo(rewardData);
   }
 

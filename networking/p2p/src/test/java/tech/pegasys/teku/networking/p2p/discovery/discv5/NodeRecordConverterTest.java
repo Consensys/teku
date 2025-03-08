@@ -346,8 +346,8 @@ class NodeRecordConverterTest {
   }
 
   @ParameterizedTest
-  @MethodSource("getCscFixtures")
-  public void shouldDecodeCscCorrectly(final String hexString, final Integer csc) {
+  @MethodSource("getCgcFixtures")
+  public void shouldDecodeCgcCorrectly(final String hexString, final Integer csc) {
     assertThat(
             convertNodeRecordWithFields(
                 false,
@@ -378,7 +378,7 @@ class NodeRecordConverterTest {
     return NodeRecordFactory.DEFAULT.createFromValues(UInt64.ZERO, fieldList);
   }
 
-  private static Stream<Arguments> getCscFixtures() {
+  private static Stream<Arguments> getCgcFixtures() {
     return Stream.of(
         Arguments.of("0x00", 0),
         Arguments.of("0x", 0),

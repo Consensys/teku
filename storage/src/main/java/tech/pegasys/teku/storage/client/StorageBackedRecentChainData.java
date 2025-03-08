@@ -173,7 +173,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
     return storeFuture.thenApply(
         maybeData -> {
           if (maybeData.isEmpty()) {
-            STATUS_LOG.finishInitializingChainData();
+            STATUS_LOG.emptyChainData();
             return this;
           }
 

@@ -96,7 +96,7 @@ public class BlockImporterTest {
       mock(WeakSubjectivityValidator.class);
   private final ForkChoiceNotifier forkChoiceNotifier = new NoopForkChoiceNotifier();
   private final MergeTransitionBlockValidator transitionBlockValidator =
-      new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
+      new MergeTransitionBlockValidator(spec, recentChainData);
 
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
   private final ForkChoice forkChoice =

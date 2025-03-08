@@ -89,7 +89,7 @@ public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
       final BesuNode executionEngine, final int genesisTime) throws Exception {
     return TekuNodeConfigBuilder.createBeaconNode()
         .withBellatrixEpoch(UInt64.ZERO)
-        .withTotalTerminalDifficulty(10001)
+        .withTerminalBlockHash(DEFAULT_EL_GENESIS_HASH, 1)
         .withGenesisTime(genesisTime)
         .withRealNetwork()
         .withStartupTargetPeerCount(0)

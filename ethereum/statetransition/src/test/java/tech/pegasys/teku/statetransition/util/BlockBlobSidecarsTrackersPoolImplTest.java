@@ -42,6 +42,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.ObservableMetricsSystem;
 import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
@@ -80,6 +81,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final ExecutionLayerChannel executionLayer = mock(ExecutionLayerChannel.class);
+  BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPool;
 
   @SuppressWarnings("unchecked")
   private final Function<BlobSidecar, SafeFuture<Void>> blobSidecarPublisher = mock(Function.class);
@@ -89,24 +91,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
   private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
   private final int maxItems = 15;
-  private final BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPool =
-      new PoolFactory(metricsSystem)
-          .createPoolForBlockBlobSidecarsTrackers(
-              blockImportChannel,
-              spec,
-              timeProvider,
-              asyncRunner,
-              recentChainData,
-              executionLayer,
-              () -> blobSidecarGossipValidator,
-              blobSidecarPublisher,
-              historicalTolerance,
-              futureTolerance,
-              maxItems,
-              this::trackerFactory,
-              false,
-              KZG.NOOP,
-              __ -> {});
 
   private UInt64 currentSlot = historicalTolerance.times(2);
   private final List<Bytes32> requiredBlockRootEvents = new ArrayList<>();
@@ -120,6 +104,24 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
   @BeforeEach
   public void setup() {
+    blockBlobSidecarsTrackersPool =
+        new PoolFactory(metricsSystem)
+            .createPoolForBlockBlobSidecarsTrackers(
+                blockImportChannel,
+                spec,
+                timeProvider,
+                asyncRunner,
+                recentChainData,
+                executionLayer,
+                () -> blobSidecarGossipValidator,
+                blobSidecarPublisher,
+                historicalTolerance,
+                futureTolerance,
+                maxItems,
+                this::trackerFactory,
+                false,
+                KZG.NOOP,
+                __ -> {});
     // Set up slot
     blockBlobSidecarsTrackersPool.subscribeRequiredBlockRoot(requiredBlockRootEvents::add);
     blockBlobSidecarsTrackersPool.subscribeRequiredBlockRootDropped(
@@ -132,6 +134,11 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
         .thenReturn(SafeFuture.completedFuture(List.of()));
     when(blobSidecarPublisher.apply(any())).thenReturn(SafeFuture.COMPLETE);
     setSlot(currentSlot);
+  }
+
+  @AfterEach
+  public void tearDown() {
+    metricsSystem.shutdown();
   }
 
   private void setSlot(final long slot) {
@@ -1302,7 +1309,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
   private void assertStats(final String type, final String subType, final double count) {
     assertThat(
-            getMetricsValues("block_blobs_trackers_pool_stats_total").get(List.of(type, subType)))
+            getMetricsValues("block_blobs_trackers_pool_stats_total").get(List.of(subType, type)))
         .isEqualTo(count);
   }
 
@@ -1325,8 +1332,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   private Map<List<String>, Object> getMetricsValues(final String metricName) {
     return metricsSystem
         .streamObservations(TekuMetricCategory.BEACON)
-        .filter(ob -> ob.getMetricName().equals(metricName))
-        .collect(Collectors.toMap(Observation::getLabels, Observation::getValue));
+        .filter(ob -> ob.metricName().equals(metricName))
+        .collect(Collectors.toMap(Observation::labels, Observation::value));
   }
 
   private BlockBlobSidecarsTracker trackerFactory(final SlotAndBlockRoot slotAndBlockRoot) {

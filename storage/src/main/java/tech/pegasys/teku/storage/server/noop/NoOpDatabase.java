@@ -96,6 +96,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Optional<Bytes32> getLatestCanonicalBlockRoot() {
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
     return Optional.empty();
   }
@@ -255,6 +260,11 @@ public class NoOpDatabase implements Database {
 
   @Override
   public Map<String, Long> getColumnCounts(final Optional<String> maybeColumnFilter) {
+    return new HashMap<>();
+  }
+
+  @Override
+  public Map<String, Optional<String>> getVariables() {
     return new HashMap<>();
   }
 

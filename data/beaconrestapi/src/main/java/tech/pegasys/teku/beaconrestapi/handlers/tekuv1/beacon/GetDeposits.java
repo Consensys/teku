@@ -57,6 +57,7 @@ public class GetDeposits extends RestApiEndpoint {
             .summary("Get deposits")
             .description("Get all deposits currently held for inclusion in future blocks.")
             .tags(TAG_TEKU)
+            .deprecated(true)
             .response(SC_OK, "Request successful", DEPOSITS_RESPONSE_TYPE)
             .build());
     this.eth1DataProvider = eth1DataProvider;

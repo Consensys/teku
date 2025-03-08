@@ -135,13 +135,13 @@ class EngineGetPayloadV2Test {
   private SafeFuture<Response<GetPayloadV2Response>> dummySuccessfulResponse(
       final ExecutionPayload executionPayload, final UInt256 blockValue) {
     return SafeFuture.completedFuture(
-        new Response<>(
+        Response.fromPayloadReceivedAsJson(
             new GetPayloadV2Response(
                 ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload), blockValue)));
   }
 
   private SafeFuture<Response<GetPayloadV2Response>> dummyFailedResponse(
       final String errorMessage) {
-    return SafeFuture.completedFuture(Response.withErrorMessage(errorMessage));
+    return SafeFuture.completedFuture(Response.fromErrorMessage(errorMessage));
   }
 }

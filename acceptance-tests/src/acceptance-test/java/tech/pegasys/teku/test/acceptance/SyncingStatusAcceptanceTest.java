@@ -35,14 +35,13 @@ public class SyncingStatusAcceptanceTest extends AcceptanceTestBase {
         createBesuNode(
             config ->
                 config
-                    .withMiningEnabled(true)
                     .withMergeSupport()
                     .withGenesisFile("besu/preMergeGenesis.json")
                     .withJwtTokenAuthorization(JWT_FILE));
     eth1Node.start();
 
     final ValidatorKeystores validatorKeystores =
-        createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 8);
+        createTekuDepositSender(networkName).generateValidatorKeys(8);
 
     final GenesisGenerator.InitialStateData genesis =
         createGenesisGenerator().network(networkName).validatorKeys(validatorKeystores).generate();
@@ -55,7 +54,7 @@ public class SyncingStatusAcceptanceTest extends AcceptanceTestBase {
                 .withNetwork(networkName)
                 .withDepositsFrom(eth1Node)
                 .withBellatrixEpoch(UInt64.ONE)
-                .withTotalTerminalDifficulty(10001)
+                .withTerminalBlockHash(DEFAULT_EL_GENESIS_HASH, 0)
                 .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
                 .withExecutionEngine(eth1Node)
                 .withInitialState(genesis)

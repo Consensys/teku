@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -56,6 +58,11 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   /** The valid attestation retention period is 64 slots in deneb */
   static final long ATTESTATION_RETENTION_SLOTS = 64;
+
+  static final Comparator<Attestation> ATTESTATION_INCLUSION_COMPARATOR =
+      Comparator.<Attestation>comparingInt(
+              attestation -> attestation.getAggregationBits().getBitCount())
+          .reversed();
 
   /**
    * Default maximum number of attestations to store in the pool.
@@ -143,7 +150,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     // if an attestation has committee bits, committees size should have been computed. If this is
     // not the case, we should ignore this attestation and not add it to the pool
     if (attestation.requiresCommitteeBits() && committeesSize.isEmpty()) {
-      LOG.warn(
+      LOG.debug(
           "Committees size couldn't be retrieved for attestation at slot {}, block root {} and target root {}. Will NOT add this attestation to the pool.",
           attestationData.getSlot(),
           attestationData.getBeaconBlockRoot(),
@@ -238,22 +245,20 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         schemaDefinitions.getAttestationSchema().requiresCommitteeBits();
 
     final AtomicInteger prevEpochCount = new AtomicInteger(0);
+
     return dataHashBySlot
         // We can immediately skip any attestations from the block slot or later
         .headMap(stateAtBlockSlot.getSlot(), false)
         .descendingMap()
         .values()
         .stream()
-        .flatMap(Collection::stream)
-        .map(attestationGroupByDataHash::get)
-        .filter(Objects::nonNull)
-        .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
-        .filter(forkChecker::areAttestationsFromCorrectFork)
-        .flatMap(MatchingDataAttestationGroup::stream)
-        .map(ValidatableAttestation::getAttestation)
-        .filter(
-            attestation ->
-                attestation.requiresCommitteeBits() == blockRequiresAttestationsWithCommitteeBits)
+        .flatMap(
+            dataHashSetForSlot ->
+                streamAggregatesForDataHashesBySlot(
+                    dataHashSetForSlot,
+                    stateAtBlockSlot,
+                    forkChecker,
+                    blockRequiresAttestationsWithCommitteeBits))
         .limit(attestationsSchema.getMaxLength())
         .filter(
             attestation -> {
@@ -265,6 +270,25 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
               return true;
             })
         .collect(attestationsSchema.collector());
+  }
+
+  private Stream<Attestation> streamAggregatesForDataHashesBySlot(
+      final Set<Bytes> dataHashSetForSlot,
+      final BeaconState stateAtBlockSlot,
+      final AttestationForkChecker forkChecker,
+      final boolean blockRequiresAttestationsWithCommitteeBits) {
+
+    return dataHashSetForSlot.stream()
+        .map(attestationGroupByDataHash::get)
+        .filter(Objects::nonNull)
+        .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
+        .filter(forkChecker::areAttestationsFromCorrectFork)
+        .flatMap(MatchingDataAttestationGroup::stream)
+        .map(ValidatableAttestation::getAttestation)
+        .filter(
+            attestation ->
+                attestation.requiresCommitteeBits() == blockRequiresAttestationsWithCommitteeBits)
+        .sorted(ATTESTATION_INCLUSION_COMPARATOR);
   }
 
   public synchronized List<Attestation> getAttestations(

@@ -14,18 +14,15 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
-import static tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor.TD_MIN_SAMPLES;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
@@ -37,6 +34,7 @@ import org.mockito.Mockito;
 import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -115,13 +113,7 @@ public class TerminalPowBlockMonitorTest {
 
     terminalPowBlockMonitor =
         new TerminalPowBlockMonitor(
-            executionLayer,
-            spec,
-            recentChainData,
-            forkChoiceNotifier,
-            asyncRunner,
-            eventLogger,
-            timeProvider);
+            executionLayer, spec, recentChainData, forkChoiceNotifier, asyncRunner, eventLogger);
 
     terminalPowBlockMonitor.onNodeSyncStateChanged(true);
   }
@@ -145,196 +137,19 @@ public class TerminalPowBlockMonitorTest {
   }
 
   @Test
-  void shouldNotFailWhenCurrentSlotInBellatrixMilestoneButHeadStateIsFromEarlierMilestone() {
+  public void shouldThrowIfTTDOnlyConfigured() {
     setUpTTDConfig();
 
-    // Current epoch is in bellatrix, but state is still genesis from phase0.
-    storageSystem
-        .chainUpdater()
-        .setCurrentSlot(spec.computeStartSlotAtEpoch(BELLATRIX_FORK_EPOCH).plus(1));
-
-    // Terminal block has been reached
-    final Bytes32 headBlockHash = dataStructureUtil.randomBytes32();
-    final Bytes32 headBlockParentHash = dataStructureUtil.randomBytes32();
-    when(executionLayer.eth1GetPowChainHead())
-        .thenReturn(
-            completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD, TIME_IN_PAST)));
-    when(executionLayer.eth1GetPowBlock(headBlockParentHash))
-        .thenReturn(
-            completedFuture(
-                Optional.of(
-                    new PowBlock(
-                        headBlockParentHash,
-                        dataStructureUtil.randomBytes32(),
-                        TTD.subtract(10),
-                        TIME_IN_PAST))));
-
-    terminalPowBlockMonitor.start();
-
-    asyncRunner.executeQueuedActions();
-    verify(forkChoiceNotifier).onTerminalBlockReached(headBlockHash);
-  }
-
-  @Test
-  public void shouldPerformTerminalBlockDetectionByTTD() {
-    Bytes32 headBlockHash;
-    Bytes32 headBlockParentHash;
-
-    setUpTTDConfig();
-
-    terminalPowBlockMonitor.start();
-
-    // NOT YET BELLATRIX FORK - should not notify
-    goToSlot(UInt64.ONE);
-
-    assertThat(terminalPowBlockMonitor.isRunning()).isTrue();
-    assertThat(asyncRunner.hasDelayedActions()).isTrue();
-
-    asyncRunner.executeQueuedActions();
-
-    verify(executionLayer, times(0)).eth1GetPowChainHead();
-    verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
-
-    // AT BELLATRIX FORK, TTD not reached - should not send
-    headBlockHash = dataStructureUtil.randomBytes32();
-
-    goToSlot(BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
-
-    when(executionLayer.eth1GetPowChainHead())
-        .thenReturn(
-            completedFuture(
-                new PowBlock(
-                    headBlockHash,
-                    dataStructureUtil.randomBytes32(),
-                    TTD.subtract(10),
-                    TIME_IN_PAST)));
-
-    asyncRunner.executeQueuedActions();
-
-    verify(executionLayer, times(1)).eth1GetPowChainHead();
-    verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
-
-    // AT BELLATRIX FORK, TTD reached - should notify
-    headBlockHash = dataStructureUtil.randomBytes32();
-    headBlockParentHash = dataStructureUtil.randomBytes32();
-    when(executionLayer.eth1GetPowChainHead())
-        .thenReturn(
-            completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD, TIME_IN_PAST)));
-    when(executionLayer.eth1GetPowBlock(headBlockParentHash))
-        .thenReturn(
-            completedFuture(
-                Optional.of(
-                    new PowBlock(
-                        headBlockParentHash,
-                        dataStructureUtil.randomBytes32(),
-                        TTD.subtract(10),
-                        TIME_IN_PAST))));
-
-    asyncRunner.executeQueuedActions();
-
-    verify(eventLogger).terminalPowBlockDetected(headBlockHash);
-    verify(executionLayer, times(1)).eth1GetPowBlock(headBlockParentHash);
-    verify(executionLayer, times(2)).eth1GetPowChainHead();
-    verify(forkChoiceNotifier, times(1)).onTerminalBlockReached(headBlockHash);
-
-    // Terminal Block - should not notify
-    asyncRunner.executeQueuedActions();
-
-    verify(executionLayer, times(3)).eth1GetPowChainHead();
+    assertThatThrownBy(() -> terminalPowBlockMonitor.start())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining(
+            "Bellatrix transition by terminal total difficulty is no more supported");
     verifyNoMoreInteractions(executionLayer);
-
-    // new different Terminal Block with wrong parent TTD - should not notify
-    headBlockHash = dataStructureUtil.randomBytes32();
-    headBlockParentHash = dataStructureUtil.randomBytes32();
-    when(executionLayer.eth1GetPowChainHead())
-        .thenReturn(
-            completedFuture(
-                new PowBlock(headBlockHash, headBlockParentHash, TTD.add(10), TIME_IN_PAST)));
-    when(executionLayer.eth1GetPowBlock(headBlockParentHash))
-        .thenReturn(
-            completedFuture(
-                Optional.of(
-                    new PowBlock(
-                        headBlockParentHash,
-                        dataStructureUtil.randomBytes32(),
-                        TTD,
-                        TIME_IN_PAST))));
-
-    asyncRunner.executeQueuedActions();
-
-    verify(executionLayer, times(1)).eth1GetPowBlock(headBlockParentHash);
-    verify(executionLayer, times(4)).eth1GetPowChainHead();
-    verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(headBlockHash);
-
-    // new different Terminal Block with correct parent TTD - should notify
-    headBlockHash = dataStructureUtil.randomBytes32();
-    headBlockParentHash = dataStructureUtil.randomBytes32();
-    when(executionLayer.eth1GetPowChainHead())
-        .thenReturn(
-            completedFuture(
-                new PowBlock(headBlockHash, headBlockParentHash, TTD.add(10), TIME_IN_PAST)));
-    when(executionLayer.eth1GetPowBlock(headBlockParentHash))
-        .thenReturn(
-            completedFuture(
-                Optional.of(
-                    new PowBlock(
-                        headBlockParentHash,
-                        dataStructureUtil.randomBytes32(),
-                        TTD.subtract(10),
-                        TIME_IN_PAST))));
-
-    asyncRunner.executeQueuedActions();
-
-    verify(eventLogger).terminalPowBlockDetected(headBlockHash);
-    verify(executionLayer, times(1)).eth1GetPowBlock(headBlockParentHash);
-    verify(executionLayer, times(5)).eth1GetPowChainHead();
-    verify(forkChoiceNotifier, times(1)).onTerminalBlockReached(headBlockHash);
-
-    // MERGE Completed - should stop
-    doMerge(headBlockHash);
-
-    asyncRunner.executeQueuedActions();
-
-    assertThat(terminalPowBlockMonitor.isRunning()).isFalse();
-
-    // final check
-    verifyNoMoreInteractions(executionLayer);
-    verifyNoMoreInteractions(eventLogger);
-  }
-
-  @Test
-  public void shouldNotSelectTTDBlockWithTimestampInFuture() {
-    setUpTTDConfig();
-
-    terminalPowBlockMonitor.start();
-
-    // AT BELLATRIX FORK, TTD reached but block in future - should not notify
-    goToSlot(BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
-    Bytes32 headBlockHash = dataStructureUtil.randomBytes32();
-    Bytes32 headBlockParentHash = dataStructureUtil.randomBytes32();
-    final UInt64 timeInFuture = timeProvider.getTimeInSeconds().plus(1);
-    when(executionLayer.eth1GetPowChainHead())
-        .thenReturn(
-            completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD, timeInFuture)));
-    when(executionLayer.eth1GetPowBlock(headBlockParentHash))
-        .thenReturn(
-            completedFuture(
-                Optional.of(
-                    new PowBlock(
-                        headBlockParentHash,
-                        dataStructureUtil.randomBytes32(),
-                        TTD.subtract(10),
-                        TIME_IN_PAST))));
-
-    asyncRunner.executeQueuedActions();
-
-    verify(eventLogger, never()).terminalPowBlockDetected(headBlockHash);
-    verify(forkChoiceNotifier, never()).onTerminalBlockReached(headBlockHash);
   }
 
   @Test
   public void shouldHandleLatestPowBlockBeingNull() {
-    setUpTTDConfig();
+    setUpTerminalBlockHashConfig();
 
     terminalPowBlockMonitor.start();
     try (LogCaptor logCaptor = LogCaptor.forClass(TerminalPowBlockMonitor.class)) {
@@ -388,10 +203,7 @@ public class TerminalPowBlockMonitorTest {
             completedFuture(
                 Optional.of(
                     new PowBlock(
-                        TERMINAL_BLOCK_HASH,
-                        dataStructureUtil.randomBytes32(),
-                        UInt256.ONE,
-                        TIME_IN_PAST))));
+                        TERMINAL_BLOCK_HASH, dataStructureUtil.randomBytes32(), TIME_IN_PAST))));
 
     asyncRunner.executeQueuedActions();
 
@@ -424,7 +236,7 @@ public class TerminalPowBlockMonitorTest {
 
   @Test
   void shouldNotPerformCheckIfSyncing() {
-    setUpTTDConfig();
+    setUpTerminalBlockHashConfig();
 
     terminalPowBlockMonitor.start();
 
@@ -435,62 +247,5 @@ public class TerminalPowBlockMonitorTest {
     asyncRunner.executeQueuedActions();
 
     verifyNoMoreInteractions(executionLayer);
-  }
-
-  @Test
-  void shouldCalculateTtdEta() {
-
-    setUpTTDConfig();
-
-    final UInt256 tdDiff = TTD.divide(TD_MIN_SAMPLES * 2);
-
-    terminalPowBlockMonitor.start();
-
-    goToSlot(BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
-
-    UInt256 lastTD = UInt256.ZERO;
-    UInt64 lastTime = UInt64.ZERO;
-
-    for (int cnt = TD_MIN_SAMPLES; cnt > 0; cnt--) {
-      lastTD = lastTD.plus(tdDiff);
-      lastTime = timeProvider.getTimeInSeconds();
-      pollTtd(lastTD, lastTime);
-      timeProvider.advanceTimeBySeconds(spec.getGenesisSpecConfig().getSecondsPerEth1Block());
-    }
-
-    final long eta = (long) spec.getGenesisSpecConfig().getSecondsPerEth1Block() * TD_MIN_SAMPLES;
-    final Duration expectedETA = Duration.ofSeconds(eta);
-    final Instant expectedInstant = Instant.ofEpochSecond(eta + lastTime.longValue());
-
-    verify(eventLogger).terminalPowBlockTtdEta(lastTD, expectedETA, expectedInstant);
-
-    // check that if current time goes beyond the ETA we get an event with NOW values
-    timeProvider.advanceTimeBySeconds(eta + 100);
-
-    pollTtd(lastTD, lastTime);
-    pollTtd(lastTD, lastTime);
-    pollTtd(lastTD, lastTime);
-    pollTtd(lastTD, lastTime);
-    pollTtd(lastTD, lastTime);
-
-    verify(eventLogger)
-        .terminalPowBlockTtdEta(
-            lastTD,
-            Duration.ZERO,
-            Instant.ofEpochSecond(timeProvider.getTimeInSeconds().longValue()));
-
-    verifyNoMoreInteractions(eventLogger);
-  }
-
-  private void pollTtd(final UInt256 ttd, final UInt64 time) {
-    when(executionLayer.eth1GetPowChainHead())
-        .thenReturn(
-            completedFuture(
-                new PowBlock(
-                    dataStructureUtil.randomBytes32(),
-                    dataStructureUtil.randomBytes32(),
-                    ttd,
-                    time)));
-    asyncRunner.executeQueuedActions();
   }
 }

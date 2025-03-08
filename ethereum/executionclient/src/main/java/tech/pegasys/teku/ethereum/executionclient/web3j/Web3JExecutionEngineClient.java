@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
@@ -67,7 +66,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         .doRequest(
             web3JClient.getEth1Web3j().ethGetBlockByHash(blockHash.toHexString(), false),
             EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT)
-        .thenApply(Response::getPayload)
+        .thenApply(Response::payload)
         .thenApply(Web3JExecutionEngineClient::eth1BlockToPowBlock);
   }
 
@@ -77,7 +76,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         .doRequest(
             web3JClient.getEth1Web3j().ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false),
             EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT)
-        .thenApply(Response::getPayload)
+        .thenApply(Response::payload)
         .thenApply(Web3JExecutionEngineClient::eth1BlockToPowBlock);
   }
 
@@ -87,7 +86,6 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         : new PowBlock(
             Bytes32.fromHexStringStrict(eth1Block.getHash()),
             Bytes32.fromHexStringStrict(eth1Block.getParentHash()),
-            UInt256.valueOf(eth1Block.getTotalDifficulty()),
             UInt64.valueOf(eth1Block.getTimestamp()));
   }
 

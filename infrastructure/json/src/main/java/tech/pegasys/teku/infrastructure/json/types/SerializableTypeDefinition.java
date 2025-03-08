@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.json.types;
 import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 public interface SerializableTypeDefinition<T> extends OpenApiTypeDefinition {
   void serialize(T value, JsonGenerator gen) throws IOException;
@@ -35,5 +36,12 @@ public interface SerializableTypeDefinition<T> extends OpenApiTypeDefinition {
   static <T> SerializableTypeDefinition<List<T>> listOf(
       final SerializableTypeDefinition<T> itemType) {
     return new SerializableArrayTypeDefinition<>(itemType);
+  }
+
+  static <T> SerializableTypeDefinition<List<T>> listOf(
+      final SerializableTypeDefinition<T> itemType,
+      final Optional<Integer> minItems,
+      final Optional<Integer> maxItems) {
+    return new SerializableArrayTypeDefinition<>(itemType, Optional.empty(), minItems, maxItems);
   }
 }

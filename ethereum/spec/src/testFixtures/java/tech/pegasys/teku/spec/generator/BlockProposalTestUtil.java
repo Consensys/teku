@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -223,11 +224,14 @@ public class BlockProposalTestUtil {
                           blockBody);
 
               // Sign block and set block signature
-              BLSSignature blockSignature = signer.signBlock(block, state.getForkInfo()).join();
+              final BLSSignature blockSignature =
+                  signer.signBlock(block, state.getForkInfo()).join();
 
               final SignedBeaconBlock signedBlock =
                   SignedBeaconBlock.create(spec, block, blockSignature);
-              return new SignedBlockAndState(signedBlock, blockSlotState);
+              final BeaconState updatedState =
+                  state.updated(w -> w.setLatestBlockHeader(BeaconBlockHeader.fromBlock(block)));
+              return new SignedBlockAndState(signedBlock, updatedState);
             });
   }
 

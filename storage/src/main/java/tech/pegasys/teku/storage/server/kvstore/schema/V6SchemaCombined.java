@@ -81,6 +81,8 @@ public abstract class V6SchemaCombined implements SchemaCombined {
       KvStoreVariable.create(9, CHECKPOINT_SERIALIZER);
   private static final KvStoreVariable<DepositTreeSnapshot> FINALIZED_DEPOSIT_SNAPSHOT =
       KvStoreVariable.create(10, DEPOSIT_SNAPSHOT_SERIALIZER);
+  private static final KvStoreVariable<Bytes32> LATEST_CANONICAL_BLOCK_ROOT =
+      KvStoreVariable.create(11, BYTES32_SERIALIZER);
 
   private final KvStoreVariable<UInt64> optimisticTransitionBlockSlot;
   private final KvStoreVariable<UInt64> earliestBlobSidecarSlot;
@@ -199,6 +201,11 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   }
 
   @Override
+  public KvStoreVariable<Bytes32> getVariableLatestCanonicalBlockRoot() {
+    return LATEST_CANONICAL_BLOCK_ROOT;
+  }
+
+  @Override
   public KvStoreVariable<UInt64> getVariableEarliestBlockSlot() {
     return earliestBlockSlot;
   }
@@ -249,6 +256,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
         .put("FINALIZED_DEPOSIT_SNAPSHOT", getVariableFinalizedDepositSnapshot())
         .put("EARLIEST_BLOB_SIDECAR_SLOT", getVariableEarliestBlobSidecarSlot())
         .put("EARLIEST_BLOCK_SLOT_AVAILABLE", getVariableEarliestBlockSlot())
+        .put("LATEST_CANONICAL_BLOCK_ROOT", getVariableLatestCanonicalBlockRoot())
         .put("FIRST_CUSTODY_INCOMPLETE_SLOT", getVariableFirstCustodyIncompleteSlot())
         .put("FIRST_SAMPLER_INCOMPLETE_SLOT", getVariableFirstSamplerIncompleteSlot())
         .build();

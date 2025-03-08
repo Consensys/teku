@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static tech.pegasys.teku.spec.SpecMilestone.FULU;
+import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -113,8 +113,8 @@ class SpecConfigBuilderTest {
   public void shouldCreateSpecExposingNonActiveConfig() {
     // we will need to update this when we schedule ELECTRA on mainnet
     final Spec spec = getSpec(__ -> {});
-    assertThat(spec.getForkSchedule().getHighestSupportedMilestone()).isNotEqualTo(FULU);
-    assertThat(spec.getSpecConfigAndParent().specConfig().getMilestone()).isEqualTo(FULU);
+    assertThat(spec.getForkSchedule().getHighestSupportedMilestone()).isNotEqualTo(ELECTRA);
+    assertThat(spec.getSpecConfigAndParent().specConfig().getMilestone()).isEqualTo(ELECTRA);
   }
 
   @Test
