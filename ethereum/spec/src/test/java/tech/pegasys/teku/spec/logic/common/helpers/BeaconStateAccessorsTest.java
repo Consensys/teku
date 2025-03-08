@@ -23,7 +23,11 @@ import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -62,6 +66,31 @@ public class BeaconStateAccessorsTest {
         createBeaconState()
             .updated(state -> state.setSlot(GENESIS_SLOT.plus(2L * specConfig.getSlotsPerEpoch())));
     assertEquals(GENESIS_EPOCH.increment(), beaconStateAccessors.getPreviousEpoch(beaconState));
+  }
+
+  public static Stream<Arguments> validateStateForCommitteeQueryParams() {
+    return Stream.of(
+        Arguments.of(8, 15, false),
+        Arguments.of(21, 15, false),
+        Arguments.of(2, 15, false),
+        Arguments.of(7, 16, true));
+  }
+
+  @ParameterizedTest
+  @MethodSource("validateStateForCommitteeQueryParams")
+  void validateStateForCommitteeQuery(
+      final long stateSlot, final long querySlotLong, final boolean shouldThrow) {
+    final UInt64 slot = UInt64.valueOf(stateSlot);
+    final UInt64 querySlot = UInt64.valueOf(querySlotLong);
+    final BeaconState state = dataStructureUtil.randomBeaconState(slot);
+    if (shouldThrow) {
+      assertThatThrownBy(
+              () -> beaconStateAccessors.validateStateForCommitteeQuery(state, querySlot))
+          .isInstanceOf(StateTooOldException.class);
+    } else {
+      assertDoesNotThrow(
+          () -> beaconStateAccessors.validateStateForCommitteeQuery(state, querySlot));
+    }
   }
 
   @Test

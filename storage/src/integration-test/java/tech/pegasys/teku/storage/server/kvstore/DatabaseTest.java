@@ -248,6 +248,7 @@ public class DatabaseTest {
             Map.of(),
             false,
             Optional.empty(),
+            Optional.empty(),
             true));
     database.update(
         new StorageUpdate(
@@ -262,6 +263,7 @@ public class DatabaseTest {
             Map.of(),
             Map.of(),
             false,
+            Optional.empty(),
             Optional.empty(),
             true));
     // Will not be overridden from Database interface, only initial set
@@ -419,6 +421,7 @@ public class DatabaseTest {
             Map.of(),
             false,
             Optional.empty(),
+            Optional.empty(),
             true));
     database.update(
         new StorageUpdate(
@@ -433,6 +436,7 @@ public class DatabaseTest {
             Map.of(blobSidecar3_0.getBlockRoot(), blobSidecar3_0.getSlot()),
             Map.of(),
             false,
+            Optional.empty(),
             Optional.empty(),
             true));
 
@@ -1626,18 +1630,19 @@ public class DatabaseTest {
         StoreBuilder.create()
             .metricsSystem(new NoOpMetricsSystem())
             .specProvider(spec)
-            .time(data.getTime())
-            .anchor(data.getAnchor())
-            .genesisTime(data.getGenesisTime())
-            .latestFinalized(data.getLatestFinalized())
-            .finalizedOptimisticTransitionPayload(data.getFinalizedOptimisticTransitionPayload())
-            .justifiedCheckpoint(data.getJustifiedCheckpoint())
-            .bestJustifiedCheckpoint(data.getBestJustifiedCheckpoint())
-            .blockInformation(data.getBlockInformation())
-            .votes(data.getVotes())
+            .time(data.time())
+            .anchor(data.anchor())
+            .genesisTime(data.genesisTime())
+            .latestFinalized(data.latestFinalized())
+            .finalizedOptimisticTransitionPayload(data.finalizedOptimisticTransitionPayload())
+            .justifiedCheckpoint(data.justifiedCheckpoint())
+            .bestJustifiedCheckpoint(data.bestJustifiedCheckpoint())
+            .blockInformation(data.blockInformation())
+            .votes(data.votes())
             .asyncRunner(mock(AsyncRunner.class))
             .blockProvider(mock(BlockProvider.class))
             .stateProvider(mock(StateAndBlockSummaryProvider.class))
+            .latestCanonicalBlockRoot(Optional.empty())
             .build();
 
     assertThat(store.getTimeSeconds()).isEqualTo(genesisTime);
@@ -2299,6 +2304,23 @@ public class DatabaseTest {
         database.pruneFinalizedBlocks(UInt64.valueOf(7), 10, UInt64.valueOf(10));
     assertThat(lastPrunedSlot1).isEqualTo(UInt64.valueOf(7));
     assertThat(database.getEarliestAvailableBlockSlot()).isEqualTo(Optional.empty());
+  }
+
+  @TestTemplate
+  public void shouldPersistLatestCanonicalBlockRoot(final DatabaseContext context)
+      throws Exception {
+    initialize(context);
+
+    // it is initially empty
+    assertThat(database.getLatestCanonicalBlockRoot()).isEmpty();
+
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    final Bytes32 randomBlockRoot = dataStructureUtil.randomBytes32();
+    transaction.setLatestCanonicalBlockRoot(randomBlockRoot);
+
+    commit(transaction);
+
+    assertThat(database.getLatestCanonicalBlockRoot()).contains(randomBlockRoot);
   }
 
   private List<Map.Entry<Bytes32, UInt64>> getFinalizedStateRootsList() {

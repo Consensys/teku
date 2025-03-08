@@ -136,6 +136,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public Optional<Bytes32> getLatestCanonicalBlockRoot() {
+    return hotDao.getLatestCanonicalBlockRoot();
+  }
+
+  @Override
   @MustBeClosed
   public HotUpdater hotUpdater() {
     return hotDao.hotUpdater();
@@ -433,6 +438,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void setFinalizedCheckpoint(final Checkpoint checkpoint) {
       hotUpdater.setFinalizedCheckpoint(checkpoint);
+    }
+
+    @Override
+    public void setLatestCanonicalBlockRoot(final Bytes32 canonicalBlockRoot) {
+      hotUpdater.setLatestCanonicalBlockRoot(canonicalBlockRoot);
     }
 
     @Override
