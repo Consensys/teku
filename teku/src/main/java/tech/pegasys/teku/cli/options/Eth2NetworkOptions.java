@@ -61,6 +61,16 @@ public class Eth2NetworkOptions {
   private boolean ignoreWeakSubjectivityPeriodEnabled = false;
 
   @Option(
+      names = {"--Xis-checkpoint-override-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Allows override .",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean isCheckpointOverrideEnabled = false;
+
+  @Option(
       names = {"--genesis-state"},
       paramLabel = "<STRING>",
       description =
@@ -348,6 +358,7 @@ public class Eth2NetworkOptions {
     }
     builder
         .ignoreWeakSubjectivityPeriodEnabled(ignoreWeakSubjectivityPeriodEnabled)
+        .isCheckpointOverrideEnabled(isCheckpointOverrideEnabled)
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)
         .asyncP2pMaxThreads(asyncP2pMaxThreads)
         .asyncBeaconChainMaxThreads(asyncBeaconChainMaxThreads)

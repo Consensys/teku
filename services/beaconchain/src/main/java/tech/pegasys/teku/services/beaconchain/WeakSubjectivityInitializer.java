@@ -85,6 +85,9 @@ public class WeakSubjectivityInitializer {
       final Spec spec, final String stateResource, final String sanitizedResource)
       throws IOException {
     STATUS_LOG.loadingInitialStateResource(sanitizedResource);
+    final String finalizedStateResource =
+        stateResource.substring(0, stateResource.lastIndexOf("/") + 1) + "finalized";
+    final BeaconState finalizedState = ChainDataLoader.loadState(spec, finalizedStateResource);
     final BeaconState state = ChainDataLoader.loadState(spec, stateResource);
     if (state.getSlot().isGreaterThan(state.getLatestBlockHeader().getSlot())) {
       STATUS_LOG.warningUnexpectedInitialState(
@@ -92,7 +95,7 @@ public class WeakSubjectivityInitializer {
           state.getSlot(),
           state.getLatestBlockHeader().getSlot());
     }
-    final AnchorPoint anchor = AnchorPoint.fromInitialState(spec, state);
+    final AnchorPoint anchor = AnchorPoint.fromInitialState(spec, state, finalizedState);
     STATUS_LOG.loadedInitialStateResource(
         state.hashTreeRoot(),
         anchor.getRoot(),
@@ -182,7 +185,8 @@ public class WeakSubjectivityInitializer {
       final AnchorPoint initialAnchor,
       final UInt64 currentSlot,
       final Spec spec,
-      final Optional<WeakSubjectivityCalculator> maybeWsCalculator) {
+      final Optional<WeakSubjectivityCalculator> maybeWsCalculator,
+      final boolean isCheckPointOverrideEnabled) {
     final Fork expectedFork = spec.getForkSchedule().getFork(initialAnchor.getEpoch());
     final Fork loadedFork = initialAnchor.getState().getFork();
     if (!isSameForkInfo(expectedFork, loadedFork)) {
@@ -201,29 +205,30 @@ public class WeakSubjectivityInitializer {
       // Skip extra validations for genesis state
       return;
     }
+    if (!isCheckPointOverrideEnabled) {
+      final UInt64 slotsBetweenBlockAndEpochStart =
+          initialAnchor.getEpochStartSlot().minus(initialAnchor.getBlockSlot());
+      final UInt64 anchorEpoch = initialAnchor.getEpoch();
+      final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
 
-    final UInt64 slotsBetweenBlockAndEpochStart =
-        initialAnchor.getEpochStartSlot().minus(initialAnchor.getBlockSlot());
-    final UInt64 anchorEpoch = initialAnchor.getEpoch();
-    final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
+      if (initialAnchor.getBlockSlot().isGreaterThanOrEqualTo(currentSlot)) {
+        throw new IllegalStateException(
+            String.format(
+                "The provided initial state appears to be from a future slot (%s). Please check that the initial state corresponds to a finalized checkpoint on the target chain.",
+                initialAnchor.getBlockSlot()));
+      } else if (anchorEpoch.plus(2).isGreaterThan(currentEpoch)) {
+        throw new IllegalStateException(
+            "The provided initial state is too recent. Please check that the initial state corresponds to a finalized checkpoint.");
+      }
 
-    if (initialAnchor.getBlockSlot().isGreaterThanOrEqualTo(currentSlot)) {
-      throw new IllegalStateException(
-          String.format(
-              "The provided initial state appears to be from a future slot (%s). Please check that the initial state corresponds to a finalized checkpoint on the target chain.",
-              initialAnchor.getBlockSlot()));
-    } else if (anchorEpoch.plus(2).isGreaterThan(currentEpoch)) {
-      throw new IllegalStateException(
-          "The provided initial state is too recent. Please check that the initial state corresponds to a finalized checkpoint.");
-    }
-
-    if (slotsBetweenBlockAndEpochStart.isGreaterThan(UInt64.ZERO)) {
-      Level level = slotsBetweenBlockAndEpochStart.isGreaterThan(2) ? Level.WARN : Level.INFO;
-      STATUS_LOG.warnOnInitialStateWithSkippedSlots(
-          level,
-          initialAnchor.getSlot(),
-          initialAnchor.getEpoch(),
-          initialAnchor.getEpochStartSlot());
+      if (slotsBetweenBlockAndEpochStart.isGreaterThan(UInt64.ZERO)) {
+        Level level = slotsBetweenBlockAndEpochStart.isGreaterThan(2) ? Level.WARN : Level.INFO;
+        STATUS_LOG.warnOnInitialStateWithSkippedSlots(
+            level,
+            initialAnchor.getSlot(),
+            initialAnchor.getEpoch(),
+            initialAnchor.getEpochStartSlot());
+      }
     }
   }
 

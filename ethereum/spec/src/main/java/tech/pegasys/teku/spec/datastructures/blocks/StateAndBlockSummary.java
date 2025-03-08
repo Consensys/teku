@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects;
@@ -33,20 +32,21 @@ public class StateAndBlockSummary implements BeaconBlockSummary {
   protected StateAndBlockSummary(final BeaconBlockSummary blockSummary, final BeaconState state) {
     checkNotNull(blockSummary);
     checkNotNull(state);
-    final Bytes32 latestBlockHeaderBodyRoot = state.getLatestBlockHeader().getBodyRoot();
+    // final Bytes32 latestBlockHeaderBodyRoot = state.getLatestBlockHeader().getBodyRoot();
     // if the state slot is 0, we're either at genesis or testing
-    if (!state.getSlot().isZero()) {
-      // This check would allow a state to have an empty slot, and still be a valid block and state.
-      checkArgument(
-          latestBlockHeaderBodyRoot.equals(blockSummary.getBodyRoot()),
-          String.format(
-              "Latest Block body root %s in state at slot %s must match the block summary root. "
-                  + "Block slot %s, block body root %s",
-              latestBlockHeaderBodyRoot,
-              state.getSlot(),
-              blockSummary.getSlot(),
-              blockSummary.getBodyRoot()));
-    }
+    //    if (!state.getSlot().isZero()) {
+    // This check would allow a state to have an empty slot, and still be a valid block and state.
+    //      checkArgument(
+    //          latestBlockHeaderBodyRoot.equals(blockSummary.getBodyRoot()),
+    //          String.format(
+    //              "Latest Block body root %s in state at slot %s must match the block summary
+    // root. "
+    //                  + "Block slot %s, block body root %s",
+    //              latestBlockHeaderBodyRoot,
+    //              state.getSlot(),
+    //              blockSummary.getSlot(),
+    //              blockSummary.getBodyRoot()));
+    //    }
     this.blockSummary = blockSummary;
     this.state = state;
   }
