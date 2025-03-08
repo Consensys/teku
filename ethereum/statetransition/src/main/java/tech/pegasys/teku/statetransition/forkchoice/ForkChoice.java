@@ -323,6 +323,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private SafeFuture<Boolean> processHead(
       final Optional<UInt64> nodeSlot, final boolean isPreProposal) {
+    LOG.info("processHead {}", nodeSlot);
     final Checkpoint retrievedJustifiedCheckpoint =
         recentChainData.getStore().getJustifiedCheckpoint();
     return recentChainData
@@ -592,7 +593,20 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         blobSidecars,
         earliestBlobSidecarsSlot);
 
+    final boolean reorg;
+    if (recentChainData
+        .getBestBlockRoot()
+        .map(root -> !root.equals(block.getParentRoot()))
+        .orElse(false)) {
+      LOG.info("Reorg detected. Parent block root: {}", block.getParentRoot());
+      reorg = true;
+    } else {
+      LOG.info("not reorging {} with {}", recentChainData.getBestBlockRoot(), block.toLogString());
+      reorg = false;
+    }
+
     if (shouldApplyProposerBoost(block, transaction)) {
+      LOG.info("Applying proposer boost for block at slot {}", block.getSlot());
       transaction.setProposerBoostRoot(block.getRoot());
     }
 
@@ -624,6 +638,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
     updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
+
+    if (reorg) {
+      processHead(block.getSlot()).ifExceptionGetsHereRaiseABug();
+    }
+
     return result;
   }
 
@@ -631,6 +650,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private boolean shouldApplyProposerBoost(
       final SignedBeaconBlock block, final StoreTransaction transaction) {
     // get_current_slot(store) == block.slot
+
+    LOG.info(
+        "shouldApplyProposerBoost - current slot: {}, block slot: {}",
+        spec.getCurrentSlot(transaction),
+        block.getSlot());
     if (!spec.getCurrentSlot(transaction).equals(block.getSlot())) {
       return false;
     }
