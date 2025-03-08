@@ -25,6 +25,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -34,6 +37,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -44,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -167,14 +172,50 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     return Optional.of(attestationGroup);
   }
 
-  // We only have the committees size already available via attestations received in the gossip
-  // flow and have been successfully validated, so querying the state is required for other cases
   private Optional<Int2IntMap> getCommitteesSizeUsingTheState(
       final AttestationData attestationData) {
-    return recentChainData
-        .getStore()
-        .getBlockStateIfAvailable(attestationData.getTarget().getRoot())
-        .map(state -> spec.getBeaconCommitteesSize(state, attestationData.getSlot()));
+    // we can use the first state of the epoch to get committees for an attestation
+    final MiscHelpers miscHelpers = spec.atSlot(attestationData.getSlot()).miscHelpers();
+    final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(attestationData.getSlot());
+    final UInt64 attestationEpoch = miscHelpers.computeEpochAtSlot(attestationData.getSlot());
+
+    LOG.debug("currentEpoch {}, attestationEpoch {}", currentEpoch, attestationEpoch);
+    if (attestationEpoch.equals(currentEpoch)
+        || attestationEpoch.equals(currentEpoch.decrement())) {
+
+      final Optional<SafeFuture<BeaconState>> maybeFuture = recentChainData.getBestState();
+      if (maybeFuture.isEmpty()) {
+        return Optional.empty();
+      } else {
+        try {
+          final BeaconState state = maybeFuture.get().get(200, TimeUnit.MILLISECONDS);
+          return Optional.of(spec.getBeaconCommitteesSize(state, attestationData.getSlot()));
+        } catch (ExecutionException | TimeoutException | InterruptedException e) {
+          LOG.info(
+              "Couldn't retrieve state for committee calculation of slot {}",
+              attestationData.getSlot());
+          return Optional.empty();
+        }
+      }
+    }
+
+    // attestation is not from the current or previous epoch
+    LOG.debug("State at slot {} needed", miscHelpers.computeStartSlotAtEpoch(attestationEpoch));
+    final SafeFuture<Optional<BeaconState>> optionalFutureBeaconState =
+        recentChainData.retrieveStateInEffectAtSlot(
+            miscHelpers.computeStartSlotAtEpoch(attestationEpoch));
+    try {
+      final Optional<BeaconState> maybeState =
+          optionalFutureBeaconState.get(200, TimeUnit.MILLISECONDS);
+      return maybeState.map(
+          state -> spec.getBeaconCommitteesSize(state, attestationData.getSlot()));
+    } catch (ExecutionException | TimeoutException | InterruptedException e) {
+      LOG.info(
+          "Couldn't retrieve state in effect at slot {} for committee calculation of slot {}",
+          miscHelpers.computeStartSlotAtEpoch(attestationEpoch),
+          attestationData.getSlot());
+      return Optional.empty();
+    }
   }
 
   @Override
