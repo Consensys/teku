@@ -32,13 +32,12 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
-import org.hyperledger.besu.metrics.ObservableMetricsSystem;
-import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
@@ -65,8 +64,7 @@ public class BlockBlobSidecarsTrackersPoolImplFuluTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final UInt64 historicalTolerance = UInt64.valueOf(5);
   private final UInt64 futureTolerance = UInt64.valueOf(2);
-  private final ObservableMetricsSystem metricsSystem =
-      new PrometheusMetricsSystem(Set.of(TekuMetricCategory.BEACON), false);
+  private final MetricsSystem metricsSystem = new StubMetricsSystem();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
@@ -131,7 +129,7 @@ public class BlockBlobSidecarsTrackersPoolImplFuluTest {
   @Test
   public void onNewBlockNonSuperNode_shouldIgnoreFuluBlocks() {
     final BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPoolCustom =
-        new PoolFactory(metricsSystem)
+        new PoolFactory(new StubMetricsSystem())
             .createPoolForBlockBlobSidecarsTrackers(
                 blockImportChannel,
                 spec,
@@ -232,7 +230,7 @@ public class BlockBlobSidecarsTrackersPoolImplFuluTest {
           return tracker;
         };
     final BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPoolCustom =
-        new PoolFactory(metricsSystem)
+        new PoolFactory(new StubMetricsSystem())
             .createPoolForBlockBlobSidecarsTrackers(
                 blockImportChannel,
                 spec,
