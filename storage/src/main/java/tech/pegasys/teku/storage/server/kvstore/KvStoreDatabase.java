@@ -200,6 +200,11 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public Optional<Bytes32> getLatestCanonicalBlockRoot() {
+    return dao.getLatestCanonicalBlockRoot();
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
     return dao.getFinalizedBlockAtSlot(slot);
   }
@@ -750,6 +755,7 @@ public class KvStoreDatabase implements Database {
     final Checkpoint finalizedCheckpoint = dao.getFinalizedCheckpoint().orElseThrow();
     final Checkpoint bestJustifiedCheckpoint = dao.getBestJustifiedCheckpoint().orElseThrow();
     final BeaconState finalizedState = dao.getLatestFinalizedState().orElseThrow();
+    final Optional<Bytes32> latestCanonicalBlockRoot = dao.getLatestCanonicalBlockRoot();
 
     final Map<UInt64, VoteTracker> votes = dao.getVotes();
 
@@ -796,7 +802,8 @@ public class KvStoreDatabase implements Database {
             justifiedCheckpoint,
             bestJustifiedCheckpoint,
             blockInformation,
-            votes));
+            votes,
+            latestCanonicalBlockRoot));
   }
 
   @Override
@@ -1145,6 +1152,7 @@ public class KvStoreDatabase implements Database {
                 updater.deleteHotState(checkpoint.getRoot());
               });
 
+      update.getLatestCanonicalBlockRoot().ifPresent(updater::setLatestCanonicalBlockRoot);
       update.getJustifiedCheckpoint().ifPresent(updater::setJustifiedCheckpoint);
       update.getBestJustifiedCheckpoint().ifPresent(updater::setBestJustifiedCheckpoint);
       latestFinalizedStateUpdateStartTime = System.currentTimeMillis();

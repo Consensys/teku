@@ -280,9 +280,11 @@ class Store extends CacheableStore {
       final Checkpoint justifiedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
       final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
+      final Optional<Bytes32> initialCanonicalBlockRoot,
       final Map<UInt64, VoteTracker> votes,
       final StoreConfig config) {
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(time, genesisTime));
+
     final ForkChoiceStrategy forkChoiceStrategy =
         ForkChoiceStrategy.initialize(
             spec,
@@ -292,7 +294,8 @@ class Store extends CacheableStore {
                 initialCheckpoint,
                 currentEpoch,
                 justifiedCheckpoint,
-                finalizedAnchor));
+                finalizedAnchor,
+                getInitialCanonicalBlockRoot(config, initialCanonicalBlockRoot)));
     return create(
         asyncRunner,
         metricsSystem,
@@ -313,13 +316,27 @@ class Store extends CacheableStore {
         forkChoiceStrategy);
   }
 
+  private static Optional<Bytes32> getInitialCanonicalBlockRoot(
+      final StoreConfig config, final Optional<Bytes32> initialCanonicalBlockRoot) {
+    if (config.getInitialCanonicalBlockRoot().isPresent()) {
+      LOG.warn(
+          "Overriding initial canonical block root from database ({}) with value from configuration ({})",
+          initialCanonicalBlockRoot.map(Bytes32::toString).orElse("empty"),
+          config.getInitialCanonicalBlockRoot().get());
+      return config.getInitialCanonicalBlockRoot();
+    }
+    return initialCanonicalBlockRoot;
+  }
+
+  @SuppressWarnings("UnusedVariable")
   private static ProtoArray buildProtoArray(
       final Spec spec,
       final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
       final Optional<Checkpoint> initialCheckpoint,
       final UInt64 currentEpoch,
       final Checkpoint justifiedCheckpoint,
-      final AnchorPoint finalizedAnchor) {
+      final AnchorPoint finalizedAnchor,
+      final Optional<Bytes32> initialCanonicalBlockRoot) {
     final List<StoredBlockMetadata> blocks = new ArrayList<>(blockInfoByRoot.values());
     blocks.sort(Comparator.comparing(StoredBlockMetadata::getBlockSlot));
     final ProtoArray protoArray =
@@ -335,6 +352,7 @@ class Store extends CacheableStore {
         throw new IllegalStateException(
             "Incompatible database version detected. The data in this database is too old to be read by Teku. A re-sync will be required.");
       }
+
       protoArray.onBlock(
           block.getBlockSlot(),
           block.getBlockRoot(),
@@ -345,6 +363,9 @@ class Store extends CacheableStore {
           block.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
           spec.isBlockProcessorOptimistic(block.getBlockSlot()));
     }
+
+    initialCanonicalBlockRoot.ifPresent(protoArray::setInitialCanonicalBlockRoot);
+
     return protoArray;
   }
 
