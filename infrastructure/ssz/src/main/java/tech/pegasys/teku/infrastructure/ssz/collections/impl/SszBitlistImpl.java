@@ -112,6 +112,11 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
   }
 
   @Override
+  public SszBitlist withBit(final int i) {
+    return new SszBitlistImpl(getSchema(), value.withBit(i));
+  }
+
+  @Override
   public boolean getBit(final int i) {
     return value.getBit(i);
   }

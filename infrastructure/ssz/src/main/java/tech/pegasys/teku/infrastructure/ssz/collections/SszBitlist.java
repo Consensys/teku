@@ -50,6 +50,8 @@ public interface SszBitlist extends SszPrimitiveList<Boolean, SszBit>, SszBitSet
    */
   SszBitlist or(SszBitlist other);
 
+  SszBitlist withBit(int i);
+
   /** Returns individual bit value */
   boolean getBit(int i);
 

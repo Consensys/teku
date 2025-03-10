@@ -208,7 +208,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   public synchronized void onAttestationsIncludedInBlock(
       final UInt64 slot, final Iterable<Attestation> attestations) {
+    final long startMs = System.currentTimeMillis();
     attestations.forEach(attestation -> onAttestationIncludedInBlock(slot, attestation));
+    LOG.info("onAttestationsIncludedInBlock in {} ms", System.currentTimeMillis() - startMs);
   }
 
   private void onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
@@ -255,6 +257,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .flatMap(
             dataHashSetForSlot ->
                 streamAggregatesForDataHashesBySlot(
+                    stateAtBlockSlot.getSlot(),
                     dataHashSetForSlot,
                     stateAtBlockSlot,
                     forkChecker,
@@ -273,6 +276,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   private Stream<Attestation> streamAggregatesForDataHashesBySlot(
+      final UInt64 slot,
       final Set<Bytes> dataHashSetForSlot,
       final BeaconState stateAtBlockSlot,
       final AttestationForkChecker forkChecker,
@@ -283,7 +287,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(Objects::nonNull)
         .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
         .filter(forkChecker::areAttestationsFromCorrectFork)
-        .flatMap(MatchingDataAttestationGroup::stream)
+        .flatMap(group -> group.streamForBlockProduction(slot))
         .map(ValidatableAttestation::getAttestation)
         .filter(
             attestation ->
@@ -311,7 +315,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(Objects::nonNull)
         .flatMap(
             matchingDataAttestationGroup ->
-                matchingDataAttestationGroup.stream(maybeCommitteeIndex, requiresCommitteeBits))
+                matchingDataAttestationGroup.streamForAPI(
+                    maybeCommitteeIndex, requiresCommitteeBits))
         .map(ValidatableAttestation::getAttestation)
         .toList();
   }
@@ -324,7 +329,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   public synchronized Optional<ValidatableAttestation> createAggregateFor(
       final Bytes32 attestationHashTreeRoot, final Optional<UInt64> committeeIndex) {
     return Optional.ofNullable(attestationGroupByDataHash.get(attestationHashTreeRoot))
-        .flatMap(attestations -> attestations.stream(committeeIndex).findFirst());
+        .flatMap(attestations -> attestations.streamForAggregation(committeeIndex).findFirst());
   }
 
   public synchronized void onReorg(final UInt64 commonAncestorSlot) {
