@@ -208,7 +208,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   public synchronized void onAttestationsIncludedInBlock(
       final UInt64 slot, final Iterable<Attestation> attestations) {
+    final long startMs = System.currentTimeMillis();
     attestations.forEach(attestation -> onAttestationIncludedInBlock(slot, attestation));
+    LOG.info("onAttestationsIncludedInBlock in {} ms", System.currentTimeMillis() - startMs);
   }
 
   private void onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
