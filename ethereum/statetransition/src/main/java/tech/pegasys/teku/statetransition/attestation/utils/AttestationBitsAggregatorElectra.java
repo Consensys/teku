@@ -76,7 +76,7 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
           committeeBitsStartingPositions.getOrDefault(otherCommitteeIndex, -1);
       if (startingPosition != -1) {
         if (aggregationBits.getBit(startingPosition + otherAggregatedBit)) {
-          throw new CannotAggregateException();
+          return false;
         }
         aggregationBits = aggregationBits.withBit(startingPosition + otherAggregatedBit);
         return true;
