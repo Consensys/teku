@@ -306,12 +306,13 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
 
       // we are in committee aggregation scenario
       final SszBitvector committeeBits = maybeCommitteeBits.get();
-      if (committeeBits.getBitCount() != 1) {
-        // we want to aggregate attestations for a single committee only
+      if (!committeeBits.isSet(maybeCommitteeIndex.get().intValue())) {
+        // the committeeIndex must match
         return false;
       }
-      // the committeeIndex must match
-      return committeeBits.isSet(maybeCommitteeIndex.get().intValue());
+
+      // we want to aggregate attestations for a single committee only
+      return committeeBits.getBitCount() == 1;
     }
   }
 }
