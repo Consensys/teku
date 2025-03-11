@@ -138,9 +138,9 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
     final List<Attestation> attestations = getAttestationList(2);
 
     when(validatorApiChannel.sendSignedAttestations(attestations))
-            .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
+        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
 
-    final Response response = postAttestations(attestations, specMilestone.name(),true);
+    final Response response = postAttestations(attestations, specMilestone.name(), true);
 
     assertThat(response.code()).isEqualTo(SC_OK);
     assertThat(response.body().string()).isEmpty();
@@ -155,12 +155,14 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
   }
 
   @SuppressWarnings("unchecked")
-  protected Response postAttestations(final List<?> attestations, final String milestone) throws IOException {
+  protected Response postAttestations(final List<?> attestations, final String milestone)
+      throws IOException {
     return postAttestations(attestations, milestone, false);
   }
 
   @SuppressWarnings("unchecked")
-  protected Response postAttestations(final List<?> attestations, final String milestone, final boolean useLowerCaseHeader)
+  protected Response postAttestations(
+      final List<?> attestations, final String milestone, final boolean useLowerCaseHeader)
       throws IOException {
     final SerializableTypeDefinition<List<Attestation>> attestationsListTypeDef =
         SerializableTypeDefinition.listOf(
@@ -173,19 +175,18 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
           PostAttestationsV2.ROUTE,
           JsonUtil.serialize((List<Attestation>) attestations, attestationsListTypeDef));
     }
-    if(useLowerCaseHeader){
+    if (useLowerCaseHeader) {
       return postWithLowerCaseHeader(
-              PostAttestationsV2.ROUTE,
-              JsonUtil.serialize((List<Attestation>) attestations, attestationsListTypeDef),
-              Collections.emptyMap(),
-              Optional.of(milestone));
-    }
-    else{
-    return post(
-        PostAttestationsV2.ROUTE,
-        JsonUtil.serialize((List<Attestation>) attestations, attestationsListTypeDef),
-        Collections.emptyMap(),
-        Optional.of(milestone));
+          PostAttestationsV2.ROUTE,
+          JsonUtil.serialize((List<Attestation>) attestations, attestationsListTypeDef),
+          Collections.emptyMap(),
+          Optional.of(milestone));
+    } else {
+      return post(
+          PostAttestationsV2.ROUTE,
+          JsonUtil.serialize((List<Attestation>) attestations, attestationsListTypeDef),
+          Collections.emptyMap(),
+          Optional.of(milestone));
     }
   }
 }

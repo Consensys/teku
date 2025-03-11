@@ -137,7 +137,10 @@ public class PostAttestationsV2 extends RestApiEndpoint {
 
   public static DeserializableTypeDefinition<? extends Attestation> headerBasedSelector(
       final Map<String, String> headers, final SchemaDefinitionCache schemaDefinitionCache) {
-    Optional<String> requiredHeader = headers.keySet().stream().filter((key -> key.equalsIgnoreCase(HEADER_CONSENSUS_VERSION))).findFirst();
+    Optional<String> requiredHeader =
+        headers.keySet().stream()
+            .filter((key -> key.equalsIgnoreCase(HEADER_CONSENSUS_VERSION)))
+            .findFirst();
     if (requiredHeader.isEmpty()) {
       throw new BadRequestException(
           String.format("Missing required header value for (%s)", HEADER_CONSENSUS_VERSION));
