@@ -31,12 +31,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 
 public class CommonAncestorTest extends AbstractSyncTest {
-
-  private final int maxHeadDistance = 2;
   private final CommonAncestor commonAncestor =
       new CommonAncestor(recentChainData, 4, OptionalInt.empty());
   private final CommonAncestor commonAncestorWithMaxHeadDistance =
-      new CommonAncestor(recentChainData, 4, OptionalInt.of(maxHeadDistance));
+      new CommonAncestor(recentChainData, 4, OptionalInt.of(2));
 
   @Test
   void shouldNotSearchCommonAncestorWithoutSufficientLocalData() {
@@ -195,6 +193,7 @@ public class CommonAncestorTest extends AbstractSyncTest {
             spec.computeEpochAtSlot(currentRemoteHead),
             dataStructureUtil.randomBytes32());
     when(recentChainData.getHeadSlot()).thenReturn(currentLocalHead);
+    // Only the first block matches the local chain
     when(recentChainData.containsBlock(any())).thenReturn(true).thenReturn(false);
 
     final SafeFuture<UInt64> futureSlot =
@@ -210,8 +209,40 @@ public class CommonAncestorTest extends AbstractSyncTest {
   }
 
   @Test
+  void shouldCompleteFindCommonAncestorWhenMaxHeadDistanceIsDefined() {
+    final UInt64 firstNonFinalSlot = UInt64.valueOf(1000);
+
+    final UInt64 currentLocalHead = firstNonFinalSlot.plus(BLOCK_COUNT_PER_ATTEMPT.plus(21));
+    final UInt64 currentRemoteHead = firstNonFinalSlot.plus(BLOCK_COUNT_PER_ATTEMPT.plus(20));
+    final UInt64 syncStartSlot = currentRemoteHead.minus(BLOCK_COUNT_PER_ATTEMPT.minus(1));
+    final SafeFuture<Void> requestFuture = new SafeFuture<>();
+    when(peer.requestBlocksByRange(eq(syncStartSlot), eq(BLOCK_COUNT_PER_ATTEMPT), any()))
+        .thenReturn(requestFuture);
+    final PeerStatus status =
+        withPeerHeadSlot(
+            currentRemoteHead,
+            spec.computeEpochAtSlot(currentRemoteHead),
+            dataStructureUtil.randomBytes32());
+    when(recentChainData.getHeadSlot()).thenReturn(currentLocalHead);
+    // Only the first block matches the local chain
+    when(recentChainData.containsBlock(any())).thenReturn(true);
+
+    final SafeFuture<UInt64> futureSlot =
+        commonAncestorWithMaxHeadDistance.getCommonAncestor(
+            peer, firstNonFinalSlot, status.getHeadSlot());
+
+    assertThat(futureSlot.isDone()).isFalse();
+
+    verifyAndRespond(syncStartSlot, requestFuture);
+
+    // last received slot is the best slot
+    assertThatSafeFuture(futureSlot)
+        .isCompletedWithValue(syncStartSlot.plus(BLOCK_COUNT_PER_ATTEMPT).minus(1));
+  }
+
+  @Test
   void shouldStopSearchingAndReturnExceptionallyIfMaxHeadDistanceIsReached() {
-    final UInt64 firstNonFinalSlot = dataStructureUtil.randomUInt64();
+    final UInt64 firstNonFinalSlot = UInt64.valueOf(1000);
 
     final UInt64 currentLocalHead = firstNonFinalSlot.plus(BLOCK_COUNT_PER_ATTEMPT.plus(21));
     final UInt64 currentRemoteHead = firstNonFinalSlot.plus(BLOCK_COUNT_PER_ATTEMPT.plus(20));
