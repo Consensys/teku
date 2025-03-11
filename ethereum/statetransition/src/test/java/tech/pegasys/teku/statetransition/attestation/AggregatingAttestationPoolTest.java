@@ -198,11 +198,11 @@ class AggregatingAttestationPoolTest {
   @TestTemplate
   public void getAttestationsForBlock_shouldIncludeAttestationsThatPassValidation() {
     final Attestation attestation1 =
-        addAttestationFromValidators(dataStructureUtil.randomAttestationData(ZERO), 1);
+        addAttestationFromValidators(dataStructureUtil.randomAttestationData(ZERO), 1, 2);
     final Attestation attestation2 =
-        addAttestationFromValidators(dataStructureUtil.randomAttestationData(ZERO), 2);
+        addAttestationFromValidators(dataStructureUtil.randomAttestationData(ZERO), 2, 3);
     final Attestation attestation3 =
-        addAttestationFromValidators(dataStructureUtil.randomAttestationData(ZERO), 3);
+        addAttestationFromValidators(dataStructureUtil.randomAttestationData(ZERO), 3, 4);
 
     final BeaconState state = dataStructureUtil.randomBeaconState(ONE);
     when(mockSpec.validateAttestation(state, attestation1.getData()))
@@ -350,18 +350,18 @@ class AggregatingAttestationPoolTest {
 
     final List<Attestation> expectedAttestations = new ArrayList<>();
     // Current epoch Attestations
-    expectedAttestations.add(addAttestationFromValidators(startSlotAtCurrentEpoch.plus(2), 1));
-    expectedAttestations.add(addAttestationFromValidators(startSlotAtCurrentEpoch.plus(1), 2));
-    expectedAttestations.add(addAttestationFromValidators(startSlotAtCurrentEpoch, 3));
+    expectedAttestations.add(addAttestationFromValidators(startSlotAtCurrentEpoch.plus(2), 1, 2));
+    expectedAttestations.add(addAttestationFromValidators(startSlotAtCurrentEpoch.plus(1), 2, 3));
+    expectedAttestations.add(addAttestationFromValidators(startSlotAtCurrentEpoch, 3, 4));
 
     // Prev epoch attestations within capacity limit
     for (int i = 0; i < prevEpochCapacity; i++) {
       expectedAttestations.add(
-          addAttestationFromValidators(startSlotAtCurrentEpoch.minus(i + 1), 3 + i));
+          addAttestationFromValidators(startSlotAtCurrentEpoch.minus(i + 1), 3 + i, 4 + i));
     }
     // Add a few extras
-    addAttestationFromValidators(startSlotAtCurrentEpoch.minus(3), 1);
-    addAttestationFromValidators(startSlotAtCurrentEpoch.minus(4), 2);
+    addAttestationFromValidators(startSlotAtCurrentEpoch.minus(3), 1, 2);
+    addAttestationFromValidators(startSlotAtCurrentEpoch.minus(4), 2, 3);
 
     assertThat(aggregatingPool.getAttestationsForBlock(stateAtBlockSlot, forkChecker))
         .containsExactlyElementsOf(expectedAttestations);
@@ -372,9 +372,9 @@ class AggregatingAttestationPoolTest {
     final AttestationData pruneAttestationData = dataStructureUtil.randomAttestationData(SLOT);
     final AttestationData preserveAttestationData =
         dataStructureUtil.randomAttestationData(SLOT.plus(ONE));
-    addAttestationFromValidators(pruneAttestationData, 1);
+    addAttestationFromValidators(pruneAttestationData, 1, 2);
     final Attestation preserveAttestation =
-        addAttestationFromValidators(preserveAttestationData, 2);
+        addAttestationFromValidators(preserveAttestationData, 2, 3);
 
     final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState();
 
@@ -462,18 +462,18 @@ class AggregatingAttestationPoolTest {
     final AttestationData attestationData1 = dataStructureUtil.randomAttestationData(ONE);
     final AttestationData attestationData2 =
         dataStructureUtil.randomAttestationData(UInt64.valueOf(2));
-    addAttestationFromValidators(attestationData0, 1);
-    addAttestationFromValidators(attestationData0, 2);
-    addAttestationFromValidators(attestationData1, 3);
-    addAttestationFromValidators(attestationData1, 4);
-    addAttestationFromValidators(attestationData2, 5);
+    addAttestationFromValidators(attestationData0, 1, 2);
+    addAttestationFromValidators(attestationData0, 2, 3);
+    addAttestationFromValidators(attestationData1, 3, 4);
+    addAttestationFromValidators(attestationData1, 4, 5);
+    addAttestationFromValidators(attestationData2, 5, 6);
 
     assertThat(aggregatingPool.getSize()).isEqualTo(5);
 
     final BeaconState slot1State = dataStructureUtil.randomBeaconState(ONE);
     assertThat(aggregatingPool.getAttestationsForBlock(slot1State, forkChecker)).isNotEmpty();
 
-    addAttestationFromValidators(attestationData2, 6);
+    addAttestationFromValidators(attestationData2, 6, 7);
     // Should drop the slot 0 attestations
     assertThat(aggregatingPool.getSize()).isEqualTo(4);
     assertThat(aggregatingPool.getAttestationsForBlock(slot1State, forkChecker)).isEmpty();
@@ -484,18 +484,18 @@ class AggregatingAttestationPoolTest {
     aggregatingPool =
         new AggregatingAttestationPool(mockSpec, mockRecentChainData, new NoOpMetricsSystem(), 5);
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
-    addAttestationFromValidators(attestationData, 1);
-    addAttestationFromValidators(attestationData, 2);
-    addAttestationFromValidators(attestationData, 3);
-    addAttestationFromValidators(attestationData, 4);
-    addAttestationFromValidators(attestationData, 5);
+    addAttestationFromValidators(attestationData, 1, 2);
+    addAttestationFromValidators(attestationData, 2, 3);
+    addAttestationFromValidators(attestationData, 3, 4);
+    addAttestationFromValidators(attestationData, 4, 5);
+    addAttestationFromValidators(attestationData, 5, 6);
 
     assertThat(aggregatingPool.getSize()).isEqualTo(5);
 
     final BeaconState slot1State = dataStructureUtil.randomBeaconState(ONE);
     assertThat(aggregatingPool.getAttestationsForBlock(slot1State, forkChecker)).isNotEmpty();
 
-    addAttestationFromValidators(attestationData, 6);
+    addAttestationFromValidators(attestationData, 6, 7);
     // Can't drop anything as we only have one slot.
     assertThat(aggregatingPool.getSize()).isEqualTo(6);
   }
