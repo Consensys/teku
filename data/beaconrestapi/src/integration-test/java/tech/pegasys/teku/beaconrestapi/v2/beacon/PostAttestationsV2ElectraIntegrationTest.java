@@ -15,12 +15,8 @@ package tech.pegasys.teku.beaconrestapi.v2.beacon;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
-import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostAttestationsV2;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -58,22 +54,12 @@ public class PostAttestationsV2ElectraIntegrationTest extends PostAttestationsV2
 
   @Override
   @SuppressWarnings("unchecked")
-  protected Response postAttestations(final List<?> attestations, final String milestone)
-      throws IOException {
+  protected String serializeAttestations(final List<?> attestations) throws IOException {
     final SerializableTypeDefinition<List<SingleAttestation>> attestationsListTypeDef =
         SerializableTypeDefinition.listOf(
             SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions())
                 .getSingleAttestationSchema()
                 .getJsonTypeDefinition());
-    if (milestone == null) {
-      return post(
-          PostAttestationsV2.ROUTE,
-          JsonUtil.serialize((List<SingleAttestation>) attestations, attestationsListTypeDef));
-    }
-    return post(
-        PostAttestationsV2.ROUTE,
-        JsonUtil.serialize((List<SingleAttestation>) attestations, attestationsListTypeDef),
-        Collections.emptyMap(),
-        Optional.of(milestone));
+    return JsonUtil.serialize((List<SingleAttestation>) attestations, attestationsListTypeDef);
   }
 }

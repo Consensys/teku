@@ -17,12 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_GONE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -32,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import okhttp3.MediaType;
@@ -66,7 +64,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.statetransition.MappedOperationPool;
 import tech.pegasys.teku.statetransition.OperationPool;
@@ -130,9 +127,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   protected final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
 
-  protected final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager =
-      mock(ExecutionLayerBlockProductionManager.class);
-
   protected RewardCalculator rewardCalculator = mock(RewardCalculator.class);
 
   protected OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
@@ -162,7 +156,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected BeaconRestApi beaconRestApi;
 
   protected OkHttpClient client;
-  protected final ObjectMapper objectMapper = new ObjectMapper();
 
   protected ForkChoice forkChoice;
 
@@ -313,35 +306,17 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     return results;
   }
 
-  public SignedBlockAndState finalizeChainAtEpoch(final UInt64 epoch) {
-    return chainUpdater.finalizeEpoch(epoch);
-  }
-
-  protected void assertNoContent(final Response response) throws IOException {
-    assertThat(response.code()).isEqualTo(SC_NO_CONTENT);
-    assertThat(response.body().string()).isEmpty();
-  }
-
-  protected void assertGone(final Response response) throws IOException {
-    assertThat(response.code()).isEqualTo(SC_GONE);
-    assertThat(response.body().string()).isEmpty();
-  }
-
   protected void assertBadRequest(final Response response) {
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
   }
 
-  protected void assertNotFound(final Response response) throws IOException {
+  protected void assertNotFound(final Response response) {
     assertThat(response.code()).isEqualTo(SC_NOT_FOUND);
   }
 
   protected void assertForbidden(final Response response) throws IOException {
     assertThat(response.code()).isEqualTo(SC_FORBIDDEN);
     assertThat(response.body().string()).contains("Host not authorized");
-  }
-
-  protected void assertBodyEquals(final Response response, final String body) throws IOException {
-    assertThat(response.body().string()).isEqualTo(body);
   }
 
   protected Response getResponse(final String path, final String contentType, final String encoding)
@@ -407,9 +382,19 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected Response post(
       final String route, final String postData, final Optional<String> milestone)
       throws IOException {
+    return post(
+        route,
+        postData,
+        requestBuilder ->
+            milestone.ifPresent(m -> requestBuilder.header(HEADER_CONSENSUS_VERSION, m)));
+  }
+
+  protected Response post(
+      final String route, final String postData, final Consumer<Request.Builder> requestModifier)
+      throws IOException {
     final RequestBody body = RequestBody.create(postData, JSON);
     final Request.Builder requestBuilder = new Request.Builder().url(getUrl() + route).post(body);
-    milestone.ifPresent(m -> requestBuilder.header(HEADER_CONSENSUS_VERSION, m));
+    requestModifier.accept(requestBuilder);
     return client.newCall(requestBuilder.build()).execute();
   }
 
@@ -430,10 +415,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     final Request.Builder requestBuilder = new Request.Builder().url(getUrl() + route).post(body);
     milestoneHeader.ifPresent(m -> requestBuilder.header(HEADER_CONSENSUS_VERSION, m));
     return client.newCall(requestBuilder.build()).execute();
-  }
-
-  protected String mapToJson(final Map<String, Object> postParams) throws JsonProcessingException {
-    return objectMapper.writer().writeValueAsString(postParams);
   }
 
   private String getUrl() {
