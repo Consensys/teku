@@ -269,6 +269,19 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void syncMaxDistanceFromHead_shouldBeUnsetByDefault() {
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+    assertThat(tekuConfiguration.sync().getForwardSyncMaxDistanceFromHead()).isEmpty();
+  }
+
+  @Test
+  public void syncMaxDistanceFromHead_shouldBeSettable() {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xp2p-sync-max-distance-from-head", "10");
+    assertThat(tekuConfiguration.sync().getForwardSyncMaxDistanceFromHead()).hasValue(10);
+  }
+
+  @Test
   public void historicalSyncBatchSize_greaterThanMessageSizeShouldThrowException() {
     assertThatThrownBy(
             () -> createConfigBuilder().sync(s -> s.historicalSyncBatchSize(3000)).build())

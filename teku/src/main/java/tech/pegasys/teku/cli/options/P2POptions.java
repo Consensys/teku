@@ -265,6 +265,16 @@ public class P2POptions {
       SyncConfig.DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE;
 
   @Option(
+      names = {"--Xp2p-sync-max-distance-from-head"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Maximum number slots to jump back when trying to find a common ancestor with target chain.",
+      hidden = true,
+      arity = "1")
+  private Integer forwardSyncMaxDistanceFromHead;
+
+  @Option(
       names = {"--Xp2p-sync-blob-sidecars-rate-limit"},
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
@@ -514,7 +524,8 @@ public class P2POptions {
                     .forwardSyncMaxBlocksPerMinute(forwardSyncBlocksRateLimit)
                     .forwardSyncMaxBlobSidecarsPerMinute(forwardSyncBlobSidecarsRateLimit)
                     .forwardSyncBatchSize(forwardSyncBatchSize)
-                    .forwardSyncMaxPendingBatches(forwardSyncMaxPendingBatches));
+                    .forwardSyncMaxPendingBatches(forwardSyncMaxPendingBatches)
+                    .forwardSyncMaxDistanceFromHead(forwardSyncMaxDistanceFromHead));
 
     if (subscribeAllSubnetsEnabled) {
       builder
