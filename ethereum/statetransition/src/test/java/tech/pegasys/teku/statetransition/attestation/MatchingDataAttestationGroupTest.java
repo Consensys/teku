@@ -181,8 +181,7 @@ class MatchingDataAttestationGroupTest {
   }
 
   @TestTemplate
-  public void iterator_shouldAggregateAttestationsWithMoreValidatorsFirst(
-      final SpecContext specContext) {
+  public void iterator_shouldAggregateAttestationsWithMoreValidatorsFirst() {
     final ValidatableAttestation bigAttestation = addAttestation(1, 3, 5, 7);
     final ValidatableAttestation mediumAttestation = addAttestation(3, 5, 9);
     final ValidatableAttestation littleAttestation = addAttestation(2, 4);
