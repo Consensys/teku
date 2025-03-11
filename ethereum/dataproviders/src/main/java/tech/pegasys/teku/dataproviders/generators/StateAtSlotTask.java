@@ -110,7 +110,7 @@ public class StateAtSlotTask implements CacheableTask<SlotAndBlockRoot, BeaconSt
     //              state.getSlot(), slotAndBlockRoot.getSlot()));
     //    }
     try {
-      if (state.getSlot().equals(slotAndBlockRoot.getSlot())) {
+      if (state.getSlot().isLessThanOrEqualTo(slotAndBlockRoot.getSlot())) {
         return state;
       }
 
