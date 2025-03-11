@@ -94,6 +94,7 @@ class MatchingDataAttestationGroupTest {
 
   @TestTemplate
   public void remove_multipleCallsToRemoveShouldAggregate() {
+
     // Create attestations that will be removed
     final ValidatableAttestation attestation1 = createAttestation(1);
     final ValidatableAttestation attestation2 = createAttestation(2);
@@ -106,7 +107,7 @@ class MatchingDataAttestationGroupTest {
     assertThat(numRemoved).isEqualTo(0);
     numRemoved += group.onAttestationIncludedInBlock(UInt64.ZERO, attestation2.getAttestation());
     assertThat(numRemoved).isEqualTo(1);
-    assertThat(group.stream()).containsExactly(attestation3);
+    assertThat(group.stream(Optional.of(UInt64.ZERO))).containsExactly(attestation3);
   }
 
   @TestTemplate
@@ -120,7 +121,7 @@ class MatchingDataAttestationGroupTest {
             UInt64.ZERO,
             aggregateAttestations(attestation1.getAttestation(), attestation2.getAttestation()));
 
-    assertThat(group.stream()).containsExactly(attestation3);
+    assertThat(group.stream(Optional.of(UInt64.ZERO))).containsExactly(attestation3);
     assertThat(numRemoved).isEqualTo(2); // the one attestation is still there, and we've removed 2.
   }
 
@@ -159,7 +160,7 @@ class MatchingDataAttestationGroupTest {
 
   @TestTemplate
   public void add_shouldIgnoreDuplicateAttestations() {
-    final ValidatableAttestation attestation = addAttestation(1);
+    final ValidatableAttestation attestation = addAttestation(1, 2);
     final ValidatableAttestation copy =
         ValidatableAttestation.from(
             spec, attestationSchema.sszDeserialize(attestation.getAttestation().sszSerialize()));
@@ -175,14 +176,16 @@ class MatchingDataAttestationGroupTest {
 
     final Attestation expected =
         aggregateAttestations(attestation1.getAttestation(), attestation2.getAttestation());
-    assertThat(group).containsExactlyInAnyOrder(ValidatableAttestation.from(spec, expected));
+    assertThat(group.stream(Optional.of(UInt64.ZERO)))
+        .containsExactlyInAnyOrder(ValidatableAttestation.from(spec, expected));
   }
 
   @TestTemplate
-  public void iterator_shouldAggregateAttestationsWithMoreValidatorsFirst() {
+  public void iterator_shouldAggregateAttestationsWithMoreValidatorsFirst(
+      final SpecContext specContext) {
     final ValidatableAttestation bigAttestation = addAttestation(1, 3, 5, 7);
     final ValidatableAttestation mediumAttestation = addAttestation(3, 5, 9);
-    final ValidatableAttestation littleAttestation = addAttestation(2);
+    final ValidatableAttestation littleAttestation = addAttestation(2, 4);
 
     assertThat(group)
         .containsExactly(
@@ -191,6 +194,17 @@ class MatchingDataAttestationGroupTest {
                 aggregateAttestations(
                     bigAttestation.getAttestation(), littleAttestation.getAttestation())),
             mediumAttestation);
+  }
+
+  @TestTemplate
+  public void iterator_electra_shouldAggregateSkipSingleAttestationsInBlockProduction(
+      final SpecContext specContext) {
+    specContext.assumeElectraActive();
+    final ValidatableAttestation bigAttestation = addAttestation(1, 3, 5, 7);
+    final ValidatableAttestation mediumAttestation = addAttestation(3, 5, 9);
+    addAttestation(2);
+
+    assertThat(group).containsExactly(bigAttestation, mediumAttestation);
   }
 
   @TestTemplate
@@ -217,7 +231,7 @@ class MatchingDataAttestationGroupTest {
     addAttestation(2, 4);
     final ValidatableAttestation useful2 = addAttestation(4);
 
-    assertThat(group)
+    assertThat(group.stream(Optional.of(UInt64.ZERO)))
         .containsExactly(
             ValidatableAttestation.from(
                 spec, aggregateAttestations(useful1.getAttestation(), useful2.getAttestation())));

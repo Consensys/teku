@@ -285,25 +285,32 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
     public Iterator<ValidatableAttestation> getRemainingAttestations() {
       return attestationsByValidatorCount.values().stream()
           .flatMap(Set::stream)
-          .filter(this::maybeFilterOnCommitteeIndex)
+          .filter(this::isAttestationRelevant)
           .filter(candidate -> !includedValidators.isSuperSetOf(candidate.getAttestation()))
           .iterator();
     }
 
-    /*
-    If we have attestations with committeeBits (Electra) then, if maybeCommitteeIndex is specified, we will consider attestation related to that committee only
-     */
-    private boolean maybeFilterOnCommitteeIndex(final ValidatableAttestation candidate) {
+    private boolean isAttestationRelevant(final ValidatableAttestation candidate) {
       final Optional<SszBitvector> maybeCommitteeBits =
           candidate.getAttestation().getCommitteeBits();
-      if (maybeCommitteeBits.isEmpty() || maybeCommitteeIndex.isEmpty()) {
+      if (maybeCommitteeBits.isEmpty()) {
+        // Pre-Electra attestation, we always consider all attestations
         return true;
       }
 
+      if (maybeCommitteeIndex.isEmpty()) {
+        // we are in block proposal scenario (not filtering by committeeIndex)
+        // we will skip single attestations
+        return !candidate.getUnconvertedAttestation().isSingleAttestation();
+      }
+
+      // we are in committee aggregation scenario
       final SszBitvector committeeBits = maybeCommitteeBits.get();
       if (committeeBits.getBitCount() != 1) {
+        // we want to aggregate attestations for a single committee only
         return false;
       }
+      // the committeeIndex must match
       return committeeBits.isSet(maybeCommitteeIndex.get().intValue());
     }
   }
