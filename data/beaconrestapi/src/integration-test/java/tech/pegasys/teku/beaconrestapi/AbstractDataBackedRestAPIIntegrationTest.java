@@ -400,6 +400,15 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     return post(route + prepareQueryParams(postParams), postData, milestone);
   }
 
+  protected Response postWithLowerCaseHeader(
+      final String route,
+      final String postData,
+      final Map<String, String> postParams,
+      final Optional<String> milestone)
+      throws IOException {
+    return postWithLowerCaseHeader(route + prepareQueryParams(postParams), postData, milestone);
+  }
+
   protected Response post(final String route, final String postData) throws IOException {
     return post(route, postData, Optional.empty());
   }
@@ -410,6 +419,15 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     final RequestBody body = RequestBody.create(postData, JSON);
     final Request.Builder requestBuilder = new Request.Builder().url(getUrl() + route).post(body);
     milestone.ifPresent(m -> requestBuilder.header(HEADER_CONSENSUS_VERSION, m));
+    return client.newCall(requestBuilder.build()).execute();
+  }
+
+  protected Response postWithLowerCaseHeader(
+      final String route, final String postData, final Optional<String> milestone)
+      throws IOException {
+    final RequestBody body = RequestBody.create(postData, JSON);
+    final Request.Builder requestBuilder = new Request.Builder().url(getUrl() + route).post(body);
+    milestone.ifPresent(m -> requestBuilder.header("eth-consensus-version", m));
     return client.newCall(requestBuilder.build()).execute();
   }
 

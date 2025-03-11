@@ -25,6 +25,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiPredicate;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -136,12 +137,13 @@ public class PostAttestationsV2 extends RestApiEndpoint {
 
   public static DeserializableTypeDefinition<? extends Attestation> headerBasedSelector(
       final Map<String, String> headers, final SchemaDefinitionCache schemaDefinitionCache) {
-    if (!headers.containsKey(HEADER_CONSENSUS_VERSION)) {
+    Optional<String> requiredHeader = headers.keySet().stream().filter((key -> key.equalsIgnoreCase(HEADER_CONSENSUS_VERSION))).findFirst();
+    if (requiredHeader.isEmpty()) {
       throw new BadRequestException(
           String.format("Missing required header value for (%s)", HEADER_CONSENSUS_VERSION));
     }
     try {
-      final SpecMilestone milestone = SpecMilestone.forName(headers.get(HEADER_CONSENSUS_VERSION));
+      final SpecMilestone milestone = SpecMilestone.forName(headers.get(requiredHeader.get()));
       if (milestone.isLessThanOrEqualTo(SpecMilestone.DENEB)) {
         return schemaDefinitionCache
             .getSchemaDefinition(SpecMilestone.PHASE0)
@@ -157,7 +159,7 @@ public class PostAttestationsV2 extends RestApiEndpoint {
       throw new BadRequestException(
           String.format(
               "Invalid value for (%s) header: %s",
-              HEADER_CONSENSUS_VERSION, headers.get(HEADER_CONSENSUS_VERSION)));
+              HEADER_CONSENSUS_VERSION, headers.get(requiredHeader.get())));
     }
   }
 }
