@@ -144,7 +144,7 @@ class MultipeerCommonAncestorFinderTest {
   }
 
   @Test
-  void shouldUseLatestFinalizedSlotWhenOneSourceFailsToFindCommonAncestor() {
+  void shouldFailWhenOneSourceFailsToFindCommonAncestor() {
     final TargetChain chain =
         chainWith(
             new SlotAndBlockRoot(UInt64.valueOf(10_000), dataStructureUtil.randomBytes32()),
@@ -167,7 +167,7 @@ class MultipeerCommonAncestorFinderTest {
 
     source1CommonAncestor.completeExceptionally(new RuntimeException("Doh!"));
     source2CommonAncestor.complete(UInt64.valueOf(1485));
-    assertThat(result).isCompletedWithValue(finalizedSlot);
+    assertThat(result).isCompletedExceptionally();
   }
 
   private SafeFuture<UInt64> findCommonAncestor(final TargetChain chain) {

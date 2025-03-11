@@ -24,6 +24,7 @@ import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -156,7 +157,8 @@ public class SyncController {
     syncResult.finishAsync(
         this::onSyncComplete,
         error -> {
-          LOG.error("Sync process failed to complete");
+          LOG.error(
+              "Sync process failed to complete: {}", ExceptionUtil.getMessageOrSimpleName(error));
           LOG.debug("Error encountered during sync", error);
           onSyncComplete(SyncResult.FAILED);
         },

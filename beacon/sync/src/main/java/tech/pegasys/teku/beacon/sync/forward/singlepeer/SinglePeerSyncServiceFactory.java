@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 
+import java.util.OptionalInt;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -34,6 +35,7 @@ public class SinglePeerSyncServiceFactory {
       final BlobSidecarManager blobSidecarManager,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final int batchSize,
+      final OptionalInt maxDistanceFromHeadReached,
       final Spec spec) {
     final SyncManager syncManager =
         SyncManager.create(
@@ -45,6 +47,7 @@ public class SinglePeerSyncServiceFactory {
             blockBlobSidecarsTrackersPool,
             metricsSystem,
             batchSize,
+            maxDistanceFromHeadReached,
             spec);
     return new SinglePeerSyncService(syncManager, recentChainData);
   }
