@@ -103,12 +103,12 @@ public class StateAtSlotTask implements CacheableTask<SlotAndBlockRoot, BeaconSt
   }
 
   private BeaconState regenerateFromState(final BeaconState state) {
-    if (state.getSlot().isGreaterThan(slotAndBlockRoot.getSlot())) {
-      throw new InvalidCheckpointException(
-          String.format(
-              "Checkpoint state (%s) must be at or prior to checkpoint slot boundary (%s)",
-              state.getSlot(), slotAndBlockRoot.getSlot()));
-    }
+//    if (state.getSlot().isGreaterThan(slotAndBlockRoot.getSlot())) {
+//      throw new InvalidCheckpointException(
+//          String.format(
+//              "Checkpoint state (%s) must be at or prior to checkpoint slot boundary (%s)",
+//              state.getSlot(), slotAndBlockRoot.getSlot()));
+//    }
     try {
       if (state.getSlot().equals(slotAndBlockRoot.getSlot())) {
         return state;
