@@ -598,10 +598,8 @@ class ValidatorApiHandlerTest {
     final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH).plus(ONE);
     when(chainDataClient.getCurrentSlot()).thenReturn(slot);
 
-    final BeaconState state = createStateWithActiveValidators(epochStartSlot);
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(state.getSlot(), state);
-    final SignedBlockAndState blockAndState = new SignedBlockAndState(block, state);
+    final SignedBlockAndState blockAndState =
+        dataStructureUtil.randomSignedBlockAndState(epochStartSlot);
 
     final SafeFuture<Optional<SignedBlockAndState>> blockAndStateResult =
         completedFuture(Optional.of(blockAndState));
@@ -624,10 +622,9 @@ class ValidatorApiHandlerTest {
     final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH).plus(ONE);
     when(chainDataClient.getCurrentSlot()).thenReturn(slot);
 
-    final BeaconState state = createStateWithActiveValidators(epochStartSlot);
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(state.getSlot(), state);
-    final SignedBlockAndState blockAndState = new SignedBlockAndState(block, state);
+    dataStructureUtil.randomBlockAndState(epochStartSlot);
+    final SignedBlockAndState blockAndState =
+        dataStructureUtil.randomSignedBlockAndState(epochStartSlot);
 
     final SafeFuture<Optional<SignedBlockAndState>> blockAndStateResult =
         completedFuture(Optional.of(blockAndState));
@@ -646,7 +643,10 @@ class ValidatorApiHandlerTest {
     assertThat(attestationData)
         .isEqualTo(
             spec.getGenericAttestationData(
-                slot, state, block.getMessage(), UInt64.valueOf(committeeIndex)));
+                slot,
+                blockAndState.getState(),
+                blockAndState.getBlock().getMessage(),
+                UInt64.valueOf(committeeIndex)));
     assertThat(attestationData.getSlot()).isEqualTo(slot);
     final InOrder inOrder = inOrder(forkChoiceTrigger, chainDataClient);
 
@@ -674,11 +674,10 @@ class ValidatorApiHandlerTest {
     // Slot is from before the current epoch, so we need to ensure we process the epoch transition
     final UInt64 blockSlot = slot.minus(1);
 
-    final BeaconState wrongState = createStateWithActiveValidators(blockSlot);
     final BeaconState rightState = createStateWithActiveValidators(slot);
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(wrongState.getSlot(), wrongState);
-    final SignedBlockAndState blockAndState = new SignedBlockAndState(block, wrongState);
+    final SignedBlockAndState blockAndState =
+        dataStructureUtil.randomSignedBlockAndState(blockSlot);
+    final SignedBeaconBlock block = blockAndState.getBlock();
 
     final SafeFuture<Optional<SignedBlockAndState>> blockAndStateResult =
         completedFuture(Optional.of(blockAndState));

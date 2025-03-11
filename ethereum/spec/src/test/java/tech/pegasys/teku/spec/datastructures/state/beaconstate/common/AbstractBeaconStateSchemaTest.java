@@ -97,7 +97,6 @@ public abstract class AbstractBeaconStateSchemaTest<
 
   @Test
   void roundTripViaSsz() {
-    // TODO - generate random version-specific state
     BeaconState beaconState = randomState();
     Bytes bytes = beaconState.sszSerialize();
     BeaconState state = schema.sszDeserialize(bytes);

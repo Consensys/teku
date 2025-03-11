@@ -281,6 +281,11 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<Optional<Bytes32>> getLatestCanonicalBlockRoot() {
+    return SafeFuture.of(database::getLatestCanonicalBlockRoot);
+  }
+
+  @Override
   public SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot) {
     return SafeFuture.of(() -> database.getNonCanonicalBlocksAtSlot(slot));
   }

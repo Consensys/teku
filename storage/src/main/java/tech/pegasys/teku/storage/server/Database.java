@@ -122,6 +122,8 @@ public interface Database extends AutoCloseable {
 
   Optional<UInt64> getSlotForFinalizedStateRoot(Bytes32 stateRoot);
 
+  Optional<Bytes32> getLatestCanonicalBlockRoot();
+
   /**
    * Return the finalized block at this slot if such a block exists.
    *
@@ -216,6 +218,8 @@ public interface Database extends AutoCloseable {
   void storeVotes(Map<UInt64, VoteTracker> votes);
 
   Map<String, Long> getColumnCounts(final Optional<String> maybeColumnFilter);
+
+  Map<String, Optional<String>> getVariables();
 
   long getBlobSidecarColumnCount();
 

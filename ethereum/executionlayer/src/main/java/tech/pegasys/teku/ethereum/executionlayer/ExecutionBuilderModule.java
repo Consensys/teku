@@ -444,7 +444,7 @@ public class ExecutionBuilderModule {
         .finish(
             statusResponse -> {
               if (statusResponse.isFailure()) {
-                markBuilderAsNotAvailable(statusResponse.getErrorMessage());
+                markBuilderAsNotAvailable(statusResponse.errorMessage());
               } else {
                 if (latestBuilderAvailability.compareAndSet(false, true)) {
                   eventLogger.builderIsAvailable();

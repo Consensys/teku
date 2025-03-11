@@ -18,21 +18,45 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class SerializableArrayTypeDefinition<ItemT, CollectionT extends Iterable<ItemT>>
     implements SerializableTypeDefinition<CollectionT> {
   private final SerializableTypeDefinition<ItemT> itemType;
   private final Optional<String> description;
+  protected final Optional<Integer> minItems;
+  protected final Optional<Integer> maxItems;
 
   public SerializableArrayTypeDefinition(final SerializableTypeDefinition<ItemT> itemType) {
     this.itemType = itemType;
     this.description = Optional.empty();
+    this.minItems = Optional.empty();
+    this.maxItems = Optional.empty();
   }
 
   public SerializableArrayTypeDefinition(
-      final SerializableTypeDefinition<ItemT> itemType, final String description) {
+      final SerializableTypeDefinition<ItemT> itemType,
+      final Optional<String> description,
+      final Optional<Integer> minItems,
+      final Optional<Integer> maxItems) {
     this.itemType = itemType;
-    this.description = Optional.of(description);
+    this.description = description;
+    this.minItems = minItems;
+    this.maxItems = maxItems;
+    if (minItems.isPresent() && minItems.get() < 0) {
+      throw new InvalidConfigurationException(
+          String.format("minItems (%d) must be at least 0", minItems.get()));
+    }
+    if (maxItems.isPresent() && maxItems.get() < 0) {
+      throw new InvalidConfigurationException(
+          String.format("maxItems (%d) must be at least 0", maxItems.get()));
+    }
+    if (minItems.isPresent() && maxItems.isPresent() && minItems.get() > maxItems.get()) {
+      throw new InvalidConfigurationException(
+          String.format(
+              "minItems (%d) must be LEQ maxItems (%d) in array type definition",
+              minItems.get(), maxItems.get()));
+    }
   }
 
   @Override
@@ -46,7 +70,8 @@ public class SerializableArrayTypeDefinition<ItemT, CollectionT extends Iterable
 
   @Override
   public SerializableTypeDefinition<CollectionT> withDescription(final String description) {
-    return new SerializableArrayTypeDefinition<>(itemType, description);
+    return new SerializableArrayTypeDefinition<>(
+        itemType, Optional.of(description), minItems, maxItems);
   }
 
   @Override
@@ -55,6 +80,12 @@ public class SerializableArrayTypeDefinition<ItemT, CollectionT extends Iterable
     gen.writeStringField("type", "array");
     if (description.isPresent()) {
       gen.writeStringField("description", description.get());
+    }
+    if (minItems.isPresent()) {
+      gen.writeNumberField("minItems", minItems.get());
+    }
+    if (maxItems.isPresent()) {
+      gen.writeNumberField("maxItems", maxItems.get());
     }
     gen.writeFieldName("items");
     itemType.serializeOpenApiTypeOrReference(gen);

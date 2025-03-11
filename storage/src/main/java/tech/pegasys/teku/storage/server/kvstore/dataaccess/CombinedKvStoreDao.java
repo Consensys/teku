@@ -330,6 +330,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public Optional<Bytes32> getLatestCanonicalBlockRoot() {
+    return db.get(schema.getVariableLatestCanonicalBlockRoot());
+  }
+
+  @Override
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(
       final Bytes32 stateRoot) {
     Optional<UInt64> maybeSlot = db.get(schema.getColumnSlotsByFinalizedStateRoot(), stateRoot);
@@ -432,6 +437,39 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
               }
             });
     return columnCounts;
+  }
+
+  @Override
+  public Map<String, Optional<String>> getVariables() {
+    Map<String, Optional<String>> variables = new LinkedHashMap<>();
+    variables.put("GENESIS_TIME", getGenesisTime().map(UInt64::toString));
+    variables.put("JUSTIFIED_CHECKPOINT", getJustifiedCheckpoint().map(Checkpoint::toString));
+    variables.put(
+        "BEST_JUSTIFIED_CHECKPOINT", getBestJustifiedCheckpoint().map(Checkpoint::toString));
+    variables.put("FINALIZED_CHECKPOINT", getFinalizedCheckpoint().map(Checkpoint::toString));
+    variables.put(
+        "WEAK_SUBJECTIVITY_CHECKPOINT", getWeakSubjectivityCheckpoint().map(Checkpoint::toString));
+    variables.put("ANCHOR_CHECKPOINT", getAnchor().map(Checkpoint::toString));
+    variables.put(
+        "FINALIZED_DEPOSIT_SNAPSHOT",
+        getFinalizedDepositSnapshot().map(DepositTreeSnapshot::toString));
+    variables.put(
+        "LATEST_CANONICAL_BLOCK_ROOT", getLatestCanonicalBlockRoot().map(Bytes32::toString));
+    try {
+      variables.put(
+          "LATEST_FINALIZED_STATE",
+          getLatestFinalizedState()
+              .map(
+                  state ->
+                      "BeaconState{slot="
+                          + state.getSlot()
+                          + ", root="
+                          + state.hashTreeRoot().toHexString()
+                          + "}"));
+    } catch (final Exception e) {
+      variables.put("FINALIZED_STATE", Optional.of(e.toString()));
+    }
+    return variables;
   }
 
   @Override
@@ -607,6 +645,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void setFinalizedCheckpoint(final Checkpoint checkpoint) {
       transaction.put(schema.getVariableFinalizedCheckpoint(), checkpoint);
+    }
+
+    @Override
+    public void setLatestCanonicalBlockRoot(final Bytes32 canonicalBlockRoot) {
+      transaction.put(schema.getVariableLatestCanonicalBlockRoot(), canonicalBlockRoot);
     }
 
     @Override

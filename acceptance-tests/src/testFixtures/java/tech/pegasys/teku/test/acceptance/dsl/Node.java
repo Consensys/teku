@@ -154,7 +154,13 @@ public abstract class Node {
   }
 
   public void waitForLogMessageContaining(final String filter) {
-    waitFor(() -> assertThat(getFilteredOutput(filter)).isNotEmpty(), 2, TimeUnit.MINUTES);
+    waitFor(
+        () -> assertThat(getFilteredOutputContaining(filter)).isNotEmpty(), 2, TimeUnit.MINUTES);
+  }
+
+  public void waitForLogMessageEndingWith(final String filter) {
+    waitFor(
+        () -> assertThat(getFilteredOutputEndingWith(filter)).isNotEmpty(), 2, TimeUnit.MINUTES);
   }
 
   protected void waitForMetricWithValue(final String metricName, final double value) {
@@ -214,11 +220,19 @@ public abstract class Node {
     return container.getLogs(OutputFrame.OutputType.STDERR);
   }
 
-  public List<String> getFilteredOutput(final String filter) {
+  public List<String> getFilteredOutputContaining(final String filter) {
     return container
         .getLogs(OutputFrame.OutputType.STDOUT)
         .lines()
         .filter(s -> s.contains(filter))
+        .collect(Collectors.toList());
+  }
+
+  public List<String> getFilteredOutputEndingWith(final String filter) {
+    return container
+        .getLogs(OutputFrame.OutputType.STDOUT)
+        .lines()
+        .filter(s -> s.endsWith(filter))
         .collect(Collectors.toList());
   }
 

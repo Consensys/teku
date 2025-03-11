@@ -15,16 +15,21 @@ package tech.pegasys.teku.spec;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.common.io.Resources;
+import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
@@ -33,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 
 public class ForkSchedule {
+  private static final Logger LOG = LogManager.getLogger();
   private final NavigableMap<UInt64, SpecMilestone> epochToMilestone;
   private final NavigableMap<UInt64, SpecMilestone> slotToMilestone;
   private final NavigableMap<UInt64, SpecMilestone> genesisOffsetToMilestone;
@@ -135,7 +141,16 @@ public class ForkSchedule {
     if (activatingMilestone == null) {
       return;
     }
-    EventLogger.EVENT_LOG.networkUpgradeActivated(epoch, activatingMilestone.name());
+
+    final String resourceName = activatingMilestone.name().toLowerCase(Locale.ROOT) + ".txt";
+    String banner = "";
+    try {
+      banner =
+          Resources.toString(this.getClass().getResource(resourceName), StandardCharsets.UTF_8);
+    } catch (Exception ex) {
+      LOG.debug("failed to read resource file", ex);
+    }
+    EventLogger.EVENT_LOG.networkUpgradeActivated(epoch, activatingMilestone.name(), banner);
   }
 
   public SpecMilestone getSpecMilestoneAtEpoch(final UInt64 epoch) {

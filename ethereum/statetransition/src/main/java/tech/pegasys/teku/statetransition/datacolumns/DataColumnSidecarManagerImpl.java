@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram.Timer;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
@@ -39,12 +40,14 @@ public class DataColumnSidecarManagerImpl implements DataColumnSidecarManager {
   public DataColumnSidecarManagerImpl(
       final DataColumnSidecarGossipValidator validator,
       final DasGossipLogger dasGossipLogger,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider) {
     this.validator = validator;
     this.dasGossipLogger = dasGossipLogger;
     this.histogram =
         new MetricsHistogram(
             metricsSystem,
+            timeProvider,
             TekuMetricCategory.BEACON,
             "data_column_sidecar_gossip_verification_seconds",
             "Full runtime of data column sidecars gossip verification");

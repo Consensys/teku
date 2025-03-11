@@ -31,13 +31,13 @@ public class ResponseUnwrapper {
     if (response.isFailure()) {
       final String errorMessage =
           String.format(
-              "Invalid remote response from the %s: %s", executionType, response.getErrorMessage());
-      if (response.getErrorMessage().contains("Failed to connect")) {
+              "Invalid remote response from the %s: %s", executionType, response.errorMessage());
+      if (response.errorMessage().contains("Failed to connect")) {
         throw new InvalidRemoteResponseException(
-            errorMessage, new ConnectException(response.getErrorMessage()));
+            errorMessage, new ConnectException(response.errorMessage()));
       }
       throw new InvalidRemoteResponseException(errorMessage);
     }
-    return response.getPayload();
+    return response.payload();
   }
 }

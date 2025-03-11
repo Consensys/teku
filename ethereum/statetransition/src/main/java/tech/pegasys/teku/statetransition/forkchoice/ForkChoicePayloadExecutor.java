@@ -50,9 +50,7 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
       final SignedBeaconBlock block,
       final ExecutionLayerChannel executionLayer) {
     return new ForkChoicePayloadExecutor(
-        block,
-        executionLayer,
-        new MergeTransitionBlockValidator(spec, recentChainData, executionLayer));
+        block, executionLayer, new MergeTransitionBlockValidator(spec, recentChainData));
   }
 
   public SafeFuture<PayloadValidationResult> getExecutionResult() {

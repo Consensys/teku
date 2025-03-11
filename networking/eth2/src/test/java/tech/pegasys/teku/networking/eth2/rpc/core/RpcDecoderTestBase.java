@@ -48,7 +48,7 @@ public class RpcDecoderTestBase {
   protected final BeaconBlocksByRootRequestMessage message = createRequestMessage(600);
   protected final RpcEncoding encoding =
       RpcEncoding.createSszSnappyEncoding(
-          TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
+          TestSpecFactory.createDefault().getNetworkingConfig().getMaxPayloadSize());
   protected final Compressor compressor = new SnappyFramedCompressor();
   protected final Bytes messagePlainData = message.sszSerialize();
   protected final Bytes messageData = compressor.compress(messagePlainData);

@@ -71,7 +71,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
       new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build();
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(
-          TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
+          TestSpecFactory.createDefault().getNetworkingConfig().getMaxPayloadSize());
   private final UInt64 genesisTime = UInt64.valueOf(1982239L);
   private final UInt64 currentForkEpoch = UInt64.valueOf(1);
   private final UInt64 count = UInt64.valueOf(5);
@@ -167,12 +167,74 @@ public class BlobSidecarsByRangeMessageHandlerTest {
                     "Only a maximum of %s blob sidecars can be requested per request",
                     maxRequestBlobSidecars)));
 
-    final long rateLimitedCount =
-        metricsSystem
-            .getCounter(TekuMetricCategory.NETWORK, "rpc_blob_sidecars_by_range_requests_total")
-            .getValue("count_too_big");
+    final long countTooBigCount =
+        metricsSystem.getCounterValue(
+            TekuMetricCategory.NETWORK,
+            "rpc_blob_sidecars_by_range_requests_total",
+            "count_too_big");
 
-    assertThat(rateLimitedCount).isOne();
+    assertThat(countTooBigCount).isOne();
+  }
+
+  @TestTemplate
+  public void validateRequest_shouldRejectRequestWhenCountOverflowsIntoNegativeNumber() {
+    final UInt64 maxRequestBlobSidecars =
+        UInt64.valueOf(
+            SpecConfigDeneb.required(spec.forMilestone(specMilestone).getConfig())
+                .getMaxRequestBlobSidecars());
+    final BlobSidecarsByRangeRequestMessage request =
+        new BlobSidecarsByRangeRequestMessage(
+            // bypass ArithmeticException when calculating maxSlot
+            startSlot, UInt64.MAX_VALUE.minus(startSlot), maxBlobsPerBlock);
+
+    final Optional<RpcException> result = handler.validateRequest(protocolId, request);
+
+    assertThat(result)
+        .hasValue(
+            new RpcException(
+                INVALID_REQUEST_CODE,
+                String.format(
+                    "Only a maximum of %s blob sidecars can be requested per request",
+                    maxRequestBlobSidecars)));
+
+    final long countTooBigCount =
+        metricsSystem.getCounterValue(
+            TekuMetricCategory.NETWORK,
+            "rpc_blob_sidecars_by_range_requests_total",
+            "count_too_big");
+
+    assertThat(countTooBigCount).isOne();
+  }
+
+  @TestTemplate
+  public void validateRequest_shouldRejectRequestWhenCountOverflowsIntoPositiveNumber() {
+    final UInt64 maxRequestBlobSidecars =
+        UInt64.valueOf(
+            SpecConfigDeneb.required(spec.forMilestone(specMilestone).getConfig())
+                .getMaxRequestBlobSidecars());
+    final BlobSidecarsByRangeRequestMessage request =
+        new BlobSidecarsByRangeRequestMessage(
+            // this count will overflow into a positive number
+            // ((Long.MAX_VALUE / 3) + 100) * 6 = 596
+            startSlot, UInt64.valueOf((Long.MAX_VALUE / 3) + 100), maxBlobsPerBlock);
+
+    final Optional<RpcException> result = handler.validateRequest(protocolId, request);
+
+    assertThat(result)
+        .hasValue(
+            new RpcException(
+                INVALID_REQUEST_CODE,
+                String.format(
+                    "Only a maximum of %s blob sidecars can be requested per request",
+                    maxRequestBlobSidecars)));
+
+    final long countTooBigCount =
+        metricsSystem.getCounterValue(
+            TekuMetricCategory.NETWORK,
+            "rpc_blob_sidecars_by_range_requests_total",
+            "count_too_big");
+
+    assertThat(countTooBigCount).isOne();
   }
 
   @TestTemplate
@@ -193,9 +255,10 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
     final long rateLimitedCount =
-        metricsSystem
-            .getCounter(TekuMetricCategory.NETWORK, "rpc_blob_sidecars_by_range_requests_total")
-            .getValue("rate_limited");
+        metricsSystem.getCounterValue(
+            TekuMetricCategory.NETWORK,
+            "rpc_blob_sidecars_by_range_requests_total",
+            "rate_limited");
 
     assertThat(rateLimitedCount).isOne();
 

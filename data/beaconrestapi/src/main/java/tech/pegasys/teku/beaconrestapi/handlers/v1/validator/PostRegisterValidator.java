@@ -54,6 +54,7 @@ public class PostRegisterValidator extends RestApiEndpoint {
                 SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition(),
                 SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA::sszDeserialize)
             .response(SC_OK, "Registration information has been received.")
+            .withUnsupportedMediaTypeResponse()
             .withBadRequestResponse(
                 Optional.of(
                     "The request could not be processed, check the response for more information."))

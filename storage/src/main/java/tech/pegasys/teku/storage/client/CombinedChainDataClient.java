@@ -34,7 +34,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
-import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -315,14 +314,6 @@ public class CombinedChainDataClient {
     }
   }
 
-  private SafeFuture<Optional<BeaconState>> regenerateStateAndSlotExact(final UInt64 slot) {
-    return getBlockAndStateInEffectAtSlot(slot)
-        .thenApplyChecked(
-            maybeBlockAndState ->
-                maybeBlockAndState.flatMap(
-                    blockAndState -> regenerateBeaconState(blockAndState.getState(), slot)));
-  }
-
   public SafeFuture<Optional<CheckpointState>> getCheckpointStateAtEpoch(final UInt64 epoch) {
     final UInt64 epochSlot = spec.computeStartSlotAtEpoch(epoch);
     return getSignedBlockAndStateInEffectAtSlot(epochSlot)
@@ -346,12 +337,6 @@ public class CombinedChainDataClient {
               final SignedBeaconBlock block = latestBlockAndState.getBlock();
               return CheckpointState.create(spec, checkpoint, block, checkpointState.orElseThrow());
             });
-  }
-
-  private SafeFuture<Optional<SignedBlockAndState>> getStateForBlock(
-      final SignedBeaconBlock block) {
-    return getStateByBlockRoot(block.getRoot())
-        .thenApply(maybeState -> maybeState.map(state -> new SignedBlockAndState(block, state)));
   }
 
   public boolean isFinalized(final UInt64 slot) {
@@ -443,69 +428,8 @@ public class CombinedChainDataClient {
                     .orElseGet(() -> getFinalizedStateFromStateRoot(stateRoot)));
   }
 
-  private SafeFuture<Optional<BeaconState>> getFinalizedStateFromStateRoot(
-      final Bytes32 stateRoot) {
-    return historicalChainData
-        .getFinalizedSlotByStateRoot(stateRoot)
-        .thenCompose(
-            maybeSlot -> maybeSlot.map(this::getStateAtSlotExact).orElse(STATE_NOT_AVAILABLE));
-  }
-
   public SafeFuture<Optional<UInt64>> getFinalizedSlotByBlockRoot(final Bytes32 blockRoot) {
     return historicalChainData.getFinalizedSlotByBlockRoot(blockRoot);
-  }
-
-  private SafeFuture<Optional<BeaconState>> getStateFromSlotAndBlock(
-      final SlotAndBlockRoot slotAndBlockRoot) {
-    final UpdatableStore store = getStore();
-    if (store == null) {
-      LOG.trace(
-          "No state at slot and block root {} because the store is not set", slotAndBlockRoot);
-      return STATE_NOT_AVAILABLE;
-    }
-    return store
-        .retrieveStateAtSlot(slotAndBlockRoot)
-        .thenCompose(
-            maybeState -> {
-              if (maybeState.isPresent()) {
-                return SafeFuture.completedFuture(maybeState);
-              }
-              LOG.debug(
-                  "State not found in store, querying historicalData for {}:{}",
-                  slotAndBlockRoot::getSlot,
-                  slotAndBlockRoot::getBlockRoot);
-              return getFinalizedStateFromSlotAndBlock(slotAndBlockRoot);
-            });
-  }
-
-  private SafeFuture<Optional<BeaconState>> getFinalizedStateFromSlotAndBlock(
-      final SlotAndBlockRoot slotAndBlockRoot) {
-    return historicalChainData
-        .getFinalizedStateByBlockRoot(slotAndBlockRoot.getBlockRoot())
-        .thenApply(
-            maybeState ->
-                maybeState.flatMap(
-                    preState -> regenerateBeaconState(preState, slotAndBlockRoot.getSlot())));
-  }
-
-  private Optional<BeaconState> regenerateBeaconState(
-      final BeaconState preState, final UInt64 slot) {
-    if (preState.getSlot().equals(slot)) {
-      return Optional.of(preState);
-    } else if (slot.compareTo(getCurrentSlot()) > 0) {
-      LOG.debug("Attempted to wind forward to a future state: {}", slot.toString());
-      return Optional.empty();
-    }
-    try {
-      LOG.debug(
-          "Processing slots to regenerate state from slot {}, target slot {}",
-          preState::getSlot,
-          () -> slot);
-      return Optional.of(spec.processSlots(preState, slot));
-    } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
-      LOG.debug("State Transition error", e);
-      return Optional.empty();
-    }
   }
 
   public Optional<SafeFuture<BeaconState>> getBestState() {
@@ -514,10 +438,6 @@ public class CombinedChainDataClient {
 
   public Optional<Bytes32> getBestBlockRoot() {
     return recentChainData.getBestBlockRoot();
-  }
-
-  public Optional<MinimalBeaconBlockSummary> getBestBlock() {
-    return recentChainData.getHeadBlock();
   }
 
   public Optional<ChainHead> getChainHead() {
@@ -532,7 +452,7 @@ public class CombinedChainDataClient {
     return recentChainData != null && recentChainData.getStore() != null;
   }
 
-  public boolean isChainDataFullyAvailable() {
+  private boolean isChainDataFullyAvailable() {
     return !recentChainData.isPreGenesis() && !recentChainData.isPreForkChoice();
   }
 
@@ -551,10 +471,6 @@ public class CombinedChainDataClient {
       }
     }
     return result;
-  }
-
-  public Optional<UInt64> getGenesisTime() {
-    return Optional.ofNullable(recentChainData.getGenesisTime());
   }
 
   /**
@@ -692,15 +608,23 @@ public class CombinedChainDataClient {
     return Optional.ofNullable(getStore()).map(ReadOnlyStore::getLatestFinalized);
   }
 
+  // in line with spec on_block, computing finalized slot as the
+  // first slot of the epoch stored in store.finalized_checkpoint
+  public SafeFuture<Optional<BeaconState>> getBestFinalizedState() {
+    final Optional<Checkpoint> maybeFinalizedCheckpoint = getFinalizedCheckpoint();
+    if (maybeFinalizedCheckpoint.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    final UInt64 finalizedSlot =
+        spec.computeStartSlotAtEpoch(maybeFinalizedCheckpoint.get().getEpoch());
+    return getStateAtSlotExact(finalizedSlot);
+  }
+
   public SafeFuture<Optional<BeaconState>> getJustifiedState() {
     if (recentChainData.isPreGenesis()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
     return getStore().retrieveCheckpointState(getStore().getJustifiedCheckpoint());
-  }
-
-  public Optional<Checkpoint> getJustifiedCheckpoint() {
-    return Optional.ofNullable(getStore()).map(ReadOnlyStore::getJustifiedCheckpoint);
   }
 
   public Optional<GenesisData> getGenesisData() {
@@ -878,5 +802,84 @@ public class CombinedChainDataClient {
 
   public SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot() {
     return historicalChainData.getEarliestDataColumnSidecarSlot();
+  }
+
+  private SafeFuture<Optional<BeaconState>> getStateFromSlotAndBlock(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    final UpdatableStore store = getStore();
+    if (store == null) {
+      LOG.trace(
+          "No state at slot and block root {} because the store is not set", slotAndBlockRoot);
+      return STATE_NOT_AVAILABLE;
+    }
+    return store
+        .retrieveStateAtSlot(slotAndBlockRoot)
+        .thenCompose(
+            maybeState -> {
+              if (maybeState.isPresent()) {
+                return SafeFuture.completedFuture(maybeState);
+              }
+              LOG.debug(
+                  "State not found in store, querying historicalData for {}:{}",
+                  slotAndBlockRoot::getSlot,
+                  slotAndBlockRoot::getBlockRoot);
+              return getFinalizedStateFromSlotAndBlock(slotAndBlockRoot);
+            });
+  }
+
+  private SafeFuture<Optional<BeaconState>> getFinalizedStateFromSlotAndBlock(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return historicalChainData
+        .getFinalizedStateByBlockRoot(slotAndBlockRoot.getBlockRoot())
+        .thenApply(
+            maybeState ->
+                maybeState.flatMap(
+                    preState -> regenerateBeaconState(preState, slotAndBlockRoot.getSlot())));
+  }
+
+  private Optional<BeaconState> regenerateBeaconState(
+      final BeaconState preState, final UInt64 slot) {
+    if (preState.getSlot().equals(slot)) {
+      return Optional.of(preState);
+    } else if (slot.compareTo(getCurrentSlot()) > 0) {
+      LOG.debug("Attempted to wind forward to a future state: {}", slot.toString());
+      return Optional.empty();
+    }
+    try {
+      LOG.debug(
+          "Processing slots to regenerate state from slot {}, target slot {}",
+          preState::getSlot,
+          () -> slot);
+      return Optional.of(spec.processSlots(preState, slot));
+    } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
+      LOG.debug("State Transition error", e);
+      return Optional.empty();
+    }
+  }
+
+  private SafeFuture<Optional<SignedBlockAndState>> getStateForBlock(
+      final SignedBeaconBlock block) {
+    return getStateByBlockRoot(block.getRoot())
+        .thenApply(maybeState -> maybeState.map(state -> new SignedBlockAndState(block, state)));
+  }
+
+  private SafeFuture<Optional<BeaconState>> getFinalizedStateFromStateRoot(
+      final Bytes32 stateRoot) {
+    return historicalChainData
+        .getFinalizedSlotByStateRoot(stateRoot)
+        .thenCompose(
+            maybeSlot -> maybeSlot.map(this::getStateAtSlotExact).orElse(STATE_NOT_AVAILABLE));
+  }
+
+  private SafeFuture<Optional<BeaconState>> regenerateStateAndSlotExact(final UInt64 slot) {
+    return getBlockAndStateInEffectAtSlot(slot)
+        .thenApplyChecked(
+            maybeBlockAndState ->
+                maybeBlockAndState.flatMap(
+                    blockAndState -> regenerateBeaconState(blockAndState.getState(), slot)));
+  }
+
+  private Optional<Checkpoint> getFinalizedCheckpoint() {
+    return Optional.ofNullable(getStore()).map(ReadOnlyStore::getFinalizedCheckpoint);
   }
 }

@@ -104,6 +104,6 @@ public class DenebUpgradeAcceptanceTest extends AcceptanceTestBase {
         .withRealNetwork()
         .withJwtSecretFile(JWT_FILE)
         .withDenebEpoch(UInt64.valueOf(2))
-        .withTotalTerminalDifficulty(0);
+        .withTerminalBlockHash(DEFAULT_EL_GENESIS_HASH, 0);
   }
 }

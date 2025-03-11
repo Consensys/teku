@@ -61,7 +61,8 @@ class ValidatorIndexProviderTest {
     when(validatorApiChannel.getValidatorIndices(validators.getPublicKeys()))
         .thenReturn(SafeFuture.completedFuture(Map.of(key1, 1, key2, 20, key3, 300)));
     provider.lookupValidators();
-    assertThat(provider.getValidatorIndices()).isCompletedWithValue(IntArrayList.of(1, 20, 300));
+    final IntCollection actual = provider.getValidatorIndices().getImmediately();
+    assertThat(actual).containsExactlyInAnyOrderElementsOf(IntArrayList.of(1, 20, 300));
   }
 
   @Test
@@ -99,7 +100,8 @@ class ValidatorIndexProviderTest {
     when(validatorApiChannel.getValidatorIndices(Set.of(key1, key3)))
         .thenReturn(SafeFuture.completedFuture(Map.of(key1, 1, key3, 300)));
     provider.lookupValidators();
-    assertThat(provider.getValidatorIndices()).isCompletedWithValue(IntArrayList.of(1, 20, 300));
+    final IntCollection actual = provider.getValidatorIndices().getImmediately();
+    assertThat(actual).containsExactlyInAnyOrderElementsOf(IntArrayList.of(1, 20, 300));
   }
 
   @Test

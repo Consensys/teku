@@ -207,6 +207,41 @@ class RecentChainDataTest {
   }
 
   @Test
+  void initializeFromAnchorPoint_withEmptySlotAtEndOfFinalizedEpoch() {
+    initPreGenesis();
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+    final UInt64 genesisTime = UInt64.valueOf(5000);
+    chainBuilder.generateGenesis(genesisTime, true);
+    final List<SignedBlockAndState> chain = chainBuilder.generateBlocksUpToSlot(15);
+    chainBuilder.generateBlockAtSlot(17);
+    final SignedBlockAndState anchor = chain.getLast();
+
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, anchor.getState());
+    final UInt64 anchorBlockTime =
+        anchorPoint.getBlockSlot().times(genesisSpecConfig.getSecondsPerSlot()).plus(genesisTime);
+    final UInt64 time = anchorBlockTime.plus(100);
+    recentChainData.initializeFromAnchorPoint(anchorPoint, time);
+    assertThat(recentChainData.getStore().getTimeSeconds()).isEqualTo(time);
+  }
+
+  @Test
+  void initializeFromAnchorPoint_withEmptySlotAtStartOEpoch() {
+    initPreGenesis();
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+    final UInt64 genesisTime = UInt64.valueOf(5000);
+    chainBuilder.generateGenesis(genesisTime, true);
+    chainBuilder.generateBlocksUpToSlot(15);
+    final SignedBlockAndState anchor = chainBuilder.generateBlockAtSlot(18);
+
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialState(spec, anchor.getState());
+    final UInt64 anchorBlockTime =
+        anchorPoint.getBlockSlot().times(genesisSpecConfig.getSecondsPerSlot()).plus(genesisTime);
+    final UInt64 time = anchorBlockTime.plus(100);
+    recentChainData.initializeFromAnchorPoint(anchorPoint, time);
+    assertThat(recentChainData.getStore().getTimeSeconds()).isEqualTo(time);
+  }
+
+  @Test
   void getGenesisData_shouldBeEmptyPreGenesis() {
     initPreGenesis();
     assertThat(recentChainData.getGenesisData()).isEmpty();
@@ -1092,7 +1127,6 @@ class RecentChainDataTest {
   private long getReorgCountMetric(final StorageSystem storageSystem) {
     return storageSystem
         .getMetricsSystem()
-        .getCounter(TekuMetricCategory.BEACON, "reorgs_total")
-        .getValue();
+        .getCounterValue(TekuMetricCategory.BEACON, "reorgs_total");
   }
 }

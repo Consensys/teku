@@ -34,10 +34,13 @@ import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
 public class P2PConfig {
 
-  public static final int DEFAULT_PEER_RATE_LIMIT = 500;
+  public static final int DEFAULT_PEER_BLOCKS_RATE_LIMIT = 500;
+  // 250 MB per peer per minute (~ 4.16 MB/s)
+  public static final int DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT = 2000;
+
+  public static final int DEFAULT_PEER_REQUEST_LIMIT = 100;
 
   public static final boolean DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED = true;
-  public static final int DEFAULT_PEER_REQUEST_LIMIT = 50;
   public static final int DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT = 2;
   public static final boolean DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED = false;
   public static final boolean DEFAULT_GOSSIP_SCORING_ENABLED = true;
@@ -61,7 +64,8 @@ public class P2PConfig {
   private final boolean subscribeAllSubnetsEnabled;
   private final int dasExtraCustodyGroupCount;
   private final boolean dasLossySamplerEnabled;
-  private final int peerRateLimit;
+  private final int peerBlocksRateLimit;
+  private final int peerBlobSidecarsRateLimit;
   private final int peerRequestLimit;
   private final int batchVerifyMaxThreads;
   private final int batchVerifyQueueCapacity;
@@ -80,7 +84,8 @@ public class P2PConfig {
       final boolean subscribeAllSubnetsEnabled,
       final int dasExtraCustodyGroupCount,
       final boolean dasLossySamplerEnabled,
-      final int peerRateLimit,
+      final int peerBlocksRateLimit,
+      final int peerBlobSidecarsRateLimit,
       final int peerRequestLimit,
       final int batchVerifyMaxThreads,
       final int batchVerifyQueueCapacity,
@@ -97,7 +102,8 @@ public class P2PConfig {
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
     this.dasExtraCustodyGroupCount = dasExtraCustodyGroupCount;
     this.dasLossySamplerEnabled = dasLossySamplerEnabled;
-    this.peerRateLimit = peerRateLimit;
+    this.peerBlocksRateLimit = peerBlocksRateLimit;
+    this.peerBlobSidecarsRateLimit = peerBlobSidecarsRateLimit;
     this.peerRequestLimit = peerRequestLimit;
     this.batchVerifyMaxThreads = batchVerifyMaxThreads;
     this.batchVerifyQueueCapacity = batchVerifyQueueCapacity;
@@ -149,8 +155,12 @@ public class P2PConfig {
         MathHelpers.intPlusMaxIntCapped(minCustodyGroupRequirement, dasExtraCustodyGroupCount));
   }
 
-  public int getPeerRateLimit() {
-    return peerRateLimit;
+  public int getPeerBlocksRateLimit() {
+    return peerBlocksRateLimit;
+  }
+
+  public int getPeerBlobSidecarsRateLimit() {
+    return peerBlobSidecarsRateLimit;
   }
 
   public int getPeerRequestLimit() {
@@ -201,7 +211,8 @@ public class P2PConfig {
     private Boolean subscribeAllCustodySubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private int dasExtraCustodyGroupCount = DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT;
     private boolean dasLossySamplerEnabled = DEFAULT_DAS_LOSSY_SAMPLER_ENABLED;
-    private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
+    private Integer peerBlocksRateLimit = DEFAULT_PEER_BLOCKS_RATE_LIMIT;
+    private Integer peerBlobSidecarsRateLimit = DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
     private int batchVerifyMaxThreads = DEFAULT_BATCH_VERIFY_MAX_THREADS;
     private OptionalInt batchVerifyQueueCapacity = OptionalInt.empty();
@@ -258,7 +269,8 @@ public class P2PConfig {
           subscribeAllSubnetsEnabled,
           dasExtraCustodyGroupCount,
           dasLossySamplerEnabled,
-          peerRateLimit,
+          peerBlocksRateLimit,
+          peerBlobSidecarsRateLimit,
           peerRequestLimit,
           batchVerifyMaxThreads,
           batchVerifyQueueCapacity.orElse(DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY),
@@ -327,13 +339,23 @@ public class P2PConfig {
       return this;
     }
 
-    public Builder peerRateLimit(final Integer peerRateLimit) {
-      checkNotNull(peerRateLimit);
-      if (peerRateLimit < 0) {
+    public Builder peerBlocksRateLimit(final Integer peerBlocksRateLimit) {
+      checkNotNull(peerBlocksRateLimit);
+      if (peerBlocksRateLimit < 0) {
         throw new InvalidConfigurationException(
-            String.format("Invalid peerRateLimit: %d", peerRateLimit));
+            String.format("Invalid peerBlocksRateLimit: %d", peerBlocksRateLimit));
       }
-      this.peerRateLimit = peerRateLimit;
+      this.peerBlocksRateLimit = peerBlocksRateLimit;
+      return this;
+    }
+
+    public Builder peerBlobSidecarsRateLimit(final Integer peerBlobSidecarsRateLimit) {
+      checkNotNull(peerBlobSidecarsRateLimit);
+      if (peerBlobSidecarsRateLimit < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid peerBlobSidecarsRateLimit: %d", peerBlobSidecarsRateLimit));
+      }
+      this.peerBlobSidecarsRateLimit = peerBlobSidecarsRateLimit;
       return this;
     }
 

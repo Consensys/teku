@@ -72,6 +72,14 @@ public class StoreOptions {
   private int earliestAvailableBlockSlotQueryFrequency =
       DEFAULT_EARLIEST_AVAILABLE_BLOCK_SLOT_QUERY_FREQUENCY;
 
+  @Option(
+      names = {"--Xstore-initial-canonical-block-root"},
+      hidden = true,
+      paramLabel = "<BlockRoot>",
+      description = "Overrides the initial canonical block root",
+      arity = "1")
+  private String initialCanonicalBlockRoot;
+
   public void configure(final TekuConfiguration.Builder builder) {
     builder.store(
         b ->
@@ -80,6 +88,7 @@ public class StoreOptions {
                 .stateCacheSize(stateCacheSize)
                 .epochStateCacheSize(epochStateCacheSize)
                 .earliestAvailableBlockSlotFrequency(earliestAvailableBlockSlotQueryFrequency)
-                .checkpointStateCacheSize(checkpointStateCacheSize));
+                .checkpointStateCacheSize(checkpointStateCacheSize)
+                .initialCanonicalBlockRoot(initialCanonicalBlockRoot));
   }
 }

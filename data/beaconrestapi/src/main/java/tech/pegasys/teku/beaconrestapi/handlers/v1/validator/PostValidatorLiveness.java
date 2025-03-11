@@ -77,7 +77,8 @@ public class PostValidatorLiveness extends RestApiEndpoint {
                     + " and based upon a subjective view of the network.")
             .tags(TAG_VALIDATOR)
             .pathParam(EPOCH_PARAMETER)
-            .requestBodyType(DeserializableTypeDefinition.listOf(UINT64_TYPE, 1))
+            .requestBodyType(
+                DeserializableTypeDefinition.listOf(UINT64_TYPE, Optional.of(1), Optional.empty()))
             .response(SC_OK, "Successful Response", RESPONSE_TYPE)
             .response(
                 SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")

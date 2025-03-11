@@ -392,7 +392,6 @@ public class EndpointMetadata {
         gen.writeObjectField("type", "array");
         gen.writeFieldName("items");
         entry.getValue().serializeOpenApiTypeOrReference(gen);
-        gen.writeObjectField("minItems", "1");
         gen.writeEndObject();
       } else { // Handle regular parameter
         entry.getValue().serializeOpenApiTypeOrReference(gen);
@@ -773,6 +772,11 @@ public class EndpointMetadata {
 
     public EndpointMetaDataBuilder withInternalErrorResponse() {
       response(SC_INTERNAL_SERVER_ERROR, "Internal server error", HTTP_ERROR_RESPONSE_TYPE);
+      return this;
+    }
+
+    public EndpointMetaDataBuilder withUnsupportedMediaTypeResponse() {
+      response(SC_UNSUPPORTED_MEDIA_TYPE, "Unsupported media type", HTTP_ERROR_RESPONSE_TYPE);
       return this;
     }
 

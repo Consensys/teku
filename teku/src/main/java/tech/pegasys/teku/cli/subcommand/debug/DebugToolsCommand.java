@@ -34,6 +34,7 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
+import tech.pegasys.teku.cli.subcommand.storage.RocksDbCommand;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
@@ -58,7 +59,12 @@ import tech.pegasys.teku.validator.client.slashingriskactions.DoppelgangerDetect
 @Command(
     name = "debug-tools",
     description = "Utilities for debugging issues",
-    subcommands = {DebugDbCommand.class, PrettyPrintCommand.class, ValidatorKeysCheckCommand.class},
+    subcommands = {
+      DebugDbCommand.class,
+      PrettyPrintCommand.class,
+      ValidatorKeysCheckCommand.class,
+      RocksDbCommand.class
+    },
     showDefaultValues = true,
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,

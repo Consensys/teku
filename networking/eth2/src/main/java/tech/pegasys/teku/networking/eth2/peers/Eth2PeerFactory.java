@@ -37,7 +37,8 @@ public class Eth2PeerFactory {
   private final CombinedChainDataClient chainDataClient;
   private final TimeProvider timeProvider;
   private final Optional<Checkpoint> requiredCheckpoint;
-  private final int peerRateLimit;
+  private final int peerBlocksRateLimit;
+  private final int peerBlobSidecarsRateLimit;
   private final int peerRequestLimit;
   private final KZG kzg;
   private final DiscoveryNodeIdExtractor discoveryNodeIdExtractor;
@@ -50,7 +51,8 @@ public class Eth2PeerFactory {
       final MetadataMessagesFactory metadataMessagesFactory,
       final TimeProvider timeProvider,
       final Optional<Checkpoint> requiredCheckpoint,
-      final int peerRateLimit,
+      final int peerBlocksRateLimit,
+      final int peerBlobSidecarsRateLimit,
       final int peerRequestLimit,
       final KZG kzg,
       final DiscoveryNodeIdExtractor discoveryNodeIdExtractor) {
@@ -61,7 +63,8 @@ public class Eth2PeerFactory {
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
     this.requiredCheckpoint = requiredCheckpoint;
-    this.peerRateLimit = peerRateLimit;
+    this.peerBlocksRateLimit = peerBlocksRateLimit;
+    this.peerBlobSidecarsRateLimit = peerBlobSidecarsRateLimit;
     this.peerRequestLimit = peerRequestLimit;
     this.kzg = kzg;
     this.discoveryNodeIdExtractor = discoveryNodeIdExtractor;
@@ -77,14 +80,10 @@ public class Eth2PeerFactory {
         metadataMessagesFactory,
         PeerChainValidator.create(spec, metricsSystem, chainDataClient, requiredCheckpoint),
         RateTracker.create(
-            peerRateLimit * BLOCK_RATE_LIMIT_BOOST, TIME_OUT, timeProvider, "blocks"),
+            peerBlocksRateLimit * BLOCK_RATE_LIMIT_BOOST, TIME_OUT, timeProvider, "blocks"),
+        RateTracker.create(peerBlobSidecarsRateLimit, TIME_OUT, timeProvider, "blobSidecars"),
         RateTracker.create(
-            peerRateLimit * spec.getMaxBlobsPerBlockForHighestMilestone().orElse(1),
-            TIME_OUT,
-            timeProvider,
-            "blobSidecars"),
-        RateTracker.create(
-            peerRateLimit * spec.getNumberOfDataColumns().orElse(1),
+            peerBlocksRateLimit * spec.getNumberOfDataColumns().orElse(1),
             TIME_OUT,
             timeProvider,
             "dataColumns"),

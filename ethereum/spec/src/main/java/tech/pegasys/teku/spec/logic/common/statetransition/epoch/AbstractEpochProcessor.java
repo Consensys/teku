@@ -371,15 +371,11 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       for (int index = 0; index < validators.size(); index++) {
         final ValidatorStatus status = statuses.get(index);
 
-        if (isEligibleForActivationQueue(status)) {
-          final Validator validator = validators.get(index);
-          if (validator.getActivationEligibilityEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH)) {
-            validators.set(
-                index, validator.withActivationEligibilityEpoch(currentEpoch.plus(UInt64.ONE)));
-          }
-        }
-
-        if (status.isActiveInCurrentEpoch()
+        final Validator validator = validators.get(index);
+        if (isEligibleForActivationQueue(validator, status)) {
+          validators.set(
+              index, validator.withActivationEligibilityEpoch(currentEpoch.plus(UInt64.ONE)));
+        } else if (status.isActiveInCurrentEpoch()
             && status.getCurrentEpochEffectiveBalance().isLessThanOrEqualTo(ejectionBalance)) {
           beaconStateMutators.initiateValidatorExit(state, index, validatorExitContextSupplier);
         }
@@ -435,9 +431,11 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
    * @param status - Validator status
    * @return true if validator is eligible to be added to the activation queue
    */
-  protected boolean isEligibleForActivationQueue(final ValidatorStatus status) {
+  protected boolean isEligibleForActivationQueue(
+      final Validator validator, final ValidatorStatus status) {
     return !status.isActiveInCurrentEpoch()
-        && status.getCurrentEpochEffectiveBalance().equals(maxEffectiveBalance);
+        && status.getCurrentEpochEffectiveBalance().equals(maxEffectiveBalance)
+        && validator.getActivationEligibilityEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH);
   }
 
   /** Processes slashings */

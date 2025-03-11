@@ -75,7 +75,7 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
             true,
             dataStructureUtil.randomEncodedExecutionRequests());
     final SafeFuture<Response<GetPayloadV4Response>> dummyResponse =
-        SafeFuture.completedFuture(new Response<>(responseData));
+        SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(responseData));
     when(executionEngineClient.getPayloadV4(context.getPayloadId())).thenReturn(dummyResponse);
 
     final UInt64 slot = dataStructureUtil.randomUInt64(1_000_000);
@@ -109,7 +109,7 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
         new PayloadStatusV1(
             ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
-        SafeFuture.completedFuture(new Response<>(responseData));
+        SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(responseData));
     when(executionEngineClient.newPayloadV4(
             eq(payloadV3),
             eq(versionedHashes),
@@ -151,7 +151,7 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
                 ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), ""),
             dataStructureUtil.randomBytes8());
     final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
-        SafeFuture.completedFuture(new Response<>(responseData));
+        SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(responseData));
     when(executionEngineClient.forkChoiceUpdatedV3(forkChoiceStateV1, payloadAttributes))
         .thenReturn(dummyResponse);
     final SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> future =
@@ -178,7 +178,7 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
                         blobSidecar.getKZGProof().getBytesCompressed()))
             .toList();
     final SafeFuture<Response<List<BlobAndProofV1>>> dummyResponse =
-        SafeFuture.completedFuture(new Response<>(responseData));
+        SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(responseData));
     when(executionEngineClient.getBlobsV1(versionedHashes)).thenReturn(dummyResponse);
     final SafeFuture<List<BlobAndProof>> future = handler.engineGetBlobs(versionedHashes, slot);
     verify(executionEngineClient).getBlobsV1(versionedHashes);

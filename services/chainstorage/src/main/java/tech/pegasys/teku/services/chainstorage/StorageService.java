@@ -273,9 +273,13 @@ public class StorageService extends Service implements StorageServiceFacade {
 
   @Override
   protected SafeFuture<?> doStop() {
-    return blockPruner
-        .map(BlockPruner::stop)
-        .orElseGet(() -> SafeFuture.completedFuture(null))
+    return SafeFuture.allOf(
+            blockPruner.map(BlockPruner::stop).map(SafeFuture::toVoid).orElse(SafeFuture.COMPLETE),
+            blobsPruner
+                .map(BlobSidecarPruner::stop)
+                .map(SafeFuture::toVoid)
+                .orElse(SafeFuture.COMPLETE),
+            statePruner.map(StatePruner::stop).map(SafeFuture::toVoid).orElse(SafeFuture.COMPLETE))
         .thenCompose(__ -> SafeFuture.fromRunnable(database::close));
   }
 

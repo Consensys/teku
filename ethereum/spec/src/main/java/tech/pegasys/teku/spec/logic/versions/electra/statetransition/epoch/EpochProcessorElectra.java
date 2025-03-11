@@ -102,21 +102,15 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
       for (int index = 0; index < validators.size(); index++) {
         final ValidatorStatus status = statuses.get(index);
 
-        if (isEligibleForActivationQueue(status)) {
-          final Validator validator = validators.get(index);
-          if (validator.getActivationEligibilityEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH)) {
-            state
-                .getValidators()
-                .update(
-                    index, v -> v.withActivationEligibilityEpoch(currentEpoch.plus(UInt64.ONE)));
-          }
+        final Validator validator = validators.get(index);
+        if (isEligibleForActivationQueue(validator, status)) {
+          state
+              .getValidators()
+              .update(index, v -> v.withActivationEligibilityEpoch(currentEpoch.plus(UInt64.ONE)));
         } else if (status.isActiveInCurrentEpoch()
             && status.getCurrentEpochEffectiveBalance().isLessThanOrEqualTo(ejectionBalance)) {
           beaconStateMutators.initiateValidatorExit(state, index, validatorExitContextSupplier);
-        }
-        // activate all eligible validators
-        final Validator validator = validators.get(index);
-        if (isEligibleForActivation(finalizedEpoch, validator)) {
+        } else if (isEligibleForActivation(finalizedEpoch, validator)) {
           state.getValidators().update(index, v -> v.withActivationEpoch(activationEpoch));
         }
       }
@@ -137,9 +131,11 @@ public class EpochProcessorElectra extends EpochProcessorCapella {
    * @param status - Validator status
    */
   @Override
-  protected boolean isEligibleForActivationQueue(final ValidatorStatus status) {
+  protected boolean isEligibleForActivationQueue(
+      final Validator validator, final ValidatorStatus status) {
     return !status.isActiveInCurrentEpoch()
-        && status.getCurrentEpochEffectiveBalance().isGreaterThanOrEqualTo(minActivationBalance);
+        && status.getCurrentEpochEffectiveBalance().isGreaterThanOrEqualTo(minActivationBalance)
+        && validator.getActivationEligibilityEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH);
   }
 
   @Override

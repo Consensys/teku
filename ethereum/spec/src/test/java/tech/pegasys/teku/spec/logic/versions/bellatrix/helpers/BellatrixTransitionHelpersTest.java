@@ -14,24 +14,15 @@
 package tech.pegasys.teku.spec.logic.versions.bellatrix.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -40,52 +31,15 @@ class BellatrixTransitionHelpersTest {
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final ExecutionLayerChannel executionLayer = mock(ExecutionLayerChannel.class);
-  private final UInt256 terminalDifficulty =
-      spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalTotalDifficulty();
-
   private final UInt64 slot = dataStructureUtil.randomUInt64();
-
   private final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
 
-  @BeforeEach
-  void setUp() {
-    when(executionLayer.eth1GetPowBlock(any())).thenReturn(completedFuture(Optional.empty()));
-  }
-
   @Test
-  void shouldBeSyncingIfPowBlockIsNotAvailable() {
-    assertPayloadResultStatus(ExecutionPayloadStatus.SYNCING);
-  }
-
-  @Test
-  void shouldBeSyncingIfPowParentIsNotAvailable() {
-    withPowBlock(payload.getParentHash(), terminalDifficulty);
-
-    assertPayloadResultStatus(ExecutionPayloadStatus.SYNCING);
-  }
-
-  @Test
-  void shouldBeInvalidIfTotalDifficultyNotReached() {
-    withPowBlock(payload.getParentHash(), terminalDifficulty.subtract(1));
-
-    assertPayloadResultStatus(ExecutionPayloadStatus.INVALID);
-  }
-
-  @Test
-  void shouldBeInvalidIfParentTotalDifficultyIsReached() {
-    final PowBlock powBlock = withPowBlock(payload.getParentHash(), terminalDifficulty.plus(1));
-    withPowBlock(powBlock.getParentHash(), terminalDifficulty);
-
-    assertPayloadResultStatus(ExecutionPayloadStatus.INVALID);
-  }
-
-  @Test
-  void shouldBeValidIfTerminalDifficultyConditionsMet() {
-    final PowBlock powBlock = withPowBlock(payload.getParentHash(), terminalDifficulty.plus(1));
-    withPowBlock(powBlock.getParentHash(), terminalDifficulty.subtract(1));
-
-    assertThat(validateMergeBlock()).isCompletedWithValue(PayloadStatus.VALID);
+  void shouldBeInvalidForTTDNotSupported() {
+    assertThat(validateMergeBlock())
+        .isCompletedWithValue(
+            PayloadStatus.invalid(
+                Optional.empty(), Optional.of("Total difficulty check is no more supported")));
   }
 
   @Test
@@ -97,9 +51,7 @@ class BellatrixTransitionHelpersTest {
         spec.getGenesisSpec()
             .getBellatrixTransitionHelpers()
             .orElseThrow()
-            .validateMergeBlock(executionLayer, payload, blockSlot);
-    // Verify EL is never called if hash is configured and matches
-    verifyNoMoreInteractions(executionLayer);
+            .validateMergeBlock(payload, blockSlot);
     assertPayloadResultStatus(result, ExecutionPayloadStatus.VALID);
   }
 
@@ -112,7 +64,7 @@ class BellatrixTransitionHelpersTest {
         spec.getGenesisSpec()
             .getBellatrixTransitionHelpers()
             .orElseThrow()
-            .validateMergeBlock(executionLayer, payload, blockSlot);
+            .validateMergeBlock(payload, blockSlot);
     assertPayloadResultStatus(result, ExecutionPayloadStatus.VALID);
   }
 
@@ -125,7 +77,7 @@ class BellatrixTransitionHelpersTest {
         spec.getGenesisSpec()
             .getBellatrixTransitionHelpers()
             .orElseThrow()
-            .validateMergeBlock(executionLayer, payload, blockSlot);
+            .validateMergeBlock(payload, blockSlot);
     assertPayloadResultStatus(result, ExecutionPayloadStatus.INVALID);
   }
 
@@ -138,7 +90,7 @@ class BellatrixTransitionHelpersTest {
         spec.getGenesisSpec()
             .getBellatrixTransitionHelpers()
             .orElseThrow()
-            .validateMergeBlock(executionLayer, payload, blockSlot);
+            .validateMergeBlock(payload, blockSlot);
     assertPayloadResultStatus(result, ExecutionPayloadStatus.INVALID);
   }
 
@@ -152,23 +104,11 @@ class BellatrixTransitionHelpersTest {
                         .terminalBlockHashActivationEpoch(terminalBlockHashActivationEpoch)));
   }
 
-  private PowBlock withPowBlock(final Bytes32 hash, final UInt256 totalDifficulty) {
-    final PowBlock powBlock =
-        new PowBlock(hash, dataStructureUtil.randomBytes32(), totalDifficulty, UInt64.ZERO);
-    when(executionLayer.eth1GetPowBlock(powBlock.getBlockHash()))
-        .thenReturn(completedFuture(Optional.of(powBlock)));
-    return powBlock;
-  }
-
-  private void assertPayloadResultStatus(final ExecutionPayloadStatus expectedStatus) {
-    assertPayloadResultStatus(validateMergeBlock(), expectedStatus);
-  }
-
   private SafeFuture<PayloadStatus> validateMergeBlock() {
     return spec.getGenesisSpec()
         .getBellatrixTransitionHelpers()
         .orElseThrow()
-        .validateMergeBlock(executionLayer, payload, slot);
+        .validateMergeBlock(payload, slot);
   }
 
   private void assertPayloadResultStatus(

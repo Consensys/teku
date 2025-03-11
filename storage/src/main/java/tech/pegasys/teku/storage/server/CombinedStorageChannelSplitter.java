@@ -190,6 +190,11 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
+  public SafeFuture<Optional<Bytes32>> getLatestCanonicalBlockRoot() {
+    return asyncRunner.runAsync(() -> queryDelegate.getLatestCanonicalBlockRoot());
+  }
+
+  @Override
   public SafeFuture<Optional<UInt64>> getFinalizedSlotByStateRoot(final Bytes32 stateRoot) {
     return asyncRunner.runAsync(() -> queryDelegate.getFinalizedSlotByStateRoot(stateRoot));
   }

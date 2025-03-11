@@ -39,7 +39,7 @@ public class PostSyncDutiesRequest extends AbstractTypeDefRequest {
         GET_SYNC_COMMITTEE_DUTIES,
         Map.of(RestApiConstants.EPOCH, epoch.toString()),
         validatorIndices.stream().toList(),
-        listOf(INTEGER_TYPE, 1),
+        listOf(INTEGER_TYPE, Optional.of(1), Optional.empty()),
         new ResponseHandler<>(SYNC_COMMITTEE_DUTIES_TYPE));
   }
 }

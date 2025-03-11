@@ -217,7 +217,8 @@ public abstract class AbstractStoreTest {
                     genesis.getExecutionBlockHash(),
                     Optional.of(spec.calculateBlockCheckpoints(genesis.getState())))))
         .storeConfig(pruningOptions)
-        .votes(emptyMap());
+        .votes(emptyMap())
+        .latestCanonicalBlockRoot(Optional.empty());
   }
 
   protected UpdatableStore createGenesisStoreWithMockForkChoiceStrategy(

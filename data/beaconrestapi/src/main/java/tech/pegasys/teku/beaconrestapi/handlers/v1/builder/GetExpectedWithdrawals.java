@@ -70,6 +70,7 @@ public class GetExpectedWithdrawals extends RestApiEndpoint {
                     + "    that gets built on the specified state.")
             .tags(TAG_BUILDER)
             .pathParam(PARAMETER_STATE_ID)
+            .deprecated(true)
             .queryParam(PROPOSAL_SLOT_PARAMETER)
             .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
             .withNotFoundResponse()

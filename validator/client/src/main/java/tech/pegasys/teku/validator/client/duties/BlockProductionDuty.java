@@ -125,7 +125,7 @@ public class BlockProductionDuty implements Duty {
 
     if (!blockContainerAndMetaData.consensusBlockValue().isZero()) {
       LOG.info(
-          "Received block for slot {}, block rewards {} ETH, execution payload value {} ETH",
+          "Validator client received block for slot {}, block rewards {} ETH, execution payload value {} ETH",
           slot,
           weiToEth(blockContainerAndMetaData.consensusBlockValue()),
           weiToEth(blockContainerAndMetaData.executionPayloadValue()));
