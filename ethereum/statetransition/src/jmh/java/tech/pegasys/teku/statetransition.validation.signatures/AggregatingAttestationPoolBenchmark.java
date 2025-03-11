@@ -71,8 +71,7 @@ public class AggregatingAttestationPoolBenchmark {
 
   // a reference file can be obtained here
   // https://drive.google.com/file/d/139bA7r88riFODZ7S0FpvtO7hmWmdC_XC/view?usp=drive_link
-  private static final String STATE_PATH =
-      "/Users/tbenr/Documents/parentBlockState_3816770.ssz";
+  private static final String STATE_PATH = "/Users/tbenr/Documents/parentBlockState_3816770.ssz";
 
   // a reference file can be obtained here
   // https://drive.google.com/file/d/1I5vXK-x8ZH9wh40wNf1oACXeF_U3to8J/view?usp=drive_link
