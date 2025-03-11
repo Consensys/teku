@@ -25,9 +25,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -188,9 +185,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         return Optional.empty();
       } else {
         try {
-          final BeaconState state = maybeFuture.get().get(200, TimeUnit.MILLISECONDS);
+          final BeaconState state = maybeFuture.get().getImmediately();
           return Optional.of(spec.getBeaconCommitteesSize(state, attestationData.getSlot()));
-        } catch (ExecutionException | TimeoutException | InterruptedException e) {
+        } catch (IllegalStateException e) {
           LOG.info(
               "Couldn't retrieve state for committee calculation of slot {}",
               attestationData.getSlot());
@@ -205,11 +202,10 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         recentChainData.retrieveStateInEffectAtSlot(
             miscHelpers.computeStartSlotAtEpoch(attestationEpoch));
     try {
-      final Optional<BeaconState> maybeState =
-          optionalFutureBeaconState.get(200, TimeUnit.MILLISECONDS);
+      final Optional<BeaconState> maybeState = optionalFutureBeaconState.getImmediately();
       return maybeState.map(
           state -> spec.getBeaconCommitteesSize(state, attestationData.getSlot()));
-    } catch (ExecutionException | TimeoutException | InterruptedException e) {
+    } catch (IllegalStateException e) {
       LOG.info(
           "Couldn't retrieve state in effect at slot {} for committee calculation of slot {}",
           miscHelpers.computeStartSlotAtEpoch(attestationEpoch),
