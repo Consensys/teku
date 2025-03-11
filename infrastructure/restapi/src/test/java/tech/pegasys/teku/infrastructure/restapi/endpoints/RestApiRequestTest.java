@@ -288,6 +288,14 @@ public class RestApiRequestTest {
   }
 
   @Test
+  void shouldRetrieveCaseInsensitiveHeader() {
+    final ParameterMetadata<String> abcParam = new ParameterMetadata<>("ABC", STRING_TYPE);
+    when(context.headerMap()).thenReturn(Map.of("abc", "helloWorld"));
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+    assertThat(request.getRequestHeader(abcParam)).isEqualTo("helloWorld");
+  }
+
+  @Test
   void shouldGetQueryParameterListTypeInteger() {
     when(context.queryParamMap()).thenReturn(Map.of("int", List.of("1", "2", "3")));
     final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
