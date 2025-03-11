@@ -38,6 +38,7 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentMatchers;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -104,7 +105,8 @@ class AggregatingAttestationPoolTest {
       final BeaconState state = dataStructureUtil.randomBeaconState();
       final UpdatableStore mockStore = mock(UpdatableStore.class);
       when(mockRecentChainData.getStore()).thenReturn(mockStore);
-      when(mockStore.getBlockStateIfAvailable(any())).thenReturn(Optional.of(state));
+      when(mockRecentChainData.getBestState())
+          .thenReturn(Optional.of(SafeFuture.completedFuture(state)));
       when(mockSpec.getBeaconCommitteesSize(any(), any())).thenReturn(committeeSizes);
     }
 
