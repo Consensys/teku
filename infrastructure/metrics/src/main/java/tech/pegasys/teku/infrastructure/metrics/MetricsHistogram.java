@@ -43,6 +43,22 @@ public class MetricsHistogram {
     this.timeProvider = timeProvider;
   }
 
+  public MetricsHistogram(
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider,
+      final MetricCategory category,
+      final String name,
+      final String help,
+      final double[] buckets,
+      final String... labels) {
+    this.histogram =
+        metricsSystem
+            .createLabelledHistogram(
+                category, name, help, buckets.length > 0 ? buckets : DEFAULT_BUCKETS)
+            .labels(labels.length > 0 ? labels : new String[0]);
+    this.timeProvider = timeProvider;
+  }
+
   public static class Timer implements Closeable {
     private final Histogram histogram;
     private final TimeProvider timeProvider;

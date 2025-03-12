@@ -837,7 +837,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             operationPoolAsyncRunner,
             Duration.ofMinutes(5),
             specConfigFulu.getNumberOfColumns(),
-            metricsSystem);
+            metricsSystem,
+            timeProvider);
     dataColumnSidecarCustody.subscribeToValidDataColumnSidecars(
         recoveringSidecarRetriever::onNewValidatedSidecar);
 

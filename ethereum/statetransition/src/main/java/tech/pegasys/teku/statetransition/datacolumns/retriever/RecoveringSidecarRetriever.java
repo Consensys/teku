@@ -27,11 +27,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
@@ -67,7 +67,8 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
       final AsyncRunner asyncRunner,
       final Duration recoverInitiationTimeout,
       final int columnCount,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider) {
     this.delegate = delegate;
     this.kzg = kzg;
     this.specHelpers = specHelpers;
@@ -85,9 +86,14 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     this.dataAvailabilityReconstructionTimeSeconds =
         new MetricsHistogram(
             metricsSystem,
+            timeProvider,
             TekuMetricCategory.BEACON,
             "data_availability_reconstruction_time_seconds",
-            "Time taken to reconstruct columns");
+            "Time taken to reconstruct columns",
+            new double[] {
+              0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 5.0,
+              7.5, 10.0
+            });
   }
 
   @Override
@@ -241,6 +247,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
               dataAvailabilityReconstructionTimeSeconds.startTimer()) {
             recover();
             recoveryComplete();
+            totalDataAvailabilityReconstructedColumns.inc(recoverColumnCount);
           } catch (final Throwable t) {
             LOG.error(
                 "Failed to reconstruct data column sidecars {}", sidecar.getSlotAndBlockRoot(), t);
