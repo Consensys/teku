@@ -109,10 +109,11 @@ public class ProtoNode {
       }
       weight = weight.minus(deltaAbsoluteValue);
     } else {
-      weight = weight.safePlus(delta);
-      if (weight.equals(UInt64.MAX_VALUE)) {
+      final UInt64 newWeight = weight.safePlus(delta);
+      if (newWeight.equals(UInt64.MAX_VALUE)) {
         LOG.trace("Unable to add delta {} to weight {}", delta, weight);
       }
+      weight = newWeight;
     }
   }
 
