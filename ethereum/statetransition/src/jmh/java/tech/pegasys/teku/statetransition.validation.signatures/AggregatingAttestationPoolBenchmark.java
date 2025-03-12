@@ -69,21 +69,22 @@ public class AggregatingAttestationPoolBenchmark {
   // https://github.com/tbenr/teku/commit/08ab0e3ac6e71a9d6340ae30757c63f922f2c968
   // state and actual block can be obtained the usual ways
 
+  // dumps files in https://drive.google.com/drive/folders/11vGCDsZej2nap_3JT6Z6NqyxL3rnJb3y
+
   // a reference file can be obtained here
   // https://drive.google.com/file/d/139bA7r88riFODZ7S0FpvtO7hmWmdC_XC/view?usp=drive_link
-  private static final String STATE_PATH = "/Users/tbenr/Documents/parentBlockState_3816770.ssz";
+  private static final String STATE_PATH = "parentBlockState_3816770.ssz";
 
   // a reference file can be obtained here
   // https://drive.google.com/file/d/1I5vXK-x8ZH9wh40wNf1oACXeF_U3to8J/view?usp=drive_link
-  private static final String POOL_DUMP_PATH =
-      "/Users/tbenr/Documents/attestations_3816773.multi_ssz";
+  private static final String POOL_DUMP_PATH = "attestations_3816773.multi_ssz";
   private static final UInt64 SLOT = UInt64.valueOf(3816773);
 
   // a reference file can be obtained here
   // https://drive.google.com/file/d/1PN0OToyNOV0SyjeQaS7oF3J4cKbmy1nX/view?usp=drive_link
   private static final Optional<String> ACTUAL_BLOCK_PATH =
       Optional.of(
-          "/Users/tbenr/Documents/block-3816773-456c9819a4c1e792ba8b1f71119628aed2a4d1e0d2c66199fbc763832937421b.ssz");
+          "block-3816773-456c9819a4c1e792ba8b1f71119628aed2a4d1e0d2c66199fbc763832937421b.ssz");
 
   private BeaconState state;
   private BeaconState newBlockState;
@@ -193,8 +194,7 @@ public class AggregatingAttestationPoolBenchmark {
 
     // NOTE: the problem with rewards is that we don't feed the pool with the "seen" attestations
     // in theory we should feed the pool with recent blocks' attestations via
-    // onAttestationsIncludedInBlock
-    // to get an accurate reward calculation
+    // onAttestationsIncludedInBlock to replicate the actual pool behavior
     final BlockRewardData blockRewardData =
         blockRewardCalculatorUtil.getBlockRewardData(block, state);
     System.out.println(
@@ -236,7 +236,5 @@ public class AggregatingAttestationPoolBenchmark {
     for (int i = 0; i < 1; i++) {
       benchmark.getAttestationsForBlock(bh);
     }
-
-    System.out.println("done");
   }
 }
