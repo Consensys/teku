@@ -95,7 +95,12 @@ public class LoggingConfigurator {
 
   public static synchronized void setAllLevels(final Level level) {
     STATUS_LOG.info("Setting logging level to {}", level.name());
-    Configurator.setAllLevels("", level);
+    // Teku
+    Configurator.setAllLevels("tech.pegasys", level);
+    // discovery
+    Configurator.setAllLevels("org.ethereum", level);
+    // jvm-libp2p
+    Configurator.setAllLevels("io.libp2p", level);
     rootLogLevel = level;
   }
 
