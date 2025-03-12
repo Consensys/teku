@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import com.google.common.collect.Sets;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -158,7 +158,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   private synchronized Optional<MatchingDataAttestationGroup> maybeCreateAttestationGroup(
       final AttestationData attestationData, final Optional<Int2IntMap> committeesSize) {
     dataHashBySlot
-        .computeIfAbsent(attestationData.getSlot(), slot -> new HashSet<>())
+        .computeIfAbsent(attestationData.getSlot(), slot -> Sets.newConcurrentHashSet())
         .add(attestationData.hashTreeRoot());
     final MatchingDataAttestationGroup attestationGroup =
         attestationGroupByDataHash.computeIfAbsent(
@@ -234,7 +234,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
               }
             });
     if (count.get() > 0) {
-      LOG.info(
+      LOG.trace(
           "firstValidAttestationSlot: {}, removed {} keys",
           () -> firstValidAttestationSlot,
           count::get);
