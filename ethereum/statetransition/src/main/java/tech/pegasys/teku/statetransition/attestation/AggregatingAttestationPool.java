@@ -152,6 +152,11 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
           attestationData.getTarget().getRoot());
       return Optional.empty();
     }
+    return maybeCreateAttestationGroup(attestationData, committeesSize);
+  }
+
+  private synchronized Optional<MatchingDataAttestationGroup> maybeCreateAttestationGroup(
+      final AttestationData attestationData, final Optional<Int2IntMap> committeesSize) {
     dataHashBySlot
         .computeIfAbsent(attestationData.getSlot(), slot -> new HashSet<>())
         .add(attestationData.hashTreeRoot());
