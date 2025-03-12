@@ -133,7 +133,6 @@ public class BeaconStateBuilderElectra
     return this;
   }
 
-
   public BeaconStateBuilderElectra pendingDeposits(final List<PendingDeposit> pendingDeposits) {
     checkNotNull(pendingDeposits);
     this.pendingDeposits =
