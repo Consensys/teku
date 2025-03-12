@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.tuweni.bytes.Bytes32;
@@ -50,7 +50,7 @@ import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggreg
 public class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
 
   private final NavigableMap<Integer, Set<ValidatableAttestation>> attestationsByValidatorCount =
-      new TreeMap<>(Comparator.reverseOrder()); // Most validators first
+      new ConcurrentSkipListMap<>(Comparator.reverseOrder()); // Most validators first
 
   private final Spec spec;
   private Optional<Bytes32> committeeShufflingSeed = Optional.empty();
@@ -70,7 +70,7 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
    * {@link AggregatingAttestationPool} once it is too old to be included in blocks (32 slots).
    */
   private final NavigableMap<UInt64, AttestationBitsAggregator> includedValidatorsBySlot =
-      new TreeMap<>();
+      new ConcurrentSkipListMap<>();
 
   /** Precalculated combined list of included validators across all blocks. */
   private AttestationBitsAggregator includedValidators;
