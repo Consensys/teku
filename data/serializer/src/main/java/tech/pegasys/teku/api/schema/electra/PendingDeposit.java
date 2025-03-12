@@ -21,7 +21,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -36,7 +35,7 @@ public class PendingDeposit {
   private final BLSPublicKey publicKey;
 
   @JsonProperty("withdrawal_credentials")
-  private final Eth1Address withdrawalCredentials;
+  private final Bytes32 withdrawalCredentials;
 
   @JsonProperty("amount")
   public final UInt64 amount;
@@ -49,7 +48,7 @@ public class PendingDeposit {
 
   public PendingDeposit(
       final @JsonProperty("pubkey") BLSPublicKey publicKey,
-      final @JsonProperty("withdrawal_credentials") Eth1Address withdrawalCredentials,
+      final @JsonProperty("withdrawal_credentials") Bytes32 withdrawalCredentials,
       final @JsonProperty("amount") UInt64 amount,
       final @JsonProperty("signature") BLSSignature signature,
       final @JsonProperty("slot") UInt64 slot) {
@@ -64,8 +63,7 @@ public class PendingDeposit {
       final tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit
           internalPendingDeposit) {
     this.publicKey = internalPendingDeposit.getPublicKey();
-    this.withdrawalCredentials =
-        Eth1Address.fromBytes(internalPendingDeposit.getWithdrawalCredentials());
+    this.withdrawalCredentials = internalPendingDeposit.getWithdrawalCredentials();
     this.amount = internalPendingDeposit.getAmount();
     this.signature = new BLSSignature(internalPendingDeposit.getSignature());
     this.slot = internalPendingDeposit.getSlot();
@@ -83,7 +81,7 @@ public class PendingDeposit {
         .getPendingDepositSchema()
         .create(
             new SszPublicKey(publicKey),
-            SszBytes32.of(Bytes32.wrap(withdrawalCredentials.getWrappedBytes())),
+            SszBytes32.of(withdrawalCredentials),
             SszUInt64.of(amount),
             new SszSignature(signature.asInternalBLSSignature()),
             SszUInt64.of(slot));
