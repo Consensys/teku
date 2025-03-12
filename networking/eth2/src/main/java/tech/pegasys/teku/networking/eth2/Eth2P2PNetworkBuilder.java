@@ -158,7 +158,7 @@ public class Eth2P2PNetworkBuilder {
         new SubnetSubscriptionService();
     final DiscoveryNodeIdExtractor discoveryNodeIdExtractor = new LibP2PDiscoveryNodeIdExtractor();
     final RpcEncoding rpcEncoding =
-        RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxChunkSize());
+        RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
     if (statusMessageFactory == null) {
       statusMessageFactory = new StatusMessageFactory(combinedChainDataClient.getRecentChainData());
     }
@@ -185,7 +185,8 @@ public class Eth2P2PNetworkBuilder {
             eth2RpcOutstandingPingThreshold,
             eth2StatusUpdateInterval,
             timeProvider,
-            config.getPeerRateLimit(),
+            config.getPeerBlocksRateLimit(),
+            config.getPeerBlobSidecarsRateLimit(),
             config.getPeerRequestLimit(),
             spec,
             kzg,

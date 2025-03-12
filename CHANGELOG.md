@@ -7,13 +7,13 @@
 ## Unreleased Changes
 
 ### Breaking Changes
-`--Xvalidators-builder-registration-default-gas-limit` is removed in favour of `--validators-builder-registration-default-gas-limit`
 
 ### Additions and Improvements
-- Default the gas limit to 36 million for externally produced blocks
-- Optimized blobs validation pipeline
-- Remove delay when fetching blobs from the local EL on block arrival
+ - Added beacon-api `/eth/v1/beacon/states/{state_id}/pending_partial_withdrawals` endpoint for use post-electra.
+ - Added beacon-api `/eth/v1/beacon/states/{state_id}/pending_deposits` endpoint for use post-electra.
+ - Added Chiado Electra configuration due at Mar-06-2025 09:43:40 GMT+0000
 
 ### Bug Fixes
-- Fix `--version` command output [#8960](https://github.com/Consensys/teku/issues/8960)
-- Fix issue (introduced in `24.12.1`) with peer stability when the upperbound is set to a high number
+ - added 415 response code for beacon-api `/eth/v1/validator/register_validator`.
+ - Holesky pectra bad block ignored to aid syncing
+ - Removed stack trace by default from duty failure messages.

@@ -97,7 +97,7 @@ public class MetricFetcher {
 
       final Map<String, String> metricLabels = new HashMap<>();
       final String labelsString = line.substring(line.indexOf("{") + 1, line.indexOf("}"));
-      final Pattern p = Pattern.compile("(.*?)=\"(.*?)\",");
+      final Pattern p = Pattern.compile("(.*?)=\"(.*?)\",?");
       final Matcher m = p.matcher(labelsString);
       while (m.find()) {
         metricLabels.put(m.group(1), m.group(2));

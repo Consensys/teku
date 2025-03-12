@@ -52,7 +52,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -116,7 +115,7 @@ public class SyncingNodeManager {
     chainUtil.initializeStorage();
 
     final MergeTransitionBlockValidator transitionBlockValidator =
-        new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
+        new MergeTransitionBlockValidator(spec, recentChainData);
 
     final ForkChoice forkChoice =
         new ForkChoice(
@@ -156,7 +155,7 @@ public class SyncingNodeManager {
             recentChainData,
             forkChoice,
             WeakSubjectivityFactory.lenientValidator(),
-            new ExecutionLayerChannelStub(spec, false, Optional.empty()));
+            new ExecutionLayerChannelStub(spec, false));
 
     final BlockManager blockManager =
         new BlockManager(

@@ -130,7 +130,8 @@ public class EngineCapabilitiesMonitorTest {
 
   private void mockEngineCapabilitiesResponse(final List<String> engineCapabilities) {
     when(executionEngineClient.exchangeCapabilities(capabilities))
-        .thenReturn(SafeFuture.completedFuture(new Response<>(engineCapabilities)));
+        .thenReturn(
+            SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(engineCapabilities)));
   }
 
   private UInt64 computeApplicableSlotForEpoch(final UInt64 epoch) {

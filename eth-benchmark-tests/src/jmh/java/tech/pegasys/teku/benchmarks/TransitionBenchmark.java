@@ -97,7 +97,7 @@ public abstract class TransitionBenchmark {
     wsValidator = WeakSubjectivityFactory.lenientValidator();
     recentChainData = MemoryOnlyRecentChainData.create(spec);
     final MergeTransitionBlockValidator transitionBlockValidator =
-        new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
+        new MergeTransitionBlockValidator(spec, recentChainData);
     ForkChoice forkChoice =
         new ForkChoice(
             spec,

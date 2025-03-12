@@ -3,7 +3,7 @@
     "tags" : [ "Beacon", "Rewards" ],
     "operationId" : "getBlockRewards",
     "summary" : "Get block rewards",
-    "description" : "Retrieve block reward info for a single block.",
+    "description" : "Retrieve block reward info for a single block. The rewards value is the sum of values of the proposer rewards from attestations, sync committees and slashings included in the proposal.",
     "parameters" : [ {
       "name" : "block_id",
       "required" : true,

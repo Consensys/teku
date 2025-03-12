@@ -39,11 +39,10 @@ public class AsyncResponseProcessorTest {
   final Eth2RpcResponseHandler<String, Void> responseHandler =
       Eth2RpcResponseHandler.expectMultipleResponses(
           RpcResponseListener.from(res -> requestProcessor.get().accept(res)));
-  private final ResponseStream<String> responseStream = new ResponseStream<>(responseHandler);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final AsyncResponseProcessor<String> asyncResponseProcessor =
-      new AsyncResponseProcessor<>(asyncRunner, responseStream, errorConsumer);
+      new AsyncResponseProcessor<>(asyncRunner, responseHandler, errorConsumer);
 
   @Test
   public void processMultipleResponsesSuccessfully() throws Exception {

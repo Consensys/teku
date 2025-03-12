@@ -97,6 +97,10 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return delegate.getColumnSlotsByFinalizedStateRoot();
   }
 
+  public KvStoreVariable<Bytes32> getVariableLatestCanonicalBlockRoot() {
+    return delegate.getVariableLatestCanonicalBlockRoot();
+  }
+
   public KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnNonCanonicalBlocksByRoot() {
     return delegate.getColumnNonCanonicalBlocksByRoot();
   }

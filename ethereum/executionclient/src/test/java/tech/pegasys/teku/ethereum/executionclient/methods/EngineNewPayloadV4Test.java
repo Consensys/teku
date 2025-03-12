@@ -180,12 +180,12 @@ class EngineNewPayloadV4Test {
 
   private SafeFuture<Response<PayloadStatusV1>> dummySuccessfulResponse() {
     return SafeFuture.completedFuture(
-        new Response<>(
+        Response.fromPayloadReceivedAsJson(
             new PayloadStatusV1(
                 ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null)));
   }
 
   private SafeFuture<Response<PayloadStatusV1>> dummyFailedResponse(final String errorMessage) {
-    return SafeFuture.completedFuture(Response.withErrorMessage(errorMessage));
+    return SafeFuture.completedFuture(Response.fromErrorMessage(errorMessage));
   }
 }

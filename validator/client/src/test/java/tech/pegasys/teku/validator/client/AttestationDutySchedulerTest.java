@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -34,11 +35,13 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.Validator.DutyType;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -395,12 +398,12 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
 
     // Execute
     dutyScheduler.onAttestationCreationDue(attestationProductionSlot);
-    verify(attestationDuty).performDuty();
 
     // Somehow we triggered the same slot again.
     dutyScheduler.onAttestationCreationDue(attestationProductionSlot);
+
     // But shouldn't produce another block and get ourselves slashed.
-    verifyNoMoreInteractions(attestationDuty);
+    verify(attestationDuty, times(1)).performDuty();
   }
 
   @Test
@@ -607,10 +610,12 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
 
     // Execute
     dutyScheduler.onAttestationCreationDue(attestationSlot);
-    verify(attestationDuty).performDuty();
 
+    // Run again for same slot
     dutyScheduler.onAttestationCreationDue(attestationSlot);
-    verifyNoMoreInteractions(attestationDuty);
+
+    // Verify we did not run it twice
+    verify(attestationDuty, times(1)).performDuty();
   }
 
   @Test
@@ -740,6 +745,191 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             UInt64.valueOf(2));
 
     assertThat(result).isEqualTo(headBlockRoot);
+  }
+
+  @Test
+  public void getAttestationNextSlotScheduledWithSingleScheduledAttestation() {
+    createDutySchedulerWithRealDuties();
+
+    final UInt64 attestationProductionSlot = UInt64.valueOf(5);
+    final AttesterDuty validator1Duties =
+        createAttestationDutyForEpoch(VALIDATOR1_KEY, 5, attestationProductionSlot);
+    when(validatorApiChannel.getAttestationDuties(eq(ZERO), any()))
+        .thenReturn(
+            completedFuture(
+                Optional.of(
+                    new AttesterDuties(
+                        false, dataStructureUtil.randomBytes32(), List.of(validator1Duties)))));
+
+    final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
+    when(attestationDuty.getType()).thenReturn(DutyType.ATTESTATION_PRODUCTION);
+
+    when(attestationDuty.performDuty()).thenReturn(new SafeFuture<>());
+    when(attestationDutyFactory.createProductionDuty(attestationProductionSlot, validator1))
+        .thenReturn(attestationDuty);
+
+    // Before we have any schedule duty we don't have a scheduled slot for attestation production
+    assertThat(dutyScheduler.getNextAttestationSlotScheduled()).isEmpty();
+
+    // Load attestation production duty
+    dutyScheduler.onSlot(spec.computeStartSlotAtEpoch(ZERO));
+
+    // Check that we are returning the expected slot for the attestation duty
+    assertThat(dutyScheduler.getNextAttestationSlotScheduled())
+        .hasValue(attestationProductionSlot.intValue());
+
+    // Execute attestation production
+    dutyScheduler.onAttestationCreationDue(attestationProductionSlot);
+
+    // After executing the scheduled duty, we are back to no scheduled slot for attestation
+    // production
+    assertThat(dutyScheduler.getNextAttestationSlotScheduled()).isEmpty();
+  }
+
+  @Test
+  public void getNextAttestationSlotScheduledWithManyAttestationsScheduledOnSameEpoch() {
+    createDutySchedulerWithRealDuties();
+
+    final UInt64 validator1AttestationProductionSlot = UInt64.valueOf(5);
+    final AttesterDuty validator1Duties =
+        createAttestationDutyForEpoch(VALIDATOR1_KEY, 5, validator1AttestationProductionSlot);
+
+    final UInt64 validator2AttestationProductionSlot = UInt64.valueOf(7);
+    final AttesterDuty validator2Duties =
+        createAttestationDutyForEpoch(VALIDATOR2_KEY, 6, validator2AttestationProductionSlot);
+
+    when(validatorApiChannel.getAttestationDuties(eq(ZERO), any()))
+        .thenReturn(
+            completedFuture(
+                Optional.of(
+                    new AttesterDuties(
+                        false,
+                        dataStructureUtil.randomBytes32(),
+                        List.of(validator1Duties, validator2Duties)))));
+
+    final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
+    when(attestationDuty.getType()).thenReturn(DutyType.ATTESTATION_PRODUCTION);
+    when(attestationDuty.performDuty()).thenReturn(new SafeFuture<>());
+
+    when(attestationDutyFactory.createProductionDuty(
+            validator1AttestationProductionSlot, validator1))
+        .thenReturn(attestationDuty);
+    when(attestationDutyFactory.createProductionDuty(
+            validator2AttestationProductionSlot, validator2))
+        .thenReturn(attestationDuty);
+
+    // Before we have any schedule duty we don't have a scheduled slot for attestation production
+    assertThat(dutyScheduler.getNextAttestationSlotScheduled()).isEmpty();
+
+    // Load attestation production duty
+    dutyScheduler.onSlot(spec.computeStartSlotAtEpoch(ZERO));
+
+    // Check that we are returning the expected slot for the attestation duty
+    assertThat(dutyScheduler.getNextAttestationSlotScheduled())
+        .hasValue(validator1AttestationProductionSlot.intValue());
+
+    // Execute first attestation production
+    dutyScheduler.onAttestationCreationDue(validator1AttestationProductionSlot);
+
+    // After executing the first scheduled duty, the next duty slot is our new next slot
+    assertThat(dutyScheduler.getNextAttestationSlotScheduled())
+        .hasValue(validator2AttestationProductionSlot.intValue());
+
+    // Execute second attestation production
+    dutyScheduler.onAttestationCreationDue(validator2AttestationProductionSlot);
+
+    // After both attestation creation duties have been created, we don't have a next scheduled slot
+    assertThat(dutyScheduler.getNextAttestationSlotScheduled()).isEmpty();
+  }
+
+  @Test
+  public void getNextAttestationSlotScheduledWithManyAttestationsScheduledOnDifferentEpochs() {
+    createDutySchedulerWithRealDuties();
+
+    // slot 5 is in epoch 0
+    final UInt64 validator1AttestationProductionSlot = UInt64.valueOf(5);
+    final AttesterDuty validator1Duties =
+        createAttestationDutyForEpoch(VALIDATOR1_KEY, 5, validator1AttestationProductionSlot);
+
+    // using minimal spec, slot 12 is on epoch 1
+    final UInt64 validator2AttestationProductionSlot = UInt64.valueOf(12);
+    final AttesterDuty validator2Duties =
+        createAttestationDutyForEpoch(VALIDATOR2_KEY, 6, validator2AttestationProductionSlot);
+
+    when(validatorApiChannel.getAttestationDuties(eq(ZERO), any()))
+        .thenReturn(
+            completedFuture(
+                Optional.of(
+                    new AttesterDuties(
+                        false, dataStructureUtil.randomBytes32(), List.of(validator1Duties)))));
+    when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
+        .thenReturn(
+            completedFuture(
+                Optional.of(
+                    new AttesterDuties(
+                        false, dataStructureUtil.randomBytes32(), List.of(validator2Duties)))));
+
+    final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
+    when(attestationDuty.getType()).thenReturn(DutyType.ATTESTATION_PRODUCTION);
+    when(attestationDuty.performDuty()).thenReturn(new SafeFuture<>());
+
+    when(attestationDutyFactory.createProductionDuty(
+            validator1AttestationProductionSlot, validator1))
+        .thenReturn(attestationDuty);
+    when(attestationDutyFactory.createProductionDuty(
+            validator2AttestationProductionSlot, validator2))
+        .thenReturn(attestationDuty);
+
+    // Before we have any schedule duty we don't have a scheduled slot for attestation production
+    assertThat(dutyScheduler.getNextAttestationSlotScheduled()).isEmpty();
+
+    // Load attestation production duty
+    dutyScheduler.onSlot(spec.computeStartSlotAtEpoch(ZERO));
+
+    // Check that we are returning the expected slot for the attestation duty
+    assertThat(dutyScheduler.getNextAttestationSlotScheduled())
+        .hasValue(validator1AttestationProductionSlot.intValue());
+
+    // Execute first attestation production
+    dutyScheduler.onAttestationCreationDue(validator1AttestationProductionSlot);
+
+    // After executing the first scheduled duty, the next duty slot is our new next slot
+    assertThat(dutyScheduler.getNextAttestationSlotScheduled())
+        .hasValue(validator2AttestationProductionSlot.intValue());
+
+    // Execute second attestation production
+    dutyScheduler.onAttestationCreationDue(validator2AttestationProductionSlot);
+
+    // After both attestation creation duties have been created, we don't have a next scheduled slot
+    assertThat(dutyScheduler.getNextAttestationSlotScheduled()).isEmpty();
+  }
+
+  private AttesterDuty createAttestationDutyForEpoch(
+      final BLSPublicKey validatorKey, final int validatorIndex, final UInt64 epoch) {
+    return new AttesterDuty(validatorKey, validatorIndex, 10, 3, 15, 6, epoch);
+  }
+
+  @Test
+  public void shouldOnlyUpdateNextAttestationSlotFromCurrentScheduledSlotOnwards() {
+    createDutySchedulerWithRealDuties();
+    AttestationDutyScheduler spyDutyScheduler = spy(dutyScheduler);
+    when(spyDutyScheduler.getNextAttestationSlotScheduled()).thenReturn(Optional.of(2));
+
+    // currentSlot = nextAttestationSlot; recalculate nextAttestationSlot
+    spyDutyScheduler.onSlot(ZERO);
+    verify(spyDutyScheduler, times(1)).getNextAttestationSlotScheduled();
+
+    // currentSlot < nextAttestationSlot; DO NOT recalculate nextAttestationSlot
+    spyDutyScheduler.onSlot(UInt64.valueOf(1));
+    verify(spyDutyScheduler, times(1)).getNextAttestationSlotScheduled();
+
+    // currentSlot = nextAttestationSlot; recalculate nextAttestationSlot
+    spyDutyScheduler.onSlot(UInt64.valueOf(2));
+    verify(spyDutyScheduler, times(2)).getNextAttestationSlotScheduled();
+
+    // currentSlot > nextAttestationSlot; recalculate nextAttestationSlot
+    spyDutyScheduler.onSlot(UInt64.valueOf(3));
+    verify(spyDutyScheduler, times(3)).getNextAttestationSlotScheduled();
   }
 
   private void createDutySchedulerWithRealDuties() {

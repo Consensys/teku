@@ -59,6 +59,7 @@ public class GetDepositSnapshot extends RestApiEndpoint {
                 "Latest finalized DepositTreeSnapshot that could be used to reconstruct Deposit merkle tree. "
                     + "See EIP-4881 for details.")
             .tags(TAG_BEACON)
+            .deprecated(true)
             .response(
                 SC_OK,
                 "Request successful",

@@ -67,6 +67,10 @@ public class V4HotKvStoreDao {
     return db.get(schema.getVariableBestJustifiedCheckpoint());
   }
 
+  public Optional<Bytes32> getLatestCanonicalBlockRoot() {
+    return db.get(schema.getVariableLatestCanonicalBlockRoot());
+  }
+
   public Optional<Checkpoint> getFinalizedCheckpoint() {
     return db.get(schema.getVariableFinalizedCheckpoint());
   }
@@ -220,6 +224,11 @@ public class V4HotKvStoreDao {
     @Override
     public void setFinalizedCheckpoint(final Checkpoint checkpoint) {
       transaction.put(schema.getVariableFinalizedCheckpoint(), checkpoint);
+    }
+
+    @Override
+    public void setLatestCanonicalBlockRoot(final Bytes32 canonicalBlockRoot) {
+      transaction.put(schema.getVariableLatestCanonicalBlockRoot(), canonicalBlockRoot);
     }
 
     @Override

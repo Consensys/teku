@@ -228,7 +228,7 @@ public class P2POptions {
       showDefaultValue = Visibility.ALWAYS,
       description =
           "Number of blocks/blobs being requested in a single batch to a single peer, while syncing historical data.\n"
-              + "NOTE: the actual size for blobs batches will be `maxBlobsPerBlock` times the value of this parameter.",
+              + "NOTE: the actual size for blobs being requested in a single batch will be up to `maxBlobsPerBlock` times the value of this parameter.",
       hidden = true,
       arity = "1")
   private Integer historicalSyncBatchSize = SyncConfig.DEFAULT_HISTORICAL_SYNC_BATCH_SIZE;
@@ -239,7 +239,7 @@ public class P2POptions {
       showDefaultValue = Visibility.ALWAYS,
       description =
           "Number of blocks/blobs being requested in a single batch to a single peer, while syncing.\n"
-              + "NOTE: the actual size for blobs batches will be `maxBlobsPerBlock` times the value of this parameter.",
+              + "NOTE: the actual size for blobs being requested in a single batch will be up to `maxBlobsPerBlock` times the value of this parameter.",
       hidden = true,
       arity = "1")
   private Integer forwardSyncBatchSize = SyncConfig.DEFAULT_FORWARD_SYNC_BATCH_SIZE;
@@ -255,13 +255,24 @@ public class P2POptions {
       SyncConfig.DEFAULT_FORWARD_SYNC_MAX_PENDING_BATCHES;
 
   @Option(
-      names = {"--Xp2p-sync-rate-limit"},
+      names = {"--Xp2p-sync-blocks-rate-limit"},
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
-      description = "Number of objects being requested per minute to a single peer, while syncing.",
+      description = "Number of blocks being requested per minute to a single peer, while syncing.",
       hidden = true,
       arity = "1")
-  private Integer forwardSyncRateLimit = SyncConfig.DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE;
+  private Integer forwardSyncBlocksRateLimit =
+      SyncConfig.DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE;
+
+  @Option(
+      names = {"--Xp2p-sync-blob-sidecars-rate-limit"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Number of blobs being requested per minute to a single peer, while syncing.",
+      hidden = true,
+      arity = "1")
+  private Integer forwardSyncBlobSidecarsRateLimit =
+      SyncConfig.DEFAULT_FORWARD_SYNC_MAX_BLOB_SIDECARS_PER_MINUTE;
 
   @Option(
       names = {"--p2p-subscribe-all-subnets-enabled"},
@@ -293,13 +304,22 @@ public class P2POptions {
   private boolean gossipScoringEnabled = P2PConfig.DEFAULT_GOSSIP_SCORING_ENABLED;
 
   @Option(
-      names = {"--Xpeer-rate-limit"},
+      names = {"--Xpeer-blocks-rate-limit"},
       paramLabel = "<NUMBER>",
       description =
-          "The number of requested objects per peer to allow per minute before disconnecting the peer.",
+          "The number of requested blocks per peer to allow per minute before disconnecting the peer.",
       arity = "1",
       hidden = true)
-  private Integer peerRateLimit = P2PConfig.DEFAULT_PEER_RATE_LIMIT;
+  private Integer peerBlocksRateLimit = P2PConfig.DEFAULT_PEER_BLOCKS_RATE_LIMIT;
+
+  @Option(
+      names = {"--Xpeer-blob-sidecars-rate-limit"},
+      paramLabel = "<NUMBER>",
+      description =
+          "The number of requested blobs per peer to allow per minute before disconnecting the peer.",
+      arity = "1",
+      hidden = true)
+  private Integer peerBlobSidecarsRateLimit = P2PConfig.DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT;
 
   @Option(
       names = {"--Xp2p-gossip-blobs-after-block-enabled"},
@@ -448,7 +468,8 @@ public class P2POptions {
                   .batchVerifyStrictThreadLimitEnabled(batchVerifyStrictThreadLimitEnabled)
                   .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
                   .isGossipScoringEnabled(gossipScoringEnabled)
-                  .peerRateLimit(peerRateLimit)
+                  .peerBlocksRateLimit(peerBlocksRateLimit)
+                  .peerBlobSidecarsRateLimit(peerBlobSidecarsRateLimit)
                   .allTopicsFilterEnabled(allTopicsFilterEnabled)
                   .peerRequestLimit(peerRequestLimit)
                   .floodPublishMaxMessageSizeThreshold(floodPublishMaxMessageSizeThreshold)
@@ -522,7 +543,8 @@ public class P2POptions {
             s ->
                 s.isMultiPeerSyncEnabled(multiPeerSyncEnabled)
                     .historicalSyncBatchSize(historicalSyncBatchSize)
-                    .forwardSyncMaxBlocksPerMinute(forwardSyncRateLimit)
+                    .forwardSyncMaxBlocksPerMinute(forwardSyncBlocksRateLimit)
+                    .forwardSyncMaxBlobSidecarsPerMinute(forwardSyncBlobSidecarsRateLimit)
                     .forwardSyncBatchSize(forwardSyncBatchSize)
                     .forwardSyncMaxPendingBatches(forwardSyncMaxPendingBatches));
 

@@ -15,31 +15,35 @@ package tech.pegasys.teku.ethereum.executionclient.rest;
 
 import java.util.Collections;
 import java.util.Map;
+import tech.pegasys.teku.ethereum.executionclient.schema.BuilderApiResponse;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 
 public interface RestClient {
-
   Map<String, String> NO_HEADERS = Collections.emptyMap();
 
-  SafeFuture<Response<Void>> getAsync(final String apiPath);
+  SafeFuture<Response<Void>> getAsync(String apiPath);
 
-  <T> SafeFuture<Response<T>> getAsync(
-      final String apiPath,
-      final Map<String, String> headers,
-      final DeserializableTypeDefinition<T> responseTypeDefinition);
+  <TResp extends SszData> SafeFuture<Response<BuilderApiResponse<TResp>>> getAsync(
+      String apiPath,
+      Map<String, String> headers,
+      ResponseSchemaAndDeserializableTypeDefinition<TResp> responseSchema);
 
-  <S> SafeFuture<Response<Void>> postAsync(
-      final String apiPath,
-      final S requestBodyObject,
-      final SerializableTypeDefinition<S> requestTypeDefinition);
+  <TReq extends SszData> SafeFuture<Response<Void>> postAsync(
+      String apiPath, TReq requestBodyObject, boolean postAsSsz);
 
-  <T, S> SafeFuture<Response<T>> postAsync(
-      final String apiPath,
-      final Map<String, String> headers,
-      final S requestBodyObject,
-      final SerializableTypeDefinition<S> requestTypeDefinition,
-      final DeserializableTypeDefinition<T> responseTypeDefinition);
+  <TResp extends SszData, TReq extends SszData>
+      SafeFuture<Response<BuilderApiResponse<TResp>>> postAsync(
+          String apiPath,
+          Map<String, String> headers,
+          TReq requestBodyObject,
+          boolean postAsSsz,
+          ResponseSchemaAndDeserializableTypeDefinition<TResp> responseSchema);
+
+  record ResponseSchemaAndDeserializableTypeDefinition<TResp extends SszData>(
+      SszSchema<TResp> responseSchema,
+      DeserializableTypeDefinition<BuilderApiResponse<TResp>> responseTypeDefinition) {}
 }

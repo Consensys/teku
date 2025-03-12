@@ -412,9 +412,11 @@ class ExecutionLayerBlockProductionManagerImplTest {
     doAnswer(
             __ -> {
               if (prepareEmptyResponse) {
-                return SafeFuture.completedFuture(new Response<>(Optional.empty()));
+                return SafeFuture.completedFuture(
+                    Response.fromPayloadReceivedAsJson(Optional.empty()));
               }
-              return SafeFuture.completedFuture(new Response<>(Optional.of(signedBuilderBid)));
+              return SafeFuture.completedFuture(
+                  Response.fromPayloadReceivedAsJson(Optional.of(signedBuilderBid)));
             })
         .when(builderClient)
         .getHeader(
@@ -472,7 +474,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
       final SignedBlockContainer signedBlindedBlockContainer) {
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
     when(builderClient.getPayload(signedBlindedBlockContainer.getSignedBlock()))
-        .thenReturn(SafeFuture.completedFuture(new Response<>(payload)));
+        .thenReturn(SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(payload)));
     return payload;
   }
 
@@ -481,7 +483,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final ExecutionPayloadAndBlobsBundle payloadAndBlobsBundle =
         dataStructureUtil.randomExecutionPayloadAndBlobsBundle();
     when(builderClient.getPayload(signedBlindedBlockContainer.getSignedBlock()))
-        .thenReturn(SafeFuture.completedFuture(new Response<>(payloadAndBlobsBundle)));
+        .thenReturn(
+            SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(payloadAndBlobsBundle)));
     return payloadAndBlobsBundle;
   }
 
@@ -537,13 +540,13 @@ class ExecutionLayerBlockProductionManagerImplTest {
   }
 
   private void setBuilderOffline(final UInt64 slot) {
-    updateBuilderStatus(SafeFuture.completedFuture(Response.withErrorMessage("oops")), slot);
+    updateBuilderStatus(SafeFuture.completedFuture(Response.fromErrorMessage("oops")), slot);
     reset(builderClient);
     assertThat(executionLayerManager.getExecutionBuilderModule().isBuilderAvailable()).isFalse();
   }
 
   private void setBuilderOnline() {
-    updateBuilderStatus(SafeFuture.completedFuture(Response.withNullPayload()), UInt64.ONE);
+    updateBuilderStatus(SafeFuture.completedFuture(Response.fromNullPayload()), UInt64.ONE);
     reset(builderClient);
     assertThat(executionLayerManager.getExecutionBuilderModule().isBuilderAvailable()).isTrue();
   }
@@ -567,9 +570,11 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
   private void verifySourceCounter(final Source source, final FallbackReason reason) {
     final long actualCount =
-        stubMetricsSystem
-            .getCounter(TekuMetricCategory.BEACON, "execution_payload_source_total")
-            .getValue(source.toString(), reason.toString());
+        stubMetricsSystem.getCounterValue(
+            TekuMetricCategory.BEACON,
+            "execution_payload_source_total",
+            source.toString(),
+            reason.toString());
     assertThat(actualCount).isOne();
   }
 }

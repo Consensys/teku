@@ -52,10 +52,7 @@ public abstract class ExecutionHandlerClientTest {
 
   private PowBlock createPowBlock(final Bytes32 blockHash) {
     return new PowBlock(
-        blockHash,
-        dataStructureUtil.randomBytes32(),
-        dataStructureUtil.randomUInt256(),
-        dataStructureUtil.randomUInt64());
+        blockHash, dataStructureUtil.randomBytes32(), dataStructureUtil.randomUInt64());
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -81,7 +78,7 @@ public abstract class ExecutionHandlerClientTest {
             ClientVersionV1.fromInternalClientVersion(consensusClientVersion)))
         .thenReturn(
             SafeFuture.completedFuture(
-                new Response<>(
+                Response.fromPayloadReceivedAsJson(
                     List.of(ClientVersionV1.fromInternalClientVersion(executionClientVersion)))));
 
     final SafeFuture<List<ClientVersion>> result =

@@ -67,7 +67,6 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.statetransition.MappedOperationPool;
 import tech.pegasys.teku.statetransition.OperationPool;
@@ -201,8 +200,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
                 recentChainData,
                 BlobSidecarManager.NOOP,
                 new NoopForkChoiceNotifier(),
-                new MergeTransitionBlockValidator(
-                    spec, recentChainData, ExecutionLayerChannel.NOOP),
+                new MergeTransitionBlockValidator(spec, recentChainData),
                 storageSystem.getMetricsSystem());
     final Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier =
         slot -> spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();

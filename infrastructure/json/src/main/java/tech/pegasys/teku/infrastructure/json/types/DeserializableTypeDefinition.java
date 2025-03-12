@@ -39,12 +39,14 @@ public interface DeserializableTypeDefinition<TObject> extends SerializableTypeD
 
   static <TObject> DeserializableTypeDefinition<List<TObject>> listOf(
       final DeserializableTypeDefinition<TObject> itemType) {
-    return new DeserializableListTypeDefinition<>(itemType, Optional.empty());
+    return new DeserializableListTypeDefinition<>(itemType, Optional.empty(), Optional.empty());
   }
 
   static <TObject> DeserializableTypeDefinition<List<TObject>> listOf(
-      final DeserializableTypeDefinition<TObject> itemType, final int minItems) {
-    return new DeserializableListTypeDefinition<>(itemType, Optional.of(minItems));
+      final DeserializableTypeDefinition<TObject> itemType,
+      final Optional<Integer> minItems,
+      final Optional<Integer> maxItems) {
+    return new DeserializableListTypeDefinition<>(itemType, minItems, maxItems);
   }
 
   static DeserializableTypeDefinition<Map<String, String>> mapOfStrings() {

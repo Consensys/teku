@@ -60,7 +60,7 @@ public class PeerSyncTest extends AbstractSyncTest {
       UInt64.valueOf(SyncConfig.DEFAULT_FORWARD_SYNC_BATCH_SIZE);
 
   private static final Bytes32 PEER_HEAD_BLOCK_ROOT = Bytes32.fromHexString("0x1234");
-  private static final UInt64 PEER_HEAD_SLOT = UInt64.valueOf(30);
+  private static final UInt64 PEER_HEAD_SLOT = UInt64.valueOf(20);
   private static final UInt64 PEER_FINALIZED_EPOCH = UInt64.valueOf(3);
 
   private final int slotsPerEpoch = spec.getGenesisSpecConfig().getSlotsPerEpoch();
@@ -76,7 +76,7 @@ public class PeerSyncTest extends AbstractSyncTest {
               PEER_HEAD_BLOCK_ROOT,
               PEER_HEAD_SLOT));
 
-  private final UInt64 denebPeerSlotsAhead = UInt64.valueOf(30);
+  private final UInt64 denebPeerSlotsAhead = UInt64.valueOf(20);
   private final UInt64 denebPeerHeadSlot = denebFirstSlot.plus(denebPeerSlotsAhead);
   private final UInt64 denebPeerFinalizedEpoch = spec.computeEpochAtSlot(denebPeerHeadSlot);
 

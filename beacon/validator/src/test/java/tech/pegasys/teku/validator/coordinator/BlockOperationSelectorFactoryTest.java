@@ -78,6 +78,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
@@ -262,6 +263,39 @@ class BlockOperationSelectorFactoryTest {
     assertThat(bodyBuilder.syncAggregate.getSyncCommitteeSignature().getSignature().isInfinity())
         .isTrue();
     assertThat(bodyBuilder.blsToExecutionChanges).isEmpty();
+  }
+
+  @Test
+  void shouldNotSelectVoluntaryExitWhenValidatorHasPendingWithdrawal() {
+    final UInt64 slot = UInt64.ONE;
+    final MutableBeaconStateElectra blockSlotState =
+        dataStructureUtil.randomBeaconState(slot).toVersionElectra().get().createWritableCopy();
+    blockSlotState
+        .getPendingPartialWithdrawals()
+        .append(dataStructureUtil.randomPendingPartialWithdrawal(1));
+    final SignedVoluntaryExit voluntaryExit =
+        dataStructureUtil.randomSignedVoluntaryExit(UInt64.valueOf(1));
+    final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
+    final UInt256 blockExecutionValue = dataStructureUtil.randomUInt256();
+
+    addToPool(voluntaryExitPool, voluntaryExit);
+    prepareBlockProductionWithPayload(
+        randomExecutionPayload,
+        executionPayloadContext,
+        blockSlotState,
+        Optional.of(blockExecutionValue));
+
+    safeJoin(
+        factory
+            .createSelector(
+                parentRoot,
+                blockSlotState,
+                randaoReveal,
+                Optional.of(defaultGraffiti),
+                Optional.empty(),
+                BlockProductionPerformance.NOOP)
+            .apply(bodyBuilder));
+    assertThat(bodyBuilder.voluntaryExits).isEmpty();
   }
 
   @Test

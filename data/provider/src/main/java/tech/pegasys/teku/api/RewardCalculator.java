@@ -123,7 +123,7 @@ public class RewardCalculator {
             blockAndMetadata.isExecutionOptimistic(), blockAndMetadata.isFinalized());
     return calculateSyncCommitteeRewards(
         committeeIndices,
-        participantReward.longValue(),
+        participantReward,
         block.getBody().getOptionalSyncAggregate(),
         rewardData);
   }
@@ -131,7 +131,7 @@ public class RewardCalculator {
   @VisibleForTesting
   SyncCommitteeRewardData calculateSyncCommitteeRewards(
       final Map<Integer, Integer> committeeIndices,
-      final long participantReward,
+      final UInt64 participantReward,
       final Optional<SyncAggregate> maybeAggregate,
       final SyncCommitteeRewardData data) {
     if (maybeAggregate.isEmpty()) {
@@ -143,9 +143,9 @@ public class RewardCalculator {
     committeeIndices.forEach(
         (i, key) -> {
           if (aggregate.getSyncCommitteeBits().getBit(i)) {
-            data.increaseReward(key, participantReward);
+            data.increaseReward(key, participantReward.longValue());
           } else {
-            data.decreaseReward(key, participantReward);
+            data.decreaseReward(key, participantReward.longValue());
           }
         });
 

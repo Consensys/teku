@@ -245,7 +245,7 @@ public class ValidatorApiHandlerIntegrationTest {
     specContext.assumeIsNotOneOf(SpecMilestone.DENEB);
     final UInt64 latestEpoch = UInt64.valueOf(2);
     final UInt64 latestSlot = specContext.getSpec().computeStartSlotAtEpoch(latestEpoch).plus(ONE);
-    final UInt64 targetEpoch = UInt64.valueOf(latestEpoch.longValue() + 3);
+    final UInt64 targetEpoch = latestEpoch.plus(3);
     final UInt64 targetEpochStartSlot = specContext.getSpec().computeStartSlotAtEpoch(targetEpoch);
     final UInt64 targetSlot = targetEpochStartSlot.plus(2);
 

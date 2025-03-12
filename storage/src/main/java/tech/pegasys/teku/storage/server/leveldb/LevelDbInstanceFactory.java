@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.io.IOException;
 import java.util.Collection;
-import org.fusesource.leveldbjni.JniDBFactory;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import org.iq80.leveldb.DB;
@@ -45,7 +44,8 @@ public class LevelDbInstanceFactory {
             .writeBufferSize(configuration.getLeveldbWriteBufferSize());
 
     try {
-      final DB db = JniDBFactory.factory.open(configuration.getDatabaseDir().toFile(), options);
+      final DB db =
+          CustomJniDBFactory.FACTORY.open(configuration.getDatabaseDir().toFile(), options);
       return new LevelDbInstance(db, metricsSystem, metricCategory);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to open database", e);

@@ -61,11 +61,35 @@ public class ValidatorKeysApi {
 
   public void addLocalValidatorsAndExpect(
       final ValidatorKeystores validatorKeystores, final String expectedStatus) throws IOException {
+    addLocalValidatorsAndExpect(
+        validatorKeystores,
+        validatorKeystores.getPasswords(),
+        validatorKeystores.getValidatorKeys().stream().map(__ -> expectedStatus).toList());
+  }
+
+  public void addLocalValidatorsAndExpect(
+      final ValidatorKeystores validatorKeystores,
+      final List<String> passwords,
+      final List<String> expectedStatuses)
+      throws IOException {
+    addLocalValidatorsAndExpect(validatorKeystores, passwords, expectedStatuses, Optional.empty());
+  }
+
+  public void addLocalValidatorsAndExpect(
+      final ValidatorKeystores validatorKeystores,
+      final List<String> passwords,
+      final List<String> expectedStatuses,
+      final Optional<List<String>> maybeExpectedMessages)
+      throws IOException {
     final Path tempDir = Files.createTempDirectory("validator-keys-api");
-    final JsonNode addResult =
-        objectMapper.readTree(addLocalValidators(validatorKeystores, tempDir));
-    assertThat(addResult.get("data").size()).isEqualTo(validatorKeystores.getValidatorCount());
-    checkStatus(addResult.get("data"), expectedStatus);
+    final List<String> keystores = validatorKeystores.getKeystores(tempDir);
+    assertThat(keystores.size()).isEqualTo(passwords.size());
+    assertThat(keystores.size()).isEqualTo(expectedStatuses.size());
+    final JsonNode addResult = objectMapper.readTree(addLocalValidators(keystores, passwords));
+    assertThat(addResult.get("data").size()).isEqualTo(keystores.size());
+    checkStatuses(addResult.get("data"), expectedStatuses);
+    maybeExpectedMessages.ifPresent(
+        expectedMessages -> checkMessages(addResult.get("data"), expectedMessages));
     tempDir.toFile().delete();
   }
 
@@ -217,14 +241,10 @@ public class ValidatorKeysApi {
     return httpClient.get(validatorUri.get(), getGasLimitUrl(publicKey), authHeaders());
   }
 
-  private String addLocalValidators(final ValidatorKeystores validatorKeystores, final Path tempDir)
+  private String addLocalValidators(final List<String> keystores, final List<String> passwords)
       throws IOException {
-    final List<String> keystores = validatorKeystores.getKeystores(tempDir);
-    final List<String> passwords = validatorKeystores.getPasswords();
-
     final String body =
         objectMapper.writeValueAsString(Map.of("keystores", keystores, "passwords", passwords));
-
     final String result = httpClient.post(validatorUri.get(), LOCAL_KEYS_URL, body, authHeaders());
     LOG.debug("POST Keys: " + result);
     return result;
@@ -299,6 +319,25 @@ public class ValidatorKeysApi {
     for (Iterator<JsonNode> it = data.elements(); it.hasNext(); ) {
       final JsonNode node = it.next();
       assertThat(node.get("status").asText()).isEqualTo(status);
+    }
+  }
+
+  private void checkStatuses(final JsonNode data, final List<String> statuses) {
+    assertThat(data.isArray()).isTrue();
+    for (int i = 0; i < data.size(); i++) {
+      final JsonNode node = data.get(i);
+      assertThat(node.get("status").asText()).isEqualTo(statuses.get(i));
+    }
+  }
+
+  private void checkMessages(final JsonNode data, final List<String> messages) {
+    assertThat(data.isArray()).isTrue();
+    for (int i = 0; i < data.size(); i++) {
+      final String message = messages.get(i);
+      if (!message.isEmpty()) {
+        final JsonNode node = data.get(i);
+        assertThat(node.get("message").asText()).isEqualTo(messages.get(i));
+      }
     }
   }
 

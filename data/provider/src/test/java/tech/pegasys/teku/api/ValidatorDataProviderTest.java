@@ -54,6 +54,7 @@ import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -407,14 +408,22 @@ public class ValidatorDataProviderTest {
     final SszList<SignedValidatorRegistration> validatorRegistrations =
         dataStructureUtil.randomSignedValidatorRegistrations(numOfValidatorRegistrationsAttempted);
 
-    final Map<BLSPublicKey, ValidatorStatus> knownValidators =
+    final Map<BLSPublicKey, StateValidatorData> knownValidators =
         IntStream.range(0, ValidatorStatus.values().length)
             .mapToObj(
                 statusIdx ->
                     Map.entry(
                         validatorRegistrations.get(statusIdx).getMessage().getPublicKey(),
                         ValidatorStatus.values()[statusIdx]))
-            .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+            .collect(
+                Collectors.toUnmodifiableMap(
+                    Map.Entry::getKey,
+                    e ->
+                        new StateValidatorData(
+                            dataStructureUtil.randomValidatorIndex(),
+                            dataStructureUtil.randomUInt64(),
+                            e.getValue(),
+                            dataStructureUtil.randomValidator())));
 
     @SuppressWarnings("EnumOrdinal")
     final List<BLSPublicKey> exitedOrUnknownKeys =
@@ -429,11 +438,11 @@ public class ValidatorDataProviderTest {
         .thenAnswer(
             args -> {
               final Collection<BLSPublicKey> publicKeys = args.getArgument(0);
-              final Map<BLSPublicKey, ValidatorStatus> validatorStatuses =
+              final Map<BLSPublicKey, StateValidatorData> validatorData =
                   publicKeys.stream()
                       .filter(knownValidators::containsKey)
                       .collect(Collectors.toMap(Function.identity(), knownValidators::get));
-              return SafeFuture.completedFuture(Optional.of(validatorStatuses));
+              return SafeFuture.completedFuture(Optional.of(validatorData));
             });
     when(validatorApiChannel.registerValidators(any())).thenReturn(SafeFuture.COMPLETE);
 
