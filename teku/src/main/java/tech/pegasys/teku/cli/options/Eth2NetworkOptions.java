@@ -219,7 +219,7 @@ public class Eth2NetworkOptions {
       names = {"--Xnetwork-pending-attestations-max-queue"},
       hidden = true,
       paramLabel = "<NUMBER>",
-      description = "Override the queue size of the p2p async runner",
+      description = "Override the queue size for pending attestations",
       converter = OptionalIntConverter.class,
       arity = "1")
   private OptionalInt pendingAttestationsMaxQueue = OptionalInt.empty();

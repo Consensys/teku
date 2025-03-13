@@ -522,7 +522,7 @@ public class Eth2NetworkConfiguration {
           "BeaconChain Max Queue size must be at least 2000 (Xnetwork-async-beaconchain-max-queue - default 10000)");
       checkArgument(
           pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS) >= 10000,
-          "Pending attestations queue size must be at least 10000 (Xnetwork-pending-attestations-max-queue - default 10000)");
+          "Pending attestations queue size must be at least 10000 (Xnetwork-pending-attestations-max-queue - default 30000)");
     }
 
     public Builder constants(final String constants) {
