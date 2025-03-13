@@ -56,6 +56,12 @@ public class Eth2NetworkConfiguration {
 
   public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = false;
 
+  // should fit attestations for a slot given validator set size
+  // so DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS * slots_per_epoch should be >= validator set size
+  // ideally
+  // on all subnets, you may receive and have to cache that number of messages
+  public static final int DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS = 30_000;
+
   public static final boolean DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES = false;
 
   public static final boolean DEFAULT_ALLOW_SYNC_OUTSIDE_WEAK_SUBJECTIVITY_PERIOD = false;
@@ -106,6 +112,7 @@ public class Eth2NetworkConfiguration {
   private final int asyncP2pMaxQueue;
   private final boolean forkChoiceLateBlockReorgEnabled;
   private final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes;
+  private final int pendingAttestationsMaxQueue;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -132,7 +139,8 @@ public class Eth2NetworkConfiguration {
       final int asyncBeaconChainMaxThreads,
       final int asyncBeaconChainMaxQueue,
       final boolean forkChoiceLateBlockReorgEnabled,
-      final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes) {
+      final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes,
+      final int pendingAttestationsMaxQueue) {
     this.spec = spec;
     this.constants = constants;
     this.stateBoostrapConfig = stateBoostrapConfig;
@@ -162,6 +170,7 @@ public class Eth2NetworkConfiguration {
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
     this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
         forkChoiceUpdatedAlwaysSendPayloadAttributes;
+    this.pendingAttestationsMaxQueue = pendingAttestationsMaxQueue;
 
     LOG.debug(
         "P2P async queue - {} threads, max queue size {} ", asyncP2pMaxThreads, asyncP2pMaxQueue);
@@ -275,6 +284,10 @@ public class Eth2NetworkConfiguration {
     return forkChoiceLateBlockReorgEnabled;
   }
 
+  public int getPendingAttestationsMaxQueue() {
+    return pendingAttestationsMaxQueue;
+  }
+
   public boolean isForkChoiceUpdatedAlwaysSendPayloadAttributes() {
     return forkChoiceUpdatedAlwaysSendPayloadAttributes;
   }
@@ -384,6 +397,7 @@ public class Eth2NetworkConfiguration {
     private boolean forkChoiceLateBlockReorgEnabled = DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
     private boolean forkChoiceUpdatedAlwaysSendPayloadAttributes =
         DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
+    private OptionalInt pendingAttestationsMaxQueue = OptionalInt.empty();
 
     public void spec(final Spec spec) {
       this.spec = spec;
@@ -479,7 +493,8 @@ public class Eth2NetworkConfiguration {
           asyncBeaconChainMaxThreads,
           asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE),
           forkChoiceLateBlockReorgEnabled,
-          forkChoiceUpdatedAlwaysSendPayloadAttributes);
+          forkChoiceUpdatedAlwaysSendPayloadAttributes,
+          pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS));
     }
 
     private void validateCommandLineParameters() {
@@ -505,6 +520,9 @@ public class Eth2NetworkConfiguration {
       checkArgument(
           asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE) >= 2000,
           "BeaconChain Max Queue size must be at least 2000 (Xnetwork-async-beaconchain-max-queue - default 10000)");
+      checkArgument(
+          pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS) >= 10000,
+          "Pending attestations queue size must be at least 10000 (Xnetwork-pending-attestations-max-queue - default 10000)");
     }
 
     public Builder constants(final String constants) {
@@ -982,6 +1000,11 @@ public class Eth2NetworkConfiguration {
         final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes) {
       this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
           forkChoiceUpdatedAlwaysSendPayloadAttributes;
+      return this;
+    }
+
+    public Builder pendingAttestationsMaxQueue(final int pendingAttestationsMaxQueue) {
+      this.pendingAttestationsMaxQueue = OptionalInt.of(pendingAttestationsMaxQueue);
       return this;
     }
   }

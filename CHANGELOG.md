@@ -19,6 +19,7 @@
  - Added Chiado Electra configuration due at Mar-06-2025 09:43:40 GMT+0000
  - Removed stack trace by default from duty failure messages.
  - Holesky pectra bad block ignored to aid syncing
+ - Added a development flag to increase the maximum pending queue for attestations.
 
 ### Bug Fixes
  - Added 415 response code for beacon-api `/eth/v1/validator/register_validator`.
