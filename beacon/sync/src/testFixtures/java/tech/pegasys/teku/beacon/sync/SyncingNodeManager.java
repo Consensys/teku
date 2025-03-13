@@ -142,7 +142,7 @@ public class SyncingNodeManager {
     final PendingPool<SignedBeaconBlock> pendingBlocks =
         poolFactory.createPendingPoolForBlocks(spec);
     final PendingPool<ValidatableAttestation> pendingAttestations =
-        poolFactory.createPendingPoolForAttestations(spec);
+        poolFactory.createPendingPoolForAttestations(spec, 10000);
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
     final Map<Bytes32, BlockImportResult> invalidBlockRoots = LimitedMap.createSynchronizedLRU(500);

@@ -22,6 +22,7 @@ import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT
 import static tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig.DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
 import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT;
 import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT_IPV6;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
 
 import java.util.List;
@@ -306,6 +307,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS);
     assertThat(tekuConfiguration.p2p().getBatchVerifyQueueCapacity())
         .isEqualTo(DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS);
+    assertThat(tekuConfiguration.eth2NetworkConfiguration().getPendingAttestationsMaxQueue())
+        .isEqualTo(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS);
   }
 
   @Test
@@ -351,12 +354,16 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
             "--Xvalidator-executor-max-queue-size",
             "15120",
             "--Xp2p-batch-verify-signatures-queue-capacity",
-            "15220");
+            "15220",
+            "--Xnetwork-pending-attestations-max-queue",
+            "15330");
 
     assertThat(tekuConfiguration.eth2NetworkConfiguration().getAsyncP2pMaxQueue())
         .isEqualTo(15_000);
     assertThat(tekuConfiguration.eth2NetworkConfiguration().getAsyncBeaconChainMaxQueue())
         .isEqualTo(15_020);
+    assertThat(tekuConfiguration.eth2NetworkConfiguration().getPendingAttestationsMaxQueue())
+        .isEqualTo(15330);
     assertThat(tekuConfiguration.validatorClient().getValidatorConfig().getExecutorMaxQueueSize())
         .isEqualTo(15_120);
     assertThat(tekuConfiguration.p2p().getBatchVerifyQueueCapacity()).isEqualTo(15_220);

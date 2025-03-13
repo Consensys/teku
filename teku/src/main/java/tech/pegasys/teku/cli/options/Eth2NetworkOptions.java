@@ -216,6 +216,15 @@ public class Eth2NetworkOptions {
   private OptionalInt asyncP2pMaxQueue = OptionalInt.empty();
 
   @Option(
+      names = {"--Xnetwork-pending-attestations-max-queue"},
+      hidden = true,
+      paramLabel = "<NUMBER>",
+      description = "Override the queue size for pending attestations",
+      converter = OptionalIntConverter.class,
+      arity = "1")
+  private OptionalInt pendingAttestationsMaxQueue = OptionalInt.empty();
+
+  @Option(
       names = {"--Xnetwork-async-beaconchain-max-threads"},
       hidden = true,
       paramLabel = "<NUMBER>",
@@ -355,6 +364,7 @@ public class Eth2NetworkOptions {
         .epochsStoreBlobs(epochsStoreBlobs)
         .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes);
     asyncP2pMaxQueue.ifPresent(builder::asyncP2pMaxQueue);
+    pendingAttestationsMaxQueue.ifPresent(builder::pendingAttestationsMaxQueue);
     asyncBeaconChainMaxQueue.ifPresent(builder::asyncBeaconChainMaxQueue);
   }
 
