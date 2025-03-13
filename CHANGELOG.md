@@ -7,6 +7,11 @@
 ## Unreleased Changes
 
 ### Breaking Changes
+- `--logging` CLI option has been modified to specify only the logging level of Teku classes and
+  related dependencies (discovery, lipb2p). Logging level of other 3rd party dependencies can still be
+  changed either
+  via [log4j configuration file](https://docs.teku.consensys.io/how-to/monitor/configure-logging#advanced-custom-logging)
+  or via [API](https://consensys.github.io/teku/#tag/Teku/operation/putLogLevel) at runtime.
 
 ### Additions and Improvements
  - Added beacon-api `/eth/v1/beacon/states/{state_id}/pending_partial_withdrawals` endpoint for use post-electra.
