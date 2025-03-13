@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.coordinator.performance;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
@@ -433,11 +432,14 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
   @Override
   public void saveProducedAttestation(final Attestation attestation) {
-    checkState(!attestation.isSingleAttestation(), "Single attestation is not supported");
-    final UInt64 epoch = spec.computeEpochAtSlot(attestation.getData().getSlot());
-    final Set<Attestation> attestationsInEpoch =
-        producedAttestationsByEpoch.computeIfAbsent(epoch, __ -> concurrentSet());
-    attestationsInEpoch.add(attestation);
+    if (attestation.isSingleAttestation()) {
+      LOG.warn("Single attestation is not supported");
+    } else {
+      final UInt64 epoch = spec.computeEpochAtSlot(attestation.getData().getSlot());
+      final Set<Attestation> attestationsInEpoch =
+          producedAttestationsByEpoch.computeIfAbsent(epoch, __ -> concurrentSet());
+      attestationsInEpoch.add(attestation);
+    }
   }
 
   @Override
