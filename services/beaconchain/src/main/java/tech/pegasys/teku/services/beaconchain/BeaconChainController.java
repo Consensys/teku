@@ -1051,7 +1051,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initAttestationManager() {
-    pendingAttestations = poolFactory.createPendingPoolForAttestations(spec);
+    pendingAttestations =
+        poolFactory.createPendingPoolForAttestations(
+            spec, beaconConfig.eth2NetworkConfig().getPendingAttestationsMaxQueue());
     final FutureItems<ValidatableAttestation> futureAttestations =
         FutureItems.create(
             ValidatableAttestation::getEarliestSlotForForkChoiceProcessing,
