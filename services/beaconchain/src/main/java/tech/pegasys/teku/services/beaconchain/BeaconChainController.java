@@ -691,7 +691,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
               gossipValidationHelper,
               MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers()),
               kzg,
-              metricsSystem);
+              metricsSystem,
+              timeProvider);
       dataColumnSidecarManager =
           new DataColumnSidecarManagerImpl(
               dataColumnSidecarGossipValidator, dasGossipLogger, metricsSystem, timeProvider);
