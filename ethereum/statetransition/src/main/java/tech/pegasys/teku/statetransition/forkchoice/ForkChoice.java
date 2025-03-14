@@ -376,8 +376,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         spec.getBeaconStateUtil(justifiedState.getSlot())
             .getEffectiveActiveUnslashedBalances(justifiedState);
 
-    // if a runtime exception occurs while updating protoarray, we could skip the transaction commit
-    // there is no clean way to solve it unless we move to a fully transactional protoarray update.
+    // If a runtime exception occurs while updating protoarray, we could skip the transaction commit.
+    // There is no clean way to solve it unless we move to a fully transactional protoarray update.
     // Currently, the assumption is that any exception thrown by design is happening before any
     // update to protoarray, so it is correct to skip the transaction commit.
     final Bytes32 headBlockRoot =
