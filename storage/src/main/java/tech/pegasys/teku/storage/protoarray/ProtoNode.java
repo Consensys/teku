@@ -95,34 +95,36 @@ public class ProtoNode {
 
   public void adjustWeight(final long delta) {
     if (delta < 0) {
+      final long absoluteDelta = -delta;
       weight =
           weight
-              .safeMinus(Math.abs(delta))
+              .safeMinus(absoluteDelta)
               .orElseGet(
                   () -> {
                     LOG.error(
                         "PLEASE FIX OR REPORT ProtoArray adjustWeight bug: Delta to be subtracted is greater than node weight for block {} ({}). Attempting to subtract {} from {}",
                         blockRoot,
                         blockSlot,
-                        Math.abs(delta),
+                        absoluteDelta,
                         weight);
                     return UInt64.ZERO;
                   });
-    } else {
-      weight =
-          weight
-              .safePlus(delta)
-              .orElseGet(
-                  () -> {
-                    LOG.error(
-                        "PLEASE FIX OR REPORT ProtoArray adjustWeight bug: Delta to be added causes uint64 overflow for block {} ({}). Attempting to add {} to {}",
-                        blockRoot,
-                        blockSlot,
-                        delta,
-                        weight);
-                    return UInt64.MAX_VALUE;
-                  });
+      return;
     }
+
+    weight =
+        weight
+            .safePlus(delta)
+            .orElseGet(
+                () -> {
+                  LOG.error(
+                      "PLEASE FIX OR REPORT ProtoArray adjustWeight bug: Delta to be added causes uint64 overflow for block {} ({}). Attempting to add {} to {}",
+                      blockRoot,
+                      blockSlot,
+                      delta,
+                      weight);
+                  return UInt64.MAX_VALUE;
+                });
   }
 
   public Bytes32 getParentRoot() {
