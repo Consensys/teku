@@ -23,6 +23,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -43,6 +45,8 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 
 public class DataColumnSidecarCustodyImpl
     implements DataColumnSidecarCustody, SlotEventsChannel, FinalizedCheckpointChannel {
+
+  private static final Logger LOG = LogManager.getLogger("das-nyota");
 
   private record SlotCustody(
       UInt64 slot,
@@ -142,8 +146,9 @@ public class DataColumnSidecarCustodyImpl
     final int oldGroupCount = totalCustodyGroupCount.getAndSet(groupCount);
     // FIXME: ignoring the case when it's less, let's skip pruning in early version, to implement in
     // future
-    // invalidating current custody as number of required groups have increased
+    // Invalidating current custody as number of required groups have increased
     if (groupCount > oldGroupCount) {
+      LOG.info("Custody group count changed from {} to {}", oldGroupCount, groupCount);
       final UInt64 minCustodyPeriodSlot =
           minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot);
       db.setFirstCustodyIncompleteSlot(minCustodyPeriodSlot).ifExceptionGetsHereRaiseABug();
@@ -206,6 +211,8 @@ public class DataColumnSidecarCustodyImpl
                           // custody
                           // TODO: test me
                           if (firstIncompleteOrLastComplete.slot().equals(firstNonFinalizedSlot)) {
+                            LOG.info(
+                                "Custody group count synced to {}", totalCustodyGroupCount.get());
                             custodyGroupCountChannel.onCustodyGroupCountSynced(
                                 totalCustodyGroupCount.get());
                           }
