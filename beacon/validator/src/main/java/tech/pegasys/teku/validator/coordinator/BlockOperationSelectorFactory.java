@@ -175,7 +175,7 @@ public class BlockOperationSelectorFactory {
             blsToExecutionChangePool.getItemsForBlock(blockSlotState));
       }
 
-        final SchemaDefinitions schemaDefinitions =
+      final SchemaDefinitions schemaDefinitions =
           spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
 
       final SafeFuture<Void> blockProductionComplete;

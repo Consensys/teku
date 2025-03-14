@@ -98,8 +98,8 @@ public interface BlockProductionPerformance {
         @Override
         public void stateHashing() {}
 
-      @Override
-      public void getAttestationsForBlock() {}
+        @Override
+        public void getAttestationsForBlock() {}
       };
 
   void complete();
