@@ -115,7 +115,7 @@ public class ProtoNode {
               .orElseGet(
                   () -> {
                     LOG.error(
-                        "PLEASE FIX OR REPORT ProtoArray adjustWeight bug: Delta to be added causes uint64 overflow fir block {} ({}). Attempting to add {} to {}",
+                        "PLEASE FIX OR REPORT ProtoArray adjustWeight bug: Delta to be added causes uint64 overflow for block {} ({}). Attempting to add {} to {}",
                         blockRoot,
                         blockSlot,
                         delta,
