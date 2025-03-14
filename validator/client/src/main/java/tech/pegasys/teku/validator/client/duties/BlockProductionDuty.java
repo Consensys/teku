@@ -82,11 +82,6 @@ public class BlockProductionDuty implements Duty {
   }
 
   private SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {
-    try {
-      Thread.sleep(1000);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
     return createRandaoReveal(forkInfo)
         .thenCompose(
             signature ->
