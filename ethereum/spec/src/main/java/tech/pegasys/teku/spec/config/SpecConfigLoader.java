@@ -17,6 +17,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -125,6 +126,14 @@ public class SpecConfigLoader {
   }
 
   private static InputStream loadConfigurationFile(final String source) throws IOException {
+    if (Eth2Network.EPHEMERY.configName().equalsIgnoreCase(source)) {
+      try {
+        return URI.create("https://ephemery.dev/latest/metadata/config.yaml").toURL().openStream();
+      } catch (IOException e) {
+        throw new IOException("Failed to fetch Ephemery config from URL", e);
+      }
+    }
+
     return getConfigLoader()
         .load(source, CONFIG_PATH + source + ".yaml")
         .orElseThrow(() -> new FileNotFoundException("Could not load spec config from " + source));
