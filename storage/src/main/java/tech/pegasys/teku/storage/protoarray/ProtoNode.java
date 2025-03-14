@@ -109,22 +109,21 @@ public class ProtoNode {
                         weight);
                     return UInt64.ZERO;
                   });
-      return;
+    } else {
+      weight =
+          weight
+              .safePlus(delta)
+              .orElseGet(
+                  () -> {
+                    LOG.error(
+                        "PLEASE FIX OR REPORT ProtoArray adjustWeight bug: Delta to be added causes uint64 overflow for block {} ({}). Attempting to add {} to {}",
+                        blockRoot,
+                        blockSlot,
+                        delta,
+                        weight);
+                    return UInt64.MAX_VALUE;
+                  });
     }
-
-    weight =
-        weight
-            .safePlus(delta)
-            .orElseGet(
-                () -> {
-                  LOG.error(
-                      "PLEASE FIX OR REPORT ProtoArray adjustWeight bug: Delta to be added causes uint64 overflow for block {} ({}). Attempting to add {} to {}",
-                      blockRoot,
-                      blockSlot,
-                      delta,
-                      weight);
-                  return UInt64.MAX_VALUE;
-                });
   }
 
   public Bytes32 getParentRoot() {
