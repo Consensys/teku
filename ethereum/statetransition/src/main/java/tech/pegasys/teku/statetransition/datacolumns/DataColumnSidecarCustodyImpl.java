@@ -202,7 +202,7 @@ public class DataColumnSidecarCustodyImpl
                         firstIncompleteOrLastComplete -> {
                           // FIXME: if we don't have finalization, we will not advance it and it's
                           // an issue
-                          // FIXME: non-finalized epochs could be still not synced with uptodate
+                          // FIXME: non-finalized epochs could be still not synced with up-to-date
                           // custody
                           // TODO: test me
                           if (firstIncompleteOrLastComplete.slot().equals(firstNonFinalizedSlot)) {
