@@ -833,7 +833,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .forEach(
             validatorIndex -> {
               final VoteTracker voteTracker = transaction.getVote(validatorIndex);
-              transaction.putVote(validatorIndex, voteTracker.createNextEquivocating());
+              if (!voteTracker.isEquivocating()) {
+                transaction.putVote(validatorIndex, voteTracker.createNextEquivocating());
+              }
             });
   }
 

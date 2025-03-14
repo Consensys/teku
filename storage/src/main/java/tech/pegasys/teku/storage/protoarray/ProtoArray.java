@@ -770,6 +770,10 @@ public class ProtoArray {
         continue;
       }
       action.onNode(node, nodeIndex);
+
+      if (getTotalTrackedNodeCount() > 20 && nodeIndex < 2) {
+        throw new RuntimeException("synthetic exception");
+      }
     }
   }
 
