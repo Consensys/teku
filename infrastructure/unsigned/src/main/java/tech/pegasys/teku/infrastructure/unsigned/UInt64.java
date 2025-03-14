@@ -144,16 +144,14 @@ public final class UInt64 implements Comparable<UInt64> {
     return fromLongBits(longBits1 + longBits2);
   }
 
-  public UInt64 safePlus(final long other) {
-    checkPositive(other);
+  public Optional<UInt64> safePlus(final long other) {
     if (value != 0 && Long.compareUnsigned(other, MAX_VALUE.longValue() - value) > 0) {
-      return UInt64.MAX_VALUE;
+      return Optional.empty();
     }
-    return plus(value, other);
+    return Optional.of(fromLongBits(value + other));
   }
 
-  public UInt64 safePlus(final UInt64 other) {
-    checkPositive(other.value);
+  public Optional<UInt64> safePlus(final UInt64 other) {
     return safePlus(other.value);
   }
 

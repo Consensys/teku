@@ -425,6 +425,10 @@ public class ProtoArray {
    * Iterate backwards through the array, touching all nodes and their parents and potentially the
    * bestChildIndex of each parent.
    *
+   * <p>NOTE: this function should only throw exceptions when validating the parameters. Once we
+   * start updating the protoarray we should not throw exceptions because we are currently not able
+   * to rollback the changes. See {@link ForkChoiceStrategy#applyPendingVotes}.
+   *
    * <p>The structure of the `nodes` array ensures that the child of each node is always touched
    * before its parent.
    *
