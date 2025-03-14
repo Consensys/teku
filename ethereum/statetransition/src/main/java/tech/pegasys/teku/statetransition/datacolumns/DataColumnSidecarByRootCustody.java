@@ -52,6 +52,12 @@ public interface DataColumnSidecarByRootCustody extends DataColumnSidecarCustody
         public AsyncStream<DataColumnSlotAndIdentifier> retrieveMissingColumns() {
           return AsyncStream.empty();
         }
+
+        @Override
+        public void onCustodyGroupCountUpdate(final int groupCount) {}
+
+        @Override
+        public void onCustodyGroupCountSynced(final int groupCount) {}
       };
 
   SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecarByRoot(

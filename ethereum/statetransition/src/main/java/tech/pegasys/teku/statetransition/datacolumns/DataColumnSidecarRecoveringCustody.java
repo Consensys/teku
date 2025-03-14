@@ -67,6 +67,12 @@ public interface DataColumnSidecarRecoveringCustody
             DataColumnSlotAndIdentifier columnId) {
           return SafeFuture.completedFuture(false);
         }
+
+        @Override
+        public void onCustodyGroupCountUpdate(final int groupCount) {}
+
+        @Override
+        public void onCustodyGroupCountSynced(final int groupCount) {}
       };
 
   void onNewBlock(SignedBeaconBlock block, Optional<BlobSidecarManager.RemoteOrigin> remoteOrigin);

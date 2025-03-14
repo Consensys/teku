@@ -113,6 +113,16 @@ public class DasLongPollCustody implements DataColumnSidecarCustody, SlotEventsC
         .ifExceptionGetsHereRaiseABug();
   }
 
+  @Override
+  public void onCustodyGroupCountUpdate(final int groupCount) {
+    delegate.onCustodyGroupCountUpdate(groupCount);
+  }
+
+  @Override
+  public void onCustodyGroupCountSynced(final int groupCount) {
+    delegate.onCustodyGroupCountSynced(groupCount);
+  }
+
   private static <T> SafeFuture<Optional<T>> anyNonEmpty(
       final SafeFuture<Optional<T>> future1, final SafeFuture<Optional<T>> future2) {
     return SafeFuture.anyOf(future1, future2)

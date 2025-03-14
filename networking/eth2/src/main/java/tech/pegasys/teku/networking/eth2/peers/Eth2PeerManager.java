@@ -112,6 +112,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final AsyncRunner asyncRunner,
       final CombinedChainDataClient combinedChainDataClient,
       final DataColumnSidecarByRootCustody dataColumnSidecarCustody,
+      final MetadataMessagesFactory metadataMessagesFactory,
       final MetricsSystem metricsSystem,
       final SubnetSubscriptionService attestationSubnetService,
       final SubnetSubscriptionService syncCommitteeSubnetService,
@@ -131,8 +132,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final Optional<UInt64> custodyGroupCount,
       final DasReqRespLogger dasLogger) {
 
-    final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
-
+    // FIXME: we have no guarantee here that it's synced already
     custodyGroupCount.ifPresent(metadataMessagesFactory::updateCustodyGroupCount);
     attestationSubnetService.subscribeToUpdates(
         metadataMessagesFactory::updateAttestationSubnetIds);

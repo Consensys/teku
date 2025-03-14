@@ -18,8 +18,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 
-public interface DataColumnSidecarCustody {
+public interface DataColumnSidecarCustody extends CustodyGroupCountChannel {
 
   SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecar(
       DataColumnSlotAndIdentifier columnId);

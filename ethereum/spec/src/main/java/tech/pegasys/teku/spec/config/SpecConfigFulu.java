@@ -48,6 +48,8 @@ public interface SpecConfigFulu extends SpecConfigElectra {
 
   int getCustodyRequirement();
 
+  int getValidatorCustodyRequirement();
+
   int getSamplesPerSlot();
 
   int getMinEpochsForDataColumnSidecarsRequests();

@@ -128,6 +128,16 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     createOrUpdateRecoveryTaskForBlock(block.getMessage());
   }
 
+  @Override
+  public void onCustodyGroupCountUpdate(final int groupCount) {
+    delegate.onCustodyGroupCountUpdate(groupCount);
+  }
+
+  @Override
+  public void onCustodyGroupCountSynced(final int groupCount) {
+    delegate.onCustodyGroupCountSynced(groupCount);
+  }
+
   private synchronized void createOrUpdateRecoveryTaskForBlock(final BeaconBlock block) {
     if (recoveryTasks.containsKey(block.getSlotAndBlockRoot())) {
       final RecoveryTask existing = recoveryTasks.get(block.getSlotAndBlockRoot());

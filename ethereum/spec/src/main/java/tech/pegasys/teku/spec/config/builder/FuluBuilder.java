@@ -39,6 +39,7 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
   private Integer numberOfCustodyGroups;
   private Integer dataColumnSidecarSubnetCount;
   private Integer custodyRequirement;
+  private Integer validatorCustodyRequirement;
   private Integer samplesPerSlot;
   private Integer minEpochsForDataColumnSidecarsRequests;
   private Integer maxRequestDataColumnSidecars;
@@ -61,6 +62,7 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
             numberOfCustodyGroups,
             dataColumnSidecarSubnetCount,
             custodyRequirement,
+            validatorCustodyRequirement,
             samplesPerSlot,
             minEpochsForDataColumnSidecarsRequests,
             maxRequestDataColumnSidecars,
@@ -123,6 +125,12 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     return this;
   }
 
+  public FuluBuilder validatorCustodyRequirement(final Integer validatorCustodyRequirement) {
+    checkNotNull(validatorCustodyRequirement);
+    this.validatorCustodyRequirement = validatorCustodyRequirement;
+    return this;
+  }
+
   public FuluBuilder samplesPerSlot(final Integer samplesPerSlot) {
     checkNotNull(samplesPerSlot);
     this.samplesPerSlot = samplesPerSlot;
@@ -173,6 +181,7 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     constants.put("numberOfCustodyGroups", numberOfCustodyGroups);
     constants.put("dataColumnSidecarSubnetCount", dataColumnSidecarSubnetCount);
     constants.put("custodyRequirement", custodyRequirement);
+    constants.put("validatorCustodyRequirement", validatorCustodyRequirement);
     constants.put("samplesPerSlot", samplesPerSlot);
     constants.put("fieldElementsPerCell", fieldElementsPerCell);
     constants.put("fieldElementsPerExtBlob", fieldElementsPerExtBlob);

@@ -86,6 +86,16 @@ public class LateInitDataColumnSidecarCustody implements DataColumnSidecarRecove
     return delegate.retrieveMissingColumns();
   }
 
+  @Override
+  public void onCustodyGroupCountUpdate(final int groupCount) {
+    delegate.onCustodyGroupCountUpdate(groupCount);
+  }
+
+  @Override
+  public void onCustodyGroupCountSynced(final int groupCount) {
+    delegate.onCustodyGroupCountSynced(groupCount);
+  }
+
   private void checkDelegate() {
     if (delegate == null) {
       throw new IllegalStateException("Delegate was not initialized");

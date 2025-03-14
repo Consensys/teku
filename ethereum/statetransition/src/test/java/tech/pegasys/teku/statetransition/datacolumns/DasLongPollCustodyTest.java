@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.datacolumns;
 import static java.time.Duration.ofMillis;
 import static java.time.Duration.ofSeconds;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.db.DelayedDasDb;
@@ -62,6 +64,7 @@ public class DasLongPollCustodyTest {
           blockResolver,
           dbAccessor,
           MinCustodyPeriodSlotCalculator.createFromSpec(spec),
+          mock(CustodyGroupCountChannel.class),
           myNodeId,
           groupCount);
 

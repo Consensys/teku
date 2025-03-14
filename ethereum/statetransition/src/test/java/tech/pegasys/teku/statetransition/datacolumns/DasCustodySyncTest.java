@@ -52,6 +52,7 @@ public class DasCustodySyncTest {
                           .numberOfColumns(8)
                           .numberOfCustodyGroups(8)
                           .custodyRequirement(2)
+                          .validatorCustodyRequirement(0)
                           .minEpochsForDataColumnSidecarsRequests(64)));
 
   final DasCustodyStand custodyStand =

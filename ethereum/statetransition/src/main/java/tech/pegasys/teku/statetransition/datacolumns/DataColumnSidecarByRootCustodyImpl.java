@@ -93,6 +93,16 @@ public class DataColumnSidecarByRootCustodyImpl
     return custody.hasCustodyDataColumnSidecar(columnId);
   }
 
+  @Override
+  public void onCustodyGroupCountUpdate(final int groupCount) {
+    custody.onCustodyGroupCountUpdate(groupCount);
+  }
+
+  @Override
+  public void onCustodyGroupCountSynced(final int groupCount) {
+    custody.onCustodyGroupCountSynced(groupCount);
+  }
+
   private static class ColumnSlotCache {
     private final Map<Bytes32, UInt64> blockRootToSlot = new HashMap<>();
     private final NavigableMap<UInt64, Bytes32> slotToBlockRoot = new TreeMap<>();
