@@ -126,6 +126,7 @@ public class BlockOperationSelectorFactory {
       final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
               blockSlotState, new AttestationForkChecker(spec, blockSlotState));
+      blockProductionPerformance.getAttestationsForBlock();
 
       // Collect slashings to include
       final Set<UInt64> exitedValidators = new HashSet<>();
@@ -174,7 +175,7 @@ public class BlockOperationSelectorFactory {
             blsToExecutionChangePool.getItemsForBlock(blockSlotState));
       }
 
-      final SchemaDefinitions schemaDefinitions =
+        final SchemaDefinitions schemaDefinitions =
           spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
 
       final SafeFuture<Void> blockProductionComplete;
