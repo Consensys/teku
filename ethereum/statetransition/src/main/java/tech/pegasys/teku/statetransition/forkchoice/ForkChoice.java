@@ -385,17 +385,20 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             recentChainData.getStore().getProposerBoostRoot(),
             spec.getProposerBoostAmount(justifiedState));
 
-    recentChainData.updateHead(
-        headBlockRoot,
-        nodeSlot.orElse(
-            forkChoiceStrategy
-                .blockSlot(headBlockRoot)
-                .orElseThrow(
-                    () ->
-                        new IllegalStateException(
-                            "Unable to retrieve the slot of fork choice head: " + headBlockRoot))));
-
-    transaction.commit();
+    try {
+      recentChainData.updateHead(
+          headBlockRoot,
+          nodeSlot.orElse(
+              forkChoiceStrategy
+                  .blockSlot(headBlockRoot)
+                  .orElseThrow(
+                      () ->
+                          new IllegalStateException(
+                              "Unable to retrieve the slot of fork choice head: "
+                                  + headBlockRoot))));
+    } finally {
+      transaction.commit();
+    }
   }
 
   /**
