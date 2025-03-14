@@ -434,12 +434,12 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   public void saveProducedAttestation(final Attestation attestation) {
     if (attestation.isSingleAttestation()) {
       LOG.warn("Single attestation is not supported");
-    } else {
-      final UInt64 epoch = spec.computeEpochAtSlot(attestation.getData().getSlot());
-      final Set<Attestation> attestationsInEpoch =
-          producedAttestationsByEpoch.computeIfAbsent(epoch, __ -> concurrentSet());
-      attestationsInEpoch.add(attestation);
+      return;
     }
+    final UInt64 epoch = spec.computeEpochAtSlot(attestation.getData().getSlot());
+    final Set<Attestation> attestationsInEpoch =
+        producedAttestationsByEpoch.computeIfAbsent(epoch, __ -> concurrentSet());
+    attestationsInEpoch.add(attestation);
   }
 
   @Override
