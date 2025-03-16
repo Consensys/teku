@@ -2635,7 +2635,7 @@ public final class DataStructureUtil {
   public PendingConsolidation randomPendingConsolidation() {
     return getElectraSchemaDefinitions(randomSlot())
         .getPendingConsolidationSchema()
-        .create(SszUInt64.of(randomUInt64()), SszUInt64.of(randomUInt64()));
+        .create(SszUInt64.of(randomValidatorIndex()), SszUInt64.of(randomValidatorIndex()));
   }
 
   public PendingPartialWithdrawal randomPendingPartialWithdrawal() {
