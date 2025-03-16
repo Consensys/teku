@@ -72,6 +72,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
@@ -797,6 +798,35 @@ public class ChainDataProvider {
                   .getPendingPartialWithdrawals();
           return new ObjectAndMetaData<>(
               withdrawals,
+              stateAndMetaData.getMilestone(),
+              stateAndMetaData.isExecutionOptimistic(),
+              stateAndMetaData.isCanonical(),
+              stateAndMetaData.isFinalized());
+        });
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<SszList<PendingConsolidation>>>>
+      getPendingConsolidations(final String stateIdParam) {
+    return stateSelectorFactory
+        .createSelectorForStateId(stateIdParam)
+        .getState()
+        .thenApply(this::getPendingConsolidations);
+  }
+
+  private Optional<ObjectAndMetaData<SszList<PendingConsolidation>>> getPendingConsolidations(
+      final Optional<StateAndMetaData> maybeStateAndMetadata) {
+    checkMinimumMilestone(maybeStateAndMetadata, SpecMilestone.ELECTRA);
+
+    return maybeStateAndMetadata.map(
+        stateAndMetaData -> {
+          final SszList<PendingConsolidation> consolidations =
+              stateAndMetaData
+                  .getData()
+                  .toVersionElectra()
+                  .orElseThrow()
+                  .getPendingConsolidations();
+          return new ObjectAndMetaData<>(
+              consolidations,
               stateAndMetaData.getMilestone(),
               stateAndMetaData.isExecutionOptimistic(),
               stateAndMetaData.isCanonical(),
