@@ -117,7 +117,7 @@ public class BlockProductionPerformanceImpl implements BlockProductionPerformanc
   }
 
   @Override
-  public void beaconBlockPreparationStarted(){
+  public void beaconBlockPreparationStarted() {
     performanceTracker.addEvent("beacon_block_preparation_started");
   }
 }

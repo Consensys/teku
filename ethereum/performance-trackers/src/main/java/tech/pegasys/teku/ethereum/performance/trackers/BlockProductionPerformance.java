@@ -101,8 +101,8 @@ public interface BlockProductionPerformance {
         @Override
         public void getAttestationsForBlock() {}
 
-          @Override
-            public void beaconBlockPreparationStarted() {}
+        @Override
+        public void beaconBlockPreparationStarted() {}
       };
 
   void complete();
