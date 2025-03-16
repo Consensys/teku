@@ -18,6 +18,7 @@ import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -74,6 +75,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatu
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -615,6 +617,40 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
         .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> provider.getValidatorInclusionAtEpoch(UInt64.MAX_VALUE))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void checkMinimumMilestone_throwsCorrectMessage() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculatorMock);
+    final Optional<StateAndMetaData> maybeState =
+        Optional.of(
+            new StateAndMetaData(
+                data.randomBeaconState(), SpecMilestone.PHASE0, false, true, true));
+    assertThatThrownBy(
+            () -> provider.checkMinimumMilestone(maybeState, SpecMilestone.ELECTRA, "badbeef"))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("badbeef");
+  }
+
+  @Test
+  void checkMinimumMilestone_checksMetadataMilestone() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculatorMock);
+    final Optional<StateAndMetaData> maybeState =
+        Optional.of(
+            new StateAndMetaData(
+                data.randomBeaconState(), SpecMilestone.ELECTRA, false, true, true));
+    assertDoesNotThrow(
+        () -> provider.checkMinimumMilestone(maybeState, SpecMilestone.ELECTRA, "badbeef"));
+  }
+
+  @Test
+  void checkMinimumMilestone_ignoresEmptyObjects() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculatorMock);
+    assertDoesNotThrow(
+        () -> provider.checkMinimumMilestone(Optional.empty(), SpecMilestone.ELECTRA, "badbeef"));
   }
 
   @Test

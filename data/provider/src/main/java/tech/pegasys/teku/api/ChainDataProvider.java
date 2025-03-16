@@ -762,7 +762,7 @@ public class ChainDataProvider {
   private Optional<ObjectAndMetaData<SszList<PendingDeposit>>> getPendingDeposits(
       final Optional<StateAndMetaData> maybeStateAndMetadata) {
 
-    checkMinimumMilestone(maybeStateAndMetadata, SpecMilestone.ELECTRA);
+    checkMinimumMilestone(maybeStateAndMetadata, SpecMilestone.ELECTRA, "pending deposits");
     return maybeStateAndMetadata.map(
         stateAndMetaData -> {
           final SszList<PendingDeposit> deposits =
@@ -786,7 +786,8 @@ public class ChainDataProvider {
 
   private Optional<ObjectAndMetaData<SszList<PendingPartialWithdrawal>>>
       getPendingPartialWithdrawals(final Optional<StateAndMetaData> maybeStateAndMetadata) {
-    checkMinimumMilestone(maybeStateAndMetadata, SpecMilestone.ELECTRA);
+    checkMinimumMilestone(
+        maybeStateAndMetadata, SpecMilestone.ELECTRA, "pending partial withdrawals");
 
     return maybeStateAndMetadata.map(
         stateAndMetaData -> {
@@ -815,7 +816,7 @@ public class ChainDataProvider {
 
   private Optional<ObjectAndMetaData<SszList<PendingConsolidation>>> getPendingConsolidations(
       final Optional<StateAndMetaData> maybeStateAndMetadata) {
-    checkMinimumMilestone(maybeStateAndMetadata, SpecMilestone.ELECTRA);
+    checkMinimumMilestone(maybeStateAndMetadata, SpecMilestone.ELECTRA, "pending consolidations");
 
     return maybeStateAndMetadata.map(
         stateAndMetaData -> {
@@ -834,15 +835,16 @@ public class ChainDataProvider {
         });
   }
 
-  private void checkMinimumMilestone(
+  void checkMinimumMilestone(
       final Optional<StateAndMetaData> maybeStateAndMetadata,
-      final SpecMilestone minimumMilestone) {
+      final SpecMilestone minimumMilestone,
+      final String missingDataLabel) {
     if (maybeStateAndMetadata.isPresent()
         && maybeStateAndMetadata.get().getMilestone().isLessThan(minimumMilestone)) {
       throw new BadRequestException(
           String.format(
-              "The state was successfully retrieved, but was prior to %s and does not contain pending deposits.",
-              minimumMilestone.name()));
+              "The state was successfully retrieved, but was prior to %s and does not contain %s.",
+              minimumMilestone.name(), missingDataLabel));
     }
   }
 }
