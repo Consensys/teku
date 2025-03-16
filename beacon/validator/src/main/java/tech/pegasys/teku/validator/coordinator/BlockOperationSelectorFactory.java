@@ -121,6 +121,7 @@ public class BlockOperationSelectorFactory {
       final BlockProductionPerformance blockProductionPerformance) {
 
     return bodyBuilder -> {
+      blockProductionPerformance.beaconBlockPreparationStarted();
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
       final SszList<Attestation> attestations =
