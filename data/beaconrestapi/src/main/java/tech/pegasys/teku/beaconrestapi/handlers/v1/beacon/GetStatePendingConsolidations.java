@@ -40,28 +40,28 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
-public class GetStatePendingPartialWithdrawals extends RestApiEndpoint {
-  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/pending_partial_withdrawals";
+public class GetStatePendingConsolidations extends RestApiEndpoint {
+  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/pending_consolidations";
 
   private final ChainDataProvider chainDataProvider;
 
-  public GetStatePendingPartialWithdrawals(
+  public GetStatePendingConsolidations(
       final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
     this(dataProvider.getChainDataProvider(), schemaDefinitionCache);
   }
 
-  GetStatePendingPartialWithdrawals(
+  GetStatePendingConsolidations(
       final ChainDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getPendingPartialWithdrawals")
-            .summary("Get pending partial withdrawals from state")
+            .operationId("getPendingConsolidations")
+            .summary("Get pending consolidations from state")
             .description(
-                "Returns pending partial withdrawals for state with given 'stateId'. Should return 400 if requested before electra.")
+                "Returns pending consolidations for state with given 'stateId'. Should return 400 if requested before electra.")
             .pathParam(PARAMETER_STATE_ID)
             .tags(TAG_BEACON)
             .response(
@@ -80,8 +80,8 @@ public class GetStatePendingPartialWithdrawals extends RestApiEndpoint {
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
 
-    final SafeFuture<Optional<ObjectAndMetaData<SszList<PendingPartialWithdrawal>>>> future =
-        chainDataProvider.getStatePendingPartialWithdrawals(
+    final SafeFuture<Optional<ObjectAndMetaData<SszList<PendingConsolidation>>>> future =
+        chainDataProvider.getStatePendingConsolidations(
             request.getPathParameter(PARAMETER_STATE_ID));
 
     request.respondAsync(
@@ -98,7 +98,7 @@ public class GetStatePendingPartialWithdrawals extends RestApiEndpoint {
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
-  private static SerializableTypeDefinition<ObjectAndMetaData<List<PendingPartialWithdrawal>>>
+  private static SerializableTypeDefinition<ObjectAndMetaData<List<PendingConsolidation>>>
       getResponseType(final SchemaDefinitionCache schemaDefinitionCache) {
     final SchemaDefinitionsElectra schemaDefinitionsElectra =
         schemaDefinitionCache
@@ -106,15 +106,15 @@ public class GetStatePendingPartialWithdrawals extends RestApiEndpoint {
             .toVersionElectra()
             .orElseThrow();
 
-    final SerializableTypeDefinition<PendingPartialWithdrawal> pendingPartialWithdrawalType =
-        schemaDefinitionsElectra.getPendingPartialWithdrawalSchema().getJsonTypeDefinition();
+    final SerializableTypeDefinition<PendingConsolidation> pendingConsolidationType =
+        schemaDefinitionsElectra.getPendingConsolidationSchema().getJsonTypeDefinition();
 
-    return SerializableTypeDefinition.<ObjectAndMetaData<List<PendingPartialWithdrawal>>>object()
-        .name("GetPendingPartialWithdrawalsResponse")
+    return SerializableTypeDefinition.<ObjectAndMetaData<List<PendingConsolidation>>>object()
+        .name("GetPendingConsolidationsResponse")
         .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
         .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
         .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
-        .withField("data", listOf(pendingPartialWithdrawalType), ObjectAndMetaData::getData)
+        .withField("data", listOf(pendingConsolidationType), ObjectAndMetaData::getData)
         .build();
   }
 }
