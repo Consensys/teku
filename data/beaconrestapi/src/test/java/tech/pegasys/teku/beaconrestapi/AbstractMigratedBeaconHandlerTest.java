@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi;
 import static org.mockito.Mockito.mock;
 
 import java.util.function.IntSupplier;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
@@ -24,12 +25,14 @@ import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
+import tech.pegasys.teku.beacon.sync.events.SyncingTarget;
 import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -72,7 +75,7 @@ public abstract class AbstractMigratedBeaconHandlerTest {
         isSyncing,
         UInt64.valueOf(currentSlot),
         UInt64.valueOf(startSlot),
-        UInt64.valueOf(highestSlot));
+        new SyncingTarget(new SlotAndBlockRoot(UInt64.valueOf(highestSlot), Bytes32.ZERO), 0));
   }
 
   protected <T> ObjectAndMetaData<T> withMetaData(final T value) {
