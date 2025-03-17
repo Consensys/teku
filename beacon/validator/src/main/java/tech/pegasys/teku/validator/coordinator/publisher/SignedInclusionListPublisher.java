@@ -36,7 +36,7 @@ public class SignedInclusionListPublisher {
     this.timeProvider = timeProvider;
   }
 
-  public SafeFuture<InternalValidationResult> sendExecutionPayload(
+  public SafeFuture<InternalValidationResult> sendInclusionList(
       final SignedInclusionList signedInclusionList) {
     publishSignedInclusionList(signedInclusionList);
     return inclusionListManager.addSignedInclusionList(
