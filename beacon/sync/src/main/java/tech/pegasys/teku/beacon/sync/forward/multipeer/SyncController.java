@@ -20,6 +20,7 @@ import java.util.concurrent.Executor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
+import tech.pegasys.teku.beacon.sync.events.SyncingTarget;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -207,13 +208,14 @@ public class SyncController {
     }
 
     public SyncingStatus asSyncingStatus() {
+      final TargetChain targetChain = getTargetChain();
       return result.isDone() || isSpeculative()
           ? notSyncingStatus()
           : new SyncingStatus(
               true,
               recentChainData.getHeadSlot(),
               startSlot,
-              getTargetChain().getChainHead().getSlot());
+              new SyncingTarget(targetChain.getChainHead(), targetChain.getPeerCount()));
     }
 
     public boolean hasSameTarget(final TargetChain chain) {

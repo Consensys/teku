@@ -17,40 +17,41 @@ import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 public class SyncingStatus {
   private final boolean syncing;
   private final UInt64 currentSlot;
   private final Optional<UInt64> startingSlot;
-  private final Optional<UInt64> highestSlot;
+  private final Optional<SyncingTarget> syncingTarget;
 
   public SyncingStatus(
       final boolean syncing,
       final UInt64 currentSlot,
       final Optional<UInt64> startingSlot,
-      final Optional<UInt64> highestSlot) {
+      final Optional<SyncingTarget> syncingTarget) {
     this.syncing = syncing;
     this.currentSlot = currentSlot;
     this.startingSlot = startingSlot;
-    this.highestSlot = highestSlot;
+    this.syncingTarget = syncingTarget;
   }
 
   public SyncingStatus(
       final boolean syncing,
       final UInt64 currentSlot,
       final UInt64 startingSlot,
-      final UInt64 highestSlot) {
+      final SyncingTarget syncingTarget) {
     this.syncing = syncing;
     this.currentSlot = currentSlot;
     this.startingSlot = Optional.ofNullable(startingSlot);
-    this.highestSlot = Optional.ofNullable(highestSlot);
+    this.syncingTarget = Optional.ofNullable(syncingTarget);
   }
 
   public SyncingStatus(final boolean syncing, final UInt64 currentSlot) {
     this.syncing = syncing;
     this.currentSlot = currentSlot;
     this.startingSlot = Optional.empty();
-    this.highestSlot = Optional.empty();
+    this.syncingTarget = Optional.empty();
   }
 
   public UInt64 getCurrentSlot() {
@@ -61,8 +62,12 @@ public class SyncingStatus {
     return startingSlot;
   }
 
+  public Optional<SyncingTarget> getSyncingTarget() {
+    return syncingTarget;
+  }
+
   public Optional<UInt64> getHighestSlot() {
-    return highestSlot;
+    return syncingTarget.map(SyncingTarget::targetSlotAndBlockRoot).map(SlotAndBlockRoot::getSlot);
   }
 
   public boolean isSyncing() {
@@ -81,12 +86,12 @@ public class SyncingStatus {
     return syncing == that.syncing
         && Objects.equals(currentSlot, that.currentSlot)
         && Objects.equals(startingSlot, that.startingSlot)
-        && Objects.equals(highestSlot, that.highestSlot);
+        && Objects.equals(syncingTarget, that.syncingTarget);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(syncing, currentSlot, startingSlot, highestSlot);
+    return Objects.hash(syncing, currentSlot, startingSlot, syncingTarget);
   }
 
   @Override
@@ -95,7 +100,7 @@ public class SyncingStatus {
         .add("syncing", syncing)
         .add("currentSlot", currentSlot)
         .add("startingSlot", startingSlot)
-        .add("highestSlot", highestSlot)
+        .add("syncingTarget", syncingTarget)
         .toString();
   }
 }
