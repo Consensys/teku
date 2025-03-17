@@ -106,8 +106,8 @@ public class EventLogger {
       final UInt64 targetSlot, final Bytes32 targetBlockRoot, final int numPeers) {
     final String syncTargetChainEventLog =
         String.format(
-            "Syncing     *** Target chain (slot: %s, block root: %s), Peers on the target chain: %s",
-            targetSlot, LogFormatter.formatHashRoot(targetBlockRoot), numPeers);
+            "Syncing     *** Target chain (Slot: %s, Block root: %s), Peers on the target chain: %s",
+            targetSlot, LogFormatter.formatAbbreviatedHashRoot(targetBlockRoot), numPeers);
     info(syncTargetChainEventLog, Color.WHITE);
   }
 
