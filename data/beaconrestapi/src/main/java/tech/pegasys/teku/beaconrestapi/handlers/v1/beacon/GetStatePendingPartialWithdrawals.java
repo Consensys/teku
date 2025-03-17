@@ -81,7 +81,7 @@ public class GetStatePendingPartialWithdrawals extends RestApiEndpoint {
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
 
     final SafeFuture<Optional<ObjectAndMetaData<SszList<PendingPartialWithdrawal>>>> future =
-        chainDataProvider.getPendingPartialWithdrawals(
+        chainDataProvider.getStatePendingPartialWithdrawals(
             request.getPathParameter(PARAMETER_STATE_ID));
 
     request.respondAsync(

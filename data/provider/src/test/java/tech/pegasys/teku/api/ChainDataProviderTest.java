@@ -61,6 +61,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -80,6 +81,10 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
@@ -697,6 +702,178 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
                     dataStructureUtil.randomBeaconState(ONE), Optional.of(ONE)))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("historic");
+  }
+
+  @Test
+  void getPendingConsolidations_shouldReturnStatePendingConsolidations() {
+    final Spec electra = TestSpecFactory.createMinimalElectra();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(electra);
+    final ChainDataProvider chainDataProvider = setupBySpec(electra, dataStructureUtil, 16);
+
+    final StateAndMetaData stateAndMetaData =
+        getTestDataWithPartialConsolidations(dataStructureUtil, 1);
+
+    final Optional<ObjectAndMetaData<SszList<PendingConsolidation>>> data =
+        chainDataProvider.getPendingConsolidations(Optional.of(stateAndMetaData));
+
+    assertThat(data).isPresent();
+    assertThat(data.get().getData())
+        .isEqualTo(
+            stateAndMetaData.getData().toVersionElectra().orElseThrow().getPendingConsolidations());
+  }
+
+  @Test
+  void getPendingPartialConsolidations_canBeEmpty() {
+    final Spec electra = TestSpecFactory.createMinimalElectra();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(electra);
+    final ChainDataProvider chainDataProvider = setupBySpec(electra, dataStructureUtil, 16);
+
+    final StateAndMetaData stateAndMetaData = getTestDataWithDeposits(dataStructureUtil, 0);
+
+    final Optional<ObjectAndMetaData<SszList<PendingConsolidation>>> data =
+        chainDataProvider.getPendingConsolidations(Optional.of(stateAndMetaData));
+
+    assertThat(data).isPresent();
+    assertThat(data.get().getData())
+        .isEqualTo(
+            stateAndMetaData.getData().toVersionElectra().orElseThrow().getPendingConsolidations());
+  }
+
+  @Test
+  void getStatePendingPartialWithdrawals_shouldReturnPartialWithdrawals() {
+    final Spec electra = TestSpecFactory.createMinimalElectra();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(electra);
+    final ChainDataProvider chainDataProvider = setupBySpec(electra, dataStructureUtil, 16);
+
+    final StateAndMetaData stateAndMetaData =
+        getTestDataWithPartialWithdrawals(dataStructureUtil, 1);
+
+    final Optional<ObjectAndMetaData<SszList<PendingPartialWithdrawal>>> data =
+        chainDataProvider.getPendingPartialWithdrawals(Optional.of(stateAndMetaData));
+
+    assertThat(data).isPresent();
+    assertThat(data.get().getData())
+        .isEqualTo(
+            stateAndMetaData
+                .getData()
+                .toVersionElectra()
+                .orElseThrow()
+                .getPendingPartialWithdrawals());
+  }
+
+  @Test
+  void getStatePendingPartialWithdrawals_canBeEmpty() {
+    final Spec electra = TestSpecFactory.createMinimalElectra();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(electra);
+    final ChainDataProvider chainDataProvider = setupBySpec(electra, dataStructureUtil, 16);
+
+    final StateAndMetaData stateAndMetaData =
+        getTestDataWithPartialWithdrawals(dataStructureUtil, 0);
+
+    final Optional<ObjectAndMetaData<SszList<PendingPartialWithdrawal>>> data =
+        chainDataProvider.getPendingPartialWithdrawals(Optional.of(stateAndMetaData));
+
+    assertThat(data).isPresent();
+    assertThat(data.get().getData())
+        .isEqualTo(
+            stateAndMetaData
+                .getData()
+                .toVersionElectra()
+                .orElseThrow()
+                .getPendingPartialWithdrawals());
+  }
+
+  @Test
+  void getPendingDeposits_shouldReturnPendingDeposits() {
+    final Spec electra = TestSpecFactory.createMinimalElectra();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(electra);
+    final ChainDataProvider chainDataProvider = setupBySpec(electra, dataStructureUtil, 16);
+
+    final StateAndMetaData stateAndMetaData = getTestDataWithDeposits(dataStructureUtil, 1);
+
+    final Optional<ObjectAndMetaData<SszList<PendingDeposit>>> data =
+        chainDataProvider.getPendingDeposits(Optional.of(stateAndMetaData));
+
+    assertThat(data).isPresent();
+    assertThat(data.get().getData())
+        .isEqualTo(
+            stateAndMetaData.getData().toVersionElectra().orElseThrow().getPendingDeposits());
+  }
+
+  @Test
+  void getPendingPartialDeposits_canBeEmpty() {
+    final Spec electra = TestSpecFactory.createMinimalElectra();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(electra);
+    final ChainDataProvider chainDataProvider = setupBySpec(electra, dataStructureUtil, 16);
+
+    final StateAndMetaData stateAndMetaData = getTestDataWithDeposits(dataStructureUtil, 0);
+
+    final Optional<ObjectAndMetaData<SszList<PendingDeposit>>> data =
+        chainDataProvider.getPendingDeposits(Optional.of(stateAndMetaData));
+
+    assertThat(data).isPresent();
+    assertThat(data.get().getData())
+        .isEqualTo(
+            stateAndMetaData.getData().toVersionElectra().orElseThrow().getPendingDeposits());
+  }
+
+  private StateAndMetaData getTestDataWithDeposits(
+      final DataStructureUtil dataStructureUtil, final int depositsCount) {
+    final BeaconStateElectra state =
+        dataStructureUtil.randomBeaconState().toVersionElectra().orElseThrow();
+    final SszList<PendingDeposit> pendingDeposits =
+        switch (depositsCount) {
+          case 1 ->
+              state.getPendingDeposits().getSchema().of(dataStructureUtil.randomPendingDeposit());
+          case 0 -> state.getPendingDeposits().getSchema().of();
+          default -> throw new IllegalArgumentException("Not implemented");
+        };
+    final BeaconStateElectra electraState =
+        state.updatedElectra(data -> data.setPendingDeposits(pendingDeposits));
+
+    return new StateAndMetaData(electraState, SpecMilestone.ELECTRA, false, true, true);
+  }
+
+  private StateAndMetaData getTestDataWithPartialWithdrawals(
+      final DataStructureUtil dataStructureUtil, final int withdrawalCount) {
+    final BeaconStateElectra state =
+        dataStructureUtil.randomBeaconState().toVersionElectra().orElseThrow();
+    final SszList<PendingPartialWithdrawal> withdrawalSszList =
+        switch (withdrawalCount) {
+          case 1 ->
+              state
+                  .getPendingPartialWithdrawals()
+                  .getSchema()
+                  .of(dataStructureUtil.randomPendingPartialWithdrawal());
+          case 0 -> state.getPendingPartialWithdrawals().getSchema().of();
+          default -> throw new IllegalArgumentException("Not implemented");
+        };
+
+    final BeaconStateElectra electraState =
+        state.updatedElectra(data -> data.setPendingPartialWithdrawals(withdrawalSszList));
+
+    return new StateAndMetaData(electraState, SpecMilestone.ELECTRA, false, true, true);
+  }
+
+  private StateAndMetaData getTestDataWithPartialConsolidations(
+      final DataStructureUtil dataStructureUtil, final int consolidationCount) {
+    final BeaconStateElectra state =
+        dataStructureUtil.randomBeaconState().toVersionElectra().orElseThrow();
+    final SszList<PendingConsolidation> pendingConsolidations =
+        switch (consolidationCount) {
+          case 1 ->
+              state
+                  .getPendingConsolidations()
+                  .getSchema()
+                  .of(dataStructureUtil.randomPendingConsolidation());
+          case 0 -> state.getPendingConsolidations().getSchema().of();
+          default -> throw new IllegalArgumentException("Not implemented");
+        };
+
+    final BeaconStateElectra electraState =
+        state.updatedElectra(data -> data.setPendingConsolidations(pendingConsolidations));
+
+    return new StateAndMetaData(electraState, SpecMilestone.ELECTRA, false, true, true);
   }
 
   @Test
