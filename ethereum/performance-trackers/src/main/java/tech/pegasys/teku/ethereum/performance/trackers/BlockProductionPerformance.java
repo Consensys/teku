@@ -32,7 +32,9 @@ package tech.pegasys.teku.ethereum.performance.trackers;
  *    (which set slotTime too)
  *         |
  *         v
- *    beaconBlockPrepared
+ *         |
+ *         v
+ *    beaconBlockPrepared (attestations_for_block is part of the process of beaconBlockPrepared)
  *    |                  |
  *    v                  v
  * engineGetPayload   builderGetHeader (maybe)
@@ -95,6 +97,12 @@ public interface BlockProductionPerformance {
 
         @Override
         public void stateHashing() {}
+
+        @Override
+        public void getAttestationsForBlock() {}
+
+        @Override
+        public void beaconBlockPreparationStarted() {}
       };
 
   void complete();
@@ -120,4 +128,8 @@ public interface BlockProductionPerformance {
   void stateTransition();
 
   void stateHashing();
+
+  void getAttestationsForBlock();
+
+  void beaconBlockPreparationStarted();
 }
