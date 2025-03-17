@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.InclusionListUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -32,10 +33,15 @@ public class SignedInclusionListValidator {
 
   private final Spec spec;
   private final RecentChainData recentChainData;
+  private final AsyncBLSSignatureVerifier signatureVerifier;
 
-  public SignedInclusionListValidator(final Spec spec, final RecentChainData recentChainData) {
+  public SignedInclusionListValidator(
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final AsyncBLSSignatureVerifier signatureVerifier) {
     this.spec = spec;
     this.recentChainData = recentChainData;
+    this.signatureVerifier = signatureVerifier;
   }
 
   public SafeFuture<InternalValidationResult> validate(
@@ -111,12 +117,12 @@ public class SignedInclusionListValidator {
 
     return recentChainData
         .retrieveStateInEffectAtSlot(slot)
-        .thenApply(
+        .thenCompose(
             maybeState -> {
               if (maybeState.isEmpty()) {
                 // We know the block is imported but now don't have a state to validate against
                 // Must have got pruned between checks
-                return InternalValidationResult.IGNORE;
+                return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
               }
               final BeaconState state = maybeState.get();
               /*
@@ -124,25 +130,39 @@ public class SignedInclusionListValidator {
                */
               if (!inclusionListUtil.hasCorrectCommitteeRoot(
                   state, slot, inclusionList.getInclusionListCommitteeRoot())) {
-                return InternalValidationResult.ignore("Inclusion List committee mismatch.");
+                return SafeFuture.completedFuture(
+                    InternalValidationResult.ignore("Inclusion List committee mismatch."));
               }
               /*
                * [REJECT] The validator index message.validator_index is within the inclusion_list_committee corresponding to message.inclusion_list_committee_root.
                */
               if (!inclusionListUtil.validatorIndexWithinCommittee(
                   state, slot, inclusionList.getValidatorIndex())) {
-                return InternalValidationResult.reject(
-                    "Validator index is not within the inclusion list committee.");
+                return SafeFuture.completedFuture(
+                    InternalValidationResult.reject(
+                        "Validator index is not within the inclusion list committee."));
               }
 
               /*
                * [REJECT] The validator index message.validator_index is within the inclusion_list_committee corresponding to message.inclusion_list_committee_root.
                */
-              if (!inclusionListUtil.isValidInclusionListSignature(state, signedInclusionList)) {
-                return InternalValidationResult.reject("Invalid inclusion list signature.");
-              }
-
-              return InternalValidationResult.ACCEPT;
+              final UInt64 epoch = spec.computeEpochAtSlot(slot);
+              return inclusionListUtil
+                  .isValidInclusionListSignature(
+                      spec.fork(epoch),
+                      state,
+                      inclusionList,
+                      signedInclusionList.getSignature(),
+                      signatureVerifier)
+                  .thenApply(
+                      isValidInclusionListSignature -> {
+                        if (isValidInclusionListSignature) {
+                          return InternalValidationResult.ACCEPT;
+                        } else {
+                          return InternalValidationResult.reject(
+                              "Invalid inclusion list signature.");
+                        }
+                      });
             });
   }
 

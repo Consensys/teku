@@ -31,6 +31,8 @@ public interface InclusionListImportResult {
           FailureReason.VALIDATOR_NOT_IN_COMMITTEE, Optional.empty());
   InclusionListImportResult FAILED_INVALID_SIGNATURE =
       new FailedInclusionListImportResult(FailureReason.INVALID_SIGNATURE, Optional.empty());
+  InclusionListImportResult FAILED_EQUIVOCATED =
+      new FailedInclusionListImportResult(FailureReason.INVALID_SIGNATURE, Optional.empty());
   InclusionListImportResult FAILED_STATE_UNAVAILABLE =
       new FailedInclusionListImportResult(FailureReason.STATE_UNAVAILABLE, Optional.empty());
 
@@ -54,6 +56,10 @@ public interface InclusionListImportResult {
     return new FailedInclusionListImportResult(FailureReason.INVALID_SIGNATURE, cause);
   }
 
+  static InclusionListImportResult failedEquivocationCheck(final Optional<Throwable> cause) {
+    return new FailedInclusionListImportResult(FailureReason.EQUIVOCATED, cause);
+  }
+
   static InclusionListImportResult success(final SignedInclusionList signedInclusionList) {
     return new SuccessfulInclusionListImport(signedInclusionList);
   }
@@ -65,6 +71,7 @@ public interface InclusionListImportResult {
     VALIDATOR_NOT_IN_COMMITTEE,
     INVALID_SIGNATURE,
     STATE_UNAVAILABLE,
+    EQUIVOCATED,
     INTERNAL_ERROR // A catch-all category for unexpected errors (bugs)
   }
 

@@ -804,7 +804,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private SafeFuture<InternalValidationResult> processInclusionList(
       final SignedInclusionList signedInclusionList) {
     return signedInclusionListPublisher
-        .sendExecutionPayload(signedInclusionList)
+        .sendInclusionList(signedInclusionList)
         .thenPeek(
             result -> {
               if (result.isReject()) {
