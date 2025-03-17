@@ -110,4 +110,14 @@ public class BlockProductionPerformanceImpl implements BlockProductionPerformanc
   public void stateHashing() {
     performanceTracker.addEvent("state_hashing");
   }
+
+  @Override
+  public void getAttestationsForBlock() {
+    performanceTracker.addEvent("get_attestations_for_block");
+  }
+
+  @Override
+  public void beaconBlockPreparationStarted() {
+    performanceTracker.addEvent("beacon_block_preparation_started");
+  }
 }

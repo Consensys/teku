@@ -121,11 +121,13 @@ public class BlockOperationSelectorFactory {
       final BlockProductionPerformance blockProductionPerformance) {
 
     return bodyBuilder -> {
+      blockProductionPerformance.beaconBlockPreparationStarted();
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
       final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
               blockSlotState, new AttestationForkChecker(spec, blockSlotState));
+      blockProductionPerformance.getAttestationsForBlock();
 
       // Collect slashings to include
       final Set<UInt64> exitedValidators = new HashSet<>();
