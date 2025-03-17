@@ -1390,7 +1390,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             executionLayer,
             recentChainData,
-            proposersDataManager);
+            proposersDataManager,
+            beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled());
   }
 
   private Optional<Eth1Address> getProposerDefaultFeeRecipient() {
