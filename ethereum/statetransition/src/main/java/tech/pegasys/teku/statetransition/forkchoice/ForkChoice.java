@@ -45,6 +45,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -79,7 +80,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.InclusionListImportResult;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
-import tech.pegasys.teku.spec.logic.common.util.InclusionListUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
@@ -283,87 +283,41 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final UInt64 currentSlot = spec.getCurrentSlot(recentChainData.getStore());
     final UpdatableStore store = recentChainData.getStore();
 
-    // Verify inclusion list slot is either from the current or previous slot
-    if (!inclusionListSlot.equals(currentSlot) || !inclusionListSlot.equals(currentSlot.minus(1))) {
-      return SafeFuture.completedFuture(InclusionListImportResult.FAILED_INCLUSION_LIST_SLOT);
-    }
-
     final UInt64 currentTime = store.getTimeInMillis();
     final UInt64 millisIntoSlot = getMillisIntoSlot(currentTime, inclusionListSlot);
 
-    // If the inclusion list is from the previous slot, ignore it if already past the attestation
-    // deadline
-    if (inclusionListSlot.equals(currentSlot.minus(1))) {
-      final UInt64 millisPerSlot = spec.getMillisPerSlot(inclusionListSlot);
-      if (!isBeforeAttestingInterval(millisPerSlot, millisIntoSlot)) {
-        return SafeFuture.completedFuture(
-            InclusionListImportResult.FAILED_PAST_ATTESTATION_DEADLINE);
+    // Do not process inclusion lists from known equivocators
+    final int viewFreezeDeadline =
+        SpecConfigEip7805.required(spec.atSlot(inclusionListSlot).getConfig())
+            .getViewFreezeDeadline();
+    final boolean isBeforeFreezeDeadline =
+        isBeforeFreezeDeadline(
+            UInt64.valueOf(viewFreezeDeadline), millisIntoSlot, inclusionListSlot, currentSlot);
+    final SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot =
+        new SlotAndInclusionListCommitteeRoot(
+            inclusionListSlot, inclusionList.getInclusionListCommitteeRoot());
+    final UInt64 validatorIndex = inclusionList.getValidatorIndex();
+
+    if (store.isInclusionListEquivocator(slotAndInclusionListCommitteeRoot, validatorIndex)) {
+      return SafeFuture.completedFuture(InclusionListImportResult.FAILED_EQUIVOCATED);
+    } else {
+      final Optional<List<InclusionList>> maybeInclusionLists =
+          store.getInclusionLists(slotAndInclusionListCommitteeRoot);
+      final List<InclusionList> inclusionLists =
+          maybeInclusionLists.orElse(Collections.emptyList()).stream()
+              .filter(il -> il.getValidatorIndex().equals(validatorIndex))
+              .toList();
+      if (!inclusionLists.isEmpty() && !inclusionLists.getFirst().equals(inclusionList)) {
+        final StoreTransaction transaction = recentChainData.startStoreTransaction();
+        transaction.putEquivocatedInclusionList(inclusionList);
+        transaction.commit().join();
+      } else if (isBeforeFreezeDeadline) {
+        final StoreTransaction transaction = recentChainData.startStoreTransaction();
+        transaction.putInclusionList(inclusionList);
+        transaction.commit().join();
       }
     }
-
-    return recentChainData
-        .retrieveStateInEffectAtSlot(inclusionListSlot)
-        .thenApply(
-            maybeState -> {
-              if (maybeState.isEmpty()) {
-                return InclusionListImportResult.FAILED_STATE_UNAVAILABLE;
-              }
-              final BeaconState state = maybeState.get();
-              // Sanity check that the given `inclusion_list_committee` matches the root in the
-              // inclusion list
-              final InclusionListUtil inclusionListUtil =
-                  spec.atSlot(inclusionListSlot).getInclusionListUtil().orElseThrow();
-              if (!inclusionListUtil.hasCorrectCommitteeRoot(
-                  state, inclusionListSlot, inclusionList.getInclusionListCommitteeRoot())) {
-                return InclusionListImportResult.FAILED_COMMITTEE_ROOT_MISMATCH;
-              }
-
-              // Verify inclusion list validator is part of the committee
-              if (!inclusionListUtil.validatorIndexWithinCommittee(
-                  state, inclusionListSlot, inclusionList.getValidatorIndex())) {
-                return InclusionListImportResult.FAILED_VALIDATOR_NOT_IN_COMMITTEE;
-              }
-
-              // Verify inclusion list signature
-              if (!inclusionListUtil.isValidInclusionListSignature(state, signedInclusionList)) {
-                return InclusionListImportResult.FAILED_INVALID_SIGNATURE;
-              }
-
-              // Do not process inclusion lists from known equivocators
-              final int viewFreezeDeadline =
-                  SpecConfigEip7805.required(spec.atSlot(inclusionListSlot).getConfig())
-                      .getViewFreezeDeadline();
-              final boolean isBeforeFreezeDeadline =
-                  isBeforeFreezeDeadline(
-                      UInt64.valueOf(viewFreezeDeadline),
-                      millisIntoSlot,
-                      inclusionListSlot,
-                      currentSlot);
-              final SlotAndInclusionListCommitteeRoot slotAndInclusionListCommitteeRoot =
-                  new SlotAndInclusionListCommitteeRoot(
-                      inclusionListSlot, inclusionList.getInclusionListCommitteeRoot());
-              final UInt64 validatorIndex = inclusionList.getValidatorIndex();
-
-              if (!store.isInclusionListEquivocator(
-                  slotAndInclusionListCommitteeRoot, validatorIndex)) {
-                final Optional<List<InclusionList>> maybeInclusionLists =
-                    store.getInclusionLists(slotAndInclusionListCommitteeRoot);
-                final List<InclusionList> inclusionLists =
-                    maybeInclusionLists.orElse(Collections.emptyList()).stream()
-                        .filter(il -> il.getValidatorIndex().equals(validatorIndex))
-                        .toList();
-                if (!inclusionLists.isEmpty() && !inclusionLists.getFirst().equals(inclusionList)) {
-                  final StoreTransaction transaction = recentChainData.startStoreTransaction();
-                  transaction.putEquivocatedInclusionList(inclusionList);
-                  transaction.commit().join();
-                } else if (isBeforeFreezeDeadline) {
-                  final StoreTransaction transaction = recentChainData.startStoreTransaction();
-                  transaction.putInclusionList(inclusionList);
-                  transaction.commit().join();
-                }
-              }
-              return InclusionListImportResult.success(signedInclusionList);
-            });
+    return SafeFuture.completedFuture(InclusionListImportResult.success(signedInclusionList));
   }
 
   private boolean isBeforeFreezeDeadline(
@@ -548,10 +502,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
 
-    // TODO EIP7805 this shouldn't be block.hashTreeRoot() but rather the IL committee root
-    final Optional<List<InclusionList>> inclusionLists =
-        store.getInclusionLists(
-            new SlotAndInclusionListCommitteeRoot(block.getSlot(), block.hashTreeRoot()));
+    final Optional<List<InclusionList>> inclusionLists;
+    if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7805)) {
+      // TODO EIP7805 this shouldn't be block.hashTreeRoot() but rather the IL committee root
+      inclusionLists =
+          store.getInclusionLists(
+              new SlotAndInclusionListCommitteeRoot(block.getSlot(), block.hashTreeRoot()));
+    } else {
+      inclusionLists = Optional.empty();
+    }
 
     final BeaconState postState;
     try {

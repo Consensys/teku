@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.common.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -22,8 +23,9 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -32,7 +34,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
-import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.BeaconStateAccessorsEip7805;
@@ -67,27 +69,33 @@ public class InclusionListUtil {
 
   public boolean isInclusionListWithinDeadline(
       final UInt64 inclusionListSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
-    final UInt64 currentSlot = miscHelpers.computeSlotAtTime(genesisTime, currentTimeMillis);
-    final UInt64 timeInCurrentSlot = miscHelpers.computeTimeAtSlot(genesisTime, currentSlot);
+    final UInt64 currentSlot =
+        miscHelpers.computeSlotAtTime(genesisTime, millisToSeconds(currentTimeMillis));
+    final UInt64 millisInCurrentSlot =
+        getMillisIntoSlot(genesisTime, currentTimeMillis, inclusionListSlot);
     return inclusionListSlot.equals(currentSlot)
         || (inclusionListSlot.equals(currentSlot.minus(1))
-            && millisToSeconds(timeInCurrentSlot).isLessThan(ATTESTATION_DEADLINE));
+            && millisToSeconds(millisInCurrentSlot).isLessThanOrEqualTo(ATTESTATION_DEADLINE));
   }
 
   /** Check if ``signed_inclusion_list`` has a valid signature. */
-  public boolean isValidInclusionListSignature(
-      final BeaconState state, final SignedInclusionList signedInclusionList) {
-    final InclusionList message = signedInclusionList.getMessage();
-    final UInt64 index = message.getValidatorIndex();
+  // TODO EIP7805 return InclusionListProcessingResult instead of Boolean
+  public SafeFuture<Boolean> isValidInclusionListSignature(
+      final Fork fork,
+      final BeaconState state,
+      final InclusionList inclusionList,
+      final BLSSignature signature,
+      final AsyncBLSSignatureVerifier signatureVerifier) {
+    final UInt64 index = inclusionList.getValidatorIndex();
     final BLSPublicKey pubkey = state.getValidators().get(index.intValue()).getPublicKey();
-    final Bytes signingRoot =
-        miscHelpers.computeSigningRoot(
-            message,
-            beaconStateAccessors.getDomain(
-                state.getForkInfo(),
-                Domain.DOMAIN_INCLUSION_LIST_COMMITTEE,
-                miscHelpers.computeEpochAtSlot(state.getSlot())));
-    return BLS.verify(pubkey, signingRoot, signedInclusionList.getSignature());
+    final Bytes32 domain =
+        beaconStateAccessors.getDomain(
+            Domain.DOMAIN_INCLUSION_LIST_COMMITTEE,
+            miscHelpers.computeEpochAtSlot(inclusionList.getSlot()),
+            fork,
+            state.getGenesisValidatorsRoot());
+    final Bytes signingRoot = miscHelpers.computeSigningRoot(inclusionList, domain);
+    return signatureVerifier.verify(pubkey, signingRoot, signature);
   }
 
   public IntList getInclusionListCommittee(final BeaconState state, final UInt64 slot) {
@@ -165,5 +173,11 @@ public class InclusionListUtil {
       }
     }
     return Optional.empty();
+  }
+
+  private UInt64 getMillisIntoSlot(
+      final UInt64 genesisTime, final UInt64 currentTimeMillis, final UInt64 slot) {
+    final UInt64 timeAtSlotSeconds = miscHelpers.computeTimeAtSlot(genesisTime, slot);
+    return currentTimeMillis.min(secondsToMillis(timeAtSlotSeconds));
   }
 }
