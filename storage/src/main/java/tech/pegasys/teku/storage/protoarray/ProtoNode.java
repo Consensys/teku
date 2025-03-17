@@ -96,33 +96,30 @@ public class ProtoNode {
   public void adjustWeight(final long delta) {
     if (delta < 0) {
       final long absoluteDelta = -delta;
-      weight =
-          weight
-              .safeMinus(absoluteDelta)
-              .orElseGet(
-                  () -> {
-                    LOG.error(
-                        "PLEASE FIX OR REPORT ProtoArray adjustWeight bug: Delta to be subtracted is greater than node weight for block {} ({}). Attempting to subtract {} from {}",
-                        blockRoot,
-                        blockSlot,
-                        absoluteDelta,
-                        weight);
-                    return UInt64.ZERO;
-                  });
+      try {
+        weight = weight.minus(absoluteDelta);
+      } catch (final ArithmeticException __) {
+        LOG.error(
+            "PLEASE FIX OR REPORT ProtoArray adjustWeight bug: Delta to be subtracted causes uint64 underflow for block {} ({}). Attempting to subtract {} from {}",
+            blockRoot,
+            blockSlot,
+            absoluteDelta,
+            weight);
+        weight = UInt64.ZERO;
+      }
+
     } else {
-      weight =
-          weight
-              .safePlus(delta)
-              .orElseGet(
-                  () -> {
-                    LOG.error(
-                        "PLEASE FIX OR REPORT ProtoArray adjustWeight bug: Delta to be added causes uint64 overflow for block {} ({}). Attempting to add {} to {}",
-                        blockRoot,
-                        blockSlot,
-                        delta,
-                        weight);
-                    return UInt64.MAX_VALUE;
-                  });
+      try {
+        weight = weight.plus(delta);
+      } catch (final ArithmeticException __) {
+        LOG.error(
+            "PLEASE FIX OR REPORT ProtoArray adjustWeight bug: Delta to be added causes uint64 overflow for block {} ({}). Attempting to add {} to {}",
+            blockRoot,
+            blockSlot,
+            delta,
+            weight);
+        weight = UInt64.MAX_VALUE;
+      }
     }
   }
 
