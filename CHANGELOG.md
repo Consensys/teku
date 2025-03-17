@@ -21,6 +21,7 @@
  - Removed stack trace by default from duty failure messages.
  - Holesky pectra bad block ignored to aid syncing
  - Added a development flag to increase the maximum pending queue for attestations.
+ - Added support for [Hoodi testnet](https://github.com/eth-clients/hoodi/).
 
 ### Bug Fixes
  - Added 415 response code for beacon-api `/eth/v1/validator/register_validator`.

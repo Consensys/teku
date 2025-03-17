@@ -81,7 +81,8 @@ public class GetStatePendingConsolidations extends RestApiEndpoint {
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
 
     final SafeFuture<Optional<ObjectAndMetaData<SszList<PendingConsolidation>>>> future =
-        chainDataProvider.getPendingConsolidations(request.getPathParameter(PARAMETER_STATE_ID));
+        chainDataProvider.getStatePendingConsolidations(
+            request.getPathParameter(PARAMETER_STATE_ID));
 
     request.respondAsync(
         future.thenApply(

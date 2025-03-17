@@ -25,6 +25,7 @@ public enum Eth2Network {
   CHIADO("chiado"),
   HOLESKY("holesky"),
   EPHEMERY("ephemery"),
+  HOODI("hoodi"),
   // Test networks
   MINIMAL("minimal"),
   SWIFT("swift"),

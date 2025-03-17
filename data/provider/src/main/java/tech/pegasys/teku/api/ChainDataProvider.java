@@ -759,7 +759,23 @@ public class ChainDataProvider {
         .thenApply(this::getPendingDeposits);
   }
 
-  private Optional<ObjectAndMetaData<SszList<PendingDeposit>>> getPendingDeposits(
+  public SafeFuture<Optional<ObjectAndMetaData<SszList<PendingPartialWithdrawal>>>>
+      getStatePendingPartialWithdrawals(final String stateIdParam) {
+    return stateSelectorFactory
+        .createSelectorForStateId(stateIdParam)
+        .getState()
+        .thenApply(this::getPendingPartialWithdrawals);
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<SszList<PendingConsolidation>>>>
+      getStatePendingConsolidations(final String stateIdParam) {
+    return stateSelectorFactory
+        .createSelectorForStateId(stateIdParam)
+        .getState()
+        .thenApply(this::getPendingConsolidations);
+  }
+
+  Optional<ObjectAndMetaData<SszList<PendingDeposit>>> getPendingDeposits(
       final Optional<StateAndMetaData> maybeStateAndMetadata) {
 
     checkMinimumMilestone(maybeStateAndMetadata, SpecMilestone.ELECTRA, "pending deposits");
@@ -776,16 +792,8 @@ public class ChainDataProvider {
         });
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<SszList<PendingPartialWithdrawal>>>>
-      getPendingPartialWithdrawals(final String stateIdParam) {
-    return stateSelectorFactory
-        .createSelectorForStateId(stateIdParam)
-        .getState()
-        .thenApply(this::getPendingPartialWithdrawals);
-  }
-
-  private Optional<ObjectAndMetaData<SszList<PendingPartialWithdrawal>>>
-      getPendingPartialWithdrawals(final Optional<StateAndMetaData> maybeStateAndMetadata) {
+  Optional<ObjectAndMetaData<SszList<PendingPartialWithdrawal>>> getPendingPartialWithdrawals(
+      final Optional<StateAndMetaData> maybeStateAndMetadata) {
     checkMinimumMilestone(
         maybeStateAndMetadata, SpecMilestone.ELECTRA, "pending partial withdrawals");
 
@@ -806,15 +814,7 @@ public class ChainDataProvider {
         });
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<SszList<PendingConsolidation>>>>
-      getPendingConsolidations(final String stateIdParam) {
-    return stateSelectorFactory
-        .createSelectorForStateId(stateIdParam)
-        .getState()
-        .thenApply(this::getPendingConsolidations);
-  }
-
-  private Optional<ObjectAndMetaData<SszList<PendingConsolidation>>> getPendingConsolidations(
+  Optional<ObjectAndMetaData<SszList<PendingConsolidation>>> getPendingConsolidations(
       final Optional<StateAndMetaData> maybeStateAndMetadata) {
     checkMinimumMilestone(maybeStateAndMetadata, SpecMilestone.ELECTRA, "pending consolidations");
 
