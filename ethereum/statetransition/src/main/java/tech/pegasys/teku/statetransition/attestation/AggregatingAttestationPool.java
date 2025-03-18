@@ -299,7 +299,11 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   void cleanupCache(final Optional<UInt64> maybeSlot) {
     // one cleanup at a time can run
-    if (isCleanupRunning.compareAndSet(false, true)) {
+    if (!isCleanupRunning.compareAndSet(false, true)) {
+      return;
+    }
+
+    try {
       if (maybeSlot.isEmpty()) {
         while (dataHashBySlot.size() > 1 && size.get() > maximumAttestationCount) {
           LOG.trace("Attestation cache at {} exceeds {}, ", size.get(), maximumAttestationCount);
@@ -308,6 +312,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
       } else {
         removeAttestationsPriorToSlot(maybeSlot.get());
       }
+    } finally {
       isCleanupRunning.set(false);
     }
   }
