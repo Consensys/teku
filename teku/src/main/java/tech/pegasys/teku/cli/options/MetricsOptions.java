@@ -99,7 +99,7 @@ public class MetricsOptions {
   private boolean blockPerformanceEnabled = MetricsConfig.DEFAULT_BLOCK_PERFORMANCE_ENABLED;
 
   @Option(
-      names = {"--metrics-block-production-timing-tracking-enabled"},
+      names = {"--metrics-block-production-performance-tracking-enabled"},
       showDefaultValue = Visibility.ALWAYS,
       paramLabel = "<BOOLEAN>",
       description = "Whether block production timing metrics are tracked and reported",

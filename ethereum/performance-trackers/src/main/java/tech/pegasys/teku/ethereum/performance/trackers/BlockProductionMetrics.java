@@ -61,7 +61,7 @@ public interface BlockProductionMetrics {
             metricsSystem,
             "block_production_delay_counter_total",
             "Counter of blocks production in different time frames in each import stages",
-            List.of("stage", "result"),
+            List.of("stage"),
             eventsAndBoundaries);
 
     List<String> blockProductionStages =
