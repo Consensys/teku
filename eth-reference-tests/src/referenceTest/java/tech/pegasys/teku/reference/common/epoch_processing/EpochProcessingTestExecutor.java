@@ -15,9 +15,11 @@ package tech.pegasys.teku.reference.common.epoch_processing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
 import static tech.pegasys.teku.reference.TestDataUtils.loadStateFromSsz;
 
 import com.google.common.collect.ImmutableMap;
+import java.util.Optional;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -29,6 +31,11 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 
 public class EpochProcessingTestExecutor implements TestExecutor {
+
+  public static final String PRE_OPERATION_STATE_FILENAME = "pre.ssz_snappy";
+  public static final String POST_OPERATION_STATE_FILENAME = "post.ssz_snappy";
+  public static final String POST_EPOCH_PROCESSING_STATE_FILENAME = "post_full.ssz_snappy";
+  public static final String PRE_EPOCH_PROCESSING_STATE_FILENAME = "pre_full.ssz_snappy";
 
   public static final ImmutableMap<String, TestExecutor> EPOCH_PROCESSING_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
@@ -94,8 +101,7 @@ public class EpochProcessingTestExecutor implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
-    final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz_snappy");
-    final String postStateFileName = "post.ssz_snappy";
+    final BeaconState preState = loadStateFromSsz(testDefinition, PRE_OPERATION_STATE_FILENAME);
 
     final SpecVersion genesisSpec = testDefinition.getSpec().getGenesisSpec();
     final EpochProcessor epochProcessor = genesisSpec.getEpochProcessor();
@@ -103,8 +109,13 @@ public class EpochProcessingTestExecutor implements TestExecutor {
     final EpochProcessingExecutor processor =
         new EpochProcessingExecutor(epochProcessor, validatorStatusFactory);
 
-    if (testDefinition.getTestDirectory().resolve(postStateFileName).toFile().exists()) {
-      final BeaconState expectedPostState = loadStateFromSsz(testDefinition, postStateFileName);
+    if (testDefinition
+        .getTestDirectory()
+        .resolve(POST_OPERATION_STATE_FILENAME)
+        .toFile()
+        .exists()) {
+      final BeaconState expectedPostState =
+          loadStateFromSsz(testDefinition, POST_OPERATION_STATE_FILENAME);
       final BeaconState result = executeOperation(preState, processor);
       assertThat(result).isEqualTo(expectedPostState);
     } else {
@@ -115,6 +126,37 @@ public class EpochProcessingTestExecutor implements TestExecutor {
               SlotProcessingException.class,
               EpochProcessingException.class,
               ArithmeticException.class);
+    }
+
+    validatePostEpochProcessingState(testDefinition, epochProcessor);
+  }
+
+  private static void validatePostEpochProcessingState(
+      final TestDefinition testDefinition, final EpochProcessor epochProcessor)
+      throws EpochProcessingException {
+    Optional<BeaconState> preFullState;
+    try {
+      preFullState =
+          Optional.of(loadStateFromSsz(testDefinition, PRE_EPOCH_PROCESSING_STATE_FILENAME));
+    } catch (Exception e) {
+      // Test do not support full epoch processing validation
+      preFullState = Optional.empty();
+    }
+
+    if (preFullState.isPresent()) {
+      if (!testDefinition
+          .getTestDirectory()
+          .resolve(POST_EPOCH_PROCESSING_STATE_FILENAME)
+          .toFile()
+          .exists()) {
+        // ERROR, we should have a post epoch processing state
+        fail("Missing %s file", POST_EPOCH_PROCESSING_STATE_FILENAME);
+      }
+      final BeaconState expectedFullPostState =
+          loadStateFromSsz(testDefinition, POST_EPOCH_PROCESSING_STATE_FILENAME);
+      final BeaconState postFullState = epochProcessor.processEpoch(preFullState.get());
+
+      assertThat(postFullState).isEqualTo(expectedFullPostState);
     }
   }
 
