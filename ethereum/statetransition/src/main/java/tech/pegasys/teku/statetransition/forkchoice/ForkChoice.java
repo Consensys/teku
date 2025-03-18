@@ -49,7 +49,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -75,7 +74,6 @@ import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.St
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -287,8 +285,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final UInt64 currentSlot = spec.getCurrentSlot(store);
 
     final int secondsPerSlot = spec.atSlot(inclusionListSlot).getConfig().getSecondsPerSlot();
-    final UInt64 timeIntoSlot = store.getTimeInSeconds().minusMinZero(store.getGenesisTime()).mod(secondsPerSlot);
-    final boolean isBeforeAttestingInterval = timeIntoSlot.isLessThan(secondsPerSlot / INTERVALS_PER_SLOT);
+    final UInt64 timeIntoSlot =
+        store.getTimeInSeconds().minusMinZero(store.getGenesisTime()).mod(secondsPerSlot);
+    final boolean isBeforeAttestingInterval =
+        timeIntoSlot.isLessThan(secondsPerSlot / INTERVALS_PER_SLOT);
 
     if (currentSlot.equals(inclusionListSlot.increment()) && !isBeforeAttestingInterval) {
       return SafeFuture.completedFuture(InclusionListImportResult.FAILED_PAST_ATTESTING_DEADLINE);
@@ -318,30 +318,30 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       }
 
       final boolean isBeforeFreezeDeadline =
-              isBeforeFreezeDeadline(
-                      spec, currentSlot, signedInclusionList, timeIntoSlot);
+          isBeforeFreezeDeadline(spec, currentSlot, signedInclusionList, timeIntoSlot);
       if (isBeforeFreezeDeadline) {
         final StoreTransaction transaction = recentChainData.startStoreTransaction();
         transaction.putInclusionList(inclusionList);
         transaction.commit().join();
         return SafeFuture.completedFuture(InclusionListImportResult.success(signedInclusionList));
       } else {
-        return SafeFuture.completedFuture(InclusionListImportResult.FAILED_PAST_INCLUSION_LIST_DEADLINE);
+        return SafeFuture.completedFuture(
+            InclusionListImportResult.FAILED_PAST_INCLUSION_LIST_DEADLINE);
       }
     }
   }
 
   private boolean isBeforeFreezeDeadline(
-          final Spec spec,
-          final UInt64 currentSlot,
-          final SignedInclusionList signedInclusionList,
-          final UInt64 timeIntoSlot) {
+      final Spec spec,
+      final UInt64 currentSlot,
+      final SignedInclusionList signedInclusionList,
+      final UInt64 timeIntoSlot) {
     final UInt64 inclusionListSlot = signedInclusionList.getMessage().getSlot();
     final int viewFreezeDeadline =
-            SpecConfigEip7805.required(spec.atSlot(inclusionListSlot).getConfig())
-                    .getViewFreezeDeadline();
+        SpecConfigEip7805.required(spec.atSlot(inclusionListSlot).getConfig())
+            .getViewFreezeDeadline();
     return currentSlot.equals(inclusionListSlot)
-            && timeIntoSlot.isLessThanOrEqualTo(viewFreezeDeadline);
+        && timeIntoSlot.isLessThanOrEqualTo(viewFreezeDeadline);
   }
 
   public void applyIndexedAttestations(final List<ValidatableAttestation> attestations) {

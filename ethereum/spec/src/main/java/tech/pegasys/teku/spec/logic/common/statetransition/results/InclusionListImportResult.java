@@ -23,8 +23,8 @@ public interface InclusionListImportResult {
       new FailedInclusionListImportResult(
           FailureReason.PAST_INCLUSION_LIST_DEADLINE, Optional.empty());
   InclusionListImportResult FAILED_PAST_ATTESTING_DEADLINE =
-          new FailedInclusionListImportResult(
-                  FailureReason.PAST_ATTESTATION_DEADLINE, Optional.empty());
+      new FailedInclusionListImportResult(
+          FailureReason.PAST_ATTESTATION_DEADLINE, Optional.empty());
   InclusionListImportResult FAILED_EQUIVOCATED =
       new FailedInclusionListImportResult(FailureReason.EQUIVOCATED, Optional.empty());
 
