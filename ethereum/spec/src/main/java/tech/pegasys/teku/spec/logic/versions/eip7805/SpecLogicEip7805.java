@@ -39,10 +39,10 @@ import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.Opera
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.eip7805.block.BlockProcessorEip7805;
+import tech.pegasys.teku.spec.logic.versions.eip7805.forktransition.Eip7805StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.BeaconStateAccessorsEip7805;
 import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.MiscHelpersEip7805;
 import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.forktransition.ElectraStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
@@ -75,7 +75,7 @@ public class SpecLogicEip7805 extends AbstractSpecLogic {
       final InclusionListUtil inclusionListUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
       final LightClientUtil lightClientUtil,
-      final ElectraStateUpgrade stateUpgrade) {
+      final Eip7805StateUpgrade stateUpgrade) {
     super(
         predicates,
         miscHelpers,
@@ -188,8 +188,8 @@ public class SpecLogicEip7805 extends AbstractSpecLogic {
         new InclusionListUtil(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
 
     // State upgrade
-    final ElectraStateUpgrade stateUpgrade =
-        new ElectraStateUpgrade(
+    final Eip7805StateUpgrade stateUpgrade =
+        new Eip7805StateUpgrade(
             config, schemaDefinitions, beaconStateAccessors, beaconStateMutators);
 
     return new SpecLogicEip7805(

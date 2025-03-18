@@ -101,6 +101,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
@@ -163,6 +164,7 @@ public class Eth2P2PNetworkFactory {
     protected OperationProcessor<ValidatableSyncCommitteeMessage> syncCommitteeMessageProcessor;
     protected OperationProcessor<SignedBlsToExecutionChange> signedBlsToExecutionChangeProcessor;
     protected OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor;
+    protected OperationProcessor<SignedInclusionList> signedInclusionListOperationProcessor;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
     protected VerifiedBlockAttestationsSubscriptionProvider
         verifiedBlockAttestationsSubscriptionProvider;
@@ -626,6 +628,10 @@ public class Eth2P2PNetworkFactory {
       if (signedBlsToExecutionChangeProcessor == null) {
         signedBlsToExecutionChangeProcessor = OperationProcessor.noop();
       }
+
+      if (signedInclusionListOperationProcessor == null) {
+        signedInclusionListOperationProcessor = OperationProcessor.noop();
+      }
     }
 
     public Eth2P2PNetworkBuilder spec(final Spec spec) {
@@ -765,6 +771,13 @@ public class Eth2P2PNetworkFactory {
         final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor) {
       checkNotNull(dataColumnSidecarOperationProcessor);
       this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder gossipedSignedInclusionListProcessor(
+        final OperationProcessor<SignedInclusionList> gossipedSignedInclusionListProcessor) {
+      checkNotNull(gossipedSignedInclusionListProcessor);
+      this.signedInclusionListOperationProcessor = gossipedSignedInclusionListProcessor;
       return this;
     }
 
