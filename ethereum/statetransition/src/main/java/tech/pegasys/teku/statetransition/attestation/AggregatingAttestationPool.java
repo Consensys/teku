@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -93,6 +94,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   private final RecentChainData recentChainData;
   private final SettableGauge sizeGauge;
   private final int maximumAttestationCount;
+  final AtomicBoolean isCleanupRunning = new AtomicBoolean(false);
 
   private final AtomicInteger size = new AtomicInteger(0);
 
@@ -125,7 +127,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
               }
             });
 
-    reduceDataHashBySlotSize();
+    cleanupCache(Optional.empty());
   }
 
   private Optional<Int2IntMap> getCommitteesSize(final Attestation attestation) {
@@ -217,28 +219,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     if (slot.isLessThan(ATTESTATION_RETENTION_SLOTS)) {
       return;
     }
-    removeAttestationsPriorToSlot(slot.minus(ATTESTATION_RETENTION_SLOTS));
-  }
-
-  private void removeAttestationsPriorToSlot(final UInt64 firstValidAttestationSlot) {
-    final AtomicInteger count = new AtomicInteger(0);
-    dataHashBySlot.headMap(firstValidAttestationSlot, false).values().stream()
-        .flatMap(Set::stream)
-        .forEach(
-            key -> {
-              final MatchingDataAttestationGroup matchingDataAttestationGroup =
-                  attestationGroupByDataHash.remove(key);
-              if (matchingDataAttestationGroup != null) {
-                updateSize(-matchingDataAttestationGroup.size());
-                count.incrementAndGet();
-              }
-            });
-    if (count.get() > 0) {
-      LOG.trace(
-          "firstValidAttestationSlot: {}, removed {} keys",
-          () -> firstValidAttestationSlot,
-          count::get);
-    }
+    cleanupCache(Optional.of(slot.minus(ATTESTATION_RETENTION_SLOTS)));
   }
 
   public void onAttestationsIncludedInBlock(
@@ -316,10 +297,39 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .collect(attestationsSchema.collector());
   }
 
-  void reduceDataHashBySlotSize() {
-    while (dataHashBySlot.size() > 1 && size.get() > maximumAttestationCount) {
-      LOG.trace("Attestation cache at {} exceeds {}, ", size.get(), maximumAttestationCount);
-      removeAttestationsPriorToSlot(dataHashBySlot.firstKey().plus(1));
+  void cleanupCache(final Optional<UInt64> maybeSlot) {
+    // one cleanup at a time can run
+    if (isCleanupRunning.compareAndSet(false, true)) {
+      if (maybeSlot.isEmpty()) {
+        while (dataHashBySlot.size() > 1 && size.get() > maximumAttestationCount) {
+          LOG.trace("Attestation cache at {} exceeds {}, ", size.get(), maximumAttestationCount);
+          removeAttestationsPriorToSlot(dataHashBySlot.firstKey().plus(1));
+        }
+      } else {
+        removeAttestationsPriorToSlot(maybeSlot.get());
+      }
+      isCleanupRunning.set(false);
+    }
+  }
+
+  private void removeAttestationsPriorToSlot(final UInt64 firstValidAttestationSlot) {
+    final AtomicInteger count = new AtomicInteger(0);
+    dataHashBySlot.headMap(firstValidAttestationSlot, false).values().stream()
+        .flatMap(Set::stream)
+        .forEach(
+            key -> {
+              final MatchingDataAttestationGroup matchingDataAttestationGroup =
+                  attestationGroupByDataHash.remove(key);
+              if (matchingDataAttestationGroup != null) {
+                updateSize(-matchingDataAttestationGroup.size());
+                count.incrementAndGet();
+              }
+            });
+    if (count.get() > 0) {
+      LOG.trace(
+          "firstValidAttestationSlot: {}, removed {} keys",
+          () -> firstValidAttestationSlot,
+          count::get);
     }
   }
 
