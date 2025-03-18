@@ -428,7 +428,7 @@ public class HistoricalBatchFetcher {
 
   private UInt64 getStartSlot() {
     if (blocksToImport.isEmpty()) {
-      return maxSlot.plus(1).safeMinus(batchSize).orElse(UInt64.ZERO);
+      return maxSlot.plus(1).minusMinZero(batchSize);
     }
 
     return blocksToImport.getLast().getSlot().plus(1);
@@ -518,7 +518,7 @@ public class HistoricalBatchFetcher {
     }
 
     public UInt64 getEndSlot() {
-      return startSlot.plus(count).safeMinus(1).orElse(startSlot);
+      return startSlot.plus(count).minusMinZero(1);
     }
   }
 }
