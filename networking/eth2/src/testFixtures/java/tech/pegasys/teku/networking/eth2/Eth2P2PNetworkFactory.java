@@ -465,27 +465,26 @@ public class Eth2P2PNetworkFactory {
                 signedBlsToExecutionChangeProcessor,
                 debugDataDumper);
         case EIP7805 ->
-          new GossipForkSubscriptionsEip7805(
-                  forkAndSpecMilestone.getFork(),
-                  spec,
-                  asyncRunner,
-                  metricsSystem,
-                  network,
-                  recentChainData,
-                  gossipEncoding,
-                  gossipedBlockProcessor,
-                  gossipedBlobSidecarProcessor,
-                  gossipedAttestationProcessor,
-                  gossipedAggregateProcessor,
-                  attesterSlashingProcessor,
-                  proposerSlashingProcessor,
-                  voluntaryExitProcessor,
-                  signedContributionAndProofProcessor,
-                  syncCommitteeMessageProcessor,
-                  signedBlsToExecutionChangeProcessor,
-                  signedInclusionListOperationProcessor,
-                  debugDataDumper
-          );
+            new GossipForkSubscriptionsEip7805(
+                forkAndSpecMilestone.getFork(),
+                spec,
+                asyncRunner,
+                metricsSystem,
+                network,
+                recentChainData,
+                gossipEncoding,
+                gossipedBlockProcessor,
+                gossipedBlobSidecarProcessor,
+                gossipedAttestationProcessor,
+                gossipedAggregateProcessor,
+                attesterSlashingProcessor,
+                proposerSlashingProcessor,
+                voluntaryExitProcessor,
+                signedContributionAndProofProcessor,
+                syncCommitteeMessageProcessor,
+                signedBlsToExecutionChangeProcessor,
+                signedInclusionListOperationProcessor,
+                debugDataDumper);
       };
     }
 
@@ -719,8 +718,7 @@ public class Eth2P2PNetworkFactory {
     }
 
     public Eth2P2PNetworkBuilder gossipedSignedInclusionListProcessor(
-            final OperationProcessor<SignedInclusionList>
-                    gossipedSignedInclusionListProcessor) {
+        final OperationProcessor<SignedInclusionList> gossipedSignedInclusionListProcessor) {
       checkNotNull(gossipedSignedInclusionListProcessor);
       this.signedInclusionListOperationProcessor = gossipedSignedInclusionListProcessor;
       return this;

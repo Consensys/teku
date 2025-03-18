@@ -43,7 +43,6 @@ import tech.pegasys.teku.spec.logic.versions.eip7805.forktransition.Eip7805State
 import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.BeaconStateAccessorsEip7805;
 import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.MiscHelpersEip7805;
 import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.forktransition.ElectraStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
