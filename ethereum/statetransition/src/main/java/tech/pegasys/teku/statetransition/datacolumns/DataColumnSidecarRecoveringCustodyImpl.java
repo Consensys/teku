@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -56,7 +57,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
 
   private final long columnCount;
   private final int recoverColumnCount;
-  private final boolean isSuperNode;
+  private final AtomicBoolean isSuperNode;
 
   final Function<UInt64, Duration> slotToRecoveryDelay;
   private final Map<SlotAndBlockRoot, RecoveryTask> recoveryTasks;
@@ -82,7 +83,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
     this.recoveryTasks =
         LimitedMap.createSynchronizedNatural(spec.getGenesisSpec().getSlotsPerEpoch());
-    this.isSuperNode = isSuperNode;
+    this.isSuperNode = new AtomicBoolean(isSuperNode);
     this.slotToRecoveryDelay = slotToRecoveryDelay;
     this.columnCount = columnCount;
     this.recoverColumnCount = columnCount / 2;
@@ -135,6 +136,12 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
 
   @Override
   public void onCustodyGroupCountSynced(final int groupCount) {
+    if (!isSuperNode.get()
+        && groupCount
+            == SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
+                .getNumberOfCustodyGroups()) {
+      isSuperNode.set(true);
+    }
     delegate.onCustodyGroupCountSynced(groupCount);
   }
 
@@ -194,7 +201,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   }
 
   private boolean isActiveSuperNode(final UInt64 slot) {
-    return isSuperNode
+    return isSuperNode.get()
         && spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU);
   }
 
