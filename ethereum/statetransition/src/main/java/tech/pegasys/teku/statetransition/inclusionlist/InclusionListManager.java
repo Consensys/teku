@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -41,7 +43,7 @@ public class InclusionListManager implements SlotEventsChannel {
   private final SignedInclusionListValidator signedInclusionListValidator;
   private final ForkChoice forkChoice;
   private final NavigableMap<UInt64, Map<UInt64, List<SignedInclusionList>>>
-      slotToInclusionListsByValidatorIndex = new TreeMap<>();
+      slotToInclusionListsByValidatorIndex = new ConcurrentSkipListMap<>();
 
   public InclusionListManager(
       final SignedInclusionListValidator signedInclusionListValidator,
