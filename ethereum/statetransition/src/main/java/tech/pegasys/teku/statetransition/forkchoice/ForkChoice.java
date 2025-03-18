@@ -296,7 +296,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final UInt64 timeIntoSlot = store.getTimeInSeconds().minusMinZero(store.getGenesisTime()).mod(secondsPerSlot);
     final boolean isBeforeAttestingInterval = timeIntoSlot.isLessThan(secondsPerSlot / INTERVALS_PER_SLOT);
 
-    if (currentSlot.equals(inclusionListSlot.plus(UInt64.ONE)) && !isBeforeAttestingInterval) {
+    if (currentSlot.equals(inclusionListSlot.increment()) && !isBeforeAttestingInterval) {
       return SafeFuture.completedFuture(InclusionListImportResult.FAILED_PAST_ATTESTING_DEADLINE);
     }
 
