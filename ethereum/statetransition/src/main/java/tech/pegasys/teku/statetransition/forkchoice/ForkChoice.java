@@ -744,7 +744,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         forkChoiceExecutor);
   }
 
-  @SuppressWarnings("UnusedVariable")
   private void updateForkChoiceForImportedBlock(
       final SignedBeaconBlock block,
       final boolean shouldApplyProposerBoost,
