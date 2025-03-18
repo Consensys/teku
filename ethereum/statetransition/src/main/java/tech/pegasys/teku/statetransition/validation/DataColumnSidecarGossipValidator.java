@@ -370,9 +370,8 @@ public class DataColumnSidecarGossipValidator {
       return miscHelpersFulu.verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
     } catch (final Throwable t) {
       LOG.error(
-          "Failed to reconstruct data column sidecars {}",
-          dataColumnSidecar.getSszKZGCommitments().hashTreeRoot(),
-          t);
+          "Failed to verify inclusion proof for  data column sidecar {}",
+          dataColumnSidecar.toLogString());
     }
     return false;
   }

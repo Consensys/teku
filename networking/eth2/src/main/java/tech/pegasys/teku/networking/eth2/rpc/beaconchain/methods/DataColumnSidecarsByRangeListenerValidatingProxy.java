@@ -19,7 +19,13 @@ import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.DataColu
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
@@ -35,12 +41,16 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
   private final UInt64 endSlot;
 
   private final Set<UInt64> columns;
+  private final MetricsHistogram dataColumnSidecarInclusionProofVerificationTimeSeconds;
+  private static final Logger LOG = LogManager.getLogger();
 
   public DataColumnSidecarsByRangeListenerValidatingProxy(
       final Spec spec,
       final Peer peer,
       final RpcResponseListener<DataColumnSidecar> dataColumnSidecarResponseListener,
       final KZG kzg,
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider,
       final UInt64 startSlot,
       final UInt64 count,
       final List<UInt64> columns) {
@@ -49,6 +59,17 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
     this.startSlot = startSlot;
     this.endSlot = startSlot.plus(count).minusMinZero(1);
     this.columns = new HashSet<>(columns);
+    this.dataColumnSidecarInclusionProofVerificationTimeSeconds =
+        new MetricsHistogram(
+            metricsSystem,
+            timeProvider,
+            TekuMetricCategory.BEACON,
+            "data_column_sidecar_inclusion_proof_verification_seconds",
+            "Time taken to verify data column sidecar inclusion proof",
+            new double[] {
+              0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04, 0.05, 0.1,
+              0.5, 1.0
+            });
   }
 
   @Override
@@ -66,7 +87,14 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
                 peer, DATA_COLUMN_SIDECAR_UNEXPECTED_IDENTIFIER);
           }
 
-          verifyInclusionProof(dataColumnSidecar);
+          try (MetricsHistogram.Timer ignored =
+              dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
+            verifyInclusionProof(dataColumnSidecar);
+          } catch (final Throwable t) {
+            LOG.error(
+                "Failed to verify inclusion proof for  data column sidecar {}",
+                dataColumnSidecar.toLogString());
+          }
           verifyKzgProof(dataColumnSidecar);
 
           return dataColumnSidecarResponseListener.onResponse(dataColumnSidecar);

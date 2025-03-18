@@ -23,10 +23,12 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -49,6 +51,8 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
   private DataColumnSidecarsByRootListenerValidatingProxy listenerWrapper;
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final KZG kzg = mock(KZG.class);
+  private final MetricsSystem metricsSystem = mock(MetricsSystem.class);
+  private final TimeProvider timeProvider = mock(TimeProvider.class);
 
   @SuppressWarnings("unchecked")
   private final RpcResponseListener<DataColumnSidecar> listener = mock(RpcResponseListener.class);
@@ -76,7 +80,7 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
             new DataColumnIdentifier(block4.getRoot(), UInt64.ZERO));
     listenerWrapper =
         new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer, spec, listener, kzg, dataColumnIdentifiers);
+            peer, spec, listener, kzg, metricsSystem, timeProvider, dataColumnIdentifiers);
 
     final DataColumnSidecar dataColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, UInt64.ZERO);
@@ -106,7 +110,7 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
             new DataColumnIdentifier(block1.getRoot(), UInt64.ONE));
     listenerWrapper =
         new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer, spec, listener, kzg, dataColumnIdentifiers);
+            peer, spec, listener, kzg, metricsSystem, timeProvider, dataColumnIdentifiers);
 
     final DataColumnSidecar datColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, UInt64.ZERO);
@@ -136,7 +140,7 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
         new DataColumnIdentifier(block1.getRoot(), UInt64.ZERO);
     listenerWrapper =
         new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer, spec, listener, kzg, List.of(dataColumnIdentifier));
+            peer, spec, listener, kzg, metricsSystem, timeProvider, List.of(dataColumnIdentifier));
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
@@ -193,7 +197,7 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
         new DataColumnIdentifier(dataColumnSidecar.getBlockRoot(), UInt64.ZERO);
     listenerWrapper =
         new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer, spec, listener, kzg, List.of(dataColumnIdentifier));
+            peer, spec, listener, kzg, metricsSystem, timeProvider, List.of(dataColumnIdentifier));
 
     final SafeFuture<?> result = listenerWrapper.onResponse(dataColumnSidecar);
     assertThat(result).isCompletedExceptionally();
