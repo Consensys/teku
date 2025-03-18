@@ -14,7 +14,9 @@
 package tech.pegasys.teku.ethereum.performance.trackers;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
+
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -25,18 +27,21 @@ public class BlockProductionAndPublishingPerformanceFactory {
   private final boolean enabled;
   private final Map<Flow, Integer> lateProductionEventThresholds;
   private final Map<Flow, Integer> latePublishingEventThresholds;
+  private final Optional<BlockProductionMetrics> blockProductionMetrics;
 
   public BlockProductionAndPublishingPerformanceFactory(
-      final TimeProvider timeProvider,
-      final Function<UInt64, UInt64> slotTimeCalculator,
-      final boolean enabled,
-      final int lateProductionEventLocalThreshold,
-      final int lateProductionEventBuilderThreshold,
-      final int latePublishingEventLocalThreshold,
-      final int latePublishingEvenBuilderThreshold) {
+          final TimeProvider timeProvider,
+          final Function<UInt64, UInt64> slotTimeCalculator,
+          final boolean enabled,
+          final int lateProductionEventLocalThreshold,
+          final int lateProductionEventBuilderThreshold,
+          final int latePublishingEventLocalThreshold,
+          final int latePublishingEvenBuilderThreshold,
+          final Optional<BlockProductionMetrics> blockProductionMetrics) {
     this.timeProvider = timeProvider;
     this.slotTimeCalculator = slotTimeCalculator;
     this.enabled = enabled;
+    this.blockProductionMetrics = blockProductionMetrics;
     this.lateProductionEventThresholds =
         Map.of(
             Flow.LOCAL,
@@ -53,8 +58,8 @@ public class BlockProductionAndPublishingPerformanceFactory {
 
   public BlockProductionPerformance createForProduction(final UInt64 slot) {
     if (enabled) {
-      return new BlockProductionPerformanceImpl(
-          timeProvider, slot, slotTimeCalculator.apply(slot), lateProductionEventThresholds);
+              return new BlockProductionPerformanceImpl(
+                timeProvider, slot, slotTimeCalculator.apply(slot), lateProductionEventThresholds, blockProductionMetrics.orElse(BlockProductionMetrics.NOOP));
     } else {
       return BlockProductionPerformance.NOOP;
     }

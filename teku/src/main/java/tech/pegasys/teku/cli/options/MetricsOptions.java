@@ -98,6 +98,15 @@ public class MetricsOptions {
       arity = "0..1")
   private boolean blockPerformanceEnabled = MetricsConfig.DEFAULT_BLOCK_PERFORMANCE_ENABLED;
 
+ @Option(
+      names = {"--metrics-block-production-timing-tracking-enabled"},
+      showDefaultValue = Visibility.ALWAYS,
+      paramLabel = "<BOOLEAN>",
+      description = "Whether block production timing metrics are tracked and reported",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean blockProductionPerformanceEnabled = MetricsConfig.DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_ENABLED;
+
   @Option(
       names = {"--Xmetrics-tick-timing-tracking-enabled"},
       hidden = true,
@@ -195,6 +204,7 @@ public class MetricsOptions {
                 .metricsPublishInterval(metricsPublicationInterval)
                 .idleTimeoutSeconds(idleTimeoutSeconds)
                 .blockPerformanceEnabled(blockPerformanceEnabled)
+                .blockProductionPerformanceEnabled(blockProductionPerformanceEnabled)
                 .tickPerformanceEnabled(tickPerformanceEnabled)
                 .blobSidecarsStorageCountersEnabled(blobSidecarsStorageCountersEnabled)
                 .blockProductionAndPublishingPerformanceEnabled(
