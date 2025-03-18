@@ -61,7 +61,7 @@ public class Eth2NetworkConfiguration {
   // so DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS * slots_per_epoch should be >= validator set size
   // ideally
   // on all subnets, you may receive and have to cache that number of messages
-  public static final int DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS = 30_000;
+  public static final int DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS = 70_000;
 
   public static final boolean DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES = false;
 

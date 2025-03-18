@@ -13,24 +13,23 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import com.google.common.collect.Sets;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -69,8 +68,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   /**
    * Default maximum number of attestations to store in the pool.
    *
-   * <p>With 1.2 million active validators, we'd expect around 37_500 attestations per slot; so 3
-   * slots worth of attestations is almost 120_000.
+   * <p>With 2 million active validators, we'd expect around 62_500 attestations per slot; so 3
+   * slots worth of attestations is almost 187_500.
    *
    * <p>128 attestations perfectly packed at a 1.2 million validator set would be 1_200_000 / 32 /
    * 64 bits, about 584 bits per aggregate. 128 of those is 74752 attestations if perfectly packed.
@@ -85,16 +84,17 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
    * <p>Strictly to cache all attestations for a full 2 epochs is significantly larger than this
    * cache.
    */
-  public static final int DEFAULT_MAXIMUM_ATTESTATION_COUNT = 120_000;
+  public static final int DEFAULT_MAXIMUM_ATTESTATION_COUNT = 187_500;
 
-  private final Map<Bytes, MatchingDataAttestationGroup> attestationGroupByDataHash =
-      new HashMap<>();
-  private final NavigableMap<UInt64, Set<Bytes>> dataHashBySlot = new TreeMap<>();
+  private final Map<Bytes32, MatchingDataAttestationGroup> attestationGroupByDataHash =
+      new ConcurrentSkipListMap<>();
+  private final NavigableMap<UInt64, Set<Bytes32>> dataHashBySlot = new ConcurrentSkipListMap<>();
 
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final SettableGauge sizeGauge;
   private final int maximumAttestationCount;
+  final AtomicBoolean isCleanupRunning = new AtomicBoolean(false);
 
   private final AtomicInteger size = new AtomicInteger(0);
 
@@ -114,9 +114,10 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     this.maximumAttestationCount = maximumAttestationCount;
   }
 
-  public synchronized void add(final ValidatableAttestation attestation) {
+  public void add(final ValidatableAttestation attestation) {
     final Optional<Int2IntMap> committeesSize =
         attestation.getCommitteesSize().or(() -> getCommitteesSize(attestation.getAttestation()));
+
     getOrCreateAttestationGroup(attestation.getAttestation(), committeesSize)
         .ifPresent(
             attestationGroup -> {
@@ -125,14 +126,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
                 updateSize(1);
               }
             });
-    // Always keep the latest slot attestations, so we don't discard everything
-    int currentSize = getSize();
-    while (dataHashBySlot.size() > 1 && currentSize > maximumAttestationCount) {
-      LOG.trace("Attestation cache at {} exceeds {}, ", currentSize, maximumAttestationCount);
-      final UInt64 firstSlotToKeep = dataHashBySlot.firstKey().plus(1);
-      removeAttestationsPriorToSlot(firstSlotToKeep);
-      currentSize = getSize();
-    }
+
+    cleanupCache(Optional.empty());
   }
 
   private Optional<Int2IntMap> getCommitteesSize(final Attestation attestation) {
@@ -159,8 +154,13 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
           attestationData.getTarget().getRoot());
       return Optional.empty();
     }
+    return maybeCreateAttestationGroup(attestationData, committeesSize);
+  }
+
+  private synchronized Optional<MatchingDataAttestationGroup> maybeCreateAttestationGroup(
+      final AttestationData attestationData, final Optional<Int2IntMap> committeesSize) {
     dataHashBySlot
-        .computeIfAbsent(attestationData.getSlot(), slot -> new HashSet<>())
+        .computeIfAbsent(attestationData.getSlot(), slot -> Sets.newConcurrentHashSet())
         .add(attestationData.hashTreeRoot());
     final MatchingDataAttestationGroup attestationGroup =
         attestationGroupByDataHash.computeIfAbsent(
@@ -215,36 +215,24 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   @Override
-  public synchronized void onSlot(final UInt64 slot) {
-    if (slot.compareTo(ATTESTATION_RETENTION_SLOTS) <= 0) {
+  public void onSlot(final UInt64 slot) {
+    if (slot.isLessThan(ATTESTATION_RETENTION_SLOTS)) {
       return;
     }
-    final UInt64 firstValidAttestationSlot = slot.minus(ATTESTATION_RETENTION_SLOTS);
-    removeAttestationsPriorToSlot(firstValidAttestationSlot);
+    cleanupCache(Optional.of(slot.minus(ATTESTATION_RETENTION_SLOTS)));
   }
 
-  private void removeAttestationsPriorToSlot(final UInt64 firstValidAttestationSlot) {
-    final Collection<Set<Bytes>> dataHashesToRemove =
-        dataHashBySlot.headMap(firstValidAttestationSlot, false).values();
-    dataHashesToRemove.stream()
-        .flatMap(Set::stream)
-        .forEach(
-            key -> {
-              final int removed = attestationGroupByDataHash.get(key).size();
-              attestationGroupByDataHash.remove(key);
-              updateSize(-removed);
-            });
-    if (!dataHashesToRemove.isEmpty()) {
-      LOG.trace(
-          "firstValidAttestationSlot: {}, removing: {}",
-          () -> firstValidAttestationSlot,
-          dataHashesToRemove::size);
-    }
-    dataHashesToRemove.clear();
-  }
-
-  public synchronized void onAttestationsIncludedInBlock(
+  public void onAttestationsIncludedInBlock(
       final UInt64 slot, final Iterable<Attestation> attestations) {
+    final Optional<UInt64> maybeCurrentSlot = recentChainData.getCurrentSlot();
+    if (maybeCurrentSlot.isEmpty()
+        || maybeCurrentSlot.get().minusMinZero(slot).isGreaterThan(ATTESTATION_RETENTION_SLOTS)) {
+      LOG.trace(
+          "Attestations included in block at slot {}, head slot {} - skipping.",
+          slot,
+          maybeCurrentSlot);
+      return;
+    }
     attestations.forEach(attestation -> onAttestationIncludedInBlock(slot, attestation));
   }
 
@@ -263,11 +251,11 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     sizeGauge.set(currentSize);
   }
 
-  public synchronized int getSize() {
+  public int getSize() {
     return size.get();
   }
 
-  public synchronized SszList<Attestation> getAttestationsForBlock(
+  public SszList<Attestation> getAttestationsForBlock(
       final BeaconState stateAtBlockSlot, final AttestationForkChecker forkChecker) {
     final UInt64 currentEpoch = spec.getCurrentEpoch(stateAtBlockSlot);
     final int previousEpochLimit = spec.getPreviousEpochAttestationCapacity(stateAtBlockSlot);
@@ -309,8 +297,49 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .collect(attestationsSchema.collector());
   }
 
+  void cleanupCache(final Optional<UInt64> maybeSlot) {
+    // one cleanup at a time can run
+    if (!isCleanupRunning.compareAndSet(false, true)) {
+      return;
+    }
+
+    try {
+      if (maybeSlot.isEmpty()) {
+        while (dataHashBySlot.size() > 1 && size.get() > maximumAttestationCount) {
+          LOG.trace("Attestation cache at {} exceeds {}, ", size.get(), maximumAttestationCount);
+          removeAttestationsPriorToSlot(dataHashBySlot.firstKey().plus(1));
+        }
+      } else {
+        removeAttestationsPriorToSlot(maybeSlot.get());
+      }
+    } finally {
+      isCleanupRunning.set(false);
+    }
+  }
+
+  private void removeAttestationsPriorToSlot(final UInt64 firstValidAttestationSlot) {
+    final AtomicInteger count = new AtomicInteger(0);
+    dataHashBySlot.headMap(firstValidAttestationSlot, false).values().stream()
+        .flatMap(Set::stream)
+        .forEach(
+            key -> {
+              final MatchingDataAttestationGroup matchingDataAttestationGroup =
+                  attestationGroupByDataHash.remove(key);
+              if (matchingDataAttestationGroup != null) {
+                updateSize(-matchingDataAttestationGroup.size());
+                count.incrementAndGet();
+              }
+            });
+    if (count.get() > 0) {
+      LOG.trace(
+          "firstValidAttestationSlot: {}, removed {} keys",
+          () -> firstValidAttestationSlot,
+          count::get);
+    }
+  }
+
   private Stream<Attestation> streamAggregatesForDataHashesBySlot(
-      final Set<Bytes> dataHashSetForSlot,
+      final Set<Bytes32> dataHashSetForSlot,
       final BeaconState stateAtBlockSlot,
       final AttestationForkChecker forkChecker,
       final boolean blockRequiresAttestationsWithCommitteeBits) {
@@ -328,15 +357,13 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .sorted(ATTESTATION_INCLUSION_COMPARATOR);
   }
 
-  public synchronized List<Attestation> getAttestations(
+  public List<Attestation> getAttestations(
       final Optional<UInt64> maybeSlot, final Optional<UInt64> maybeCommitteeIndex) {
-
-    final Predicate<Map.Entry<UInt64, Set<Bytes>>> filterForSlot =
+    final Predicate<Map.Entry<UInt64, Set<Bytes32>>> filterForSlot =
         (entry) -> maybeSlot.map(slot -> entry.getKey().equals(slot)).orElse(true);
-
     final UInt64 slot = maybeSlot.orElse(recentChainData.getCurrentSlot().orElse(UInt64.ZERO));
-    final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
 
+    final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
     final boolean requiresCommitteeBits =
         schemaDefinitions.getAttestationSchema().requiresCommitteeBits();
 
@@ -358,13 +385,13 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     return spec.validateAttestation(stateAtBlockSlot, attestationData).isEmpty();
   }
 
-  public synchronized Optional<ValidatableAttestation> createAggregateFor(
+  public Optional<ValidatableAttestation> createAggregateFor(
       final Bytes32 attestationHashTreeRoot, final Optional<UInt64> committeeIndex) {
     return Optional.ofNullable(attestationGroupByDataHash.get(attestationHashTreeRoot))
         .flatMap(attestations -> attestations.stream(committeeIndex).findFirst());
   }
 
-  public synchronized void onReorg(final UInt64 commonAncestorSlot) {
+  public void onReorg(final UInt64 commonAncestorSlot) {
     attestationGroupByDataHash.values().forEach(group -> group.onReorg(commonAncestorSlot));
   }
 }
