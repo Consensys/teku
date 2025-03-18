@@ -46,7 +46,7 @@ public interface BlockProductionMetrics {
         }
       };
 
-  static BlockProductionMetricsImpl create(MetricsSystem metricsSystem) {
+  static BlockProductionMetricsImpl create(final MetricsSystem metricsSystem) {
 
     final Map<List<String>, List<Long>> eventsAndBoundaries =
         Map.of(

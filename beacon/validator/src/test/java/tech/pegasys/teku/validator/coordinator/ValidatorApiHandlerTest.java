@@ -151,7 +151,7 @@ class ValidatorApiHandlerTest {
 
   private final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory =
       new BlockProductionAndPublishingPerformanceFactory(
-          StubTimeProvider.withTimeInMillis(0), __ -> ZERO, false, 0, 0, 0, 0);
+          StubTimeProvider.withTimeInMillis(0), __ -> ZERO, false, 0, 0, 0, 0, Optional.empty());
 
   private Spec spec;
   private UInt64 epochStartSlot;
