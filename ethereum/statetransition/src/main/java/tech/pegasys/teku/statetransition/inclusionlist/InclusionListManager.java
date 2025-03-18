@@ -19,7 +19,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -40,7 +44,7 @@ public class InclusionListManager implements SlotEventsChannel {
   private static final UInt64 SLOTS_TO_RETAIN = UInt64.valueOf(4);
   private final SignedInclusionListValidator signedInclusionListValidator;
   private final ForkChoice forkChoice;
-  private final NavigableMap<UInt64, Map<UInt64, List<SignedInclusionList>>>
+  private final NavigableMap<UInt64, ConcurrentMap<UInt64, List<SignedInclusionList>>>
       slotToInclusionListsByValidatorIndex = new ConcurrentSkipListMap<>();
 
   public InclusionListManager(
@@ -59,7 +63,7 @@ public class InclusionListManager implements SlotEventsChannel {
     final UInt64 validatorIndex = signedInclusionList.getMessage().getValidatorIndex();
     final UInt64 slot = signedInclusionList.getMessage().getSlot();
     slotToInclusionListsByValidatorIndex
-        .computeIfAbsent(slot, index -> new HashMap<>())
+        .computeIfAbsent(slot, index -> new ConcurrentHashMap<>())
         .compute(
             validatorIndex,
             (index, inclusionLists) -> {
@@ -126,7 +130,7 @@ public class InclusionListManager implements SlotEventsChannel {
   public List<SignedInclusionList> getInclusionLists(
       final UInt64 slot, final SszBitvector committeeIndices) {
     final Map<UInt64, List<SignedInclusionList>> inclusionListsForSlot =
-        slotToInclusionListsByValidatorIndex.getOrDefault(slot, Map.of());
+        slotToInclusionListsByValidatorIndex.getOrDefault(slot, new ConcurrentHashMap<>());
     return inclusionListsForSlot.entrySet().stream()
         .filter(
             validatorIndexToInclusionLists ->
