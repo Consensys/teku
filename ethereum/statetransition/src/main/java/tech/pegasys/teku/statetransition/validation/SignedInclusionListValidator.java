@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -46,7 +47,7 @@ public class SignedInclusionListValidator {
 
   public SafeFuture<InternalValidationResult> validate(
       final SignedInclusionList signedInclusionList,
-      final NavigableMap<UInt64, Map<UInt64, List<SignedInclusionList>>>
+      final NavigableMap<UInt64, ConcurrentMap<UInt64, List<SignedInclusionList>>>
           slotToInclusionListsByValidatorIndex) {
 
     final InclusionList inclusionList = signedInclusionList.getMessage();
@@ -167,7 +168,7 @@ public class SignedInclusionListValidator {
   }
 
   private int countInclusionLists(
-      final NavigableMap<UInt64, Map<UInt64, List<SignedInclusionList>>>
+      final NavigableMap<UInt64, ConcurrentMap<UInt64, List<SignedInclusionList>>>
           slotToInclusionListsByValidatorIndex,
       final UInt64 validatorIndex) {
     final Set<Map<UInt64, List<SignedInclusionList>>> validatorInclusionLists =
