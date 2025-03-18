@@ -52,6 +52,7 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   private final KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
       nonCanonicalBlobSidecarBySlotRootBlobIndex;
   private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes> sidecarByColumnSlotAndIdentifier;
+  private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes> nonCanonicalSidecarByColumnSlotAndIdentifier;
   private final List<Bytes> deletedColumnIds;
 
   public V6SchemaCombinedTreeState(final Spec spec) {
@@ -94,6 +95,9 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
     sidecarByColumnSlotAndIdentifier =
         KvStoreColumn.create(
             finalizedOffset + 16, COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER, BYTES_SERIALIZER);
+    nonCanonicalSidecarByColumnSlotAndIdentifier =
+        KvStoreColumn.create(
+            finalizedOffset + 17, COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER, BYTES_SERIALIZER);
     deletedColumnIds =
         List.of(
             asColumnId(finalizedOffset + 9),
@@ -159,6 +163,12 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   public KvStoreColumn<DataColumnSlotAndIdentifier, Bytes>
       getColumnSidecarByColumnSlotAndIdentifier() {
     return sidecarByColumnSlotAndIdentifier;
+  }
+
+  @Override
+  public KvStoreColumn<DataColumnSlotAndIdentifier, Bytes>
+      getColumnNonCanonicalSidecarByColumnSlotAndIdentifier() {
+    return nonCanonicalSidecarByColumnSlotAndIdentifier;
   }
 
   @Override

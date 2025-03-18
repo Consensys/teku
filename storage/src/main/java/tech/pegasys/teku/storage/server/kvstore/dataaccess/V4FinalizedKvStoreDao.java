@@ -213,6 +213,10 @@ public class V4FinalizedKvStoreDao {
     return db.get(schema.getColumnSidecarByColumnSlotAndIdentifier(), identifier);
   }
 
+  public Optional<Bytes> getNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
+    return db.get(schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(), identifier);
+  }
+
   @MustBeClosed
   public Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(
       final UInt64 startSlot, final UInt64 endSlot) {
@@ -220,6 +224,15 @@ public class V4FinalizedKvStoreDao {
         schema.getColumnSidecarByColumnSlotAndIdentifier(),
         new DataColumnSlotAndIdentifier(startSlot, MIN_BLOCK_ROOT, UInt64.ZERO),
         new DataColumnSlotAndIdentifier(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE));
+  }
+
+  @MustBeClosed
+  public Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiers(
+          final UInt64 startSlot, final UInt64 endSlot) {
+    return db.streamKeys(
+            schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(),
+            new DataColumnSlotAndIdentifier(startSlot, MIN_BLOCK_ROOT, UInt64.ZERO),
+            new DataColumnSlotAndIdentifier(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE));
   }
 
   public List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(
@@ -490,8 +503,22 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
+    public void addNonCanonicalSidecar(final DataColumnSidecar sidecar) {
+        transaction.put(
+            schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(),
+            new DataColumnSlotAndIdentifier(
+                sidecar.getSlot(), sidecar.getBlockRoot(), sidecar.getIndex()),
+            sidecar.sszSerialize());
+    }
+
+    @Override
     public void removeSidecar(final DataColumnSlotAndIdentifier identifier) {
       transaction.delete(schema.getColumnSidecarByColumnSlotAndIdentifier(), identifier);
+    }
+
+    @Override
+    public void removeNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
+      transaction.delete(schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(), identifier);
     }
 
     @Override

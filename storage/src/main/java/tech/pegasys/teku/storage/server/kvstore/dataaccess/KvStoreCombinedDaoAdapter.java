@@ -336,10 +336,22 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public Optional<Bytes> getNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
+    return finalizedDao.getNonCanonicalSidecar(identifier);
+  }
+
+  @Override
   @MustBeClosed
   public Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(
       final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamDataColumnIdentifiers(startSlot, endSlot);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiers(
+          final UInt64 startSlot, final UInt64 endSlot) {
+    return finalizedDao.streamNonCanonicalDataColumnIdentifiers(startSlot, endSlot);
   }
 
   @Override
@@ -664,8 +676,18 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
+    public void addNonCanonicalSidecar(final DataColumnSidecar sidecar) {
+      finalizedUpdater.addNonCanonicalSidecar(sidecar);
+    }
+
+    @Override
     public void removeSidecar(final DataColumnSlotAndIdentifier identifier) {
       finalizedUpdater.removeSidecar(identifier);
+    }
+
+    @Override
+    public void removeNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
+      finalizedUpdater.removeNonCanonicalSidecar(identifier);
     }
 
     @Override

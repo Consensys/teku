@@ -50,6 +50,7 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   private final KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
       nonCanonicalBlobSidecarBySlotRootBlobIndex;
   private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes> sidecarByColumnSlotAndIdentifier;
+  private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes> nonCanonicalSidecarByColumnSlotAndIdentifier;
   private final List<Bytes> deletedColumnIds;
 
   private V6SchemaCombinedSnapshot(final Spec spec, final int finalizedOffset) {
@@ -88,6 +89,10 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
     sidecarByColumnSlotAndIdentifier =
         KvStoreColumn.create(
             finalizedOffset + 14, COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER, BYTES_SERIALIZER);
+
+    nonCanonicalSidecarByColumnSlotAndIdentifier =
+        KvStoreColumn.create(
+                finalizedOffset + 15, COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER, BYTES_SERIALIZER);
 
     deletedColumnIds =
         List.of(
@@ -152,6 +157,12 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   public KvStoreColumn<DataColumnSlotAndIdentifier, Bytes>
       getColumnSidecarByColumnSlotAndIdentifier() {
     return sidecarByColumnSlotAndIdentifier;
+  }
+
+  @Override
+  public KvStoreColumn<DataColumnSlotAndIdentifier, Bytes>
+      getColumnNonCanonicalSidecarByColumnSlotAndIdentifier() {
+    return nonCanonicalSidecarByColumnSlotAndIdentifier;
   }
 
   @Override

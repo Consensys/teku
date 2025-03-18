@@ -259,6 +259,8 @@ public interface Database extends AutoCloseable {
 
   Optional<DataColumnSidecar> getSidecar(DataColumnSlotAndIdentifier identifier);
 
+  Optional<DataColumnSidecar> getNonCanonicalSidecar(DataColumnSlotAndIdentifier identifier);
+
   @MustBeClosed
   Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(
       UInt64 firstSlot, UInt64 lastSlot);
@@ -266,6 +268,15 @@ public interface Database extends AutoCloseable {
   @MustBeClosed
   default Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(final UInt64 slot) {
     return streamDataColumnIdentifiers(slot, slot);
+  }
+
+  @MustBeClosed
+  Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiers(
+          UInt64 firstSlot, UInt64 lastSlot);
+
+  @MustBeClosed
+  default Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiers(final UInt64 slot) {
+    return streamNonCanonicalDataColumnIdentifiers(slot, slot);
   }
 
   Optional<UInt64> getEarliestDataColumnSidecarSlot();
@@ -276,5 +287,10 @@ public interface Database extends AutoCloseable {
 
   void addSidecar(DataColumnSidecar sidecar);
 
+  void addNonCanonicalSidecar(DataColumnSidecar sidecar);
+
   void pruneAllSidecars(UInt64 tillSlotInclusive);
+
+  void pruneAllNonCanonicalSidecars(UInt64 tillSlotInclusive);
+
 }

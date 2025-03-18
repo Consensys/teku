@@ -367,8 +367,19 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Optional<DataColumnSidecar> getNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
+    return Optional.empty();
+  }
+
+  @Override
   @MustBeClosed
   public Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(
+      final UInt64 firstSlot, final UInt64 lastSlot) {
+    return Stream.empty();
+  }
+
+  @Override
+  public Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiers(
       final UInt64 firstSlot, final UInt64 lastSlot) {
     return Stream.empty();
   }
@@ -388,7 +399,13 @@ public class NoOpDatabase implements Database {
   public void addSidecar(final DataColumnSidecar sidecar) {}
 
   @Override
+  public void addNonCanonicalSidecar(final DataColumnSidecar sidecar) {}
+
+  @Override
   public void pruneAllSidecars(final UInt64 tillSlotInclusive) {}
+
+  @Override
+  public void pruneAllNonCanonicalSidecars(final UInt64 tillSlotInclusive) {}
 
   @Override
   public void close() {}
