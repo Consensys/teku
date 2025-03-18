@@ -34,7 +34,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -173,42 +172,42 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
       final AttestationData attestationData) {
     // we can use the first state of the epoch to get committees for an attestation
     final MiscHelpers miscHelpers = spec.atSlot(attestationData.getSlot()).miscHelpers();
-    final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(attestationData.getSlot());
+    final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElse(UInt64.ZERO);
     final UInt64 attestationEpoch = miscHelpers.computeEpochAtSlot(attestationData.getSlot());
 
     LOG.debug("currentEpoch {}, attestationEpoch {}", currentEpoch, attestationEpoch);
     if (attestationEpoch.equals(currentEpoch)
-        || attestationEpoch.equals(currentEpoch.decrement())) {
+        || attestationEpoch.equals(currentEpoch.minusMinZero(1))) {
 
-      final Optional<SafeFuture<BeaconState>> maybeFuture = recentChainData.getBestState();
-      if (maybeFuture.isEmpty()) {
-        return Optional.empty();
-      } else {
-        try {
-          final BeaconState state = maybeFuture.get().getImmediately();
-          return Optional.of(spec.getBeaconCommitteesSize(state, attestationData.getSlot()));
-        } catch (IllegalStateException e) {
-          LOG.info(
-              "Couldn't retrieve state for committee calculation of slot {}",
-              attestationData.getSlot());
-          return Optional.empty();
-        }
-      }
+      return recentChainData
+          .getBestState()
+          .flatMap(
+              state -> {
+                try {
+                  return Optional.of(
+                      spec.getBeaconCommitteesSize(
+                          state.getImmediately(), attestationData.getSlot()));
+                } catch (IllegalStateException e) {
+                  LOG.info(
+                      "Couldn't retrieve state for committee calculation of slot {}",
+                      attestationData.getSlot());
+                  return Optional.empty();
+                }
+              });
     }
 
     // attestation is not from the current or previous epoch
-    LOG.debug("State at slot {} needed", miscHelpers.computeStartSlotAtEpoch(attestationEpoch));
-    final SafeFuture<Optional<BeaconState>> optionalFutureBeaconState =
-        recentChainData.retrieveStateInEffectAtSlot(
-            miscHelpers.computeStartSlotAtEpoch(attestationEpoch));
+    final UInt64 attestationEpochStartSlot = miscHelpers.computeStartSlotAtEpoch(attestationEpoch);
+    LOG.debug("State at slot {} needed", attestationEpochStartSlot);
     try {
-      final Optional<BeaconState> maybeState = optionalFutureBeaconState.getImmediately();
-      return maybeState.map(
-          state -> spec.getBeaconCommitteesSize(state, attestationData.getSlot()));
-    } catch (IllegalStateException e) {
+      return recentChainData
+          .retrieveStateInEffectAtSlot(attestationEpochStartSlot)
+          .getImmediately()
+          .map(state -> spec.getBeaconCommitteesSize(state, attestationData.getSlot()));
+    } catch (final IllegalStateException e) {
       LOG.info(
           "Couldn't retrieve state in effect at slot {} for committee calculation of slot {}",
-          miscHelpers.computeStartSlotAtEpoch(attestationEpoch),
+          attestationEpochStartSlot,
           attestationData.getSlot());
       return Optional.empty();
     }
