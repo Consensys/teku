@@ -19,58 +19,22 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 @SuppressWarnings("ClassInitializationDeadlock")
 public interface InclusionListImportResult {
 
-  InclusionListImportResult FAILED_INCLUSION_LIST_SLOT =
-      new FailedInclusionListImportResult(FailureReason.INCLUSION_LIST_SLOT, Optional.empty());
-  InclusionListImportResult FAILED_PAST_ATTESTATION_DEADLINE =
+  InclusionListImportResult FAILED_PAST_INCLUSION_LIST_DEADLINE =
       new FailedInclusionListImportResult(
-          FailureReason.PAST_ATTESTATION_DEADLINE, Optional.empty());
-  InclusionListImportResult FAILED_COMMITTEE_ROOT_MISMATCH =
-      new FailedInclusionListImportResult(FailureReason.COMMITTEE_ROOT_MISMATCH, Optional.empty());
-  InclusionListImportResult FAILED_VALIDATOR_NOT_IN_COMMITTEE =
-      new FailedInclusionListImportResult(
-          FailureReason.VALIDATOR_NOT_IN_COMMITTEE, Optional.empty());
-  InclusionListImportResult FAILED_INVALID_SIGNATURE =
-      new FailedInclusionListImportResult(FailureReason.INVALID_SIGNATURE, Optional.empty());
+          FailureReason.PAST_INCLUSION_LIST_DEADLINE, Optional.empty());
+  InclusionListImportResult FAILED_PAST_ATTESTING_DEADLINE =
+          new FailedInclusionListImportResult(
+                  FailureReason.PAST_ATTESTATION_DEADLINE, Optional.empty());
   InclusionListImportResult FAILED_EQUIVOCATED =
-      new FailedInclusionListImportResult(FailureReason.INVALID_SIGNATURE, Optional.empty());
-  InclusionListImportResult FAILED_STATE_UNAVAILABLE =
-      new FailedInclusionListImportResult(FailureReason.STATE_UNAVAILABLE, Optional.empty());
-
-  static InclusionListImportResult failedSlotCheckInvalid(final Optional<Throwable> cause) {
-    return new FailedInclusionListImportResult(FailureReason.INCLUSION_LIST_SLOT, cause);
-  }
-
-  static InclusionListImportResult failedAttestationDeadline(final Optional<Throwable> cause) {
-    return new FailedInclusionListImportResult(FailureReason.PAST_ATTESTATION_DEADLINE, cause);
-  }
-
-  static InclusionListImportResult failedCommitteeRootInvalid(final Optional<Throwable> cause) {
-    return new FailedInclusionListImportResult(FailureReason.COMMITTEE_ROOT_MISMATCH, cause);
-  }
-
-  static InclusionListImportResult failedValidatorNotInCommittee(final Optional<Throwable> cause) {
-    return new FailedInclusionListImportResult(FailureReason.VALIDATOR_NOT_IN_COMMITTEE, cause);
-  }
-
-  static InclusionListImportResult failedSignatureCheckInvalid(final Optional<Throwable> cause) {
-    return new FailedInclusionListImportResult(FailureReason.INVALID_SIGNATURE, cause);
-  }
-
-  static InclusionListImportResult failedEquivocationCheck(final Optional<Throwable> cause) {
-    return new FailedInclusionListImportResult(FailureReason.EQUIVOCATED, cause);
-  }
+      new FailedInclusionListImportResult(FailureReason.EQUIVOCATED, Optional.empty());
 
   static InclusionListImportResult success(final SignedInclusionList signedInclusionList) {
     return new SuccessfulInclusionListImport(signedInclusionList);
   }
 
   enum FailureReason {
-    INCLUSION_LIST_SLOT,
+    PAST_INCLUSION_LIST_DEADLINE,
     PAST_ATTESTATION_DEADLINE,
-    COMMITTEE_ROOT_MISMATCH,
-    VALIDATOR_NOT_IN_COMMITTEE,
-    INVALID_SIGNATURE,
-    STATE_UNAVAILABLE,
     EQUIVOCATED,
     INTERNAL_ERROR // A catch-all category for unexpected errors (bugs)
   }
