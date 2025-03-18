@@ -843,9 +843,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     dasCustodySync = new DasCustodySync(custody, recoveringSidecarRetriever);
     eventChannels.subscribe(SlotEventsChannel.class, dasCustodySync);
 
-    if (beaconConfig.p2pConfig().isDasLossySamplerEnabled()) {
-      LOG.info("Lossy Sampler is not supported, starting basic sampler");
-    }
     CurrentSlotProvider currentSlotProvider =
         CurrentSlotProvider.create(spec, recentChainData.getStore());
     final DasSamplerBasic dasSampler =

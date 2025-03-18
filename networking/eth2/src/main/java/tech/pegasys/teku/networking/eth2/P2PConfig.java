@@ -51,7 +51,6 @@ public class P2PConfig {
   public static final int DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE = 250;
   public static final boolean DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED = false;
   public static final int DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT = 0;
-  public static final boolean DEFAULT_DAS_LOSSY_SAMPLER_ENABLED = false;
 
   private final Spec spec;
   private final NetworkConfig networkConfig;
@@ -63,7 +62,6 @@ public class P2PConfig {
   private final int targetSubnetSubscriberCount;
   private final boolean subscribeAllSubnetsEnabled;
   private final int dasExtraCustodyGroupCount;
-  private final boolean dasLossySamplerEnabled;
   private final int peerBlocksRateLimit;
   private final int peerBlobSidecarsRateLimit;
   private final int peerRequestLimit;
@@ -83,7 +81,6 @@ public class P2PConfig {
       final int targetSubnetSubscriberCount,
       final boolean subscribeAllSubnetsEnabled,
       final int dasExtraCustodyGroupCount,
-      final boolean dasLossySamplerEnabled,
       final int peerBlocksRateLimit,
       final int peerBlobSidecarsRateLimit,
       final int peerRequestLimit,
@@ -101,7 +98,6 @@ public class P2PConfig {
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
     this.dasExtraCustodyGroupCount = dasExtraCustodyGroupCount;
-    this.dasLossySamplerEnabled = dasLossySamplerEnabled;
     this.peerBlocksRateLimit = peerBlocksRateLimit;
     this.peerBlobSidecarsRateLimit = peerBlobSidecarsRateLimit;
     this.peerRequestLimit = peerRequestLimit;
@@ -195,10 +191,6 @@ public class P2PConfig {
     return isGossipBlobsAfterBlockEnabled;
   }
 
-  public boolean isDasLossySamplerEnabled() {
-    return dasLossySamplerEnabled;
-  }
-
   public static class Builder {
     private final NetworkConfig.Builder networkConfig = NetworkConfig.builder();
     private final DiscoveryConfig.Builder discoveryConfig = DiscoveryConfig.builder();
@@ -210,7 +202,6 @@ public class P2PConfig {
     private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private Boolean subscribeAllCustodySubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private int dasExtraCustodyGroupCount = DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT;
-    private boolean dasLossySamplerEnabled = DEFAULT_DAS_LOSSY_SAMPLER_ENABLED;
     private Integer peerBlocksRateLimit = DEFAULT_PEER_BLOCKS_RATE_LIMIT;
     private Integer peerBlobSidecarsRateLimit = DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
@@ -268,7 +259,6 @@ public class P2PConfig {
           targetSubnetSubscriberCount,
           subscribeAllSubnetsEnabled,
           dasExtraCustodyGroupCount,
-          dasLossySamplerEnabled,
           peerBlocksRateLimit,
           peerBlobSidecarsRateLimit,
           peerRequestLimit,
@@ -319,11 +309,6 @@ public class P2PConfig {
     public Builder subscribeAllSubnetsEnabled(final Boolean subscribeAllSubnetsEnabled) {
       checkNotNull(subscribeAllSubnetsEnabled);
       this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
-      return this;
-    }
-
-    public Builder dasLossySamplerEnabled(final boolean dasLossySamplerEnabled) {
-      this.dasLossySamplerEnabled = dasLossySamplerEnabled;
       return this;
     }
 
