@@ -59,7 +59,6 @@ import tech.pegasys.teku.ethereum.executionclient.ExecutionClientVersionChannel;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionClientVersionProvider;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionAndPublishingPerformanceFactory;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionMetrics;
-import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionMetricsImpl;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -962,11 +961,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
       blobSidecarGossipChannel = BlobSidecarGossipChannel.NOOP;
     }
 
-
-    final Optional<BlockProductionMetrics> blockProductionMetrics = beaconConfig.getMetricsConfig().isBlockProductionPerformanceEnabled()
+    final Optional<BlockProductionMetrics> blockProductionMetrics =
+        beaconConfig.getMetricsConfig().isBlockProductionPerformanceEnabled()
             ? Optional.of(BlockProductionMetrics.create(metricsSystem))
             : Optional.empty();
-
 
     final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory =
         new BlockProductionAndPublishingPerformanceFactory(
@@ -980,7 +978,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockProductionMetrics);
 
     final DutyMetrics dutyMetrics =
-            DutyMetrics.create(metricsSystem, timeProvider, recentChainData, spec);
+        DutyMetrics.create(metricsSystem, timeProvider, recentChainData, spec);
 
     final MilestoneBasedBlockPublisher blockPublisher =
         new MilestoneBasedBlockPublisher(

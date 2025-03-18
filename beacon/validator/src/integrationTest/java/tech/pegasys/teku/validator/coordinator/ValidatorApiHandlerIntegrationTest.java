@@ -24,6 +24,11 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.NOT_REQUIRED;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.IntStream;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
@@ -31,7 +36,6 @@ import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.beacon.sync.events.SyncStateTracker;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionAndPublishingPerformanceFactory;
-import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionMetrics;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -75,13 +79,6 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.IntStream;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestTemplate;
 
 @TestSpecContext(milestone = {SpecMilestone.PHASE0, SpecMilestone.DENEB})
 public class ValidatorApiHandlerIntegrationTest {

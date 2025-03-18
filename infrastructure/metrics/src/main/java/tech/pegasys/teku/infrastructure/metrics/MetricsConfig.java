@@ -193,7 +193,8 @@ public class MetricsConfig {
     private int metricsPublishInterval = DEFAULT_METRICS_PUBLICATION_INTERVAL;
     private int idleTimeoutSeconds = DEFAULT_IDLE_TIMEOUT_SECONDS;
     private boolean blockPerformanceEnabled = DEFAULT_BLOCK_PERFORMANCE_ENABLED;
-    private boolean blockProductionPerformanceEnabled = DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_ENABLED;
+    private boolean blockProductionPerformanceEnabled =
+        DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_ENABLED;
     private boolean blockProductionAndPublishingPerformanceEnabled =
         DEFAULT_BLOCK_PRODUCTION_AND_PUBLISHING_PERFORMANCE_ENABLED;
     private int blockProductionPerformanceWarningLocalThreshold =
@@ -267,7 +268,8 @@ public class MetricsConfig {
       return this;
     }
 
-    public MetricsConfigBuilder blockProductionPerformanceEnabled(final boolean blockProductionPerformanceEnabled) {
+    public MetricsConfigBuilder blockProductionPerformanceEnabled(
+        final boolean blockProductionPerformanceEnabled) {
       this.blockProductionPerformanceEnabled = blockProductionPerformanceEnabled;
       return this;
     }

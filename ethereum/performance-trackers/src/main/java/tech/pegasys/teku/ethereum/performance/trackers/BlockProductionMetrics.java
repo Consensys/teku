@@ -28,12 +28,8 @@ import static tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPer
 import static tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceImpl.STATE_HASHING;
 import static tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceImpl.STATE_TRANSITION;
 
-import com.google.common.collect.Streams;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.MetricsCountersByIntervals;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
@@ -54,8 +50,7 @@ public interface BlockProductionMetrics {
 
     final Map<List<String>, List<Long>> eventsAndBoundaries =
         Map.of(
-            List.of(
-                COMPLETE_LABEL),
+            List.of(COMPLETE_LABEL),
             List.of(50L, 100L, 250L, 500L, 1000L, 2000L, 3000L, 4000L),
             List.of(), // default
             List.of(50L, 100L, 250L, 500L, 1000L, 2000L, 3000L, 4000L, 5000L, 8000L, 12000L));
@@ -69,25 +64,24 @@ public interface BlockProductionMetrics {
             List.of("stage", "result"),
             eventsAndBoundaries);
 
-            List<String> blockProductionStages =
-                List.of(
-                        PREPARATION_ON_TICK,
-                        PREPARATION_APPLY_DEFERRED_ATTESTATIONS,
-                        PREPARATION_PROCESS_HEAD,
-                        RETRIEVE_STATE,
-                        BEACON_BLOCK_PREPARATION_STARTED,
-                        GET_ATTESTATIONS_FOR_BLOCK,
-                        BEACON_BLOCK_PREPARED,
-                        LOCAL_GET_PAYLOAD,
-                        BUILDER_GET_HEADER,
-                        BUILDER_BID_VALIDATED,
-                        BEACON_BLOCK_CREATED,
-                        STATE_TRANSITION,
-                        STATE_HASHING,
-                        COMPLETE_LABEL);
+    List<String> blockProductionStages =
+        List.of(
+            PREPARATION_ON_TICK,
+            PREPARATION_APPLY_DEFERRED_ATTESTATIONS,
+            PREPARATION_PROCESS_HEAD,
+            RETRIEVE_STATE,
+            BEACON_BLOCK_PREPARATION_STARTED,
+            GET_ATTESTATIONS_FOR_BLOCK,
+            BEACON_BLOCK_PREPARED,
+            LOCAL_GET_PAYLOAD,
+            BUILDER_GET_HEADER,
+            BUILDER_BID_VALIDATED,
+            BEACON_BLOCK_CREATED,
+            STATE_TRANSITION,
+            STATE_HASHING,
+            COMPLETE_LABEL);
 
-      blockProductionStages.forEach(
-                        stage -> metricsCountersByIntervals.initCounters(List.of(stage)));
+    blockProductionStages.forEach(stage -> metricsCountersByIntervals.initCounters(List.of(stage)));
 
     final SettableLabelledGauge latestDelayGauge =
         SettableLabelledGauge.create(

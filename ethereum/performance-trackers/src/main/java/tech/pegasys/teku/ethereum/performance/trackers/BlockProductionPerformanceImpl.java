@@ -65,10 +65,9 @@ public class BlockProductionPerformanceImpl implements BlockProductionPerformanc
     performanceTracker.report(
         slotTime,
         isLateEvent,
-        (event, stepDuration) ->
-                blockProductionMetrics.recordValue(stepDuration, event.getLeft()),
+        (event, stepDuration) -> blockProductionMetrics.recordValue(stepDuration, event.getLeft()),
         totalDuration ->
-                blockProductionMetrics.recordValue(totalDuration, TOTAL_PRODUCTION_TIME_LABEL),
+            blockProductionMetrics.recordValue(totalDuration, TOTAL_PRODUCTION_TIME_LABEL),
         (totalDuration, timings) ->
             EventLogger.EVENT_LOG.slowBlockProductionEvent(slot, totalDuration, timings));
   }
