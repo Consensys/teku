@@ -138,4 +138,14 @@ public class BlockProductionPerformanceImpl implements BlockProductionPerformanc
   public void beaconBlockPreparationStarted() {
     performanceTracker.addEvent(BEACON_BLOCK_PREPARATION_STARTED);
   }
+
+  @Override
+  public void getAttestationsForBlock() {
+    performanceTracker.addEvent("get_attestations_for_block");
+  }
+
+  @Override
+  public void beaconBlockPreparationStarted() {
+    performanceTracker.addEvent("beacon_block_preparation_started");
+  }
 }
