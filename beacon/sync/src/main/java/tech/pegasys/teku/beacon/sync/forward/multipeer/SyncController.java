@@ -215,7 +215,8 @@ public class SyncController {
               true,
               recentChainData.getHeadSlot(),
               startSlot,
-              new SyncingTarget(targetChain.getChainHead(), targetChain.getPeerCount()));
+              new SyncingTarget(targetChain.getChainHead(), targetChain.getPeerCount()),
+              sync.getSyncProgressSummary());
     }
 
     public boolean hasSameTarget(final TargetChain chain) {

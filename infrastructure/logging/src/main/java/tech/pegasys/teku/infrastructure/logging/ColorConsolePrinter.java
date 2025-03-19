@@ -25,7 +25,8 @@ public class ColorConsolePrinter {
     BLUE,
     PURPLE,
     CYAN,
-    WHITE
+    WHITE,
+    GRAY
   }
 
   public static String print(final String message, final Color color) {
@@ -42,6 +43,7 @@ public class ColorConsolePrinter {
       case PURPLE -> "\u001b[35m";
       case CYAN -> "\u001b[36m";
       case WHITE -> "\u001b[37m";
+      case GRAY -> "\u001b[90m";
     };
   }
 }

@@ -23,6 +23,9 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.NavigableSet;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.BatchImporter.BatchImportResult;
@@ -129,6 +132,68 @@ public class BatchSync implements Sync {
     eventThread.execute(
         exceptionHandlingRunnable(() -> switchSyncTarget(targetChain, result), result));
     return result;
+  }
+
+  @Override
+  public String getSyncProgressSummary() {
+    record BatchesProgress(
+        Optional<UInt64> downloadingFromSlot,
+        int downloadingSlots,
+        int downloadingBatches,
+        int downloadedSlots) {}
+
+    final SafeFuture<String> result = new SafeFuture<>();
+    eventThread.execute(
+        exceptionHandlingRunnable(
+            () -> {
+              var progress =
+                  activeBatches.stream()
+                      .filter(batch -> batch.isAwaitingBlocks() || batch.isComplete())
+                      .map(
+                          batch -> {
+                            if (batch.isAwaitingBlocks()) {
+                              return new BatchesProgress(
+                                  Optional.of(batch.getFirstSlot()),
+                                  batch.getCount().intValue(),
+                                  1,
+                                  0);
+                            }
+                            if (batch.isComplete()) {
+                              return new BatchesProgress(
+                                  Optional.empty(), 0, 0, batch.getCount().intValue());
+                            }
+                            return new BatchesProgress(Optional.empty(), 0, 0, 0);
+                          })
+                      .reduce(
+                          new BatchesProgress(Optional.empty(), 0, 0, 0),
+                          (s1, s2) ->
+                              new BatchesProgress(
+                                  s1.downloadingFromSlot.isEmpty()
+                                      ? s2.downloadingFromSlot
+                                      : s1.downloadingFromSlot,
+                                  s1.downloadingSlots + s2.downloadingSlots,
+                                  s1.downloadingBatches + s2.downloadingBatches,
+                                  s1.downloadedSlots + s2.downloadedSlots));
+
+              result.complete(
+                  String.format(
+                      "Downloading %d slots in %d batches from slot %s, Downloaded slots: %d, Importing: %s",
+                      progress.downloadingSlots,
+                      progress.downloadingBatches,
+                      progress.downloadingFromSlot.map(UInt64::toString).orElse("N/A"),
+                      progress.downloadedSlots,
+                      importingBatch
+                          .map(
+                              b ->
+                                  String.format("%s slots from %s", b.getCount(), b.getFirstSlot()))
+                          .orElse("none")));
+            },
+            result));
+    try {
+      return result.get(100, TimeUnit.MILLISECONDS);
+    } catch (final InterruptedException | ExecutionException | TimeoutException __) {
+      return "--Sync progress summary not available--";
+    }
   }
 
   private void switchSyncTarget(
