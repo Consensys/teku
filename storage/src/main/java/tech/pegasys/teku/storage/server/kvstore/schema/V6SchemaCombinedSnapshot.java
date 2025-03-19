@@ -50,7 +50,8 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   private final KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
       nonCanonicalBlobSidecarBySlotRootBlobIndex;
   private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes> sidecarByColumnSlotAndIdentifier;
-  private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes> nonCanonicalSidecarByColumnSlotAndIdentifier;
+  private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes>
+      nonCanonicalSidecarByColumnSlotAndIdentifier;
   private final List<Bytes> deletedColumnIds;
 
   private V6SchemaCombinedSnapshot(final Spec spec, final int finalizedOffset) {
@@ -92,7 +93,7 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
 
     nonCanonicalSidecarByColumnSlotAndIdentifier =
         KvStoreColumn.create(
-                finalizedOffset + 15, COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER, BYTES_SERIALIZER);
+            finalizedOffset + 15, COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER, BYTES_SERIALIZER);
 
     deletedColumnIds =
         List.of(

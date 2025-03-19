@@ -1126,7 +1126,8 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public Optional<DataColumnSidecar> getNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
+  public Optional<DataColumnSidecar> getNonCanonicalSidecar(
+      final DataColumnSlotAndIdentifier identifier) {
     final Optional<Bytes> maybePayload = dao.getNonCanonicalSidecar(identifier);
     return maybePayload.map(payload -> spec.deserializeSidecar(payload, identifier.slot()));
   }
@@ -1141,7 +1142,7 @@ public class KvStoreDatabase implements Database {
   @Override
   @MustBeClosed
   public Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiers(
-          final UInt64 firstSlot, final UInt64 lastSlot) {
+      final UInt64 firstSlot, final UInt64 lastSlot) {
     return dao.streamNonCanonicalDataColumnIdentifiers(firstSlot, lastSlot);
   }
 
@@ -1195,8 +1196,8 @@ public class KvStoreDatabase implements Database {
   @Override
   public void pruneAllNonCanonicalSidecars(final UInt64 tillSlotInclusive) {
     try (final Stream<DataColumnSlotAndIdentifier> prunableIdentifiers =
-                 streamNonCanonicalDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive);
-         final FinalizedUpdater updater = finalizedUpdater()) {
+            streamNonCanonicalDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive);
+        final FinalizedUpdater updater = finalizedUpdater()) {
       prunableIdentifiers.forEach(updater::removeNonCanonicalSidecar);
       updater.commit();
     }

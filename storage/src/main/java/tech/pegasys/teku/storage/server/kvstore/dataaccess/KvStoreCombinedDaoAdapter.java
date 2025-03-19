@@ -350,7 +350,7 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   @Override
   @MustBeClosed
   public Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiers(
-          final UInt64 startSlot, final UInt64 endSlot) {
+      final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamNonCanonicalDataColumnIdentifiers(startSlot, endSlot);
   }
 

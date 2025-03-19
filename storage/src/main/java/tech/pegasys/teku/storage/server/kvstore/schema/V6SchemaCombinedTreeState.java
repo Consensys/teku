@@ -52,7 +52,8 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   private final KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
       nonCanonicalBlobSidecarBySlotRootBlobIndex;
   private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes> sidecarByColumnSlotAndIdentifier;
-  private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes> nonCanonicalSidecarByColumnSlotAndIdentifier;
+  private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes>
+      nonCanonicalSidecarByColumnSlotAndIdentifier;
   private final List<Bytes> deletedColumnIds;
 
   public V6SchemaCombinedTreeState(final Spec spec) {

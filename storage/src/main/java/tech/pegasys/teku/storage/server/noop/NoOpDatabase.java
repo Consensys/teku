@@ -367,7 +367,8 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Optional<DataColumnSidecar> getNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
+  public Optional<DataColumnSidecar> getNonCanonicalSidecar(
+      final DataColumnSlotAndIdentifier identifier) {
     return Optional.empty();
   }
 

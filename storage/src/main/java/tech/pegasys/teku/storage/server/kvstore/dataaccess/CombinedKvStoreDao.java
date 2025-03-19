@@ -592,11 +592,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   @MustBeClosed
   public Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiers(
-          final UInt64 startSlot, final UInt64 endSlot) {
+      final UInt64 startSlot, final UInt64 endSlot) {
     return db.streamKeys(
-            schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(),
-            new DataColumnSlotAndIdentifier(startSlot, MIN_BLOCK_ROOT, UInt64.ZERO),
-            new DataColumnSlotAndIdentifier(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE));
+        schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(),
+        new DataColumnSlotAndIdentifier(startSlot, MIN_BLOCK_ROOT, UInt64.ZERO),
+        new DataColumnSlotAndIdentifier(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE));
   }
 
   @Override
@@ -928,10 +928,10 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void addNonCanonicalSidecar(final DataColumnSidecar sidecar) {
       transaction.put(
-              schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(),
-              new DataColumnSlotAndIdentifier(
-                      sidecar.getSlot(), sidecar.getBlockRoot(), sidecar.getIndex()),
-              sidecar.sszSerialize());
+          schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(),
+          new DataColumnSlotAndIdentifier(
+              sidecar.getSlot(), sidecar.getBlockRoot(), sidecar.getIndex()),
+          sidecar.sszSerialize());
     }
 
     @Override
@@ -941,8 +941,8 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
     @Override
     public void removeNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
-      transaction.delete(schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(), identifier);
+      transaction.delete(
+          schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(), identifier);
     }
-
   }
 }

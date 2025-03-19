@@ -181,7 +181,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(UInt64 startSlot, UInt64 endSlot);
 
   @MustBeClosed
-  Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiers(UInt64 startSlot, UInt64 endSlot);
+  Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiers(
+      UInt64 startSlot, UInt64 endSlot);
 
   List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(SlotAndBlockRoot slotAndBlockRoot);
 
