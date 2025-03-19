@@ -47,12 +47,12 @@ public class DataColumnSidecarSubnetBackboneSubscriber
   }
 
   @Override
-  public void onCustodyGroupCountUpdate(int groupCount) {
+  public void onCustodyGroupCountUpdate(final int groupCount) {
     totalGroupCount.set(groupCount);
   }
 
   @Override
-  public void onCustodyGroupCountSynced(int groupCount) {}
+  public void onCustodyGroupCountSynced(final int groupCount) {}
 
   private void subscribeToSubnets(final Collection<Integer> newSubscriptions) {
 
