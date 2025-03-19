@@ -15,11 +15,10 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -33,7 +32,6 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIde
 public class DataColumnSidecarsByRootValidator extends AbstractDataColumnSidecarValidator {
   private final Set<DataColumnIdentifier> expectedDataColumnIdentifiers;
   private final MetricsHistogram dataColumnSidecarInclusionProofVerificationTimeSeconds;
-  private static final Logger LOG = LogManager.getLogger();
 
   public DataColumnSidecarsByRootValidator(
       final Peer peer,
@@ -69,10 +67,9 @@ public class DataColumnSidecarsByRootValidator extends AbstractDataColumnSidecar
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
       verifyInclusionProof(dataColumnSidecar);
-    } catch (final Throwable t) {
-      LOG.error(
-          "Failed to verify inclusion proof for  data column sidecar {}",
-          dataColumnSidecar.toLogString());
+    } catch (final IOException ioException) {
+      throw new DataColumnSidecarsResponseInvalidResponseException(
+          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
     }
     verifyKzgProof(dataColumnSidecar);
   }
