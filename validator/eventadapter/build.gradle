@@ -11,7 +11,7 @@ dependencies {
   implementation project(':validator:api')
   implementation project(':validator:beaconnode')
 
-  implementation 'io.tmio:tuweni-bytes'
+  implementation 'io.consensys.tuweni:tuweni-bytes'
 
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'

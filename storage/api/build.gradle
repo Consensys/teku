@@ -4,7 +4,7 @@ dependencies {
     implementation project(':ethereum:pow:api')
     implementation project(':ethereum:spec')
 
-    implementation 'io.tmio:tuweni-bytes'
+    implementation 'io.consensys.tuweni:tuweni-bytes'
 }
 
 publishing {

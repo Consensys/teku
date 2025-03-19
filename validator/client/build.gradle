@@ -27,7 +27,7 @@ dependencies {
   implementation project(':infrastructure:bls-keystore')
   implementation project(':infrastructure:subscribers')
 
-  implementation 'io.tmio:tuweni-bytes'
+  implementation 'io.consensys.tuweni:tuweni-bytes'
   implementation 'commons-io:commons-io'
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'

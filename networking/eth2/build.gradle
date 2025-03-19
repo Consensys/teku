@@ -19,7 +19,7 @@ dependencies {
 
   implementation 'io.libp2p:jvm-libp2p'
   implementation 'io.netty:netty-codec-http'
-  implementation 'io.tmio:tuweni-ssz'
+  implementation 'io.consensys.tuweni:tuweni-ssz'
   implementation 'org.xerial.snappy:snappy-java'
 
   testImplementation testFixtures(project(':infrastructure:metrics'))
