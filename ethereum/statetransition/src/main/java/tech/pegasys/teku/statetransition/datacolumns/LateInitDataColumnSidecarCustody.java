@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
@@ -94,6 +95,11 @@ public class LateInitDataColumnSidecarCustody implements DataColumnSidecarRecove
   @Override
   public void onCustodyGroupCountSynced(final int groupCount) {
     delegate.onCustodyGroupCountSynced(groupCount);
+  }
+
+  @Override
+  public List<UInt64> getCustodyColumnIndices(final UInt64 epoch) {
+    return delegate.getCustodyColumnIndices(epoch);
   }
 
   private void checkDelegate() {

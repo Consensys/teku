@@ -97,6 +97,11 @@ public class DasLongPollCustody implements DataColumnSidecarCustody, SlotEventsC
     return delegate.retrieveMissingColumns();
   }
 
+  @Override
+  public List<UInt64> getCustodyColumnIndices(final UInt64 epoch) {
+    return delegate.getCustodyColumnIndices(epoch);
+  }
+
   private SafeFuture<Optional<DataColumnSidecar>> addPendingRequest(
       final DataColumnSlotAndIdentifier columnId) {
     final SafeFuture<Optional<DataColumnSidecar>> promise = new SafeFuture<>();

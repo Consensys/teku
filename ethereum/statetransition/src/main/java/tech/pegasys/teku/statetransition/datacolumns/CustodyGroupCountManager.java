@@ -77,12 +77,12 @@ public class CustodyGroupCountManager implements SlotEventsChannel {
                             })
                         .mapToLong(UInt64::intValue)
                         .sum();
-                final UInt64 custodyGroupCountExtra =
+                final UInt64 validatorCustodyGroupCount =
                     UInt64.valueOf(activeBases)
                         .times(specConfigFulu.getValidatorCustodyRequirement());
                 final UInt64 custodyGroupCountUpdated =
-                    custodyGroupCountExtra
-                        .plus(initCustodyGroupCount)
+                    validatorCustodyGroupCount
+                        .max(initCustodyGroupCount)
                         .min(specConfigFulu.getNumberOfCustodyGroups());
                 updateCustodyGroupCount(custodyGroupCountUpdated);
               }

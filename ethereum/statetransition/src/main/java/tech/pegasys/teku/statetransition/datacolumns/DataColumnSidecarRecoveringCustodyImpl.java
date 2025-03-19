@@ -135,11 +135,18 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   }
 
   @Override
+  public List<UInt64> getCustodyColumnIndices(final UInt64 epoch) {
+    return delegate.getCustodyColumnIndices(epoch);
+  }
+
+  @Override
   public void onCustodyGroupCountSynced(final int groupCount) {
     if (!isSuperNode.get()
         && groupCount
             == SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
                 .getNumberOfCustodyGroups()) {
+      LOG.info(
+          "Number of required custody groups reached maximum custody groups. Activating super node reconstruction.");
       isSuperNode.set(true);
     }
     delegate.onCustodyGroupCountSynced(groupCount);

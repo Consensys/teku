@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
@@ -30,4 +32,6 @@ public interface DataColumnSidecarCustody extends CustodyGroupCountChannel {
   SafeFuture<Void> onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar);
 
   AsyncStream<DataColumnSlotAndIdentifier> retrieveMissingColumns();
+
+  List<UInt64> getCustodyColumnIndices(UInt64 epoch);
 }

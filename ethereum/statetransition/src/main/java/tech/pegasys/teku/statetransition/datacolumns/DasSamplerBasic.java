@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Sets;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -25,7 +24,6 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -44,8 +42,6 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckpointChannel {
   private static final Logger LOG = LogManager.getLogger("das-nyota");
 
-  private final UInt256 nodeId;
-  private final int myTotalCustodyGroups;
   private final DataColumnSidecarCustody custody;
   private final DataColumnSidecarRetriever retriever;
 
@@ -58,9 +54,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
       final CurrentSlotProvider currentSlotProvider,
       final DataColumnSidecarDbAccessor db,
       final DataColumnSidecarCustody custody,
-      final DataColumnSidecarRetriever retriever,
-      final UInt256 nodeId,
-      final int myTotalCustodyGroups) {
+      final DataColumnSidecarRetriever retriever) {
     this.currentSlotProvider = currentSlotProvider;
     checkNotNull(spec);
     checkNotNull(db);
@@ -70,8 +64,6 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
     this.db = db;
     this.custody = custody;
     this.retriever = retriever;
-    this.nodeId = nodeId;
-    this.myTotalCustodyGroups = myTotalCustodyGroups;
   }
 
   private int getColumnCount(final UInt64 slot) {
@@ -80,14 +72,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
 
   private List<DataColumnSlotAndIdentifier> calculateSamplingColumnIds(
       final UInt64 slot, final Bytes32 blockRoot) {
-    final Optional<MiscHelpersFulu> maybeMiscHelpers =
-        spec.atSlot(slot).miscHelpers().toVersionFulu();
-    return maybeMiscHelpers
-        .map(
-            miscHelpersFulu ->
-                miscHelpersFulu.computeCustodyColumnIndexes(nodeId, myTotalCustodyGroups))
-        .orElse(Collections.emptyList())
-        .stream()
+    return custody.getCustodyColumnIndices(spec.computeEpochAtSlot(slot)).stream()
         .map(columnIndex -> new DataColumnSlotAndIdentifier(slot, blockRoot, columnIndex))
         .toList();
   }

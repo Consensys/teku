@@ -855,13 +855,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         CurrentSlotProvider.create(spec, recentChainData.getStore());
     final DasSamplerBasic dasSampler =
         new DasSamplerBasic(
-            spec,
-            currentSlotProvider,
-            dbAccessor,
-            custody,
-            recoveringSidecarRetriever,
-            nodeId,
-            totalMyCustodyGroups);
+            spec, currentSlotProvider, dbAccessor, custody, recoveringSidecarRetriever);
     LOG.info("DAS Basic Sampler initialized with {} groups to sample", totalMyCustodyGroups);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, dasSampler);
     this.dataAvailabilitySampler = dasSampler;
@@ -1245,6 +1239,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 .getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU)));
 
     eventChannels.subscribe(SlotEventsChannel.class, subnetBackboneSubscriber);
+    eventChannels.subscribe(CustodyGroupCountChannel.class, subnetBackboneSubscriber);
   }
 
   public void initExecutionLayerBlockProductionManager() {

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -101,6 +102,11 @@ public class DataColumnSidecarByRootCustodyImpl
   @Override
   public void onCustodyGroupCountSynced(final int groupCount) {
     custody.onCustodyGroupCountSynced(groupCount);
+  }
+
+  @Override
+  public List<UInt64> getCustodyColumnIndices(final UInt64 epoch) {
+    return custody.getCustodyColumnIndices(epoch);
   }
 
   private static class ColumnSlotCache {

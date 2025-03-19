@@ -120,6 +120,9 @@ public class DataColumnSidecarCustodyImpl
     this.custodyGroupCountChannel = custodyGroupCountChannel;
     this.nodeId = nodeId;
     this.totalCustodyGroupCount = new AtomicInteger(totalCustodyGroupCount);
+    LOG.info(
+        "Initialized DataColumnSidecar Custody with custody group count {}",
+        totalCustodyGroupCount);
   }
 
   private List<UInt64> getCustodyColumnsForSlot(final UInt64 slot) {
@@ -156,7 +159,14 @@ public class DataColumnSidecarCustodyImpl
   }
 
   @Override
-  public void onCustodyGroupCountSynced(final int groupCount) {}
+  public void onCustodyGroupCountSynced(final int groupCount) {
+    LOG.info("Custody group synced changed to {}", groupCount);
+  }
+
+  @Override
+  public List<UInt64> getCustodyColumnIndices(final UInt64 epoch) {
+    return getCustodyColumnsForEpoch(epoch);
+  }
 
   private boolean isMyCustody(final UInt64 slot, final UInt64 columnIndex) {
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
@@ -209,7 +219,6 @@ public class DataColumnSidecarCustodyImpl
                           // an issue
                           // FIXME: non-finalized epochs could be still not synced with up-to-date
                           // custody
-                          // TODO: test me
                           if (firstIncompleteOrLastComplete.slot().equals(firstNonFinalizedSlot)) {
                             LOG.info(
                                 "Custody group count synced to {}", totalCustodyGroupCount.get());
