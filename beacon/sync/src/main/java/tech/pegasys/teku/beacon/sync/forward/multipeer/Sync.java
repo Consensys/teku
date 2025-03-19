@@ -26,4 +26,6 @@ public interface Sync {
    * @return a future that completes when the sync is complete
    */
   SafeFuture<SyncResult> syncToChain(TargetChain targetChain);
+
+  String getSyncProgressSummary();
 }

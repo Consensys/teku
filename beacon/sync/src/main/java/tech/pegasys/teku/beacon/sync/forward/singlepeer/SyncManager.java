@@ -196,7 +196,8 @@ public class SyncManager extends Service {
             peerSync.getStartingSlot(),
             new SyncingTarget(
                 new SlotAndBlockRoot(bestPeerStatus.getHeadSlot(), bestPeerStatus.getHeadRoot()),
-                1));
+                1),
+            "");
       }
     }
     return new SyncingStatus(false, recentChainData.getHeadSlot());
