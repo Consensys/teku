@@ -18,7 +18,7 @@ dependencies {
   implementation project(':infrastructure:serviceutils')
   implementation project(':validator:client')
 
-  implementation 'io.tmio:tuweni-units'
+  implementation 'io.consensys.tuweni:tuweni-units'
 
   testImplementation project(':ethereum:pow:merkletree')
 
