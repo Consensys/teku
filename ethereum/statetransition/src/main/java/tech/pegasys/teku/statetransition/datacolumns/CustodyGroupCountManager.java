@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
@@ -26,19 +27,24 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class CustodyGroupCountManager implements SlotEventsChannel {
 
-  final int initCustodyGroupCount;
-  final AtomicInteger custodyGroupCount;
-  final SpecConfigFulu specConfigFulu;
-  final ProposersDataManager proposersDataManager;
-  final CustodyGroupCountChannel custodyGroupCountChannel;
-  final CombinedChainDataClient combinedChainDataClient;
+  private final int initCustodyGroupCount;
+  private final AtomicInteger custodyGroupCount;
+  private final Spec spec;
+  private final SpecConfigFulu specConfigFulu;
+  private final ProposersDataManager proposersDataManager;
+  private final CustodyGroupCountChannel custodyGroupCountChannel;
+  private final CombinedChainDataClient combinedChainDataClient;
+
+  private UInt64 lastEpoch = UInt64.MAX_VALUE;
 
   public CustodyGroupCountManager(
+      final Spec spec,
       final SpecConfigFulu specConfigFulu,
       final ProposersDataManager proposersDataManager,
       final CustodyGroupCountChannel custodyGroupCountChannel,
       final CombinedChainDataClient combinedChainDataClient,
       final int initCustodyGroupCount) {
+    this.spec = spec;
     this.specConfigFulu = specConfigFulu;
     this.proposersDataManager = proposersDataManager;
     this.combinedChainDataClient = combinedChainDataClient;
@@ -47,11 +53,14 @@ public class CustodyGroupCountManager implements SlotEventsChannel {
     this.custodyGroupCount = new AtomicInteger(initCustodyGroupCount);
   }
 
-  // TODO: every epoch should be enough
   @Override
   public void onSlot(final UInt64 slot) {
     if (initCustodyGroupCount == specConfigFulu.getNumberOfCustodyGroups()) {
       // Supernode, we are already subscribed to all groups
+      return;
+    }
+
+    if (!updateEpoch(spec.computeEpochAtSlot(slot))) {
       return;
     }
 
@@ -88,6 +97,14 @@ public class CustodyGroupCountManager implements SlotEventsChannel {
               }
             })
         .ifExceptionGetsHereRaiseABug();
+  }
+
+  private synchronized boolean updateEpoch(final UInt64 epoch) {
+    if (lastEpoch != epoch) {
+      lastEpoch = epoch;
+      return true;
+    }
+    return false;
   }
 
   private synchronized void updateCustodyGroupCount(final UInt64 newCustodyGroupCount) {

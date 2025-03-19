@@ -876,6 +876,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         beaconConfig.p2pConfig().getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU));
     final CustodyGroupCountManager custodyGroupCountManager =
         new CustodyGroupCountManager(
+            spec,
             specConfigFulu,
             proposersDataManager,
             eventChannels.getPublisher(CustodyGroupCountChannel.class),
