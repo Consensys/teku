@@ -172,7 +172,12 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
       final AttestationData attestationData) {
     // we can use the first state of the epoch to get committees for an attestation
     final MiscHelpers miscHelpers = spec.atSlot(attestationData.getSlot()).miscHelpers();
-    final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElse(UInt64.ZERO);
+    final Optional<UInt64> maybeEpoch = recentChainData.getCurrentEpoch();
+    // the only reason this can happen is we don't have a store yet.
+    if (maybeEpoch.isEmpty()) {
+      return Optional.empty();
+    }
+    final UInt64 currentEpoch = maybeEpoch.get();
     final UInt64 attestationEpoch = miscHelpers.computeEpochAtSlot(attestationData.getSlot());
 
     LOG.debug("currentEpoch {}, attestationEpoch {}", currentEpoch, attestationEpoch);
@@ -188,7 +193,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
                       spec.getBeaconCommitteesSize(
                           state.getImmediately(), attestationData.getSlot()));
                 } catch (IllegalStateException e) {
-                  LOG.info(
+                  LOG.debug(
                       "Couldn't retrieve state for committee calculation of slot {}",
                       attestationData.getSlot());
                   return Optional.empty();
@@ -197,6 +202,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     }
 
     // attestation is not from the current or previous epoch
+    // this is really an edge case because the current or previous epoch is at least 31 slots
+    // and the attestation is only valid for 64 slots, so it may be epoch-2 but not beyond.
     final UInt64 attestationEpochStartSlot = miscHelpers.computeStartSlotAtEpoch(attestationEpoch);
     LOG.debug("State at slot {} needed", attestationEpochStartSlot);
     try {
@@ -205,7 +212,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
           .getImmediately()
           .map(state -> spec.getBeaconCommitteesSize(state, attestationData.getSlot()));
     } catch (final IllegalStateException e) {
-      LOG.info(
+      LOG.debug(
           "Couldn't retrieve state in effect at slot {} for committee calculation of slot {}",
           attestationEpochStartSlot,
           attestationData.getSlot());
