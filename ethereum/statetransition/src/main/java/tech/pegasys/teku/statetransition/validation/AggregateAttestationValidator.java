@@ -180,7 +180,7 @@ public class AggregateAttestationValidator {
               if (!beaconCommittee.contains(aggregateAndProof.getIndex().intValue())) {
                 return SafeFuture.completedFuture(
                     reject(
-                        "Rejecting aggregate because validator index %s is not in committee. Should have been one of %s",
+                        "Rejecting aggregate because attester %s is not in committee. Should have been one of %s",
                         aggregateAndProof.getIndex(), beaconCommittee));
               }
 
