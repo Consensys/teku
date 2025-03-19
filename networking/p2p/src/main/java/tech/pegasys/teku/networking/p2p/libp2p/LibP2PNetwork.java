@@ -59,7 +59,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
 
-  protected LibP2PNetwork(
+  public LibP2PNetwork(
       final PrivKey privKey,
       final NodeId nodeId,
       final Host host,
