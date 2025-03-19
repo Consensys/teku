@@ -100,7 +100,7 @@ public class CustodyGroupCountManager implements SlotEventsChannel {
   }
 
   private synchronized boolean updateEpoch(final UInt64 epoch) {
-    if (lastEpoch != epoch) {
+    if (!lastEpoch.equals(epoch)) {
       lastEpoch = epoch;
       return true;
     }
