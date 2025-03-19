@@ -1,5 +1,5 @@
 dependencies {
-  compileOnly 'io.tmio:tuweni-bytes'
+  compileOnly 'io.consensys.tuweni:tuweni-bytes'
   implementation project(':infrastructure:ssz')
 }
 

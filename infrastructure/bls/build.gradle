@@ -1,12 +1,12 @@
 dependencies {
   api 'org.bouncycastle:bcprov-jdk18on'
 
-  implementation 'io.tmio:tuweni-bytes'
-  implementation 'io.tmio:tuweni-ssz'
+  implementation 'io.consensys.tuweni:tuweni-bytes'
+  implementation 'io.consensys.tuweni:tuweni-ssz'
   implementation 'commons-io:commons-io'
   implementation 'tech.pegasys:jblst'
   implementation project(':infrastructure:crypto')
   implementation project(':infrastructure:logging')
 
-  testFixturesImplementation 'io.tmio:tuweni-bytes'
+  testFixturesImplementation 'io.consensys.tuweni:tuweni-bytes'
 }
