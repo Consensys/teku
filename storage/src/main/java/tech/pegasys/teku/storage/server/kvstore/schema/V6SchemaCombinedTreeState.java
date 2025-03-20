@@ -52,6 +52,8 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   private final KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
       nonCanonicalBlobSidecarBySlotRootBlobIndex;
   private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes> sidecarByColumnSlotAndIdentifier;
+  private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes>
+      nonCanonicalSidecarByColumnSlotAndIdentifier;
   private final List<Bytes> deletedColumnIds;
 
   public V6SchemaCombinedTreeState(final Spec spec) {
@@ -94,6 +96,9 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
     sidecarByColumnSlotAndIdentifier =
         KvStoreColumn.create(
             finalizedOffset + 16, COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER, BYTES_SERIALIZER);
+    nonCanonicalSidecarByColumnSlotAndIdentifier =
+        KvStoreColumn.create(
+            finalizedOffset + 17, COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER, BYTES_SERIALIZER);
     deletedColumnIds =
         List.of(
             asColumnId(finalizedOffset + 9),
@@ -162,6 +167,12 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   }
 
   @Override
+  public KvStoreColumn<DataColumnSlotAndIdentifier, Bytes>
+      getColumnNonCanonicalSidecarByColumnSlotAndIdentifier() {
+    return nonCanonicalSidecarByColumnSlotAndIdentifier;
+  }
+
+  @Override
   public Map<String, KvStoreVariable<?>> getVariableMap() {
     return ImmutableMap.<String, KvStoreVariable<?>>builder()
         .put("GENESIS_TIME", getVariableGenesisTime())
@@ -207,6 +218,9 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
             "NON_CANONICAL_BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
             getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex())
         .put("SIDECAR_BY_COLUMN_SLOT_AND_IDENTIFIER", getColumnSidecarByColumnSlotAndIdentifier())
+        .put(
+            "NON_CANONICAL_SIDECAR_BY_COLUMN_SLOT_AND_IDENTIFIER",
+            getColumnNonCanonicalSidecarByColumnSlotAndIdentifier())
         .build();
   }
 
