@@ -76,7 +76,7 @@ dependencyManagement {
 
     dependency 'javax.annotation:javax.annotation-api:1.3.2'
 
-    dependencySet(group: 'io.tmio', version: '2.4.2') {
+    dependencySet(group: 'io.consensys.tuweni', version: '2.7.0') {
       entry 'tuweni-bytes'
       entry 'tuweni-crypto'
       entry 'tuweni-ssz'
@@ -140,12 +140,12 @@ dependencyManagement {
 
     dependency 'io.prometheus:prometheus-metrics-bom:1.3.5'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '25.2.0') {
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '25.3.0') {
       entry('metrics-core')
       entry('core')
       entry('config')
     }
-    dependencySet(group: 'org.hyperledger.besu', version: '25.2.0') {
+    dependencySet(group: 'org.hyperledger.besu', version: '25.3.0') {
       entry('besu-datatypes')
       entry('evm')
       entry('plugin-api')

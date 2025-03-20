@@ -8,7 +8,7 @@ dependencies {
   implementation project(':infrastructure:bytes')
   implementation project(':infrastructure:async')
 
-  implementation 'io.tmio:tuweni-units'
+  implementation 'io.consensys.tuweni:tuweni-units'
 
   testImplementation project(':data:provider')
   testImplementation testFixtures(project(':ethereum:spec'))

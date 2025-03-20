@@ -3,7 +3,7 @@ dependencies {
     implementation project(':infrastructure:async')
     implementation project(':infrastructure:metrics')
 
-    implementation 'io.tmio:tuweni-bytes'
+    implementation 'io.consensys.tuweni:tuweni-bytes'
 
     testImplementation testFixtures(project(':ethereum:spec'))
     testImplementation testFixtures(project(':ethereum:networks'))
