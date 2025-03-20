@@ -68,8 +68,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   /**
    * Default maximum number of attestations to store in the pool.
    *
-   * <p>With 1.2 million active validators, we'd expect around 37_500 attestations per slot; so 3
-   * slots worth of attestations is almost 120_000.
+   * <p>With 2 million active validators, we'd expect around 62_500 attestations per slot; so 3
+   * slots worth of attestations is almost 187_500.
    *
    * <p>128 attestations perfectly packed at a 1.2 million validator set would be 1_200_000 / 32 /
    * 64 bits, about 584 bits per aggregate. 128 of those is 74752 attestations if perfectly packed.
@@ -84,7 +84,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
    * <p>Strictly to cache all attestations for a full 2 epochs is significantly larger than this
    * cache.
    */
-  public static final int DEFAULT_MAXIMUM_ATTESTATION_COUNT = 120_000;
+  public static final int DEFAULT_MAXIMUM_ATTESTATION_COUNT = 187_500;
 
   private final Map<Bytes, MatchingDataAttestationGroup> attestationGroupByDataHash =
       new HashMap<>();
