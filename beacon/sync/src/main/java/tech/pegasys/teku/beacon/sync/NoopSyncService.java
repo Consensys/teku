@@ -20,7 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
-import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncToChainStatus;
+import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncProgress;
 import tech.pegasys.teku.beacon.sync.gossip.blobs.BlobSidecarSubscriber;
 import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarsFetcher;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.BlockSubscriber;
@@ -68,7 +68,7 @@ public class NoopSyncService
   }
 
   @Override
-  public SafeFuture<Optional<SyncToChainStatus>> getSyncToChainStatus() {
+  public SafeFuture<Optional<SyncProgress>> getSyncToChainStatus() {
     return SafeFuture.completedFuture(Optional.empty());
   }
 

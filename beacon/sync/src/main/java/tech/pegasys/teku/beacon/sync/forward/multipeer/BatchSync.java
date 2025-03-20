@@ -132,32 +132,40 @@ public class BatchSync implements Sync {
   }
 
   @Override
-  public SafeFuture<Optional<SyncToChainStatus>> getSyncToChainStatus() {
-    record Accumulators(
-        UInt64 downloadingFromSlot,
+  public SafeFuture<Optional<SyncProgress>> getSyncProgress() {
+    record BatchInfoAccumulator(
+        UInt64 fromSlot,
+        UInt64 toSlot,
+        int batches,
         int downloadingSlots,
         int downloadingBatches,
-        int downloadedSlots) {
+        int readySlots,
+        int readyBatches) {
       static final UInt64 NOT_DOWNLOADING = UInt64.MAX_VALUE;
 
-      static Accumulators accumulate(final Accumulators a, final Accumulators b) {
-        return new Accumulators(
-            a.downloadingFromSlot.min(b.downloadingFromSlot),
+      static BatchInfoAccumulator accumulate(
+          final BatchInfoAccumulator a, final BatchInfoAccumulator b) {
+        return new BatchInfoAccumulator(
+            a.fromSlot.min(b.fromSlot),
+            a.toSlot.max(b.toSlot),
+            a.batches + b.batches,
             a.downloadingSlots + b.downloadingSlots,
             a.downloadingBatches + b.downloadingBatches,
-            a.downloadedSlots + b.downloadedSlots);
+            a.readySlots + b.readySlots,
+            a.readyBatches + b.readyBatches);
       }
 
-      SyncToChainStatus toSyncToChainStatus(
+      SyncProgress toSyncProgress(
           final Optional<Batch> importingBatch, final TargetChain targetChain) {
-        return new SyncToChainStatus(
-            downloadingFromSlot.equals(NOT_DOWNLOADING)
-                ? Optional.empty()
-                : Optional.of(downloadingFromSlot),
+        return new SyncProgress(
+            fromSlot,
+            toSlot,
+            batches,
             downloadingSlots,
             downloadingBatches,
-            downloadedSlots,
-            importingBatch.map(Batch::getLastSlot),
+            readySlots,
+            readyBatches,
+            importingBatch.isPresent(),
             targetChain.getChainHead(),
             targetChain.getPeerCount());
       }
@@ -167,30 +175,41 @@ public class BatchSync implements Sync {
       return SafeFuture.completedFuture(Optional.empty());
     }
 
-    final SafeFuture<Optional<SyncToChainStatus>> result = new SafeFuture<>();
+    final SafeFuture<Optional<SyncProgress>> result = new SafeFuture<>();
     eventThread.execute(
         exceptionHandlingRunnable(
             () -> {
-              var progress =
+              final Optional<BatchInfoAccumulator> reducedBatchesInfo =
                   activeBatches.stream()
                       .map(
                           batch -> {
                             if (batch.isAwaitingBlocks()) {
-                              return new Accumulators(
-                                  batch.getFirstSlot(), batch.getCount().intValue(), 1, 0);
+                              return new BatchInfoAccumulator(
+                                  batch.getFirstSlot(),
+                                  batch.getLastSlot(),
+                                  1,
+                                  batch.getCount().intValue(),
+                                  1,
+                                  0,
+                                  0);
                             }
                             if (batch.isComplete()) {
-                              return new Accumulators(
-                                  Accumulators.NOT_DOWNLOADING, 0, 0, batch.getCount().intValue());
+                              return new BatchInfoAccumulator(
+                                  batch.getFirstSlot(),
+                                  batch.getLastSlot(),
+                                  1,
+                                  0,
+                                  0,
+                                  batch.getCount().intValue(),
+                                  1);
                             }
-                            return new Accumulators(Accumulators.NOT_DOWNLOADING, 0, 0, 0);
+                            return new BatchInfoAccumulator(
+                                batch.getFirstSlot(), batch.getLastSlot(), 0, 0, 0, 0, 0);
                           })
-                      .reduce(
-                          new Accumulators(Accumulators.NOT_DOWNLOADING, 0, 0, 0),
-                          Accumulators::accumulate);
+                      .reduce(BatchInfoAccumulator::accumulate);
 
               result.complete(
-                  Optional.of(progress.toSyncToChainStatus(importingBatch, targetChain)));
+                  reducedBatchesInfo.map(info -> info.toSyncProgress(importingBatch, targetChain)));
             },
             result));
     return result;

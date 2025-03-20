@@ -166,11 +166,14 @@ public class SlotProcessor {
                 syncToChainStatus.ifPresent(
                     status ->
                         eventLog.syncProgressEvent(
-                            status.downloadingFromSlot(),
+                            status.fromSlot(),
+                            status.toSlot(),
+                            status.batches(),
                             status.downloadingSlots(),
                             status.downloadingBatches(),
-                            status.downloadedSlots(),
-                            status.importingUpToSlot(),
+                            status.readySlots(),
+                            status.readyBatches(),
+                            status.importing(),
                             status.targetChainHead().getBlockRoot(),
                             status.targetChainHead().getSlot(),
                             status.targetChainPeers())))

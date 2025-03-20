@@ -30,14 +30,17 @@ public interface Sync {
    */
   SafeFuture<SyncResult> syncToChain(TargetChain targetChain);
 
-  SafeFuture<Optional<SyncToChainStatus>> getSyncToChainStatus();
+  SafeFuture<Optional<SyncProgress>> getSyncProgress();
 
-  record SyncToChainStatus(
-      Optional<UInt64> downloadingFromSlot,
+  record SyncProgress(
+      UInt64 fromSlot,
+      UInt64 toSlot,
+      int batches,
       int downloadingSlots,
       int downloadingBatches,
-      int downloadedSlots,
-      Optional<UInt64> importingUpToSlot,
+      int readySlots,
+      int readyBatches,
+      boolean importing,
       SlotAndBlockRoot targetChainHead,
       int targetChainPeers) {}
 }

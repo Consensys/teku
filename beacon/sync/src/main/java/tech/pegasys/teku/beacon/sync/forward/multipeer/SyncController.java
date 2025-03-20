@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.events.SyncingTarget;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
-import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncToChainStatus;
+import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncProgress;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
@@ -123,9 +123,9 @@ public class SyncController {
     return currentSync.map(InProgressSync::asSyncingStatus).orElseGet(this::notSyncingStatus);
   }
 
-  public SafeFuture<Optional<SyncToChainStatus>> getSyncToChainStatus() {
+  public SafeFuture<Optional<SyncProgress>> getSyncToChainStatus() {
     return currentSync
-        .map(__ -> sync.getSyncToChainStatus())
+        .map(__ -> sync.getSyncProgress())
         .orElse(SafeFuture.completedFuture(Optional.empty()));
   }
 
