@@ -76,7 +76,7 @@ dependencyManagement {
 
     dependency 'javax.annotation:javax.annotation-api:1.3.2'
 
-    dependencySet(group: 'io.tmio', version: '2.4.2') {
+    dependencySet(group: 'io.consensys.tuweni', version: '2.7.0') {
       entry 'tuweni-bytes'
       entry 'tuweni-crypto'
       entry 'tuweni-ssz'
