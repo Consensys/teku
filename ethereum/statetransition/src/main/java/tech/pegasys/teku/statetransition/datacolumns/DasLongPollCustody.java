@@ -97,11 +97,6 @@ public class DasLongPollCustody implements DataColumnSidecarCustody, SlotEventsC
     return delegate.retrieveMissingColumns();
   }
 
-  @Override
-  public List<UInt64> getCustodyColumnIndices(final UInt64 epoch) {
-    return delegate.getCustodyColumnIndices(epoch);
-  }
-
   private SafeFuture<Optional<DataColumnSidecar>> addPendingRequest(
       final DataColumnSlotAndIdentifier columnId) {
     final SafeFuture<Optional<DataColumnSidecar>> promise = new SafeFuture<>();
@@ -116,16 +111,6 @@ public class DasLongPollCustody implements DataColumnSidecarCustody, SlotEventsC
         .runAfterDelay(
             () -> pendingRequests.setNoWaitSlot(slot.increment()), waitPeriodForCurrentSlot)
         .ifExceptionGetsHereRaiseABug();
-  }
-
-  @Override
-  public void onCustodyGroupCountUpdate(final int groupCount) {
-    delegate.onCustodyGroupCountUpdate(groupCount);
-  }
-
-  @Override
-  public void onCustodyGroupCountSynced(final int groupCount) {
-    delegate.onCustodyGroupCountSynced(groupCount);
   }
 
   private static <T> SafeFuture<Optional<T>> anyNonEmpty(

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +30,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 
@@ -67,7 +65,7 @@ public class DataColumnSidecarCustodyImplTest {
             blockResolver,
             dbAccessor,
             MinCustodyPeriodSlotCalculator.createFromSpec(spec),
-            mock(CustodyGroupCountChannel.class),
+            CustodyGroupCountManager.NOOP,
             myNodeId,
             groupCount);
     BeaconBlock block = blockResolver.addBlock(10, true);

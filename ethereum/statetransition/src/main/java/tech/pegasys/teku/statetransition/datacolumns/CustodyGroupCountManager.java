@@ -13,104 +13,26 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
-import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
-import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+public interface CustodyGroupCountManager {
+  CustodyGroupCountManager NOOP =
+      new CustodyGroupCountManager() {
+        @Override
+        public int getCustodyGroupCount() {
+          return 0;
+        }
 
-public class CustodyGroupCountManager implements SlotEventsChannel {
+        @Override
+        public int getCustodyGroupSyncedCount() {
+          return 0;
+        }
 
-  private final int initCustodyGroupCount;
-  private final AtomicInteger custodyGroupCount;
-  private final Spec spec;
-  private final SpecConfigFulu specConfigFulu;
-  private final ProposersDataManager proposersDataManager;
-  private final CustodyGroupCountChannel custodyGroupCountChannel;
-  private final CombinedChainDataClient combinedChainDataClient;
+        @Override
+        public void setCustodyGroupSyncedCount(int custodyGroupSyncedCount) {}
+      };
 
-  private UInt64 lastEpoch = UInt64.MAX_VALUE;
+  int getCustodyGroupCount();
 
-  public CustodyGroupCountManager(
-      final Spec spec,
-      final SpecConfigFulu specConfigFulu,
-      final ProposersDataManager proposersDataManager,
-      final CustodyGroupCountChannel custodyGroupCountChannel,
-      final CombinedChainDataClient combinedChainDataClient,
-      final int initCustodyGroupCount) {
-    this.spec = spec;
-    this.specConfigFulu = specConfigFulu;
-    this.proposersDataManager = proposersDataManager;
-    this.combinedChainDataClient = combinedChainDataClient;
-    this.custodyGroupCountChannel = custodyGroupCountChannel;
-    this.initCustodyGroupCount = initCustodyGroupCount;
-    this.custodyGroupCount = new AtomicInteger(initCustodyGroupCount);
-  }
+  int getCustodyGroupSyncedCount();
 
-  @Override
-  public void onSlot(final UInt64 slot) {
-    if (initCustodyGroupCount == specConfigFulu.getNumberOfCustodyGroups()) {
-      // Supernode, we are already subscribed to all groups
-      return;
-    }
-
-    if (!updateEpoch(spec.computeEpochAtSlot(slot))) {
-      return;
-    }
-
-    final Map<UInt64, PreparedProposerInfo> preparedProposerInfo =
-        proposersDataManager.getPreparedProposerInfo();
-    if (preparedProposerInfo.isEmpty()) {
-      return;
-    }
-
-    final UInt64 baseBalance = specConfigFulu.getMinActivationBalance();
-    combinedChainDataClient
-        .getStateAtSlotExact(slot.decrement())
-        .thenAccept(
-            maybeState -> {
-              if (maybeState.isPresent()) {
-                final long activeBases =
-                    preparedProposerInfo.keySet().stream()
-                        .map(
-                            proposerIndex -> {
-                              final Validator validator =
-                                  maybeState.get().getValidators().get(proposerIndex.intValue());
-                              return validator.getEffectiveBalance().dividedBy(baseBalance);
-                            })
-                        .mapToLong(UInt64::intValue)
-                        .sum();
-                final UInt64 validatorCustodyGroupCount =
-                    UInt64.valueOf(activeBases)
-                        .times(specConfigFulu.getValidatorCustodyRequirement());
-                final UInt64 custodyGroupCountUpdated =
-                    validatorCustodyGroupCount
-                        .max(initCustodyGroupCount)
-                        .min(specConfigFulu.getNumberOfCustodyGroups());
-                updateCustodyGroupCount(custodyGroupCountUpdated);
-              }
-            })
-        .ifExceptionGetsHereRaiseABug();
-  }
-
-  private synchronized boolean updateEpoch(final UInt64 epoch) {
-    if (!lastEpoch.equals(epoch)) {
-      lastEpoch = epoch;
-      return true;
-    }
-    return false;
-  }
-
-  private synchronized void updateCustodyGroupCount(final UInt64 newCustodyGroupCount) {
-    final int oldCustodyGroupCount = custodyGroupCount.getAndSet(newCustodyGroupCount.intValue());
-    if (oldCustodyGroupCount != newCustodyGroupCount.intValue()) {
-      custodyGroupCountChannel.onCustodyGroupCountUpdate(newCustodyGroupCount.intValue());
-    }
-  }
+  void setCustodyGroupSyncedCount(int custodyGroupSyncedCount);
 }

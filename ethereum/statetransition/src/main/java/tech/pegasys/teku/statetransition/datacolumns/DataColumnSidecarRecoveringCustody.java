@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
-import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -67,17 +66,6 @@ public interface DataColumnSidecarRecoveringCustody
         public SafeFuture<Boolean> hasCustodyDataColumnSidecar(
             DataColumnSlotAndIdentifier columnId) {
           return SafeFuture.completedFuture(false);
-        }
-
-        @Override
-        public void onCustodyGroupCountUpdate(final int groupCount) {}
-
-        @Override
-        public void onCustodyGroupCountSynced(final int groupCount) {}
-
-        @Override
-        public List<UInt64> getCustodyColumnIndices(final UInt64 epoch) {
-          return List.of();
         }
       };
 

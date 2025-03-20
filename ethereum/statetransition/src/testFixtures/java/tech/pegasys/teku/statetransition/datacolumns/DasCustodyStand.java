@@ -36,7 +36,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.db.DelayedDasDb;
@@ -107,7 +106,7 @@ public class DasCustodyStand {
             asyncBlockResolver,
             dbAccessor,
             minCustodyPeriodSlotCalculator,
-            CustodyGroupCountChannel.NOOP,
+            CustodyGroupCountManager.NOOP,
             myNodeId,
             totalCustodyGroupCount);
     subscribeToSlotEvents(this.custody);

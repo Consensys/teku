@@ -13,18 +13,16 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
-import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 public interface DataColumnSidecarByRootCustody extends DataColumnSidecarCustody {
 
-  public static final DataColumnSidecarByRootCustody NOOP =
+  DataColumnSidecarByRootCustody NOOP =
       new DataColumnSidecarByRootCustody() {
         @Override
         public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecarByRoot(
@@ -53,17 +51,6 @@ public interface DataColumnSidecarByRootCustody extends DataColumnSidecarCustody
         @Override
         public AsyncStream<DataColumnSlotAndIdentifier> retrieveMissingColumns() {
           return AsyncStream.empty();
-        }
-
-        @Override
-        public void onCustodyGroupCountUpdate(final int groupCount) {}
-
-        @Override
-        public void onCustodyGroupCountSynced(final int groupCount) {}
-
-        @Override
-        public List<UInt64> getCustodyColumnIndices(final UInt64 epoch) {
-          return List.of();
         }
       };
 

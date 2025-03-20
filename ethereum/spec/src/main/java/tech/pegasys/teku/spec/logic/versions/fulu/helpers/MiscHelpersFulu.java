@@ -162,6 +162,15 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .toList();
   }
 
+  public UInt64 calculateCustodyGroupCount(
+      final int defaultCustodyGroupCount, final long baseValidatorsNumber) {
+    final UInt64 validatorCustodyGroupCount =
+        UInt64.valueOf(baseValidatorsNumber).times(specConfigFulu.getValidatorCustodyRequirement());
+    return validatorCustodyGroupCount
+        .max(defaultCustodyGroupCount)
+        .min(specConfigFulu.getNumberOfCustodyGroups());
+  }
+
   public boolean verifyDataColumnSidecarKzgProof(
       final KZG kzg, final DataColumnSidecar dataColumnSidecar) {
     final int dataColumns = specConfigFulu.getNumberOfColumns();
