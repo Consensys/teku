@@ -168,8 +168,8 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
   }
 
   @Override
-  public SafeFuture<Optional<SyncProgress>> getSyncToChainStatus() {
-    return syncController.getSyncToChainStatus();
+  public SafeFuture<Optional<SyncProgress>> getSyncProgress() {
+    return syncController.getSyncProgress();
   }
 
   @Override

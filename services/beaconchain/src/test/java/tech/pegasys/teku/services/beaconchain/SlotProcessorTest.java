@@ -32,6 +32,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
+import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
@@ -69,6 +70,7 @@ public class SlotProcessorTest {
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
   private final SyncService syncService = mock(SyncService.class);
+  private final ForwardSync forwardSync = mock(ForwardSync.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
   private final ForkChoiceNotifier forkChoiceNotifier = new NoopForkChoiceNotifier();
   private final Eth2P2PNetwork p2pNetwork = mock(Eth2P2PNetwork.class);
@@ -95,6 +97,8 @@ public class SlotProcessorTest {
   @BeforeEach
   public void setup() {
     recentChainData.initializeFromGenesis(beaconState, UInt64.ZERO);
+    when(syncService.getForwardSync()).thenReturn(forwardSync);
+    when(forwardSync.getSyncProgress()).thenReturn(SafeFuture.completedFuture(Optional.empty()));
   }
 
   @Test

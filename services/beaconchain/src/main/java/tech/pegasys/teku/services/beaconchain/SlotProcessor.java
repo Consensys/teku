@@ -160,7 +160,7 @@ public class SlotProcessor {
     }
     syncService
         .getForwardSync()
-        .getSyncToChainStatus()
+        .getSyncProgress()
         .thenAccept(
             syncToChainStatus ->
                 syncToChainStatus.ifPresent(

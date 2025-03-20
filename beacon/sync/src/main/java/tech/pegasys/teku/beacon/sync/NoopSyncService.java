@@ -68,7 +68,7 @@ public class NoopSyncService
   }
 
   @Override
-  public SafeFuture<Optional<SyncProgress>> getSyncToChainStatus() {
+  public SafeFuture<Optional<SyncProgress>> getSyncProgress() {
     return SafeFuture.completedFuture(Optional.empty());
   }
 

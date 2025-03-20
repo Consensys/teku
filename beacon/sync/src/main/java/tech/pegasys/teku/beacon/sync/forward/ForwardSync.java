@@ -22,7 +22,7 @@ public interface ForwardSync {
 
   SyncingStatus getSyncStatus();
 
-  SafeFuture<Optional<SyncProgress>> getSyncToChainStatus();
+  SafeFuture<Optional<SyncProgress>> getSyncProgress();
 
   boolean isSyncActive();
 
