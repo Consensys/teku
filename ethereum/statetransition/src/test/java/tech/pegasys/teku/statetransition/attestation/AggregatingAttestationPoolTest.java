@@ -400,9 +400,11 @@ class AggregatingAttestationPoolTest {
 
   @TestTemplate
   public void getSize_shouldDecreaseWhenAttestationsRemoved() {
-    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
     addAttestationFromValidators(attestationData, 1, 2, 3, 4);
     final Attestation attestationToRemove = addAttestationFromValidators(attestationData, 2, 5);
+
+    when(mockRecentChainData.getCurrentEpoch()).thenReturn(Optional.of(ZERO));
     aggregatingPool.onAttestationsIncludedInBlock(ZERO, List.of(attestationToRemove));
     assertThat(aggregatingPool.getSize()).isEqualTo(1);
   }
@@ -418,12 +420,14 @@ class AggregatingAttestationPoolTest {
 
   @TestTemplate
   public void getSize_shouldDecrementForAllRemovedAttestations() {
-    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
     addAttestationFromValidators(attestationData, 1, 2, 3);
     addAttestationFromValidators(attestationData, 4, 5);
     assertThat(aggregatingPool.getSize()).isEqualTo(2);
     final Attestation attestationToRemove =
         addAttestationFromValidators(attestationData, 1, 2, 3, 4, 5);
+
+    when(mockRecentChainData.getCurrentEpoch()).thenReturn(Optional.of(ZERO));
     aggregatingPool.onAttestationsIncludedInBlock(ZERO, List.of(attestationToRemove));
     assertThat(aggregatingPool.getSize()).isEqualTo(0);
   }
@@ -441,7 +445,7 @@ class AggregatingAttestationPoolTest {
 
   @TestTemplate
   public void getSize_shouldDecrementForAllRemovedAttestationsWhileKeepingOthers() {
-    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
 
     addAttestationFromValidators(attestationData, 1, 2, 3);
     addAttestationFromValidators(attestationData, 4, 5);
@@ -452,6 +456,7 @@ class AggregatingAttestationPoolTest {
         addAttestationFromValidators(attestationData, 1, 2, 3, 4, 5);
     assertThat(aggregatingPool.getSize()).isEqualTo(5);
 
+    when(mockRecentChainData.getCurrentEpoch()).thenReturn(Optional.of(ONE));
     aggregatingPool.onAttestationsIncludedInBlock(ZERO, List.of(attestationToRemove));
     assertThat(aggregatingPool.getSize()).isEqualTo(2);
   }
@@ -627,6 +632,7 @@ class AggregatingAttestationPoolTest {
   @TestTemplate
   void onAttestationsIncludedInBlock_shouldNotAddAttestationsAlreadySeenInABlock() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
+    when(mockRecentChainData.getCurrentEpoch()).thenReturn(Optional.of(ZERO));
     // Included in block before we see any attestations with this data
     aggregatingPool.onAttestationsIncludedInBlock(
         ONE, List.of(createAttestation(attestationData, 1, 2, 3, 4)));
@@ -639,6 +645,7 @@ class AggregatingAttestationPoolTest {
   @TestTemplate
   void onAttestationsIncludedInBlock_shouldRemoveAttestationsWhenSeenInABlock() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
+    when(mockRecentChainData.getCurrentEpoch()).thenReturn(Optional.of(ZERO));
     addAttestationFromValidators(attestationData, 2, 3);
 
     aggregatingPool.onAttestationsIncludedInBlock(

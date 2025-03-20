@@ -117,16 +117,6 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
 
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
 
-    final ValidatorExitContext validatorExitContext = validatorExitContextSupplier.get();
-
-    if (validatorExitContext.getExitQueueChurn().compareTo(validatorExitContext.getChurnLimit())
-        >= 0) {
-      validatorExitContext.setExitQueueEpoch(validatorExitContext.getExitQueueEpoch().increment());
-      validatorExitContext.setExitQueueChurn(UInt64.ONE);
-    } else {
-      validatorExitContext.setExitQueueChurn(validatorExitContext.getExitQueueChurn().increment());
-    }
-
     final UInt64 exitQueueEpoch =
         computeExitEpochAndUpdateChurn(stateElectra, validator.getEffectiveBalance());
 
