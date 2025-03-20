@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.events.SyncingTarget;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
+import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncToChainStatus;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
@@ -122,6 +123,12 @@ public class SyncController {
     return currentSync.map(InProgressSync::asSyncingStatus).orElseGet(this::notSyncingStatus);
   }
 
+  public SafeFuture<Optional<SyncToChainStatus>> getSyncToChainStatus() {
+    return currentSync
+        .map(__ -> sync.getSyncToChainStatus())
+        .orElse(SafeFuture.completedFuture(Optional.empty()));
+  }
+
   private SyncingStatus notSyncingStatus() {
     return new SyncingStatus(false, recentChainData.getHeadSlot());
   }
@@ -215,8 +222,7 @@ public class SyncController {
               true,
               recentChainData.getHeadSlot(),
               startSlot,
-              new SyncingTarget(targetChain.getChainHead(), targetChain.getPeerCount()),
-              sync.getSyncProgressSummary());
+              new SyncingTarget(targetChain.getChainHead(), targetChain.getPeerCount()));
     }
 
     public boolean hasSameTarget(final TargetChain chain) {

@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -103,17 +104,25 @@ public class EventLogger {
   }
 
   public void syncProgressEvent(
-      final UInt64 targetSlot,
-      final Bytes32 targetBlockRoot,
-      final int numPeers,
-      final String progress) {
+      final Optional<UInt64> downloadingFromSlot,
+      final int downloadingSlots,
+      final int downloadingBatches,
+      final int downloadedSlots,
+      final Optional<UInt64> importingFromSlot,
+      final Bytes32 targetChainBlockRoot,
+      final UInt64 targetChainBlockSlot,
+      final int targetChainPeers) {
     final String syncTargetChainEventLog =
         String.format(
-            "Progress  *** %s, Target chain %s (%s), Peers %s",
-            progress,
-            LogFormatter.formatAbbreviatedHashRoot(targetBlockRoot),
-            targetSlot,
-            numPeers);
+            "Progress  *** Downloading %d slots in %d batches from slot %s, Downloaded slots: %d, Importing up to slot: %s, Target chain: %s (%s) with %s peers",
+            downloadingSlots,
+            downloadingBatches,
+            downloadingFromSlot.map(UInt64::toString).orElse("N/A"),
+            downloadedSlots,
+            importingFromSlot.map(UInt64::toString).orElse("N/A"),
+            LogFormatter.formatAbbreviatedHashRoot(targetChainBlockRoot),
+            targetChainBlockSlot,
+            targetChainPeers);
     info(syncTargetChainEventLog, Color.GRAY);
   }
 

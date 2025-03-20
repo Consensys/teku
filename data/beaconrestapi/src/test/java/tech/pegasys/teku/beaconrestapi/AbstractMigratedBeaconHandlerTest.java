@@ -75,9 +75,7 @@ public abstract class AbstractMigratedBeaconHandlerTest {
         isSyncing,
         UInt64.valueOf(currentSlot),
         UInt64.valueOf(startSlot),
-        new SyncingTarget(new SlotAndBlockRoot(UInt64.valueOf(highestSlot), Bytes32.ZERO), 0),
-        // TO DO: progress
-        "");
+        new SyncingTarget(new SlotAndBlockRoot(UInt64.valueOf(highestSlot), Bytes32.ZERO), 0));
   }
 
   protected <T> ObjectAndMetaData<T> withMetaData(final T value) {
