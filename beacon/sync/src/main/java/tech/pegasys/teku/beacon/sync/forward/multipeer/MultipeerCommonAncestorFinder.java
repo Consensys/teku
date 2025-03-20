@@ -69,7 +69,7 @@ public class MultipeerCommonAncestorFinder {
     }
 
     return findCommonAncestor(latestFinalizedSlot, targetChain)
-        .thenPeek(ancestor -> LOG.info("Found common ancestor at slot {}", ancestor));
+        .thenPeek(ancestor -> LOG.debug("Found common ancestor at slot {}", ancestor));
   }
 
   private SafeFuture<UInt64> findCommonAncestor(
