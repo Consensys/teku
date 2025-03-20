@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer;
 
+import java.util.Optional;
 import java.util.OptionalInt;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
+import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncToChainStatus;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.BatchFactory;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.PeerScoringConflictResolutionStrategy;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.PeerChainTracker;
@@ -163,6 +165,11 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
   @Override
   public SyncingStatus getSyncStatus() {
     return syncController.getSyncStatus();
+  }
+
+  @Override
+  public SafeFuture<Optional<SyncToChainStatus>> getSyncToChainStatus() {
+    return syncController.getSyncToChainStatus();
   }
 
   @Override

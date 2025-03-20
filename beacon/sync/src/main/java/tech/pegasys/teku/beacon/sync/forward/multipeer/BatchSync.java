@@ -23,9 +23,6 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.NavigableSet;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.BatchImporter.BatchImportResult;
@@ -135,65 +132,68 @@ public class BatchSync implements Sync {
   }
 
   @Override
-  public String getSyncProgressSummary() {
-    record BatchesProgress(
-        Optional<UInt64> downloadingFromSlot,
+  public SafeFuture<Optional<SyncToChainStatus>> getSyncToChainStatus() {
+    record Accumulators(
+        UInt64 downloadingFromSlot,
         int downloadingSlots,
         int downloadingBatches,
-        int downloadedSlots) {}
+        int downloadedSlots) {
+      static final UInt64 NOT_DOWNLOADING = UInt64.MAX_VALUE;
 
-    final SafeFuture<String> result = new SafeFuture<>();
+      static Accumulators accumulate(final Accumulators a, final Accumulators b) {
+        return new Accumulators(
+            a.downloadingFromSlot.min(b.downloadingFromSlot),
+            a.downloadingSlots + b.downloadingSlots,
+            a.downloadingBatches + b.downloadingBatches,
+            a.downloadedSlots + b.downloadedSlots);
+      }
+
+      SyncToChainStatus toSyncToChainStatus(
+          final Optional<Batch> importingBatch, final TargetChain targetChain) {
+        return new SyncToChainStatus(
+            downloadingFromSlot.equals(NOT_DOWNLOADING)
+                ? Optional.empty()
+                : Optional.of(downloadingFromSlot),
+            downloadingSlots,
+            downloadingBatches,
+            downloadedSlots,
+            importingBatch.map(Batch::getLastSlot),
+            targetChain.getChainHead(),
+            targetChain.getPeerCount());
+      }
+    }
+
+    if (syncResult.isDone()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+
+    final SafeFuture<Optional<SyncToChainStatus>> result = new SafeFuture<>();
     eventThread.execute(
         exceptionHandlingRunnable(
             () -> {
               var progress =
                   activeBatches.stream()
-                      .filter(batch -> batch.isAwaitingBlocks() || batch.isComplete())
                       .map(
                           batch -> {
                             if (batch.isAwaitingBlocks()) {
-                              return new BatchesProgress(
-                                  Optional.of(batch.getFirstSlot()),
-                                  batch.getCount().intValue(),
-                                  1,
-                                  0);
+                              return new Accumulators(
+                                  batch.getFirstSlot(), batch.getCount().intValue(), 1, 0);
                             }
                             if (batch.isComplete()) {
-                              return new BatchesProgress(
-                                  Optional.empty(), 0, 0, batch.getCount().intValue());
+                              return new Accumulators(
+                                  Accumulators.NOT_DOWNLOADING, 0, 0, batch.getCount().intValue());
                             }
-                            return new BatchesProgress(Optional.empty(), 0, 0, 0);
+                            return new Accumulators(Accumulators.NOT_DOWNLOADING, 0, 0, 0);
                           })
                       .reduce(
-                          new BatchesProgress(Optional.empty(), 0, 0, 0),
-                          (s1, s2) ->
-                              new BatchesProgress(
-                                  s1.downloadingFromSlot.isEmpty()
-                                      ? s2.downloadingFromSlot
-                                      : s1.downloadingFromSlot,
-                                  s1.downloadingSlots + s2.downloadingSlots,
-                                  s1.downloadingBatches + s2.downloadingBatches,
-                                  s1.downloadedSlots + s2.downloadedSlots));
+                          new Accumulators(Accumulators.NOT_DOWNLOADING, 0, 0, 0),
+                          Accumulators::accumulate);
 
               result.complete(
-                  String.format(
-                      "Downloading %d slots in %d batches from slot %s, Downloaded slots: %d, Importing: %s",
-                      progress.downloadingSlots,
-                      progress.downloadingBatches,
-                      progress.downloadingFromSlot.map(UInt64::toString).orElse("N/A"),
-                      progress.downloadedSlots,
-                      importingBatch
-                          .map(
-                              b ->
-                                  String.format("%s slots from %s", b.getCount(), b.getFirstSlot()))
-                          .orElse("none")));
+                  Optional.of(progress.toSyncToChainStatus(importingBatch, targetChain)));
             },
             result));
-    try {
-      return result.get(100, TimeUnit.MILLISECONDS);
-    } catch (final InterruptedException | ExecutionException | TimeoutException __) {
-      return "--Sync progress summary not available--";
-    }
+    return result;
   }
 
   private void switchSyncTarget(

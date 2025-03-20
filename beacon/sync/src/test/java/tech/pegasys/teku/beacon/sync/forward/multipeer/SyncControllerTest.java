@@ -80,9 +80,7 @@ class SyncControllerTest {
                 true,
                 HEAD_SLOT,
                 HEAD_SLOT,
-                new SyncingTarget(targetChain.getChainHead(), targetChain.getPeerCount()),
-                // TO DO: progress
-                ""));
+                new SyncingTarget(targetChain.getChainHead(), targetChain.getPeerCount())));
   }
 
   @Test
@@ -128,9 +126,7 @@ class SyncControllerTest {
                 true,
                 HEAD_SLOT,
                 HEAD_SLOT,
-                new SyncingTarget(targetChain.getChainHead(), targetChain.getPeerCount()),
-                // TO DO: progress
-                ""));
+                new SyncingTarget(targetChain.getChainHead(), targetChain.getPeerCount())));
   }
 
   @Test

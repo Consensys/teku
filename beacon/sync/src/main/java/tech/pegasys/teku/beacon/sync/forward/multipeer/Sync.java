@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer;
 
+import java.util.Optional;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 public interface Sync {
 
@@ -27,5 +30,14 @@ public interface Sync {
    */
   SafeFuture<SyncResult> syncToChain(TargetChain targetChain);
 
-  String getSyncProgressSummary();
+  SafeFuture<Optional<SyncToChainStatus>> getSyncToChainStatus();
+
+  record SyncToChainStatus(
+      Optional<UInt64> downloadingFromSlot,
+      int downloadingSlots,
+      int downloadingBatches,
+      int downloadedSlots,
+      Optional<UInt64> importingUpToSlot,
+      SlotAndBlockRoot targetChainHead,
+      int targetChainPeers) {}
 }

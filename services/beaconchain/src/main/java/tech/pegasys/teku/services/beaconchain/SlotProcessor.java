@@ -158,17 +158,24 @@ public class SlotProcessor {
     } else {
       eventLog.syncEvent(slot, recentChainData.getHeadSlot(), p2pNetwork.getPeerCount());
     }
-    var status = syncService.getForwardSync().getSyncStatus();
+    syncService
+        .getForwardSync()
+        .getSyncToChainStatus()
+        .thenAccept(
+            syncToChainStatus ->
+                syncToChainStatus.ifPresent(
+                    status ->
+                        eventLog.syncProgressEvent(
+                            status.downloadingFromSlot(),
+                            status.downloadingSlots(),
+                            status.downloadingBatches(),
+                            status.downloadedSlots(),
+                            status.importingUpToSlot(),
+                            status.targetChainHead().getBlockRoot(),
+                            status.targetChainHead().getSlot(),
+                            status.targetChainPeers())))
+        .finish(throwable -> {});
 
-    status
-        .getSyncingTarget()
-        .ifPresent(
-            syncingTarget ->
-                eventLog.syncProgressEvent(
-                    syncingTarget.targetSlotAndBlockRoot().getSlot(),
-                    syncingTarget.targetSlotAndBlockRoot().getBlockRoot(),
-                    syncingTarget.numberOfPeers(),
-                    status.getProgress()));
     slotEventsChannelPublisher.onSlot(slot);
 
     final UInt64 nodeEpoch = spec.computeEpochAtSlot(slot);
