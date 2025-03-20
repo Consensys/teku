@@ -205,7 +205,8 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
         && localProposingSlot.isPresent()
         && recentChainData.shouldOverrideForkChoiceUpdate(forkChoiceState.getHeadBlockRoot())) {
       LOG.debug(
-          "internalForkChoiceUpdated forkChoiceState skipped due to late block reorg override");
+          "internalForkChoiceUpdated skipped due to late block reorg override producing block at slot {}",
+          localProposingSlot.get());
       return;
     }
 
