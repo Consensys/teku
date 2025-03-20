@@ -9,5 +9,6 @@
 ### Breaking Changes
 
 ### Additions and Improvements
+- Increased the attestation queue size limits.
 
 ### Bug Fixes
