@@ -126,7 +126,7 @@ class SyncControllerTest {
                 true,
                 HEAD_SLOT,
                 HEAD_SLOT,
-                new SyncingTarget(targetChain.getChainHead(), targetChain.getPeerCount())));
+                new SyncingTarget(newTargetChain.getChainHead(), newTargetChain.getPeerCount())));
   }
 
   @Test
