@@ -21,7 +21,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Optional;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -89,7 +88,7 @@ public class EventLogger {
   public void syncEvent(final UInt64 nodeSlot, final UInt64 headSlot, final int numPeers) {
     final String syncEventLog =
         String.format(
-            "Syncing   *** End slot: %s, Head slot: %s, Remaining slots: %s, Connected peers: %s",
+            "Syncing          *** End slot: %s, Head slot: %s, Remaining slots: %s, Connected peers: %s",
             nodeSlot, headSlot, nodeSlot.minusMinZero(headSlot), numPeers);
     info(syncEventLog, Color.WHITE);
   }
@@ -98,28 +97,34 @@ public class EventLogger {
       final UInt64 nodeSlot, final UInt64 headSlot, final int numPeers) {
     final String syncEventLog =
         String.format(
-            "Syncing   *** End slot: %s, Head slot: %s, Waiting for execution layer sync, Connected peers: %s",
+            "Syncing          *** End slot: %s, Head slot: %s, Waiting for execution layer sync, Connected peers: %s",
             nodeSlot, headSlot, numPeers);
     info(syncEventLog, Color.WHITE);
   }
 
   public void syncProgressEvent(
-      final Optional<UInt64> downloadingFromSlot,
+      final UInt64 fromSlot,
+      final UInt64 toSlot,
+      final int batches,
       final int downloadingSlots,
       final int downloadingBatches,
-      final int downloadedSlots,
-      final Optional<UInt64> importingFromSlot,
+      final int readySlots,
+      final int readyBatches,
+      final boolean importing,
       final Bytes32 targetChainBlockRoot,
       final UInt64 targetChainBlockSlot,
       final int targetChainPeers) {
     final String syncTargetChainEventLog =
         String.format(
-            "Progress  *** Downloading %d slots in %d batches from slot %s, Downloaded slots: %d, Importing up to slot: %s, Target chain: %s (%s) with %s peers",
+            "Syncing progress *** Slots: %s - %s (%d batches), Downloading: %d slots (%d batches), Ready: %d slots (%d batches), Batch import: %s, Target chain: %s (%s) with %s peers",
+            fromSlot,
+            toSlot,
+            batches,
             downloadingSlots,
             downloadingBatches,
-            downloadingFromSlot.map(UInt64::toString).orElse("N/A"),
-            downloadedSlots,
-            importingFromSlot.map(UInt64::toString).orElse("N/A"),
+            readySlots,
+            readyBatches,
+            importing ? "in progress" : "waiting",
             LogFormatter.formatAbbreviatedHashRoot(targetChainBlockRoot),
             targetChainBlockSlot,
             targetChainPeers);

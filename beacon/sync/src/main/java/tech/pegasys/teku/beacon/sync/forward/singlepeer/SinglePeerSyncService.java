@@ -16,7 +16,7 @@ package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 import java.util.Optional;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
-import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncToChainStatus;
+import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncProgress;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -53,7 +53,7 @@ public class SinglePeerSyncService extends Service implements ForwardSyncService
   }
 
   @Override
-  public SafeFuture<Optional<SyncToChainStatus>> getSyncToChainStatus() {
+  public SafeFuture<Optional<SyncProgress>> getSyncToChainStatus() {
     return SafeFuture.completedFuture(Optional.empty());
   }
 
