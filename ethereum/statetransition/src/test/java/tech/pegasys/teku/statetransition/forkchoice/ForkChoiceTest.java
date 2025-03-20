@@ -470,7 +470,7 @@ class ForkChoiceTest {
     if (shouldReorg) {
       assertThat(recentChainData.getStore().getProposerBoostRoot())
           .contains(expectedChainHead.getRoot());
-      assertThat(forkChoice.processHead()).isCompleted();
+      // for reorging blocks with proposer boost processHead is executed by forkChoice.onBlock
       // Check we switched chains, if proposer reward wasn't considered we'd stay on the other fork
       assertThat(recentChainData.getBestBlockRoot()).hasValue(expectedChainHead.getRoot());
     } else {
