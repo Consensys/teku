@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.validator.remote;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -44,5 +46,60 @@ class RemoteBeaconNodeApiTest {
                     spec,
                     List.of(new URI("notvalid"))))
         .hasMessageContaining("Failed to convert remote api endpoint");
+  }
+
+  @Test
+  void createSuccessfullyWithValidUrl() throws Exception {
+    final RemoteBeaconNodeApi api = 
+        RemoteBeaconNodeApi.create(
+            serviceConfig,
+            validatorConfig,
+            asyncRunner,
+            spec,
+            List.of(new URI("http://localhost:5051")));
+    
+    assertThat(api).isNotNull();
+  }
+
+  @Test
+  void throwsExceptionWhenEmptyUrlListProvided() {
+    assertThatThrownBy(
+            () ->
+                RemoteBeaconNodeApi.create(
+                    serviceConfig,
+                    validatorConfig,
+                    asyncRunner,
+                    spec,
+                    Collections.emptyList()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("No remote beacon node endpoints specified");
+  }
+
+  @Test
+  void createSuccessfullyWithMultipleValidUrls() throws Exception {
+    final RemoteBeaconNodeApi api = 
+        RemoteBeaconNodeApi.create(
+            serviceConfig,
+            validatorConfig,
+            asyncRunner,
+            spec,
+            List.of(
+                new URI("http://primary.example.com:5051"),
+                new URI("http://secondary.example.com:5051")));
+    
+    assertThat(api).isNotNull();
+  }
+
+  @Test
+  void throwsExceptionWhenNullUrlListProvided() {
+    assertThatThrownBy(
+            () ->
+                RemoteBeaconNodeApi.create(
+                    serviceConfig,
+                    validatorConfig,
+                    asyncRunner,
+                    spec,
+                    null))
+        .isInstanceOf(NullPointerException.class);
   }
 }
