@@ -88,7 +88,7 @@ public class EventLogger {
   public void syncEvent(final UInt64 nodeSlot, final UInt64 headSlot, final int numPeers) {
     final String syncEventLog =
         String.format(
-            "Syncing          *** End slot: %s, Head slot: %s, Remaining slots: %s, Connected peers: %s",
+            "Syncing     *** Slot: %s, Head slot: %s, Remaining slots: %s, Connected peers: %s",
             nodeSlot, headSlot, nodeSlot.minusMinZero(headSlot), numPeers);
     info(syncEventLog, Color.WHITE);
   }
@@ -97,7 +97,7 @@ public class EventLogger {
       final UInt64 nodeSlot, final UInt64 headSlot, final int numPeers) {
     final String syncEventLog =
         String.format(
-            "Syncing          *** End slot: %s, Head slot: %s, Waiting for execution layer sync, Connected peers: %s",
+            "Syncing     *** Slot: %s, Head slot: %s, Waiting for execution layer sync, Connected peers: %s",
             nodeSlot, headSlot, numPeers);
     info(syncEventLog, Color.WHITE);
   }
@@ -116,7 +116,7 @@ public class EventLogger {
       final int targetChainPeers) {
     final String syncTargetChainEventLog =
         String.format(
-            "Syncing progress *** Slots: %s - %s (%d batches), Downloading: %d slots (%d batches), Ready: %d slots (%d batches), Batch import: %s, Target chain: %s (%s) with %s peers",
+            "Sync Info  *** Range: %s - %s (%d batches), Downloading: %d slots (%d batches), Ready: %d slots (%d batches), Batch import: %s, Target chain: %s (%s) with %s peers",
             fromSlot,
             toSlot,
             batches,
