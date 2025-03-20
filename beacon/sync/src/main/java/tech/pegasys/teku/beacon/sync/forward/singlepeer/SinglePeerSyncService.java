@@ -53,7 +53,7 @@ public class SinglePeerSyncService extends Service implements ForwardSyncService
   }
 
   @Override
-  public SafeFuture<Optional<SyncProgress>> getSyncToChainStatus() {
+  public SafeFuture<Optional<SyncProgress>> getSyncProgress() {
     return SafeFuture.completedFuture(Optional.empty());
   }
 

@@ -123,7 +123,7 @@ public class SyncController {
     return currentSync.map(InProgressSync::asSyncingStatus).orElseGet(this::notSyncingStatus);
   }
 
-  public SafeFuture<Optional<SyncProgress>> getSyncToChainStatus() {
+  public SafeFuture<Optional<SyncProgress>> getSyncProgress() {
     return currentSync
         .map(__ -> sync.getSyncProgress())
         .orElse(SafeFuture.completedFuture(Optional.empty()));
