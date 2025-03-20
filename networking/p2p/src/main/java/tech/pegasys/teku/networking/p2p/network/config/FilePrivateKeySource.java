@@ -54,7 +54,8 @@ public class FilePrivateKeySource implements PrivateKeySource {
 
   private Bytes getPrivateKeyBytesFromTextFile() {
     try {
-      final Bytes privateKeyBytes = Bytes.fromHexString(Files.readString(Paths.get(fileName)));
+      final Bytes privateKeyBytes =
+          Bytes.fromHexString(Files.readString(Paths.get(fileName)).trim());
       STATUS_LOG.usingGeneratedP2pPrivateKey(fileName, false);
       return privateKeyBytes;
     } catch (MalformedInputException e) {

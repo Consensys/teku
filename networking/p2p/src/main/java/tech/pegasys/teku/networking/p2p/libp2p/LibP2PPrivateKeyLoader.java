@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.KeyType;
 import io.libp2p.core.crypto.PrivKey;
+import io.libp2p.crypto.keys.Secp256k1Kt;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.p2p.network.config.PrivateKeySource;
@@ -41,7 +42,12 @@ public class LibP2PPrivateKeyLoader implements LibP2PNetwork.PrivateKeyProvider 
         privateKeySource
             .map(PrivateKeySource::getOrGeneratePrivateKeyBytes)
             .orElseGet(() -> generateAndSaveNewPrivateKey(keyValueStore));
-    return KeyKt.unmarshalPrivateKey(privKeyBytes.toArrayUnsafe());
+    try {
+      return KeyKt.unmarshalPrivateKey(privKeyBytes.toArrayUnsafe());
+    } catch (final Exception __) {
+      // Try to unmarshall raw SECP256K1 key without extra ProtoBuf data
+      return Secp256k1Kt.unmarshalSecp256k1PrivateKey(privKeyBytes.toArrayUnsafe());
+    }
   }
 
   private Bytes generateAndSaveNewPrivateKey(final KeyValueStore<String, Bytes> keyValueStore) {
