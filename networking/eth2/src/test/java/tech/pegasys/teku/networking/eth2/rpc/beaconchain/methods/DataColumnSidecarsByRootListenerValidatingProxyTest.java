@@ -28,6 +28,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
@@ -51,8 +53,8 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
   private DataColumnSidecarsByRootListenerValidatingProxy listenerWrapper;
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final KZG kzg = mock(KZG.class);
-  private final MetricsSystem metricsSystem = mock(MetricsSystem.class);
-  private final TimeProvider timeProvider = mock(TimeProvider.class);
+  private final MetricsSystem metricsSystem = new StubMetricsSystem();
+  private final TimeProvider timeProvider = StubTimeProvider.withTimeInMillis(UInt64.ZERO);
 
   @SuppressWarnings("unchecked")
   private final RpcResponseListener<DataColumnSidecar> listener = mock(RpcResponseListener.class);
