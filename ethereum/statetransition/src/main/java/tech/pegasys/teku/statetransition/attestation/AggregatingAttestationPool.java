@@ -71,16 +71,6 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
    * <p>With 2 million active validators, we'd expect around 62_500 attestations per slot; so 3
    * slots worth of attestations is almost 187_500.
    *
-   * <p>128 attestations perfectly packed at a 1.2 million validator set would be 1_200_000 / 32 /
-   * 64 bits, about 584 bits per aggregate. 128 of those is 74752 attestations if perfectly packed.
-   * Technically if we did have to cache 2 full slots of information, that would be roughly 150k
-   * cache size.
-   *
-   * <p>Because the real world exists, it's fair to expect that it's not all perfect, and 120k
-   * should be an adequately large cache to store current attestations plus some old ones that may
-   * not have been included so that we have plenty to choose if block building based on an expected
-   * 1.2 million validators.
-   *
    * <p>Strictly to cache all attestations for a full 2 epochs is significantly larger than this
    * cache.
    */
