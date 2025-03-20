@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import com.google.common.base.Throwables;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -167,7 +169,15 @@ public class AttestationManager extends Service
                     result ->
                         result.ifInvalid(
                             reason -> LOG.debug("Rejected received attestation: " + reason)),
-                    err -> LOG.error("Failed to process received attestation.", err));
+                    err -> {
+                      final Throwable rootException = Throwables.getRootCause(err);
+                      if (rootException instanceof RejectedExecutionException) {
+                        // these tend to flood the channel, and we're already struggling
+                        LOG.trace("Failed to process received attestation.: {}", err.getMessage());
+                      } else {
+                        LOG.error("Failed to process received attestation.", err);
+                      }
+                    });
             notifyAllValidAttestationsSubscribers(attestation);
           }
         });

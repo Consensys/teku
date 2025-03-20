@@ -61,7 +61,7 @@ public class Eth2NetworkConfiguration {
   // so DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS * slots_per_epoch should be >= validator set size
   // ideally
   // on all subnets, you may receive and have to cache that number of messages
-  public static final int DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS = 30_000;
+  public static final int DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS = 70_000;
 
   public static final boolean DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES = false;
 
@@ -523,7 +523,7 @@ public class Eth2NetworkConfiguration {
           "BeaconChain Max Queue size must be at least 2000 (Xnetwork-async-beaconchain-max-queue - default 10000)");
       checkArgument(
           pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS) >= 10000,
-          "Pending attestations queue size must be at least 10000 (Xnetwork-pending-attestations-max-queue - default 30000)");
+          "Pending attestations queue size must be at least 10000 (Xnetwork-pending-attestations-max-queue - default 70000)");
     }
 
     public Builder constants(final String constants) {

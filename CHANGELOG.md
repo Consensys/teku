@@ -26,3 +26,4 @@
 ### Bug Fixes
  - Added 415 response code for beacon-api `/eth/v1/validator/register_validator`.
  - Accept HTTP headers in a case-insensitive manner ([RFC 7230](https://datatracker.ietf.org/doc/html/rfc7230#section-3.2))
+ - Increased the attestation queue size limits.
