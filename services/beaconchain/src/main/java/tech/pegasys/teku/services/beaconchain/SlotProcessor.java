@@ -25,6 +25,7 @@ import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
+import tech.pegasys.teku.infrastructure.logging.EventLogger.TargetChain;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
@@ -159,15 +160,22 @@ public class SlotProcessor {
     if (currentSyncState == SyncState.AWAITING_EL) {
       eventLog.syncEventAwaitingEL(slot, recentChainData.getHeadSlot(), p2pNetwork.getPeerCount());
     } else {
-      eventLog.syncEvent(slot, recentChainData.getHeadSlot(), p2pNetwork.getPeerCount());
-    }
-    syncService
-        .getForwardSync()
-        .getSyncProgress()
-        .finish(
-            maybeSyncProgress ->
-                maybeSyncProgress.ifPresent(
-                    syncProgress ->
+      syncService
+          .getForwardSync()
+          .getSyncProgress()
+          .finish(
+              maybeSyncProgress ->
+                  maybeSyncProgress.ifPresentOrElse(
+                      syncProgress -> {
+                        eventLog.syncEvent(
+                            slot,
+                            recentChainData.getHeadSlot(),
+                            p2pNetwork.getPeerCount(),
+                            Optional.of(
+                                new TargetChain(
+                                    syncProgress.targetChainHead().getBlockRoot(),
+                                    syncProgress.targetChainHead().getSlot(),
+                                    syncProgress.targetChainPeers())));
                         eventLog.syncProgressEvent(
                             syncProgress.fromSlot(),
                             syncProgress.toSlot(),
@@ -176,11 +184,16 @@ public class SlotProcessor {
                             syncProgress.downloadingBatches(),
                             syncProgress.readySlots(),
                             syncProgress.readyBatches(),
-                            syncProgress.importing(),
-                            syncProgress.targetChainHead().getBlockRoot(),
-                            syncProgress.targetChainHead().getSlot(),
-                            syncProgress.targetChainPeers())),
-            throwable -> LOG.warn("Exception retrieving forward sync progress", throwable));
+                            syncProgress.importing());
+                      },
+                      () ->
+                          eventLog.syncEvent(
+                              slot,
+                              recentChainData.getHeadSlot(),
+                              p2pNetwork.getPeerCount(),
+                              Optional.empty())),
+              throwable -> LOG.warn("Exception retrieving forward sync progress", throwable));
+    }
 
     slotEventsChannelPublisher.onSlot(slot);
 
