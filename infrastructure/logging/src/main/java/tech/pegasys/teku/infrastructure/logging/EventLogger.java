@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -85,13 +86,31 @@ public class EventLogger {
     info(driftEventLog, Color.WHITE);
   }
 
-  public void syncEvent(final UInt64 nodeSlot, final UInt64 headSlot, final int numPeers) {
+  public void syncEvent(
+      final UInt64 nodeSlot,
+      final UInt64 headSlot,
+      final int numPeers,
+      final Optional<TargetChain> maybeTargetChain) {
     final String syncEventLog =
         String.format(
-            "Syncing     *** Slot: %s, Head slot: %s, Remaining slots: %s, Connected peers: %s",
-            nodeSlot, headSlot, nodeSlot.minusMinZero(headSlot), numPeers);
+            "Syncing     *** Slot: %s, Head slot: %s, Remaining slots: %s, Connected peers: %s%s",
+            nodeSlot,
+            headSlot,
+            nodeSlot.minusMinZero(headSlot),
+            numPeers,
+            maybeTargetChain
+                .map(
+                    targetChain ->
+                        String.format(
+                            ", Target chain: %s (%s) with %s peers",
+                            LogFormatter.formatAbbreviatedHashRoot(targetChain.blockRoot),
+                            targetChain.slot,
+                            targetChain.numPeers))
+                .orElse(""));
     info(syncEventLog, Color.WHITE);
   }
+
+  public record TargetChain(Bytes32 blockRoot, UInt64 slot, int numPeers) {}
 
   public void syncEventAwaitingEL(
       final UInt64 nodeSlot, final UInt64 headSlot, final int numPeers) {
@@ -110,13 +129,10 @@ public class EventLogger {
       final int downloadingBatches,
       final int readySlots,
       final int readyBatches,
-      final boolean importing,
-      final Bytes32 targetChainBlockRoot,
-      final UInt64 targetChainBlockSlot,
-      final int targetChainPeers) {
+      final boolean importing) {
     final String syncProgressEventLog =
         String.format(
-            "Sync Info   *** Range: %s - %s (%d batches), Downloading: %s, Ready: %s, Batch import: %s, Target chain: %s (%s) with %s peers",
+            "Sync Info   *** Range: %s - %s (%d batches), Downloading: %s, Ready: %s, Batch import: %s",
             fromSlot,
             toSlot,
             batches,
@@ -126,10 +142,7 @@ public class EventLogger {
             readySlots == 0
                 ? "none"
                 : String.format("%d slots (%d batches)", readySlots, readyBatches),
-            importing ? "in progress" : "waiting",
-            LogFormatter.formatAbbreviatedHashRoot(targetChainBlockRoot),
-            targetChainBlockSlot,
-            targetChainPeers);
+            importing ? "in progress" : "waiting");
     info(syncProgressEventLog, Color.GRAY);
   }
 
