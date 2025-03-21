@@ -29,8 +29,8 @@ class FilePrivateKeySourceTest {
   @Test
   void shouldCreateKeyAndSaveToFile(@TempDir final Path tempDir) throws IOException {
     final Path file = tempDir.resolve("file.txt");
-    final PrivateKeySource privateKeySource = new FilePrivateKeySource(file.toString());
-    final Bytes generatedBytes = privateKeySource.getOrGeneratePrivateKeyBytes();
+    final PrivateKeySource privateKeySource = new GeneratingFilePrivateKeySource(file.toString());
+    final Bytes generatedBytes = privateKeySource.getPrivateKeyBytes();
     final Bytes savedBytes = Bytes.fromHexString(Files.readString(file));
 
     assertThat(generatedBytes).isEqualTo(savedBytes);
@@ -41,9 +41,9 @@ class FilePrivateKeySourceTest {
     final Path file = tempDir.resolve("file.txt");
     final Bytes privateKey = Bytes.wrap(PrivateKeyGenerator.generate().bytes());
     Files.writeString(file, privateKey.toHexString());
-    final PrivateKeySource privateKeySource = new FilePrivateKeySource(file.toString());
+    final PrivateKeySource privateKeySource = new GeneratingFilePrivateKeySource(file.toString());
 
-    assertThat(privateKeySource.getOrGeneratePrivateKeyBytes()).isEqualTo(privateKey);
+    assertThat(privateKeySource.getPrivateKeyBytes()).isEqualTo(privateKey);
   }
 
   @Test
@@ -51,24 +51,25 @@ class FilePrivateKeySourceTest {
     final Path file = tempDir.resolve("file.dat");
     final Bytes privateKey = Bytes.wrap(PrivateKeyGenerator.generate().bytes());
     Files.write(file, privateKey.toArray());
-    final PrivateKeySource privateKeySource = new FilePrivateKeySource(file.toString());
+    final PrivateKeySource privateKeySource = new GeneratingFilePrivateKeySource(file.toString());
 
-    assertThat(privateKeySource.getOrGeneratePrivateKeyBytes()).isEqualTo(privateKey);
+    assertThat(privateKeySource.getPrivateKeyBytes()).isEqualTo(privateKey);
   }
 
   @Test
   void shouldThrowExceptionIfInvalidFileName(@TempDir final Path tempDir) {
     final PrivateKeySource privateKeySource =
-        new FilePrivateKeySource(tempDir + "/invalid file name!!\0");
-    assertThatThrownBy(privateKeySource::getOrGeneratePrivateKeyBytes)
+        new GeneratingFilePrivateKeySource(tempDir + "/invalid file name!!\0");
+    assertThatThrownBy(privateKeySource::getPrivateKeyBytes)
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Not able to create or retrieve p2p private key file -");
   }
 
   @Test
   void shouldThrowExceptionIfProvideDirectory(@TempDir final Path tempDir) {
-    final PrivateKeySource privateKeySource = new FilePrivateKeySource(tempDir.toString());
-    assertThatThrownBy(privateKeySource::getOrGeneratePrivateKeyBytes)
+    final PrivateKeySource privateKeySource =
+        new GeneratingFilePrivateKeySource(tempDir.toString());
+    assertThatThrownBy(privateKeySource::getPrivateKeyBytes)
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("p2p private key file not found -");
   }
