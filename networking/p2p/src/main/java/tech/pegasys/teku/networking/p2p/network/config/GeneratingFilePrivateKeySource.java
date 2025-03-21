@@ -15,25 +15,41 @@ package tech.pegasys.teku.networking.p2p.network.config;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
+import io.libp2p.core.crypto.KeyKt;
+import io.libp2p.core.crypto.KeyType;
+import io.libp2p.core.crypto.PrivKey;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.MalformedInputException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Optional;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
-public record GetTypedFilePrivateKeySource(String fileName, Type type) implements PrivateKeySource {
+public class GeneratingFilePrivateKeySource implements PrivateKeySource {
+  private final String fileName;
+
+  public GeneratingFilePrivateKeySource(final String fileName) {
+    this.fileName = fileName;
+  }
 
   @Override
   public Bytes getPrivateKeyBytes() {
-    File file = new File(fileName);
-    if (file.exists()) {
-      return getPrivateKeyBytesFromTextFile();
+    try {
+      File file = new File(fileName);
+      if (!file.createNewFile()) {
+        return getPrivateKeyBytesFromTextFile();
+      }
+      final PrivKey privKey = KeyKt.generateKeyPair(KeyType.SECP256K1).component1();
+      final Bytes privateKeyBytes = Bytes.wrap(KeyKt.marshalPrivateKey(privKey));
+      Files.writeString(file.toPath(), privateKeyBytes.toHexString());
+      STATUS_LOG.usingGeneratedP2pPrivateKey(fileName, true);
+      return privateKeyBytes;
+
+    } catch (IOException e) {
+      throw new IllegalArgumentException(
+          "Not able to create or retrieve p2p private key file - " + fileName);
     }
-    throw new InvalidConfigurationException(
-        String.format("File %s with private key does not exist", fileName));
   }
 
   private Bytes getPrivateKeyBytesFromTextFile() {
@@ -59,8 +75,24 @@ public record GetTypedFilePrivateKeySource(String fileName, Type type) implement
     }
   }
 
+  public String getFileName() {
+    return fileName;
+  }
+
   @Override
-  public Optional<Type> getType() {
-    return Optional.of(type);
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    GeneratingFilePrivateKeySource that = (GeneratingFilePrivateKeySource) o;
+    return Objects.equals(fileName, that.fileName);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(fileName);
   }
 }

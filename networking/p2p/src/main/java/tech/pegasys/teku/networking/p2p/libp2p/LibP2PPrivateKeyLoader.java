@@ -42,7 +42,7 @@ public class LibP2PPrivateKeyLoader implements LibP2PNetwork.PrivateKeyProvider 
     final Bytes privKeyBytes;
     final Optional<PrivateKeySource.Type> type;
     if (privateKeySource.isEmpty()) {
-      privKeyBytes = generateAndSaveNewPrivateKey(keyValueStore);
+      privKeyBytes = getOrGenerateAndSaveNewPrivateKey(keyValueStore);
       type = Optional.empty();
     } else {
       type = privateKeySource.get().getType();
@@ -57,7 +57,8 @@ public class LibP2PPrivateKeyLoader implements LibP2PNetwork.PrivateKeyProvider 
         .orElseGet(() -> KeyKt.unmarshalPrivateKey(privKeyBytes.toArrayUnsafe()));
   }
 
-  private Bytes generateAndSaveNewPrivateKey(final KeyValueStore<String, Bytes> keyValueStore) {
+  private Bytes getOrGenerateAndSaveNewPrivateKey(
+      final KeyValueStore<String, Bytes> keyValueStore) {
     final Bytes privateKey;
     final Optional<Bytes> generatedKeyBytes = keyValueStore.get(GENERATED_NODE_KEY_KEY);
     if (generatedKeyBytes.isEmpty()) {

@@ -83,7 +83,7 @@ class NetworkConfigTest {
             .privateKeyFile("file.txt")
             .build();
     final Optional<PrivateKeySource> source = config.getPrivateKeySource();
-    final PrivateKeySource expected = new GetOrGenerateFilePrivateKeySource("file.txt");
+    final PrivateKeySource expected = new GeneratingFilePrivateKeySource("file.txt");
 
     assertThat(source).isPresent();
     assertThat(source).contains(expected);

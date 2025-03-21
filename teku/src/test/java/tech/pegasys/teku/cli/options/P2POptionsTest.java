@@ -35,10 +35,10 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
-import tech.pegasys.teku.networking.p2p.network.config.GetOrGenerateFilePrivateKeySource;
-import tech.pegasys.teku.networking.p2p.network.config.GetTypedFilePrivateKeySource;
+import tech.pegasys.teku.networking.p2p.network.config.GeneratingFilePrivateKeySource;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.config.PrivateKeySource;
+import tech.pegasys.teku.networking.p2p.network.config.TypedFilePrivateKeySource;
 
 public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
@@ -65,9 +65,9 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(networkConfig.getNetworkInterfaces()).containsExactly("127.100.0.1");
     assertThat(networkConfig.getListenPort()).isEqualTo(4321);
     assertThat(networkConfig.getPrivateKeySource())
-        .containsInstanceOf(GetOrGenerateFilePrivateKeySource.class);
+        .containsInstanceOf(GeneratingFilePrivateKeySource.class);
     assertThat(
-            ((GetOrGenerateFilePrivateKeySource) networkConfig.getPrivateKeySource().get())
+            ((GeneratingFilePrivateKeySource) networkConfig.getPrivateKeySource().get())
                 .getFileName())
         .isEqualTo("/the/file");
 
@@ -199,9 +199,9 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--p2p-private-key-file", "/some/file");
     assertThat(tekuConfiguration.network().getPrivateKeySource())
-        .containsInstanceOf(GetOrGenerateFilePrivateKeySource.class);
+        .containsInstanceOf(GeneratingFilePrivateKeySource.class);
     assertThat(
-            ((GetOrGenerateFilePrivateKeySource)
+            ((GeneratingFilePrivateKeySource)
                     tekuConfiguration.network().getPrivateKeySource().get())
                 .getFileName())
         .isEqualTo("/some/file");
@@ -226,7 +226,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--Xp2p-private-key-file-ecdsa", "/some/file");
     assertThat(tekuConfiguration.network().getPrivateKeySource())
-        .containsInstanceOf(GetTypedFilePrivateKeySource.class);
+        .containsInstanceOf(TypedFilePrivateKeySource.class);
     assertEquals(
         PrivateKeySource.Type.ECDSA,
         tekuConfiguration.network().getPrivateKeySource().get().getType().get());
@@ -237,7 +237,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--Xp2p-private-key-file-secp256k1", "/some/file");
     assertThat(tekuConfiguration.network().getPrivateKeySource())
-        .containsInstanceOf(GetTypedFilePrivateKeySource.class);
+        .containsInstanceOf(TypedFilePrivateKeySource.class);
     assertEquals(
         PrivateKeySource.Type.SECP256K1,
         tekuConfiguration.network().getPrivateKeySource().get().getType().get());

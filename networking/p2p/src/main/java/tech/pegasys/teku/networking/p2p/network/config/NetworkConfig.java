@@ -252,17 +252,17 @@ public class NetworkConfig {
     }
 
     private Optional<PrivateKeySource> createFileKeySource() {
-      return privateKeyFile.map(GetOrGenerateFilePrivateKeySource::new);
+      return privateKeyFile.map(GeneratingFilePrivateKeySource::new);
     }
 
     private Optional<PrivateKeySource> createSecp256k1FileKeySource() {
       return privateKeyFileSecp256k1.map(
-          path -> new GetTypedFilePrivateKeySource(path, PrivateKeySource.Type.SECP256K1));
+          path -> new TypedFilePrivateKeySource(path, PrivateKeySource.Type.SECP256K1));
     }
 
     private Optional<PrivateKeySource> createEcdsaFileKeySource() {
       return privateKeyFileEcdsa.map(
-          path -> new GetTypedFilePrivateKeySource(path, PrivateKeySource.Type.ECDSA));
+          path -> new TypedFilePrivateKeySource(path, PrivateKeySource.Type.ECDSA));
     }
 
     public Builder isEnabled(final Boolean enabled) {
