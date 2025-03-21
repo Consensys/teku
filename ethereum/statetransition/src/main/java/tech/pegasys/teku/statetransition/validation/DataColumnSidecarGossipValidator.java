@@ -369,11 +369,8 @@ public class DataColumnSidecarGossipValidator {
         dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
       return miscHelpersFulu.verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
     } catch (final Throwable t) {
-      LOG.error(
-          "Failed to verify inclusion proof for  data column sidecar {}",
-          dataColumnSidecar.toLogString());
+      return false;
     }
-    return false;
   }
 
   private boolean verifyBlockHeaderSignature(
