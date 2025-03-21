@@ -13,8 +13,18 @@
 
 package tech.pegasys.teku.networking.p2p.network.config;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 
 public interface PrivateKeySource {
-  Bytes getOrGeneratePrivateKeyBytes();
+  Bytes getPrivateKeyBytes();
+
+  default Optional<Type> getType() {
+    return Optional.empty();
+  }
+
+  enum Type {
+    SECP256K1,
+    ECDSA
+  }
 }

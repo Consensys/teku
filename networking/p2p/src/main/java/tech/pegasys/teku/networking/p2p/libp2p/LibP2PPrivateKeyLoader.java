@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p;
 
+import static io.libp2p.crypto.keys.EcdsaKt.unmarshalEcdsaPrivateKey;
+import static io.libp2p.crypto.keys.Secp256k1Kt.unmarshalSecp256k1PrivateKey;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.KeyType;
 import io.libp2p.core.crypto.PrivKey;
-import io.libp2p.crypto.keys.Secp256k1Kt;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.p2p.network.config.PrivateKeySource;
@@ -38,16 +39,22 @@ public class LibP2PPrivateKeyLoader implements LibP2PNetwork.PrivateKeyProvider 
 
   @Override
   public PrivKey get() {
-    final Bytes privKeyBytes =
-        privateKeySource
-            .map(PrivateKeySource::getOrGeneratePrivateKeyBytes)
-            .orElseGet(() -> generateAndSaveNewPrivateKey(keyValueStore));
-    try {
-      return KeyKt.unmarshalPrivateKey(privKeyBytes.toArrayUnsafe());
-    } catch (final Exception __) {
-      // Try to unmarshall raw SECP256K1 key without extra ProtoBuf data
-      return Secp256k1Kt.unmarshalSecp256k1PrivateKey(privKeyBytes.toArrayUnsafe());
+    final Bytes privKeyBytes;
+    final Optional<PrivateKeySource.Type> type;
+    if (privateKeySource.isEmpty()) {
+      privKeyBytes = generateAndSaveNewPrivateKey(keyValueStore);
+      type = Optional.empty();
+    } else {
+      type = privateKeySource.get().getType();
+      privKeyBytes = privateKeySource.get().getPrivateKeyBytes();
     }
+    return type.map(
+            value ->
+                switch (value) {
+                  case ECDSA -> unmarshalEcdsaPrivateKey(privKeyBytes.toArrayUnsafe());
+                  case SECP256K1 -> unmarshalSecp256k1PrivateKey(privKeyBytes.toArrayUnsafe());
+                })
+        .orElseGet(() -> KeyKt.unmarshalPrivateKey(privKeyBytes.toArrayUnsafe()));
   }
 
   private Bytes generateAndSaveNewPrivateKey(final KeyValueStore<String, Bytes> keyValueStore) {

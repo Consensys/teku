@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
@@ -25,6 +26,7 @@ import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFA
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
 
+import com.google.common.base.Supplier;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
@@ -33,8 +35,10 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
-import tech.pegasys.teku.networking.p2p.network.config.FilePrivateKeySource;
+import tech.pegasys.teku.networking.p2p.network.config.GetOrGenerateFilePrivateKeySource;
+import tech.pegasys.teku.networking.p2p.network.config.GetTypedFilePrivateKeySource;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
+import tech.pegasys.teku.networking.p2p.network.config.PrivateKeySource;
 
 public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
@@ -60,8 +64,11 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(networkConfig.getAdvertisedIps()).containsExactly("127.200.0.1");
     assertThat(networkConfig.getNetworkInterfaces()).containsExactly("127.100.0.1");
     assertThat(networkConfig.getListenPort()).isEqualTo(4321);
-    assertThat(networkConfig.getPrivateKeySource()).containsInstanceOf(FilePrivateKeySource.class);
-    assertThat(((FilePrivateKeySource) networkConfig.getPrivateKeySource().get()).getFileName())
+    assertThat(networkConfig.getPrivateKeySource())
+        .containsInstanceOf(GetOrGenerateFilePrivateKeySource.class);
+    assertThat(
+            ((GetOrGenerateFilePrivateKeySource) networkConfig.getPrivateKeySource().get())
+                .getFileName())
         .isEqualTo("/the/file");
 
     final SyncConfig syncConfig = tekuConfig.sync();
@@ -192,11 +199,48 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--p2p-private-key-file", "/some/file");
     assertThat(tekuConfiguration.network().getPrivateKeySource())
-        .containsInstanceOf(FilePrivateKeySource.class);
+        .containsInstanceOf(GetOrGenerateFilePrivateKeySource.class);
     assertThat(
-            ((FilePrivateKeySource) tekuConfiguration.network().getPrivateKeySource().get())
+            ((GetOrGenerateFilePrivateKeySource)
+                    tekuConfiguration.network().getPrivateKeySource().get())
                 .getFileName())
         .isEqualTo("/some/file");
+  }
+
+  @Test
+  public void privateKeyFile_mustBeSingle() {
+    final Supplier<TekuConfiguration> tekuConfigurationSupplier =
+        () ->
+            getTekuConfigurationFromArguments(
+                "--p2p-private-key-file",
+                "/some/file",
+                "--Xp2p-private-key-file-ecdsa",
+                "/some/file2");
+    assertThatThrownBy(tekuConfigurationSupplier::get)
+        .isInstanceOf(AssertionError.class)
+        .hasMessageContaining("Only single private key option should be specified");
+  }
+
+  @Test
+  public void privateKeyFileECDSA_shouldBeParsed() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xp2p-private-key-file-ecdsa", "/some/file");
+    assertThat(tekuConfiguration.network().getPrivateKeySource())
+        .containsInstanceOf(GetTypedFilePrivateKeySource.class);
+    assertEquals(
+        PrivateKeySource.Type.ECDSA,
+        tekuConfiguration.network().getPrivateKeySource().get().getType().get());
+  }
+
+  @Test
+  public void privateKeyFileSECP256K1_shouldBeParsed() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xp2p-private-key-file-secp256k1", "/some/file");
+    assertThat(tekuConfiguration.network().getPrivateKeySource())
+        .containsInstanceOf(GetTypedFilePrivateKeySource.class);
+    assertEquals(
+        PrivateKeySource.Type.SECP256K1,
+        tekuConfiguration.network().getPrivateKeySource().get().getType().get());
   }
 
   @Test
