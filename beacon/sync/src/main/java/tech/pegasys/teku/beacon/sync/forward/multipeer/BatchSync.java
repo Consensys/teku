@@ -141,7 +141,6 @@ public class BatchSync implements Sync {
         int downloadingBatches,
         int readySlots,
         int readyBatches) {
-      static final UInt64 NOT_DOWNLOADING = UInt64.MAX_VALUE;
 
       static BatchInfoAccumulator accumulate(
           final BatchInfoAccumulator a, final BatchInfoAccumulator b) {
