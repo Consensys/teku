@@ -14,7 +14,9 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import java.util.List;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
@@ -32,8 +34,10 @@ public class DataColumnSidecarsByRootListenerValidatingProxy
       final Spec spec,
       final RpcResponseListener<DataColumnSidecar> listener,
       final KZG kzg,
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider,
       final List<DataColumnIdentifier> expectedDataColumnIdentifiers) {
-    super(peer, spec, kzg, expectedDataColumnIdentifiers);
+    super(peer, spec, kzg, metricsSystem, timeProvider, expectedDataColumnIdentifiers);
     this.listener = listener;
   }
 

@@ -31,6 +31,7 @@ import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
@@ -54,6 +55,7 @@ public class DataColumnSidecarGossipValidatorTest {
   private final MiscHelpersFulu miscHelpersFulu = mock(MiscHelpersFulu.class);
   private final KZG kzg = mock(KZG.class);
   private final MetricsSystem metricsSystemStub = new StubMetricsSystem();
+  private final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(0);
   private DataStructureUtil dataStructureUtil;
   private DataColumnSidecarGossipValidator validator;
 
@@ -79,7 +81,8 @@ public class DataColumnSidecarGossipValidatorTest {
             gossipValidationHelper,
             miscHelpersFulu,
             kzg,
-            metricsSystemStub);
+            metricsSystemStub,
+            stubTimeProvider);
 
     parentSlot = UInt64.valueOf(1);
 
@@ -153,7 +156,8 @@ public class DataColumnSidecarGossipValidatorTest {
             gossipValidationHelper,
             miscHelpersFulu,
             kzg,
-            metricsSystemStub);
+            metricsSystemStub,
+            stubTimeProvider);
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
@@ -381,7 +385,8 @@ public class DataColumnSidecarGossipValidatorTest {
             gossipValidationHelper,
             miscHelpersFulu,
             kzg,
-            metricsSystemStub);
+            metricsSystemStub,
+            stubTimeProvider);
     // Accept everything
     when(gossipValidationHelper.isSlotFinalized(any())).thenReturn(false);
     when(gossipValidationHelper.isSlotFromFuture(any())).thenReturn(false);

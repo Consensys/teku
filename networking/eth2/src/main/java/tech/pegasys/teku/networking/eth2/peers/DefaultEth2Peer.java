@@ -28,10 +28,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
@@ -100,6 +102,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final RateTracker dataColumnSidecarsRequestTracker;
   private final RateTracker requestTracker;
   private final KZG kzg;
+  private final MetricsSystem metricsSystem;
+  private final TimeProvider timeProvider;
   private final Supplier<UInt64> firstSlotSupportingBlobSidecarsByRange;
   private final Supplier<UInt64> firstSlotSupportingDataColumnSidecarsByRange;
   private final Supplier<BlobSidecarsByRootRequestMessageSchema>
@@ -122,7 +126,9 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final RateTracker blobSidecarsRequestTracker,
       final RateTracker dataColumnSidecarsRequestTracker,
       final RateTracker requestTracker,
-      final KZG kzg) {
+      final KZG kzg,
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider) {
     super(peer);
     this.spec = spec;
     this.discoveryNodeId = discoveryNodeId;
@@ -135,6 +141,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     this.dataColumnSidecarsRequestTracker = dataColumnSidecarsRequestTracker;
     this.requestTracker = requestTracker;
     this.kzg = kzg;
+    this.metricsSystem = metricsSystem;
+    this.timeProvider = timeProvider;
     this.firstSlotSupportingBlobSidecarsByRange =
         Suppliers.memoize(
             () -> {
@@ -315,7 +323,13 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                     new DataColumnSidecarsByRootRequestMessage(
                         dataColumnSidecarsByRootRequestMessageSchema.get(), dataColumnIdentifiers),
                     new DataColumnSidecarsByRootListenerValidatingProxy(
-                        this, spec, listener, kzg, dataColumnIdentifiers)))
+                        this,
+                        spec,
+                        listener,
+                        kzg,
+                        metricsSystem,
+                        timeProvider,
+                        dataColumnIdentifiers)))
         .orElse(failWithUnsupportedMethodException("DataColumnSidecarsByRoot"));
   }
 
@@ -465,6 +479,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                       this,
                       listener,
                       kzg,
+                      metricsSystem,
+                      timeProvider,
                       request.getStartSlot(),
                       request.getCount(),
                       request.getColumns()));
