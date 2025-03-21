@@ -115,7 +115,7 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
             getFirstCustodyIncompleteSlot()
                 .thenApply(
                     maybeFirstIncompleteSlot ->
-                        maybeFirstIncompleteSlot.orElse(UInt64.ONE).decrement());
+                        maybeFirstIncompleteSlot.orElse(UInt64.ONE).safeDecrement());
         SafeFuture.collectAll(prevSlotCount, finalizedSlot)
             .thenPeek(
                 prevSlotCountFinalizedSlot -> {

@@ -45,13 +45,13 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
   private static final Logger LOG = LogManager.getLogger("das-nyota");
 
   private final UInt256 nodeId;
-  private final int myTotalCustodyGroups;
   private final DataColumnSidecarCustody custody;
   private final DataColumnSidecarRetriever retriever;
 
   private final Spec spec;
   private final CurrentSlotProvider currentSlotProvider;
   private final DataColumnSidecarDbAccessor db;
+  private final CustodyGroupCountManager custodyGroupCountManager;
 
   public DasSamplerBasic(
       final Spec spec,
@@ -59,8 +59,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
       final DataColumnSidecarDbAccessor db,
       final DataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
-      final UInt256 nodeId,
-      final int myTotalCustodyGroups) {
+      final CustodyGroupCountManager custodyGroupCountManager,
+      final UInt256 nodeId) {
     this.currentSlotProvider = currentSlotProvider;
     checkNotNull(spec);
     checkNotNull(db);
@@ -70,8 +70,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
     this.db = db;
     this.custody = custody;
     this.retriever = retriever;
+    this.custodyGroupCountManager = custodyGroupCountManager;
     this.nodeId = nodeId;
-    this.myTotalCustodyGroups = myTotalCustodyGroups;
   }
 
   private int getColumnCount(final UInt64 slot) {
@@ -85,7 +85,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
     return maybeMiscHelpers
         .map(
             miscHelpersFulu ->
-                miscHelpersFulu.computeCustodyColumnIndexes(nodeId, myTotalCustodyGroups))
+                miscHelpersFulu.computeCustodyColumnIndexes(
+                    nodeId, custodyGroupCountManager.getCustodyGroupCount()))
         .orElse(Collections.emptyList())
         .stream()
         .map(columnIndex -> new DataColumnSlotAndIdentifier(slot, blockRoot, columnIndex))

@@ -17,16 +17,19 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 
-public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChannel {
+public class DataColumnSidecarSubnetBackboneSubscriber
+    implements SlotEventsChannel, CustodyGroupCountChannel {
   private final Eth2P2PNetwork eth2P2PNetwork;
   private final UInt256 nodeId;
-  private final int totalGroupCount;
+  private final AtomicInteger totalGroupCount;
   private final Spec spec;
 
   private IntSet currentSubscribedSubnets = IntSet.of();
@@ -40,8 +43,16 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
     this.spec = spec;
     this.eth2P2PNetwork = eth2P2PNetwork;
     this.nodeId = nodeId;
-    this.totalGroupCount = totalGroupCount;
+    this.totalGroupCount = new AtomicInteger(totalGroupCount);
   }
+
+  @Override
+  public void onCustodyGroupCountUpdate(final int groupCount) {
+    totalGroupCount.set(groupCount);
+  }
+
+  @Override
+  public void onCustodyGroupCountSynced(final int groupCount) {}
 
   private void subscribeToSubnets(final Collection<Integer> newSubscriptions) {
 
@@ -70,7 +81,7 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
             miscHelpersFulu -> {
               List<UInt64> subnets =
                   miscHelpersFulu.computeDataColumnSidecarBackboneSubnets(
-                      nodeId, epoch, totalGroupCount);
+                      nodeId, epoch, totalGroupCount.get());
               subscribeToSubnets(subnets.stream().map(UInt64::intValue).toList());
             });
   }

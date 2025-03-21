@@ -127,6 +127,19 @@ public final class UInt64 implements Comparable<UInt64> {
   }
 
   /**
+   * Decrement this value by one and return the result. If trying to decrement from ZERO, still
+   * returns the ZERO
+   *
+   * @return The result of decrementing this value by 1.
+   */
+  public UInt64 safeDecrement() {
+    if (value == 0L) {
+      return ZERO;
+    }
+    return minus(value, 1);
+  }
+
+  /**
    * Return the result of adding this value and the specified one.
    *
    * @param other the unsigned value to add.

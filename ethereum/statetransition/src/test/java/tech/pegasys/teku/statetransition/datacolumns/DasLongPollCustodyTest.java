@@ -62,6 +62,7 @@ public class DasLongPollCustodyTest {
           blockResolver,
           dbAccessor,
           MinCustodyPeriodSlotCalculator.createFromSpec(spec),
+          CustodyGroupCountManager.NOOP,
           myNodeId,
           groupCount);
 

@@ -91,8 +91,10 @@ public class DataColumnSidecarRecoveryCustodyTest {
           miscHelpersFulu,
           KZG.NOOP,
           dataColumnSidecarPublisher,
+          CustodyGroupCountManager.NOOP,
           true,
           config.getNumberOfColumns(),
+          config.getNumberOfCustodyGroups(),
           __ -> Duration.ofSeconds(2));
 
   @BeforeEach
@@ -112,8 +114,10 @@ public class DataColumnSidecarRecoveryCustodyTest {
             miscHelpersFulu,
             KZG.NOOP,
             dataColumnSidecarPublisher,
+            CustodyGroupCountManager.NOOP,
             true,
             config.getNumberOfColumns(),
+            config.getNumberOfCustodyGroups(),
             __ -> Duration.ofSeconds(2));
 
     custody.onSlot(slot);
@@ -130,8 +134,10 @@ public class DataColumnSidecarRecoveryCustodyTest {
             miscHelpersFulu,
             KZG.NOOP,
             dataColumnSidecarPublisher,
+            CustodyGroupCountManager.NOOP,
             false,
             config.getNumberOfColumns(),
+            config.getNumberOfCustodyGroups(),
             __ -> Duration.ofSeconds(2));
 
     custody.onSlot(slot);

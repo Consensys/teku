@@ -70,6 +70,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubsc
 import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.connection.PeerPools;
@@ -239,6 +240,7 @@ public class Eth2P2PNetworkFactory {
                 asyncRunner,
                 combinedChainDataClient,
                 DataColumnSidecarByRootCustody.NOOP,
+                new MetadataMessagesFactory(),
                 METRICS_SYSTEM,
                 attestationSubnetService,
                 syncCommitteeSubnetService,

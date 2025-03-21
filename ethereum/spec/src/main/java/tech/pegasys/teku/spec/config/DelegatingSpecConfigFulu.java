@@ -78,6 +78,11 @@ public class DelegatingSpecConfigFulu extends DelegatingSpecConfigElectra
   }
 
   @Override
+  public int getValidatorCustodyRequirement() {
+    return delegate.getValidatorCustodyRequirement();
+  }
+
+  @Override
   public int getSamplesPerSlot() {
     return delegate.getSamplesPerSlot();
   }

@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 public interface DataColumnSidecarByRootCustody extends DataColumnSidecarCustody {
 
-  public static final DataColumnSidecarByRootCustody NOOP =
+  DataColumnSidecarByRootCustody NOOP =
       new DataColumnSidecarByRootCustody() {
         @Override
         public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecarByRoot(
