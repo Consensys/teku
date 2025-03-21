@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.nio.ByteOrder;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class MathHelpers {
@@ -133,5 +134,21 @@ public class MathHelpers {
 
   public static UInt64 bytesToUInt64(final Bytes data) {
     return UInt64.fromLongBits(data.toLong(ByteOrder.LITTLE_ENDIAN));
+  }
+
+  public static Bytes uint256ToBytes(final UInt256 number) {
+    final Bytes intBytes =
+        Bytes.wrap(number.toUnsignedBigInteger(ByteOrder.LITTLE_ENDIAN).toByteArray())
+            .trimLeadingZeros();
+    // We should keep 32 bytes
+    return Bytes32.leftPad(intBytes);
+  }
+
+  public static int intPlusMaxIntCapped(final int a, final int b) {
+    final UInt64 sum = UInt64.valueOf(a).plus(b);
+    if (sum.isLessThanOrEqualTo(UInt64.valueOf(Integer.MAX_VALUE))) {
+      return sum.intValue();
+    }
+    return Integer.MAX_VALUE;
   }
 }

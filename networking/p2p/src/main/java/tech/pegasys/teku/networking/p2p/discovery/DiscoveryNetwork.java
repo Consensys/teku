@@ -45,6 +45,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
   public static final String ATTESTATION_SUBNET_ENR_FIELD = "attnets";
   public static final String SYNC_COMMITTEE_SUBNET_ENR_FIELD = "syncnets";
+  public static final String DAS_CUSTODY_GROUP_COUNT_ENR_FIELD = "cgc";
   public static final String ETH2_ENR_FIELD = "eth2";
 
   private final Spec spec;
@@ -136,6 +137,15 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             .getSyncnetsENRFieldSchema()
             .ofBits(subnetIds)
             .sszSerialize());
+  }
+
+  public void setDASTotalCustodySubnetCount(final int count) {
+    if (count < 0) {
+      throw new IllegalArgumentException(
+          String.format("Custody subnet count should be a positive number, but was %s", count));
+    }
+    discoveryService.updateCustomENRField(
+        DAS_CUSTODY_GROUP_COUNT_ENR_FIELD, Bytes.ofUnsignedInt(count).trimLeadingZeros());
   }
 
   public void setPreGenesisForkInfo() {

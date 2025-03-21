@@ -240,6 +240,12 @@ public class BeaconRestApiTypes {
           CoreTypes.UINT64_TYPE.withDescription(
               "Array of indices for blob sidecars to request for in the specified block. Returns all blob sidecars in the block if not specified."));
 
+  public static final ParameterMetadata<UInt64> DATA_COLUMN_INDICES_PARAMETER =
+      new ParameterMetadata<>(
+          "indices",
+          CoreTypes.UINT64_TYPE.withDescription(
+              "Array of indices for data column sidecars to request for in the specified block. Returns all data column sidecars in the block if not specified."));
+
   private static final EnumTypeDefinition<BroadcastValidationParameter> BROADCAST_VALIDATION_VALUE =
       new EnumTypeDefinition.EnumTypeBuilder<>(BroadcastValidationParameter.class)
           .example("consensus_and_equivocation")

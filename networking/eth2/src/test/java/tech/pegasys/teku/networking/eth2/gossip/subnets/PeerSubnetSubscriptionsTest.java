@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
@@ -25,17 +26,20 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.SubnetSubscriptionService;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 
@@ -47,6 +51,8 @@ class PeerSubnetSubscriptionsTest {
 
   private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final SettableLabelledGauge subnetPeerCountGauge = mock(SettableLabelledGauge.class);
+  final Supplier<SpecVersion> currentSpecVersionSupplier = spec::getGenesisSpec;
+  final Supplier<Optional<UInt64>> currentSlotSupplier = Optional::empty;
   private final SchemaDefinitionsSupplier currentSchemaDefinitions =
       spec::getGenesisSchemaDefinitions;
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
@@ -54,7 +60,10 @@ class PeerSubnetSubscriptionsTest {
       mock(AttestationSubnetTopicProvider.class);
   private final SyncCommitteeSubnetTopicProvider syncCommitteeTopicProvider =
       mock(SyncCommitteeSubnetTopicProvider.class);
+  private final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider =
+      mock(DataColumnSidecarSubnetTopicProvider.class);
   private final SubnetSubscriptionService syncnetSubscriptions = new SubnetSubscriptionService();
+  private final SubnetSubscriptionService dataColumnSubscriptions = new SubnetSubscriptionService();
 
   @BeforeEach
   public void setUp() {
@@ -197,11 +206,14 @@ class PeerSubnetSubscriptionsTest {
 
   private PeerSubnetSubscriptions createPeerSubnetSubscriptions() {
     return PeerSubnetSubscriptions.create(
-        currentSchemaDefinitions,
+        currentSpecVersionSupplier.get(),
+        NodeIdToDataColumnSidecarSubnetsCalculator.NOOP,
         gossipNetwork,
         attestationTopicProvider,
         syncCommitteeTopicProvider,
         syncnetSubscriptions,
+        dataColumnSidecarSubnetTopicProvider,
+        dataColumnSubscriptions,
         TARGET_SUBSCRIBER_COUNT,
         subnetPeerCountGauge);
   }

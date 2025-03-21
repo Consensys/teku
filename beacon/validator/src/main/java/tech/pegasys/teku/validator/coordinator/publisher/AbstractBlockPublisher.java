@@ -144,10 +144,10 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
 
     if (gossipBlobsAfterBlock) {
       publishBlock(block, blockPublishingPerformance)
-          .always(() -> publishBlobSidecars(blobSidecars.get(), blockPublishingPerformance));
+          .always(() -> publishBlobSidecars(blobSidecars.get(), block, blockPublishingPerformance));
     } else {
       publishBlock(block, blockPublishingPerformance).ifExceptionGetsHereRaiseABug();
-      publishBlobSidecars(blobSidecars.get(), blockPublishingPerformance);
+      publishBlobSidecars(blobSidecars.get(), block, blockPublishingPerformance);
     }
   }
 
@@ -163,7 +163,9 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
       SignedBeaconBlock block, BlockPublishingPerformance blockPublishingPerformance);
 
   abstract void publishBlobSidecars(
-      List<BlobSidecar> blobSidecars, BlockPublishingPerformance blockPublishingPerformance);
+      List<BlobSidecar> blobSidecars,
+      SignedBeaconBlock block,
+      BlockPublishingPerformance blockPublishingPerformance);
 
   private SafeFuture<SendSignedBlockResult> calculateResult(
       final SignedBlockContainer maybeBlindedBlockContainer,

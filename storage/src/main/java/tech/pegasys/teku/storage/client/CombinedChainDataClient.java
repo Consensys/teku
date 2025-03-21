@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -194,6 +196,62 @@ public class CombinedChainDataClient {
         .getAllBlobSidecarKeys(slot)
         .thenApply(keys -> filterBlobSidecarKeys(keys, indices))
         .thenCompose(this::getAllBlobSidecars);
+  }
+
+  private List<BlobSidecar> filterBlobSidecars(
+      final List<BlobSidecar> blobSidecars, final List<UInt64> indices) {
+    if (indices.isEmpty()) {
+      return blobSidecars;
+    }
+    return blobSidecars.stream().filter(key -> indices.contains(key.getIndex())).toList();
+  }
+
+  private Stream<SlotAndBlockRootAndBlobIndex> filterBlobSidecarKeys(
+      final List<SlotAndBlockRootAndBlobIndex> keys, final List<UInt64> indices) {
+    if (indices.isEmpty()) {
+      return keys.stream();
+    }
+    return keys.stream().filter(key -> indices.contains(key.getBlobIndex()));
+  }
+
+  private SafeFuture<List<BlobSidecar>> getBlobSidecars(
+      final Stream<SlotAndBlockRootAndBlobIndex> keys) {
+    return SafeFuture.collectAll(keys.map(this::getAllBlobSidecarByKey))
+        .thenApply(blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).toList());
+  }
+
+  private SafeFuture<List<BlobSidecar>> getAllBlobSidecars(
+      final Stream<SlotAndBlockRootAndBlobIndex> keys) {
+    return SafeFuture.collectAll(keys.map(this::getAllBlobSidecarByKey))
+        .thenApply(blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).toList());
+  }
+
+  public SafeFuture<List<DataColumnSidecar>> getDataColumnSidecars(
+      final UInt64 slot, final List<UInt64> indices) {
+    return historicalChainData
+        .getDataColumnIdentifiers(slot)
+        .thenApply(identifiers -> filterDataColumnSidecarKeys(identifiers, indices))
+        .thenCompose(this::getDataColumnSidecars);
+  }
+
+  private Stream<DataColumnSlotAndIdentifier> filterDataColumnSidecarKeys(
+      final List<DataColumnSlotAndIdentifier> identifiers, final List<UInt64> indices) {
+    if (indices.isEmpty()) {
+      return identifiers.stream();
+    }
+    return identifiers.stream().filter(identifier -> indices.contains(identifier.columnIndex()));
+  }
+
+  private SafeFuture<List<DataColumnSidecar>> getDataColumnSidecars(
+      final Stream<DataColumnSlotAndIdentifier> identifier) {
+    return SafeFuture.collectAll(identifier.map(this::getDataColumnSidecarByIdentifier))
+        .thenApply(
+            dataColumnSidecars -> dataColumnSidecars.stream().flatMap(Optional::stream).toList());
+  }
+
+  private SafeFuture<Optional<DataColumnSidecar>> getDataColumnSidecarByIdentifier(
+      final DataColumnSlotAndIdentifier identifier) {
+    return historicalChainData.getSidecar(identifier);
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(final UInt64 slot) {
@@ -720,6 +778,32 @@ public class CombinedChainDataClient {
     return historicalChainData.getAnchor();
   }
 
+  public SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot() {
+    return historicalChainData.getFirstCustodyIncompleteSlot();
+  }
+
+  public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
+    return historicalChainData.getFirstSamplerIncompleteSlot();
+  }
+
+  public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
+      final DataColumnSlotAndIdentifier identifier) {
+    return historicalChainData.getSidecar(identifier);
+  }
+
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
+    return historicalChainData.getDataColumnIdentifiers(slot);
+  }
+
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(
+      final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
+    return historicalChainData.getDataColumnIdentifiers(startSlot, endSlot, limit);
+  }
+
+  public SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot() {
+    return historicalChainData.getEarliestDataColumnSidecarSlot();
+  }
+
   private SafeFuture<Optional<BeaconState>> getStateFromSlotAndBlock(
       final SlotAndBlockRoot slotAndBlockRoot) {
     final UpdatableStore store = getStore();
@@ -793,34 +877,6 @@ public class CombinedChainDataClient {
             maybeBlockAndState ->
                 maybeBlockAndState.flatMap(
                     blockAndState -> regenerateBeaconState(blockAndState.getState(), slot)));
-  }
-
-  private List<BlobSidecar> filterBlobSidecars(
-      final List<BlobSidecar> blobSidecars, final List<UInt64> indices) {
-    if (indices.isEmpty()) {
-      return blobSidecars;
-    }
-    return blobSidecars.stream().filter(key -> indices.contains(key.getIndex())).toList();
-  }
-
-  private Stream<SlotAndBlockRootAndBlobIndex> filterBlobSidecarKeys(
-      final List<SlotAndBlockRootAndBlobIndex> keys, final List<UInt64> indices) {
-    if (indices.isEmpty()) {
-      return keys.stream();
-    }
-    return keys.stream().filter(key -> indices.contains(key.getBlobIndex()));
-  }
-
-  private SafeFuture<List<BlobSidecar>> getBlobSidecars(
-      final Stream<SlotAndBlockRootAndBlobIndex> keys) {
-    return SafeFuture.collectAll(keys.map(this::getAllBlobSidecarByKey))
-        .thenApply(blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).toList());
-  }
-
-  private SafeFuture<List<BlobSidecar>> getAllBlobSidecars(
-      final Stream<SlotAndBlockRootAndBlobIndex> keys) {
-    return SafeFuture.collectAll(keys.map(this::getAllBlobSidecarByKey))
-        .thenApply(blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).toList());
   }
 
   private Optional<Checkpoint> getFinalizedCheckpoint() {

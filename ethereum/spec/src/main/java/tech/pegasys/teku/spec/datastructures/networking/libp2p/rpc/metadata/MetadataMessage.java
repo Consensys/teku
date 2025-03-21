@@ -32,4 +32,8 @@ public interface MetadataMessage extends SszContainer, RpcRequest {
   default Optional<SszBitvector> getOptionalSyncnets() {
     return Optional.empty();
   }
+
+  default Optional<UInt64> getOptionalCustodyGroupCount() {
+    return Optional.empty();
+  }
 }

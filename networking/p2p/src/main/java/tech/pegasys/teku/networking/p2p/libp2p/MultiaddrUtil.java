@@ -58,7 +58,7 @@ public class MultiaddrUtil {
     return addr.withP2P(PeerId.fromBase58(nodeId.toBase58()));
   }
 
-  private static LibP2PNodeId getNodeId(final DiscoveryPeer peer) {
+  private static NodeId getNodeId(final DiscoveryPeer peer) {
     final PubKey pubKey = unmarshalSecp256k1PublicKey(peer.getPublicKey().toArrayUnsafe());
     return new LibP2PNodeId(PeerId.fromPubKey(pubKey));
   }

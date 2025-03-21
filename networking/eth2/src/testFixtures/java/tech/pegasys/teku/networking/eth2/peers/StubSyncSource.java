@@ -27,6 +27,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class StubSyncSource implements SyncSource {
@@ -79,6 +80,16 @@ public class StubSyncSource implements SyncSource {
     currentBlobSidecarRequest = Optional.of(request);
     currentBlobSidecarListener = Optional.of(listener);
     return request;
+  }
+
+  @Override
+  public SafeFuture<Void> requestDataColumnSidecarsByRange(
+      final UInt64 startSlot,
+      final UInt64 count,
+      final List<UInt64> columns,
+      final RpcResponseListener<DataColumnSidecar> listener) {
+    // TODO
+    return SafeFuture.COMPLETE;
   }
 
   @Override

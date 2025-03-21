@@ -92,4 +92,48 @@ public class GossipFailureLogger {
               error);
     }
   }
+
+  public void logWithSuppression(final Throwable error, final UInt64 slot) {
+    logWithSuppression(error, slot, "");
+  }
+
+  public synchronized void logWithSuppression(
+      final Throwable error, final UInt64 slot, final String details) {
+    final String appendDetails = details.isEmpty() ? "" : ": " + details;
+    final Throwable rootCause = Throwables.getRootCause(error);
+
+    final boolean suppress =
+        lastErroredSlot
+            .filter(
+                uInt64 ->
+                    slot.equals(uInt64) && rootCause.getClass().equals(lastRootCause.getClass()))
+            .isPresent();
+
+    lastErroredSlot = Optional.of(slot);
+    lastRootCause = rootCause;
+
+    if (lastRootCause instanceof MessageAlreadySeenException) {
+      LOG.debug(
+          "Failed to publish {}(s) for slot {} because the message has already been seen {}",
+          messageType,
+          lastErroredSlot,
+          appendDetails);
+    } else if (lastRootCause instanceof NoPeersForOutboundMessageException
+        || lastRootCause instanceof SemiDuplexNoOutboundStreamException) {
+      LOG.log(
+          suppress ? Level.DEBUG : Level.WARN,
+          "Failed to publish {}(s) for slot {} because no peers were available on the required gossip topic {}",
+          messageType,
+          lastErroredSlot,
+          appendDetails);
+    } else {
+      LOG.log(
+          suppress ? Level.DEBUG : Level.ERROR,
+          "Failed to publish {}(s) for slot {} {}",
+          messageType,
+          lastErroredSlot,
+          appendDetails,
+          error);
+    }
+  }
 }

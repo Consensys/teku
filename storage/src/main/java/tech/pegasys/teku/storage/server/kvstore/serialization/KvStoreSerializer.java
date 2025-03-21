@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 
 public interface KvStoreSerializer<T> {
@@ -56,6 +57,8 @@ public interface KvStoreSerializer<T> {
   KvStoreSerializer<SlotAndBlockRootAndBlobIndex>
       SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER =
           new SlotAndBlockRootAndBlobIndexKeySerializer();
+  KvStoreSerializer<DataColumnSlotAndIdentifier> COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER =
+      new ColumnSlotAndIdentifierKeySerializer();
 
   static KvStoreSerializer<BeaconState> createStateSerializer(final Spec spec) {
     return new BeaconStateSerializer(spec);

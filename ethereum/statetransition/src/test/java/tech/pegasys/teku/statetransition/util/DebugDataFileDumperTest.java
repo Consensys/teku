@@ -98,7 +98,7 @@ class DebugDataFileDumperTest {
     final DebugDataFileDumper dumper = new DebugDataFileDumper(tempDir);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
-    dumper.saveInvalidBlobSidecars(blobSidecars, block);
+    dumper.saveInvalidSidecars(blobSidecars, block);
 
     final String kzgCommitmentsFileName =
         String.format(

@@ -79,6 +79,7 @@ public class MilestoneDependentTypesUtilTest {
     return Stream.of(
         Arguments.of(SpecMilestone.PHASE0),
         Arguments.of(SpecMilestone.DENEB),
-        Arguments.of(SpecMilestone.ELECTRA));
+        Arguments.of(SpecMilestone.ELECTRA),
+        Arguments.of(SpecMilestone.FULU));
   }
 }

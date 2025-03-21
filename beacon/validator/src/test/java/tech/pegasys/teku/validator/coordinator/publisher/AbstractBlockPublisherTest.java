@@ -48,7 +48,7 @@ import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 
 public class AbstractBlockPublisherTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  private final Spec spec = TestSpecFactory.createMinimalDeneb();
+  private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final BlockGossipChannel blockGossipChannel = mock(BlockGossipChannel.class);
@@ -93,7 +93,8 @@ public class AbstractBlockPublisherTest {
         .isCompletedWithValue(SendSignedBlockResult.success(signedBlockContents.getRoot()));
 
     verify(blockPublisher).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
-    verify(blockPublisher).publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+    verify(blockPublisher)
+        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
     verify(blockPublisher)
         .importBlock(
             signedBlock, BroadcastValidationLevel.NOT_REQUIRED, BlockPublishingPerformance.NOOP);
@@ -130,12 +131,13 @@ public class AbstractBlockPublisherTest {
 
     verify(blockPublisher, never()).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
     verify(blockPublisher, never())
-        .publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
 
     validationResult.complete(BroadcastValidationResult.SUCCESS);
 
     verify(blockPublisher).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
-    verify(blockPublisher).publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+    verify(blockPublisher)
+        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
     assertThatSafeFuture(sendSignedBlockResult)
         .isCompletedWithValue(SendSignedBlockResult.success(signedBlockContents.getRoot()));
   }
@@ -170,13 +172,13 @@ public class AbstractBlockPublisherTest {
 
     verify(blockPublisher, never()).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
     verify(blockPublisher, never())
-        .publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
 
     validationResult.complete(BroadcastValidationResult.CONSENSUS_FAILURE);
 
     verify(blockPublisher, never()).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
     verify(blockPublisher, never())
-        .publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
 
     assertThatSafeFuture(sendSignedBlockResult)
         .isCompletedWithValue(
@@ -211,12 +213,13 @@ public class AbstractBlockPublisherTest {
 
     verify(blockPublisher).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
     verify(blockPublisher, never())
-        .publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
 
     // Complete block publishing
     publishBlockFuture.complete(null);
 
-    verify(blockPublisher).publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+    verify(blockPublisher)
+        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
 
     verify(blockPublisher)
         .importBlock(
@@ -241,7 +244,8 @@ public class AbstractBlockPublisherTest {
             SendSignedBlockResult.notImported(FailureReason.FAILED_STATE_TRANSITION.name()));
 
     verify(blockPublisher).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
-    verify(blockPublisher).publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+    verify(blockPublisher)
+        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
     verify(blockPublisher)
         .importBlock(
             signedBlock, BroadcastValidationLevel.NOT_REQUIRED, BlockPublishingPerformance.NOOP);
@@ -303,6 +307,7 @@ public class AbstractBlockPublisherTest {
     @Override
     void publishBlobSidecars(
         final List<BlobSidecar> blobSidecars,
+        final SignedBeaconBlock block,
         final BlockPublishingPerformance blockPublishingPerformance) {}
   }
 }

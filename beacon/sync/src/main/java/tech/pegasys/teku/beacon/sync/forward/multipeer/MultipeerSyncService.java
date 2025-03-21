@@ -15,6 +15,7 @@ package tech.pegasys.teku.beacon.sync.forward.multipeer;
 
 import java.util.OptionalInt;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.beacon.sync.events.SyncPreImportBlockChannel;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.BatchFactory;
@@ -74,6 +75,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
       final BlockImporter blockImporter,
       final BlobSidecarManager blobSidecarManager,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final SyncPreImportBlockChannel syncPreImportBlockChannel,
       final int batchSize,
       final int maxPendingBatches,
       final int maxBlocksPerMinute,
@@ -103,7 +105,8 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
             maxPendingBatches,
             MultipeerCommonAncestorFinder.create(
                 recentChainData, eventThread, maxDistanceFromHeadReached, spec),
-            timeProvider);
+            timeProvider,
+            syncPreImportBlockChannel);
     final SyncController syncController =
         new SyncController(
             eventThread,

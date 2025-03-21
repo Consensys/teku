@@ -84,14 +84,15 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustody;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -207,6 +208,7 @@ public class BlockManagerTest {
             localRecentChainData,
             blockImporter,
             blockBlobSidecarsTrackersPool,
+            DataColumnSidecarRecoveringCustody.NOOP,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
@@ -220,7 +222,7 @@ public class BlockManagerTest {
         .initializeGenesisWithPayload(false, dataStructureUtil.randomExecutionPayloadHeader());
     assertThat(blockManager.start()).isCompleted();
     when(blobSidecarManager.createAvailabilityChecker(any()))
-        .thenReturn(BlobSidecarsAvailabilityChecker.NOOP);
+        .thenReturn(AvailabilityChecker.NOOP_BLOBSIDECAR);
     when(blockValidator.initiateBroadcastValidation(any(), any()))
         .thenReturn(blockBroadcastValidator);
     when(blockBroadcastValidator.getResult()).thenReturn(SafeFuture.completedFuture(SUCCESS));
@@ -348,6 +350,7 @@ public class BlockManagerTest {
             localRecentChainData,
             blockImporter,
             blockBlobSidecarsTrackersPool,
+            DataColumnSidecarRecoveringCustody.NOOP,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
@@ -861,7 +864,7 @@ public class BlockManagerTest {
         .isCompletedWithValueMatching(Optional::isEmpty);
 
     final SignedBeaconBlock block1 = signedBlockAndState1.getBlock();
-    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
+    final AvailabilityChecker<BlobSidecar> blobSidecarsAvailabilityChecker1 =
         createAvailabilityCheckerWithValidBlobSidecars(block1, blobSidecars1);
 
     assertThatBlockImport(block1).isCompletedWithValueMatching(BlockImportResult::isSuccessful);
@@ -883,7 +886,7 @@ public class BlockManagerTest {
     assertThatNothingStoredForSlotRoot(signedBlockAndState2.getSlotAndBlockRoot());
 
     final SignedBeaconBlock block2 = signedBlockAndState2.getBlock();
-    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker2 =
+    final AvailabilityChecker<BlobSidecar> blobSidecarsAvailabilityChecker2 =
         createAvailabilityCheckerWithValidBlobSidecars(block2, blobSidecars2);
 
     assertThatBlockImport(block2).isCompletedWithValueMatching(BlockImportResult::isSuccessful);
@@ -906,12 +909,11 @@ public class BlockManagerTest {
     assertThatNothingStoredForSlotRoot(signedBlockAndState3.getSlotAndBlockRoot());
 
     final SignedBeaconBlock block3 = signedBlockAndState3.getBlock();
-    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker3 =
+    final AvailabilityChecker<BlobSidecar> blobSidecarsAvailabilityChecker3 =
         createAvailabilityCheckerWithValidBlobSidecars(block3, blobSidecars3);
 
     assertThatBlockImport(block3).isCompletedWithValueMatching(BlockImportResult::isSuccessful);
     verify(blobSidecarsAvailabilityChecker3).getAvailabilityCheckResult();
-    assertThatStored(block3.getMessage(), blobSidecars3);
     // Have not changed
     assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValue(Optional.of(signedBlockAndState1.getSlot()));
@@ -932,7 +934,7 @@ public class BlockManagerTest {
 
     final SignedBeaconBlock block1 = signedBlockAndState1.getBlock();
     assertThat(block1.getSlot()).isEqualTo(UInt64.valueOf(10));
-    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
+    final AvailabilityChecker<BlobSidecar> blobSidecarsAvailabilityChecker1 =
         createAvailabilityCheckerWithValidBlobSidecars(block1, blobSidecars1);
 
     assertThatBlockImport(block1).isCompletedWithValueMatching(BlockImportResult::isSuccessful);
@@ -961,7 +963,7 @@ public class BlockManagerTest {
 
     final SignedBeaconBlock block1 = signedBlockAndState1.getBlock();
     assertThat(block1.getSlot()).isEqualTo(UInt64.valueOf(10));
-    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
+    final AvailabilityChecker<BlobSidecar> blobSidecarsAvailabilityChecker1 =
         createAvailabilityCheckerWithValidBlobSidecars(block1, blobSidecars1);
 
     assertThatBlockImport(block1).isCompletedWithValueMatching(BlockImportResult::isSuccessful);
@@ -990,7 +992,7 @@ public class BlockManagerTest {
         .isCompletedWithValueMatching(Optional::isEmpty);
 
     final SignedBeaconBlock block1 = signedBlockAndState1.getBlock();
-    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
+    final AvailabilityChecker<BlobSidecar> blobSidecarsAvailabilityChecker1 =
         createAvailabilityCheckerWithNotRequiredBlobSidecars(block1);
 
     assertThatBlockImport(block1).isCompletedWithValueMatching(BlockImportResult::isSuccessful);
@@ -1021,7 +1023,7 @@ public class BlockManagerTest {
         .isCompletedWithValueMatching(Optional::isEmpty);
 
     final SignedBeaconBlock block1 = signedBlockAndState1.getBlock();
-    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
+    final AvailabilityChecker<BlobSidecar> blobSidecarsAvailabilityChecker1 =
         createAvailabilityCheckerWithNotAvailableBlobSidecars(block1);
 
     assertThatBlockImport(block1)
@@ -1053,7 +1055,7 @@ public class BlockManagerTest {
 
     final SignedBeaconBlock block1 = signedBlockAndState1.getBlock();
     // pre-Deneb is used NOOP with default not required
-    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
+    final AvailabilityChecker<BlobSidecar> blobSidecarsAvailabilityChecker1 =
         createAvailabilityCheckerWithNotRequiredBlobSidecars(block1);
 
     assertThatBlockImport(block1).isCompletedWithValueMatching(BlockImportResult::isSuccessful);
@@ -1065,40 +1067,42 @@ public class BlockManagerTest {
         .isCompletedWithValueMatching(Optional::isEmpty);
   }
 
-  private BlobSidecarsAvailabilityChecker createAvailabilityCheckerWithValidBlobSidecars(
+  private AvailabilityChecker<BlobSidecar> createAvailabilityCheckerWithValidBlobSidecars(
       final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
     reset(blobSidecarManager);
-    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
-        mock(BlobSidecarsAvailabilityChecker.class);
+    @SuppressWarnings("unchecked")
+    final AvailabilityChecker<BlobSidecar> blobSidecarsAvailabilityChecker =
+        mock(AvailabilityChecker.class);
     when(blobSidecarManager.createAvailabilityChecker(eq(block)))
         .thenReturn(blobSidecarsAvailabilityChecker);
     when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
-        .thenReturn(
-            SafeFuture.completedFuture(BlobSidecarsAndValidationResult.validResult(blobSidecars)));
+        .thenReturn(SafeFuture.completedFuture(DataAndValidationResult.validResult(blobSidecars)));
     return blobSidecarsAvailabilityChecker;
   }
 
-  private BlobSidecarsAvailabilityChecker createAvailabilityCheckerWithNotRequiredBlobSidecars(
+  private AvailabilityChecker<BlobSidecar> createAvailabilityCheckerWithNotRequiredBlobSidecars(
       final SignedBeaconBlock block) {
     reset(blobSidecarManager);
-    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
-        mock(BlobSidecarsAvailabilityChecker.class);
+    @SuppressWarnings("unchecked")
+    final AvailabilityChecker<BlobSidecar> blobSidecarsAvailabilityChecker =
+        mock(AvailabilityChecker.class);
     when(blobSidecarManager.createAvailabilityChecker(eq(block)))
         .thenReturn(blobSidecarsAvailabilityChecker);
     when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
-        .thenReturn(BlobSidecarsAndValidationResult.NOT_REQUIRED_RESULT_FUTURE);
+        .thenReturn(DataAndValidationResult.notRequiredResultFuture());
     return blobSidecarsAvailabilityChecker;
   }
 
-  private BlobSidecarsAvailabilityChecker createAvailabilityCheckerWithNotAvailableBlobSidecars(
+  private AvailabilityChecker<BlobSidecar> createAvailabilityCheckerWithNotAvailableBlobSidecars(
       final SignedBeaconBlock block) {
     reset(blobSidecarManager);
-    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
-        mock(BlobSidecarsAvailabilityChecker.class);
+    @SuppressWarnings("unchecked")
+    final AvailabilityChecker<BlobSidecar> blobSidecarsAvailabilityChecker =
+        mock(AvailabilityChecker.class);
     when(blobSidecarManager.createAvailabilityChecker(eq(block)))
         .thenReturn(blobSidecarsAvailabilityChecker);
     when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
-        .thenReturn(SafeFuture.completedFuture(BlobSidecarsAndValidationResult.NOT_AVAILABLE));
+        .thenReturn(SafeFuture.completedFuture(DataAndValidationResult.notAvailable()));
     return blobSidecarsAvailabilityChecker;
   }
 
@@ -1160,6 +1164,7 @@ public class BlockManagerTest {
         localRecentChainData,
         blockImporter,
         blockBlobSidecarsTrackersPool,
+        DataColumnSidecarRecoveringCustody.NOOP,
         pendingBlocks,
         futureBlocks,
         invalidBlockRoots,

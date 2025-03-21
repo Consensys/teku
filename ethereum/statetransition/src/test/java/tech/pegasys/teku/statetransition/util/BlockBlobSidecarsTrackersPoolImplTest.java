@@ -51,6 +51,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -117,7 +118,10 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
                 historicalTolerance,
                 futureTolerance,
                 maxItems,
-                this::trackerFactory);
+                this::trackerFactory,
+                false,
+                KZG.NOOP,
+                __ -> {});
     // Set up slot
     blockBlobSidecarsTrackersPool.subscribeRequiredBlockRoot(requiredBlockRootEvents::add);
     blockBlobSidecarsTrackersPool.subscribeRequiredBlockRootDropped(
@@ -656,7 +660,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
                                 .getKZGCommitment()
                                 .getBytesCompressed())
                         .kzgCommitmentInclusionProof(
-                            miscHelpersDeneb.computeKzgCommitmentInclusionProof(
+                            miscHelpersDeneb.computeBlobKzgCommitmentInclusionProof(
                                 index, block.getMessage().getBody()))
                         .build())
             .toList();

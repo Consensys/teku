@@ -190,5 +190,9 @@ public interface SpecConfig extends NetworkingSpecConfig {
     return Optional.empty();
   }
 
+  default Optional<SpecConfigFulu> toVersionFulu() {
+    return Optional.empty();
+  }
+
   SpecMilestone getMilestone();
 }

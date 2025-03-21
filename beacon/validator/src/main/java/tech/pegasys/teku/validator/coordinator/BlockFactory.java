@@ -21,7 +21,9 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanc
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
@@ -41,4 +43,7 @@ public interface BlockFactory {
       SignedBeaconBlock maybeBlindedBlock, BlockPublishingPerformance blockPublishingPerformance);
 
   List<BlobSidecar> createBlobSidecars(SignedBlockContainer blockContainer);
+
+  List<DataColumnSidecar> createDataColumnSidecars(
+      SignedBlockContainer blockContainer, List<Blob> blobs);
 }

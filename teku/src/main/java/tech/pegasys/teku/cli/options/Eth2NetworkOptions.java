@@ -95,6 +95,17 @@ public class Eth2NetworkOptions {
   private String trustedSetup = null; // Depends on network configuration
 
   @Option(
+      names = {"--Xrust-kzg-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Use Rust KZG library LibPeerDASKZG with fallback to CKZG4844 for EIP-4844 methods",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean rustKzgEnabled = Eth2NetworkConfiguration.DEFAULT_RUST_KZG_ENABLED;
+
+  @Option(
       names = {"--Xfork-choice-late-block-reorg-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Allow late blocks to be reorged out if they meet the requirements.",
@@ -157,6 +168,14 @@ public class Eth2NetworkOptions {
       description = "Override the electra fork activation epoch.",
       arity = "1")
   private UInt64 electraForkEpoch;
+
+  @Option(
+      names = {"--Xnetwork-fulu-fork-epoch"},
+      hidden = true,
+      paramLabel = "<epoch>",
+      description = "Override the Fulu fork activation epoch.",
+      arity = "1")
+  private UInt64 fuluForkEpoch;
 
   @Option(
       names = {"--Xnetwork-total-terminal-difficulty-override"},
@@ -340,6 +359,9 @@ public class Eth2NetworkOptions {
     if (electraForkEpoch != null) {
       builder.electraForkEpoch(electraForkEpoch);
     }
+    if (fuluForkEpoch != null) {
+      builder.fuluForkEpoch(fuluForkEpoch);
+    }
     if (totalTerminalDifficultyOverride != null) {
       builder.totalTerminalDifficultyOverride(totalTerminalDifficultyOverride);
     }
@@ -362,7 +384,8 @@ public class Eth2NetworkOptions {
         .asyncBeaconChainMaxThreads(asyncBeaconChainMaxThreads)
         .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
         .epochsStoreBlobs(epochsStoreBlobs)
-        .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes);
+        .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes)
+        .rustKzgEnabled(rustKzgEnabled);
     asyncP2pMaxQueue.ifPresent(builder::asyncP2pMaxQueue);
     pendingAttestationsMaxQueue.ifPresent(builder::pendingAttestationsMaxQueue);
     asyncBeaconChainMaxQueue.ifPresent(builder::asyncBeaconChainMaxQueue);

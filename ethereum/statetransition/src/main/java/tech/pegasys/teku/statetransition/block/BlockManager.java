@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustody;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
@@ -49,6 +50,7 @@ public class BlockManager extends Service
   private final RecentChainData recentChainData;
   private final BlockImporter blockImporter;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
+  private final DataColumnSidecarRecoveringCustody dataColumnSidecarRecoveringCustody;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final BlockValidator blockValidator;
   private final TimeProvider timeProvider;
@@ -68,6 +70,7 @@ public class BlockManager extends Service
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final DataColumnSidecarRecoveringCustody dataColumnSidecarRecoveringCustody,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
@@ -78,6 +81,7 @@ public class BlockManager extends Service
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
+    this.dataColumnSidecarRecoveringCustody = dataColumnSidecarRecoveringCustody;
     this.pendingBlocks = pendingBlocks;
     this.futureBlocks = futureBlocks;
     this.invalidBlockRoots = invalidBlockRoots;
@@ -252,6 +256,7 @@ public class BlockManager extends Service
       final BlockBroadcastValidator blockBroadcastValidator,
       final Optional<RemoteOrigin> origin) {
     blockBlobSidecarsTrackersPool.onNewBlock(block, origin);
+    dataColumnSidecarRecoveringCustody.onNewBlock(block, origin);
 
     return blockImporter
         .importBlock(block, blockImportPerformance, blockBroadcastValidator)

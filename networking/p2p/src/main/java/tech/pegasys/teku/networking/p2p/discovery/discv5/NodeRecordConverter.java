@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ATTESTATION_SUBNET_ENR_FIELD;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.DAS_CUSTODY_GROUP_COUNT_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ETH2_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.SYNC_COMMITTEE_SUBNET_ENR_FIELD;
 
@@ -23,6 +24,7 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.schema.EnrField;
 import org.ethereum.beacon.discovery.schema.IdentitySchemaInterpreter;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
@@ -73,6 +75,11 @@ public class NodeRecordConverter {
     final SszBitvector syncCommitteeSubnets =
         parseField(nodeRecord, SYNC_COMMITTEE_SUBNET_ENR_FIELD, syncnetsSchema::fromBytes)
             .orElse(syncnetsSchema.getDefault());
+    final Optional<Integer> dasTotalCustodySubnetCount =
+        parseField(
+            nodeRecord,
+            DAS_CUSTODY_GROUP_COUNT_ENR_FIELD,
+            bytes -> UInt64.fromBytes(bytes).intValue());
 
     return new DiscoveryPeer(
         ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)),
@@ -80,7 +87,8 @@ public class NodeRecordConverter {
         address,
         enrForkId,
         persistentAttestationSubnets,
-        syncCommitteeSubnets);
+        syncCommitteeSubnets,
+        dasTotalCustodySubnetCount);
   }
 
   private static <T> Optional<T> parseField(
@@ -88,7 +96,7 @@ public class NodeRecordConverter {
     try {
       return Optional.ofNullable((Bytes) nodeRecord.get(fieldName)).map(parse);
     } catch (final Exception e) {
-      LOG.debug("Failed to parse ENR field {}", fieldName, e);
+      LOG.debug("Failed to parse ENR field {}: {}", fieldName, e);
       return Optional.empty();
     }
   }

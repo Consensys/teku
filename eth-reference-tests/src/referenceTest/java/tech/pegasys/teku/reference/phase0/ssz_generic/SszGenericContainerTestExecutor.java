@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
@@ -88,23 +89,16 @@ public class SszGenericContainerTestExecutor extends AbstractSszGenericTestExecu
   }
 
   private String format(final Object value) {
-    if (value instanceof SszByte) {
-      return Integer.toString(Byte.toUnsignedInt(((SszByte) value).get()));
-    } else if (value instanceof SszBytes4) {
-      return Long.toString(
-          ((SszBytes4) value).get().getWrappedBytes().toLong(ByteOrder.LITTLE_ENDIAN));
-    } else if (value instanceof SszBitlist) {
-      return ((SszBitlist) value).sszSerialize().toHexString();
-    } else if (value instanceof SszByteList) {
-      return ((SszByteList) value).sszSerialize().toHexString();
-    } else if (value instanceof SszBitvector) {
-      return ((SszBitvector) value).sszSerialize().toHexString();
-    } else if (value instanceof final SszCollection<?> list) {
-      return list.stream().map(this::format).toList().toString();
-    } else if (value instanceof SszContainer) {
-      return formatSszContainer((SszContainer) value).toString();
-    } else {
-      return value.toString();
-    }
+    return switch (value) {
+      case SszByte sszByte -> Integer.toString(Byte.toUnsignedInt(sszByte.get()));
+      case SszBytes4 sszBytes4 ->
+          Long.toString(sszBytes4.get().getWrappedBytes().toLong(ByteOrder.LITTLE_ENDIAN));
+      case SszBitlist sszBits -> sszBits.sszSerialize().toHexString();
+      case SszByteList sszBytes -> sszBytes.sszSerialize().toHexString();
+      case SszBitvector bitvector -> bitvector.sszSerialize().toHexString();
+      case SszCollection<?> list -> list.stream().map(this::format).toList().toString();
+      case SszContainer sszContainer -> formatSszContainer(sszContainer).toString();
+      default -> Objects.toString(value, null);
+    };
   }
 }

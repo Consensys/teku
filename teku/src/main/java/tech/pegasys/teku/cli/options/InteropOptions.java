@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import com.google.common.base.Strings;
 import java.nio.file.Path;
+import java.util.Optional;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -63,6 +64,14 @@ public class InteropOptions {
 
   @Option(
       hidden = true,
+      names = {"--Xinterop-number-of-blobs"},
+      paramLabel = "<INTEGER>",
+      description =
+          "Number of blobs generated. If absent then a random number of blobs is generated every slot")
+  private Integer interopNumberOfBlobs = null;
+
+  @Option(
+      hidden = true,
       names = {"--Xinterop-enabled"},
       paramLabel = "<BOOLEAN>",
       fallbackValue = "true",
@@ -72,15 +81,20 @@ public class InteropOptions {
   private boolean interopEnabled = false;
 
   public TekuConfiguration.Builder configure(final TekuConfiguration.Builder builder) {
-    return builder.interop(
-        interopBuilder ->
-            interopBuilder
-                .interopGenesisTime(interopGenesisTime)
-                .interopGenesisPayloadHeader(convertToPath(interopGenesisPayloadHeader))
-                .interopOwnedValidatorStartIndex(interopOwnerValidatorStartIndex)
-                .interopOwnedValidatorCount(interopOwnerValidatorCount)
-                .interopNumberOfValidators(interopNumberOfValidators)
-                .interopEnabled(interopEnabled));
+    return builder
+        .interop(
+            interopBuilder ->
+                interopBuilder
+                    .interopGenesisTime(interopGenesisTime)
+                    .interopGenesisPayloadHeader(convertToPath(interopGenesisPayloadHeader))
+                    .interopOwnedValidatorStartIndex(interopOwnerValidatorStartIndex)
+                    .interopOwnedValidatorCount(interopOwnerValidatorCount)
+                    .interopNumberOfValidators(interopNumberOfValidators)
+                    .interopEnabled(interopEnabled))
+        .executionLayer(
+            executionLayerBuilder ->
+                executionLayerBuilder.stubNumberOfGeneratedBlobs(
+                    Optional.ofNullable(interopNumberOfBlobs)));
   }
 
   private Path convertToPath(final String option) {

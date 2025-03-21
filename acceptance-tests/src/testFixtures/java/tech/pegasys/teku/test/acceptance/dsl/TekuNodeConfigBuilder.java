@@ -222,6 +222,19 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withFuluEpoch(final UInt64 fuluForkEpoch) {
+
+    mustBe(NodeType.BEACON_NODE);
+    LOG.debug("Xnetwork-fulu-fork-epoch={}", fuluForkEpoch);
+    configMap.put("Xnetwork-fulu-fork-epoch", fuluForkEpoch.toString());
+    specConfigModifier =
+        specConfigModifier.andThen(
+            specConfigBuilder ->
+                specConfigBuilder.fuluBuilder(
+                    fuluBuilder -> fuluBuilder.fuluForkEpoch(fuluForkEpoch)));
+    return this;
+  }
+
   public TekuNodeConfigBuilder withTotalTerminalDifficulty(final long totalTerminalDifficulty) {
     return withTotalTerminalDifficulty(UInt256.valueOf(totalTerminalDifficulty));
   }
@@ -579,6 +592,34 @@ public class TekuNodeConfigBuilder {
   public TekuNodeConfigBuilder withGraffiti(final String graffiti) {
     LOG.debug("validators-graffiti: {}", graffiti);
     configMap.put("validators-graffiti", graffiti);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withLogLevel(final String logLevel) {
+    LOG.debug("logging: {}", logLevel);
+    configMap.put("logging", logLevel);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withGossipScoringEnabled(final boolean gossipScoringEnabled) {
+    LOG.debug("Xp2p-gossip-scoring-enabled: {}", gossipScoringEnabled);
+    configMap.put("Xp2p-gossip-scoring-enabled", gossipScoringEnabled);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withDasExtraCustodyGroupCount(final int extraCustodySubnetCount) {
+    LOG.debug("Xdas-extra-custody-group-count: {}", extraCustodySubnetCount);
+    configMap.put("Xdas-extra-custody-group-count", extraCustodySubnetCount);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withStubBlobCount(final Optional<Integer> stubBlobCount) {
+    LOG.debug("Xinterop-number-of-blobs: {}", stubBlobCount);
+    if (stubBlobCount.isPresent()) {
+      configMap.put("Xinterop-number-of-blobs", stubBlobCount.get());
+    } else {
+      configMap.remove("Xinterop-number-of-blobs");
+    }
     return this;
   }
 

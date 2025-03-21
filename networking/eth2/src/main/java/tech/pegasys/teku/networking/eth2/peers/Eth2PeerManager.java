@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.async.RootCauseExceptionHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.SubnetSubscriptionService;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
@@ -44,6 +45,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
+import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -72,6 +75,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final Spec spec,
       final AsyncRunner asyncRunner,
       final CombinedChainDataClient combinedChainDataClient,
+      final DataColumnSidecarByRootCustody dataColumnSidecarCustody,
       final RecentChainData recentChainData,
       final MetricsSystem metricsSystem,
       final Eth2PeerFactory eth2PeerFactory,
@@ -80,7 +84,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final RpcEncoding rpcEncoding,
       final Duration eth2RpcPingInterval,
       final int eth2RpcOutstandingPingThreshold,
-      final Duration eth2StatusUpdateInterval) {
+      final Duration eth2StatusUpdateInterval,
+      final DasReqRespLogger dasLogger) {
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.eth2PeerFactory = eth2PeerFactory;
@@ -91,11 +96,13 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             asyncRunner,
             this,
             combinedChainDataClient,
+            dataColumnSidecarCustody,
             recentChainData,
             metricsSystem,
             statusMessageFactory,
             metadataMessagesFactory,
-            rpcEncoding);
+            rpcEncoding,
+            dasLogger);
     this.eth2RpcPingInterval = eth2RpcPingInterval;
     this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
     this.eth2StatusUpdateInterval = eth2StatusUpdateInterval;
@@ -104,6 +111,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   public static Eth2PeerManager create(
       final AsyncRunner asyncRunner,
       final CombinedChainDataClient combinedChainDataClient,
+      final DataColumnSidecarByRootCustody dataColumnSidecarCustody,
+      final MetadataMessagesFactory metadataMessagesFactory,
       final MetricsSystem metricsSystem,
       final SubnetSubscriptionService attestationSubnetService,
       final SubnetSubscriptionService syncCommitteeSubnetService,
@@ -119,9 +128,12 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final int peerRequestLimit,
       final Spec spec,
       final KZG kzg,
-      final DiscoveryNodeIdExtractor discoveryNodeIdExtractor) {
+      final DiscoveryNodeIdExtractor discoveryNodeIdExtractor,
+      final Optional<UInt64> custodyGroupCount,
+      final DasReqRespLogger dasLogger) {
 
-    final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
+    // FIXME: we have no guarantee here that it's synced already
+    custodyGroupCount.ifPresent(metadataMessagesFactory::updateCustodyGroupCount);
     attestationSubnetService.subscribeToUpdates(
         metadataMessagesFactory::updateAttestationSubnetIds);
     syncCommitteeSubnetService.subscribeToUpdates(
@@ -131,6 +143,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         spec,
         asyncRunner,
         combinedChainDataClient,
+        dataColumnSidecarCustody,
         combinedChainDataClient.getRecentChainData(),
         metricsSystem,
         new Eth2PeerFactory(
@@ -151,7 +164,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         rpcEncoding,
         eth2RpcPingInterval,
         eth2RpcOutstandingPingThreshold,
-        eth2StatusUpdateInterval);
+        eth2StatusUpdateInterval,
+        dasLogger);
   }
 
   public MetadataMessage getMetadataMessage() {
@@ -234,7 +248,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
               if (!peer.hasStatus()) {
                 LOG.trace(
                     "Disconnecting peer {} because initial status was not received", peer.getId());
-                peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT)
+                peer.disconnectCleanly(DisconnectReason.NO_STATUS_RECEIVED)
                     .ifExceptionGetsHereRaiseABug();
               }
             },
@@ -245,7 +259,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
               LOG.error(
                   "Error while waiting for peer {} to exchange status. Disconnecting",
                   peer.getId());
-              peer.disconnectImmediately(Optional.of(DisconnectReason.REMOTE_FAULT), true);
+              peer.disconnectImmediately(Optional.of(DisconnectReason.NO_STATUS_RECEIVED), true);
             });
   }
 

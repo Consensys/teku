@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -39,7 +40,10 @@ public class MetadataMessageSchemaAltair
 
   @Override
   public MetadataMessageAltair create(
-      final UInt64 seqNumber, final Iterable<Integer> attnets, final Iterable<Integer> syncnets) {
+      final UInt64 seqNumber,
+      final Iterable<Integer> attnets,
+      final Iterable<Integer> syncnets,
+      final Optional<UInt64> custodySubnetCount) {
     return new MetadataMessageAltair(
         this, seqNumber, getAttnestSchema().ofBits(attnets), getSyncnetsSchema().ofBits(syncnets));
   }
