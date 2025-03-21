@@ -39,8 +39,7 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
   private Integer numberOfCustodyGroups;
   private Integer dataColumnSidecarSubnetCount;
   private Integer custodyRequirement;
-  // TODO: remove hardcode once the config includes value
-  private Integer validatorCustodyRequirement = 4;
+  private Integer validatorCustodyRequirement;
   private Integer samplesPerSlot;
   private Integer minEpochsForDataColumnSidecarsRequests;
   private Integer maxRequestDataColumnSidecars;
