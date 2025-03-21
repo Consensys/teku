@@ -116,14 +116,16 @@ public class EventLogger {
       final int targetChainPeers) {
     final String syncProgressEventLog =
         String.format(
-            "Sync Info  *** Range: %s - %s (%d batches), Downloading: %d slots (%d batches), Ready: %d slots (%d batches), Batch import: %s, Target chain: %s (%s) with %s peers",
+            "Sync Info   *** Range: %s - %s (%d batches), Downloading: %s, Ready: %s, Batch import: %s, Target chain: %s (%s) with %s peers",
             fromSlot,
             toSlot,
             batches,
-            downloadingSlots,
-            downloadingBatches,
-            readySlots,
-            readyBatches,
+            downloadingSlots == 0
+                ? "none"
+                : String.format("%d slots (%d batches)", downloadingSlots, downloadingBatches),
+            readySlots == 0
+                ? "none"
+                : String.format("%d slots (%d batches)", readySlots, readyBatches),
             importing ? "in progress" : "waiting",
             LogFormatter.formatAbbreviatedHashRoot(targetChainBlockRoot),
             targetChainBlockSlot,
@@ -170,8 +172,8 @@ public class EventLogger {
     error(
         "Execution Client request failed. "
             + (couldBeAuthError
-                ? "Check the same JWT secret is configured for Teku and the Execution Client."
-                : EXECUTION_CLIENT_READINESS_USER_REMINDER),
+            ? "Check the same JWT secret is configured for Teku and the Execution Client."
+            : EXECUTION_CLIENT_READINESS_USER_REMINDER),
         Color.RED,
         error);
   }
