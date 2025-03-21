@@ -151,7 +151,7 @@ class ValidatorApiHandlerTest {
 
   private final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory =
       new BlockProductionAndPublishingPerformanceFactory(
-          StubTimeProvider.withTimeInMillis(0), __ -> ZERO, false, 0, 0, 0, 0);
+          StubTimeProvider.withTimeInMillis(0), __ -> ZERO, false, 0, 0, 0, 0, Optional.empty());
 
   private Spec spec;
   private UInt64 epochStartSlot;
@@ -1222,6 +1222,20 @@ class ValidatorApiHandlerTest {
   public void getSyncCommitteeSelectionProofShouldNotBeImplementedByBeaconNode() {
     assertThatThrownBy(() -> validatorApiHandler.getSyncCommitteeSelectionProof(List.of()))
         .isInstanceOf(UnsupportedOperationException.class);
+  }
+
+  @Test
+  public void shouldReportPerformanceWhenAttestationIsIgnored() {
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    when(attestationManager.addAttestation(any(), any()))
+        .thenReturn(completedFuture(InternalValidationResult.IGNORE));
+    final SafeFuture<List<SubmitDataError>> result =
+        validatorApiHandler.sendSignedAttestations(List.of(attestation));
+    verify(attestationManager)
+        .addAttestation(ValidatableAttestation.fromValidator(spec, attestation), Optional.empty());
+    verify(performanceTracker).saveProducedAttestation(attestation);
+    verify(dutyMetrics).onAttestationPublished(attestation.getData().getSlot());
+    assertThat(result).isCompletedWithValue(emptyList());
   }
 
   private boolean validatorIsLive(

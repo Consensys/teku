@@ -154,9 +154,27 @@ public class P2POptions {
       names = {"--p2p-private-key-file"},
       paramLabel = "<FILENAME>",
       description =
-          "This node's private key file. If not specified, uses or generates a key which is stored within the <beacon-data-dir>.",
+          "This node's private key file in LibP2P format. If not specified, uses or generates a key which is stored within the <beacon-data-dir>.",
       arity = "1")
   private String p2pPrivateKeyFile = null;
+
+  @Option(
+      names = {"--Xp2p-private-key-file-secp256k1"},
+      paramLabel = "<FILENAME>",
+      description =
+          "This node's private key file of Secp256k1 type. Only single private key option should be specified.",
+      hidden = true,
+      arity = "1")
+  private String p2pPrivateKeyFileSecp256k1 = null;
+
+  @Option(
+      names = {"--Xp2p-private-key-file-ecdsa"},
+      paramLabel = "<FILENAME>",
+      description =
+          "This node's private key file of ECDSA type. Only single private key option should be specified.",
+      hidden = true,
+      arity = "1")
+  private String p2pPrivateKeyFileEcdsa = null;
 
   @Option(
       names = {"--p2p-peer-lower-bound"},
@@ -263,6 +281,16 @@ public class P2POptions {
       arity = "1")
   private Integer forwardSyncBlocksRateLimit =
       SyncConfig.DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE;
+
+  @Option(
+      names = {"--Xp2p-sync-max-distance-from-head"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Maximum number slots to jump back when trying to find a common ancestor with target chain.",
+      hidden = true,
+      arity = "1")
+  private Integer forwardSyncMaxDistanceFromHead;
 
   @Option(
       names = {"--Xp2p-sync-blob-sidecars-rate-limit"},
@@ -507,6 +535,13 @@ public class P2POptions {
               if (p2pPrivateKeyFile != null) {
                 n.privateKeyFile(p2pPrivateKeyFile);
               }
+              if (p2pPrivateKeyFileSecp256k1 != null) {
+                n.privateKeyFileSecp256k1(p2pPrivateKeyFileSecp256k1);
+              }
+              if (p2pPrivateKeyFileEcdsa != null) {
+                n.privateKeyFileEcdsa(p2pPrivateKeyFileEcdsa);
+              }
+
               if (p2pAdvertisedPort != null) {
                 n.advertisedPort(OptionalInt.of(p2pAdvertisedPort));
               }
@@ -534,7 +569,8 @@ public class P2POptions {
                     .forwardSyncMaxBlocksPerMinute(forwardSyncBlocksRateLimit)
                     .forwardSyncMaxBlobSidecarsPerMinute(forwardSyncBlobSidecarsRateLimit)
                     .forwardSyncBatchSize(forwardSyncBatchSize)
-                    .forwardSyncMaxPendingBatches(forwardSyncMaxPendingBatches));
+                    .forwardSyncMaxPendingBatches(forwardSyncMaxPendingBatches)
+                    .forwardSyncMaxDistanceFromHead(forwardSyncMaxDistanceFromHead));
 
     if (subscribeAllSubnetsEnabled) {
       builder

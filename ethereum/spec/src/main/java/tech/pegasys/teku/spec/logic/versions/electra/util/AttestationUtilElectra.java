@@ -194,7 +194,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
             });
   }
 
-  private Attestation convertSingleAttestationToAggregated(
+  public Attestation convertSingleAttestationToAggregated(
       final SingleAttestation singleAttestation,
       final SszBitlist singleAttestationAggregationBits) {
     final AttestationElectraSchema attestationElectraSchema =
@@ -233,7 +233,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
         signatureVerifier);
   }
 
-  private SszBitlist getSingleAttestationAggregationBits(
+  public SszBitlist getSingleAttestationAggregationBits(
       final BeaconState state, final SingleAttestation singleAttestation) {
     final IntList committee =
         beaconStateAccessors.getBeaconCommittee(

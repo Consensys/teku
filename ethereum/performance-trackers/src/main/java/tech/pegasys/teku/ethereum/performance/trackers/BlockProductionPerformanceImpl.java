@@ -21,22 +21,39 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BlockProductionPerformanceImpl implements BlockProductionPerformance {
 
+  public static final String PREPARATION_ON_TICK = "preparation_on_tick";
+  public static final String PREPARATION_APPLY_DEFERRED_ATTESTATIONS =
+      "preparation_apply_deferred_attestations";
+  public static final String PREPARATION_PROCESS_HEAD = "preparation_process_head";
+  public static final String BEACON_BLOCK_PREPARED = "beacon_block_prepared";
+  public static final String RETRIEVE_STATE = "retrieve_state";
+  public static final String LOCAL_GET_PAYLOAD = "local_get_payload";
+  public static final String BUILDER_GET_HEADER = "builder_get_header";
+  public static final String BUILDER_BID_VALIDATED = "builder_bid_validated";
+  public static final String BEACON_BLOCK_CREATED = "beacon_block_created";
+  public static final String STATE_TRANSITION = "state_transition";
+  public static final String STATE_HASHING = "state_hashing";
+  public static final String GET_ATTESTATIONS_FOR_BLOCK = "get_attestations_for_block";
+  public static final String BEACON_BLOCK_PREPARATION_STARTED = "beacon_block_preparation_started";
+  public static final String TOTAL_PRODUCTION_TIME_LABEL = "total_production_time";
   private final PerformanceTracker performanceTracker;
   private final UInt64 slot;
   private final UInt64 slotTime;
   private final Map<Flow, Integer> lateThresholds;
-
+  private final BlockProductionMetrics blockProductionMetrics;
   private volatile Flow flow = Flow.LOCAL;
 
   BlockProductionPerformanceImpl(
       final TimeProvider timeProvider,
       final UInt64 slot,
       final UInt64 slotTime,
-      final Map<Flow, Integer> lateThresholds) {
+      final Map<Flow, Integer> lateThresholds,
+      final BlockProductionMetrics blockProductionMetrics) {
     this.performanceTracker = new PerformanceTracker(timeProvider);
     this.lateThresholds = lateThresholds;
     this.slot = slot;
     this.slotTime = slotTime;
+    this.blockProductionMetrics = blockProductionMetrics;
     performanceTracker.addEvent("start");
   }
 
@@ -48,66 +65,77 @@ public class BlockProductionPerformanceImpl implements BlockProductionPerformanc
     performanceTracker.report(
         slotTime,
         isLateEvent,
-        (event, stepDuration) -> {},
-        totalDuration -> {},
+        (event, stepDuration) -> blockProductionMetrics.recordValue(stepDuration, event.getLeft()),
+        totalDuration ->
+            blockProductionMetrics.recordValue(totalDuration, TOTAL_PRODUCTION_TIME_LABEL),
         (totalDuration, timings) ->
             EventLogger.EVENT_LOG.slowBlockProductionEvent(slot, totalDuration, timings));
   }
 
   @Override
   public void prepareOnTick() {
-    performanceTracker.addEvent("preparation_on_tick");
+    performanceTracker.addEvent(PREPARATION_ON_TICK);
   }
 
   @Override
   public void prepareApplyDeferredAttestations() {
-    performanceTracker.addEvent("preparation_apply_deferred_attestations");
+    performanceTracker.addEvent(PREPARATION_APPLY_DEFERRED_ATTESTATIONS);
   }
 
   @Override
   public void prepareProcessHead() {
-    performanceTracker.addEvent("preparation_process_head");
+    performanceTracker.addEvent(PREPARATION_PROCESS_HEAD);
   }
 
   @Override
   public void beaconBlockPrepared() {
-    performanceTracker.addEvent("beacon_block_prepared");
+    performanceTracker.addEvent(BEACON_BLOCK_PREPARED);
   }
 
   @Override
   public void getStateAtSlot() {
-    performanceTracker.addEvent("retrieve_state");
+    performanceTracker.addEvent(RETRIEVE_STATE);
   }
 
   @Override
   public void engineGetPayload() {
-    performanceTracker.addEvent("local_get_payload");
+    performanceTracker.addEvent(LOCAL_GET_PAYLOAD);
   }
 
   @Override
   public void builderGetHeader() {
-    performanceTracker.addEvent("builder_get_header");
+    performanceTracker.addEvent(BUILDER_GET_HEADER);
     // set the flow to BUILDER when builderGetHeader has been called
     flow = Flow.BUILDER;
   }
 
   @Override
   public void builderBidValidated() {
-    performanceTracker.addEvent("builder_bid_validated");
+    performanceTracker.addEvent(BUILDER_BID_VALIDATED);
   }
 
   @Override
   public void beaconBlockCreated() {
-    performanceTracker.addEvent("beacon_block_created");
+    performanceTracker.addEvent(BEACON_BLOCK_CREATED);
   }
 
   @Override
   public void stateTransition() {
-    performanceTracker.addEvent("state_transition");
+    performanceTracker.addEvent(STATE_TRANSITION);
   }
 
   @Override
   public void stateHashing() {
-    performanceTracker.addEvent("state_hashing");
+    performanceTracker.addEvent(STATE_HASHING);
+  }
+
+  @Override
+  public void getAttestationsForBlock() {
+    performanceTracker.addEvent(GET_ATTESTATIONS_FOR_BLOCK);
+  }
+
+  @Override
+  public void beaconBlockPreparationStarted() {
+    performanceTracker.addEvent(BEACON_BLOCK_PREPARATION_STARTED);
   }
 }

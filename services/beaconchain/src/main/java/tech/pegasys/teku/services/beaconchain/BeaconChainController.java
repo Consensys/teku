@@ -62,6 +62,7 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionClientVersionChannel;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionClientVersionProvider;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionAndPublishingPerformanceFactory;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionMetrics;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -1312,6 +1313,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
       dataColumnSidecarGossipChannel = DataColumnSidecarGossipChannel.NOOP;
     }
 
+    final Optional<BlockProductionMetrics> blockProductionMetrics =
+        beaconConfig.getMetricsConfig().isBlockProductionPerformanceEnabled()
+            ? Optional.of(BlockProductionMetrics.create(metricsSystem))
+            : Optional.empty();
+
     final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory =
         new BlockProductionAndPublishingPerformanceFactory(
             timeProvider,
@@ -1320,7 +1326,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             beaconConfig.getMetricsConfig().getBlockProductionPerformanceWarningLocalThreshold(),
             beaconConfig.getMetricsConfig().getBlockProductionPerformanceWarningBuilderThreshold(),
             beaconConfig.getMetricsConfig().getBlockPublishingPerformanceWarningLocalThreshold(),
-            beaconConfig.getMetricsConfig().getBlockPublishingPerformanceWarningBuilderThreshold());
+            beaconConfig.getMetricsConfig().getBlockPublishingPerformanceWarningBuilderThreshold(),
+            blockProductionMetrics);
 
     final DutyMetrics dutyMetrics =
         DutyMetrics.create(metricsSystem, timeProvider, recentChainData, spec);
@@ -1409,7 +1416,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initAttestationManager() {
-    pendingAttestations = poolFactory.createPendingPoolForAttestations(spec);
+    pendingAttestations =
+        poolFactory.createPendingPoolForAttestations(
+            spec, beaconConfig.eth2NetworkConfig().getPendingAttestationsMaxQueue());
     final FutureItems<ValidatableAttestation> futureAttestations =
         FutureItems.create(
             ValidatableAttestation::getEarliestSlotForForkChoiceProcessing,
@@ -1762,7 +1771,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             executionLayer,
             recentChainData,
-            proposersDataManager);
+            proposersDataManager,
+            beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled());
   }
 
   private Optional<Eth1Address> getProposerDefaultFeeRecipient() {

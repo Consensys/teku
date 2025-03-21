@@ -18,9 +18,11 @@ import static tech.pegasys.teku.infrastructure.logging.Converter.gweiToEth;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
 
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -36,14 +38,20 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil.BlockRewardData;
+import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
@@ -55,25 +63,28 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 @Fork(1)
 @State(Scope.Thread)
 public class AggregatingAttestationPoolBenchmark {
-  private static final Spec SPEC = TestSpecFactory.createMainnetDeneb();
+  private static final Spec SPEC = TestSpecFactory.createMainnetElectra();
 
   // pool dump can be created via something similar to
-  // https://github.com/tbenr/teku/commit/bd37ec8f5c6ce02edb3e375a1561e1d934b7d191
+  // https://github.com/tbenr/teku/commit/08ab0e3ac6e71a9d6340ae30757c63f922f2c968
   // state and actual block can be obtained the usual ways
+
+  // dumps files in https://drive.google.com/drive/folders/11vGCDsZej2nap_3JT6Z6NqyxL3rnJb3y
 
   // a reference file can be obtained here
   // https://drive.google.com/file/d/139bA7r88riFODZ7S0FpvtO7hmWmdC_XC/view?usp=drive_link
-  private static final String STATE_PATH =
-      "BeaconStateDeneb_3630479_03664f196162fb81a4406c508674dd1ede09b883d37d0f3d0f076897f68741d2.ssz";
+  private static final String STATE_PATH = "parentBlockState_3816770.ssz";
 
   // a reference file can be obtained here
   // https://drive.google.com/file/d/1I5vXK-x8ZH9wh40wNf1oACXeF_U3to8J/view?usp=drive_link
-  private static final String POOL_DUMP_PATH = "attestations_3630479.multi_ssz";
+  private static final String POOL_DUMP_PATH = "attestations_3816773.multi_ssz";
+  private static final UInt64 SLOT = UInt64.valueOf(3816773);
 
   // a reference file can be obtained here
   // https://drive.google.com/file/d/1PN0OToyNOV0SyjeQaS7oF3J4cKbmy1nX/view?usp=drive_link
-  private static final String ACTUAL_BLOCK_PATH =
-      "block-3630480-e652bd51c7e4e528fea0728a3ad96f86ceb92e9daa227f315e96a9884ceb187b.ssz";
+  private static final Optional<String> ACTUAL_BLOCK_PATH =
+      Optional.of(
+          "block-3816773-456c9819a4c1e792ba8b1f71119628aed2a4d1e0d2c66199fbc763832937421b.ssz");
 
   private BeaconState state;
   private BeaconState newBlockState;
@@ -100,12 +111,51 @@ public class AggregatingAttestationPoolBenchmark {
 
     this.attestationForkChecker = new AttestationForkChecker(SPEC, state);
 
-    var attestationSchema = SPEC.getGenesisSpec().getSchemaDefinitions().getAttestationSchema();
+    final long[] singleAttestationCount = {0};
+    final long[] aggregatedAttestationCount = {0};
 
+    var attestationSchema = SPEC.getGenesisSpec().getSchemaDefinitions().getAttestationSchema();
+    var singleAttestationSchema =
+        SPEC.getGenesisSpec()
+            .getSchemaDefinitions()
+            .toVersionElectra()
+            .map(SchemaDefinitionsElectra::getSingleAttestationSchema);
+    var attestationUtil =
+        (AttestationUtilElectra) SPEC.forMilestone(SpecMilestone.ELECTRA).getAttestationUtil();
     try (final Stream<String> attestationLinesStream = Files.lines(Paths.get(POOL_DUMP_PATH))) {
       attestationLinesStream
-          .map(line -> attestationSchema.sszDeserialize(Bytes.fromHexString(line)))
-          .map(attestation -> ValidatableAttestation.from(SPEC, attestation))
+          .map(
+              line -> {
+                try {
+                  aggregatedAttestationCount[0]++;
+                  return attestationSchema.sszDeserialize(Bytes.fromHexString(line));
+                } catch (Exception e) {
+                  aggregatedAttestationCount[0]--;
+                  singleAttestationCount[0]++;
+                  return singleAttestationSchema
+                      .orElseThrow()
+                      .sszDeserialize(Bytes.fromHexString(line));
+                }
+              })
+          .map(
+              attestation -> {
+                var validatableAttestation = ValidatableAttestation.from(SPEC, attestation);
+
+                if (attestation.isSingleAttestation()) {
+                  final SszBitlist singleAttestationAggregationBits =
+                      attestationUtil.getSingleAttestationAggregationBits(
+                          state, (SingleAttestation) attestation);
+
+                  final Attestation convertedAttestation =
+                      attestationUtil.convertSingleAttestationToAggregated(
+                          (SingleAttestation) attestation, singleAttestationAggregationBits);
+
+                  validatableAttestation.convertToAggregatedFormatFromSingleAttestation(
+                      convertedAttestation);
+                }
+
+                return validatableAttestation;
+              })
           .forEach(
               attestation -> {
                 attestation.saveCommitteeShufflingSeedAndCommitteesSize(state);
@@ -113,9 +163,15 @@ public class AggregatingAttestationPoolBenchmark {
               });
     }
 
-    this.newBlockState = SPEC.processSlots(state, state.getSlot().increment());
+    this.newBlockState = SPEC.processSlots(state, SLOT);
 
-    System.out.println("init done. Pool size: " + pool.getSize());
+    System.out.println(
+        "init done. Pool size: "
+            + pool.getSize()
+            + " singleAttestationCount: "
+            + singleAttestationCount[0]
+            + " aggregatedAttestationCount: "
+            + aggregatedAttestationCount[0]);
   }
 
   @Benchmark
@@ -124,39 +180,48 @@ public class AggregatingAttestationPoolBenchmark {
     bh.consume(attestationsForBlock);
   }
 
-  public void printBlockRewardData() throws Exception {
+  public void printBlockRewardData() {
     final BlockRewardCalculatorUtil blockRewardCalculatorUtil = new BlockRewardCalculatorUtil(SPEC);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(SPEC);
-    final UInt64 blockSlot = state.getSlot().increment();
 
     var block =
         dataStructureUtil
-            .blockBuilder(blockSlot.longValue())
-            .slot(blockSlot)
+            .blockBuilder(SLOT.longValue())
+            .slot(SLOT)
             .attestations(pool.getAttestationsForBlock(newBlockState, attestationForkChecker))
             .build()
             .getImmediately();
 
-    BlockRewardData blockRewardData = blockRewardCalculatorUtil.getBlockRewardData(block, state);
+    // NOTE: the problem with rewards is that we don't feed the pool with the "seen" attestations
+    // in theory we should feed the pool with recent blocks' attestations via
+    // onAttestationsIncludedInBlock to replicate the actual pool behavior
+    final BlockRewardData blockRewardData =
+        blockRewardCalculatorUtil.getBlockRewardData(block, state);
     System.out.println(
         "Block attestation rewards: "
             + gweiToEth(UInt64.valueOf(blockRewardData.attestations()))
             + " ETH");
 
-    final SignedBeaconBlock actualBlock;
-    try (final FileInputStream fileInputStream = new FileInputStream(ACTUAL_BLOCK_PATH)) {
-      actualBlock =
-          SPEC.getGenesisSpec()
-              .getSchemaDefinitions()
-              .getSignedBeaconBlockSchema()
-              .sszDeserialize(Bytes.wrap(fileInputStream.readAllBytes()));
-    }
+    ACTUAL_BLOCK_PATH.ifPresent(
+        actualBlockPath -> {
+          final SignedBeaconBlock actualBlock;
+          try (final FileInputStream fileInputStream = new FileInputStream(actualBlockPath)) {
+            actualBlock =
+                SPEC.getGenesisSpec()
+                    .getSchemaDefinitions()
+                    .getSignedBeaconBlockSchema()
+                    .sszDeserialize(Bytes.wrap(fileInputStream.readAllBytes()));
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
 
-    blockRewardData = blockRewardCalculatorUtil.getBlockRewardData(actualBlock.getMessage(), state);
-    System.out.println(
-        "Block attestation rewards: "
-            + gweiToEth(UInt64.valueOf(blockRewardData.attestations()))
-            + " ETH (actual block)");
+          final BlockRewardData actualBlockRewardData =
+              blockRewardCalculatorUtil.getBlockRewardData(actualBlock.getMessage(), state);
+          System.out.println(
+              "Block attestation rewards: "
+                  + gweiToEth(UInt64.valueOf(actualBlockRewardData.attestations()))
+                  + " ETH (actual block)");
+        });
   }
 
   public static void main(String[] args) throws Exception {
@@ -168,7 +233,7 @@ public class AggregatingAttestationPoolBenchmark {
         new Blackhole(
             "Today's password is swordfish. I understand instantiating Blackholes directly is dangerous.");
 
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 1; i++) {
       benchmark.getAttestationsForBlock(bh);
     }
   }

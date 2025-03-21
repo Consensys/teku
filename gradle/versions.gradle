@@ -77,7 +77,7 @@ dependencyManagement {
 
     dependency 'javax.annotation:javax.annotation-api:1.3.2'
 
-    dependencySet(group: 'io.tmio', version: '2.4.2') {
+    dependencySet(group: 'io.consensys.tuweni', version: '2.7.0') {
       entry 'tuweni-bytes'
       entry 'tuweni-crypto'
       entry 'tuweni-ssz'
@@ -141,12 +141,12 @@ dependencyManagement {
 
     dependency 'io.prometheus:prometheus-metrics-bom:1.3.5'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '25.2.0') {
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '25.3.0') {
       entry('metrics-core')
       entry('core')
       entry('config')
     }
-    dependencySet(group: 'org.hyperledger.besu', version: '25.2.0') {
+    dependencySet(group: 'org.hyperledger.besu', version: '25.3.0') {
       entry('besu-datatypes')
       entry('evm')
       entry('plugin-api')
@@ -159,10 +159,10 @@ dependencyManagement {
 
     // discovery includes tuweni libraries under a different name so version resolution doesn't work
     // exclude them here and leave them to be included on the classpath by the version we use
-    dependency('tech.pegasys.discovery:discovery:24.12.0') {
-      exclude 'org.apache.tuweni:bytes'
-      exclude 'org.apache.tuweni:crypto'
-      exclude 'org.apache.tuweni:units'
+    dependency('tech.pegasys.discovery:discovery:25.3.0') {
+      exclude 'io.consensys.tuweni:bytes'
+      exclude 'io.consensys.tuweni:crypto'
+      exclude 'io.consensys.tuweni:units'
     }
 
     dependencySet(group: 'org.jupnp', version: '3.0.3') {

@@ -95,23 +95,30 @@ public class ProtoNode {
 
   public void adjustWeight(final long delta) {
     if (delta < 0) {
-      UInt64 deltaAbsoluteValue = UInt64.valueOf(Math.abs(delta));
-      if (deltaAbsoluteValue.isGreaterThan(weight)) {
-        throw new RuntimeException(
-            "ProtoNode: Delta to be subtracted is greater than node weight for block "
-                + blockRoot
-                + " ("
-                + blockSlot
-                + "). Attempting to subtract "
-                + deltaAbsoluteValue
-                + " from "
-                + weight);
+      final long absoluteDelta = -delta;
+      try {
+        weight = weight.minus(absoluteDelta);
+      } catch (final ArithmeticException __) {
+        LOG.error(
+            "PLEASE FIX OR REPORT ProtoArray adjustWeight bug: Delta to be subtracted causes uint64 underflow for block {} ({}). Attempting to subtract {} from {}",
+            blockRoot,
+            blockSlot,
+            absoluteDelta,
+            weight);
+        weight = UInt64.ZERO;
       }
-      weight = weight.minus(deltaAbsoluteValue);
+
     } else {
-      weight = weight.safePlus(delta);
-      if (weight.equals(UInt64.MAX_VALUE)) {
-        LOG.trace("Unable to add delta {} to weight {}", delta, weight);
+      try {
+        weight = weight.plus(delta);
+      } catch (final ArithmeticException __) {
+        LOG.error(
+            "PLEASE FIX OR REPORT ProtoArray adjustWeight bug: Delta to be added causes uint64 overflow for block {} ({}). Attempting to add {} to {}",
+            blockRoot,
+            blockSlot,
+            delta,
+            weight);
+        weight = UInt64.MAX_VALUE;
       }
     }
   }
