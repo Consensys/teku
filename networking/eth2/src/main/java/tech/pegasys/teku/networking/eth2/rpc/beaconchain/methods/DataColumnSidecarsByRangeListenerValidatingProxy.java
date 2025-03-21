@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType.DATA_COLUMN_SIDECAR_SLOT_NOT_IN_RANGE;
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType.DATA_COLUMN_SIDECAR_UNEXPECTED_IDENTIFIER;
+import static tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_HISTOGRAM;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -23,7 +24,6 @@ import java.util.Set;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
@@ -58,16 +58,8 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
     this.endSlot = startSlot.plus(count).minusMinZero(1);
     this.columns = new HashSet<>(columns);
     this.dataColumnSidecarInclusionProofVerificationTimeSeconds =
-        new MetricsHistogram(
-            metricsSystem,
-            timeProvider,
-            TekuMetricCategory.BEACON,
-            "data_column_sidecar_inclusion_proof_verification_seconds",
-            "Time taken to verify data column sidecar inclusion proof",
-            new double[] {
-              0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04, 0.05, 0.1,
-              0.5, 1.0
-            });
+        DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_HISTOGRAM.apply(
+            metricsSystem, timeProvider);
   }
 
   @Override
