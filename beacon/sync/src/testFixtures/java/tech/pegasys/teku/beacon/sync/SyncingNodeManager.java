@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -142,7 +143,7 @@ public class SyncingNodeManager {
     final PendingPool<SignedBeaconBlock> pendingBlocks =
         poolFactory.createPendingPoolForBlocks(spec);
     final PendingPool<ValidatableAttestation> pendingAttestations =
-        poolFactory.createPendingPoolForAttestations(spec);
+        poolFactory.createPendingPoolForAttestations(spec, 10000);
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
     final Map<Bytes32, BlockImportResult> invalidBlockRoots = LimitedMap.createSynchronizedLRU(500);
@@ -200,6 +201,7 @@ public class SyncingNodeManager {
             BlockBlobSidecarsTrackersPool.NOOP,
             new NoOpMetricsSystem(),
             SyncConfig.DEFAULT_FORWARD_SYNC_BATCH_SIZE,
+            OptionalInt.empty(),
             spec);
 
     final ForwardSyncService syncService = new SinglePeerSyncService(syncManager, recentChainData);

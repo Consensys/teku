@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
@@ -22,8 +23,10 @@ import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT
 import static tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig.DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
 import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT;
 import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT_IPV6;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
 
+import com.google.common.base.Supplier;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
@@ -32,8 +35,10 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
-import tech.pegasys.teku.networking.p2p.network.config.FilePrivateKeySource;
+import tech.pegasys.teku.networking.p2p.network.config.GeneratingFilePrivateKeySource;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
+import tech.pegasys.teku.networking.p2p.network.config.PrivateKeySource;
+import tech.pegasys.teku.networking.p2p.network.config.TypedFilePrivateKeySource;
 
 public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
@@ -59,8 +64,11 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(networkConfig.getAdvertisedIps()).containsExactly("127.200.0.1");
     assertThat(networkConfig.getNetworkInterfaces()).containsExactly("127.100.0.1");
     assertThat(networkConfig.getListenPort()).isEqualTo(4321);
-    assertThat(networkConfig.getPrivateKeySource()).containsInstanceOf(FilePrivateKeySource.class);
-    assertThat(((FilePrivateKeySource) networkConfig.getPrivateKeySource().get()).getFileName())
+    assertThat(networkConfig.getPrivateKeySource())
+        .containsInstanceOf(GeneratingFilePrivateKeySource.class);
+    assertThat(
+            ((GeneratingFilePrivateKeySource) networkConfig.getPrivateKeySource().get())
+                .getFileName())
         .isEqualTo("/the/file");
 
     final SyncConfig syncConfig = tekuConfig.sync();
@@ -191,11 +199,48 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--p2p-private-key-file", "/some/file");
     assertThat(tekuConfiguration.network().getPrivateKeySource())
-        .containsInstanceOf(FilePrivateKeySource.class);
+        .containsInstanceOf(GeneratingFilePrivateKeySource.class);
     assertThat(
-            ((FilePrivateKeySource) tekuConfiguration.network().getPrivateKeySource().get())
+            ((GeneratingFilePrivateKeySource)
+                    tekuConfiguration.network().getPrivateKeySource().get())
                 .getFileName())
         .isEqualTo("/some/file");
+  }
+
+  @Test
+  public void privateKeyFile_mustBeSingle() {
+    final Supplier<TekuConfiguration> tekuConfigurationSupplier =
+        () ->
+            getTekuConfigurationFromArguments(
+                "--p2p-private-key-file",
+                "/some/file",
+                "--Xp2p-private-key-file-ecdsa",
+                "/some/file2");
+    assertThatThrownBy(tekuConfigurationSupplier::get)
+        .isInstanceOf(AssertionError.class)
+        .hasMessageContaining("Only single private key option should be specified");
+  }
+
+  @Test
+  public void privateKeyFileECDSA_shouldBeParsed() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xp2p-private-key-file-ecdsa", "/some/file");
+    assertThat(tekuConfiguration.network().getPrivateKeySource())
+        .containsInstanceOf(TypedFilePrivateKeySource.class);
+    assertEquals(
+        PrivateKeySource.Type.ECDSA,
+        tekuConfiguration.network().getPrivateKeySource().get().getType().get());
+  }
+
+  @Test
+  public void privateKeyFileSECP256K1_shouldBeParsed() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xp2p-private-key-file-secp256k1", "/some/file");
+    assertThat(tekuConfiguration.network().getPrivateKeySource())
+        .containsInstanceOf(TypedFilePrivateKeySource.class);
+    assertEquals(
+        PrivateKeySource.Type.SECP256K1,
+        tekuConfiguration.network().getPrivateKeySource().get().getType().get());
   }
 
   @Test
@@ -269,6 +314,19 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void syncMaxDistanceFromHead_shouldBeUnsetByDefault() {
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+    assertThat(tekuConfiguration.sync().getForwardSyncMaxDistanceFromHead()).isEmpty();
+  }
+
+  @Test
+  public void syncMaxDistanceFromHead_shouldBeSettable() {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xp2p-sync-max-distance-from-head", "10");
+    assertThat(tekuConfiguration.sync().getForwardSyncMaxDistanceFromHead()).hasValue(10);
+  }
+
+  @Test
   public void historicalSyncBatchSize_greaterThanMessageSizeShouldThrowException() {
     assertThatThrownBy(
             () -> createConfigBuilder().sync(s -> s.historicalSyncBatchSize(3000)).build())
@@ -293,6 +351,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS);
     assertThat(tekuConfiguration.p2p().getBatchVerifyQueueCapacity())
         .isEqualTo(DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS);
+    assertThat(tekuConfiguration.eth2NetworkConfiguration().getPendingAttestationsMaxQueue())
+        .isEqualTo(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS);
   }
 
   @Test
@@ -338,12 +398,16 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
             "--Xvalidator-executor-max-queue-size",
             "15120",
             "--Xp2p-batch-verify-signatures-queue-capacity",
-            "15220");
+            "15220",
+            "--Xnetwork-pending-attestations-max-queue",
+            "15330");
 
     assertThat(tekuConfiguration.eth2NetworkConfiguration().getAsyncP2pMaxQueue())
         .isEqualTo(15_000);
     assertThat(tekuConfiguration.eth2NetworkConfiguration().getAsyncBeaconChainMaxQueue())
         .isEqualTo(15_020);
+    assertThat(tekuConfiguration.eth2NetworkConfiguration().getPendingAttestationsMaxQueue())
+        .isEqualTo(15330);
     assertThat(tekuConfiguration.validatorClient().getValidatorConfig().getExecutorMaxQueueSize())
         .isEqualTo(15_120);
     assertThat(tekuConfiguration.p2p().getBatchVerifyQueueCapacity()).isEqualTo(15_220);

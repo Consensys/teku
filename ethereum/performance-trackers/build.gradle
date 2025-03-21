@@ -1,4 +1,6 @@
 dependencies {
+  implementation 'org.hyperledger.besu:plugin-api'
+  implementation project(':infrastructure:metrics')
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:time')
 }

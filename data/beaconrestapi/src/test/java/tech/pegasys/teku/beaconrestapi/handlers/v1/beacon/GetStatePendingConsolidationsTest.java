@@ -34,19 +34,19 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
-import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
+import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 
-public class GetStatePendingPartialWithdrawalsTest
+public class GetStatePendingConsolidationsTest
     extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
 
   @BeforeEach
   public void setup() {
 
-    final GetStatePendingPartialWithdrawals pendingWithdrawalsHandler =
-        new GetStatePendingPartialWithdrawals(chainDataProvider, schemaDefinitionCache);
+    final GetStatePendingConsolidations pendingConsolidationsHandler =
+        new GetStatePendingConsolidations(chainDataProvider, schemaDefinitionCache);
     initialise(SpecMilestone.ELECTRA);
     genesis();
-    setHandler(pendingWithdrawalsHandler);
+    setHandler(pendingConsolidationsHandler);
     request.setPathParameter("state_id", "head");
   }
 
@@ -72,17 +72,17 @@ public class GetStatePendingPartialWithdrawalsTest
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    final PendingPartialWithdrawal withdrawal = dataStructureUtil.randomPendingPartialWithdrawal();
-    final ObjectAndMetaData<List<PendingPartialWithdrawal>> responseData =
-        new ObjectAndMetaData<>(List.of(withdrawal), SpecMilestone.ELECTRA, false, true, false);
+    final PendingConsolidation pendingConsolidation =
+        dataStructureUtil.randomPendingConsolidation();
+    final ObjectAndMetaData<List<PendingConsolidation>> responseData =
+        new ObjectAndMetaData<>(
+            List.of(pendingConsolidation), SpecMilestone.ELECTRA, false, true, false);
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =
         String.format(
             "{\"version\":\"electra\",\"execution_optimistic\":false,\"finalized\":false,"
-                + "\"data\":[{\"validator_index\":\"%s\",\"amount\":\"%s\",\"withdrawable_epoch\":\"%s\"}]}",
-            withdrawal.getValidatorIndex(),
-            withdrawal.getAmount(),
-            withdrawal.getWithdrawableEpoch());
+                + "\"data\":[{\"source_index\":\"%s\",\"target_index\":\"%s\"}]}",
+            pendingConsolidation.getSourceIndex(), pendingConsolidation.getTargetIndex());
     assertThat(data).isEqualTo(expected);
   }
 
@@ -90,13 +90,13 @@ public class GetStatePendingPartialWithdrawalsTest
   void metadata_shouldHandle200OctetStream() throws IOException {
     final BeaconStateElectra state =
         dataStructureUtil.randomBeaconState().toVersionElectra().orElseThrow();
-    final PendingPartialWithdrawal pendingPartialWithdrawal =
-        dataStructureUtil.randomPendingPartialWithdrawal();
-    final SszList<PendingPartialWithdrawal> deposits =
-        state.getPendingPartialWithdrawals().getSchema().of(pendingPartialWithdrawal);
-    final ObjectAndMetaData<SszList<PendingPartialWithdrawal>> responseData =
-        new ObjectAndMetaData<>(deposits, SpecMilestone.ELECTRA, false, true, false);
+    final PendingConsolidation pendingConsolidation =
+        dataStructureUtil.randomPendingConsolidation();
+    final SszList<PendingConsolidation> consolidations =
+        state.getPendingConsolidations().getSchema().of(pendingConsolidation);
+    final ObjectAndMetaData<SszList<PendingConsolidation>> responseData =
+        new ObjectAndMetaData<>(consolidations, SpecMilestone.ELECTRA, false, true, false);
     final byte[] data = getResponseSszFromMetadata(handler, SC_OK, responseData);
-    assertThat(Bytes.of(data)).isEqualTo(deposits.sszSerialize());
+    assertThat(Bytes.of(data)).isEqualTo(consolidations.sszSerialize());
   }
 }

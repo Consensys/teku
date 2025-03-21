@@ -24,14 +24,17 @@ import static tech.pegasys.teku.beacon.sync.forward.singlepeer.CommonAncestor.BL
 import static tech.pegasys.teku.beacon.sync.forward.singlepeer.CommonAncestor.SLOTS_TO_JUMP_BACK_EXPONENTIAL_BASE;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
+import java.util.OptionalInt;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 
 public class CommonAncestorTest extends AbstractSyncTest {
-
-  private final CommonAncestor commonAncestor = new CommonAncestor(recentChainData, 4);
+  private final CommonAncestor commonAncestor =
+      new CommonAncestor(recentChainData, 4, OptionalInt.empty());
+  private final CommonAncestor commonAncestorWithMaxHeadDistance =
+      new CommonAncestor(recentChainData, 4, OptionalInt.of(2));
 
   @Test
   void shouldNotSearchCommonAncestorWithoutSufficientLocalData() {
@@ -172,6 +175,108 @@ public class CommonAncestorTest extends AbstractSyncTest {
     assertThatSafeFuture(
             commonAncestor.getCommonAncestor(peer, firstNonFinalSlot, status.getHeadSlot()))
         .isCompletedWithValue(firstNonFinalSlot);
+  }
+
+  @Test
+  void shouldCompleteExceptionallyIfMaxHeadDistanceIsReached() {
+    final UInt64 firstNonFinalSlot = UInt64.valueOf(1000);
+
+    final UInt64 currentLocalHead = firstNonFinalSlot.plus(BLOCK_COUNT_PER_ATTEMPT.plus(21));
+    final UInt64 currentRemoteHead = firstNonFinalSlot.plus(BLOCK_COUNT_PER_ATTEMPT.plus(20));
+    final UInt64 syncStartSlot = currentRemoteHead.minus(BLOCK_COUNT_PER_ATTEMPT.minus(1));
+    final SafeFuture<Void> requestFuture = new SafeFuture<>();
+    when(peer.requestBlocksByRange(eq(syncStartSlot), eq(BLOCK_COUNT_PER_ATTEMPT), any()))
+        .thenReturn(requestFuture);
+    final PeerStatus status =
+        withPeerHeadSlot(
+            currentRemoteHead,
+            spec.computeEpochAtSlot(currentRemoteHead),
+            dataStructureUtil.randomBytes32());
+    when(recentChainData.getHeadSlot()).thenReturn(currentLocalHead);
+    // Only the first block matches the local chain
+    when(recentChainData.containsBlock(any())).thenReturn(true).thenReturn(false);
+
+    final SafeFuture<UInt64> futureSlot =
+        commonAncestorWithMaxHeadDistance.getCommonAncestor(
+            peer, firstNonFinalSlot, status.getHeadSlot());
+
+    assertThat(futureSlot.isDone()).isFalse();
+
+    verifyAndRespond(syncStartSlot, requestFuture);
+
+    assertThatSafeFuture(futureSlot)
+        .isCompletedExceptionallyWithMessage("Max distance from head reached");
+  }
+
+  @Test
+  void shouldCompleteFindCommonAncestorWhenMaxHeadDistanceIsDefined() {
+    final UInt64 firstNonFinalSlot = UInt64.valueOf(1000);
+
+    final UInt64 currentLocalHead = firstNonFinalSlot.plus(BLOCK_COUNT_PER_ATTEMPT.plus(21));
+    final UInt64 currentRemoteHead = firstNonFinalSlot.plus(BLOCK_COUNT_PER_ATTEMPT.plus(20));
+    final UInt64 syncStartSlot = currentRemoteHead.minus(BLOCK_COUNT_PER_ATTEMPT.minus(1));
+    final SafeFuture<Void> requestFuture = new SafeFuture<>();
+    when(peer.requestBlocksByRange(eq(syncStartSlot), eq(BLOCK_COUNT_PER_ATTEMPT), any()))
+        .thenReturn(requestFuture);
+    final PeerStatus status =
+        withPeerHeadSlot(
+            currentRemoteHead,
+            spec.computeEpochAtSlot(currentRemoteHead),
+            dataStructureUtil.randomBytes32());
+    when(recentChainData.getHeadSlot()).thenReturn(currentLocalHead);
+    // Only the first block matches the local chain
+    when(recentChainData.containsBlock(any())).thenReturn(true);
+
+    final SafeFuture<UInt64> futureSlot =
+        commonAncestorWithMaxHeadDistance.getCommonAncestor(
+            peer, firstNonFinalSlot, status.getHeadSlot());
+
+    assertThat(futureSlot.isDone()).isFalse();
+
+    verifyAndRespond(syncStartSlot, requestFuture);
+
+    // last received slot is the best slot
+    assertThatSafeFuture(futureSlot)
+        .isCompletedWithValue(syncStartSlot.plus(BLOCK_COUNT_PER_ATTEMPT).minus(1));
+  }
+
+  @Test
+  void shouldStopSearchingAndReturnExceptionallyIfMaxHeadDistanceIsReached() {
+    final UInt64 firstNonFinalSlot = UInt64.valueOf(1000);
+
+    final UInt64 currentLocalHead = firstNonFinalSlot.plus(BLOCK_COUNT_PER_ATTEMPT.plus(21));
+    final UInt64 currentRemoteHead = firstNonFinalSlot.plus(BLOCK_COUNT_PER_ATTEMPT.plus(20));
+    final UInt64 syncStartSlot = currentRemoteHead.minus(BLOCK_COUNT_PER_ATTEMPT.minus(1));
+    final SafeFuture<Void> requestFuture = new SafeFuture<>();
+    when(peer.requestBlocksByRange(eq(syncStartSlot), eq(BLOCK_COUNT_PER_ATTEMPT), any()))
+        .thenReturn(requestFuture);
+    final PeerStatus status =
+        withPeerHeadSlot(
+            currentRemoteHead,
+            spec.computeEpochAtSlot(currentRemoteHead),
+            dataStructureUtil.randomBytes32());
+
+    when(recentChainData.getHeadSlot()).thenReturn(currentLocalHead);
+    when(recentChainData.containsBlock(any())).thenReturn(false);
+
+    final SafeFuture<UInt64> futureSlot =
+        commonAncestorWithMaxHeadDistance.getCommonAncestor(
+            peer, firstNonFinalSlot, status.getHeadSlot());
+
+    assertThat(futureSlot.isDone()).isFalse();
+
+    verify(peer)
+        .requestBlocksByRange(
+            eq(syncStartSlot),
+            eq(BLOCK_COUNT_PER_ATTEMPT),
+            blockResponseListenerArgumentCaptor.capture());
+
+    requestFuture.complete(null);
+
+    assertThatSafeFuture(
+            commonAncestorWithMaxHeadDistance.getCommonAncestor(
+                peer, firstNonFinalSlot, status.getHeadSlot()))
+        .isCompletedExceptionallyWithMessage("Max distance from head reached");
   }
 
   private void verifyAndRespond(

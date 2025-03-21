@@ -1,6 +1,6 @@
 dependencies {
     api 'it.unimi.dsi:fastutil'
-    api 'io.tmio:tuweni-bytes'
+    api 'io.consensys.tuweni:tuweni-bytes'
     api project(':infrastructure:bls')
     api project(':infrastructure:bytes')
     api project(':infrastructure:collections')
@@ -9,9 +9,9 @@ dependencies {
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-    implementation 'io.tmio:tuweni-bytes'
-    implementation 'io.tmio:tuweni-ssz'
-    implementation 'io.tmio:tuweni-units'
+    implementation 'io.consensys.tuweni:tuweni-bytes'
+    implementation 'io.consensys.tuweni:tuweni-ssz'
+    implementation 'io.consensys.tuweni:tuweni-units'
     implementation project(':ethereum:performance-trackers')
     implementation project(':ethereum:execution-types')
     implementation project(':ethereum:pow:api')
@@ -28,7 +28,7 @@ dependencies {
     implementation project(':infrastructure:time')
 
     testFixturesApi 'com.google.guava:guava'
-    testFixturesApi 'io.tmio:tuweni-bytes'
+    testFixturesApi 'io.consensys.tuweni:tuweni-bytes'
     testFixturesApi project(':ethereum:pow:api')
     testFixturesApi project(':infrastructure:ssz')
     testFixturesApi project(':infrastructure:unsigned')
@@ -36,8 +36,8 @@ dependencies {
     testFixturesImplementation 'com.fasterxml.jackson.core:jackson-databind'
     testFixturesImplementation 'net.jqwik:jqwik'
     testFixturesImplementation 'org.apache.logging.log4j:log4j-api'
-    testFixturesImplementation 'io.tmio:tuweni-units'
-    testFixturesImplementation 'io.tmio:tuweni-ssz'
+    testFixturesImplementation 'io.consensys.tuweni:tuweni-units'
+    testFixturesImplementation 'io.consensys.tuweni:tuweni-ssz'
     testFixturesImplementation 'org.hyperledger.besu.internal:core'
     testFixturesImplementation 'org.hyperledger.besu.internal:config'
     testFixturesImplementation 'org.hyperledger.besu:besu-datatypes'

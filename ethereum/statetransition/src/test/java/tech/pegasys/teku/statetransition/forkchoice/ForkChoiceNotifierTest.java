@@ -138,7 +138,8 @@ class ForkChoiceNotifierTest {
             spec,
             executionLayerChannel,
             recentChainData,
-            proposersDataManager);
+            proposersDataManager,
+            false);
     notifier.onSyncingStatusChanged(true); // Start in sync to make testing easier
     // store fcu notification
     notifier.subscribeToForkChoiceUpdatedResult(
@@ -181,7 +182,8 @@ class ForkChoiceNotifierTest {
             spec,
             executionLayerChannel,
             recentChainData,
-            proposersDataManager);
+            proposersDataManager,
+            false);
     notifier.onSyncingStatusChanged(true);
     // store fcu notification
     notifier.subscribeToForkChoiceUpdatedResult(
@@ -238,6 +240,66 @@ class ForkChoiceNotifierTest {
     notifyForkChoiceUpdated(forkChoiceState, Optional.of(blockSlot));
     verify(executionLayerChannel)
         .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadBuildingAttributes));
+  }
+
+  @Test
+  void
+      onForkChoiceUpdated_shouldNotSendIfShouldShouldOverrideForkChoiceUpdateAndLateBlockReorgIsEnabled() {
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    final BeaconState headState = getHeadState();
+
+    recentChainData = mock(RecentChainData.class);
+    notifier =
+        new ForkChoiceNotifierImpl(
+            forkChoiceStateProvider,
+            eventThread,
+            timeProvider,
+            spec,
+            executionLayerChannel,
+            recentChainData,
+            proposersDataManager,
+            true);
+    // store fcu notification
+    notifier.subscribeToForkChoiceUpdatedResult(
+        notification -> forkChoiceUpdatedResultNotification = notification);
+
+    final UInt64 blockSlot = headState.getSlot().plus(1);
+
+    storageSystem.chainUpdater().setCurrentSlot(blockSlot);
+
+    when(recentChainData.shouldOverrideForkChoiceUpdate(any())).thenReturn(true);
+
+    notifyForkChoiceUpdatedVerifyNoNotification(forkChoiceState, Optional.of(blockSlot));
+  }
+
+  @Test
+  void
+      onForkChoiceUpdated_shouldSendIfNotShouldShouldOverrideForkChoiceUpdateAndLateBlockReorgIsEnabled() {
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    final BeaconState headState = getHeadState();
+
+    recentChainData = mock(RecentChainData.class);
+    notifier =
+        new ForkChoiceNotifierImpl(
+            forkChoiceStateProvider,
+            eventThread,
+            timeProvider,
+            spec,
+            executionLayerChannel,
+            recentChainData,
+            proposersDataManager,
+            true);
+    // store fcu notification
+    notifier.subscribeToForkChoiceUpdatedResult(
+        notification -> forkChoiceUpdatedResultNotification = notification);
+
+    final UInt64 blockSlot = headState.getSlot().plus(1);
+
+    storageSystem.chainUpdater().setCurrentSlot(blockSlot);
+
+    when(recentChainData.shouldOverrideForkChoiceUpdate(any())).thenReturn(false);
+
+    notifyForkChoiceUpdated(forkChoiceState, Optional.of(blockSlot));
   }
 
   @Test

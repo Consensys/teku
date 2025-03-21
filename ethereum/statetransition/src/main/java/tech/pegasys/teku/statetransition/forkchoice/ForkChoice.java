@@ -81,6 +81,7 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.protoarray.DeferredVotes;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
@@ -383,6 +384,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         spec.getBeaconStateUtil(justifiedState.getSlot())
             .getEffectiveActiveUnslashedBalances(justifiedState);
 
+    // If a runtime exception occurs while updating protoarray, we could skip the transaction
+    // commit.
+    // There is no clean way to solve it unless we move to a fully transactional protoarray update.
+    // Currently, the assumption is that any exception thrown by design is happening before any
+    // update to protoarray, so it is correct to skip the transaction commit.
     final Bytes32 headBlockRoot =
         transaction.applyForkChoiceScoreChanges(
             recentChainData.getCurrentEpoch().orElseThrow(),
@@ -392,17 +398,23 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             recentChainData.getStore().getProposerBoostRoot(),
             spec.getProposerBoostAmount(justifiedState));
 
-    recentChainData.updateHead(
-        headBlockRoot,
-        nodeSlot.orElse(
-            forkChoiceStrategy
-                .blockSlot(headBlockRoot)
-                .orElseThrow(
-                    () ->
-                        new IllegalStateException(
-                            "Unable to retrieve the slot of fork choice head: " + headBlockRoot))));
-
-    transaction.commit();
+    try {
+      recentChainData.updateHead(
+          headBlockRoot,
+          nodeSlot.orElse(
+              forkChoiceStrategy
+                  .blockSlot(headBlockRoot)
+                  .orElseThrow(
+                      () ->
+                          new IllegalStateException(
+                              "Unable to retrieve the slot of fork choice head: "
+                                  + headBlockRoot))));
+    } finally {
+      // here we just make sure to commit, because protoarray has been updated. We just had an
+      // exception while updating recentChainData which will become consistent again on the next
+      // successful updateHead call
+      transaction.commit();
+    }
   }
 
   /**
@@ -600,7 +612,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         blobSidecars,
         earliestBlobSidecarsSlot);
 
-    if (shouldApplyProposerBoost(block, transaction)) {
+    final boolean shouldApplyProposerBoost = shouldApplyProposerBoost(block, transaction);
+    if (shouldApplyProposerBoost) {
       transaction.setProposerBoostRoot(block.getRoot());
     }
 
@@ -630,7 +643,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     } else {
       result = BlockImportResult.optimisticallySuccessful(block);
     }
-    updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
+    updateForkChoiceForImportedBlock(block, shouldApplyProposerBoost, result, forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
     return result;
   }
@@ -764,15 +777,33 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private void updateForkChoiceForImportedBlock(
       final SignedBeaconBlock block,
+      final boolean shouldApplyProposerBoost,
       final BlockImportResult result,
       final ForkChoiceStrategy forkChoiceStrategy) {
 
+    final ChainHead currentHead = recentChainData.getChainHead().orElseThrow();
+
     final SlotAndBlockRoot bestHeadBlock = findNewChainHead(forkChoiceStrategy);
-    if (!bestHeadBlock.getBlockRoot().equals(recentChainData.getBestBlockRoot().orElseThrow())) {
+    if (!bestHeadBlock.getBlockRoot().equals(currentHead.getRoot())) {
       recentChainData.updateHead(bestHeadBlock.getBlockRoot(), bestHeadBlock.getSlot());
       if (bestHeadBlock.getBlockRoot().equals(block.getRoot())) {
         result.markAsCanonical();
       }
+    }
+
+    if (!result.isBlockOnCanonicalChain() && shouldApplyProposerBoost) {
+      // This is likely a reorging block that requires a full processHead to update the head.
+      // Running processHead here will ensure:
+      //
+      // - node producing a reorging block will attest and produce sync committee for the reorging
+      // block
+      // - node just importing (not producing it) a reorging block will produce sync committee for
+      // the new head
+      //
+      // It wouldn't be enough to trigger processHead at attestationDue because it will only
+      // cover attestation generation and not sync committee message, since it is generated
+      // VC side and requires head event to be sent before attestationDue.
+      processHead().finish(error -> LOG.error("Fork choice updating head failed", error));
     }
   }
 
@@ -864,7 +895,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .forEach(
             validatorIndex -> {
               final VoteTracker voteTracker = transaction.getVote(validatorIndex);
-              transaction.putVote(validatorIndex, voteTracker.createNextEquivocating());
+              if (!voteTracker.isEquivocating()) {
+                transaction.putVote(validatorIndex, voteTracker.createNextEquivocating());
+              }
             });
   }
 

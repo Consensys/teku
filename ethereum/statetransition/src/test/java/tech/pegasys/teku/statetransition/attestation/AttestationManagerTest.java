@@ -75,7 +75,7 @@ class AttestationManagerTest {
   private final ForkChoice forkChoice = mock(ForkChoice.class);
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final PendingPool<ValidatableAttestation> pendingAttestations =
-      new PoolFactory(metricsSystem).createPendingPoolForAttestations(spec);
+      new PoolFactory(metricsSystem).createPendingPoolForAttestations(spec, 10000);
   private final FutureItems<ValidatableAttestation> futureAttestations =
       FutureItems.create(
           ValidatableAttestation::getEarliestSlotForForkChoiceProcessing,
