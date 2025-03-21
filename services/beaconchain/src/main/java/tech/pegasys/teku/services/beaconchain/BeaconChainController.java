@@ -798,6 +798,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               custodyGroupCountManager,
               isFuluSuperNode(),
               specConfigFulu.getNumberOfColumns(),
+              specConfigFulu.getNumberOfCustodyGroups(),
               slot -> Duration.ofMillis(spec.getMillisPerSlot(slot).dividedBy(3).longValue()));
       eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarRecoveringCustody);
 

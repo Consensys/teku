@@ -35,7 +35,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -77,6 +76,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       final CustodyGroupCountManager custodyGroupCountManager,
       final boolean isSuperNode,
       final int columnCount,
+      final int groupCount,
       final Function<UInt64, Duration> slotToRecoveryDelay) {
     this.delegate = delegate;
     this.asyncRunner = asyncRunner;
@@ -90,10 +90,8 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     this.isSuperNode = new AtomicBoolean(isSuperNode);
     this.slotToRecoveryDelay = slotToRecoveryDelay;
     this.columnCount = columnCount;
+    this.groupCount = groupCount;
     this.recoverColumnCount = columnCount / 2;
-    this.groupCount =
-        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
-            .getNumberOfCustodyGroups();
   }
 
   @Override
