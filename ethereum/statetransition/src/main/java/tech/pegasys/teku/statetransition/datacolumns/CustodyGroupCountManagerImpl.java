@@ -82,7 +82,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
     final UInt64 baseBalance = specConfigFulu.getMinActivationBalance();
     combinedChainDataClient
-        .getStateAtSlotExact(slot.decrement())
+        .getStateAtSlotExact(slot.safeDecrement())
         .thenAccept(
             maybeState -> {
               if (maybeState.isPresent()) {
