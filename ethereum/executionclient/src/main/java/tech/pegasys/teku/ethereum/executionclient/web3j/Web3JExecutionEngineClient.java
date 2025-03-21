@@ -335,7 +335,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     final Request<?, GetnclusionListVersionV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_getInclusionListV1",
-            list(parentHash),
+            list(parentHash.toHexString()),
             web3JClient.getWeb3jService(),
             GetnclusionListVersionV1Web3jResponse.class);
     return web3JClient.doRequest(web3jRequest, GET_INCLUSION_LIST_TIMEOUT);
