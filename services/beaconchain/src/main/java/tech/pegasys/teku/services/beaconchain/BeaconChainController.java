@@ -980,9 +980,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
 
     final Optional<BlockProductionMetrics> blockProductionMetrics =
-            beaconConfig.getMetricsConfig().isBlockProductionPerformanceEnabled()
-                    ? Optional.of(BlockProductionMetrics.create(metricsSystem))
-                    : Optional.empty();
+        beaconConfig.getMetricsConfig().isBlockProductionPerformanceEnabled()
+            ? Optional.of(BlockProductionMetrics.create(metricsSystem))
+            : Optional.empty();
 
     final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory =
         new BlockProductionAndPublishingPerformanceFactory(
