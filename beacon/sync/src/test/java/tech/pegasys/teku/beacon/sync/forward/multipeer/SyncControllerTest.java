@@ -31,7 +31,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
-import tech.pegasys.teku.beacon.sync.events.SyncingTarget;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -76,11 +75,7 @@ class SyncControllerTest {
     assertThat(syncController.isSyncActive()).isTrue();
     assertThat(syncController.getSyncStatus())
         .isEqualTo(
-            new SyncingStatus(
-                true,
-                HEAD_SLOT,
-                HEAD_SLOT,
-                new SyncingTarget(targetChain.getChainHead(), targetChain.getPeerCount())));
+            new SyncingStatus(true, HEAD_SLOT, HEAD_SLOT, targetChain.getChainHead().getSlot()));
   }
 
   @Test
@@ -122,11 +117,7 @@ class SyncControllerTest {
     assertThat(syncController.isSyncActive()).isTrue();
     assertThat(syncController.getSyncStatus())
         .isEqualTo(
-            new SyncingStatus(
-                true,
-                HEAD_SLOT,
-                HEAD_SLOT,
-                new SyncingTarget(newTargetChain.getChainHead(), newTargetChain.getPeerCount())));
+            new SyncingStatus(true, HEAD_SLOT, HEAD_SLOT, newTargetChain.getChainHead().getSlot()));
   }
 
   @Test

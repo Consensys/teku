@@ -20,15 +20,12 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import okhttp3.Response;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
-import tech.pegasys.teku.beacon.sync.events.SyncingTarget;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
@@ -80,6 +77,6 @@ public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrat
         isSyncing,
         UInt64.valueOf(currentSlot),
         UInt64.valueOf(startSlot),
-        new SyncingTarget(new SlotAndBlockRoot(UInt64.valueOf(highestSlot), Bytes32.ZERO), 0));
+        UInt64.valueOf(highestSlot));
   }
 }

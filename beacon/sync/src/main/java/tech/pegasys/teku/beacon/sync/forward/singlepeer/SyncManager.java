@@ -27,7 +27,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
-import tech.pegasys.teku.beacon.sync.events.SyncingTarget;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -41,7 +40,6 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
@@ -189,14 +187,9 @@ public class SyncManager extends Service {
     if (isSyncActive) {
       final Optional<Eth2Peer> bestPeer = findBestSyncPeer();
       if (bestPeer.isPresent()) {
-        final PeerStatus bestPeerStatus = bestPeer.get().getStatus();
+        final UInt64 highestSlot = bestPeer.get().getStatus().getHeadSlot();
         return new SyncingStatus(
-            true,
-            recentChainData.getHeadSlot(),
-            peerSync.getStartingSlot(),
-            new SyncingTarget(
-                new SlotAndBlockRoot(bestPeerStatus.getHeadSlot(), bestPeerStatus.getHeadRoot()),
-                1));
+            true, recentChainData.getHeadSlot(), peerSync.getStartingSlot(), highestSlot);
       }
     }
     return new SyncingStatus(false, recentChainData.getHeadSlot());
