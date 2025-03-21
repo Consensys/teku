@@ -177,7 +177,7 @@ public class SlotProcessor {
                             status.targetChainHead().getBlockRoot(),
                             status.targetChainHead().getSlot(),
                             status.targetChainPeers())))
-        .finish(throwable -> {});
+        .ifExceptionGetsHereRaiseABug();
 
     slotEventsChannelPublisher.onSlot(slot);
 
