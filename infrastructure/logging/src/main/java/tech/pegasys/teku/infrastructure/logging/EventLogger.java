@@ -172,8 +172,8 @@ public class EventLogger {
     error(
         "Execution Client request failed. "
             + (couldBeAuthError
-            ? "Check the same JWT secret is configured for Teku and the Execution Client."
-            : EXECUTION_CLIENT_READINESS_USER_REMINDER),
+                ? "Check the same JWT secret is configured for Teku and the Execution Client."
+                : EXECUTION_CLIENT_READINESS_USER_REMINDER),
         Color.RED,
         error);
   }
