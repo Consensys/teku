@@ -116,7 +116,11 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
   @Override
   public void setCustodyGroupSyncedCount(final int custodyGroupSyncedCount) {
-    this.custodyGroupSyncedCount.set(custodyGroupSyncedCount);
+    final int oldCustodyGroupSyncedCount =
+        this.custodyGroupSyncedCount.getAndSet(custodyGroupSyncedCount);
+    if (oldCustodyGroupSyncedCount == custodyGroupSyncedCount) {
+      return;
+    }
     LOG.info("Synced custody group count updated to {}.", custodyGroupSyncedCount);
     custodyGroupCountChannel.onCustodyGroupCountSynced(custodyGroupSyncedCount);
   }
