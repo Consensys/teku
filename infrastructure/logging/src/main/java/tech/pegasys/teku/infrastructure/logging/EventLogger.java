@@ -114,7 +114,7 @@ public class EventLogger {
       final Bytes32 targetChainBlockRoot,
       final UInt64 targetChainBlockSlot,
       final int targetChainPeers) {
-    final String syncTargetChainEventLog =
+    final String syncProgressEventLog =
         String.format(
             "Sync Info  *** Range: %s - %s (%d batches), Downloading: %d slots (%d batches), Ready: %d slots (%d batches), Batch import: %s, Target chain: %s (%s) with %s peers",
             fromSlot,
@@ -128,7 +128,7 @@ public class EventLogger {
             LogFormatter.formatAbbreviatedHashRoot(targetChainBlockRoot),
             targetChainBlockSlot,
             targetChainPeers);
-    info(syncTargetChainEventLog, Color.GRAY);
+    info(syncProgressEventLog, Color.GRAY);
   }
 
   public void syncCompleted() {

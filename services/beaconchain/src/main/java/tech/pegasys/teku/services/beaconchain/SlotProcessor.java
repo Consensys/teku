@@ -19,6 +19,8 @@ import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SL
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -35,6 +37,7 @@ import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SlotProcessor {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final RecentChainData recentChainData;
@@ -161,23 +164,23 @@ public class SlotProcessor {
     syncService
         .getForwardSync()
         .getSyncProgress()
-        .thenAccept(
-            syncToChainStatus ->
-                syncToChainStatus.ifPresent(
-                    status ->
+        .finish(
+            maybeSyncProgress ->
+                maybeSyncProgress.ifPresent(
+                    syncProgress ->
                         eventLog.syncProgressEvent(
-                            status.fromSlot(),
-                            status.toSlot(),
-                            status.batches(),
-                            status.downloadingSlots(),
-                            status.downloadingBatches(),
-                            status.readySlots(),
-                            status.readyBatches(),
-                            status.importing(),
-                            status.targetChainHead().getBlockRoot(),
-                            status.targetChainHead().getSlot(),
-                            status.targetChainPeers())))
-        .ifExceptionGetsHereRaiseABug();
+                            syncProgress.fromSlot(),
+                            syncProgress.toSlot(),
+                            syncProgress.batches(),
+                            syncProgress.downloadingSlots(),
+                            syncProgress.downloadingBatches(),
+                            syncProgress.readySlots(),
+                            syncProgress.readyBatches(),
+                            syncProgress.importing(),
+                            syncProgress.targetChainHead().getBlockRoot(),
+                            syncProgress.targetChainHead().getSlot(),
+                            syncProgress.targetChainPeers())),
+            throwable -> LOG.warn("Exception retrieving forward sync progress", throwable));
 
     slotEventsChannelPublisher.onSlot(slot);
 
