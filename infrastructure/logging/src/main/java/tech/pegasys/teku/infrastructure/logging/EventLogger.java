@@ -132,10 +132,10 @@ public class EventLogger {
       final boolean importing) {
     final String syncProgressEventLog =
         String.format(
-            "Sync Info   *** Range: %s - %s (%d batches), Downloading: %s, Ready: %s, Batch import: %s",
-            fromSlot,
-            toSlot,
-            batches,
+            "Sync Info   *** Range: %s, Downloading: %s, Ready: %s, Batch import: %s",
+            batches == 0
+                ? "none"
+                : String.format("%s - %s (%d batches)", fromSlot, toSlot, batches),
             downloadingSlots == 0
                 ? "none"
                 : String.format("%d slots (%d batches)", downloadingSlots, downloadingBatches),

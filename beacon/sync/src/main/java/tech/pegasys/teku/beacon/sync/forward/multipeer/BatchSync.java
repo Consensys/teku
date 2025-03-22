@@ -133,43 +133,6 @@ public class BatchSync implements Sync {
 
   @Override
   public SafeFuture<Optional<SyncProgress>> getSyncProgress() {
-    record BatchInfoAccumulator(
-        UInt64 fromSlot,
-        UInt64 toSlot,
-        int batches,
-        int downloadingSlots,
-        int downloadingBatches,
-        int readySlots,
-        int readyBatches) {
-
-      static BatchInfoAccumulator accumulate(
-          final BatchInfoAccumulator a, final BatchInfoAccumulator b) {
-        return new BatchInfoAccumulator(
-            a.fromSlot.min(b.fromSlot),
-            a.toSlot.max(b.toSlot),
-            a.batches + b.batches,
-            a.downloadingSlots + b.downloadingSlots,
-            a.downloadingBatches + b.downloadingBatches,
-            a.readySlots + b.readySlots,
-            a.readyBatches + b.readyBatches);
-      }
-
-      SyncProgress toSyncProgress(
-          final Optional<Batch> importingBatch, final TargetChain targetChain) {
-        return new SyncProgress(
-            fromSlot,
-            toSlot,
-            batches,
-            downloadingSlots,
-            downloadingBatches,
-            readySlots,
-            readyBatches,
-            importingBatch.isPresent(),
-            targetChain.getChainHead(),
-            targetChain.getPeerCount());
-      }
-    }
-
     if (syncResult.isDone()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
@@ -178,37 +141,14 @@ public class BatchSync implements Sync {
     eventThread.execute(
         exceptionHandlingRunnable(
             () -> {
-              final Optional<BatchInfoAccumulator> reducedBatchesInfo =
+              final BatchInfoAccumulator reducedBatchesInfo =
                   activeBatches.stream()
-                      .map(
-                          batch -> {
-                            if (batch.isAwaitingBlocks()) {
-                              return new BatchInfoAccumulator(
-                                  batch.getFirstSlot(),
-                                  batch.getLastSlot(),
-                                  1,
-                                  batch.getCount().intValue(),
-                                  1,
-                                  0,
-                                  0);
-                            }
-                            if (batch.isComplete()) {
-                              return new BatchInfoAccumulator(
-                                  batch.getFirstSlot(),
-                                  batch.getLastSlot(),
-                                  1,
-                                  0,
-                                  0,
-                                  batch.getCount().intValue(),
-                                  1);
-                            }
-                            return new BatchInfoAccumulator(
-                                batch.getFirstSlot(), batch.getLastSlot(), 0, 0, 0, 0, 0);
-                          })
-                      .reduce(BatchInfoAccumulator::accumulate);
+                      .map(BatchInfoAccumulator::fromBatch)
+                      .reduce(BatchInfoAccumulator::accumulate)
+                      .orElse(BatchInfoAccumulator.EMPTY);
 
               result.complete(
-                  reducedBatchesInfo.map(info -> info.toSyncProgress(importingBatch, targetChain)));
+                  Optional.of(reducedBatchesInfo.toSyncProgress(importingBatch, targetChain)));
             },
             result));
     return result;
@@ -618,5 +558,57 @@ public class BatchSync implements Sync {
         batch.isConfirmed(),
         batch.isComplete(),
         batch.getSource());
+  }
+
+  private record BatchInfoAccumulator(
+      UInt64 fromSlot,
+      UInt64 toSlot,
+      int batches,
+      int downloadingSlots,
+      int downloadingBatches,
+      int readySlots,
+      int readyBatches) {
+
+    static final BatchInfoAccumulator EMPTY =
+        new BatchInfoAccumulator(UInt64.ZERO, UInt64.ZERO, 0, 0, 0, 0, 0);
+
+    static BatchInfoAccumulator fromBatch(final Batch batch) {
+      if (batch.isAwaitingBlocks()) {
+        return new BatchInfoAccumulator(
+            batch.getFirstSlot(), batch.getLastSlot(), 1, batch.getCount().intValue(), 1, 0, 0);
+      }
+      if (batch.isComplete()) {
+        return new BatchInfoAccumulator(
+            batch.getFirstSlot(), batch.getLastSlot(), 1, 0, 0, batch.getCount().intValue(), 1);
+      }
+      return new BatchInfoAccumulator(batch.getFirstSlot(), batch.getLastSlot(), 0, 0, 0, 0, 0);
+    }
+
+    static BatchInfoAccumulator accumulate(
+        final BatchInfoAccumulator a, final BatchInfoAccumulator b) {
+      return new BatchInfoAccumulator(
+          a.fromSlot.min(b.fromSlot),
+          a.toSlot.max(b.toSlot),
+          a.batches + b.batches,
+          a.downloadingSlots + b.downloadingSlots,
+          a.downloadingBatches + b.downloadingBatches,
+          a.readySlots + b.readySlots,
+          a.readyBatches + b.readyBatches);
+    }
+
+    SyncProgress toSyncProgress(
+        final Optional<Batch> importingBatch, final TargetChain targetChain) {
+      return new SyncProgress(
+          fromSlot,
+          toSlot,
+          batches,
+          downloadingSlots,
+          downloadingBatches,
+          readySlots,
+          readyBatches,
+          importingBatch.isPresent(),
+          targetChain.getChainHead(),
+          targetChain.getPeerCount());
+    }
   }
 }
