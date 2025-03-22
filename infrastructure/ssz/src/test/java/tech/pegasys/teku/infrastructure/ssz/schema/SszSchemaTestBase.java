@@ -127,6 +127,7 @@ public abstract class SszSchemaTestBase extends SszTypeTestBase {
     assertThatTreeNode(result).isTreeEqual(node);
     final SszData rebuiltData = schema.createFromBackingNode(result);
     assertThat(rebuiltData).isEqualTo(data);
+    assertThat(rebuiltData.sszSerialize()).isEqualTo(data.sszSerialize());
   }
 
   @MethodSource("testSchemaArguments")
