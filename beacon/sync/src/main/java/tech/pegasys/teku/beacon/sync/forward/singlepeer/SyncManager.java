@@ -185,9 +185,9 @@ public class SyncManager extends Service {
   public SyncingStatus getSyncStatus() {
     final boolean isSyncActive = isSyncActive();
     if (isSyncActive) {
-      Optional<Eth2Peer> bestPeer = findBestSyncPeer();
+      final Optional<Eth2Peer> bestPeer = findBestSyncPeer();
       if (bestPeer.isPresent()) {
-        UInt64 highestSlot = bestPeer.get().getStatus().getHeadSlot();
+        final UInt64 highestSlot = bestPeer.get().getStatus().getHeadSlot();
         return new SyncingStatus(
             true, recentChainData.getHeadSlot(), peerSync.getStartingSlot(), highestSlot);
       }
