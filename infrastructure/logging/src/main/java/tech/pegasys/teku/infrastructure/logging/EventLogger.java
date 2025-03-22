@@ -93,11 +93,10 @@ public class EventLogger {
       final Optional<TargetChain> maybeTargetChain) {
     final String syncEventLog =
         String.format(
-            "Syncing     *** Slot: %s, Head slot: %s, Remaining slots: %s, Connected peers: %s%s",
+            "Syncing     *** Slot: %s, Head slot: %s, Remaining slots: %s%s, Connected peers: %s",
             nodeSlot,
             headSlot,
             nodeSlot.minusMinZero(headSlot),
-            numPeers,
             maybeTargetChain
                 .map(
                     targetChain ->
@@ -106,7 +105,8 @@ public class EventLogger {
                             LogFormatter.formatAbbreviatedHashRoot(targetChain.blockRoot),
                             targetChain.slot,
                             targetChain.numPeers))
-                .orElse(""));
+                .orElse(""),
+            numPeers);
     info(syncEventLog, Color.WHITE);
   }
 
