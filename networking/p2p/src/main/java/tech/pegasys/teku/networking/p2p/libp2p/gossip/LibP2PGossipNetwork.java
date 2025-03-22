@@ -53,7 +53,7 @@ public class LibP2PGossipNetwork implements GossipNetwork {
   private final PubsubPublisherApi publisher;
   private final GossipTopicHandlers topicHandlers;
 
-  LibP2PGossipNetwork(
+  public LibP2PGossipNetwork(
       final MetricsSystem metricsSystem,
       final Gossip gossip,
       final PubsubPublisherApi publisher,
