@@ -123,9 +123,7 @@ public class SyncController {
   }
 
   public SafeFuture<Optional<SyncProgress>> getSyncProgress() {
-    return currentSync
-        .map(__ -> sync.getSyncProgress())
-        .orElse(SafeFuture.completedFuture(Optional.empty()));
+    return sync.getSyncProgress();
   }
 
   private SyncingStatus notSyncingStatus() {
