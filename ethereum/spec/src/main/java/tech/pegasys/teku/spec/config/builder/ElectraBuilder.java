@@ -172,9 +172,9 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   }
 
   public ElectraBuilder maxConsolidationRequestsPerPayload(
-      final Integer maxConsolidationsRequestPerPayload) {
-    checkNotNull(maxConsolidationsRequestPerPayload);
-    this.maxConsolidationRequestsPerPayload = maxConsolidationsRequestPerPayload;
+      final Integer maxConsolidationRequestsPerPayload) {
+    checkNotNull(maxConsolidationRequestsPerPayload);
+    this.maxConsolidationRequestsPerPayload = maxConsolidationRequestsPerPayload;
     return this;
   }
 
