@@ -329,7 +329,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     performanceRecord.ifPresent(TickProcessingPerformance::deferredAttestationsApplied);
   }
 
-  public void reorgToHeadWhileSyncing(final Bytes32 oldHeadRoot, final Bytes32 newHeadRoot) {
+  public void reorgWhileSyncing(final Bytes32 oldHeadRoot, final Bytes32 newHeadRoot) {
     onForkChoiceThread(
             () -> {
               final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
@@ -339,7 +339,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                 return;
               }
 
-              forkChoiceStrategy.reorgToHeadWhileSyncing(
+              forkChoiceStrategy.reorgWhileSyncing(
                   oldHeadRoot, newHeadRoot, commonAncestor.get().getBlockRoot());
             })
         .ifExceptionGetsHereRaiseABug();
