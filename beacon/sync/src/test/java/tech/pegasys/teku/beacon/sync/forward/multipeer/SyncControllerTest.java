@@ -48,12 +48,18 @@ class SyncControllerTest {
   private final SyncTargetSelector syncTargetSelector = mock(SyncTargetSelector.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final Executor subscriberExecutor = mock(Executor.class);
+  private final SyncReorgManager syncReorgManager = mock(SyncReorgManager.class);
 
   private final TargetChain targetChain = chainWith(dataStructureUtil.randomSlotAndBlockRoot());
 
   private final SyncController syncController =
       new SyncController(
-          eventThread, subscriberExecutor, recentChainData, syncTargetSelector, sync);
+          eventThread,
+          subscriberExecutor,
+          recentChainData,
+          syncTargetSelector,
+          syncReorgManager,
+          sync);
   private static final UInt64 HEAD_SLOT = UInt64.valueOf(2338);
 
   @BeforeEach

@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
+import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.BlocksImportedSubscriber;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncProgress;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -28,9 +29,10 @@ import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class SyncController {
+public class SyncController implements BlocksImportedSubscriber {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Subscribers<SyncSubscriber> subscribers = Subscribers.create(true);
@@ -40,6 +42,7 @@ public class SyncController {
   private final RecentChainData recentChainData;
   private final SyncTargetSelector syncTargetSelector;
   private final Sync sync;
+  private final SyncReorgManager syncReorgManager;
 
   /**
    * The current sync. When empty, no sync has started, otherwise contains the details of the last
@@ -55,12 +58,26 @@ public class SyncController {
       final Executor subscriberExecutor,
       final RecentChainData recentChainData,
       final SyncTargetSelector syncTargetSelector,
+      final SyncReorgManager syncReorgManager,
       final Sync sync) {
     this.eventThread = eventThread;
     this.subscriberExecutor = subscriberExecutor;
     this.recentChainData = recentChainData;
     this.syncTargetSelector = syncTargetSelector;
+    this.syncReorgManager = syncReorgManager;
     this.sync = sync;
+    sync.subscribeToBlocksImportedEvent(this);
+  }
+
+  @Override
+  public void onBlocksImported(final SignedBeaconBlock lastImportedBlock) {
+    eventThread.execute(
+        () -> {
+          if (isSyncSpeculative()) {
+            return;
+          }
+          syncReorgManager.onBlocksImported(lastImportedBlock);
+        });
   }
 
   /**

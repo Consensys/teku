@@ -76,6 +76,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
       final BlockImporter blockImporter,
       final BlobSidecarManager blobSidecarManager,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
+      final SyncReorgManager syncReorgManager,
       final int batchSize,
       final int maxPendingBatches,
       final int maxBlocksPerMinute,
@@ -117,6 +118,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
                 finalizedTargetChains,
                 nonfinalizedTargetChains,
                 spec.getSlotsPerEpoch(recentChainData.getCurrentSlot().orElse(UInt64.ZERO))),
+            syncReorgManager,
             batchSync);
     final PeerChainTracker peerChainTracker =
         new PeerChainTracker(
