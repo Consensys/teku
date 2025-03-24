@@ -80,6 +80,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final ExecutionPayloadManager executionPayloadManager,
       final SyncPreImportBlockChannel syncPreImportBlockChannel,
+      final SyncReorgManager syncReorgManager,
       final int batchSize,
       final int maxPendingBatches,
       final int maxBlocksPerMinute,
@@ -115,7 +116,6 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
     final SyncController syncController =
         new SyncController(
             eventThread,
-            asyncRunner,
             new OrderedAsyncRunner(asyncRunner),
             recentChainData,
             new SyncTargetSelector(
@@ -124,6 +124,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
                 finalizedTargetChains,
                 nonfinalizedTargetChains,
                 spec.getSlotsPerEpoch(recentChainData.getCurrentSlot().orElse(UInt64.ZERO))),
+            syncReorgManager,
             batchSync);
     final PeerChainTracker peerChainTracker =
         new PeerChainTracker(
