@@ -596,7 +596,7 @@ public class BatchSync implements Sync {
           a.readyBatches + b.readyBatches);
     }
 
-    SyncProgress toSyncProgress(
+    private SyncProgress toSyncProgress(
         final Optional<Batch> importingBatch, final TargetChain targetChain) {
       return new SyncProgress(
           fromSlot,
