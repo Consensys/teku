@@ -189,7 +189,18 @@ public class ProtoArray {
     applyToNodes(this::updateBestDescendantOfParent);
   }
 
-  public void reorgToHeadWhileSyncing(
+  /**
+   * This function is supposed to be called while syncing. It assumes the protoarray to be in a
+   * state where all nodes have been just initialized (see {@link #setInitialCanonicalBlockRoot})
+   * and have a weight of 1 on the canonical chain and 0 on all other chains.
+   *
+   * <p>It may also do the reorg if we enter syncing mode and, while syncing, we decide to sync to a
+   * new chain so that the common ancestor has not received any votes yet.
+   *
+   * <p>The function set all weights to 0 to the reorged chain and set all weights to 1 to the new
+   * chain.
+   */
+  public void reorgWhileSyncing(
       final Bytes32 oldHeadRoot, final Bytes32 newHeadRoot, final Bytes32 commonAncestorRoot) {
     final Optional<ProtoNode> oldHead = getProtoNode(oldHeadRoot);
     final Optional<ProtoNode> newHead = getProtoNode(newHeadRoot);
