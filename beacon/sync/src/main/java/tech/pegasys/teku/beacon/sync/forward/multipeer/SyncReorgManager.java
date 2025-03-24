@@ -21,7 +21,7 @@ import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SyncReorgManager implements BlocksImportedSubscriber {
-  static final int SLOT_REORG_THRESHOLD = 10;
+  static final int REORG_SLOT_THRESHOLD = 10;
 
   private final RecentChainData recentChainData;
   private final ForkChoiceTrigger forkChoiceTrigger;
@@ -48,12 +48,11 @@ public class SyncReorgManager implements BlocksImportedSubscriber {
     if (currentHead
         .get()
         .getSlot()
-        .plus(SLOT_REORG_THRESHOLD)
+        .plus(REORG_SLOT_THRESHOLD)
         .isGreaterThan(lastImportedBlock.getSlot())) {
       return;
     }
 
-    forkChoiceTrigger.reorgToHeadWhileSyncing(
-        currentHead.get().getRoot(), lastImportedBlock.getRoot());
+    forkChoiceTrigger.reorgWhileSyncing(currentHead.get().getRoot(), lastImportedBlock.getRoot());
   }
 }

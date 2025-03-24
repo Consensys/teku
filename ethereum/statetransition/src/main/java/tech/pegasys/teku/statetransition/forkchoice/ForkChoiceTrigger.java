@@ -49,7 +49,7 @@ public class ForkChoiceTrigger {
     return forkChoiceRatchet.ensureForkChoiceCompleteForSlot(slot);
   }
 
-  public void reorgToHeadWhileSyncing(final Bytes32 oldHeadRoot, final Bytes32 newHeadRoot) {
-    forkChoice.reorgToHeadWhileSyncing(oldHeadRoot, newHeadRoot);
+  public void reorgWhileSyncing(final Bytes32 oldHeadRoot, final Bytes32 newHeadRoot) {
+    forkChoice.reorgWhileSyncing(oldHeadRoot, newHeadRoot);
   }
 }
