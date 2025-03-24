@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import org.apache.tuweni.bytes.Bytes32;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -83,5 +84,9 @@ public class ForkChoiceTrigger {
 
   public SafeFuture<Void> prepareForAttestationProduction(final UInt64 slot) {
     return forkChoiceRatchet.ensureForkChoiceCompleteForSlot(slot);
+  }
+
+  public void reorgToHeadWhileSyncing(final Bytes32 oldHeadRoot, final Bytes32 newHeadRoot) {
+    forkChoice.reorgToHeadWhileSyncing(oldHeadRoot, newHeadRoot);
   }
 }
