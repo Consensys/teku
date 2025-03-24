@@ -568,10 +568,10 @@ class ProtoArrayTest {
     assertHead(block4a);
 
     // setting chain a as the canonical chain via non-tip block
-    protoArray.reorgWhileSyncing(block2b, block2a, block1);
+    protoArray.reorgWhileSyncing(block4a, block2b, block1);
 
     // block2a is now the head due to weight
-    assertHead(block2a);
+    assertHead(block2b);
   }
 
   @Test
