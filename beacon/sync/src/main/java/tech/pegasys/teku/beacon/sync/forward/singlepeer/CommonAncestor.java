@@ -87,10 +87,11 @@ public class CommonAncestor {
       return SafeFuture.failedFuture(new RuntimeException("Max distance from head reached"));
     }
     if (attempt >= maxAttempts || firstRequestedSlot.isLessThanOrEqualTo(firstNonFinalSlot)) {
+      LOG.debug("max attempts or first non-final slot reached. Returning {}", firstNonFinalSlot);
       return SafeFuture.completedFuture(firstNonFinalSlot);
     }
 
-    LOG.debug("Sampling ahead from {} to {}.", firstRequestedSlot, lastSlot);
+    LOG.debug("Sampling ahead from {} to {}. Attempt {}", firstRequestedSlot, lastSlot, attempt);
 
     final BestBlockListener blockResponseListener = new BestBlockListener(recentChainData);
     final PeerSyncBlockListener blockListener =
