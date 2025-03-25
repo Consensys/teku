@@ -33,6 +33,12 @@ public interface Sync {
 
   SafeFuture<Optional<SyncProgress>> getSyncProgress();
 
+  long subscribeToBlocksImportedEvent(BlocksImportedSubscriber subscriber);
+
+  interface BlocksImportedSubscriber {
+    void onBlocksImported(SignedBeaconBlock lastImportedBlock);
+  }
+
   record SyncProgress(
       UInt64 fromSlot,
       UInt64 toSlot,
@@ -44,10 +50,4 @@ public interface Sync {
       boolean importing,
       SlotAndBlockRoot targetChainHead,
       int targetChainPeers) {}
-
-  long subscribeToBlocksImportedEvent(BlocksImportedSubscriber subscriber);
-
-  interface BlocksImportedSubscriber {
-    void onBlocksImported(SignedBeaconBlock lastImportedBlock);
-  }
 }
