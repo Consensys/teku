@@ -45,13 +45,13 @@ public class SyncReorgManager implements BlocksImportedSubscriber {
       return;
     }
 
-    if (currentHead
-        .get()
-        .getSlot()
-        .plus(REORG_SLOT_THRESHOLD)
-        .isGreaterThan(lastImportedBlock.getSlot())) {
-      return;
-    }
+//    if (currentHead
+//        .get()
+//        .getSlot()
+//        .plus(REORG_SLOT_THRESHOLD)
+//        .isGreaterThan(lastImportedBlock.getSlot())) {
+//      return;
+//    }
 
     forkChoiceTrigger.reorgWhileSyncing(currentHead.get().getRoot(), lastImportedBlock.getRoot());
   }

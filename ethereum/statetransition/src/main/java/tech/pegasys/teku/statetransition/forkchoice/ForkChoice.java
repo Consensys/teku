@@ -324,6 +324,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                 return;
               }
 
+              if(commonAncestor.get().getBlockRoot().equals(oldHeadRoot)) {
+                  return;
+              }
+
               forkChoiceStrategy.reorgWhileSyncing(
                   oldHeadRoot, newHeadRoot, commonAncestor.get().getBlockRoot());
             })
