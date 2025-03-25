@@ -51,6 +51,8 @@ public class SlotProcessor {
   private volatile UInt64 onTickSlotAttestation;
   private volatile UInt64 onTickEpochPrecompute;
 
+  // DUMMY
+
   @VisibleForTesting
   SlotProcessor(
       final Spec spec,
