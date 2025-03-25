@@ -158,7 +158,8 @@ public class DebugToolsCommand implements Runnable {
     tempDir.toFile().deleteOnExit();
 
     DataDirLayout dataDirLayout =
-        new SeparateServiceDataDirLayout(tempDir, Optional.empty(), Optional.empty(), false);
+        new SeparateServiceDataDirLayout(
+            tempDir, Optional.empty(), Optional.empty(), Optional.empty(), false);
     final KeyManager keyManager = new NoOpKeyManager();
 
     final AsyncRunnerFactory asyncRunnerFactory =
