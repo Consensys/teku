@@ -16,6 +16,8 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
@@ -23,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.Meta
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 
 public class MetadataMessagesFactory implements CustodyGroupCountChannel {
+  private static final Logger LOG = LogManager.getLogger("das-nyota");
 
   private final AtomicLong seqNumberGenerator = new AtomicLong(0L);
   private Iterable<Integer> attestationSubnetIds = Collections.emptyList();
@@ -61,8 +64,11 @@ public class MetadataMessagesFactory implements CustodyGroupCountChannel {
   }
 
   public synchronized MetadataMessage createMetadataMessage(final MetadataMessageSchema<?> schema) {
-    return schema.create(
-        getCurrentSeqNumber(), attestationSubnetIds, syncCommitteeSubnetIds, custodyGroupCount);
+    final MetadataMessage metadataMessage =
+        schema.create(
+            getCurrentSeqNumber(), attestationSubnetIds, syncCommitteeSubnetIds, custodyGroupCount);
+    LOG.debug("Created metadata message {}", metadataMessage);
+    return metadataMessage;
   }
 
   public PingMessage createPingMessage() {
