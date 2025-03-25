@@ -31,13 +31,16 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncProgress;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.Batch;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.StubBatchFactory;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChains;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
@@ -961,6 +964,81 @@ class BatchSyncTest {
     assertBatchNotActive(batch1);
   }
 
+  @Test
+  void shouldGetSyncProgress() {
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
+
+    SyncProgress syncProgress = getSyncProgress();
+
+    // downloading
+    assertThat(syncProgress.batches()).isEqualTo(5);
+    assertThat(syncProgress.downloadingSlots()).isEqualTo(125);
+    assertThat(syncProgress.downloadingBatches()).isEqualTo(5);
+    assertThat(syncProgress.readySlots()).isZero();
+    assertThat(syncProgress.readyBatches()).isZero();
+    assertThat(syncProgress.importing()).isFalse();
+
+    final Batch batch0 = batches.get(0);
+    final Batch batch1 = batches.get(1);
+    final Batch batch2 = batches.get(2);
+    final Batch batch3 = batches.get(3);
+    final Batch batch4 = batches.get(4);
+
+    // complete two batches which form a chain
+    batches.receiveBlocks(
+        batch0, chainBuilder.generateBlockAtSlot(batch0.getLastSlot()).getBlock());
+    batches.receiveBlocks(
+        batch1, chainBuilder.generateBlockAtSlot(batch1.getLastSlot()).getBlock());
+
+    syncProgress = getSyncProgress();
+
+    // partially ready batches
+    assertThat(syncProgress.batches()).isEqualTo(5);
+    assertThat(syncProgress.downloadingSlots()).isEqualTo(75);
+    assertThat(syncProgress.downloadingBatches()).isEqualTo(3);
+    assertThat(syncProgress.readySlots()).isEqualTo(50);
+    assertThat(syncProgress.readyBatches()).isEqualTo(2);
+    assertThat(syncProgress.importing()).isTrue();
+
+    // complete other batches
+    batches.receiveBlocks(
+        batch2, chainBuilder.generateBlockAtSlot(batch2.getLastSlot()).getBlock());
+    batches.receiveBlocks(
+        batch3, chainBuilder.generateBlockAtSlot(batch3.getLastSlot()).getBlock());
+    batches.receiveBlocks(
+        batch4, chainBuilder.generateBlockAtSlot(batch4.getLastSlot()).getBlock());
+
+    syncProgress = getSyncProgress();
+
+    // all batches are ready
+    assertThat(syncProgress.batches()).isEqualTo(5);
+    assertThat(syncProgress.downloadingSlots()).isEqualTo(0);
+    assertThat(syncProgress.downloadingBatches()).isEqualTo(0);
+    assertThat(syncProgress.readySlots()).isEqualTo(125);
+    assertThat(syncProgress.readyBatches()).isEqualTo(5);
+    assertThat(syncProgress.importing()).isTrue();
+
+    // import batches
+    batches.getImportResult(batch0).complete(IMPORTED_ALL_BLOCKS);
+    batches.getImportResult(batch1).complete(IMPORTED_ALL_BLOCKS);
+    batches.getImportResult(batch2).complete(IMPORTED_ALL_BLOCKS);
+    batches.getImportResult(batch3).complete(IMPORTED_ALL_BLOCKS);
+
+    asyncRunner.executeDueActionsRepeatedly();
+
+    syncProgress = getSyncProgress();
+
+    // on to the next set of batches
+    assertThat(syncProgress.batches()).isEqualTo(5);
+    assertThat(syncProgress.fromSlot()).isEqualTo(UInt64.valueOf(101));
+    assertThat(syncProgress.toSlot()).isEqualTo(UInt64.valueOf(225));
+    assertThat(syncProgress.downloadingSlots()).isEqualTo(100);
+    assertThat(syncProgress.downloadingBatches()).isEqualTo(4);
+    assertThat(syncProgress.readySlots()).isEqualTo(25);
+    assertThat(syncProgress.readyBatches()).isEqualTo(1);
+    assertThat(syncProgress.importing()).isFalse();
+  }
+
   private void assertBatchNotActive(final Batch batch) {
     // Need to use the wrapped batch which enforces usage of event thread
     eventThread.execute(
@@ -982,5 +1060,11 @@ class BatchSyncTest {
 
   private void assertNoBatchesImported() {
     verifyNoInteractions(batchImporter);
+  }
+
+  private SyncProgress getSyncProgress() {
+    final Optional<SyncProgress> syncProgress = SafeFutureAssert.safeJoin(sync.getSyncProgress());
+    assertThat(syncProgress).isPresent();
+    return syncProgress.get();
   }
 }
