@@ -33,9 +33,11 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
+import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncProgress;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
+import tech.pegasys.teku.infrastructure.logging.EventLogger.TargetChain;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
@@ -208,6 +210,41 @@ public class SlotProcessorTest {
 
     verify(syncService).getCurrentSyncState();
     verify(eventLogger).syncEventAwaitingEL(ZERO, ZERO, 1);
+  }
+
+  @Test
+  public void onTick_shouldChangeSyncingMessagesIfForwardSyncProgressIsAvailable() {
+    final SyncProgress syncProgress =
+        new SyncProgress(
+            ZERO, ONE, 5, 100, 4, 25, 1, true, dataStructureUtil.randomSlotAndBlockRoot(), 1);
+
+    when(forwardSync.getSyncProgress())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(syncProgress)));
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
+    when(p2pNetwork.getPeerCount()).thenReturn(1);
+
+    slotProcessor.onTick(genesisTimeMillis, Optional.empty());
+
+    verify(eventLogger)
+        .syncEvent(
+            ZERO,
+            ZERO,
+            1,
+            Optional.of(
+                new TargetChain(
+                    syncProgress.targetChainHead().getBlockRoot(),
+                    syncProgress.targetChainHead().getSlot(),
+                    syncProgress.targetChainPeers())));
+    verify(eventLogger)
+        .syncProgressEvent(
+            syncProgress.fromSlot(),
+            syncProgress.toSlot(),
+            syncProgress.batches(),
+            syncProgress.downloadingSlots(),
+            syncProgress.downloadingBatches(),
+            syncProgress.readySlots(),
+            syncProgress.readyBatches(),
+            syncProgress.importing());
   }
 
   @Test
