@@ -251,7 +251,6 @@ public class GraffitiBuilderTest {
     assertThat(clientInfo).isEqualTo(expectedWatermark);
   }
 
-
   @ParameterizedTest(name = "code={0}")
   @MethodSource("getClientCodes")
   public void formatClientInfo_shouldHandleBadCodeOnClientNamesAndFullCommit(
@@ -381,15 +380,15 @@ public class GraffitiBuilderTest {
   private static Stream<Arguments> graffitiWatermarks() {
     // watermark_max_length, expected_result
     return Stream.of(
-            Arguments.of(32, "BUabcdTK" + V_2BYTES),
-            Arguments.of(12, "BUabcdTK" + V_2BYTES),
-            Arguments.of(11, "BUabTK" + V_1BYTE),
-            Arguments.of(8, "BUabTK" + V_1BYTE),
-            Arguments.of(7, "BUTK"),
-            Arguments.of(4, "BUTK"),
-            Arguments.of(3, "BU"),
-            Arguments.of(2, "BU"),
-            Arguments.of(1, ""),
-            Arguments.of(-1, ""));
+        Arguments.of(32, "BUabcdTK" + V_2BYTES),
+        Arguments.of(12, "BUabcdTK" + V_2BYTES),
+        Arguments.of(11, "BUabTK" + V_1BYTE),
+        Arguments.of(8, "BUabTK" + V_1BYTE),
+        Arguments.of(7, "BUTK"),
+        Arguments.of(4, "BUTK"),
+        Arguments.of(3, "BU"),
+        Arguments.of(2, "BU"),
+        Arguments.of(1, ""),
+        Arguments.of(-1, ""));
   }
 }
