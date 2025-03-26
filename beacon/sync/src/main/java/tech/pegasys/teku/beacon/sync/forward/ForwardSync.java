@@ -13,11 +13,16 @@
 
 package tech.pegasys.teku.beacon.sync.forward;
 
+import java.util.Optional;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
+import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncProgress;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public interface ForwardSync {
 
   SyncingStatus getSyncStatus();
+
+  SafeFuture<Optional<SyncProgress>> getSyncProgress();
 
   boolean isSyncActive();
 

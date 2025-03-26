@@ -18,5 +18,5 @@ dependencies {
 
     integrationTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
     integrationTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-    integrationTestImplementation 'io.tmio:tuweni-bytes'
+    integrationTestImplementation 'io.consensys.tuweni:tuweni-bytes'
 }

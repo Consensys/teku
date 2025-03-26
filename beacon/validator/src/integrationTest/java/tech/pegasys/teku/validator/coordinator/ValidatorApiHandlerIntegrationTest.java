@@ -189,7 +189,7 @@ public class ValidatorApiHandlerIntegrationTest {
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
             new BlockProductionAndPublishingPerformanceFactory(
-                new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0),
+                new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0, Optional.empty()),
             new MilestoneBasedBlockPublisher(
                 asyncRunner,
                 specContext.getSpec(),

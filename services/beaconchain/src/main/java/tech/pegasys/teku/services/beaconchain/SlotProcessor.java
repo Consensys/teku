@@ -19,10 +19,13 @@ import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SL
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
-import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
+import tech.pegasys.teku.infrastructure.logging.EventLogger.TargetChain;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
@@ -35,10 +38,11 @@ import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SlotProcessor {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final RecentChainData recentChainData;
-  private final SyncStateProvider syncStateProvider;
+  private final SyncService syncService;
   private final ForkChoiceTrigger forkChoiceTrigger;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final Eth2P2PNetwork p2pNetwork;
@@ -55,7 +59,7 @@ public class SlotProcessor {
   SlotProcessor(
       final Spec spec,
       final RecentChainData recentChainData,
-      final SyncStateProvider syncStateProvider,
+      final SyncService syncService,
       final ForkChoiceTrigger forkChoiceTrigger,
       final ForkChoiceNotifier forkChoiceNotifier,
       final Eth2P2PNetwork p2pNetwork,
@@ -64,7 +68,7 @@ public class SlotProcessor {
       final EventLogger eventLogger) {
     this.spec = spec;
     this.recentChainData = recentChainData;
-    this.syncStateProvider = syncStateProvider;
+    this.syncService = syncService;
     this.forkChoiceTrigger = forkChoiceTrigger;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.p2pNetwork = p2pNetwork;
@@ -76,7 +80,7 @@ public class SlotProcessor {
   public SlotProcessor(
       final Spec spec,
       final RecentChainData recentChainData,
-      final SyncStateProvider syncStateProvider,
+      final SyncService syncService,
       final ForkChoiceTrigger forkChoiceTrigger,
       final ForkChoiceNotifier forkChoiceNotifier,
       final Eth2P2PNetwork p2pNetwork,
@@ -85,7 +89,7 @@ public class SlotProcessor {
     this(
         spec,
         recentChainData,
-        syncStateProvider,
+        syncService,
         forkChoiceTrigger,
         forkChoiceNotifier,
         p2pNetwork,
@@ -110,7 +114,7 @@ public class SlotProcessor {
     if (currentTimeMillis.isLessThan(genesisTimeMillis)) {
       return;
     }
-    final SyncState currentSyncState = syncStateProvider.getCurrentSyncState();
+    final SyncState currentSyncState = syncService.getCurrentSyncState();
     if (isNextSlotDue(currentTimeMillis, genesisTimeMillis) && !currentSyncState.isInSync()) {
       processSlotWhileSyncing(currentSyncState);
       nodeSlot.inc();
@@ -156,8 +160,41 @@ public class SlotProcessor {
     if (currentSyncState == SyncState.AWAITING_EL) {
       eventLog.syncEventAwaitingEL(slot, recentChainData.getHeadSlot(), p2pNetwork.getPeerCount());
     } else {
-      eventLog.syncEvent(slot, recentChainData.getHeadSlot(), p2pNetwork.getPeerCount());
+      syncService
+          .getForwardSync()
+          .getSyncProgress()
+          .finish(
+              maybeSyncProgress ->
+                  maybeSyncProgress.ifPresentOrElse(
+                      syncProgress -> {
+                        eventLog.syncEvent(
+                            slot,
+                            recentChainData.getHeadSlot(),
+                            p2pNetwork.getPeerCount(),
+                            Optional.of(
+                                new TargetChain(
+                                    syncProgress.targetChainHead().getBlockRoot(),
+                                    syncProgress.targetChainHead().getSlot(),
+                                    syncProgress.targetChainPeers())));
+                        eventLog.syncProgressEvent(
+                            syncProgress.fromSlot(),
+                            syncProgress.toSlot(),
+                            syncProgress.batches(),
+                            syncProgress.downloadingSlots(),
+                            syncProgress.downloadingBatches(),
+                            syncProgress.readySlots(),
+                            syncProgress.readyBatches(),
+                            syncProgress.importing());
+                      },
+                      () ->
+                          eventLog.syncEvent(
+                              slot,
+                              recentChainData.getHeadSlot(),
+                              p2pNetwork.getPeerCount(),
+                              Optional.empty())),
+              throwable -> LOG.warn("Exception retrieving forward sync progress", throwable));
     }
+
     slotEventsChannelPublisher.onSlot(slot);
 
     final UInt64 nodeEpoch = spec.computeEpochAtSlot(slot);

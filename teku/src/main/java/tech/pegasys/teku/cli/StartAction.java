@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,20 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.p2p.network.config;
+package tech.pegasys.teku.cli;
 
-import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.config.TekuConfiguration;
 
-public interface PrivateKeySource {
-  Bytes getPrivateKeyBytes();
+@FunctionalInterface
+public interface StartAction {
 
-  default Optional<Type> getType() {
-    return Optional.empty();
-  }
-
-  enum Type {
-    SECP256K1,
-    ECDSA
-  }
+  void start(TekuConfiguration config, NodeMode nodeMode);
 }
