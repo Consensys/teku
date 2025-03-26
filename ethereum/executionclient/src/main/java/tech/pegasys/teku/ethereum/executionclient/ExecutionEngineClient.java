@@ -24,10 +24,10 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
-import tech.pegasys.teku.ethereum.executionclient.schema.GetInclusionListV1Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.InclusionListV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
@@ -91,7 +91,7 @@ public interface ExecutionEngineClient {
 
   SafeFuture<Response<List<BlobAndProofV1>>> getBlobsV1(List<VersionedHash> blobVersionedHashes);
 
-  SafeFuture<Response<GetInclusionListV1Response>> getInclusionListV1(Bytes32 parentHash);
+  SafeFuture<Response<InclusionListV1>> getInclusionListV1(Bytes32 parentHash);
 
   SafeFuture<Response<UpdatePayloadWithInclusionListV1Response>> updatePayloadWithInclusionListV1(
       Bytes8 payloadId, List<Bytes> inclusionList);
