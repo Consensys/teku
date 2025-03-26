@@ -34,7 +34,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuilder;
@@ -71,7 +70,10 @@ public abstract class AbstractBeaconNodeCommandTest {
       final ArgumentCaptor<TekuConfiguration> configCaptor =
           ArgumentCaptor.forClass(TekuConfiguration.class);
       assertThat(stringWriter.toString()).isEmpty();
-      verify(startAction).start(configCaptor.capture(), eq(expectValidatorClient));
+      verify(startAction)
+          .start(
+              configCaptor.capture(),
+              expectValidatorClient ? eq(NodeMode.VC_ONLY) : eq(NodeMode.COMBINED));
 
       return configCaptor.getValue();
     } catch (Throwable t) {
