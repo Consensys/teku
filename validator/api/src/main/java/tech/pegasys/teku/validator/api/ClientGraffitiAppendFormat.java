@@ -21,5 +21,5 @@ public enum ClientGraffitiAppendFormat {
   // Appends client name codes if there is a space for it.
   CLIENT_CODES,
   // Clients information is not appended to the graffiti.
-  DISABLED;
+  DISABLED
 }
