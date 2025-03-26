@@ -42,6 +42,13 @@ public interface DataColumnSidecarDB extends DataColumnSidecarCoreDB {
   @Override
   SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(UInt64 slot);
 
+  @Override
+  SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalSidecar(
+      DataColumnSlotAndIdentifier identifier);
+
+  @Override
+  SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalColumnIdentifiers(UInt64 slot);
+
   // update
 
   SafeFuture<Void> setFirstCustodyIncompleteSlot(UInt64 slot);

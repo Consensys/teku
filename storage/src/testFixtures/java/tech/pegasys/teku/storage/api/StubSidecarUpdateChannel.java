@@ -34,6 +34,11 @@ public class StubSidecarUpdateChannel implements SidecarUpdateChannel {
   }
 
   @Override
+  public SafeFuture<Void> onNewNonCanonicalSidecar(final DataColumnSidecar sidecar) {
+    return SafeFuture.COMPLETE;
+  }
+
+  @Override
   public SafeFuture<Void> onSidecarsAvailabilitySlot(final UInt64 earliestSlotRequired) {
     return SafeFuture.COMPLETE;
   }

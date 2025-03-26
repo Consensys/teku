@@ -31,6 +31,8 @@ public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
   private Optional<UInt64> firstCustodyIncompleteSlot = Optional.empty();
   private Optional<UInt64> firstSamplerIncompleteSlot = Optional.empty();
   private final NavigableMap<DataColumnSlotAndIdentifier, DataColumnSidecar> db = new TreeMap<>();
+  private final NavigableMap<DataColumnSlotAndIdentifier, DataColumnSidecar> dbNonCanonical =
+      new TreeMap<>();
   private final AtomicLong dbReadCounter = new AtomicLong();
   private final AtomicLong dbWriteCounter = new AtomicLong();
 
@@ -89,9 +91,30 @@ public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
   }
 
   @Override
+  public SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalSidecar(
+      final DataColumnSlotAndIdentifier identifier) {
+    dbReadCounter.incrementAndGet();
+    return SafeFuture.completedFuture(Optional.ofNullable(dbNonCanonical.get(identifier)));
+  }
+
+  @Override
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalColumnIdentifiers(
+      final UInt64 slot) {
+    dbReadCounter.incrementAndGet();
+    return SafeFuture.completedFuture(
+        dbNonCanonical
+            .subMap(minimalComparableForSlot(slot), minimalComparableForSlot(slot.increment()))
+            .keySet()
+            .stream()
+            .sorted()
+            .toList());
+  }
+
+  @Override
   public SafeFuture<Void> pruneAllSidecars(final UInt64 tillSlot) {
     dbWriteCounter.incrementAndGet();
     db.headMap(minimalComparableForSlot(tillSlot)).clear();
+    dbNonCanonical.headMap(minimalComparableForSlot(tillSlot)).clear();
     return SafeFuture.COMPLETE;
   }
 

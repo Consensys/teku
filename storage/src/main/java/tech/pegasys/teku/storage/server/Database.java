@@ -291,6 +291,4 @@ public interface Database extends AutoCloseable {
   void addNonCanonicalSidecar(DataColumnSidecar sidecar);
 
   void pruneAllSidecars(UInt64 tillSlotInclusive);
-
-  void pruneAllNonCanonicalSidecars(UInt64 tillSlotInclusive);
 }

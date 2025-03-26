@@ -50,6 +50,15 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
                 delegateDb.getColumnIdentifiers(slot), slotToNumberOfColumns.apply(slot)));
   }
 
+  private SlotCache getOrCreateSlotCacheNonCanonical(final UInt64 slot) {
+    return slotCaches.computeIfAbsent(
+        slot,
+        __ ->
+            new SlotCache(
+                delegateDb.getNonCanonicalColumnIdentifiers(slot),
+                slotToNumberOfColumns.apply(slot)));
+  }
+
   private void invalidateSlotCache(final UInt64 slot) {
     slotCaches.remove(slot);
   }
@@ -57,6 +66,12 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
   @Override
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(final UInt64 slot) {
     return getOrCreateSlotCache(slot).generateColumnIdentifiers(slot);
+  }
+
+  @Override
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalColumnIdentifiers(
+      final UInt64 slot) {
+    return getOrCreateSlotCacheNonCanonical(slot).generateColumnIdentifiers(slot);
   }
 
   @Override
@@ -119,6 +134,12 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
       final DataColumnSlotAndIdentifier identifier) {
     return delegateDb.getSidecar(identifier);
+  }
+
+  @Override
+  public SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalSidecar(
+      final DataColumnSlotAndIdentifier identifier) {
+    return delegateDb.getNonCanonicalSidecar(identifier);
   }
 
   @Override

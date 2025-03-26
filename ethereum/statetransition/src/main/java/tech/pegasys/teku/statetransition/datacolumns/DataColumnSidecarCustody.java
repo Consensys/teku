@@ -26,6 +26,11 @@ public interface DataColumnSidecarCustody {
 
   SafeFuture<Boolean> hasCustodyDataColumnSidecar(DataColumnSlotAndIdentifier columnId);
 
+  SafeFuture<Optional<DataColumnSidecar>> getCustodyNonCanonicalDataColumnSidecar(
+      DataColumnSlotAndIdentifier columnId);
+
+  SafeFuture<Boolean> hasCustodyNonCanonicalDataColumnSidecar(DataColumnSlotAndIdentifier columnId);
+
   SafeFuture<Void> onNewValidatedDataColumnSidecar(DataColumnSidecar dataColumnSidecar);
 
   AsyncStream<DataColumnSlotAndIdentifier> retrieveMissingColumns();

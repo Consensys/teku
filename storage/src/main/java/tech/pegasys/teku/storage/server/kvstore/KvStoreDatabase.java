@@ -1191,10 +1191,7 @@ public class KvStoreDatabase implements Database {
       prunableIdentifiers.forEach(updater::removeSidecar);
       updater.commit();
     }
-  }
 
-  @Override
-  public void pruneAllNonCanonicalSidecars(final UInt64 tillSlotInclusive) {
     try (final Stream<DataColumnSlotAndIdentifier> prunableIdentifiers =
             streamNonCanonicalDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive);
         final FinalizedUpdater updater = finalizedUpdater()) {
@@ -1408,18 +1405,31 @@ public class KvStoreDatabase implements Database {
             .map(entry -> new SlotAndBlockRoot(entry.getValue(), entry.getKey()))
             .collect(Collectors.toSet());
 
-    LOG.trace("Removing sidecars for non-canonical blocks");
-    try (final FinalizedUpdater updater = finalizedUpdater()) {
-      for (final SlotAndBlockRoot slotAndBlockRoot : nonCanonicalBlocks) {
-        dao.getDataColumnIdentifiers(slotAndBlockRoot)
-            .forEach(
-                identifier -> {
-                  LOG.trace(
-                      "Removing sidecar with identifier {} for non-canonical block", identifier);
-                  updater.removeSidecar(identifier);
-                });
+    final Iterator<SlotAndBlockRoot> nonCanonicalBlocksIterator = nonCanonicalBlocks.iterator();
+    int index = 0;
+    while (nonCanonicalBlocksIterator.hasNext()) {
+      final int start = index;
+      try (final FinalizedUpdater updater = finalizedUpdater()) {
+        while (nonCanonicalBlocksIterator.hasNext() && (index - start) < BLOBS_TX_BATCH_SIZE) {
+          dao.getDataColumnIdentifiers(nonCanonicalBlocksIterator.next())
+              .forEach(
+                  key -> {
+                    dao.getSidecar(key)
+                        .ifPresent(
+                            sidecarBytes -> {
+                              DataColumnSidecar sideCar =
+                                  spec.deserializeSidecar(sidecarBytes, key.slot());
+                              updater.addNonCanonicalSidecar(sideCar);
+                              LOG.trace(
+                                  "Removing sidecar with identifier {} for non-canonical block",
+                                  key);
+                              updater.removeSidecar(key);
+                            });
+                  });
+          index++;
+        }
+        updater.commit();
       }
-      updater.commit();
     }
   }
 

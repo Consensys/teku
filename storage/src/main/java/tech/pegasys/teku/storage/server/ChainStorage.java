@@ -388,6 +388,12 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalSidecar(
+      final DataColumnSlotAndIdentifier identifier) {
+    return SafeFuture.of(() -> database.getNonCanonicalSidecar(identifier));
+  }
+
+  @Override
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
     return SafeFuture.of(
         () -> {
@@ -411,6 +417,32 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalDataColumnIdentifiers(
+      final UInt64 slot) {
+    return SafeFuture.of(
+        () -> {
+          try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+              database.streamNonCanonicalDataColumnIdentifiers(slot)) {
+            return dataColumnIdentifiersStream.toList();
+          }
+        });
+  }
+
+  @Override
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalDataColumnIdentifiers(
+      final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
+    return SafeFuture.of(
+        () -> {
+          try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+              database
+                  .streamNonCanonicalDataColumnIdentifiers(startSlot, endSlot)
+                  .limit(limit.longValue())) {
+            return dataColumnIdentifiersStream.toList();
+          }
+        });
+  }
+
+  @Override
   public SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot() {
     return SafeFuture.of(database::getEarliestDataColumnSidecarSlot);
   }
@@ -428,6 +460,11 @@ public class ChainStorage
   @Override
   public SafeFuture<Void> onNewSidecar(final DataColumnSidecar sidecar) {
     return SafeFuture.fromRunnable(() -> database.addSidecar(sidecar));
+  }
+
+  @Override
+  public SafeFuture<Void> onNewNonCanonicalSidecar(final DataColumnSidecar sidecar) {
+    return SafeFuture.fromRunnable(() -> database.addNonCanonicalSidecar(sidecar));
   }
 
   @Override

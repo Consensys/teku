@@ -791,6 +791,11 @@ public class CombinedChainDataClient {
     return historicalChainData.getSidecar(identifier);
   }
 
+  public SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalSidecar(
+      final DataColumnSlotAndIdentifier identifier) {
+    return historicalChainData.getNonCanonicalSidecar(identifier);
+  }
+
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
     return historicalChainData.getDataColumnIdentifiers(slot);
   }
@@ -798,6 +803,11 @@ public class CombinedChainDataClient {
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(
       final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
     return historicalChainData.getDataColumnIdentifiers(startSlot, endSlot, limit);
+  }
+
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalDataColumnIdentifiers(
+      final UInt64 slot) {
+    return historicalChainData.getNonCanonicalDataColumnIdentifiers(slot);
   }
 
   public SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot() {
