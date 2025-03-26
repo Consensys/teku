@@ -25,10 +25,10 @@ import oshi.hardware.HardwareAbstractionLayer;
 
 public class StartupLogConfigTest {
 
-  private final int NETWORK_REPORT_INDEX = 0;
-  private final int HARDWARE_REPORT_INDEX = 1;
-  private final int BEACON_API_REPORT_INDEX = 2;
-  private final int VALIDATOR_API_REPORT_INDEX = 3;
+  private static final int NETWORK_REPORT_INDEX = 0;
+  private static final int HARDWARE_REPORT_INDEX = 1;
+  private static final int BEACON_API_REPORT_INDEX = 2;
+  private static final int VALIDATOR_API_REPORT_INDEX = 3;
 
   @Test
   public void checkNetworkAndStorageModeReport() {
