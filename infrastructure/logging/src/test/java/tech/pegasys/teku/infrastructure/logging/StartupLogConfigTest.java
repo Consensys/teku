@@ -53,13 +53,13 @@ public class StartupLogConfigTest {
     when(centralProcessor.getLogicalProcessorCount()).thenReturn(12);
 
     final StartupLogConfig startupLogConfig =
-        startupLogConfigBuilder().hardwareInfo(hardwareInfo).build();
+        startupLogConfigBuilder().hardwareInfo(hardwareInfo).maxHeapSize(1_073_741_824L).build();
 
     final List<String> report = startupLogConfig.getReport();
 
     assertThat(report.get(HARDWARE_REPORT_INDEX))
         .isEqualTo(
-            "Host Configuration | Maximum Heap Size: 8.00 GB, Total Memory: 16.00 GB, CPU Cores: 12");
+            "Host Configuration | Maximum Heap Size: 1.00 GB, Total Memory: 16.00 GB, CPU Cores: 12");
   }
 
   @Test
@@ -133,6 +133,7 @@ public class StartupLogConfigTest {
         .network("mainnet")
         .storageMode("PRUNE")
         .hardwareInfo(hardwareInfo)
+        .maxHeapSize(4_000_000_000L)
         .beaconChainRestApiEnabled(true)
         .beaconChainRestApiInterface("127.0.0.1")
         .beaconChainRestApiPort(5678)

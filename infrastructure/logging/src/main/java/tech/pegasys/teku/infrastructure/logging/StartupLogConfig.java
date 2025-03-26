@@ -41,6 +41,7 @@ public class StartupLogConfig {
       final String network,
       final String storageMode,
       final HardwareAbstractionLayer hardwareInfo,
+      final long maxHeapSize,
       final boolean beaconChainRestApiEnabled,
       final String beaconChainRestApiInterface,
       final int beaconChainRestApiPort,
@@ -52,7 +53,7 @@ public class StartupLogConfig {
     this.network = network;
     this.storageMode = storageMode;
 
-    this.maxHeapSize = normalizeSize(Runtime.getRuntime().maxMemory());
+    this.maxHeapSize = normalizeSize(maxHeapSize);
     this.memory = normalizeSize(hardwareInfo.getMemory().getTotal());
     this.cpuCores = hardwareInfo.getProcessor().getLogicalProcessorCount();
 
@@ -102,6 +103,7 @@ public class StartupLogConfig {
     private String network;
     private String storageMode;
     private HardwareAbstractionLayer hardwareInfo;
+    private long maxHeapSize;
     private boolean beaconChainRestApiEnabled;
     private String beaconChainRestApiInterface;
     private int beaconChainRestApiPort;
@@ -118,6 +120,7 @@ public class StartupLogConfig {
           network,
           storageMode,
           hardwareInfo,
+          maxHeapSize,
           beaconChainRestApiEnabled,
           beaconChainRestApiInterface,
           beaconChainRestApiPort,
@@ -143,6 +146,11 @@ public class StartupLogConfig {
     public Builder hardwareInfo(final HardwareAbstractionLayer hardwareInfo) {
       checkNotNull(hardwareInfo);
       this.hardwareInfo = hardwareInfo;
+      return this;
+    }
+
+    public Builder maxHeapSize(final long maxHeapSize) {
+      this.maxHeapSize = maxHeapSize;
       return this;
     }
 
