@@ -114,6 +114,6 @@ public class BootnodeService extends Service {
     return discoveryService
         .stop()
         .thenRun(asyncRunner::shutdown)
-        .thenPeek(__ -> LOG.info("Bootnode service stoppped!"));
+        .thenPeek(__ -> LOG.info("Bootnode service stopped!"));
   }
 }
