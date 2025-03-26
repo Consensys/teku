@@ -336,7 +336,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
     try {
       startLogging();
       final TekuConfiguration tekuConfig = tekuConfiguration();
-      startAction.start(tekuConfig, false);
+      startAction.start(tekuConfig, NodeMode.COMBINED);
       return 0;
     } catch (final Throwable t) {
       return handleExceptionAndReturnExitCode(t);
@@ -423,10 +423,5 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   public LoggingConfigurator getLoggingConfigurator() {
     return loggingConfigurator;
-  }
-
-  @FunctionalInterface
-  public interface StartAction {
-    void start(TekuConfiguration config, boolean validatorClient);
   }
 }
