@@ -37,7 +37,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
-import tech.pegasys.teku.ethereum.executionclient.schema.InclusionListV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
@@ -303,7 +302,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Response<InclusionListV1>> getInclusionListV1(final Bytes32 parentHash) {
+  public SafeFuture<Response<List<String>>> getInclusionListV1(final Bytes32 parentHash) {
     final Request<?, GetnclusionListVersionV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_getInclusionListV1",
@@ -353,7 +352,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
       extends org.web3j.protocol.core.Response<List<BlobAndProofV1>> {}
 
   static class GetnclusionListVersionV1Web3jResponse
-      extends org.web3j.protocol.core.Response<InclusionListV1> {}
+      extends org.web3j.protocol.core.Response<List<String>> {}
 
   static class UpdatePayloadWithInclusionListV1Web3jResponse
       extends org.web3j.protocol.core.Response<UpdatePayloadWithInclusionListV1Response> {}

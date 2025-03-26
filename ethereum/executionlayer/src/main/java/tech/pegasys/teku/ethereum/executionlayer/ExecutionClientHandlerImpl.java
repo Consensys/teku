@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionlayer;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
@@ -175,7 +176,12 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
                       .orElseThrow()
                       .getInclusionListSchema()
                       .getTransactionSchema();
-              return response.asInternalTransaction(transactionSchema);
+              return response.stream()
+                  .map(
+                      inclusionListTransactionV1 ->
+                          transactionSchema.fromBytes(
+                              Bytes.fromHexString(inclusionListTransactionV1)))
+                  .toList();
             });
   }
 
