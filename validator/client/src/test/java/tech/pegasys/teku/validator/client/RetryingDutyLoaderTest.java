@@ -24,6 +24,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
@@ -36,9 +38,9 @@ class RetryingDutyLoaderTest {
 
   private final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
   private final Optional<ScheduledDuties> scheduledDutiesOptional = Optional.of(scheduledDuties);
-
+  final TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
   private final RetryingDutyLoader<ScheduledDuties> dutyLoader =
-      new RetryingDutyLoader<>(asyncRunner, delegate);
+      new RetryingDutyLoader<>(asyncRunner, timeProvider, delegate);
 
   @Test
   public void shouldReturnDutiesWhenLoadedSuccessfully() {

@@ -421,21 +421,21 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                   + " but current slot is "
                   + currentSlot));
     }
-
-    try (final OperationTimer.TimingContext context =
+    // we are in an async context, don't follow the AutoClose pattern
+    final OperationTimer.TimingContext context =
         startTimer(
             dutyMetrics.getValidatorDutyMetric(),
             ATTESTATION_PRODUCTION.getName(),
-            CREATE.getName())) {
+            CREATE.getName());
 
-      final UInt64 epoch = spec.computeEpochAtSlot(slot);
-      final UInt64 minQuerySlot = spec.computeStartSlotAtEpoch(epoch);
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
+    final UInt64 minQuerySlot = spec.computeStartSlotAtEpoch(epoch);
 
-      return forkChoiceTrigger
-          .prepareForAttestationProduction(slot)
-          .thenCompose(
-              __ -> {
-                final SafeFuture<Optional<AttestationData>> future =
+    final SafeFuture<Optional<AttestationData>> result =
+        forkChoiceTrigger
+            .prepareForAttestationProduction(slot)
+            .thenCompose(
+                __ ->
                     combinedChainDataClient
                         .getSignedBlockAndStateInEffectAtSlot(slot)
                         .thenCompose(
@@ -470,11 +470,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                                         block, blockAndState.getState(), slot, committeeIndex);
                                 return SafeFuture.completedFuture(Optional.of(attestationData));
                               }
-                            });
-                future.always(context::stopTimer);
-                return future;
-              });
-    }
+                            }));
+    result.always(context::stopTimer);
+    return result;
   }
 
   private AttestationData createAttestationData(

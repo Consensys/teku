@@ -100,11 +100,11 @@ public class BlockProposalAcceptanceTest extends AcceptanceTestBase {
                   StandardCharsets.UTF_8);
           // 13 bytes + 1 byte
           assertThat(graffitiMessage).startsWith(userGraffiti + " ");
-          // 18 bytes left, so 12 bytes client footprint: TKxxxxELxxxx. 20 bytes with full commits
+          // 18 bytes left, so 12 bytes client footprint: ELxxxxTKxxxx. 20 bytes with full commits
           // doesn't fit
           assertThat(graffitiMessage).contains("TK");
           // stub execution endpoint.
-          assertThat(graffitiMessage).endsWith("SB0000");
+          assertThat(graffitiMessage).contains("SB0000");
         });
   }
 }

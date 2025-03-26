@@ -19,6 +19,7 @@ import java.util.List;
 import oshi.hardware.HardwareAbstractionLayer;
 
 public class StartupLogConfig {
+
   private final String network;
   private final String storageMode;
 
@@ -31,6 +32,7 @@ public class StartupLogConfig {
   private final int beaconChainRestApiPort;
   private final List<String> beaconChainRestApiAllow;
 
+  private final boolean validatorRestApiEnabled;
   private final String validatorRestApiInterface;
   private final int validatorRestApiPort;
   private final List<String> validatorRestApiAllow;
@@ -39,17 +41,19 @@ public class StartupLogConfig {
       final String network,
       final String storageMode,
       final HardwareAbstractionLayer hardwareInfo,
+      final long maxHeapSize,
       final boolean beaconChainRestApiEnabled,
       final String beaconChainRestApiInterface,
       final int beaconChainRestApiPort,
       final List<String> beaconChainRestApiAllow,
+      final boolean validatorRestApiEnabled,
       final String validatorRestApiInterface,
       final int validatorRestApiPort,
       final List<String> validatorRestApiAllow) {
     this.network = network;
     this.storageMode = storageMode;
 
-    this.maxHeapSize = normalizeSize(Runtime.getRuntime().maxMemory());
+    this.maxHeapSize = normalizeSize(maxHeapSize);
     this.memory = normalizeSize(hardwareInfo.getMemory().getTotal());
     this.cpuCores = hardwareInfo.getProcessor().getLogicalProcessorCount();
 
@@ -58,6 +62,7 @@ public class StartupLogConfig {
     this.beaconChainRestApiPort = beaconChainRestApiPort;
     this.beaconChainRestApiAllow = beaconChainRestApiAllow;
 
+    this.validatorRestApiEnabled = validatorRestApiEnabled;
     this.validatorRestApiInterface = validatorRestApiInterface;
     this.validatorRestApiPort = validatorRestApiPort;
     this.validatorRestApiAllow = validatorRestApiAllow;
@@ -81,9 +86,11 @@ public class StartupLogConfig {
                 beaconChainRestApiInterface, beaconChainRestApiPort, beaconChainRestApiAllow)
             : "Rest Api Configuration | Enabled: false";
     final String validatorApi =
-        String.format(
-            "Validator Api Configuration | Listen Address: %s, Port %s, Allow: %s",
-            validatorRestApiInterface, validatorRestApiPort, validatorRestApiAllow);
+        validatorRestApiEnabled
+            ? String.format(
+                "Validator Api Configuration | Enabled: true, Listen Address: %s, Port: %s, Allow: %s",
+                validatorRestApiInterface, validatorRestApiPort, validatorRestApiAllow)
+            : "Validator Api Configuration | Enabled: false";
     return List.of(general, host, restApi, validatorApi);
   }
 
@@ -92,13 +99,16 @@ public class StartupLogConfig {
   }
 
   public static class Builder {
+
     private String network;
     private String storageMode;
     private HardwareAbstractionLayer hardwareInfo;
+    private long maxHeapSize;
     private boolean beaconChainRestApiEnabled;
     private String beaconChainRestApiInterface;
     private int beaconChainRestApiPort;
     private List<String> beaconChainRestApiAllow;
+    private boolean validatorRestApiEnabled;
     private String validatorRestApiInterface;
     private int validatorRestApiPort;
     private List<String> validatorRestApiAllow;
@@ -110,10 +120,12 @@ public class StartupLogConfig {
           network,
           storageMode,
           hardwareInfo,
+          maxHeapSize,
           beaconChainRestApiEnabled,
           beaconChainRestApiInterface,
           beaconChainRestApiPort,
           beaconChainRestApiAllow,
+          validatorRestApiEnabled,
           validatorRestApiInterface,
           validatorRestApiPort,
           validatorRestApiAllow);
@@ -137,6 +149,11 @@ public class StartupLogConfig {
       return this;
     }
 
+    public Builder maxHeapSize(final long maxHeapSize) {
+      this.maxHeapSize = maxHeapSize;
+      return this;
+    }
+
     public Builder beaconChainRestApiEnabled(final boolean beaconChainRestApiEnabled) {
       this.beaconChainRestApiEnabled = beaconChainRestApiEnabled;
       return this;
@@ -156,6 +173,11 @@ public class StartupLogConfig {
     public Builder beaconChainRestApiAllow(final List<String> beaconChainRestApiAllow) {
       checkNotNull(beaconChainRestApiAllow);
       this.beaconChainRestApiAllow = beaconChainRestApiAllow;
+      return this;
+    }
+
+    public Builder validatorRestApiEnabled(final boolean validatorRestApiEnabled) {
+      this.validatorRestApiEnabled = validatorRestApiEnabled;
       return this;
     }
 

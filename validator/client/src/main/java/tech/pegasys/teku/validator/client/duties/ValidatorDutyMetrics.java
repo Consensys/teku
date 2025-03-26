@@ -36,21 +36,22 @@ public class ValidatorDutyMetrics {
         ValidatorDutyMetricUtils.createValidatorDutyMetric(metricsSystem));
   }
 
+  // NOTE: we don't use the AutoCloseable in the try block because we are in an async context
+  // if an exception is thrown during the async flow pluming we can accept to lose the data point
+
   public SafeFuture<DutyResult> performDutyWithMetrics(final Duty duty) {
-    try (final OperationTimer.TimingContext context =
-        startTimer(dutyMetric, getDutyType(duty), TOTAL.getName())) {
-      return duty.performDuty().alwaysRun(context::stopTimer);
-    }
+    final OperationTimer.TimingContext context =
+        startTimer(dutyMetric, getDutyType(duty), TOTAL.getName());
+    return duty.performDuty().alwaysRun(context::stopTimer);
   }
 
   public <T> SafeFuture<T> record(
       final Supplier<SafeFuture<T>> dutyStepFutureSupplier,
       final Duty duty,
       final ValidatorDutyMetricsSteps step) {
-    try (final OperationTimer.TimingContext context =
-        startTimer(dutyMetric, getDutyType(duty), step.getName())) {
-      return dutyStepFutureSupplier.get().alwaysRun(context::stopTimer);
-    }
+    final OperationTimer.TimingContext context =
+        startTimer(dutyMetric, getDutyType(duty), step.getName());
+    return dutyStepFutureSupplier.get().alwaysRun(context::stopTimer);
   }
 
   private static String getDutyType(final Duty duty) {
