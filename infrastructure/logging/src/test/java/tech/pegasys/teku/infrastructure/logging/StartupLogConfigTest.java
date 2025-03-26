@@ -17,9 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.text.DecimalFormatSymbols;
 import java.util.List;
-import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import oshi.hardware.CentralProcessor;
 import oshi.hardware.GlobalMemory;
@@ -27,19 +25,24 @@ import oshi.hardware.HardwareAbstractionLayer;
 
 public class StartupLogConfigTest {
 
+  private final int NETWORK_REPORT_INDEX = 0;
+  private final int HARDWARE_REPORT_INDEX = 1;
+  private final int BEACON_API_REPORT_INDEX = 2;
+  private final int VALIDATOR_API_REPORT_INDEX = 3;
+
   @Test
-  void checkReportWithRestApiEnabled() {
-    testReport(
-        true,
-        "Rest Api Configuration | Enabled: true, Listen Address: 127.0.0.1, Port: 5678, Allow: [127.0.0.1, localhost]");
+  public void checkNetworkAndStorageModeReport() {
+    final StartupLogConfig startupLogConfig =
+        startupLogConfigBuilder().network("mainnet").storageMode("PRUNE").build();
+
+    final List<String> report = startupLogConfig.getReport();
+
+    assertThat(report.get(NETWORK_REPORT_INDEX))
+        .isEqualTo("Configuration | Network: mainnet, Storage Mode: PRUNE");
   }
 
   @Test
-  void checkReportWithRestApiNotEnabled() {
-    testReport(false, "Rest Api Configuration | Enabled: false");
-  }
-
-  private void testReport(final boolean restApiEnabled, final String restApiReport) {
+  public void checkHardwareReport() {
     final HardwareAbstractionLayer hardwareInfo = mock(HardwareAbstractionLayer.class);
     final GlobalMemory memory = mock(GlobalMemory.class);
     when(hardwareInfo.getMemory()).thenReturn(memory);
@@ -47,39 +50,96 @@ public class StartupLogConfigTest {
 
     final CentralProcessor centralProcessor = mock(CentralProcessor.class);
     when(hardwareInfo.getProcessor()).thenReturn(centralProcessor);
-    when(centralProcessor.getLogicalProcessorCount()).thenReturn(10);
+    when(centralProcessor.getLogicalProcessorCount()).thenReturn(12);
 
-    final StartupLogConfig config =
-        StartupLogConfig.builder()
-            .network("mainnet")
-            .storageMode("PRUNE")
-            .hardwareInfo(hardwareInfo)
-            .beaconChainRestApiEnabled(restApiEnabled)
+    final StartupLogConfig startupLogConfig =
+        startupLogConfigBuilder().hardwareInfo(hardwareInfo).build();
+
+    final List<String> report = startupLogConfig.getReport();
+
+    assertThat(report.get(HARDWARE_REPORT_INDEX))
+        .isEqualTo(
+            "Host Configuration | Maximum Heap Size: 8.00 GB, Total Memory: 16.00 GB, CPU Cores: 12");
+  }
+
+  @Test
+  public void checkReportWithBeaconRestApiEnabled() {
+    final StartupLogConfig startupLogConfig =
+        startupLogConfigBuilder()
+            .beaconChainRestApiEnabled(true)
             .beaconChainRestApiInterface("127.0.0.1")
             .beaconChainRestApiPort(5678)
             .beaconChainRestApiAllow(List.of("127.0.0.1", "localhost"))
+            .build();
+
+    final List<String> report = startupLogConfig.getReport();
+
+    assertThat(report.get(BEACON_API_REPORT_INDEX))
+        .isEqualTo(
+            "Rest Api Configuration | Enabled: true, Listen Address: 127.0.0.1, Port: 5678, Allow: [127.0.0.1, localhost]");
+  }
+
+  @Test
+  public void checkReportWithValidatorRestApiDisabled() {
+    final StartupLogConfig startupLogConfig =
+        startupLogConfigBuilder().beaconChainRestApiEnabled(false).build();
+
+    final List<String> report = startupLogConfig.getReport();
+
+    assertThat(report.get(BEACON_API_REPORT_INDEX))
+        .isEqualTo("Rest Api Configuration | Enabled: false");
+  }
+
+  @Test
+  public void checkReportWithValidatorRestApiEnabled() {
+    final StartupLogConfig startupLogConfig =
+        startupLogConfigBuilder()
+            .validatorRestApiEnabled(true)
             .validatorRestApiInterface("127.0.0.1")
-            .validatorRestApiPort(6789)
+            .validatorRestApiPort(5679)
             .validatorRestApiAllow(List.of("127.0.0.1", "localhost"))
             .build();
 
-    List<String> report = config.getReport();
+    final List<String> report = startupLogConfig.getReport();
 
-    assertThat(report)
-        .elements(0, 2, 3)
-        .containsExactly(
-            "Configuration | Network: mainnet, Storage Mode: PRUNE",
-            restApiReport,
-            "Validator Api Configuration | Listen Address: 127.0.0.1, Port 6789, Allow: [127.0.0.1, localhost]");
-    String escapedDecimalSeparator =
-        Pattern.quote("" + DecimalFormatSymbols.getInstance().getDecimalSeparator());
-    assertThat(report.get(1))
-        .matches(
-            Pattern.compile(
-                "Host Configuration \\| Maximum Heap Size: \\d+"
-                    + escapedDecimalSeparator
-                    + "\\d+ GB, Total Memory: 16"
-                    + escapedDecimalSeparator
-                    + "00 GB, CPU Cores: 10"));
+    assertThat(report.get(VALIDATOR_API_REPORT_INDEX))
+        .isEqualTo(
+            "Validator Api Configuration | Enabled: true, Listen Address: 127.0.0.1, Port: 5679, Allow: [127.0.0.1, "
+                + "localhost]");
+  }
+
+  @Test
+  public void checkReportWithBeaconRestApiDisabled() {
+    final StartupLogConfig startupLogConfig =
+        startupLogConfigBuilder().validatorRestApiEnabled(false).build();
+
+    final List<String> report = startupLogConfig.getReport();
+
+    assertThat(report.get(VALIDATOR_API_REPORT_INDEX))
+        .isEqualTo("Validator Api Configuration | Enabled: false");
+  }
+
+  private StartupLogConfig.Builder startupLogConfigBuilder() {
+    final HardwareAbstractionLayer hardwareInfo = mock(HardwareAbstractionLayer.class);
+    final GlobalMemory memory = mock(GlobalMemory.class);
+    when(hardwareInfo.getMemory()).thenReturn(memory);
+    when(memory.getTotal()).thenReturn(Long.valueOf("123"));
+
+    final CentralProcessor centralProcessor = mock(CentralProcessor.class);
+    when(hardwareInfo.getProcessor()).thenReturn(centralProcessor);
+    when(centralProcessor.getLogicalProcessorCount()).thenReturn(2);
+
+    return StartupLogConfig.builder()
+        .network("mainnet")
+        .storageMode("PRUNE")
+        .hardwareInfo(hardwareInfo)
+        .beaconChainRestApiEnabled(true)
+        .beaconChainRestApiInterface("127.0.0.1")
+        .beaconChainRestApiPort(5678)
+        .beaconChainRestApiAllow(List.of("127.0.0.1", "localhost"))
+        .validatorRestApiEnabled(true)
+        .validatorRestApiInterface("127.0.0.1")
+        .validatorRestApiPort(6789)
+        .validatorRestApiAllow(List.of("127.0.0.1", "localhost"));
   }
 }

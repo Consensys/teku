@@ -19,6 +19,7 @@ import java.util.List;
 import oshi.hardware.HardwareAbstractionLayer;
 
 public class StartupLogConfig {
+
   private final String network;
   private final String storageMode;
 
@@ -86,7 +87,7 @@ public class StartupLogConfig {
     final String validatorApi =
         validatorRestApiEnabled
             ? String.format(
-                "Validator Api Configuration | Listen Address: %s, Port %s, Allow: %s",
+                "Validator Api Configuration | Enabled: true, Listen Address: %s, Port: %s, Allow: %s",
                 validatorRestApiInterface, validatorRestApiPort, validatorRestApiAllow)
             : "Validator Api Configuration | Enabled: false";
     return List.of(general, host, restApi, validatorApi);
@@ -97,6 +98,7 @@ public class StartupLogConfig {
   }
 
   public static class Builder {
+
     private String network;
     private String storageMode;
     private HardwareAbstractionLayer hardwareInfo;
