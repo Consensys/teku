@@ -94,7 +94,6 @@ public final class Teku {
 
   static BeaconNode startBeaconNode(final TekuConfiguration config) {
     return (BeaconNode) start(config, NodeMode.COMBINED);
-
   }
 
   static ValidatorNode startValidatorNode(final TekuConfiguration config) {
