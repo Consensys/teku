@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionclient.methods;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
@@ -60,7 +61,12 @@ public class EngineGetInclusionListV1 extends AbstractEngineJsonRpcMethod<List<T
                       .orElseThrow()
                       .getInclusionListSchema()
                       .getTransactionSchema();
-              return response.asInternalTransaction(transactionSchema);
+              return response.stream()
+                  .map(
+                      inclusionListTransactionV1 ->
+                          transactionSchema.fromBytes(
+                              Bytes.fromHexString(inclusionListTransactionV1)))
+                  .toList();
             });
   }
 }
