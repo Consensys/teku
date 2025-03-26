@@ -42,6 +42,8 @@ import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.Validator.DutyType;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -58,6 +60,7 @@ import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
       mock(BeaconCommitteeSubscriptions.class);
+  private final TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
 
   private final AttestationDutyFactory attestationDutyFactory = mock(AttestationDutyFactory.class);
 
@@ -947,7 +950,9 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             false);
     dutyScheduler =
         new AttestationDutyScheduler(
-            metricsSystem, new RetryingDutyLoader<>(asyncRunner, attestationDutyLoader), spec);
+            metricsSystem,
+            new RetryingDutyLoader<>(asyncRunner, timeProvider, attestationDutyLoader),
+            spec);
   }
 
   private void createDutySchedulerWithMockDuties() {
@@ -963,6 +968,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             false);
     dutyScheduler =
         new AttestationDutyScheduler(
-            metricsSystem2, new RetryingDutyLoader<>(asyncRunner, attestationDutyLoader), spec);
+            metricsSystem2,
+            new RetryingDutyLoader<>(asyncRunner, timeProvider, attestationDutyLoader),
+            spec);
   }
 }
