@@ -86,6 +86,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
@@ -2729,6 +2730,26 @@ public final class DataStructureUtil {
                 .orElseThrow()
                 .getMaxBlobsPerBlock()
             + 1);
+  }
+
+  public List<Bytes> randomInclusionListTransactions(final UInt64 slot) {
+    final SpecConfigEip7805 specConfigEip7805 =
+        spec.atSlot(slot).getConfig().toVersionEip7805().orElseThrow();
+    final int maxTransactionsSize = specConfigEip7805.getMaxBytesPerInclusionList();
+    final List<Bytes> transactions = new ArrayList<>();
+    int currentTransactionsSize = 0;
+    while (transactions.size() < specConfigEip7805.getMaxTransactionsPerInclusionList()
+        && currentTransactionsSize < maxTransactionsSize) {
+      final Bytes transaction = Bytes.random(randomInt(10, maxTransactionsSize + 1));
+      final int remainingSize = maxTransactionsSize - currentTransactionsSize;
+      if (transaction.size() <= remainingSize) {
+        transactions.add(transaction);
+        currentTransactionsSize += transaction.size();
+      } else if (!transactions.isEmpty()) {
+        break;
+      }
+    }
+    return transactions;
   }
 
   private int randomInt(final int origin, final int bound) {

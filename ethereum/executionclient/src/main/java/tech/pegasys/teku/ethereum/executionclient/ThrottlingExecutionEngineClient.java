@@ -25,10 +25,10 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
-import tech.pegasys.teku.ethereum.executionclient.schema.GetInclusionListV1Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.InclusionListV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
@@ -181,8 +181,7 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Response<GetInclusionListV1Response>> getInclusionListV1(
-      final Bytes32 parentHash) {
+  public SafeFuture<Response<InclusionListV1>> getInclusionListV1(final Bytes32 parentHash) {
     return taskQueue.queueTask(() -> delegate.getInclusionListV1(parentHash));
   }
 

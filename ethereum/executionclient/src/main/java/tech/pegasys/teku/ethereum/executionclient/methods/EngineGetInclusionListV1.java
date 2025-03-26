@@ -13,22 +13,26 @@
 
 package tech.pegasys.teku.ethereum.executionclient.methods;
 
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
-import tech.pegasys.teku.ethereum.executionclient.schema.GetInclusionListV1Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip7805.GetInclusionListResponse;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 
-public class EngineGetInclusionListV1
-    extends AbstractEngineJsonRpcMethod<GetInclusionListResponse> {
+public class EngineGetInclusionListV1 extends AbstractEngineJsonRpcMethod<List<Transaction>> {
 
   private static final Logger LOG = LogManager.getLogger();
+  private final Spec spec;
 
-  public EngineGetInclusionListV1(final ExecutionEngineClient executionEngineClient) {
+  public EngineGetInclusionListV1(
+      final ExecutionEngineClient executionEngineClient, final Spec spec) {
     super(executionEngineClient);
+    this.spec = spec;
   }
 
   @Override
@@ -42,12 +46,21 @@ public class EngineGetInclusionListV1
   }
 
   @Override
-  public SafeFuture<GetInclusionListResponse> execute(final JsonRpcRequestParams params) {
+  public SafeFuture<List<Transaction>> execute(final JsonRpcRequestParams params) {
     final Bytes32 parentHash = params.getRequiredParameter(0, Bytes32.class);
     LOG.trace("Calling {}(parentHash={})", getVersionedName(), parentHash);
     return executionEngineClient
         .getInclusionListV1(parentHash)
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        .thenApply(GetInclusionListV1Response::asInternalInclusionListResponse);
+        .thenApply(
+            response -> {
+              final TransactionSchema transactionSchema =
+                  spec.getGenesisSchemaDefinitions()
+                      .toVersionEip7805()
+                      .orElseThrow()
+                      .getInclusionListSchema()
+                      .getTransactionSchema();
+              return response.asInternalTransaction(transactionSchema);
+            });
   }
 }
