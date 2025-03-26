@@ -19,7 +19,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
-import static tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
 import static tech.pegasys.teku.ethereum.json.types.config.SpecConfigDataMapBuilder.GET_SPEC_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -38,6 +37,8 @@ import org.mockserver.matchers.Times;
 import org.mockserver.socket.PortFactory;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
+import tech.pegasys.teku.cli.NodeMode;
+import tech.pegasys.teku.cli.StartAction;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
@@ -206,7 +207,7 @@ public class ValidatorClientCommandTest {
   public TekuConfiguration getResultingTekuConfiguration() {
     final ArgumentCaptor<TekuConfiguration> configCaptor =
         ArgumentCaptor.forClass(TekuConfiguration.class);
-    verify(startAction).start(configCaptor.capture(), eq(true));
+    verify(startAction).start(configCaptor.capture(), eq(NodeMode.VC_ONLY));
     return configCaptor.getValue();
   }
 }
