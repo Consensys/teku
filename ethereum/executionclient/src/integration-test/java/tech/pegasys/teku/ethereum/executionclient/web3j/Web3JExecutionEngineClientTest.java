@@ -23,6 +23,7 @@ import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.SpecMilestone.EIP7805;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -53,6 +54,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.ethereum.executionclient.schema.InclusionListV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
@@ -72,7 +74,7 @@ import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(milestone = {CAPELLA, DENEB, ELECTRA})
+@TestSpecContext(milestone = {CAPELLA, DENEB, ELECTRA, EIP7805})
 public class Web3JExecutionEngineClientTest {
 
   private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
@@ -404,6 +406,39 @@ public class Web3JExecutionEngineClientTest {
     assertThat(requestData.get("params"))
         .asInstanceOf(LIST)
         .containsExactly(blobVersionedHashes.stream().map(VersionedHash::toHexString).toList());
+  }
+
+  @TestTemplate
+  public void getInclusionListV1_shouldBuildRequestAndResponseSuccessfully() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(EIP7805);
+    final List<Bytes> transactions =
+        dataStructureUtil.randomInclusionListTransactions(dataStructureUtil.randomSlot());
+    final InclusionListV1 inclusionListV1 = new InclusionListV1(transactions);
+    final String transactionsJson =
+        String.format(
+            "\"%s\"",
+            transactions.stream().map(Bytes::toHexString).collect(Collectors.joining(", ")));
+    final String bodyResponse =
+        "{\"jsonrpc\": \"2.0\", \"id\": 0, \"result\": { \"inclusionList\": ["
+            + transactionsJson
+            + "]}}";
+
+    mockSuccessfulResponse(bodyResponse);
+
+    final Bytes32 parentHash = dataStructureUtil.randomSlotAndBlockRoot().getBlockRoot();
+
+    final SafeFuture<Response<InclusionListV1>> futureResponse =
+        eeClient.getInclusionListV1(parentHash);
+
+    assertThat(futureResponse)
+        .succeedsWithin(1, TimeUnit.SECONDS)
+        .matches(response -> response.payload().equals(inclusionListV1));
+
+    final Map<String, Object> requestData = takeRequest();
+    verifyJsonRpcMethodCall(requestData, "engine_getInclusionListV1");
+    assertThat(requestData.get("params"))
+        .asInstanceOf(LIST)
+        .containsExactly(parentHash.toHexString());
   }
 
   private void mockSuccessfulResponse(final String responseBody) {

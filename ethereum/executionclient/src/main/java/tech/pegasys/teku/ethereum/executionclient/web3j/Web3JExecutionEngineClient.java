@@ -35,11 +35,11 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
-import tech.pegasys.teku.ethereum.executionclient.schema.GetInclusionListV1Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV5Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.InclusionListV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
@@ -330,12 +330,11 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Response<GetInclusionListV1Response>> getInclusionListV1(
-      final Bytes32 parentHash) {
+  public SafeFuture<Response<InclusionListV1>> getInclusionListV1(final Bytes32 parentHash) {
     final Request<?, GetnclusionListVersionV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_getInclusionListV1",
-            list(parentHash.toHexString()),
+            Collections.singletonList(parentHash.toHexString()),
             web3JClient.getWeb3jService(),
             GetnclusionListVersionV1Web3jResponse.class);
     return web3JClient.doRequest(web3jRequest, GET_INCLUSION_LIST_TIMEOUT);
@@ -387,7 +386,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
       extends org.web3j.protocol.core.Response<List<BlobAndProofV2>> {}
 
   static class GetnclusionListVersionV1Web3jResponse
-      extends org.web3j.protocol.core.Response<GetInclusionListV1Response> {}
+      extends org.web3j.protocol.core.Response<InclusionListV1> {}
 
   static class UpdatePayloadWithInclusionListV1Web3jResponse
       extends org.web3j.protocol.core.Response<UpdatePayloadWithInclusionListV1Response> {}

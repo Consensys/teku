@@ -96,12 +96,12 @@ public class InclusionListProductionDuty implements Duty {
                               slot, UInt64.valueOf(validatorWithIndex.index)),
                       this,
                       CREATE_TOTAL);
-              return signAttestationForValidator(
+              return signInclusionListForValidator(
                   slot, forkInfo, validatorWithIndex, unsignedInclusionList);
             });
   }
 
-  private SafeFuture<ProductionResult<SignedInclusionList>> signAttestationForValidator(
+  private SafeFuture<ProductionResult<SignedInclusionList>> signInclusionListForValidator(
       final UInt64 slot,
       final ForkInfo forkInfo,
       final ValidatorWithIndex validatorWithIndex,
@@ -115,7 +115,7 @@ public class InclusionListProductionDuty implements Duty {
                           validationInclusionList(inclusionList);
                           return validatorDutyMetrics.record(
                               () ->
-                                  signAttestationForValidator(
+                                  signInclusionListForValidator(
                                       forkInfo, inclusionList, validatorWithIndex),
                               this,
                               ValidatorDutyMetricsSteps.SIGN);
@@ -133,7 +133,7 @@ public class InclusionListProductionDuty implements Duty {
             error -> ProductionResult.failure(validatorWithIndex.validator.getPublicKey(), error));
   }
 
-  private SafeFuture<ProductionResult<SignedInclusionList>> signAttestationForValidator(
+  private SafeFuture<ProductionResult<SignedInclusionList>> signInclusionListForValidator(
       final ForkInfo forkInfo,
       final InclusionList inclusionList,
       final ValidatorWithIndex validatorWithIndex) {
@@ -141,7 +141,7 @@ public class InclusionListProductionDuty implements Duty {
         .validator
         .getSigner()
         .signInclusionList(inclusionList, forkInfo)
-        .thenApply(signature -> createSignedPayloadAttestation(inclusionList, signature))
+        .thenApply(signature -> createSignedInclusionList(inclusionList, signature))
         .thenApply(
             signedInclusionList ->
                 ProductionResult.success(
@@ -150,7 +150,7 @@ public class InclusionListProductionDuty implements Duty {
                     signedInclusionList));
   }
 
-  private SignedInclusionList createSignedPayloadAttestation(
+  private SignedInclusionList createSignedInclusionList(
       final InclusionList inclusionList, final BLSSignature signature) {
     final SignedInclusionListSchema signedInclusionListSchema =
         spec.atSlot(inclusionList.getSlot())

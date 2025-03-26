@@ -197,7 +197,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
                       .orElseThrow()
                       .getInclusionListSchema()
                       .getTransactionSchema();
-              return response.transactions.stream().map(transactionSchema::fromBytes).toList();
+              return response.asInternalTransaction(transactionSchema);
             });
   }
 

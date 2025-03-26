@@ -327,8 +327,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return combinedChainDataClient
         .getStateAtSlotExact(slot)
         .thenApply(
-            optionalState ->
-                optionalState.map(
+            maybeState ->
+                maybeState.map(
                     state ->
                         inclusionListDutiesGenerator.getInclusionListDutiesFromIndicesAndState(
                             state,

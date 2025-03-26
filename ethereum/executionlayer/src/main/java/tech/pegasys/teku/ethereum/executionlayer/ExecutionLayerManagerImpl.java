@@ -255,7 +255,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   @Override
   public SafeFuture<List<Transaction>> engineGetInclusionList(
       final Bytes32 parentHash, final UInt64 slot) {
-    LOG.trace("calling engineGetInclusionList(parentHash={}, slot={})", parentHash, slot);
+    LOG.info("calling engineGetInclusionList(parentHash={}, slot={})", parentHash, slot);
     return executionClientHandler.engineGetInclusionList(parentHash, slot);
   }
 
