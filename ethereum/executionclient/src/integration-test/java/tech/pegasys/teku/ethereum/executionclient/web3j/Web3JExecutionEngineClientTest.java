@@ -54,7 +54,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
-import tech.pegasys.teku.ethereum.executionclient.schema.InclusionListV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
@@ -413,26 +412,24 @@ public class Web3JExecutionEngineClientTest {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(EIP7805);
     final List<Bytes> transactions =
         dataStructureUtil.randomInclusionListTransactions(dataStructureUtil.randomSlot());
-    final InclusionListV1 inclusionListV1 = new InclusionListV1(transactions);
+    final List<String> inclusionListTransactionV1List =
+        transactions.stream().map(Bytes::toHexString).toList();
     final String transactionsJson =
         String.format(
-            "\"%s\"",
-            transactions.stream().map(Bytes::toHexString).collect(Collectors.joining(", ")));
+            "\"%s\"", transactions.stream().map(Bytes::toString).collect(Collectors.joining(", ")));
     final String bodyResponse =
-        "{\"jsonrpc\": \"2.0\", \"id\": 0, \"result\": { \"inclusionList\": ["
-            + transactionsJson
-            + "]}}";
+        "{\"jsonrpc\": \"2.0\", \"id\": 0, \"result\": [" + transactionsJson + "]}";
 
     mockSuccessfulResponse(bodyResponse);
 
     final Bytes32 parentHash = dataStructureUtil.randomSlotAndBlockRoot().getBlockRoot();
 
-    final SafeFuture<Response<InclusionListV1>> futureResponse =
+    final SafeFuture<Response<List<String>>> futureResponse =
         eeClient.getInclusionListV1(parentHash);
 
     assertThat(futureResponse)
         .succeedsWithin(1, TimeUnit.SECONDS)
-        .matches(response -> response.payload().equals(inclusionListV1));
+        .matches(response -> response.payload().equals(inclusionListTransactionV1List));
 
     final Map<String, Object> requestData = takeRequest();
     verifyJsonRpcMethodCall(requestData, "engine_getInclusionListV1");

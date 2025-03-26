@@ -29,7 +29,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV5Response;
-import tech.pegasys.teku.ethereum.executionclient.schema.InclusionListV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
@@ -97,7 +96,7 @@ public interface ExecutionEngineClient {
 
   SafeFuture<Response<List<BlobAndProofV2>>> getBlobsV2(List<VersionedHash> blobVersionedHashes);
 
-  SafeFuture<Response<InclusionListV1>> getInclusionListV1(Bytes32 parentHash);
+  SafeFuture<Response<List<String>>> getInclusionListV1(Bytes32 parentHash);
 
   SafeFuture<Response<UpdatePayloadWithInclusionListV1Response>> updatePayloadWithInclusionListV1(
       Bytes8 payloadId, List<Bytes> inclusionList);
