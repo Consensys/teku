@@ -176,6 +176,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @CommandLine.Spec private CommandLine.Model.CommandSpec spec;
 
   private final ValidatorClientCommand validatorClientSubcommand;
+  private final BootnodeCommand bootnodeSubcommand;
 
   public BeaconNodeCommand(
       final PrintWriter outputWriter,
@@ -192,6 +193,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
     metricCategoryConverter.addCategories(TekuMetricCategory.class);
     metricCategoryConverter.addCategories(StandardMetricCategory.class);
     this.validatorClientSubcommand = new ValidatorClientCommand(loggingOptions);
+    this.bootnodeSubcommand = new BootnodeCommand();
   }
 
   private CommandLine configureCommandLine(final CommandLine commandLine) {
@@ -212,7 +214,10 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   private CommandLine getCommandLine() {
-    return configureCommandLine(new CommandLine(this).addSubcommand(validatorClientSubcommand));
+    return configureCommandLine(
+        new CommandLine(this)
+            .addSubcommand(validatorClientSubcommand)
+            .addSubcommand(bootnodeSubcommand));
   }
 
   public int parse(final String[] args) {
