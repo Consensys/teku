@@ -48,13 +48,9 @@ class TekuMetricCategoryTest {
             STORAGE_FINALIZED_DB,
             REMOTE_VALIDATOR,
             VALIDATOR,
-            VALIDATOR_PERFORMANCE);
+            VALIDATOR_PERFORMANCE,
+            VALIDATOR_DUTY);
 
     assertThat(TekuMetricCategory.defaultCategories()).containsAll(expectedDefaultCategories);
-  }
-
-  @Test
-  public void validatorDutyCategoryIsNotADefaultCategory() {
-    assertThat(TekuMetricCategory.defaultCategories()).doesNotContain(VALIDATOR_DUTY);
   }
 }
