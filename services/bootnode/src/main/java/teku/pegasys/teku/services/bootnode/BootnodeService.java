@@ -97,7 +97,7 @@ public class BootnodeService extends Service {
         .start()
         .thenPeek(
             __ -> {
-              LOG.info("Bootnode service started!");
+              LOG.info("Bootnode service started");
 
               discoveryService
                   .getEnr()
@@ -114,6 +114,6 @@ public class BootnodeService extends Service {
     return discoveryService
         .stop()
         .thenRun(asyncRunner::shutdown)
-        .thenPeek(__ -> LOG.info("Bootnode service stopped!"));
+        .thenPeek(__ -> LOG.info("Bootnode service stopped"));
   }
 }

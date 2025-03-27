@@ -193,7 +193,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
     metricCategoryConverter.addCategories(TekuMetricCategory.class);
     metricCategoryConverter.addCategories(StandardMetricCategory.class);
     this.validatorClientSubcommand = new ValidatorClientCommand(loggingOptions);
-    this.bootnodeSubcommand = new BootnodeCommand();
+    this.bootnodeSubcommand = new BootnodeCommand(loggingOptions);
   }
 
   private CommandLine configureCommandLine(final CommandLine commandLine) {

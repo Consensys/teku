@@ -46,23 +46,25 @@ public class BootnodeCommand implements Callable<Integer> {
   public static final String LOG_FILE_PREFIX = "teku-bootnode";
 
   @Mixin(name = "Network")
-  private final Eth2NetworkOptions eth2NetworkOptions = new Eth2NetworkOptions();
+  private Eth2NetworkOptions eth2NetworkOptions;
 
   @Mixin(name = "Data Storage")
-  private final BeaconNodeDataOptions beaconNodeDataOptions = new BeaconNodeDataOptions();
+  private BeaconNodeDataOptions beaconNodeDataOptions;
 
   @Mixin(name = "P2P")
-  private final P2POptions p2POptions = new P2POptions();
+  private P2POptions p2POptions;
 
   @Mixin(name = "Logging")
-  private final LoggingOptions loggingOptions = new LoggingOptions();
+  private final LoggingOptions loggingOptions;
 
   @Mixin(name = "Metrics")
-  private final MetricsOptions metricsOptions = new MetricsOptions();
+  private MetricsOptions metricsOptions;
 
   @ParentCommand private BeaconNodeCommand parentCommand;
 
-  public BootnodeCommand() {}
+  public BootnodeCommand(final LoggingOptions sharedLoggingOptions) {
+    this.loggingOptions = sharedLoggingOptions;
+  }
 
   @Override
   public Integer call() {
