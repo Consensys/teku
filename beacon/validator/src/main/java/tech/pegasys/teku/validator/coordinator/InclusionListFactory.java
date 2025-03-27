@@ -14,8 +14,6 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -28,8 +26,6 @@ import tech.pegasys.teku.spec.logic.common.util.InclusionListUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class InclusionListFactory {
-
-  private static final Logger LOG = LogManager.getLogger();
 
   private final ExecutionLayerChannel executionLayerChannel;
   private final CombinedChainDataClient combinedChainDataClient;
