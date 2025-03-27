@@ -543,6 +543,7 @@ public class ValidatorClientService extends Service {
       final DutyLoader<?> inclusionListDutyLoader =
           new RetryingDutyLoader<>(
               asyncRunner,
+              timeProvider,
               new InclusionListDutyLoader(
                   validatorApiChannel,
                   dependentRoot ->
