@@ -205,10 +205,10 @@ public class StatusLogger {
   }
 
   public void doppelgangerCheck(final UInt64 epoch, final Set<String> publicKeys) {
-    log.info("Performing doppelganger check at epoch {} for public keys {} ",
-            epoch,
-             formatValidatorKeys(publicKeys));
-
+    log.info(
+        "Performing doppelganger check at epoch {} for public keys {} ",
+        epoch,
+        formatValidatorKeys(publicKeys));
   }
 
   public void validatorsDoppelgangersDetected(final Map<UInt64, String> doppelgangersInfo) {
