@@ -53,5 +53,6 @@ dependencies {
 
   jmhImplementation testFixtures(project(':infrastructure:bls'))
   jmhImplementation testFixtures(project(':ethereum:spec'))
+  jmhImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   jmhImplementation 'org.mockito:mockito-core'
 }

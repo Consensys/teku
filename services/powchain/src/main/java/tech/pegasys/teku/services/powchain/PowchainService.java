@@ -75,6 +75,7 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
   private final Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider;
   private final Supplier<Optional<BeaconState>> finalizedStateSupplier;
 
+  private AsyncRunner asyncRunner;
   private List<Web3j> web3js;
   private Eth1Providers eth1Providers;
   private Eth1DepositManager eth1DepositManager;
@@ -116,7 +117,11 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
     return SafeFuture.allOfFailFast(
         Stream.concat(
                 Stream.<ExceptionThrowingRunnable>of(
-                    headTracker::stop, eth1DepositManager::stop, eth1Providers::stop),
+                    headTracker::stop,
+                    eth1DepositManager::stop,
+                    eth1Providers::stop,
+                    // stop all tasks currently running
+                    asyncRunner::shutdown),
                 web3js.stream().map(web3j -> web3j::shutdown))
             .map(SafeFuture::fromRunnable)
             .toArray(SafeFuture[]::new));
@@ -151,7 +156,7 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
 
   @VisibleForTesting
   void initialize() {
-    final AsyncRunner asyncRunner = serviceConfig.createAsyncRunner("powchain");
+    asyncRunner = serviceConfig.createAsyncRunner("powchain");
 
     final SpecConfig config = powConfig.getSpec().getGenesisSpecConfig();
     if (!powConfig.isEnabled()) {
@@ -169,7 +174,7 @@ public class PowchainService extends Service implements FinalizedCheckpointChann
               config,
               serviceConfig.getMetricsSystem(),
               executionWeb3jClientProvider.getEndpoint(),
-              web3js.get(0),
+              web3js.getFirst(),
               asyncRunner,
               serviceConfig.getTimeProvider());
 

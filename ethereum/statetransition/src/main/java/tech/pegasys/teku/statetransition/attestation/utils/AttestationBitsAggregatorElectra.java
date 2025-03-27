@@ -69,6 +69,15 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
       final SszBitlist otherAggregatedBits,
       final boolean isAggregation) {
 
+    if (otherCommitteeBits.equals(committeeBits)) {
+      // If the committee bits are the same, we can directly combine the aggregation bits
+      if (isAggregation && aggregationBits.intersects(otherAggregatedBits)) {
+        return false;
+      }
+      aggregationBits = aggregationBits.or(otherAggregatedBits);
+      return true;
+    }
+
     final SszBitvector combinedCommitteeBits = committeeBits.or(otherCommitteeBits);
 
     final Int2IntMap otherCommitteeBitsStartingPositions =
@@ -185,14 +194,12 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
 
   @Override
   public boolean isSuperSetOf(final Attestation other) {
-    if (!committeeBits.isSuperSetOf(other.getCommitteeBitsRequired())) {
-      return false;
+    if (committeeBits.equals(other.getCommitteeBitsRequired())) {
+      return aggregationBits.isSuperSetOf(other.getAggregationBits());
     }
 
-    if (committeeBits.getBitCount() == other.getCommitteeBitsRequired().getBitCount()) {
-      // this committeeBits is a superset of the other, and bit count is the same, so they are the
-      // same set and we can directly compare aggregation bits.
-      return aggregationBits.isSuperSetOf(other.getAggregationBits());
+    if (!committeeBits.isSuperSetOf(other.getCommitteeBitsRequired())) {
+      return false;
     }
 
     final SszBitvector otherCommitteeBits = other.getCommitteeBitsRequired();
