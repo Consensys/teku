@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -151,8 +151,7 @@ class ExpectedWithdrawalsTest {
         BeaconStateElectra.required(
             new BeaconStateTestBuilder(dataStructureUtil)
                 .activeConsolidatingValidator(electraMaxBalance.plus(partialWithdrawalBalance))
-                // the two validators below are skipped because they are queued for exit therefore
-                // they're withdrawals are skipped
+                // the two validators below are skipped because they are queued for exit
                 .activeConsolidatingValidatorQueuedForExit(
                     electraMaxBalance.plus(partialWithdrawalBalance + 1))
                 .activeConsolidatingValidatorQueuedForExit(
@@ -166,11 +165,6 @@ class ExpectedWithdrawalsTest {
 
     final ExpectedWithdrawals withdrawals =
         spec.getBlockProcessor(preState.getSlot()).getExpectedWithdrawals(preState);
-
-    // even having 2 of the 3 partial withdrawals skipped,
-    // the count should be 2(which is the MAX_PENDING_PARTIALS_PER_WITHDRAWALS_SWEEP for minimal
-    // spec)
-    // because we consider the skipped in the count
-    assertThat(withdrawals.getPartialWithdrawalCount()).isEqualTo(2);
+    assertThat(withdrawals.getPartialWithdrawalCount()).isEqualTo(3);
   }
 }
