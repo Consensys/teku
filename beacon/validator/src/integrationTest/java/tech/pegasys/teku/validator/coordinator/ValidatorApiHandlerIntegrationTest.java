@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -189,7 +189,7 @@ public class ValidatorApiHandlerIntegrationTest {
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
             new BlockProductionAndPublishingPerformanceFactory(
-                new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0),
+                new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0, Optional.empty()),
             new MilestoneBasedBlockPublisher(
                 asyncRunner,
                 specContext.getSpec(),

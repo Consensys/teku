@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -99,6 +99,16 @@ public class MetricsOptions {
   private boolean blockPerformanceEnabled = MetricsConfig.DEFAULT_BLOCK_PERFORMANCE_ENABLED;
 
   @Option(
+      names = {"--metrics-block-production-performance-tracking-enabled"},
+      showDefaultValue = Visibility.ALWAYS,
+      paramLabel = "<BOOLEAN>",
+      description = "Whether block production timing metrics are tracked and reported",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean blockProductionPerformanceEnabled =
+      MetricsConfig.DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_ENABLED;
+
+  @Option(
       names = {"--Xmetrics-tick-timing-tracking-enabled"},
       hidden = true,
       showDefaultValue = Visibility.ALWAYS,
@@ -195,6 +205,7 @@ public class MetricsOptions {
                 .metricsPublishInterval(metricsPublicationInterval)
                 .idleTimeoutSeconds(idleTimeoutSeconds)
                 .blockPerformanceEnabled(blockPerformanceEnabled)
+                .blockProductionPerformanceEnabled(blockProductionPerformanceEnabled)
                 .tickPerformanceEnabled(tickPerformanceEnabled)
                 .blobSidecarsStorageCountersEnabled(blobSidecarsStorageCountersEnabled)
                 .blockProductionAndPublishingPerformanceEnabled(

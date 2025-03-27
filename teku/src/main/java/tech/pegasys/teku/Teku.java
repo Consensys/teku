@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -19,7 +19,8 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
-import tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
+import tech.pegasys.teku.cli.NodeMode;
+import tech.pegasys.teku.cli.StartAction;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.io.JemallocDetector;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
@@ -61,13 +62,15 @@ public final class Teku {
         .parse(args);
   }
 
-  private static Node start(final TekuConfiguration config, final boolean validatorOnly) {
+  private static Node start(final TekuConfiguration config, final NodeMode nodeMode) {
     final Node node;
-    if (validatorOnly) {
-      node = new ValidatorNode(config);
-    } else {
-      node = new BeaconNode(config);
+
+    switch (nodeMode) {
+      case VC_ONLY -> node = new ValidatorNode(config);
+      case COMBINED -> node = new BeaconNode(config);
+      default -> throw new IllegalStateException("Expected node mode to be set");
     }
+
     // Check that BLS is available before starting to ensure we get a nice error message if it's not
     if (BlstLoader.INSTANCE.isEmpty()) {
       throw new UnsupportedOperationException("BLS native library unavailable for this platform");
@@ -90,11 +93,11 @@ public final class Teku {
   }
 
   static BeaconNode startBeaconNode(final TekuConfiguration config) {
-    return (BeaconNode) start(config, false);
+    return (BeaconNode) start(config, NodeMode.COMBINED);
   }
 
   static ValidatorNode startValidatorNode(final TekuConfiguration config) {
-    return (ValidatorNode) start(config, true);
+    return (ValidatorNode) start(config, NodeMode.VC_ONLY);
   }
 
   private static class CLIException extends RuntimeException {

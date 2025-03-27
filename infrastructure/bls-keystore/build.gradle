@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2020
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,8 +18,8 @@ dependencies {
   implementation 'org.bouncycastle:bcprov-jdk18on'
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
-  implementation 'io.tmio:tuweni-bytes'
-  implementation 'io.tmio:tuweni-crypto'
+  implementation 'io.consensys.tuweni:tuweni-bytes'
+  implementation 'io.consensys.tuweni:tuweni-crypto'
 
   testImplementation 'org.assertj:assertj-core'
   testImplementation 'org.junit.jupiter:junit-jupiter-engine'

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p;
 
+import static io.libp2p.crypto.keys.EcdsaKt.unmarshalEcdsaPrivateKey;
+import static io.libp2p.crypto.keys.Secp256k1Kt.unmarshalSecp256k1PrivateKey;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import io.libp2p.core.crypto.KeyKt;
@@ -37,14 +39,26 @@ public class LibP2PPrivateKeyLoader implements LibP2PNetwork.PrivateKeyProvider 
 
   @Override
   public PrivKey get() {
-    final Bytes privKeyBytes =
-        privateKeySource
-            .map(PrivateKeySource::getOrGeneratePrivateKeyBytes)
-            .orElseGet(() -> generateAndSaveNewPrivateKey(keyValueStore));
-    return KeyKt.unmarshalPrivateKey(privKeyBytes.toArrayUnsafe());
+    final Bytes privKeyBytes;
+    final Optional<PrivateKeySource.Type> type;
+    if (privateKeySource.isEmpty()) {
+      privKeyBytes = getOrGenerateAndSaveNewPrivateKey(keyValueStore);
+      type = Optional.empty();
+    } else {
+      type = privateKeySource.get().getType();
+      privKeyBytes = privateKeySource.get().getPrivateKeyBytes();
+    }
+    return type.map(
+            value ->
+                switch (value) {
+                  case ECDSA -> unmarshalEcdsaPrivateKey(privKeyBytes.toArrayUnsafe());
+                  case SECP256K1 -> unmarshalSecp256k1PrivateKey(privKeyBytes.toArrayUnsafe());
+                })
+        .orElseGet(() -> KeyKt.unmarshalPrivateKey(privKeyBytes.toArrayUnsafe()));
   }
 
-  private Bytes generateAndSaveNewPrivateKey(final KeyValueStore<String, Bytes> keyValueStore) {
+  private Bytes getOrGenerateAndSaveNewPrivateKey(
+      final KeyValueStore<String, Bytes> keyValueStore) {
     final Bytes privateKey;
     final Optional<Bytes> generatedKeyBytes = keyValueStore.get(GENERATED_NODE_KEY_KEY);
     if (generatedKeyBytes.isEmpty()) {

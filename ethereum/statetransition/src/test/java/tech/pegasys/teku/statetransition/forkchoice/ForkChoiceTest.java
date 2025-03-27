@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -470,7 +470,7 @@ class ForkChoiceTest {
     if (shouldReorg) {
       assertThat(recentChainData.getStore().getProposerBoostRoot())
           .contains(expectedChainHead.getRoot());
-      assertThat(forkChoice.processHead()).isCompleted();
+      // for reorging blocks with proposer boost processHead is executed by forkChoice.onBlock
       // Check we switched chains, if proposer reward wasn't considered we'd stay on the other fork
       assertThat(recentChainData.getBestBlockRoot()).hasValue(expectedChainHead.getRoot());
     } else {

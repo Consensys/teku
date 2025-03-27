@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -180,8 +180,8 @@ public class AggregateAttestationValidator {
               if (!beaconCommittee.contains(aggregateAndProof.getIndex().intValue())) {
                 return SafeFuture.completedFuture(
                     reject(
-                        "Rejecting aggregate because attester is not in committee. Should have been one of %s",
-                        beaconCommittee));
+                        "Rejecting aggregate because attester %s is not in committee. Should have been one of %s",
+                        aggregateAndProof.getIndex(), beaconCommittee));
               }
 
               if (!validateSignature(

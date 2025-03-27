@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -402,11 +402,13 @@ class AggregatingAttestationPoolTest {
 
   @TestTemplate
   public void getSize_shouldDecreaseWhenAttestationsRemoved() {
-    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
 
     when(mockRecentChainData.getCurrentSlot()).thenReturn(Optional.of(ONE));
     addAttestationFromValidators(attestationData, 1, 2, 3, 4);
     final Attestation attestationToRemove = addAttestationFromValidators(attestationData, 2, 5);
+
+    when(mockRecentChainData.getCurrentEpoch()).thenReturn(Optional.of(ZERO));
     aggregatingPool.onAttestationsIncludedInBlock(ZERO, List.of(attestationToRemove));
     assertThat(aggregatingPool.getSize()).isEqualTo(1);
   }
@@ -422,7 +424,7 @@ class AggregatingAttestationPoolTest {
 
   @TestTemplate
   public void getSize_shouldDecrementForAllRemovedAttestations() {
-    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
 
     when(mockRecentChainData.getCurrentSlot()).thenReturn(Optional.of(ONE));
     addAttestationFromValidators(attestationData, 1, 2, 3);
@@ -430,6 +432,8 @@ class AggregatingAttestationPoolTest {
     assertThat(aggregatingPool.getSize()).isEqualTo(2);
     final Attestation attestationToRemove =
         addAttestationFromValidators(attestationData, 1, 2, 3, 4, 5);
+
+    when(mockRecentChainData.getCurrentEpoch()).thenReturn(Optional.of(ZERO));
     aggregatingPool.onAttestationsIncludedInBlock(ZERO, List.of(attestationToRemove));
     assertThat(aggregatingPool.getSize()).isEqualTo(0);
   }
@@ -447,7 +451,7 @@ class AggregatingAttestationPoolTest {
 
   @TestTemplate
   public void getSize_shouldDecrementForAllRemovedAttestationsWhileKeepingOthers() {
-    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
 
     addAttestationFromValidators(attestationData, 1, 2, 3);
     addAttestationFromValidators(attestationData, 4, 5);
@@ -459,7 +463,7 @@ class AggregatingAttestationPoolTest {
     assertThat(aggregatingPool.getSize()).isEqualTo(5);
 
     when(mockRecentChainData.getCurrentSlot()).thenReturn(Optional.of(ONE));
-
+    when(mockRecentChainData.getCurrentEpoch()).thenReturn(Optional.of(ONE));
     aggregatingPool.onAttestationsIncludedInBlock(ZERO, List.of(attestationToRemove));
     assertThat(aggregatingPool.getSize()).isEqualTo(2);
   }
@@ -635,6 +639,7 @@ class AggregatingAttestationPoolTest {
   @TestTemplate
   void onAttestationsIncludedInBlock_shouldNotAddAttestationsAlreadySeenInABlock() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
+    when(mockRecentChainData.getCurrentEpoch()).thenReturn(Optional.of(ZERO));
     when(mockRecentChainData.getCurrentSlot()).thenReturn(Optional.of(ONE));
     // Included in block before we see any attestations with this data
     aggregatingPool.onAttestationsIncludedInBlock(
@@ -648,6 +653,7 @@ class AggregatingAttestationPoolTest {
   @TestTemplate
   void onAttestationsIncludedInBlock_shouldRemoveAttestationsWhenSeenInABlock() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
+    when(mockRecentChainData.getCurrentEpoch()).thenReturn(Optional.of(ZERO));
     addAttestationFromValidators(attestationData, 2, 3);
 
     when(mockRecentChainData.getCurrentSlot()).thenReturn(Optional.of(ONE));
