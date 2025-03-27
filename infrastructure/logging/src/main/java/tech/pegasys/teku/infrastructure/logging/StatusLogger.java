@@ -36,7 +36,8 @@ public class StatusLogger {
 
   public static final StatusLogger STATUS_LOG =
       new StatusLogger(LoggingConfigurator.STATUS_LOGGER_NAME);
-  public static final int KEY_LIMIT = 20;
+
+  private static final int VALIDATOR_KEY_LIMIT = 20;
 
   @SuppressWarnings("PrivateStaticFinalLoggers")
   final Logger log;
@@ -424,18 +425,6 @@ public class StatusLogger {
     }
   }
 
-  public void adjustingP2pLowerBoundToUpperBound(final int p2pUpperBound) {
-    log.info(
-        "Adjusting target number of peers lower bound to equal upper bound, which is {}",
-        p2pUpperBound);
-  }
-
-  public void adjustingP2pUpperBoundToLowerBound(final int p2pLowerBound) {
-    log.warn(
-        "Target number of peers upper bound cannot be set below the peers lower bound.  Increasing target to {}.",
-        p2pLowerBound);
-  }
-
   public void performance(final String performance) {
     log.info(performance);
   }
@@ -525,13 +514,6 @@ public class StatusLogger {
         executionBlockHash);
   }
 
-  public void warnFlagDeprecation(final String oldFlag, final String newFlag) {
-    logWithColorIfLevelGreaterThanInfo(
-        Level.WARN,
-        String.format("Flag `%s` is deprecated, use `%s` instead", oldFlag, newFlag),
-        Color.YELLOW);
-  }
-
   public void warnIgnoringWeakSubjectivityPeriod() {
     log.warn(
         print(
@@ -559,7 +541,7 @@ public class StatusLogger {
     if (keys.isEmpty()) {
       return "";
     }
-    final String suffix = keys.size() > KEY_LIMIT ? "… (" + keys.size() + " total)" : "";
-    return keys.stream().limit(KEY_LIMIT).collect(Collectors.joining(", ", "", suffix));
+    final String suffix = keys.size() > VALIDATOR_KEY_LIMIT ? "… (" + keys.size() + " total)" : "";
+    return keys.stream().limit(VALIDATOR_KEY_LIMIT).collect(Collectors.joining(", ", "", suffix));
   }
 }
