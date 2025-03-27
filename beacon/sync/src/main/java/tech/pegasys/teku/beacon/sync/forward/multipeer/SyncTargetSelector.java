@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -51,7 +51,7 @@ public class SyncTargetSelector {
   public Optional<SyncTarget> selectSyncTarget(final Optional<SyncTarget> activeSyncTarget) {
     final boolean inSyncMode =
         activeSyncTarget.map(target -> !target.isSpeculativeSync()).orElse(false);
-    LOG.trace(
+    LOG.debug(
         "Considering sync targets. In sync mode: {}, Active target {}",
         inSyncMode,
         activeSyncTarget);
@@ -61,7 +61,7 @@ public class SyncTargetSelector {
             .map(SyncTarget::finalizedTarget);
 
     if (finalizedSyncTarget.isPresent()) {
-      LOG.trace("Selected finalized chain as sync target {}", finalizedSyncTarget);
+      LOG.debug("Selected finalized chain as sync target {}", finalizedSyncTarget);
       return finalizedSyncTarget;
     }
 
@@ -72,7 +72,7 @@ public class SyncTargetSelector {
                 inSyncMode)
             .map(SyncTarget::nonfinalizedTarget);
     if (nonfinalizedSyncTarget.isPresent()) {
-      LOG.trace("Selected non-finalized chain as sync target {}", nonfinalizedSyncTarget);
+      LOG.debug("Selected non-finalized chain as sync target {}", nonfinalizedSyncTarget);
       return nonfinalizedSyncTarget;
     }
 

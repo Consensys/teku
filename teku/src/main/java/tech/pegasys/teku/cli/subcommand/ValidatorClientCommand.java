@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -22,6 +22,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.ParentCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
+import tech.pegasys.teku.cli.NodeMode;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.InteropOptions;
 import tech.pegasys.teku.cli.options.LoggingOptions;
@@ -97,7 +98,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
       startLogging();
       final TekuConfiguration globalConfiguration = tekuConfiguration();
       checkValidatorKeysConfig(globalConfiguration);
-      parentCommand.getStartAction().start(globalConfiguration, true);
+      parentCommand.getStartAction().start(globalConfiguration, NodeMode.VC_ONLY);
       return 0;
     } catch (final Throwable t) {
       return parentCommand.handleExceptionAndReturnExitCode(t);

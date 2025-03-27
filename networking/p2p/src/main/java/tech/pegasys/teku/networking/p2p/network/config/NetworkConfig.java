@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,6 +29,7 @@ import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.utils.Strings;
@@ -213,7 +214,8 @@ public class NetworkConfig {
 
     private Boolean isEnabled = true;
     private Optional<String> privateKeyFile = Optional.empty();
-    private Optional<PrivateKeySource> privateKeySource = Optional.empty();
+    private Optional<String> privateKeyFileSecp256k1 = Optional.empty();
+    private Optional<String> privateKeyFileEcdsa = Optional.empty();
     private List<String> networkInterfaces = DEFAULT_P2P_INTERFACE;
     private Optional<List<String>> advertisedIps = Optional.empty();
     private int listenPort = DEFAULT_P2P_PORT;
@@ -225,11 +227,21 @@ public class NetworkConfig {
     private Builder() {}
 
     public NetworkConfig build() {
+      if (Stream.of(privateKeyFile, privateKeyFileSecp256k1, privateKeyFileEcdsa)
+              .filter(Optional::isPresent)
+              .count()
+          > 1) {
+        throw new InvalidConfigurationException(
+            "Only single private key option should be specified.");
+      }
+
       return new NetworkConfig(
           isEnabled,
           gossipConfigBuilder.build(),
           wireLogsConfig.build(),
-          privateKeySource.or(this::createFileKeySource),
+          createFileKeySource()
+              .or(this::createSecp256k1FileKeySource)
+              .or(this::createEcdsaFileKeySource),
           networkInterfaces,
           advertisedIps,
           listenPort,
@@ -240,7 +252,17 @@ public class NetworkConfig {
     }
 
     private Optional<PrivateKeySource> createFileKeySource() {
-      return privateKeyFile.map(FilePrivateKeySource::new);
+      return privateKeyFile.map(GeneratingFilePrivateKeySource::new);
+    }
+
+    private Optional<PrivateKeySource> createSecp256k1FileKeySource() {
+      return privateKeyFileSecp256k1.map(
+          path -> new TypedFilePrivateKeySource(path, PrivateKeySource.Type.SECP256K1));
+    }
+
+    private Optional<PrivateKeySource> createEcdsaFileKeySource() {
+      return privateKeyFileEcdsa.map(
+          path -> new TypedFilePrivateKeySource(path, PrivateKeySource.Type.ECDSA));
     }
 
     public Builder isEnabled(final Boolean enabled) {
@@ -265,9 +287,15 @@ public class NetworkConfig {
       return this;
     }
 
-    public Builder setPrivateKeySource(final PrivateKeySource privateKeySource) {
-      checkNotNull(privateKeySource);
-      this.privateKeySource = Optional.of(privateKeySource);
+    public Builder privateKeyFileSecp256k1(final String privateKeyFileSecp256k1) {
+      checkNotNull(privateKeyFileSecp256k1);
+      this.privateKeyFileSecp256k1 = Optional.of(privateKeyFileSecp256k1).filter(f -> !f.isBlank());
+      return this;
+    }
+
+    public Builder privateKeyFileEcdsa(final String privateKeyFileEcdsa) {
+      checkNotNull(privateKeyFileEcdsa);
+      this.privateKeyFileEcdsa = Optional.of(privateKeyFileEcdsa).filter(f -> !f.isBlank());
       return this;
     }
 
