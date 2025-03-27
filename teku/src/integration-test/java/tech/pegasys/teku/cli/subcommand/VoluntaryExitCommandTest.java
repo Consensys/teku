@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -56,6 +56,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
+import tech.pegasys.teku.cli.StartAction;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -86,7 +87,7 @@ public class VoluntaryExitCommandTest {
           outputWriter,
           errorWriter,
           Collections.emptyMap(),
-          mock(BeaconNodeCommand.StartAction.class),
+          mock(StartAction.class),
           mock(LoggingConfigurator.class));
 
   private final ByteArrayOutputStream stdOut = new ByteArrayOutputStream();

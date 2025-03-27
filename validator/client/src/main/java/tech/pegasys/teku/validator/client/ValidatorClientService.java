@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -95,7 +95,7 @@ public class ValidatorClientService extends Service {
   private final BeaconNodeApi beaconNodeApi;
   private final ForkProvider forkProvider;
   private final Spec spec;
-
+  private final TimeProvider timeProvider;
   private final List<ValidatorTimingChannel> validatorTimingChannels = new ArrayList<>();
   private final ValidatorStatusProvider validatorStatusProvider;
   private ValidatorIndexProvider validatorIndexProvider;
@@ -124,7 +124,8 @@ public class ValidatorClientService extends Service {
       final Spec spec,
       final MetricsSystem metricsSystem,
       final SlashingRiskAction doppelgangerDetectionAction,
-      final Optional<SlashingRiskAction> maybeValidatorSlashedAction) {
+      final Optional<SlashingRiskAction> maybeValidatorSlashedAction,
+      final TimeProvider timeProvider) {
     this.eventChannels = eventChannels;
     this.validatorLoader = validatorLoader;
     this.beaconNodeApi = beaconNodeApi;
@@ -137,6 +138,7 @@ public class ValidatorClientService extends Service {
     this.metricsSystem = metricsSystem;
     this.doppelgangerDetectionAction = doppelgangerDetectionAction;
     this.maybeValidatorSlashedAction = maybeValidatorSlashedAction;
+    this.timeProvider = timeProvider;
   }
 
   public static ValidatorClientService create(
@@ -236,7 +238,8 @@ public class ValidatorClientService extends Service {
             config.getSpec(),
             services.getMetricsSystem(),
             doppelgangerDetectionAction,
-            maybeValidatorSlashedAction);
+            maybeValidatorSlashedAction,
+            services.getTimeProvider());
 
     asyncRunner
         .runAsync(
@@ -472,6 +475,7 @@ public class ValidatorClientService extends Service {
     final DutyLoader<?> attestationDutyLoader =
         new RetryingDutyLoader<>(
             asyncRunner,
+            timeProvider,
             new AttestationDutyLoader(
                 validatorApiChannel,
                 forkProvider,
@@ -488,6 +492,7 @@ public class ValidatorClientService extends Service {
     final DutyLoader<?> blockDutyLoader =
         new RetryingDutyLoader<>(
             asyncRunner,
+            timeProvider,
             new BlockProductionDutyLoader(
                 validatorApiChannel,
                 dependentRoot ->
@@ -508,6 +513,7 @@ public class ValidatorClientService extends Service {
       final DutyLoader<SyncCommitteeScheduledDuties> syncCommitteeDutyLoader =
           new RetryingDutyLoader<>(
               asyncRunner,
+              timeProvider,
               new SyncCommitteeDutyLoader(
                   validators,
                   validatorIndexProvider,

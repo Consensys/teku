@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -154,9 +154,27 @@ public class P2POptions {
       names = {"--p2p-private-key-file"},
       paramLabel = "<FILENAME>",
       description =
-          "This node's private key file. If not specified, uses or generates a key which is stored within the <beacon-data-dir>.",
+          "This node's private key file in LibP2P format. If not specified, uses or generates a key which is stored within the <beacon-data-dir>.",
       arity = "1")
   private String p2pPrivateKeyFile = null;
+
+  @Option(
+      names = {"--Xp2p-private-key-file-secp256k1"},
+      paramLabel = "<FILENAME>",
+      description =
+          "This node's private key file of Secp256k1 type. Only single private key option should be specified.",
+      hidden = true,
+      arity = "1")
+  private String p2pPrivateKeyFileSecp256k1 = null;
+
+  @Option(
+      names = {"--Xp2p-private-key-file-ecdsa"},
+      paramLabel = "<FILENAME>",
+      description =
+          "This node's private key file of ECDSA type. Only single private key option should be specified.",
+      hidden = true,
+      arity = "1")
+  private String p2pPrivateKeyFileEcdsa = null;
 
   @Option(
       names = {"--p2p-peer-lower-bound"},
@@ -507,6 +525,13 @@ public class P2POptions {
               if (p2pPrivateKeyFile != null) {
                 n.privateKeyFile(p2pPrivateKeyFile);
               }
+              if (p2pPrivateKeyFileSecp256k1 != null) {
+                n.privateKeyFileSecp256k1(p2pPrivateKeyFileSecp256k1);
+              }
+              if (p2pPrivateKeyFileEcdsa != null) {
+                n.privateKeyFileEcdsa(p2pPrivateKeyFileEcdsa);
+              }
+
               if (p2pAdvertisedPort != null) {
                 n.advertisedPort(OptionalInt.of(p2pAdvertisedPort));
               }
