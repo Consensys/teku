@@ -36,6 +36,7 @@ public class StatusLogger {
 
   public static final StatusLogger STATUS_LOG =
       new StatusLogger(LoggingConfigurator.STATUS_LOGGER_NAME);
+  public static final int KEY_LIMIT = 20;
 
   @SuppressWarnings("PrivateStaticFinalLoggers")
   final Logger log;
@@ -204,10 +205,10 @@ public class StatusLogger {
   }
 
   public void doppelgangerCheck(final UInt64 epoch, final Set<String> publicKeys) {
-    log.info(
-        "Performing doppelganger check. Epoch {}, Public keys {}",
-        epoch,
-        String.join(", ", publicKeys));
+    log.info("Performing doppelganger check at epoch {} for public keys {} ",
+            epoch,
+             formatValidatorKeys(publicKeys));
+
   }
 
   public void validatorsDoppelgangersDetected(final Map<UInt64, String> doppelgangersInfo) {
@@ -552,5 +553,13 @@ public class StatusLogger {
       final Level level, final String msg, final ColorConsolePrinter.Color color) {
     final boolean useColor = level.compareTo(Level.INFO) < 0;
     log.log(level, useColor ? print(msg, color) : msg);
+  }
+
+  private String formatValidatorKeys(final Set<String> keys) {
+    if (keys.isEmpty()) {
+      return "";
+    }
+    final String suffix = keys.size() > KEY_LIMIT ? "… (" + keys.size() + " total)" : "";
+    return keys.stream().limit(KEY_LIMIT).collect(Collectors.joining(", ", "", suffix));
   }
 }
