@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -99,6 +100,7 @@ public class EventSubscriptionManager
     nodeDataProvider.subscribeToSyncCommitteeContributions(this::onSyncCommitteeContribution);
     nodeDataProvider.subscribeToNewBlsToExecutionChanges(this::onNewBlsToExecutionChange);
     nodeDataProvider.subscribeToForkChoiceUpdatedResult(this::onForkChoiceUpdatedResult);
+    nodeDataProvider.subscribeToNewInclusionList(this::onNewInclusionList);
   }
 
   public void registerClient(final SseClient sseClient) {
@@ -277,6 +279,14 @@ public class EventSubscriptionManager
 
   protected void onSyncStateChange(final SyncState syncState) {
     notifySubscribersOfEvent(EventType.sync_state, new SyncStateChangeEvent(syncState.name()));
+  }
+
+  protected void onNewInclusionList(final SignedInclusionList signedInclusionList) {
+    final InclusionListEvent inclusionListEvent =
+        new InclusionListEvent(
+            signedInclusionList,
+            spec.atSlot(signedInclusionList.getMessage().getSlot()).getMilestone());
+    notifySubscribersOfEvent(EventType.inclusion_list, inclusionListEvent);
   }
 
   private void notifySubscribersOfEvent(final EventType eventType, final Event<?> event) {

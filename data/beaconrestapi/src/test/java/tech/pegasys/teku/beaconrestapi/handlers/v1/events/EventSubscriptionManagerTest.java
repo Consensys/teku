@@ -45,7 +45,6 @@ import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -54,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
@@ -66,7 +66,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ReorgContext;
 
 public class EventSubscriptionManagerTest {
-  private final Spec spec = TestSpecFactory.createMinimalElectra();
+  private final Spec spec = TestSpecFactory.createMainnetEip7805();
   private final SpecConfig specConfig = spec.getGenesisSpecConfig();
   private final DataStructureUtil data = new DataStructureUtil(spec);
   protected final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
@@ -125,7 +125,7 @@ public class EventSubscriptionManagerTest {
       data.randomPayloadBuildingAttributes(true);
   final PayloadAttributesData samplePayloadAttributesData =
       new PayloadAttributesData(
-          SpecMilestone.ELECTRA,
+          spec.getGenesisSpec().getMilestone(),
           new Data(
               samplePayloadAttributes.getProposalSlot(),
               samplePayloadAttributes.getParentBeaconBlockRoot(),
@@ -151,6 +151,7 @@ public class EventSubscriptionManagerTest {
           Optional.of(samplePayloadAttributes),
           false,
           new SafeFuture<>());
+  private final SignedInclusionList signedInclusionList = data.randomSignedInclusionList();
 
   private final AsyncContext async = mock(AsyncContext.class);
   private final EventChannels channels = mock(EventChannels.class);
@@ -434,6 +435,17 @@ public class EventSubscriptionManagerTest {
     assertThat(outputStream.countEvents()).isEqualTo(0);
   }
 
+  @Test
+  void shouldPropagateInclusionList() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=inclusion_list");
+    manager.registerClient(client1);
+
+    triggerInclusionListEvent();
+    checkEvent(
+        "inclusion_list",
+        new InclusionListEvent(signedInclusionList, spec.getGenesisSpec().getMilestone()));
+  }
+
   private void triggerVoluntaryExitEvent() {
     manager.onNewVoluntaryExit(sampleVoluntaryExit, InternalValidationResult.ACCEPT, false);
     asyncRunner.executeQueuedActions();
@@ -532,6 +544,11 @@ public class EventSubscriptionManagerTest {
   private void triggerContributionEvent() {
     manager.onSyncCommitteeContribution(
         contributionAndProof, InternalValidationResult.ACCEPT, false);
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerInclusionListEvent() {
+    manager.onNewInclusionList(signedInclusionList);
     asyncRunner.executeQueuedActions();
   }
 
