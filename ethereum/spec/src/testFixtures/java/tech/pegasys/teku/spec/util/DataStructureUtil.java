@@ -184,6 +184,7 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -227,6 +228,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7805;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
@@ -2671,6 +2673,14 @@ public final class DataStructureUtil {
         spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema().getAttestationsSchema(),
         () -> randomAttestation(slot),
         count);
+  }
+
+  public SignedInclusionList randomSignedInclusionList() {
+    return new SignedInclusionList(
+        SchemaDefinitionsEip7805.required(spec.getGenesisSchemaDefinitions())
+            .getSignedInclusionListSchema(),
+        randomInclusionList(),
+        randomSignature());
   }
 
   public InclusionList randomInclusionList() {

@@ -11,31 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response;
+package tech.pegasys.teku.spec.datastructures.inclusionlist;
 
-import java.util.List;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 
-@SuppressWarnings("JavaCase")
-public enum EventType {
-  head,
-  block,
-  attestation,
-  voluntary_exit,
-  finalized_checkpoint,
-  chain_reorg,
-  sync_state,
-  contribution_and_proof,
-  bls_to_execution_change,
-  blob_sidecar,
-  attester_slashing,
-  proposer_slashing,
-  payload_attributes,
-  block_gossip,
-  single_attestation,
-  data_column_sidecar,
-  inclusion_list;
-
-  public static List<EventType> getTopics(final List<String> topics) {
-    return topics.stream().map(EventType::valueOf).toList();
-  }
+public interface SignedInclusionListListener {
+  void accept(SignedInclusionList signedInclusionList);
 }

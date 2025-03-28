@@ -34,6 +34,7 @@ import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.Data;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.PayloadAttributes;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.PayloadAttributesData;
@@ -44,7 +45,6 @@ import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -55,19 +55,22 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ReorgContext;
 
 public class EventSubscriptionManagerTest {
-  private final Spec spec = TestSpecFactory.createMinimalFulu();
+  private final Spec spec = TestSpecFactory.createMainnetEip7805();
+  private final SchemaDefinitionCache schemaDefinitionCache = new SchemaDefinitionCache(spec);
   private final SpecConfig specConfig = spec.getGenesisSpecConfig();
   private final DataStructureUtil data = new DataStructureUtil(spec);
   protected final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
@@ -126,7 +129,7 @@ public class EventSubscriptionManagerTest {
       data.randomPayloadBuildingAttributes(true);
   final PayloadAttributesData samplePayloadAttributesData =
       new PayloadAttributesData(
-          SpecMilestone.FULU,
+          spec.getGenesisSpec().getMilestone(),
           new Data(
               samplePayloadAttributes.getProposalSlot(),
               samplePayloadAttributes.getParentBeaconBlockRoot(),
@@ -152,6 +155,7 @@ public class EventSubscriptionManagerTest {
           Optional.of(samplePayloadAttributes),
           false,
           new SafeFuture<>());
+  private final SignedInclusionList signedInclusionList = data.randomSignedInclusionList();
 
   private final AsyncContext async = mock(AsyncContext.class);
   private final EventChannels channels = mock(EventChannels.class);
@@ -172,6 +176,7 @@ public class EventSubscriptionManagerTest {
     manager =
         new EventSubscriptionManager(
             spec,
+            schemaDefinitionCache,
             nodeDataProvider,
             chainDataProvider,
             syncDataProvider,
@@ -445,6 +450,20 @@ public class EventSubscriptionManagerTest {
     assertThat(outputStream.countEvents()).isEqualTo(0);
   }
 
+  @Test
+  void shouldPropagateInclusionList() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=inclusion_list");
+    manager.registerClient(client1);
+
+    triggerInclusionListEvent();
+    checkEvent(
+        "inclusion_list",
+        new InclusionListEvent(
+            signedInclusionList,
+            spec.getGenesisSpec().getMilestone(),
+            BeaconRestApiTypes.getInclusionListEventDataType(schemaDefinitionCache)));
+  }
+
   private void triggerVoluntaryExitEvent() {
     manager.onNewVoluntaryExit(sampleVoluntaryExit, InternalValidationResult.ACCEPT, false);
     asyncRunner.executeQueuedActions();
@@ -548,6 +567,11 @@ public class EventSubscriptionManagerTest {
   private void triggerContributionEvent() {
     manager.onSyncCommitteeContribution(
         contributionAndProof, InternalValidationResult.ACCEPT, false);
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerInclusionListEvent() {
+    manager.onNewInclusionList(signedInclusionList);
     asyncRunner.executeQueuedActions();
   }
 
