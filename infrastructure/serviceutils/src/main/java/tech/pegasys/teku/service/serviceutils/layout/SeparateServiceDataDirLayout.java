@@ -19,8 +19,10 @@ import java.util.Optional;
 public class SeparateServiceDataDirLayout implements DataDirLayout {
   static final String BEACON_DATA_DIR_NAME = "beacon";
   static final String VALIDATOR_DATA_DIR_NAME = "validator";
+  static final String BOOTNODE_DATA_DIR_NAME = "bootnode";
   static final String DEBUG_DIR_NAME = "debug";
   private final Path beaconNodeDataDir;
+  private final Path bootnodeDataDir;
   private final Path validatorDataDir;
   private final Path debugDataDir;
   private final boolean debugDataDumpingEnabled;
@@ -28,9 +30,12 @@ public class SeparateServiceDataDirLayout implements DataDirLayout {
   public SeparateServiceDataDirLayout(
       final Path baseDir,
       final Optional<Path> beaconDataDirectory,
+      final Optional<Path> bootnodeDataDirectory,
       final Optional<Path> validatorDataDirectory,
       final boolean debugDataDumpingEnabled) {
     beaconNodeDataDir = beaconDataDirectory.orElseGet(() -> baseDir.resolve(BEACON_DATA_DIR_NAME));
+    bootnodeDataDir =
+        bootnodeDataDirectory.orElseGet(() -> baseDir.resolve(BOOTNODE_DATA_DIR_NAME));
     validatorDataDir =
         validatorDataDirectory.orElseGet(() -> baseDir.resolve(VALIDATOR_DATA_DIR_NAME));
     debugDataDir = baseDir.resolve(DEBUG_DIR_NAME);
@@ -40,6 +45,11 @@ public class SeparateServiceDataDirLayout implements DataDirLayout {
   @Override
   public Path getBeaconDataDirectory() {
     return beaconNodeDataDir;
+  }
+
+  @Override
+  public Path getBootnodeDataDirectory() {
+    return bootnodeDataDir;
   }
 
   @Override

@@ -29,6 +29,11 @@ public class SimpleDataDirLayout implements DataDirLayout {
   }
 
   @Override
+  public Path getBootnodeDataDirectory() {
+    return path;
+  }
+
+  @Override
   public Path getValidatorDataDirectory() {
     return path;
   }

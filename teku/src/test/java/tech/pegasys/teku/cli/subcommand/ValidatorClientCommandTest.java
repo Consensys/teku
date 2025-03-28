@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.cli.NodeMode;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
@@ -35,7 +36,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
 
   @BeforeEach
   void setUp() {
-    expectValidatorClient = true;
+    expectedNodeMode = NodeMode.VC_ONLY;
   }
 
   @Test

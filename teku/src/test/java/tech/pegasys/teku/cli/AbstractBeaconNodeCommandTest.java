@@ -45,7 +45,7 @@ public abstract class AbstractBeaconNodeCommandTest {
   protected final PrintWriter outputWriter = new PrintWriter(stringWriter, true);
   protected final PrintWriter errorWriter = new PrintWriter(stringWriter, true);
   protected final LoggingConfigurator loggingConfigurator = mock(LoggingConfigurator.class);
-  protected boolean expectValidatorClient = false;
+  protected NodeMode expectedNodeMode = NodeMode.COMBINED;
 
   final StartAction startAction = mock(StartAction.class);
 
@@ -70,10 +70,7 @@ public abstract class AbstractBeaconNodeCommandTest {
       final ArgumentCaptor<TekuConfiguration> configCaptor =
           ArgumentCaptor.forClass(TekuConfiguration.class);
       assertThat(stringWriter.toString()).isEmpty();
-      verify(startAction)
-          .start(
-              configCaptor.capture(),
-              expectValidatorClient ? eq(NodeMode.VC_ONLY) : eq(NodeMode.COMBINED));
+      verify(startAction).start(configCaptor.capture(), eq(expectedNodeMode));
 
       return configCaptor.getValue();
     } catch (Throwable t) {

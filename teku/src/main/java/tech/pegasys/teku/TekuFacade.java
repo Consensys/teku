@@ -42,4 +42,8 @@ public final class TekuFacade {
   public static ValidatorNodeFacade startValidatorNode(final TekuConfiguration config) {
     return Teku.startValidatorNode(config);
   }
+
+  public static BootnodeFacade startBootnode(final TekuConfiguration config) {
+    return Teku.startBootnode(config);
+  }
 }

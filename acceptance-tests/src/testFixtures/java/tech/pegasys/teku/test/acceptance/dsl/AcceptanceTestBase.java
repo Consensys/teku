@@ -81,6 +81,10 @@ public class AcceptanceTestBase {
     return addNode(TekuValidatorNode.create(network, version, configOptions));
   }
 
+  protected TekuBootnodeNode createBootnode(final TekuNodeConfig tekuNodeConfig) {
+    return addNode(TekuBootnodeNode.create(network, TekuDockerVersion.LOCAL_BUILD, tekuNodeConfig));
+  }
+
   protected Web3SignerNode createWeb3SignerNode(
       final Consumer<Web3SignerNode.Config> configOptions) {
     return Web3SignerNode.create(network, configOptions);
