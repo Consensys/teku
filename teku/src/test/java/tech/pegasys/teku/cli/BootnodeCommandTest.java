@@ -67,16 +67,14 @@ class BootnodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldUseBootnodeDataDir(@TempDir final Path tempDir) {
-    final String[] args =
-        new String[] {"bootnode", "--data-base-path", tempDir.toAbsolutePath().toString()};
+    final String[] args = new String[] {"bootnode", "--data-base-path=" + tempDir.toAbsolutePath()};
     int parseResult = beaconNodeCommand.parse(args);
 
     assertThat(parseResult).isEqualTo(0);
 
     final TekuConfiguration tekuConfig = getResultingTekuConfiguration();
 
-    assertThat(tekuConfig.eth2NetworkConfiguration().getEth2Network())
-        .hasValue(Eth2Network.MAINNET);
+    assertThat(tekuConfig.dataConfig().getDataBasePath()).isEqualTo(tempDir.toAbsolutePath());
   }
 
   @Test

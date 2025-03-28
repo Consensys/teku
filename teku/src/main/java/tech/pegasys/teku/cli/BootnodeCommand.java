@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -90,6 +90,7 @@ public class BootnodeCommand implements Callable<Integer> {
     try {
       final TekuConfiguration.Builder builder = TekuConfiguration.builder();
       eth2NetworkOptions.configure(builder);
+      beaconNodeDataOptions.configure(builder);
       p2POptions.configure(builder);
       loggingOptions.configureWireLogs(builder);
       metricsOptions.configure(builder);
