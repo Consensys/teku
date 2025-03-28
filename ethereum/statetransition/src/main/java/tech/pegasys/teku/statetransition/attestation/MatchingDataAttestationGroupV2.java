@@ -342,7 +342,6 @@ public class MatchingDataAttestationGroupV2 implements MatchingDataAttestationGr
     }
   }
 
-
   @Override
   public boolean isValid(final BeaconState stateAtBlockSlot, final Spec spec) {
     return spec.validateAttestation(stateAtBlockSlot, attestationData).isEmpty();
@@ -415,10 +414,7 @@ public class MatchingDataAttestationGroupV2 implements MatchingDataAttestationGr
       // Filter based on the iterator's local includedValidators copy
       // No lock needed for this read operation
       // Use outer class field attestationsByValidatorCount
-      return MatchingDataAttestationGroupV2.this
-          .attestationsByValidatorCount
-          .values()
-          .stream()
+      return MatchingDataAttestationGroupV2.this.attestationsByValidatorCount.values().stream()
           .flatMap(Set::stream) // streams the concurrent set safely
           .filter(this::isAttestationRelevant)
           // Check against the iterator's local copy of included validators
