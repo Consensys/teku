@@ -167,6 +167,12 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
       return SafeFuture.COMPLETE;
     }
     LOG.debug("JvmLibP2PNetwork.stop()");
+    
+    // Stop gossip network metrics updater
+    if (gossipNetwork instanceof LibP2PGossipNetwork) {
+      ((LibP2PGossipNetwork) gossipNetwork).stop();
+    }
+    
     return SafeFuture.of(host.stop());
   }
 
