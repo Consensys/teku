@@ -19,6 +19,7 @@ import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.KeyType;
 import io.libp2p.core.crypto.PrivKey;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.tuweni.bytes.Bytes;
@@ -113,7 +114,7 @@ class BootnodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     try {
       Files.createFile(path);
-      Files.write(path, privKeyBytes.toHexString().getBytes());
+      Files.writeString(path, privKeyBytes.toHexString(), Charset.defaultCharset());
       return privKeyBytes.toHexString();
     } catch (IOException e) {
       throw new RuntimeException(e);
