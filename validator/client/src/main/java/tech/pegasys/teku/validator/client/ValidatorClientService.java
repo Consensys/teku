@@ -29,6 +29,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -41,6 +43,7 @@ import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
@@ -369,6 +372,7 @@ public class ValidatorClientService extends Service {
       final ValidatorClientConfiguration validatorClientConfiguration,
       final AsyncRunner asyncRunner) {
     final ValidatorConfig validatorConfig = validatorClientConfiguration.getValidatorConfig();
+    final MetricsSystem metricsSystem = services.getMetricsSystem();
 
     final BeaconNodeApi beaconNodeApi;
     if (validatorConfig.getSentryNodeConfigurationFile().isEmpty()) {
@@ -376,13 +380,15 @@ public class ValidatorClientService extends Service {
           validatorConfig
               .getBeaconNodeApiEndpoints()
               .map(
-                  beaconNodeApiEndpoints ->
-                      RemoteBeaconNodeApi.create(
-                          services,
-                          validatorConfig,
-                          asyncRunner,
-                          validatorClientConfiguration.getSpec(),
-                          beaconNodeApiEndpoints))
+                  beaconNodeApiEndpoints -> {
+                    addVersionMetric(metricsSystem);
+                    return RemoteBeaconNodeApi.create(
+                        services,
+                        validatorConfig,
+                        asyncRunner,
+                        validatorClientConfiguration.getSpec(),
+                        beaconNodeApiEndpoints);
+                  })
               .orElseGet(
                   () ->
                       InProcessBeaconNodeApi.create(
@@ -394,6 +400,8 @@ public class ValidatorClientService extends Service {
       final SentryNodesConfig sentryNodesConfig =
           new SentryNodesConfigLoader()
               .load(validatorConfig.getSentryNodeConfigurationFile().get());
+
+      addVersionMetric(metricsSystem);
 
       beaconNodeApi =
           SentryBeaconNodeApi.create(
@@ -564,6 +572,18 @@ public class ValidatorClientService extends Service {
         "local_validator_count",
         "Current number of validators running in this validator client",
         validators::getValidatorCount);
+  }
+
+  /** Only available when running a standalone VC client */
+  private static void addVersionMetric(final MetricsSystem metricsSystem) {
+    final String version = VersionProvider.IMPLEMENTATION_VERSION.replaceAll("^v", "");
+    final LabelledMetric<Counter> versionCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.REMOTE_VALIDATOR,
+            VersionProvider.CLIENT_IDENTITY + "_version_total",
+            "Teku version in use",
+            "version");
+    versionCounter.labels(version).inc();
   }
 
   @Override
