@@ -33,7 +33,6 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -276,14 +275,10 @@ public class AggregateAttestationValidator {
         receivedOnSubnetId);
   }
 
-  record DataHashAndCommitteeIndex(Bytes32 hash, int committeeIndex) {
+  record DataHashAndCommitteeIndex(Bytes32 hash, UInt64 committeeIndex) {
     static DataHashAndCommitteeIndex from(final Attestation attestation) {
       return new DataHashAndCommitteeIndex(
-          attestation.getData().hashTreeRoot(),
-          attestation
-              .getCommitteeBits()
-              .map(SszBitvector::getLastSetBitIndex)
-              .orElseGet(() -> attestation.getFirstCommitteeIndex().intValue()));
+          attestation.getData().hashTreeRoot(), attestation.getFirstCommitteeIndex());
     }
   }
 
