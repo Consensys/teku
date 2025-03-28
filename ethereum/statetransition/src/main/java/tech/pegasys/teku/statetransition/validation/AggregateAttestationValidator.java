@@ -20,7 +20,6 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
@@ -34,6 +33,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -52,7 +52,7 @@ public class AggregateAttestationValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Set<AggregatorIndexAndEpoch> receivedAggregatorIndexAndEpochs =
       LimitedSet.createSynchronized(VALID_AGGREGATE_SET_SIZE);
-  private final SeenAggregatesCache<Bytes32> seenAggregationBits =
+  private final SeenAggregatesCache<DataHashAndCommitteeIndex> seenAggregationBits =
       new SeenAggregatesCache<>(VALID_ATTESTATION_DATA_SET_SIZE);
   private final AttestationValidator attestationValidator;
   private final Spec spec;
@@ -69,7 +69,8 @@ public class AggregateAttestationValidator {
 
   public void addSeenAggregate(final ValidatableAttestation attestation) {
     seenAggregationBits.add(
-        attestation.getData().hashTreeRoot(), attestation.getAttestation().getAggregationBits());
+        DataHashAndCommitteeIndex.from(attestation.getAttestation()),
+        attestation.getAttestation().getAggregationBits());
   }
 
   public SafeFuture<InternalValidationResult> validate(final ValidatableAttestation attestation) {
@@ -87,7 +88,8 @@ public class AggregateAttestationValidator {
     }
 
     final SszBitlist aggregationBits = attestation.getAttestation().getAggregationBits();
-    if (seenAggregationBits.isAlreadySeen(attestation.getData().hashTreeRoot(), aggregationBits)) {
+    if (seenAggregationBits.isAlreadySeen(
+        DataHashAndCommitteeIndex.from(attestation.getAttestation()), aggregationBits)) {
       return completedFuture(ignore("Ignoring duplicate aggregate based on aggregation bits"));
     }
 
@@ -216,7 +218,8 @@ public class AggregateAttestationValidator {
       return ignore("Ignoring duplicate aggregate");
     }
     if (!seenAggregationBits.add(
-        attestation.getData().hashTreeRoot(), attestation.getAttestation().getAggregationBits())) {
+        DataHashAndCommitteeIndex.from(attestation.getAttestation()),
+        attestation.getAttestation().getAggregationBits())) {
       return ignore("Ignoring duplicate aggregate based on aggregation bits");
     }
     return result;
@@ -273,31 +276,16 @@ public class AggregateAttestationValidator {
         receivedOnSubnetId);
   }
 
-  private static class AggregatorIndexAndEpoch {
-    private final UInt64 aggregatorIndex;
-    private final UInt64 epoch;
-
-    private AggregatorIndexAndEpoch(final UInt64 aggregatorIndex, final UInt64 epoch) {
-      this.aggregatorIndex = aggregatorIndex;
-      this.epoch = epoch;
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      final AggregatorIndexAndEpoch that = (AggregatorIndexAndEpoch) o;
-      return Objects.equals(aggregatorIndex, that.aggregatorIndex)
-          && Objects.equals(epoch, that.epoch);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(aggregatorIndex, epoch);
+  record DataHashAndCommitteeIndex(Bytes32 hash, int committeeIndex) {
+    static DataHashAndCommitteeIndex from(final Attestation attestation) {
+      return new DataHashAndCommitteeIndex(
+          attestation.getData().hashTreeRoot(),
+          attestation
+              .getCommitteeBits()
+              .map(SszBitvector::getLastSetBitIndex)
+              .orElseGet(() -> attestation.getFirstCommitteeIndex().intValue()));
     }
   }
+
+  private record AggregatorIndexAndEpoch(UInt64 aggregatorIndex, UInt64 epoch) {}
 }
