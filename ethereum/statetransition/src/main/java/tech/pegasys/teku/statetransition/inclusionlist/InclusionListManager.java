@@ -26,7 +26,9 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.inclusionlist.SignedInclusionListListener;
 import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.InclusionListImportResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -43,6 +45,8 @@ public class InclusionListManager implements SlotEventsChannel {
   private final ForkChoice forkChoice;
   private final NavigableMap<UInt64, ConcurrentMap<UInt64, List<SignedInclusionList>>>
       slotToInclusionListsByValidatorIndex = new ConcurrentSkipListMap<>();
+  private final Subscribers<SignedInclusionListListener> inclusionListsSubscribers =
+      Subscribers.create(true);
 
   public InclusionListManager(
       final SignedInclusionListValidator signedInclusionListValidator,
@@ -103,6 +107,7 @@ public class InclusionListManager implements SlotEventsChannel {
                     },
                     err -> LOG.error("Failed to process received inclusion list.", err));
           }
+          notifyInclusionListsSubscribers(signedInclusionList);
         });
   }
 
@@ -135,5 +140,14 @@ public class InclusionListManager implements SlotEventsChannel {
         .flatMap(
             validatorIndexToInclusionLists -> validatorIndexToInclusionLists.getValue().stream())
         .toList();
+  }
+
+  public void subscribeToInclusionLists(final SignedInclusionListListener listener) {
+    inclusionListsSubscribers.subscribe(listener);
+  }
+
+  private void notifyInclusionListsSubscribers(final SignedInclusionList signedInclusionList) {
+    inclusionListsSubscribers.forEach(
+        signedInclusionListListener -> signedInclusionListListener.accept(signedInclusionList));
   }
 }
