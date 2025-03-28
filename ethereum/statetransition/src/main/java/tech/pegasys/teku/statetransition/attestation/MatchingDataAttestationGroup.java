@@ -13,17 +13,17 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import com.google.common.collect.Sets;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.tuweni.bytes.Bytes32;
@@ -50,7 +50,7 @@ import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggreg
 public class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
 
   private final NavigableMap<Integer, Set<ValidatableAttestation>> attestationsByValidatorCount =
-      new TreeMap<>(Comparator.reverseOrder()); // Most validators first
+      new ConcurrentSkipListMap<>(Comparator.reverseOrder()); // Most validators first
 
   private final Spec spec;
   private Optional<Bytes32> committeeShufflingSeed = Optional.empty();
@@ -70,7 +70,7 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
    * {@link AggregatingAttestationPool} once it is too old to be included in blocks (32 slots).
    */
   private final NavigableMap<UInt64, AttestationBitsAggregator> includedValidatorsBySlot =
-      new TreeMap<>();
+      new ConcurrentSkipListMap<>();
 
   /** Precalculated combined list of included validators across all blocks. */
   private AttestationBitsAggregator includedValidators;
@@ -110,10 +110,11 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
     if (committeeShufflingSeed.isEmpty()) {
       committeeShufflingSeed = attestation.getCommitteeShufflingSeed();
     }
+    // uses a concurrent Set for safety
     return attestationsByValidatorCount
         .computeIfAbsent(
             attestation.getAttestation().getAggregationBits().getBitCount(),
-            count -> new HashSet<>())
+            count -> Sets.newConcurrentHashSet())
         .add(attestation);
   }
 
@@ -155,7 +156,7 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
     return StreamSupport.stream(spliterator(committeeIndex), false);
   }
 
-  public Spliterator<ValidatableAttestation> spliterator(final Optional<UInt64> committeeIndex) {
+  private Spliterator<ValidatableAttestation> spliterator(final Optional<UInt64> committeeIndex) {
     return Spliterators.spliteratorUnknownSize(iterator(committeeIndex), 0);
   }
 
@@ -254,8 +255,6 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
     private final Optional<UInt64> maybeCommitteeIndex;
     private final AttestationBitsAggregator includedValidators;
 
-    private Iterator<ValidatableAttestation> remainingAttestations = getRemainingAttestations();
-
     private AggregatingIterator(final Optional<UInt64> committeeIndex) {
       this.maybeCommitteeIndex = committeeIndex;
       includedValidators = MatchingDataAttestationGroup.this.includedValidators.copy();
@@ -263,31 +262,28 @@ public class MatchingDataAttestationGroup implements Iterable<ValidatableAttesta
 
     @Override
     public boolean hasNext() {
-      if (!remainingAttestations.hasNext()) {
-        remainingAttestations = getRemainingAttestations();
-      }
-      return remainingAttestations.hasNext();
+      return streamRemainingAttestations().findAny().isPresent();
     }
 
     @Override
     public ValidatableAttestation next() {
       final AggregateAttestationBuilder builder =
           new AggregateAttestationBuilder(spec, attestationData);
-      remainingAttestations.forEachRemaining(
-          candidate -> {
-            if (builder.aggregate(candidate)) {
-              includedValidators.or(candidate.getAttestation());
-            }
-          });
+      streamRemainingAttestations()
+          .forEach(
+              candidate -> {
+                if (builder.aggregate(candidate)) {
+                  includedValidators.or(candidate.getAttestation());
+                }
+              });
       return builder.buildAggregate();
     }
 
-    public Iterator<ValidatableAttestation> getRemainingAttestations() {
+    private Stream<ValidatableAttestation> streamRemainingAttestations() {
       return attestationsByValidatorCount.values().stream()
           .flatMap(Set::stream)
           .filter(this::isAttestationRelevant)
-          .filter(candidate -> !includedValidators.isSuperSetOf(candidate.getAttestation()))
-          .iterator();
+          .filter(candidate -> !includedValidators.isSuperSetOf(candidate.getAttestation()));
     }
 
     private boolean isAttestationRelevant(final ValidatableAttestation candidate) {
