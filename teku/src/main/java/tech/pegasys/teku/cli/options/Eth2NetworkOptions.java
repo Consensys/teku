@@ -22,7 +22,6 @@ import java.util.function.Consumer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.Bytes32Converter;
@@ -265,7 +264,7 @@ public class Eth2NetworkOptions {
       arity = "1")
   private Long eth1DepositContractDeployBlockOverride;
 
-  @CommandLine.Option(
+  @Option(
       names = {"--Xepochs-store-blobs"},
       hidden = true,
       paramLabel = "<STRING>",
@@ -277,6 +276,17 @@ public class Eth2NetworkOptions {
       showDefaultValue = Visibility.ALWAYS,
       arity = "0..1")
   private String epochsStoreBlobs;
+
+  @Option(
+      names = {"--Xaggregating-attestation-pool-v2-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable the new aggregating attestation pool.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean aggregatingAttestationPoolV2Enabled =
+      Eth2NetworkConfiguration.DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED;
 
   public Eth2NetworkConfiguration getNetworkConfiguration() {
     return createEth2NetworkConfig(builder -> {});
@@ -361,6 +371,7 @@ public class Eth2NetworkOptions {
         .asyncP2pMaxThreads(asyncP2pMaxThreads)
         .asyncBeaconChainMaxThreads(asyncBeaconChainMaxThreads)
         .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
+        .aggregatingAttestationPoolV2Enabled(aggregatingAttestationPoolV2Enabled)
         .epochsStoreBlobs(epochsStoreBlobs)
         .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes);
     asyncP2pMaxQueue.ifPresent(builder::asyncP2pMaxQueue);
