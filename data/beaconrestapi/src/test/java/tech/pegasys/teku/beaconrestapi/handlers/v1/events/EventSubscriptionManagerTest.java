@@ -35,6 +35,7 @@ import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.Data;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.PayloadAttributes;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.PayloadAttributesData;
@@ -60,6 +61,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -67,6 +69,7 @@ import tech.pegasys.teku.storage.api.ReorgContext;
 
 public class EventSubscriptionManagerTest {
   private final Spec spec = TestSpecFactory.createMainnetEip7805();
+  private final SchemaDefinitionCache schemaDefinitionCache = new SchemaDefinitionCache(spec);
   private final SpecConfig specConfig = spec.getGenesisSpecConfig();
   private final DataStructureUtil data = new DataStructureUtil(spec);
   protected final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
@@ -172,6 +175,7 @@ public class EventSubscriptionManagerTest {
     manager =
         new EventSubscriptionManager(
             spec,
+            schemaDefinitionCache,
             nodeDataProvider,
             chainDataProvider,
             syncDataProvider,
@@ -443,7 +447,10 @@ public class EventSubscriptionManagerTest {
     triggerInclusionListEvent();
     checkEvent(
         "inclusion_list",
-        new InclusionListEvent(signedInclusionList, spec.getGenesisSpec().getMilestone()));
+        new InclusionListEvent(
+            signedInclusionList,
+            spec.getGenesisSpec().getMilestone(),
+            BeaconRestApiTypes.getInclusionListEventDataType(schemaDefinitionCache)));
   }
 
   private void triggerVoluntaryExitEvent() {

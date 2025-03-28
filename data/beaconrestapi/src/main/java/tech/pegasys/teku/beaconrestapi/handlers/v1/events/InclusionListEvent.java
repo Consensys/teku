@@ -13,24 +13,20 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
-import tech.pegasys.teku.ethereum.json.types.EthereumTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 
-public class InclusionListEvent extends Event<InclusionListEvent.InclusionListData> {
-  InclusionListEvent(final SignedInclusionList signedInclusionList, final SpecMilestone milestone) {
+public class InclusionListEvent extends Event<InclusionListEvent.InclusionListEventData> {
+  InclusionListEvent(
+      final SignedInclusionList signedInclusionList,
+      final SpecMilestone milestone,
+      final SerializableTypeDefinition<InclusionListEventData>
+          inclusionListDataSerializableTypeDefinition) {
     super(
-        SerializableTypeDefinition.object(InclusionListEvent.InclusionListData.class)
-            .name("InclusionListEvent")
-            .withField("version", EthereumTypes.MILESTONE_TYPE, InclusionListData::milestone)
-            .withField(
-                "data",
-                signedInclusionList.getSchema().getJsonTypeDefinition(),
-                InclusionListData::data)
-            .build(),
-        new InclusionListData(milestone, signedInclusionList));
+        inclusionListDataSerializableTypeDefinition,
+        new InclusionListEventData(milestone, signedInclusionList));
   }
 
-  record InclusionListData(SpecMilestone milestone, SignedInclusionList data) {}
+  public record InclusionListEventData(SpecMilestone milestone, SignedInclusionList data) {}
 }
