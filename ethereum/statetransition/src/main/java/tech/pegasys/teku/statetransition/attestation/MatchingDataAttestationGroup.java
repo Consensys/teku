@@ -145,6 +145,4 @@ public interface MatchingDataAttestationGroup extends Iterable<ValidatableAttest
    * @return True if the AttestationData is valid for the state, false otherwise.
    */
   boolean isValid(BeaconState stateAtBlockSlot, Spec spec);
-
-  // iterator() and spliterator() without args are inherited from Iterable<ValidatableAttestation>
 }

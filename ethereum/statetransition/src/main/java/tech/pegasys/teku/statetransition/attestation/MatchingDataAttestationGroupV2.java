@@ -342,50 +342,30 @@ public class MatchingDataAttestationGroupV2 implements MatchingDataAttestationGr
     }
   }
 
-  // Added for use by AggregatingAttestationPoolV2 check
-  // Needs read lock because it accesses includedValidators state? No, spec/state access assumed
-  // safe.
+
   @Override
   public boolean isValid(final BeaconState stateAtBlockSlot, final Spec spec) {
-    // readLock.lock(); // No need to lock for immutable attestationData
-    // try {
     return spec.validateAttestation(stateAtBlockSlot, attestationData).isEmpty();
-    // } finally {
-    //     readLock.unlock();
-    // }
   }
 
-  // Read lock needed for committeeShufflingSeed access
   @Override
   public boolean matchesCommitteeShufflingSeed(final Set<Bytes32> validSeeds) {
     // Volatile read is safe without needing a lock here
     return committeeShufflingSeed.map(validSeeds::contains).orElse(false);
   }
 
-  // Read lock needed for includedValidators access
   private boolean noMatchingAttestations(
       final Optional<UInt64> committeeIndex, final boolean requiresCommitteeBits) {
     // Assumes called under read lock already by stream(...)
-    // readLock.lock();
-    // try {
     return requiresCommitteeBits != includedValidators.requiresCommitteeBits()
         || noMatchingPreElectraAttestations(committeeIndex);
-    // } finally {
-    //   readLock.unlock();
-    // }
   }
 
-  // Read lock needed? No, only accesses immutable attestationData and includedValidators type.
   private boolean noMatchingPreElectraAttestations(final Optional<UInt64> committeeIndex) {
     // Assumes called under read lock already by noMatchingAttestations
-    // readLock.lock();
-    // try {
     return committeeIndex.isPresent()
         && !includedValidators.requiresCommitteeBits() // Read under caller's lock
         && !attestationData.getIndex().equals(committeeIndex.get()); // immutable data access
-    // } finally {
-    //   readLock.unlock();
-    // }
   }
 
   private class AggregatingIteratorV2 implements Iterator<ValidatableAttestation> {
@@ -416,25 +396,16 @@ public class MatchingDataAttestationGroupV2 implements MatchingDataAttestationGr
 
     @Override
     public ValidatableAttestation next() {
-      // Build aggregate from the current batch of remaining attestations
-      // Use the outer class spec and attestationData fields directly
       final AggregateAttestationBuilder builder =
-          new AggregateAttestationBuilder(
-              MatchingDataAttestationGroupV2.this.spec,
-              MatchingDataAttestationGroupV2.this.attestationData);
+          new AggregateAttestationBuilder(spec, attestationData);
 
-      // Consume remainingAttestations for this aggregation step
       // No lock needed here as we operate on iterator-local state and read concurrent map
       remainingAttestations.forEachRemaining(
           candidate -> {
-            // Aggregate if not already covered by *this iterator's* seen bits
             if (builder.aggregate(candidate)) {
-              // Update the iterator's local view of included validators
               iteratorSpecificIncludedValidators.or(candidate.getAttestation());
             }
           });
-
-      // next() invalidates remainingAttestations; hasNext() will refresh if needed
       return builder.buildAggregate();
     }
 
@@ -447,8 +418,8 @@ public class MatchingDataAttestationGroupV2 implements MatchingDataAttestationGr
       return MatchingDataAttestationGroupV2.this
           .attestationsByValidatorCount
           .values()
-          .stream() // Stream<Set<VAtt>>
-          .flatMap(Set::stream) // Stream<VAtt> - streams the concurrent set safely
+          .stream()
+          .flatMap(Set::stream) // streams the concurrent set safely
           .filter(this::isAttestationRelevant)
           // Check against the iterator's local copy of included validators
           .filter(
