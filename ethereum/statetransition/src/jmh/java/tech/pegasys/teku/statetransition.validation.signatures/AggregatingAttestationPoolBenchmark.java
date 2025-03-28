@@ -58,6 +58,7 @@ import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPoolV2;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -76,18 +77,20 @@ public class AggregatingAttestationPoolBenchmark {
 
   // a reference file can be obtained here
   // https://drive.google.com/file/d/139bA7r88riFODZ7S0FpvtO7hmWmdC_XC/view?usp=drive_link
-  private static final String STATE_PATH = "parentBlockState_3816770.ssz";
+  private static final String STATE_PATH =
+      "/Users/tbenr/Documents/blockPreStateSlotState 3816770.ssz";
 
   // a reference file can be obtained here
   // https://drive.google.com/file/d/1I5vXK-x8ZH9wh40wNf1oACXeF_U3to8J/view?usp=drive_link
-  private static final String POOL_DUMP_PATH = "attestations_3816773.multi_ssz";
+  private static final String POOL_DUMP_PATH =
+      "/Users/tbenr/Documents/attestations_3816773.multi_ssz";
   private static final UInt64 SLOT = UInt64.valueOf(3816773);
 
   // a reference file can be obtained here
   // https://drive.google.com/file/d/1PN0OToyNOV0SyjeQaS7oF3J4cKbmy1nX/view?usp=drive_link
   private static final Optional<String> ACTUAL_BLOCK_PATH =
       Optional.of(
-          "block-3816773-456c9819a4c1e792ba8b1f71119628aed2a4d1e0d2c66199fbc763832937421b.ssz");
+          "/Users/tbenr/Documents/block-3816773-456c9819a4c1e792ba8b1f71119628aed2a4d1e0d2c66199fbc763832937421b.ssz");
 
   record AttestationDataRootAndCommitteeIndex(Bytes32 attestationDataRoot, UInt64 committeeIndex) {}
 
@@ -106,7 +109,7 @@ public class AggregatingAttestationPoolBenchmark {
         new HashMap<>();
 
     this.pool =
-        new AggregatingAttestationPool(
+        new AggregatingAttestationPoolV2(
             SPEC, recentChainData, new NoOpMetricsSystem(), DEFAULT_MAXIMUM_ATTESTATION_COUNT);
     this.recentChainData = mock(RecentChainData.class);
 
@@ -269,6 +272,7 @@ public class AggregatingAttestationPoolBenchmark {
             "Today's password is swordfish. I understand instantiating Blackholes directly is dangerous.");
 
     for (int i = 0; i < 1; i++) {
+      benchmark.createAggregateFor(bh);
       benchmark.getAttestationsForBlock(bh);
     }
   }
