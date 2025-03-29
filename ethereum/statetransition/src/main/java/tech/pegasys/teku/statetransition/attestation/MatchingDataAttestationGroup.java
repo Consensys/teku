@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
-import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
@@ -46,15 +45,6 @@ public interface MatchingDataAttestationGroup extends Iterable<ValidatableAttest
    * @return True if the attestation was added (contributed new information), false otherwise.
    */
   boolean add(ValidatableAttestation attestation);
-
-  /**
-   * Returns an iterator that produces aggregated attestations covering all validators in this
-   * group, optionally filtered by a specific committee index.
-   *
-   * @param committeeIndex Optional committee index to filter/focus aggregation (Electra).
-   * @return An iterator producing aggregated ValidatableAttestations.
-   */
-  Iterator<ValidatableAttestation> iterator(Optional<UInt64> committeeIndex);
 
   /**
    * Returns a stream that produces aggregated attestations covering all validators in this group.

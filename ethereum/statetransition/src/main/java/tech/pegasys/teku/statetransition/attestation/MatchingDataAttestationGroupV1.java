@@ -138,8 +138,7 @@ public class MatchingDataAttestationGroupV1 implements MatchingDataAttestationGr
     return new AggregatingIterator(Optional.empty());
   }
 
-  @Override
-  public Iterator<ValidatableAttestation> iterator(final Optional<UInt64> committeeIndex) {
+  private Iterator<ValidatableAttestation> iterator(final Optional<UInt64> committeeIndex) {
     return new AggregatingIterator(committeeIndex);
   }
 

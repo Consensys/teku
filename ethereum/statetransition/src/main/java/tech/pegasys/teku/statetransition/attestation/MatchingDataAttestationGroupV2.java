@@ -24,6 +24,7 @@ import java.util.Spliterators;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -62,8 +63,8 @@ public class MatchingDataAttestationGroupV2 implements MatchingDataAttestationGr
               Comparator.reverseOrder()); // Most validators first, thread-safe map
 
   private final Spec spec;
-  // Make the field volatile for safe publication and reads without lock after first write
-  private volatile Optional<Bytes32> committeeShufflingSeed = Optional.empty();
+  private final AtomicReference<Optional<Bytes32>> committeeShufflingSeedRef =
+      new AtomicReference<>(Optional.empty());
   private final AttestationData attestationData;
   private final Optional<Int2IntMap> committeesSize;
 
@@ -99,7 +100,6 @@ public class MatchingDataAttestationGroupV2 implements MatchingDataAttestationGr
   }
 
   private AttestationBitsAggregator createEmptyAttestationBits() {
-    // Assumes schema lookup is safe here
     return AttestationBitsAggregator.fromEmptyFromAttestationSchema(
         spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema(),
         committeesSize);
@@ -107,7 +107,6 @@ public class MatchingDataAttestationGroupV2 implements MatchingDataAttestationGr
 
   @Override
   public AttestationData getAttestationData() {
-    // AttestationData is immutable, safe to return without lock
     return attestationData;
   }
 
@@ -125,37 +124,24 @@ public class MatchingDataAttestationGroupV2 implements MatchingDataAttestationGr
     readLock.lock();
     try {
       if (includedValidators.isSuperSetOf(attestation.getAttestation())) {
-        return false; // Fast exit if redundant
+        return false;
       }
     } finally {
       readLock.unlock();
     }
     // --- End Read Lock Section ---
 
-    // --- Set Seed (Set-Once Optimization using volatile + double-checked lock) ---
-    // Perform cheap volatile read first. If seed is already set, skip locking.
-    if (committeeShufflingSeed.isEmpty()) {
-      // Only try to set the seed if the attestation actually has one
+    // --- Set Seed (Atomic CAS approach) ---
+    // Cheap read first (not strictly necessary but avoids getting seed if already set)
+    if (committeeShufflingSeedRef.get().isEmpty()) {
       Optional<Bytes32> attestationSeedMaybe = attestation.getCommitteeShufflingSeed();
       if (attestationSeedMaybe.isPresent()) {
-        // Acquire write lock only if seed is potentially unset AND attestation has a seed
-        writeLock.lock();
-        try {
-          // Double-check under write lock to ensure only one thread sets it
-          if (committeeShufflingSeed.isEmpty()) {
-            committeeShufflingSeed = attestationSeedMaybe; // Set the seed
-          }
-          // If another thread set it between volatile read and lock acquisition,
-          // this check prevents overwriting. If attestationSeedMaybe was empty,
-          // we wouldn't acquire the lock anyway.
-        } finally {
-          writeLock.unlock();
-        }
+        // Attempt to atomically set the value *only if* it's currently Optional.empty()
+        // This guarantees only one thread succeeds in setting the value.
+        committeeShufflingSeedRef.compareAndSet(Optional.empty(), attestationSeedMaybe);
+        // We don't need to check the return value of compareAndSet;
+        // if it fails, it means another thread already set it, which is fine.
       }
-      // If committeeShufflingSeed is still empty here, it means either:
-      // 1. This attestation (and potentially others before it) didn't have a seed.
-      // 2. Another thread set it while we were waiting for the lock.
-      // Both outcomes are correct.
     }
     // --- End Set Seed ---
 
@@ -194,8 +180,7 @@ public class MatchingDataAttestationGroupV2 implements MatchingDataAttestationGr
     return createAggregatingIterator(Optional.empty());
   }
 
-  @Override
-  public Iterator<ValidatableAttestation> iterator(final Optional<UInt64> committeeIndex) {
+  private Iterator<ValidatableAttestation> iterator(final Optional<UInt64> committeeIndex) {
     // Create iterator with necessary state captured under lock
     return createAggregatingIterator(committeeIndex);
   }
@@ -350,7 +335,7 @@ public class MatchingDataAttestationGroupV2 implements MatchingDataAttestationGr
   @Override
   public boolean matchesCommitteeShufflingSeed(final Set<Bytes32> validSeeds) {
     // Volatile read is safe without needing a lock here
-    return committeeShufflingSeed.map(validSeeds::contains).orElse(false);
+    return committeeShufflingSeedRef.get().map(validSeeds::contains).orElse(false);
   }
 
   private boolean noMatchingAttestations(

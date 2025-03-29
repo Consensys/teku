@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.attestation;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -261,10 +260,9 @@ public class AggregatingAttestationPoolV2 implements AggregatingAttestationPool 
   private void removeAttestationsPriorToSlot(final UInt64 firstValidAttestationSlot) {
     // headMap provides a view, collect keys to avoid issues with concurrent modification during
     // removal
-    final List<UInt64> slotsToRemove = new ArrayList<>();
     final NavigableMap<UInt64, Set<Bytes>> headMap =
         dataHashBySlot.headMap(firstValidAttestationSlot, false);
-    slotsToRemove.addAll(headMap.keySet());
+    final List<UInt64> slotsToRemove = List.copyOf(headMap.keySet());
 
     if (slotsToRemove.isEmpty()) {
       return;
@@ -276,12 +274,12 @@ public class AggregatingAttestationPoolV2 implements AggregatingAttestationPool 
         slotsToRemove.size());
 
     int removedCount = 0;
-    for (UInt64 slot : slotsToRemove) {
+    for (final UInt64 slot : slotsToRemove) {
       // Remove from dataHashBySlot first
       final Set<Bytes> dataHashes = dataHashBySlot.remove(slot);
       if (dataHashes != null) {
         // Now remove corresponding entries from attestationGroupByDataHash
-        for (Bytes key : dataHashes) {
+        for (final Bytes key : dataHashes) {
           final MatchingDataAttestationGroup removedGroup = attestationGroupByDataHash.remove(key);
           if (removedGroup != null) {
             // Get size (needs read lock internally in MatchingDataAttestationGroupV2)
