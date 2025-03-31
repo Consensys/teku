@@ -38,7 +38,7 @@ public class ValidatorConsolidationAcceptanceTest extends AcceptanceTestBase {
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
-  @Disabled("Flaky test - under investigation")
+
   void consolidateValidator() throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
@@ -86,7 +86,12 @@ public class ValidatorConsolidationAcceptanceTest extends AcceptanceTestBase {
     final BLSPublicKey targetValidatorPubkey = targetValidator.getValidatorKey().getPublicKey();
 
     besuNode.createConsolidationRequest(
+            eth1PrivateKey, targetValidatorPubkey, targetValidatorPubkey);
+
+    besuNode.createConsolidationRequest(
         eth1PrivateKey, sourceValidatorPubkey, targetValidatorPubkey);
+
+    tekuNode.waitForNewFinalization();
     waitForValidatorExit(tekuNode, sourceValidatorPubkey);
   }
 
