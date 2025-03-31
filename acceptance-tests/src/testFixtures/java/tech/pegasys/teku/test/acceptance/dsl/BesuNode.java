@@ -123,21 +123,21 @@ public class BesuNode extends Node {
   }
 
   public Eth1Address getDepositContractAddress() {
-    return Eth1Address.fromHexString("0xdddddddddddddddddddddddddddddddddddddddd");
+    return Eth1Address.fromHexString("0x00000961ef480eb55e80d19ad83579a64c007002");
   }
 
   /*
    Defined on https://eips.ethereum.org/EIPS/eip-7002 (WITHDRAWAL_REQUEST_PREDEPLOY_ADDRESS)
   */
   public Eth1Address getWithdrawalRequestContractAddress() {
-    return Eth1Address.fromHexString("0x0c15F14308530b7CDB8460094BbB9cC28b9AaaAA");
+    return Eth1Address.fromHexString("0x00000961Ef480Eb55e80D19ad83579A64c007002");
   }
 
   /*
    Defined on https://eips.ethereum.org/EIPS/eip-7251 (CONSOLIDATION_REQUEST_PREDEPLOY_ADDRESS)
   */
   public Eth1Address getConsolidationRequestContractAddress() {
-    return Eth1Address.fromHexString("0x00b42dbF2194e931E80326D950320f7d9Dbeac02");
+    return Eth1Address.fromHexString("0x0000BBdDc7CE488642fb579F8B00f3a590007251");
   }
 
   public String getInternalJsonRpcUrl() {
