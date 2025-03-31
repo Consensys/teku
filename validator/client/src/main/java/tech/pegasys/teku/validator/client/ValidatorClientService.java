@@ -172,9 +172,18 @@ public class ValidatorClientService extends Service {
 
     final ValidatorLoader validatorLoader =
         createValidatorLoader(services, config, asyncRunner, updatableGraffitiProvider);
+
+    final MetricsSystem metricsSystem = services.getMetricsSystem();
+
+    /* Only available when running a standalone VC client */
+    if (validatorConfig.getSentryNodeConfigurationFile().isPresent()
+        || validatorConfig.getBeaconNodeApiEndpoints().isPresent()) {
+      addVersionMetric(metricsSystem);
+    }
+
     final ValidatorStatusProvider validatorStatusProvider =
         new OwnedValidatorStatusProvider(
-            services.getMetricsSystem(),
+            metricsSystem,
             validatorLoader.getOwnedValidators(),
             validatorApiChannel,
             config.getSpec(),
@@ -237,7 +246,7 @@ public class ValidatorClientService extends Service {
             beaconProposerPreparer,
             validatorRegistrator,
             config.getSpec(),
-            services.getMetricsSystem(),
+            metricsSystem,
             doppelgangerDetectionAction,
             maybeValidatorSlashedAction,
             services.getTimeProvider());
@@ -372,7 +381,6 @@ public class ValidatorClientService extends Service {
       final ValidatorClientConfiguration validatorClientConfiguration,
       final AsyncRunner asyncRunner) {
     final ValidatorConfig validatorConfig = validatorClientConfiguration.getValidatorConfig();
-    final MetricsSystem metricsSystem = services.getMetricsSystem();
 
     final BeaconNodeApi beaconNodeApi;
     if (validatorConfig.getSentryNodeConfigurationFile().isEmpty()) {
@@ -380,15 +388,13 @@ public class ValidatorClientService extends Service {
           validatorConfig
               .getBeaconNodeApiEndpoints()
               .map(
-                  beaconNodeApiEndpoints -> {
-                    addVersionMetric(metricsSystem);
-                    return RemoteBeaconNodeApi.create(
-                        services,
-                        validatorConfig,
-                        asyncRunner,
-                        validatorClientConfiguration.getSpec(),
-                        beaconNodeApiEndpoints);
-                  })
+                  beaconNodeApiEndpoints ->
+                      RemoteBeaconNodeApi.create(
+                          services,
+                          validatorConfig,
+                          asyncRunner,
+                          validatorClientConfiguration.getSpec(),
+                          beaconNodeApiEndpoints))
               .orElseGet(
                   () ->
                       InProcessBeaconNodeApi.create(
@@ -400,9 +406,6 @@ public class ValidatorClientService extends Service {
       final SentryNodesConfig sentryNodesConfig =
           new SentryNodesConfigLoader()
               .load(validatorConfig.getSentryNodeConfigurationFile().get());
-
-      addVersionMetric(metricsSystem);
-
       beaconNodeApi =
           SentryBeaconNodeApi.create(
               services,
@@ -574,7 +577,6 @@ public class ValidatorClientService extends Service {
         validators::getValidatorCount);
   }
 
-  /** Only available when running a standalone VC client */
   private static void addVersionMetric(final MetricsSystem metricsSystem) {
     final String version = VersionProvider.IMPLEMENTATION_VERSION.replaceAll("^v", "");
     final LabelledMetric<Counter> versionCounter =
