@@ -25,16 +25,19 @@ public class DataConfig {
 
   private final Path dataBasePath;
   private final Optional<Path> beaconDataPath;
+  private final Optional<Path> bootnodeDataPath;
   private final Optional<Path> validatorDataPath;
   private final boolean debugDataDumpingEnabled;
 
   private DataConfig(
       final Path dataBasePath,
       final Optional<Path> beaconDataPath,
+      final Optional<Path> bootnodeDataPath,
       final Optional<Path> validatorDataPath,
       final boolean debugDataDumpingEnabled) {
     this.dataBasePath = dataBasePath;
     this.beaconDataPath = beaconDataPath;
+    this.bootnodeDataPath = bootnodeDataPath;
     this.validatorDataPath = validatorDataPath;
     this.debugDataDumpingEnabled = debugDataDumpingEnabled;
   }
@@ -51,6 +54,10 @@ public class DataConfig {
     return beaconDataPath;
   }
 
+  public Optional<Path> getBootnodeDataPath() {
+    return bootnodeDataPath;
+  }
+
   public Optional<Path> getValidatorDataPath() {
     return validatorDataPath;
   }
@@ -63,6 +70,7 @@ public class DataConfig {
 
     private Path dataBasePath = DEFAULT_DATA_PATH;
     private Optional<Path> beaconDataPath = Optional.empty();
+    private Optional<Path> bootnodeDataPath = Optional.empty();
     private Optional<Path> validatorDataPath = Optional.empty();
     private boolean debugDataDumpingEnabled = DEFAULT_DEBUG_DATA_DUMPING_ENABLED;
 
@@ -75,6 +83,11 @@ public class DataConfig {
 
     public Builder beaconDataPath(final Path beaconDataPath) {
       this.beaconDataPath = Optional.ofNullable(beaconDataPath);
+      return this;
+    }
+
+    public Builder bootnodeDataPath(final Path bootnodeDataPath) {
+      this.bootnodeDataPath = Optional.ofNullable(bootnodeDataPath);
       return this;
     }
 
@@ -93,7 +106,11 @@ public class DataConfig {
         throw new InvalidConfigurationException("data-base-path must be specified");
       }
       return new DataConfig(
-          dataBasePath, beaconDataPath, validatorDataPath, debugDataDumpingEnabled);
+          dataBasePath,
+          beaconDataPath,
+          bootnodeDataPath,
+          validatorDataPath,
+          debugDataDumpingEnabled);
     }
   }
 }
