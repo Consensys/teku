@@ -66,6 +66,7 @@ public final class Teku {
     final Node node;
 
     switch (nodeMode) {
+      case BOOTNODE_ONLY -> node = new Bootnode(config);
       case VC_ONLY -> node = new ValidatorNode(config);
       case COMBINED -> node = new BeaconNode(config);
       default -> throw new IllegalStateException("Expected node mode to be set");
@@ -94,6 +95,10 @@ public final class Teku {
 
   static BeaconNode startBeaconNode(final TekuConfiguration config) {
     return (BeaconNode) start(config, NodeMode.COMBINED);
+  }
+
+  static Bootnode startBootnode(final TekuConfiguration config) {
+    return (Bootnode) start(config, NodeMode.BOOTNODE_ONLY);
   }
 
   static ValidatorNode startValidatorNode(final TekuConfiguration config) {

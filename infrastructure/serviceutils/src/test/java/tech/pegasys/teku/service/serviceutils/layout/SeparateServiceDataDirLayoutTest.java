@@ -15,6 +15,7 @@ package tech.pegasys.teku.service.serviceutils.layout;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.service.serviceutils.layout.SeparateServiceDataDirLayout.BEACON_DATA_DIR_NAME;
+import static tech.pegasys.teku.service.serviceutils.layout.SeparateServiceDataDirLayout.BOOTNODE_DATA_DIR_NAME;
 import static tech.pegasys.teku.service.serviceutils.layout.SeparateServiceDataDirLayout.VALIDATOR_DATA_DIR_NAME;
 
 import java.nio.file.Path;
@@ -30,12 +31,20 @@ class SeparateServiceDataDirLayoutTest {
 
   @BeforeEach
   void setUp() {
-    layout = new SeparateServiceDataDirLayout(tempDir, Optional.empty(), Optional.empty(), false);
+    layout =
+        new SeparateServiceDataDirLayout(
+            tempDir, Optional.empty(), Optional.empty(), Optional.empty(), false);
   }
 
   @Test
   void shouldUseDefaultBeaconDataDirectory() {
     assertThat(layout.getBeaconDataDirectory()).isEqualTo(tempDir.resolve(BEACON_DATA_DIR_NAME));
+  }
+
+  @Test
+  void shouldUseDefaultBootnodeDataDirectory() {
+    assertThat(layout.getBootnodeDataDirectory())
+        .isEqualTo(tempDir.resolve(BOOTNODE_DATA_DIR_NAME));
   }
 
   @Test
