@@ -21,11 +21,15 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -59,7 +63,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 @Warmup(iterations = 5, time = 2000, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 2000, timeUnit = TimeUnit.MILLISECONDS)
-@BenchmarkMode(Mode.AverageTime)
 @Fork(1)
 @State(Scope.Thread)
 public class AggregatingAttestationPoolBenchmark {
@@ -86,15 +89,21 @@ public class AggregatingAttestationPoolBenchmark {
       Optional.of(
           "block-3816773-456c9819a4c1e792ba8b1f71119628aed2a4d1e0d2c66199fbc763832937421b.ssz");
 
+  record AttestationDataRootAndCommitteeIndex(Bytes32 attestationDataRoot, UInt64 committeeIndex) {}
+
   private BeaconState state;
   private BeaconState newBlockState;
   private List<ValidatableAttestation> attestations;
   private AggregatingAttestationPool pool;
   private RecentChainData recentChainData;
   private AttestationForkChecker attestationForkChecker;
+  private AttestationDataRootAndCommitteeIndex mostFrequentSingleAttestationDataRootAndCI;
 
   @Setup(Level.Trial)
   public void init() throws Exception {
+
+    final Map<AttestationDataRootAndCommitteeIndex, Integer> singleAttCounterByDataAndCommittee =
+        new HashMap<>();
 
     this.pool =
         new AggregatingAttestationPool(
@@ -152,6 +161,12 @@ public class AggregatingAttestationPoolBenchmark {
 
                   validatableAttestation.convertToAggregatedFormatFromSingleAttestation(
                       convertedAttestation);
+
+                  singleAttCounterByDataAndCommittee.compute(
+                      new AttestationDataRootAndCommitteeIndex(
+                          attestation.getData().hashTreeRoot(),
+                          attestation.getFirstCommitteeIndex()),
+                      (k, v) -> v == null ? 1 : v + 1);
                 }
 
                 return validatableAttestation;
@@ -161,6 +176,15 @@ public class AggregatingAttestationPoolBenchmark {
                 attestation.saveCommitteeShufflingSeedAndCommitteesSize(state);
                 pool.add(attestation);
               });
+
+      mostFrequentSingleAttestationDataRootAndCI =
+          singleAttCounterByDataAndCommittee.entrySet().stream()
+              .sorted(
+                  Entry.<AttestationDataRootAndCommitteeIndex, Integer>comparingByValue()
+                      .reversed())
+              .findFirst()
+              .orElseThrow()
+              .getKey();
     }
 
     this.newBlockState = SPEC.processSlots(state, SLOT);
@@ -175,8 +199,19 @@ public class AggregatingAttestationPoolBenchmark {
   }
 
   @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
   public void getAttestationsForBlock(final Blackhole bh) {
     var attestationsForBlock = pool.getAttestationsForBlock(newBlockState, attestationForkChecker);
+    bh.consume(attestationsForBlock);
+  }
+
+  @Benchmark
+  @BenchmarkMode(Mode.Throughput)
+  public void createAggregateFor(final Blackhole bh) {
+    var attestationsForBlock =
+        pool.createAggregateFor(
+            mostFrequentSingleAttestationDataRootAndCI.attestationDataRoot,
+            Optional.of(mostFrequentSingleAttestationDataRootAndCI.committeeIndex));
     bh.consume(attestationsForBlock);
   }
 

@@ -382,6 +382,41 @@ class AggregateAttestationValidatorTest {
   }
 
   @TestTemplate
+  void shouldAcceptAggregateWhenAlreadySeenAllAttestingValidatorsButOnDifferentCommitteeIndex(
+      final SpecContext specContext) {
+    // this test applies only to electra
+    specContext.assumeElectraActive();
+    disableSignatureVerification();
+
+    final StateAndBlockSummary chainHead = storageSystem.getChainHead();
+    final SignedAggregateAndProof validAggregate = generator.validAggregateAndProof(chainHead);
+    final AttestationData attestationData = validAggregate.getMessage().getAggregate().getData();
+    final UInt64 committeeIndex =
+        validAggregate.getMessage().getAggregate().getFirstCommitteeIndex();
+
+    final ValidatableAttestation smallAttestation =
+        createValidAggregate(
+            validAggregate.getMessage().getIndex(),
+            attestationData,
+            committeeIndex,
+            true,
+            false,
+            false);
+    final ValidatableAttestation largeAttestation =
+        createValidAggregate(
+            validAggregate.getMessage().getIndex(),
+            attestationData,
+            committeeIndex.increment(),
+            true,
+            true,
+            true);
+
+    validator.addSeenAggregate(largeAttestation);
+    assertThat(validator.validate(smallAttestation))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+  }
+
+  @TestTemplate
   void shouldAcceptAggregateWhenNotAllAttestingValidatorsSeen() {
     disableSignatureVerification();
     final StateAndBlockSummary chainHead = storageSystem.getChainHead();
