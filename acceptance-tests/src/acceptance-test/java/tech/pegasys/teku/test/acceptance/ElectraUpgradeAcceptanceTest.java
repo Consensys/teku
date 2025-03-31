@@ -31,7 +31,7 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
-@Disabled("Won't work until we update Engine API for Electra + EL changes")
+
 public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
 
   private static final String NETWORK_NAME = "swift";
