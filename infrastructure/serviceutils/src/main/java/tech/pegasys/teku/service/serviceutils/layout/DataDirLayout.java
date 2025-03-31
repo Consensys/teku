@@ -20,11 +20,14 @@ public interface DataDirLayout {
     return new SeparateServiceDataDirLayout(
         dataConfig.getDataBasePath(),
         dataConfig.getBeaconDataPath(),
+        dataConfig.getBootnodeDataPath(),
         dataConfig.getValidatorDataPath(),
         dataConfig.isDebugDataDumpingEnabled());
   }
 
   Path getBeaconDataDirectory();
+
+  Path getBootnodeDataDirectory();
 
   Path getValidatorDataDirectory();
 
