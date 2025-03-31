@@ -20,7 +20,6 @@ import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip7805;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -82,8 +81,7 @@ public class Eip7805StateUpgrade implements StateUpgrade<BeaconStateElectra> {
                   preStateElectra.getNextWithdrawalValidatorIndex());
               state.setNextWithdrawalIndex(preStateElectra.getNextWithdrawalIndex());
               state.setHistoricalSummaries(preStateElectra.getHistoricalSummaries());
-              state.setDepositRequestsStartIndex(
-                  SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX);
+              state.setDepositRequestsStartIndex(preStateElectra.getDepositRequestsStartIndex());
               state.setDepositBalanceToConsume(UInt64.ZERO);
               state.setExitBalanceToConsume(
                   beaconStateAccessors.getActivationExitChurnLimit(state));
