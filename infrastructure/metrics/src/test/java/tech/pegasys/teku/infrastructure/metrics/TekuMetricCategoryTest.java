@@ -20,7 +20,6 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EVENTB
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EXECUTOR;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.LIBP2P;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.NETWORK;
-import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.REMOTE_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
@@ -46,7 +45,6 @@ class TekuMetricCategoryTest {
             STORAGE,
             STORAGE_HOT_DB,
             STORAGE_FINALIZED_DB,
-            REMOTE_VALIDATOR,
             VALIDATOR,
             VALIDATOR_PERFORMANCE,
             VALIDATOR_DUTY);

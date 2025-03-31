@@ -579,7 +579,7 @@ public class ValidatorClientService extends Service {
     final String version = VersionProvider.IMPLEMENTATION_VERSION.replaceAll("^v", "");
     final LabelledMetric<Counter> versionCounter =
         metricsSystem.createLabelledCounter(
-            TekuMetricCategory.REMOTE_VALIDATOR,
+            TekuMetricCategory.VALIDATOR,
             VersionProvider.CLIENT_IDENTITY + "_version_total",
             "Teku version in use",
             "version");
