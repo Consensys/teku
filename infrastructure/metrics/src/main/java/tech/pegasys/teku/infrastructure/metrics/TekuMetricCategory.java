@@ -59,7 +59,6 @@ public enum TekuMetricCategory implements MetricCategory {
         STORAGE,
         STORAGE_HOT_DB,
         STORAGE_FINALIZED_DB,
-        REMOTE_VALIDATOR,
         VALIDATOR,
         VALIDATOR_PERFORMANCE,
         VALIDATOR_DUTY);
