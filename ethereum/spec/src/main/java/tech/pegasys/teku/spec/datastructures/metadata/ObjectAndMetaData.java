@@ -33,7 +33,12 @@ public class ObjectAndMetaData<T> {
       final boolean canonical,
       final boolean finalized) {
     this.data = data;
-    this.milestone = milestone;
+    // TODO EIP7805 this is a hack to prevent dora from crashing and should be removed once it
+    // supports the EIP7805 milestone objects version
+    this.milestone =
+        milestone != null && milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP7805)
+            ? SpecMilestone.ELECTRA
+            : milestone;
     this.executionOptimistic = executionOptimistic;
     this.canonical = canonical;
     this.finalized = finalized;
