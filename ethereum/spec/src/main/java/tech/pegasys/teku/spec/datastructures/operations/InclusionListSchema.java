@@ -44,7 +44,7 @@ public class InclusionListSchema
             FIELD_TRANSACTIONS,
             SszListSchema.create(
                 new TransactionSchema(specConfigEip7805),
-                specConfigEip7805.getMaxTransactionsPerInclusionList())));
+                specConfigEip7805.getMaxTransactionsPerPayload())));
   }
 
   public InclusionList create(

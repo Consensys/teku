@@ -22,7 +22,6 @@ import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7805;
@@ -64,11 +63,7 @@ public class EngineGetInclusionListV1 extends AbstractEngineJsonRpcMethod<List<T
                   SchemaDefinitionsEip7805.required(spec.getGenesisSchemaDefinitions())
                       .getInclusionListSchema()
                       .getTransactionSchema();
-              final int maxTransactionsPerInclusionList =
-                  SpecConfigEip7805.required(spec.getGenesisSpecConfig())
-                      .getMaxTransactionsPerInclusionList();
               return response.stream()
-                  .limit(maxTransactionsPerInclusionList)
                   .map(
                       inclusionListTransactionV1 ->
                           transactionSchema.fromBytes(

@@ -35,8 +35,6 @@ public interface SpecConfigEip7805 extends SpecConfigElectra {
 
   int getInclusionListCommitteeSize();
 
-  int getMaxTransactionsPerInclusionList();
-
   int getMaxRequestInclusionList();
 
   int getMaxBytesPerInclusionList();
