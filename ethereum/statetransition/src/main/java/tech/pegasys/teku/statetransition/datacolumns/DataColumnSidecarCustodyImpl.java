@@ -171,20 +171,6 @@ public class DataColumnSidecarCustodyImpl
   }
 
   @Override
-  public SafeFuture<Optional<DataColumnSidecar>> getCustodyNonCanonicalDataColumnSidecar(
-      final DataColumnSlotAndIdentifier columnId) {
-    return db.getNonCanonicalSidecar(columnId);
-  }
-
-  @Override
-  public SafeFuture<Boolean> hasCustodyNonCanonicalDataColumnSidecar(
-      final DataColumnSlotAndIdentifier columnId) {
-    return db.getNonCanonicalColumnIdentifiers(
-            new SlotAndBlockRoot(columnId.slot(), columnId.blockRoot()))
-        .thenApply(ids -> ids.contains(columnId));
-  }
-
-  @Override
   public void onSlot(final UInt64 slot) {
     currentSlot = slot;
     if (updateEpoch(spec.computeEpochAtSlot(slot))) {

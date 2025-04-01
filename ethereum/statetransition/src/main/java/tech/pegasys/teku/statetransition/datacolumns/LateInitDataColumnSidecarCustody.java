@@ -47,19 +47,6 @@ public class LateInitDataColumnSidecarCustody implements DataColumnSidecarRecove
   }
 
   @Override
-  public SafeFuture<Optional<DataColumnSidecar>> getCustodyNonCanonicalDataColumnSidecar(
-      final DataColumnSlotAndIdentifier columnId) {
-    checkDelegate();
-    return delegate.getCustodyNonCanonicalDataColumnSidecar(columnId);
-  }
-
-  @Override
-  public SafeFuture<Boolean> hasCustodyNonCanonicalDataColumnSidecar(
-      final DataColumnSlotAndIdentifier columnId) {
-    return delegate.hasCustodyNonCanonicalDataColumnSidecar(columnId);
-  }
-
-  @Override
   public SafeFuture<Optional<DataColumnSidecar>> getCustodyDataColumnSidecarByRoot(
       final DataColumnIdentifier columnId) {
     checkDelegate();

@@ -39,18 +39,6 @@ abstract class AbstractDelegatingDasDb implements DataColumnSidecarCoreDB {
   }
 
   @Override
-  public SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalSidecar(
-      final DataColumnSlotAndIdentifier identifier) {
-    return delegateDb.getNonCanonicalSidecar(identifier);
-  }
-
-  @Override
-  public SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalColumnIdentifiers(
-      final UInt64 slot) {
-    return delegateDb.getNonCanonicalColumnIdentifiers(slot);
-  }
-
-  @Override
   public SafeFuture<Void> addSidecar(final DataColumnSidecar sidecar) {
     return delegateDb.addSidecar(sidecar);
   }

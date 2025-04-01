@@ -37,19 +37,6 @@ interface DataColumnSidecarCoreDB {
                 ids.stream().filter(id -> id.blockRoot().equals(blockId.getBlockRoot())).toList());
   }
 
-  SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalSidecar(
-      DataColumnSlotAndIdentifier identifier);
-
-  SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalColumnIdentifiers(UInt64 slot);
-
-  default SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalColumnIdentifiers(
-      final SlotAndBlockRoot blockId) {
-    return getColumnIdentifiers(blockId.getSlot())
-        .thenApply(
-            ids ->
-                ids.stream().filter(id -> id.blockRoot().equals(blockId.getBlockRoot())).toList());
-  }
-
   // update
   SafeFuture<Void> addSidecar(DataColumnSidecar sidecar);
 }

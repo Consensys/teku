@@ -126,10 +126,5 @@ public interface StorageQueryChannel extends ChannelInterface {
   SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(
       UInt64 startSlot, UInt64 endSlot, UInt64 limit);
 
-  SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalDataColumnIdentifiers(UInt64 slot);
-
-  SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalDataColumnIdentifiers(
-      UInt64 startSlot, UInt64 endSlot, UInt64 limit);
-
   SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot();
 }

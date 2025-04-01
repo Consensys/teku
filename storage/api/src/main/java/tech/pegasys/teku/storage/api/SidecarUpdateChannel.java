@@ -28,8 +28,6 @@ public interface SidecarUpdateChannel extends ChannelInterface {
 
   SafeFuture<Void> onNewSidecar(DataColumnSidecar sidecar);
 
-  SafeFuture<Void> onNewNonCanonicalSidecar(DataColumnSidecar sidecar);
-
   // TODO: Make a dedicated pruner instead
   SafeFuture<Void> onSidecarsAvailabilitySlot(UInt64 earliestSlotRequired);
 }

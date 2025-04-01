@@ -93,28 +93,6 @@ public class DasLongPollCustody implements DataColumnSidecarCustody, SlotEventsC
   }
 
   @Override
-  public SafeFuture<Optional<DataColumnSidecar>> getCustodyNonCanonicalDataColumnSidecar(
-      final DataColumnSlotAndIdentifier columnId) {
-    final SafeFuture<Optional<DataColumnSidecar>> pendingFuture = addPendingRequest(columnId);
-    final SafeFuture<Optional<DataColumnSidecar>> existingFuture =
-        delegate.getCustodyNonCanonicalDataColumnSidecar(columnId);
-    return anyNonEmpty(pendingFuture, existingFuture);
-  }
-
-  @Override
-  public SafeFuture<Boolean> hasCustodyNonCanonicalDataColumnSidecar(
-      final DataColumnSlotAndIdentifier columnId) {
-    SafeFuture<Optional<Boolean>> pendingFuture =
-        addPendingRequest(columnId).thenApply(maybeSidecar -> maybeSidecar.map(__ -> true));
-    SafeFuture<Optional<Boolean>> existingFuture =
-        delegate
-            .hasCustodyNonCanonicalDataColumnSidecar(columnId)
-            .thenApply(doesExist -> doesExist ? Optional.of(true) : Optional.empty());
-    return anyNonEmpty(pendingFuture, existingFuture)
-        .thenApply(maybeResult -> maybeResult.orElse(false));
-  }
-
-  @Override
   public AsyncStream<DataColumnSlotAndIdentifier> retrieveMissingColumns() {
     return delegate.retrieveMissingColumns();
   }

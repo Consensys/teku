@@ -65,18 +65,6 @@ public class DelayedDasDb implements DataColumnSidecarDB {
   }
 
   @Override
-  public SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalSidecar(
-      final DataColumnSlotAndIdentifier identifier) {
-    return delay(() -> delegate.getSidecar(identifier));
-  }
-
-  @Override
-  public SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalColumnIdentifiers(
-      final UInt64 slot) {
-    return delay(() -> delegate.getColumnIdentifiers(slot));
-  }
-
-  @Override
   public SafeFuture<Void> setFirstCustodyIncompleteSlot(final UInt64 slot) {
     return delay(() -> delegate.setFirstCustodyIncompleteSlot(slot));
   }

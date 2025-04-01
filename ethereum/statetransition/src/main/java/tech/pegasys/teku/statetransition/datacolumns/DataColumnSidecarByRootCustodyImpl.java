@@ -64,27 +64,7 @@ public class DataColumnSidecarByRootCustodyImpl
         .thenCompose(
             maybeId ->
                 maybeId
-                    .map(
-                        id ->
-                            hasCustodyDataColumnSidecar(id)
-                                .thenCompose(
-                                    hasCanonical -> {
-                                      if (hasCanonical) {
-                                        return getCustodyDataColumnSidecar(id);
-                                      } else {
-                                        return hasCustodyNonCanonicalDataColumnSidecar(id)
-                                            .thenCompose(
-                                                hasNonCanonical -> {
-                                                  if (hasNonCanonical) {
-                                                    return getCustodyNonCanonicalDataColumnSidecar(
-                                                        id);
-                                                  } else {
-                                                    return SafeFuture.completedFuture(
-                                                        Optional.empty());
-                                                  }
-                                                });
-                                      }
-                                    }))
+                    .map(this::getCustodyDataColumnSidecar)
                     .orElse(SafeFuture.completedFuture(Optional.empty())));
   }
 
@@ -108,21 +88,9 @@ public class DataColumnSidecarByRootCustodyImpl
   }
 
   @Override
-  public SafeFuture<Optional<DataColumnSidecar>> getCustodyNonCanonicalDataColumnSidecar(
-      final DataColumnSlotAndIdentifier columnId) {
-    return custody.getCustodyNonCanonicalDataColumnSidecar(columnId);
-  }
-
-  @Override
   public SafeFuture<Boolean> hasCustodyDataColumnSidecar(
       final DataColumnSlotAndIdentifier columnId) {
     return custody.hasCustodyDataColumnSidecar(columnId);
-  }
-
-  @Override
-  public SafeFuture<Boolean> hasCustodyNonCanonicalDataColumnSidecar(
-      final DataColumnSlotAndIdentifier columnId) {
-    return custody.hasCustodyNonCanonicalDataColumnSidecar(columnId);
   }
 
   private static class ColumnSlotCache {

@@ -46,12 +46,6 @@ public interface DataColumnSidecarRecoveringCustody
         }
 
         @Override
-        public SafeFuture<Optional<DataColumnSidecar>> getCustodyNonCanonicalDataColumnSidecar(
-            final DataColumnSlotAndIdentifier columnId) {
-          return SafeFuture.completedFuture(Optional.empty());
-        }
-
-        @Override
         public SafeFuture<Void> onNewValidatedDataColumnSidecar(
             DataColumnSidecar dataColumnSidecar) {
           return SafeFuture.COMPLETE;
@@ -71,12 +65,6 @@ public interface DataColumnSidecarRecoveringCustody
         @Override
         public SafeFuture<Boolean> hasCustodyDataColumnSidecar(
             DataColumnSlotAndIdentifier columnId) {
-          return SafeFuture.completedFuture(false);
-        }
-
-        @Override
-        public SafeFuture<Boolean> hasCustodyNonCanonicalDataColumnSidecar(
-            final DataColumnSlotAndIdentifier columnId) {
           return SafeFuture.completedFuture(false);
         }
       };
