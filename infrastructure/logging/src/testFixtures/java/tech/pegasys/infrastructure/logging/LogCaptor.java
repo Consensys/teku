@@ -72,15 +72,15 @@ public class LogCaptor implements AutoCloseable {
   }
 
   public List<String> getInfoLogs() {
-    return getMessages(Level.INFO).collect(Collectors.toList());
+    return getMessages(Level.INFO).toList();
   }
 
   public List<String> getWarnLogs() {
-    return getMessages(Level.WARN).collect(Collectors.toList());
+    return getMessages(Level.WARN).toList();
   }
 
   public List<String> getErrorLogs() {
-    return getMessages(Level.ERROR).collect(Collectors.toList());
+    return getMessages(Level.ERROR).toList();
   }
 
   private Stream<String> getMessages(final Level level) {
