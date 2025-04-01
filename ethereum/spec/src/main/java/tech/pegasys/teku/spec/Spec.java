@@ -932,11 +932,11 @@ public class Spec {
   public AttestationData getGenericAttestationData(
       final UInt64 slot,
       final BeaconState state,
-      final BeaconBlockSummary block,
+      final Bytes32 blockRoot,
       final UInt64 committeeIndex) {
     return atSlot(slot)
         .getAttestationUtil()
-        .getGenericAttestationData(slot, state, block, committeeIndex);
+        .getGenericAttestationData(slot, state, blockRoot, committeeIndex);
   }
 
   public SafeFuture<AttestationProcessingResult> isValidIndexedAttestation(
