@@ -92,19 +92,6 @@ public class SignedInclusionListValidator {
           InternalValidationResult.ignore("Inclusion List is beyond attestation deadline"));
     }
 
-    final int transactionsCount = inclusionList.getTransactions().size();
-    final int maxTransactionsPerInclusionList =
-        specConfigEip7805.getMaxTransactionsPerInclusionList();
-    /*
-     * [REJECT] The transactions message.transactions length is within upperbound MAX_TRANSACTIONS_PER_INCLUSION_LIST.
-     */
-    if (transactionsCount > maxTransactionsPerInclusionList) {
-      return SafeFuture.completedFuture(
-          InternalValidationResult.reject(
-              "Inclusion List contains too many transactions %d. Expected maximum %d transactions",
-              transactionsCount, maxTransactionsPerInclusionList));
-    }
-
     /*
      * [IGNORE] The message is either the first or second valid message received from the validator with index message.validator_index.
      */

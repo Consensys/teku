@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -118,18 +117,7 @@ public class BlockProcessorEip7805 extends BlockProcessorElectra {
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
       final Optional<List<InclusionList>> inclusionLists)
       throws BlockProcessingException {
-
-    final List<Transaction> inclusionListTransactions;
-    if (inclusionLists.isPresent()) {
-      final int maxTransactionPerInclusionList =
-          SpecConfigEip7805.required(specConfig).getMaxTransactionsPerInclusionList();
-      inclusionListTransactions = getInclusionListTransactions(inclusionLists.get());
-
-      if (inclusionListTransactions.size() > maxTransactionPerInclusionList) {
-        throw new BlockProcessingException(
-            "Number of transaction in the inclusion list in block exceeds max transaction per inclusion list");
-      }
-    }
+    // TODO EIP7805 verify ILs have been included in the execution payload
     super.validateExecutionPayload(genericState, beaconBlockBody, payloadExecutor, inclusionLists);
   }
 

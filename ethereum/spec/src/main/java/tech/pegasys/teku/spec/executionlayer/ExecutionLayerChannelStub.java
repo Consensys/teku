@@ -723,7 +723,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final int maxTransactionsSize = specConfigEip7805.getMaxBytesPerInclusionList();
     final List<Transaction> transactions = new ArrayList<>();
     int currentTransactionsSize = 0;
-    while (transactions.size() < specConfigEip7805.getMaxTransactionsPerInclusionList()
+    while (transactions.size() < specConfigEip7805.getMaxTransactionsPerPayload()
         && currentTransactionsSize < maxTransactionsSize) {
       final Bytes transaction = Bytes.random(random.nextInt(10, maxTransactionsSize + 1));
       final int remainingSize = maxTransactionsSize - currentTransactionsSize;

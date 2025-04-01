@@ -1069,19 +1069,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   // Implements `validate_inclusion_lists` added in EIP-7805 - consensus/fork-choice
   public Optional<BlockImportResult> validateInclusionLists(
       final List<Transaction> inclusionListTransactions, final ExecutionPayload executionPayload) {
-    final SpecConfigEip7805 specConfigEip7805 =
-        spec.atSlot(recentChainData.getHeadSlot()).getConfig().toVersionEip7805().orElseThrow();
-    final int maxTransactionPerInclusionList =
-        specConfigEip7805.getMaxTransactionsPerInclusionList();
-    final int inclusionListCommitteeSize = specConfigEip7805.getInclusionListCommitteeSize();
-
-    if (inclusionListTransactions.size()
-        > maxTransactionPerInclusionList * inclusionListCommitteeSize) {
-      return Optional.of(
-          BlockImportResult.failedInclusionListSizeCheck(
-              new IllegalStateException("Inclusion list has too many transactions")));
-    }
-
     final SszList<Transaction> executionPayloadTransactions = executionPayload.getTransactions();
     if (!executionPayloadTransactions.asList().containsAll(inclusionListTransactions)) {
       return Optional.of(

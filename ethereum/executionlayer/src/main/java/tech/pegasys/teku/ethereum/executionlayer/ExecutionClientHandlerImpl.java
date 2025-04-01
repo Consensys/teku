@@ -198,14 +198,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
                       .orElseThrow()
                       .getInclusionListSchema()
                       .getTransactionSchema();
-              final int maxTransactionsPerInclusionList =
-                  spec.atSlot(slot)
-                      .getConfig()
-                      .toVersionEip7805()
-                      .orElseThrow()
-                      .getMaxTransactionsPerInclusionList();
               return response.stream()
-                  .limit(maxTransactionsPerInclusionList)
                   .map(
                       inclusionListTransactionV1 ->
                           transactionSchema.fromBytes(

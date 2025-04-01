@@ -24,7 +24,6 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigFulu implements S
   private final Bytes4 eip7805ForkVersion;
   private final UInt64 eip7805ForkEpoch;
   private final int inclusionListCommitteeSize;
-  private final int maxTransactionsPerInclusionList;
   private final int maxRequestInclusionList;
   private final int maxBytesPerInclusionList;
   private final int viewFreezeDeadline;
@@ -34,7 +33,6 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigFulu implements S
       final Bytes4 eip7805ForkVersion,
       final UInt64 eip7805ForkEpoch,
       final int inclusionListCommitteeSize,
-      final int maxTransactionsPerInclusionList,
       final int maxRequestInclusionList,
       final int maxBytesPerInclusionList,
       final int viewFreezeDeadline) {
@@ -42,7 +40,6 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigFulu implements S
     this.eip7805ForkVersion = eip7805ForkVersion;
     this.eip7805ForkEpoch = eip7805ForkEpoch;
     this.inclusionListCommitteeSize = inclusionListCommitteeSize;
-    this.maxTransactionsPerInclusionList = maxTransactionsPerInclusionList;
     this.maxRequestInclusionList = maxRequestInclusionList;
     this.maxBytesPerInclusionList = maxBytesPerInclusionList;
     this.viewFreezeDeadline = viewFreezeDeadline;
@@ -61,11 +58,6 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigFulu implements S
   @Override
   public int getInclusionListCommitteeSize() {
     return inclusionListCommitteeSize;
-  }
-
-  @Override
-  public int getMaxTransactionsPerInclusionList() {
-    return maxTransactionsPerInclusionList;
   }
 
   @Override
@@ -106,7 +98,6 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigFulu implements S
         && Objects.equals(eip7805ForkVersion, that.eip7805ForkVersion)
         && Objects.equals(eip7805ForkEpoch, that.eip7805ForkEpoch)
         && inclusionListCommitteeSize == that.inclusionListCommitteeSize
-        && maxTransactionsPerInclusionList == that.maxTransactionsPerInclusionList
         && maxRequestInclusionList == that.maxRequestInclusionList
         && maxBytesPerInclusionList == that.maxBytesPerInclusionList
         && viewFreezeDeadline == that.viewFreezeDeadline;
@@ -119,7 +110,6 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigFulu implements S
         eip7805ForkVersion,
         eip7805ForkEpoch,
         inclusionListCommitteeSize,
-        maxTransactionsPerInclusionList,
         maxRequestInclusionList,
         maxBytesPerInclusionList,
         viewFreezeDeadline);
