@@ -904,7 +904,7 @@ public class Spec {
     return atEpoch(epoch)
         .getInclusionListUtil()
         .orElseThrow()
-        .getInclusionCommitteeAssignment(state, epoch, validatorIndex);
+        .getInclusionListCommitteeAssignment(state, epoch, validatorIndex);
   }
 
   public Int2ObjectMap<CommitteeAssignment> getValidatorIndexToCommitteeAssignmentMap(
