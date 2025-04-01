@@ -119,7 +119,7 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
                   .map(slashedIndex -> validatorIndexProvider.getPublicKey(slashedIndex.intValue()))
                   .filter(Optional::isPresent)
                   .map(Optional::get)
-                  .collect(Collectors.toList());
+                  .toList();
           validatorSlashingAction.perform(slashedPublicKeys);
         });
   }
