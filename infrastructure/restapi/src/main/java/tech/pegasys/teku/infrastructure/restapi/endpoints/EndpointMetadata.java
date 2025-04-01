@@ -725,7 +725,7 @@ public class EndpointMetadata {
           List.of(new JsonResponseContentTypeDefinition<>(content), octetStreamTypeDefinition),
           headers.stream()
               .map(JsonResponseContentTypeDefinition::new)
-              .collect(Collectors.toList()));
+              .toList());
     }
 
     public <T> EndpointMetaDataBuilder response(
