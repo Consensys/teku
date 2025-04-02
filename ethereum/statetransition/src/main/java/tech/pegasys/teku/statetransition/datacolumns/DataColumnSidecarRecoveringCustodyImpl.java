@@ -53,10 +53,12 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   private final KZG kzg;
   private final Spec spec;
   private final Consumer<DataColumnSidecar> dataColumnSidecarPublisher;
+  private final CustodyGroupCountManager custodyGroupCountManager;
 
   private final long columnCount;
   private final int recoverColumnCount;
-  private final boolean isSuperNode;
+  private final int groupCount;
+  private final AtomicBoolean isSuperNode;
 
   final Function<UInt64, Duration> slotToRecoveryDelay;
   private final Map<SlotAndBlockRoot, RecoveryTask> recoveryTasks;
@@ -71,8 +73,10 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       final MiscHelpersFulu miscHelpers,
       final KZG kzg,
       final Consumer<DataColumnSidecar> dataColumnSidecarPublisher,
+      final CustodyGroupCountManager custodyGroupCountManager,
       final boolean isSuperNode,
       final int columnCount,
+      final int groupCount,
       final Function<UInt64, Duration> slotToRecoveryDelay) {
     this.delegate = delegate;
     this.asyncRunner = asyncRunner;
@@ -80,18 +84,26 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     this.kzg = kzg;
     this.spec = spec;
     this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
+    this.custodyGroupCountManager = custodyGroupCountManager;
     this.recoveryTasks =
         LimitedMap.createSynchronizedNatural(spec.getGenesisSpec().getSlotsPerEpoch());
-    this.isSuperNode = isSuperNode;
+    this.isSuperNode = new AtomicBoolean(isSuperNode);
     this.slotToRecoveryDelay = slotToRecoveryDelay;
     this.columnCount = columnCount;
+    this.groupCount = groupCount;
     this.recoverColumnCount = columnCount / 2;
   }
 
   @Override
   public void onSlot(final UInt64 slot) {
     if (!isActiveSuperNode(slot)) {
-      return;
+      if (custodyGroupCountManager.getCustodyGroupSyncedCount() == groupCount) {
+        LOG.info(
+            "Number of required custody groups reached maximum custody groups. Activating super node reconstruction.");
+        isSuperNode.set(true);
+      } else {
+        return;
+      }
     }
     asyncRunner
         .runAfterDelay(
@@ -184,7 +196,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   }
 
   private boolean isActiveSuperNode(final UInt64 slot) {
-    return isSuperNode
+    return isSuperNode.get()
         && spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU);
   }
 

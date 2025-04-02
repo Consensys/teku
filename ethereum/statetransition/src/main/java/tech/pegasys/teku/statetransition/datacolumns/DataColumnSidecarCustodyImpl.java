@@ -20,8 +20,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -41,6 +44,8 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 
 public class DataColumnSidecarCustodyImpl
     implements DataColumnSidecarCustody, SlotEventsChannel, FinalizedCheckpointChannel {
+
+  private static final Logger LOG = LogManager.getLogger("das-nyota");
 
   private record SlotCustody(
       UInt64 slot,
@@ -87,16 +92,19 @@ public class DataColumnSidecarCustodyImpl
   private final DataColumnSidecarDbAccessor db;
   private final CanonicalBlockResolver blockResolver;
   private final UInt256 nodeId;
-  private final int totalCustodyGroupCount;
+  private final AtomicInteger totalCustodyGroupCount;
   private final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator;
+  private final CustodyGroupCountManager custodyGroupCountManager;
 
   private volatile UInt64 currentSlot = null;
+  private UInt64 lastEpoch = UInt64.MAX_VALUE;
 
   public DataColumnSidecarCustodyImpl(
       final Spec spec,
       final CanonicalBlockResolver blockResolver,
       final DataColumnSidecarDbAccessor db,
       final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator,
+      final CustodyGroupCountManager custodyGroupCountManager,
       final UInt256 nodeId,
       final int totalCustodyGroupCount) {
     checkNotNull(spec);
@@ -109,8 +117,12 @@ public class DataColumnSidecarCustodyImpl
     this.db = db;
     this.blockResolver = blockResolver;
     this.minCustodyPeriodSlotCalculator = minCustodyPeriodSlotCalculator;
+    this.custodyGroupCountManager = custodyGroupCountManager;
     this.nodeId = nodeId;
-    this.totalCustodyGroupCount = totalCustodyGroupCount;
+    this.totalCustodyGroupCount = new AtomicInteger(totalCustodyGroupCount);
+    LOG.info(
+        "Initialized DataColumnSidecar Custody with custody group count {}",
+        totalCustodyGroupCount);
   }
 
   private List<UInt64> getCustodyColumnsForSlot(final UInt64 slot) {
@@ -119,7 +131,7 @@ public class DataColumnSidecarCustodyImpl
 
   private List<UInt64> getCustodyColumnsForEpoch(final UInt64 epoch) {
     return MiscHelpersFulu.required(spec.atEpoch(epoch).miscHelpers())
-        .computeCustodyColumnIndexes(nodeId, totalCustodyGroupCount);
+        .computeCustodyColumnIndexes(nodeId, totalCustodyGroupCount.get());
   }
 
   @Override
@@ -140,7 +152,7 @@ public class DataColumnSidecarCustodyImpl
         .map(
             miscHelpersFulu ->
                 miscHelpersFulu
-                    .computeCustodyColumnIndexes(nodeId, totalCustodyGroupCount)
+                    .computeCustodyColumnIndexes(nodeId, totalCustodyGroupCount.get())
                     .contains(columnIndex))
         .orElse(false);
   }
@@ -161,12 +173,34 @@ public class DataColumnSidecarCustodyImpl
   @Override
   public void onSlot(final UInt64 slot) {
     currentSlot = slot;
+    if (updateEpoch(spec.computeEpochAtSlot(slot))) {
+      int groupCount = custodyGroupCountManager.getCustodyGroupCount();
+      final int oldGroupCount = totalCustodyGroupCount.getAndSet(groupCount);
+      // FIXME: ignoring the case when it's less, let's skip pruning in early version, to implement
+      // in
+      // future
+      // Invalidating current custody as number of required groups have increased
+      if (groupCount > oldGroupCount) {
+        LOG.info("Custody group count changed from {} to {}", oldGroupCount, groupCount);
+        final UInt64 minCustodyPeriodSlot =
+            minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot);
+        db.setFirstCustodyIncompleteSlot(minCustodyPeriodSlot).ifExceptionGetsHereRaiseABug();
+      }
+    }
   }
 
   @Override
   public void onNewFinalizedCheckpoint(
       final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
     advanceFirstIncompleteSlot(checkpoint.getEpoch()).ifExceptionGetsHereRaiseABug();
+  }
+
+  private synchronized boolean updateEpoch(final UInt64 epoch) {
+    if (!lastEpoch.equals(epoch)) {
+      lastEpoch = epoch;
+      return true;
+    }
+    return false;
   }
 
   private SafeFuture<Void> advanceFirstIncompleteSlot(final UInt64 finalizedEpoch) {
@@ -178,8 +212,20 @@ public class DataColumnSidecarCustodyImpl
             maybeFirstIncompleteOrLastComplete ->
                 maybeFirstIncompleteOrLastComplete
                     .map(
-                        firstIncompleteOrLastComplete ->
-                            db.setFirstCustodyIncompleteSlot(firstIncompleteOrLastComplete.slot()))
+                        firstIncompleteOrLastComplete -> {
+                          // FIXME: if we don't have finalization, we will not advance it and it's
+                          // an issue
+                          // FIXME: non-finalized epochs could be still not synced with up-to-date
+                          // custody
+                          if (firstIncompleteOrLastComplete.slot().equals(firstNonFinalizedSlot)) {
+                            LOG.info(
+                                "Custody group count synced to {}", totalCustodyGroupCount.get());
+                            custodyGroupCountManager.setCustodyGroupSyncedCount(
+                                totalCustodyGroupCount.get());
+                          }
+                          return db.setFirstCustodyIncompleteSlot(
+                              firstIncompleteOrLastComplete.slot());
+                        })
                     .orElse(SafeFuture.COMPLETE));
   }
 

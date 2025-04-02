@@ -16,7 +16,7 @@ dependencies {
     implementation project(':storage:api')
     implementation project(':infrastructure:events')
 
-    implementation 'io.tmio:tuweni-bytes'
+    implementation 'io.consensys.tuweni:tuweni-bytes'
 
     testImplementation testFixtures(project(':ethereum:spec'))
     testImplementation testFixtures(project(':ethereum:statetransition'))

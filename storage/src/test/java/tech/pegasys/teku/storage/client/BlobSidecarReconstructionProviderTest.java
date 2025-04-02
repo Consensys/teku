@@ -206,7 +206,7 @@ public class BlobSidecarReconstructionProviderTest {
 
     final BlobsAndMatrix blobsAndMatrix = loadBlobsAndMatrixFixture();
     final MiscHelpersFulu miscHelpersFulu =
-        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.ELECTRA).miscHelpers());
+        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
 
     final List<DataColumnSidecar> dataColumnSidecars =
         miscHelpersFulu.constructDataColumnSidecars(
@@ -257,7 +257,7 @@ public class BlobSidecarReconstructionProviderTest {
 
     final BlobsAndMatrix blobsAndMatrix = loadBlobsAndMatrixFixture();
     final MiscHelpersFulu miscHelpersFulu =
-        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.ELECTRA).miscHelpers());
+        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
 
     final List<DataColumnSidecar> dataColumnSidecars =
         miscHelpersFulu.constructDataColumnSidecars(
@@ -290,7 +290,7 @@ public class BlobSidecarReconstructionProviderTest {
     final List<CellData> cellData = loadJson();
     final SchemaDefinitionsFulu schemaDefinitionsFulu =
         SchemaDefinitionsFulu.required(
-            spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions());
+            spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions());
     final SchemaDefinitionsElectra schemaDefinitionsElectra =
         SchemaDefinitionsElectra.required(
             spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions());

@@ -54,6 +54,7 @@ import tech.pegasys.teku.networking.eth2.peers.DiscoveryNodeIdExtractor;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
 import tech.pegasys.teku.networking.eth2.peers.LibP2PDiscoveryNodeIdExtractor;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.connection.PeerPools;
@@ -109,6 +110,7 @@ public class Eth2P2PNetworkBuilder {
   protected EventChannels eventChannels;
   protected CombinedChainDataClient combinedChainDataClient;
   protected DataColumnSidecarByRootCustody dataColumnSidecarCustody;
+  protected MetadataMessagesFactory metadataMessagesFactory;
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
   protected OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor;
   protected OperationProcessor<ValidatableAttestation> gossipedAttestationConsumer;
@@ -175,6 +177,7 @@ public class Eth2P2PNetworkBuilder {
             asyncRunner,
             combinedChainDataClient,
             dataColumnSidecarCustody,
+            metadataMessagesFactory,
             metricsSystem,
             attestationSubnetService,
             syncCommitteeSubnetService,
@@ -486,6 +489,7 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull("metricsSystem", metricsSystem);
     assertNotNull("combinedChainDataClient", combinedChainDataClient);
     assertNotNull("dataColumnSidecarCustody", dataColumnSidecarCustody);
+    assertNotNull("metadataMessagesFactory", metadataMessagesFactory);
     assertNotNull("keyValueStore", keyValueStore);
     assertNotNull("timeProvider", timeProvider);
     assertNotNull("gossipedBlockProcessor", gossipedBlockProcessor);
@@ -529,6 +533,13 @@ public class Eth2P2PNetworkBuilder {
       final DataColumnSidecarByRootCustody dataColumnSidecarCustody) {
     checkNotNull(dataColumnSidecarCustody);
     this.dataColumnSidecarCustody = dataColumnSidecarCustody;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder metadataMessagesFactory(
+      final MetadataMessagesFactory metadataMessagesFactory) {
+    checkNotNull(metadataMessagesFactory);
+    this.metadataMessagesFactory = metadataMessagesFactory;
     return this;
   }
 

@@ -154,9 +154,27 @@ public class P2POptions {
       names = {"--p2p-private-key-file"},
       paramLabel = "<FILENAME>",
       description =
-          "This node's private key file. If not specified, uses or generates a key which is stored within the <beacon-data-dir>.",
+          "This node's private key file in LibP2P format. If not specified, uses or generates a key which is stored within the <beacon-data-dir>.",
       arity = "1")
   private String p2pPrivateKeyFile = null;
+
+  @Option(
+      names = {"--Xp2p-private-key-file-secp256k1"},
+      paramLabel = "<FILENAME>",
+      description =
+          "This node's private key file of Secp256k1 type. Only single private key option should be specified.",
+      hidden = true,
+      arity = "1")
+  private String p2pPrivateKeyFileSecp256k1 = null;
+
+  @Option(
+      names = {"--Xp2p-private-key-file-ecdsa"},
+      paramLabel = "<FILENAME>",
+      description =
+          "This node's private key file of ECDSA type. Only single private key option should be specified.",
+      hidden = true,
+      arity = "1")
+  private String p2pPrivateKeyFileEcdsa = null;
 
   @Option(
       names = {"--p2p-peer-lower-bound"},
@@ -263,6 +281,16 @@ public class P2POptions {
       arity = "1")
   private Integer forwardSyncBlocksRateLimit =
       SyncConfig.DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE;
+
+  @Option(
+      names = {"--Xp2p-sync-max-distance-from-head"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Maximum number slots to jump back when trying to find a common ancestor with target chain.",
+      hidden = true,
+      arity = "1")
+  private Integer forwardSyncMaxDistanceFromHead;
 
   @Option(
       names = {"--Xp2p-sync-blob-sidecars-rate-limit"},
@@ -429,17 +457,6 @@ public class P2POptions {
       hidden = true)
   private int dasExtraCustodyGroupCount = P2PConfig.DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT;
 
-  @Option(
-      names = {"--Xdas-lossy-sampler-enabled"},
-      paramLabel = "<BOOLEAN>",
-      showDefaultValue = Visibility.ALWAYS,
-      description =
-          "Enables Lossy DAS Sampler, which increases number of required samples while allows non-zero column failures",
-      arity = "0..1",
-      hidden = true,
-      fallbackValue = "true")
-  private boolean dasLossySamplerEnabled = P2PConfig.DEFAULT_DAS_LOSSY_SAMPLER_ENABLED;
-
   private OptionalInt getP2pLowerBound() {
     if (p2pUpperBound.isPresent() && p2pLowerBound.isPresent()) {
       return p2pLowerBound.getAsInt() < p2pUpperBound.getAsInt() ? p2pLowerBound : p2pUpperBound;
@@ -474,8 +491,7 @@ public class P2POptions {
                   .peerRequestLimit(peerRequestLimit)
                   .floodPublishMaxMessageSizeThreshold(floodPublishMaxMessageSizeThreshold)
                   .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled)
-                  .dasExtraCustodyGroupCount(dasExtraCustodyGroupCount)
-                  .dasLossySamplerEnabled(dasLossySamplerEnabled);
+                  .dasExtraCustodyGroupCount(dasExtraCustodyGroupCount);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
             })
         .discovery(
@@ -519,6 +535,13 @@ public class P2POptions {
               if (p2pPrivateKeyFile != null) {
                 n.privateKeyFile(p2pPrivateKeyFile);
               }
+              if (p2pPrivateKeyFileSecp256k1 != null) {
+                n.privateKeyFileSecp256k1(p2pPrivateKeyFileSecp256k1);
+              }
+              if (p2pPrivateKeyFileEcdsa != null) {
+                n.privateKeyFileEcdsa(p2pPrivateKeyFileEcdsa);
+              }
+
               if (p2pAdvertisedPort != null) {
                 n.advertisedPort(OptionalInt.of(p2pAdvertisedPort));
               }
@@ -546,7 +569,8 @@ public class P2POptions {
                     .forwardSyncMaxBlocksPerMinute(forwardSyncBlocksRateLimit)
                     .forwardSyncMaxBlobSidecarsPerMinute(forwardSyncBlobSidecarsRateLimit)
                     .forwardSyncBatchSize(forwardSyncBatchSize)
-                    .forwardSyncMaxPendingBatches(forwardSyncMaxPendingBatches));
+                    .forwardSyncMaxPendingBatches(forwardSyncMaxPendingBatches)
+                    .forwardSyncMaxDistanceFromHead(forwardSyncMaxDistanceFromHead));
 
     if (subscribeAllSubnetsEnabled) {
       builder

@@ -65,6 +65,7 @@ public class DataColumnSidecarCustodyImplTest {
             blockResolver,
             dbAccessor,
             MinCustodyPeriodSlotCalculator.createFromSpec(spec),
+            CustodyGroupCountManager.NOOP,
             myNodeId,
             groupCount);
     BeaconBlock block = blockResolver.addBlock(10, true);

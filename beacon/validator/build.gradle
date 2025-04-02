@@ -33,8 +33,8 @@ dependencies {
   implementation project(':ethereum:json-types')
 
   implementation 'it.unimi.dsi:fastutil'
-  implementation 'io.tmio:tuweni-bytes'
-  implementation 'io.tmio:tuweni-ssz'
+  implementation 'io.consensys.tuweni:tuweni-bytes'
+  implementation 'io.consensys.tuweni:tuweni-ssz'
 
   testImplementation project(':infrastructure:metrics')
   testImplementation testFixtures(project(':ethereum:spec'))

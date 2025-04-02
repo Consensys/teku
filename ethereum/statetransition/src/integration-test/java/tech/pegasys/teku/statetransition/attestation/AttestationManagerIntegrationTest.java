@@ -88,7 +88,8 @@ class AttestationManagerIntegrationTest {
           storageSystem.getMetricsSystem());
 
   private final PendingPool<ValidatableAttestation> pendingAttestations =
-      new PoolFactory(storageSystem.getMetricsSystem()).createPendingPoolForAttestations(spec);
+      new PoolFactory(storageSystem.getMetricsSystem())
+          .createPendingPoolForAttestations(spec, 10000);
   private final FutureItems<ValidatableAttestation> futureAttestations =
       FutureItems.create(
           ValidatableAttestation::getEarliestSlotForForkChoiceProcessing,

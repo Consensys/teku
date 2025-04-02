@@ -42,11 +42,11 @@ public class GetStatePendingPartialWithdrawalsTest
   @BeforeEach
   public void setup() {
 
-    final GetStatePendingPartialWithdrawals pendingDepositsHandler =
+    final GetStatePendingPartialWithdrawals pendingWithdrawalsHandler =
         new GetStatePendingPartialWithdrawals(chainDataProvider, schemaDefinitionCache);
     initialise(SpecMilestone.ELECTRA);
     genesis();
-    setHandler(pendingDepositsHandler);
+    setHandler(pendingWithdrawalsHandler);
     request.setPathParameter("state_id", "head");
   }
 

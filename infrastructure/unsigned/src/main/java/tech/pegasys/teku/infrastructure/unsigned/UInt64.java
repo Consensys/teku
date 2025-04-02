@@ -16,7 +16,6 @@ package tech.pegasys.teku.infrastructure.unsigned;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.math.BigInteger;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 /** An unsigned 64-bit integer. All instances are immutable. */
@@ -127,6 +126,19 @@ public final class UInt64 implements Comparable<UInt64> {
   }
 
   /**
+   * Decrement this value by one and return the result. If trying to decrement from ZERO, still
+   * returns the ZERO
+   *
+   * @return The result of decrementing this value by 1.
+   */
+  public UInt64 safeDecrement() {
+    if (value == 0L) {
+      return ZERO;
+    }
+    return minus(value, 1);
+  }
+
+  /**
    * Return the result of adding this value and the specified one.
    *
    * @param other the unsigned value to add.
@@ -142,19 +154,6 @@ public final class UInt64 implements Comparable<UInt64> {
       throw new ArithmeticException("uint64 overflow");
     }
     return fromLongBits(longBits1 + longBits2);
-  }
-
-  public UInt64 safePlus(final long other) {
-    checkPositive(other);
-    if (value != 0 && Long.compareUnsigned(other, MAX_VALUE.longValue() - value) > 0) {
-      return UInt64.MAX_VALUE;
-    }
-    return plus(value, other);
-  }
-
-  public UInt64 safePlus(final UInt64 other) {
-    checkPositive(other.value);
-    return safePlus(other.value);
   }
 
   /**
@@ -179,36 +178,6 @@ public final class UInt64 implements Comparable<UInt64> {
    */
   public UInt64 minus(final UInt64 other) {
     return minus(value, other.value);
-  }
-
-  /**
-   * Return the result of subtracting the specified value from this one. If the operation would
-   * cause an underflow, an empty result is returned.
-   *
-   * @param other the value to subtract.
-   * @return a new UInt64 equal to this value minus the specified value.
-   */
-  public Optional<UInt64> safeMinus(final long other) {
-    checkPositive(other);
-    if (Long.compareUnsigned(value, other) < 0) {
-      return Optional.empty();
-    }
-
-    return Optional.of(fromLongBits(value - other));
-  }
-
-  /**
-   * Return the result of subtracting the specified value from this one. If the operation would
-   * cause an underflow, an empty result is returned.
-   *
-   * @param other the value to subtract.
-   * @return a new UInt64 equal to this value minus the specified value.
-   */
-  public Optional<UInt64> safeMinus(final UInt64 other) {
-    if (isLessThan(other)) {
-      return Optional.empty();
-    }
-    return Optional.of(fromLongBits(value - other.value));
   }
 
   private UInt64 minus(final long longBits1, final long longBits2) {

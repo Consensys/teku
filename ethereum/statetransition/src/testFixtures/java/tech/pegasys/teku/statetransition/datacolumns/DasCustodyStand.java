@@ -106,6 +106,7 @@ public class DasCustodyStand {
             asyncBlockResolver,
             dbAccessor,
             minCustodyPeriodSlotCalculator,
+            createCustodyGroupCountManager(totalCustodyGroupCount),
             myNodeId,
             totalCustodyGroupCount);
     subscribeToSlotEvents(this.custody);
@@ -263,5 +264,22 @@ public class DasCustodyStand {
           asyncDbDelay,
           asyncBlockResolverDelay);
     }
+  }
+
+  private CustodyGroupCountManager createCustodyGroupCountManager(final int custodyGroupCount) {
+    return new CustodyGroupCountManager() {
+      @Override
+      public int getCustodyGroupCount() {
+        return custodyGroupCount;
+      }
+
+      @Override
+      public int getCustodyGroupSyncedCount() {
+        return 0;
+      }
+
+      @Override
+      public void setCustodyGroupSyncedCount(final int custodyGroupSyncedCount) {}
+    };
   }
 }

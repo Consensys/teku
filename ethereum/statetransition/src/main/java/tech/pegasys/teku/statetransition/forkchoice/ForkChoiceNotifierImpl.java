@@ -40,6 +40,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   private final ProposersDataManager proposersDataManager;
   private final Spec spec;
   private final TimeProvider timeProvider;
+  private final boolean forkChoiceLateBlockReorgEnabled;
 
   private final Subscribers<ForkChoiceUpdatedResultSubscriber> forkChoiceUpdatedSubscribers =
       Subscribers.create(true);
@@ -55,7 +56,8 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
       final Spec spec,
       final ExecutionLayerChannel executionLayerChannel,
       final RecentChainData recentChainData,
-      final ProposersDataManager proposersDataManager) {
+      final ProposersDataManager proposersDataManager,
+      final boolean forkChoiceLateBlockReorgEnabled) {
     this.forkChoiceStateProvider = forkChoiceStateProvider;
     this.eventThread = eventThread;
     this.spec = spec;
@@ -63,6 +65,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     this.recentChainData = recentChainData;
     this.proposersDataManager = proposersDataManager;
     this.timeProvider = timeProvider;
+    this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
   }
 
   @Override
@@ -195,12 +198,23 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
 
     LOG.debug("internalForkChoiceUpdated forkChoiceState {}", forkChoiceState);
 
+    final Optional<UInt64> localProposingSlot =
+        calculatePayloadAttributesSlot(forkChoiceState, proposingSlot);
+
+    if (forkChoiceLateBlockReorgEnabled
+        && localProposingSlot.isPresent()
+        && recentChainData.shouldOverrideForkChoiceUpdate(forkChoiceState.getHeadBlockRoot())) {
+      LOG.debug(
+          "internalForkChoiceUpdated skipped due to late block reorg override producing block at slot {}",
+          localProposingSlot.get());
+      return;
+    }
+
     this.forkChoiceUpdateData = this.forkChoiceUpdateData.withForkChoiceState(forkChoiceState);
 
     LOG.debug("internalForkChoiceUpdated forkChoiceUpdateData {}", forkChoiceUpdateData);
 
-    calculatePayloadAttributesSlot(forkChoiceState, proposingSlot)
-        .ifPresent(this::updatePayloadAttributes);
+    localProposingSlot.ifPresent(this::updatePayloadAttributes);
 
     sendForkChoiceUpdated();
   }

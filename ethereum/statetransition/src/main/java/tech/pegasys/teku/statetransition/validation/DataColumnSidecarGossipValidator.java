@@ -24,6 +24,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -32,7 +33,9 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
@@ -50,6 +53,19 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
  */
 public class DataColumnSidecarGossipValidator {
   private static final Logger LOG = LogManager.getLogger();
+  public static final BiFunction<MetricsSystem, TimeProvider, MetricsHistogram>
+      DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_HISTOGRAM =
+          (metricsSystem, timeProvider) ->
+              new MetricsHistogram(
+                  metricsSystem,
+                  timeProvider,
+                  TekuMetricCategory.BEACON,
+                  "data_column_sidecar_inclusion_proof_verification_seconds",
+                  "Time taken to verify data column sidecar inclusion proof",
+                  new double[] {
+                    0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04, 0.05,
+                    0.1, 0.5, 1.0
+                  });
 
   private final Spec spec;
   private final Set<SlotProposerIndexAndColumnIndex> receivedValidDataColumnSidecarInfoSet;
@@ -61,6 +77,7 @@ public class DataColumnSidecarGossipValidator {
   private final KZG kzg;
   private final Counter totalDataColumnSidecarsProcessingRequestsCounter;
   private final Counter totalDataColumnSidecarsProcessingSuccessesCounter;
+  private final MetricsHistogram dataColumnSidecarInclusionProofVerificationTimeSeconds;
 
   public static DataColumnSidecarGossipValidator create(
       final Spec spec,
@@ -68,7 +85,8 @@ public class DataColumnSidecarGossipValidator {
       final GossipValidationHelper validationHelper,
       final MiscHelpersFulu miscHelpersFulu,
       final KZG kzg,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider) {
 
     final Optional<Integer> maybeNumberOfColumns = spec.getNumberOfDataColumns();
 
@@ -84,6 +102,7 @@ public class DataColumnSidecarGossipValidator {
         miscHelpersFulu,
         kzg,
         metricsSystem,
+        timeProvider,
         LimitedSet.createSynchronized(validInfoSize),
         LimitedSet.createSynchronized(validSignedBlockHeadersSize),
         LimitedSet.createSynchronized(validSignedBlockHeadersSize));
@@ -101,6 +120,7 @@ public class DataColumnSidecarGossipValidator {
       final MiscHelpersFulu miscHelpersFulu,
       final KZG kzg,
       final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider,
       final Set<SlotProposerIndexAndColumnIndex> receivedValidDataColumnSidecarInfoSet,
       final Set<InclusionProofInfo> validInclusionProofInfoSet,
       final Set<Bytes32> validSignedBlockHeaders) {
@@ -120,6 +140,10 @@ public class DataColumnSidecarGossipValidator {
             TekuMetricCategory.BEACON,
             "data_column_sidecar_processing_successes_total",
             "Total number of data column sidecars verified for gossip");
+    this.dataColumnSidecarInclusionProofVerificationTimeSeconds =
+        DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_HISTOGRAM.apply(
+            metricsSystem, timeProvider);
+
     this.validInclusionProofInfoSet = validInclusionProofInfoSet;
     this.validSignedBlockHeaders = validSignedBlockHeaders;
   }
@@ -348,8 +372,12 @@ public class DataColumnSidecarGossipValidator {
             dataColumnSidecar.getBlockBodyRoot()))) {
       return true;
     }
-
-    return miscHelpersFulu.verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
+    try (MetricsHistogram.Timer ignored =
+        dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
+      return miscHelpersFulu.verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
+    } catch (final Throwable t) {
+      return false;
+    }
   }
 
   private boolean verifyBlockHeaderSignature(

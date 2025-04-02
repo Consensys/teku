@@ -28,6 +28,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
   private final int numberOfCustodyGroups;
   private final int dataColumnSidecarSubnetCount;
   private final int custodyRequirement;
+  private final int validatorCustodyRequirement;
   private final int samplesPerSlot;
   private final UInt64 fieldElementsPerCell;
   private final UInt64 fieldElementsPerExtBlob;
@@ -47,6 +48,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
       final int numberOfCustodyGroups,
       final int dataColumnSidecarSubnetCount,
       final int custodyRequirement,
+      final int validatorCustodyRequirement,
       final int samplesPerSlot,
       final int minEpochsForDataColumnSidecarsRequests,
       final int maxRequestDataColumnSidecars,
@@ -61,6 +63,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
     this.numberOfCustodyGroups = numberOfCustodyGroups;
     this.dataColumnSidecarSubnetCount = dataColumnSidecarSubnetCount;
     this.custodyRequirement = custodyRequirement;
+    this.validatorCustodyRequirement = validatorCustodyRequirement;
     this.samplesPerSlot = samplesPerSlot;
     this.minEpochsForDataColumnSidecarsRequests = minEpochsForDataColumnSidecarsRequests;
     this.maxRequestDataColumnSidecars = maxRequestDataColumnSidecars;
@@ -110,6 +113,11 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
   @Override
   public int getCustodyRequirement() {
     return custodyRequirement;
+  }
+
+  @Override
+  public int getValidatorCustodyRequirement() {
+    return validatorCustodyRequirement;
   }
 
   @Override

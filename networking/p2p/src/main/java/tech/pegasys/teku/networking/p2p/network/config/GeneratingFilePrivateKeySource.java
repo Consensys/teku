@@ -26,15 +26,15 @@ import java.nio.file.Paths;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 
-public class FilePrivateKeySource implements PrivateKeySource {
+public class GeneratingFilePrivateKeySource implements PrivateKeySource {
   private final String fileName;
 
-  public FilePrivateKeySource(final String fileName) {
+  public GeneratingFilePrivateKeySource(final String fileName) {
     this.fileName = fileName;
   }
 
   @Override
-  public Bytes getOrGeneratePrivateKeyBytes() {
+  public Bytes getPrivateKeyBytes() {
     try {
       File file = new File(fileName);
       if (!file.createNewFile()) {
@@ -54,7 +54,8 @@ public class FilePrivateKeySource implements PrivateKeySource {
 
   private Bytes getPrivateKeyBytesFromTextFile() {
     try {
-      final Bytes privateKeyBytes = Bytes.fromHexString(Files.readString(Paths.get(fileName)));
+      final Bytes privateKeyBytes =
+          Bytes.fromHexString(Files.readString(Paths.get(fileName)).trim());
       STATUS_LOG.usingGeneratedP2pPrivateKey(fileName, false);
       return privateKeyBytes;
     } catch (MalformedInputException e) {
@@ -86,7 +87,7 @@ public class FilePrivateKeySource implements PrivateKeySource {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    FilePrivateKeySource that = (FilePrivateKeySource) o;
+    GeneratingFilePrivateKeySource that = (GeneratingFilePrivateKeySource) o;
     return Objects.equals(fileName, that.fileName);
   }
 

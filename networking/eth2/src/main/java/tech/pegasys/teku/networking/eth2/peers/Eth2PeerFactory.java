@@ -89,6 +89,8 @@ public class Eth2PeerFactory {
             "dataColumns"),
         RateTracker.create(
             peerRequestLimit * REQUEST_RATE_LIMIT_BOOST, TIME_OUT, timeProvider, "requestTracker"),
-        kzg);
+        kzg,
+        metricsSystem,
+        timeProvider);
   }
 }

@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessage;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingPeerId;
@@ -163,6 +164,23 @@ public class DataColumnSidecarsByRootMessageHandler
             });
   }
 
+  private SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalDataColumnSidecar(
+      final DataColumnIdentifier identifier) {
+    return combinedChainDataClient
+        .getBlockByBlockRoot(identifier.getBlockRoot())
+        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot))
+        .thenCompose(
+            maybeSlot -> {
+              if (maybeSlot.isPresent()) {
+                return combinedChainDataClient.getNonCanonicalSidecar(
+                    new DataColumnSlotAndIdentifier(
+                        maybeSlot.get(), identifier.getBlockRoot(), identifier.getIndex()));
+              } else {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+            });
+  }
+
   private UInt64 getFinalizedEpoch() {
     return combinedChainDataClient
         .getFinalizedBlock()
@@ -210,7 +228,16 @@ public class DataColumnSidecarsByRootMessageHandler
 
   private SafeFuture<Optional<DataColumnSidecar>> retrieveDataColumnSidecar(
       final DataColumnIdentifier identifier) {
-    return dataColumnSidecarCustody.getCustodyDataColumnSidecarByRoot(identifier);
+    return dataColumnSidecarCustody
+        .getCustodyDataColumnSidecarByRoot(identifier)
+        .thenCompose(
+            maybeSidecar -> {
+              if (maybeSidecar.isPresent()) {
+                return SafeFuture.completedFuture(maybeSidecar);
+              }
+              // Fallback to non-canonical sidecar if the canonical one is not found
+              return getNonCanonicalDataColumnSidecar(identifier);
+            });
   }
 
   private void handleError(

@@ -18,8 +18,8 @@ dependencies {
   implementation 'org.bouncycastle:bcprov-jdk18on'
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
-  implementation 'io.tmio:tuweni-bytes'
-  implementation 'io.tmio:tuweni-crypto'
+  implementation 'io.consensys.tuweni:tuweni-bytes'
+  implementation 'io.consensys.tuweni:tuweni-crypto'
 
   testImplementation 'org.assertj:assertj-core'
   testImplementation 'org.junit.jupiter:junit-jupiter-engine'

@@ -17,9 +17,11 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
@@ -53,7 +55,9 @@ public interface Eth2Peer extends Peer, SyncSource {
       final RateTracker blobSidecarsRequestTracker,
       final RateTracker dataColumnSidecarsRequestTracker,
       final RateTracker requestTracker,
-      final KZG kzg) {
+      final KZG kzg,
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider) {
     return new DefaultEth2Peer(
         spec,
         peer,
@@ -66,7 +70,9 @@ public interface Eth2Peer extends Peer, SyncSource {
         blobSidecarsRequestTracker,
         dataColumnSidecarsRequestTracker,
         requestTracker,
-        kzg);
+        kzg,
+        metricsSystem,
+        timeProvider);
   }
 
   void updateStatus(PeerStatus status);

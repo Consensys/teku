@@ -55,6 +55,11 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return delegate.getColumnSidecarByColumnSlotAndIdentifier();
   }
 
+  public KvStoreColumn<DataColumnSlotAndIdentifier, Bytes>
+      getColumnNonCanonicalSidecarByColumnSlotAndIdentifier() {
+    return delegate.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier();
+  }
+
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return ImmutableMap.<String, KvStoreColumn<?, ?>>builder()
         .put("SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot())
@@ -70,6 +75,9 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
             "NON_CANONICAL_BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
             getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex())
         .put("SIDECAR_BY_COLUMN_SLOT_AND_IDENTIFIER", getColumnSidecarByColumnSlotAndIdentifier())
+        .put(
+            "NON_CANONICAL_SIDECAR_BY_COLUMN_SLOT_AND_IDENTIFIER",
+            getColumnNonCanonicalSidecarByColumnSlotAndIdentifier())
         .build();
   }
 

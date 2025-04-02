@@ -175,8 +175,14 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<Bytes> getSidecar(DataColumnSlotAndIdentifier identifier);
 
+  Optional<Bytes> getNonCanonicalSidecar(DataColumnSlotAndIdentifier identifier);
+
   @MustBeClosed
   Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(UInt64 startSlot, UInt64 endSlot);
+
+  @MustBeClosed
+  Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiers(
+      UInt64 startSlot, UInt64 endSlot);
 
   List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(SlotAndBlockRoot slotAndBlockRoot);
 
@@ -291,7 +297,11 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void addSidecar(DataColumnSidecar sidecar);
 
+    void addNonCanonicalSidecar(DataColumnSidecar sidecar);
+
     void removeSidecar(DataColumnSlotAndIdentifier identifier);
+
+    void removeNonCanonicalSidecar(DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier);
 
     void commit();
 
