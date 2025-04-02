@@ -113,6 +113,7 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -127,6 +128,7 @@ class ValidatorApiHandlerTest {
   private static final UInt64 PREVIOUS_EPOCH = EPOCH.minus(ONE);
 
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
+  private final UpdatableStore store = mock(UpdatableStore.class);
   private final SyncStateProvider syncStateProvider = mock(SyncStateProvider.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
@@ -200,6 +202,7 @@ class ValidatorApiHandlerTest {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(forkChoiceTrigger.prepareForBlockProduction(any(), any())).thenReturn(SafeFuture.COMPLETE);
     when(chainDataClient.isOptimisticBlock(any())).thenReturn(false);
+    when(chainDataClient.getStore()).thenReturn(store);
     doAnswer(invocation -> SafeFuture.completedFuture(invocation.getArgument(0)))
         .when(blockFactory)
         .unblindSignedBlockIfBlinded(any(), any());
@@ -614,6 +617,8 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getSignedBlockAndStateInEffectAtSlot(slot))
         .thenReturn(blockAndStateResult);
     when(forkChoiceTrigger.prepareForAttestationProduction(slot)).thenReturn(SafeFuture.COMPLETE);
+    when(store.getInclusionListAttesterHead(any()))
+        .thenReturn(Optional.of(blockAndState.getBlock().getRoot()));
 
     when(chainDataClient.isOptimisticBlock(blockAndState.getRoot())).thenReturn(true);
 
@@ -639,7 +644,8 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getSignedBlockAndStateInEffectAtSlot(slot))
         .thenReturn(blockAndStateResult);
     when(forkChoiceTrigger.prepareForAttestationProduction(slot)).thenReturn(SafeFuture.COMPLETE);
-
+    when(store.getInclusionListAttesterHead(any()))
+        .thenReturn(Optional.of(blockAndState.getBlock().getRoot()));
     final int committeeIndex = 0;
     final SafeFuture<Optional<AttestationData>> result =
         validatorApiHandler.createAttestationData(slot, committeeIndex);
@@ -653,7 +659,7 @@ class ValidatorApiHandlerTest {
             spec.getGenericAttestationData(
                 slot,
                 blockAndState.getState(),
-                blockAndState.getBlock().getMessage(),
+                blockAndState.getBlock().getRoot(),
                 UInt64.valueOf(committeeIndex)));
     assertThat(attestationData.getSlot()).isEqualTo(slot);
     final InOrder inOrder = inOrder(forkChoiceTrigger, chainDataClient);
@@ -698,6 +704,8 @@ class ValidatorApiHandlerTest {
                 CheckpointState.create(
                     spec, new Checkpoint(EPOCH, block.getRoot()), block, rightState)));
     when(forkChoiceTrigger.prepareForAttestationProduction(slot)).thenReturn(SafeFuture.COMPLETE);
+    when(store.getInclusionListAttesterHead(any()))
+        .thenReturn(Optional.of(blockAndState.getBlock().getRoot()));
 
     final int committeeIndex = 0;
     final SafeFuture<Optional<AttestationData>> result =
@@ -710,7 +718,7 @@ class ValidatorApiHandlerTest {
     assertThat(attestationData)
         .isEqualTo(
             spec.getGenericAttestationData(
-                slot, rightState, block.getMessage(), UInt64.valueOf(committeeIndex)));
+                slot, rightState, block.getMessage().getRoot(), UInt64.valueOf(committeeIndex)));
     assertThat(attestationData.getSlot()).isEqualTo(slot);
   }
 
