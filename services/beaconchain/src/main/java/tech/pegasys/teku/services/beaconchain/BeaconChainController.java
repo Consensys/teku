@@ -980,10 +980,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
               custodyGroupCountManager);
       eventChannels.subscribe(SlotEventsChannel.class, recoveryManager);
       dataColumnSidecarCustody.subscribeToValidDataColumnSidecars(
-          dataColumnSidecarELRecoveryManager::onNewDataColumnSidecar);
-      blockManager.subscribePreImportBlocks(
-          (block, remoteOriginOptional) ->
-              dataColumnSidecarELRecoveryManager.onNewBlock(block, remoteOriginOptional));
+          recoveryManager::onNewDataColumnSidecar);
+      blockManager.subscribePreImportBlocks(recoveryManager::onNewBlock);
       dataColumnSidecarELRecoveryManager = recoveryManager;
     } else {
       dataColumnSidecarELRecoveryManager = DataColumnSidecarELRecoveryManager.NOOP;
