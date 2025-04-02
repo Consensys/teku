@@ -406,8 +406,5 @@ public class NoOpDatabase implements Database {
   public void pruneAllSidecars(final UInt64 tillSlotInclusive) {}
 
   @Override
-  public void pruneAllNonCanonicalSidecars(final UInt64 tillSlotInclusive) {}
-
-  @Override
   public void close() {}
 }
