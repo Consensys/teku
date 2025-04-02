@@ -1418,7 +1418,7 @@ public class KvStoreDatabase implements Database {
                                     spec.deserializeSidecar(sidecarBytes, key.slot());
                                 updater.addNonCanonicalSidecar(sideCar);
                                 LOG.trace(
-                                    "Removing sidecar with identifier {} for non-canonical block",
+                                    "Moving non-canonical sidecar with identifier {} to non-canonical sidecars table",
                                     key);
                                 updater.removeSidecar(key);
                               });
