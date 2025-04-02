@@ -234,6 +234,17 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         computeExtendedMatrix(blobs, kzg));
   }
 
+  public List<DataColumnSidecar> constructDataColumnSidecars(
+      final SignedBeaconBlockHeader signedBeaconBlockHeader,
+      final SszList<SszKZGCommitment> sszKZGCommitments,
+      final List<Bytes32> kzgCommitmentsInclusionProof,
+      final List<Blob> blobs,
+      final KZG kzg) {
+    final List<List<MatrixEntry>> extendedMatrix = computeExtendedMatrix(blobs, kzg);
+    return constructDataColumnSidecars(
+        signedBeaconBlockHeader, sszKZGCommitments, kzgCommitmentsInclusionProof, extendedMatrix);
+  }
+
   /**
    * Return the full ``ExtendedMatrix``.
    *
@@ -277,6 +288,19 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     final List<Bytes32> kzgCommitmentsInclusionProof =
         computeDataColumnKzgCommitmentsInclusionProof(beaconBlockBody);
 
+    return constructDataColumnSidecars(
+        signedBeaconBlockHeader, sszKZGCommitments, kzgCommitmentsInclusionProof, extendedMatrix);
+  }
+
+  public List<DataColumnSidecar> constructDataColumnSidecars(
+      final SignedBeaconBlockHeader signedBeaconBlockHeader,
+      final SszList<SszKZGCommitment> sszKZGCommitments,
+      final List<Bytes32> kzgCommitmentsInclusionProof,
+      final List<List<MatrixEntry>> extendedMatrix) {
+    if (extendedMatrix.isEmpty()) {
+      return Collections.emptyList();
+    }
+
     final DataColumnSchema dataColumnSchema = schemaDefinitions.getDataColumnSchema();
     final DataColumnSidecarSchema dataColumnSidecarSchema =
         schemaDefinitions.getDataColumnSidecarSchema();
@@ -311,9 +335,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
-      final BeaconBlock block,
-      final Collection<DataColumnSidecar> existingSidecars,
-      final KZG kzg) {
+      final Collection<DataColumnSidecar> existingSidecars, final KZG kzg) {
     if (existingSidecars.size() < (specConfigFulu.getNumberOfColumns() / 2)) {
       throw new IllegalArgumentException(
           "Number of sidecars must be greater than or equal to the half of column count");
@@ -340,7 +362,11 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         existingSidecars.stream().findFirst().orElseThrow();
     final SignedBeaconBlockHeader signedBeaconBlockHeader =
         anyExistingSidecar.getSignedBeaconBlockHeader();
-    return constructDataColumnSidecars(block, signedBeaconBlockHeader, extendedMatrix);
+    return constructDataColumnSidecars(
+        signedBeaconBlockHeader,
+        anyExistingSidecar.getSszKZGCommitments(),
+        anyExistingSidecar.getKzgCommitmentsInclusionProof().asListUnboxed(),
+        extendedMatrix);
   }
 
   /**

@@ -230,13 +230,15 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                       .map(DataColumnSidecar::getIndex)
                       .collect(Collectors.toUnmodifiableSet());
               final List<DataColumnSidecar> recoveredSidecars =
-                  miscHelpers.reconstructAllDataColumnSidecars(block, sidecars, kzg);
+                  miscHelpers.reconstructAllDataColumnSidecars(sidecars, kzg);
               recoveredSidecars.stream()
                   .filter(sidecar -> !existingSidecarsIndices.contains(sidecar.getIndex()))
                   .forEach(
                       dataColumnSidecar -> {
                         validDataColumnSidecarsSubscribers.forEach(
-                            l -> l.onNewValidSidecar(dataColumnSidecar));
+                            l ->
+                                l.onNewValidSidecar(
+                                    dataColumnSidecar, BlobSidecarManager.RemoteOrigin.RECOVERED));
                         delegate
                             .onNewValidatedDataColumnSidecar(dataColumnSidecar)
                             .ifExceptionGetsHereRaiseABug();

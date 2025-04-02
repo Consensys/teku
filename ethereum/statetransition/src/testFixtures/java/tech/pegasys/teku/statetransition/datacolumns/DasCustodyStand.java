@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -54,11 +55,11 @@ public class DasCustodyStand {
   public final Spec spec;
 
   public final CanonicalBlockResolverStub blockResolver;
-  public final UInt256 myNodeId;
 
   public final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator;
   public final DataColumnSidecarDBStub db;
   public final DataColumnSidecarDbAccessor dbAccessor;
+  public final CustodyGroupCountManager custodyGroupCountManager;
 
   public final DataColumnSidecarCustodyImpl custody;
 
@@ -66,19 +67,16 @@ public class DasCustodyStand {
 
   private final List<SlotEventsChannel> slotListeners = new CopyOnWriteArrayList<>();
   private final List<FinalizedCheckpointChannel> finalizedListeners = new CopyOnWriteArrayList<>();
-  private final int totalCustodyGroupCount;
 
   private UInt64 currentSlot = UInt64.ZERO;
 
   public DasCustodyStand(
       final Spec spec,
       final UInt64 currentSlot,
-      final UInt256 myNodeId,
       final int totalCustodyGroupCount,
       final Optional<Duration> asyncDbDelay,
       final Optional<Duration> asyncBlockResolverDelay) {
     this.spec = spec;
-    this.myNodeId = myNodeId;
     this.blockResolver = new CanonicalBlockResolverStub(spec);
     final CanonicalBlockResolver asyncBlockResolver =
         asyncBlockResolverDelay
@@ -100,14 +98,14 @@ public class DasCustodyStand {
 
     this.dbAccessor = DataColumnSidecarDbAccessor.builder(asyncDb).spec(spec).build();
 
+    this.custodyGroupCountManager = createCustodyGroupCountManager(totalCustodyGroupCount);
     this.custody =
         new DataColumnSidecarCustodyImpl(
             spec,
             asyncBlockResolver,
             dbAccessor,
             minCustodyPeriodSlotCalculator,
-            createCustodyGroupCountManager(totalCustodyGroupCount),
-            myNodeId,
+            custodyGroupCountManager,
             totalCustodyGroupCount);
     subscribeToSlotEvents(this.custody);
     subscribeToFinalizedEvents(this.custody);
@@ -117,7 +115,6 @@ public class DasCustodyStand {
     final BLSPublicKey singlePubKey = util.randomPublicKey();
     this.dataStructureUtil =
         util.withSignatureGenerator(__ -> singleSignature).withPubKeyGenerator(() -> singlePubKey);
-    this.totalCustodyGroupCount = totalCustodyGroupCount;
   }
 
   public void advanceTimeGradually(final Duration delta) {
@@ -157,14 +154,7 @@ public class DasCustodyStand {
   }
 
   public Collection<UInt64> getCustodyColumnIndexes(final UInt64 slot) {
-    final UInt64 epoch = spec.computeEpochAtSlot(slot);
-    return spec.atEpoch(epoch)
-        .miscHelpers()
-        .toVersionFulu()
-        .map(
-            miscHelpersFulu ->
-                miscHelpersFulu.computeCustodyColumnIndexes(myNodeId, totalCustodyGroupCount))
-        .orElse(Collections.emptyList());
+    return custodyGroupCountManager.getCustodyColumnIndices();
   }
 
   public UInt64 getMinCustodySlot() {
@@ -257,12 +247,7 @@ public class DasCustodyStand {
         totalCustodyGroupCount = configFulu.getCustodyRequirement();
       }
       return new DasCustodyStand(
-          spec,
-          currentSlot,
-          myNodeId,
-          totalCustodyGroupCount,
-          asyncDbDelay,
-          asyncBlockResolverDelay);
+          spec, currentSlot, totalCustodyGroupCount, asyncDbDelay, asyncBlockResolverDelay);
     }
   }
 
@@ -271,6 +256,11 @@ public class DasCustodyStand {
       @Override
       public int getCustodyGroupCount() {
         return custodyGroupCount;
+      }
+
+      @Override
+      public List<UInt64> getCustodyColumnIndices() {
+        return IntStream.range(0, custodyGroupCount).mapToObj(UInt64::valueOf).toList();
       }
 
       @Override

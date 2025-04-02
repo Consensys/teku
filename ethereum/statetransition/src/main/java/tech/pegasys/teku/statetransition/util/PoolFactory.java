@@ -37,6 +37,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELRecoveryManager;
+import tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELRecoveryManagerImpl;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -124,10 +127,7 @@ public class PoolFactory {
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
       final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
-      final Function<BlobSidecar, SafeFuture<Void>> blobSidecarGossipPublisher,
-      final boolean isSuperNode,
-      final KZG kzg,
-      final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher) {
+      final Function<BlobSidecar, SafeFuture<Void>> blobSidecarGossipPublisher) {
     return createPoolForBlockBlobSidecarsTrackers(
         blockImportChannel,
         spec,
@@ -139,10 +139,30 @@ public class PoolFactory {
         blobSidecarGossipPublisher,
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
-        DEFAULT_MAX_BLOCKS,
-        isSuperNode,
+        DEFAULT_MAX_BLOCKS);
+  }
+
+  // TODO: Do we need it here, in pool factory???
+  public DataColumnSidecarELRecoveryManager createDataColumnSidecarELRecoveryManager(
+      final Spec spec,
+      final AsyncRunner asyncRunner,
+      final RecentChainData recentChainData,
+      final ExecutionLayerChannel executionLayer,
+      final KZG kzg,
+      final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher,
+      final CustodyGroupCountManager custodyGroupCountManager) {
+    return new DataColumnSidecarELRecoveryManagerImpl(
+        spec,
+        asyncRunner,
+        recentChainData,
+        executionLayer,
+        DEFAULT_HISTORICAL_SLOT_TOLERANCE,
+        FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
+        // TODO: constant
+        10,
         kzg,
-        dataColumnSidecarPublisher);
+        dataColumnSidecarPublisher,
+        custodyGroupCountManager);
   }
 
   public BlockBlobSidecarsTrackersPoolImpl createPoolForBlockBlobSidecarsTrackers(
@@ -156,10 +176,7 @@ public class PoolFactory {
       final Function<BlobSidecar, SafeFuture<Void>> blobSidecarGossipPublisher,
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
-      final int maxTrackers,
-      final boolean isSuperNode,
-      final KZG kzg,
-      final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher) {
+      final int maxTrackers) {
     return new BlockBlobSidecarsTrackersPoolImpl(
         blockImportChannel,
         blockBlobSidecarsTrackersPoolSizeGauge,
@@ -173,10 +190,7 @@ public class PoolFactory {
         blobSidecarGossipPublisher,
         historicalBlockTolerance,
         futureBlockTolerance,
-        maxTrackers,
-        isSuperNode,
-        kzg,
-        dataColumnSidecarPublisher);
+        maxTrackers);
   }
 
   @VisibleForTesting
@@ -192,10 +206,7 @@ public class PoolFactory {
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
       final int maxItems,
-      final BlockBlobSidecarsTrackerFactory trackerFactory,
-      final boolean isSuperNode,
-      final KZG kzg,
-      final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher) {
+      final BlockBlobSidecarsTrackerFactory trackerFactory) {
     return new BlockBlobSidecarsTrackersPoolImpl(
         blockImportChannel,
         blockBlobSidecarsTrackersPoolSizeGauge,
@@ -210,9 +221,6 @@ public class PoolFactory {
         historicalBlockTolerance,
         futureBlockTolerance,
         maxItems,
-        trackerFactory,
-        isSuperNode,
-        kzg,
-        dataColumnSidecarPublisher);
+        trackerFactory);
   }
 }

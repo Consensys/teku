@@ -17,12 +17,13 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public interface DataColumnSidecarManager {
 
   interface ValidDataColumnSidecarsListener {
-    void onNewValidSidecar(DataColumnSidecar sidecar);
+    void onNewValidSidecar(DataColumnSidecar sidecar, BlobSidecarManager.RemoteOrigin remoteOrigin);
   }
 
   DataColumnSidecarManager NOOP =

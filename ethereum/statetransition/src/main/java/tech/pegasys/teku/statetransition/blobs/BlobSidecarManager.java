@@ -79,10 +79,12 @@ public interface BlobSidecarManager extends AvailabilityCheckerFactory<BlobSidec
     void onBlobSidecarReceived(BlobSidecar blobSidecar);
   }
 
+  // TODO: move out
   enum RemoteOrigin {
     RPC,
     GOSSIP,
     LOCAL_EL,
-    LOCAL_PROPOSAL
+    LOCAL_PROPOSAL,
+    RECOVERED
   }
 }
