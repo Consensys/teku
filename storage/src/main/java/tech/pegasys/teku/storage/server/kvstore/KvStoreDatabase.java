@@ -1187,15 +1187,11 @@ public class KvStoreDatabase implements Database {
   public void pruneAllSidecars(final UInt64 tillSlotInclusive) {
     try (final Stream<DataColumnSlotAndIdentifier> prunableIdentifiers =
             streamDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive);
-        final FinalizedUpdater updater = finalizedUpdater()) {
-      prunableIdentifiers.forEach(updater::removeSidecar);
-      updater.commit();
-    }
-
-    try (final Stream<DataColumnSlotAndIdentifier> prunableIdentifiers =
+        final Stream<DataColumnSlotAndIdentifier> prunableNonCanonicalIdentifiers =
             streamNonCanonicalDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive);
         final FinalizedUpdater updater = finalizedUpdater()) {
-      prunableIdentifiers.forEach(updater::removeNonCanonicalSidecar);
+      prunableIdentifiers.forEach(updater::removeSidecar);
+      prunableNonCanonicalIdentifiers.forEach(updater::removeNonCanonicalSidecar);
       updater.commit();
     }
   }
@@ -1405,28 +1401,43 @@ public class KvStoreDatabase implements Database {
             .map(entry -> new SlotAndBlockRoot(entry.getValue(), entry.getKey()))
             .collect(Collectors.toSet());
 
-    final Iterator<SlotAndBlockRoot> nonCanonicalBlocksIterator = nonCanonicalBlocks.iterator();
-    int index = 0;
-    while (nonCanonicalBlocksIterator.hasNext()) {
-      final int start = index;
+    if (storeNonCanonicalBlocks) {
+      final Iterator<SlotAndBlockRoot> nonCanonicalBlocksIterator = nonCanonicalBlocks.iterator();
+      int index = 0;
+      while (nonCanonicalBlocksIterator.hasNext()) {
+        final int start = index;
+        try (final FinalizedUpdater updater = finalizedUpdater()) {
+          while (nonCanonicalBlocksIterator.hasNext() && (index - start) < BLOBS_TX_BATCH_SIZE) {
+            dao.getDataColumnIdentifiers(nonCanonicalBlocksIterator.next())
+                .forEach(
+                    key -> {
+                      dao.getSidecar(key)
+                          .ifPresent(
+                              sidecarBytes -> {
+                                DataColumnSidecar sideCar =
+                                    spec.deserializeSidecar(sidecarBytes, key.slot());
+                                updater.addNonCanonicalSidecar(sideCar);
+                                LOG.trace(
+                                    "Removing sidecar with identifier {} for non-canonical block",
+                                    key);
+                                updater.removeSidecar(key);
+                              });
+                    });
+            index++;
+          }
+          updater.commit();
+        }
+      }
+    } else {
+      LOG.trace("Removing sidecars for non-canonical blocks");
       try (final FinalizedUpdater updater = finalizedUpdater()) {
-        while (nonCanonicalBlocksIterator.hasNext() && (index - start) < BLOBS_TX_BATCH_SIZE) {
-          dao.getDataColumnIdentifiers(nonCanonicalBlocksIterator.next())
+        for (final SlotAndBlockRoot slotAndBlockRoot : nonCanonicalBlocks) {
+          dao.getDataColumnIdentifiers(slotAndBlockRoot)
               .forEach(
                   key -> {
-                    dao.getSidecar(key)
-                        .ifPresent(
-                            sidecarBytes -> {
-                              DataColumnSidecar sideCar =
-                                  spec.deserializeSidecar(sidecarBytes, key.slot());
-                              updater.addNonCanonicalSidecar(sideCar);
-                              LOG.trace(
-                                  "Removing sidecar with identifier {} for non-canonical block",
-                                  key);
-                              updater.removeSidecar(key);
-                            });
+                    LOG.trace("Removing sidecar with identifier {} for non-canonical block", key);
+                    updater.removeSidecar(key);
                   });
-          index++;
         }
         updater.commit();
       }
