@@ -87,6 +87,8 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
       return SafeFuture.completedFuture(DutyResult.NO_OP);
     }
     try {
+      // TODO EIP7805 this chain head doesn't take into account the ILs
+      // We might need to check that the head satisfies the collected ILs
       lastSignatureBlockRoot = chainHeadTracker.getCurrentChainHead(slot);
     } catch (final ChainHeadBeyondSlotException | ChainHeadTooOldException ex) {
       return chainHeadSlotCheckFailure(ex);

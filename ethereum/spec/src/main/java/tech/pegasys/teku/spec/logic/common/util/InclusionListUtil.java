@@ -157,7 +157,7 @@ public class InclusionListUtil {
    * @param validatorIndex the validator that is calling this function.
    * @return Optional containing the slot if any, empty otherwise
    */
-  public Optional<UInt64> getInclusionCommitteeAssignment(
+  public Optional<UInt64> getInclusionListCommitteeAssignment(
       final BeaconState state, final UInt64 epoch, final int validatorIndex) {
     final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(UInt64.ONE);
     checkArgument(

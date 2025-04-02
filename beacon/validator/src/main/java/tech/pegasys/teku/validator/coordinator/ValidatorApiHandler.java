@@ -496,9 +496,20 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                               }
                               final SignedBlockAndState blockAndState = maybeBlockAndState.get();
                               final BeaconBlock block = blockAndState.getBlock().getMessage();
-
+                              final Optional<Bytes32> maybeBlockRoot =
+                                  combinedChainDataClient
+                                      .getStore()
+                                      .getInclusionListAttesterHead(block.getRoot());
+                              if (maybeBlockRoot.isEmpty()) {
+                                return SafeFuture.failedFuture(
+                                    new IllegalArgumentException(
+                                        String.format(
+                                            "Unable to create attestation for slot %s. No suitable block available.",
+                                            slot)));
+                              }
+                              final Bytes32 blockRoot = maybeBlockRoot.get();
                               // The head block must not be optimistically synced.
-                              if (combinedChainDataClient.isOptimisticBlock(block.getRoot())) {
+                              if (combinedChainDataClient.isOptimisticBlock(blockRoot)) {
                                 return NodeSyncingException.failedFuture();
                               }
                               if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {
@@ -511,14 +522,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                                         checkpointState ->
                                             Optional.of(
                                                 createAttestationData(
-                                                    block,
+                                                    blockRoot,
                                                     checkpointState.getState(),
                                                     slot,
                                                     committeeIndex)));
                               } else {
                                 final AttestationData attestationData =
                                     createAttestationData(
-                                        block, blockAndState.getState(), slot, committeeIndex);
+                                        blockRoot, blockAndState.getState(), slot, committeeIndex);
                                 return SafeFuture.completedFuture(Optional.of(attestationData));
                               }
                             }));
@@ -527,7 +538,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private AttestationData createAttestationData(
-      final BeaconBlock block,
+      final Bytes32 blockRoot,
       final BeaconState state,
       final UInt64 slot,
       final int committeeIndex) {
@@ -542,7 +553,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               + (committeeCount - 1));
     }
     final UInt64 committeeIndexUnsigned = UInt64.valueOf(committeeIndex);
-    return spec.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
+    return spec.getGenericAttestationData(slot, state, blockRoot, committeeIndexUnsigned);
   }
 
   @Override
