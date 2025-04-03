@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.storage.server.pruner;
 
-import java.io.IOException;
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -33,9 +31,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.storage.archive.DataArchive;
-import tech.pegasys.teku.storage.archive.DataArchiveWriter;
+import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 
@@ -59,12 +55,12 @@ public class BlobSidecarPruner extends Service {
   private final AtomicLong blobColumnSize = new AtomicLong(0);
   private final AtomicLong earliestBlobSidecarSlot = new AtomicLong(-1);
   private final boolean storeNonCanonicalBlobSidecars;
-  private final DataArchive dataArchive;
+  private final BlobSidecarsArchiver blobSidecarsArchiver;
 
   public BlobSidecarPruner(
       final Spec spec,
       final Database database,
-      final DataArchive dataArchive,
+      final BlobSidecarsArchiver blobSidecarsArchiver,
       final MetricsSystem metricsSystem,
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
@@ -77,7 +73,7 @@ public class BlobSidecarPruner extends Service {
       final boolean storeNonCanonicalBlobSidecars) {
     this.spec = spec;
     this.database = database;
-    this.dataArchive = dataArchive;
+    this.blobSidecarsArchiver = blobSidecarsArchiver;
     this.asyncRunner = asyncRunner;
     this.pruneInterval = pruneInterval;
     this.pruneLimit = pruneLimit;
@@ -152,10 +148,10 @@ public class BlobSidecarPruner extends Service {
       return;
     }
     LOG.debug("Pruning blobs up to slot {}, limit {}", latestPrunableSlot, pruneLimit);
-    try (DataArchiveWriter<List<BlobSidecar>> archiveWriter = dataArchive.getBlobSidecarWriter()) {
+    try {
       final long blobsPruningStart = System.currentTimeMillis();
       final boolean blobsPruningLimitReached =
-          database.pruneOldestBlobSidecars(latestPrunableSlot, pruneLimit, archiveWriter);
+          database.pruneOldestBlobSidecars(latestPrunableSlot, pruneLimit, blobSidecarsArchiver);
       logPruningResult(
           "Blobs pruning finished in {} ms. Limit reached: {}",
           blobsPruningStart,
@@ -165,14 +161,12 @@ public class BlobSidecarPruner extends Service {
         final long nonCanonicalBlobsPruningStart = System.currentTimeMillis();
         final boolean nonCanonicalBlobsLimitReached =
             database.pruneOldestNonCanonicalBlobSidecars(
-                latestPrunableSlot, pruneLimit, archiveWriter);
+                latestPrunableSlot, pruneLimit, blobSidecarsArchiver);
         logPruningResult(
             "Non canonical Blobs pruning finished in {} ms. Limit reached: {}",
             nonCanonicalBlobsPruningStart,
             nonCanonicalBlobsLimitReached);
       }
-    } catch (IOException ex) {
-      LOG.error("Failed to get the BlobSidecar archive writer", ex);
     } catch (ShuttingDownException | RejectedExecutionException ex) {
       LOG.debug("Shutting down", ex);
     }
