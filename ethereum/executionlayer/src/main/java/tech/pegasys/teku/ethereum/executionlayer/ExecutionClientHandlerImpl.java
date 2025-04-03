@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7805;
 
 public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
 
@@ -176,10 +177,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
         .thenApply(
             response -> {
               final TransactionSchema transactionSchema =
-                  spec.atSlot(slot)
-                      .getSchemaDefinitions()
-                      .toVersionEip7805()
-                      .orElseThrow()
+                  SchemaDefinitionsEip7805.required(spec.atSlot(slot).getSchemaDefinitions())
                       .getInclusionListSchema()
                       .getTransactionSchema();
               return response.stream()
