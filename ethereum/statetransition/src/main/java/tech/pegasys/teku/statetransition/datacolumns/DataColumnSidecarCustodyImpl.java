@@ -113,7 +113,6 @@ public class DataColumnSidecarCustodyImpl
     this.blockResolver = blockResolver;
     this.minCustodyPeriodSlotCalculator = minCustodyPeriodSlotCalculator;
     this.custodyGroupCountManager = custodyGroupCountManager;
-    // TODO: not sure on this
     this.totalCustodyGroupCount = new AtomicInteger(totalCustodyGroupCount);
     LOG.info(
         "Initialized DataColumnSidecar Custody with custody group count {}",

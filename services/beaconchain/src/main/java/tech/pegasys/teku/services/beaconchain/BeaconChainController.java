@@ -139,9 +139,9 @@ import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.block.BlockImportMetrics;
@@ -798,7 +798,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               dataColumnSidecar ->
                   eventChannels
                       .getPublisher(DataColumnSidecarGossipChannel.class)
-                      .publishDataColumnSidecar(dataColumnSidecar),
+                      .publishDataColumnSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED),
               custodyGroupCountManager,
               isFuluSuperNode(),
               specConfigFulu.getNumberOfColumns(),
@@ -963,11 +963,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initDataColumnSidecarELRecoveryManager()");
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
 
-      final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher =
+      final Consumer<List<DataColumnSidecar>> recoveredDataColumnSidecarPublisher =
           dataColumnSidecars ->
               eventChannels
                   .getPublisher(DataColumnSidecarGossipChannel.class)
-                  .publishDataColumnSidecars(dataColumnSidecars);
+                  .publishDataColumnSidecars(dataColumnSidecars, RemoteOrigin.RECOVERED);
 
       final DataColumnSidecarELRecoveryManager recoveryManager =
           poolFactory.createDataColumnSidecarELRecoveryManager(
@@ -976,7 +976,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               recentChainData,
               executionLayer,
               kzg,
-              dataColumnSidecarPublisher,
+              recoveredDataColumnSidecarPublisher,
               custodyGroupCountManager);
       eventChannels.subscribe(SlotEventsChannel.class, recoveryManager);
       dataColumnSidecarCustody.subscribeToValidDataColumnSidecars(

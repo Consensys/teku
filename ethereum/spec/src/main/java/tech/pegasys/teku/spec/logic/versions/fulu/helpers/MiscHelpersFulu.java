@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.fulu.helpers;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint256ToBytes;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.ArrayList;
@@ -275,6 +276,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .toList();
   }
 
+  @VisibleForTesting
   public List<DataColumnSidecar> constructDataColumnSidecars(
       final BeaconBlock beaconBlock,
       final SignedBeaconBlockHeader signedBeaconBlockHeader,
@@ -292,7 +294,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         signedBeaconBlockHeader, sszKZGCommitments, kzgCommitmentsInclusionProof, extendedMatrix);
   }
 
-  public List<DataColumnSidecar> constructDataColumnSidecars(
+  private List<DataColumnSidecar> constructDataColumnSidecars(
       final SignedBeaconBlockHeader signedBeaconBlockHeader,
       final SszList<SszKZGCommitment> sszKZGCommitments,
       final List<Bytes32> kzgCommitmentsInclusionProof,

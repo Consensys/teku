@@ -64,8 +64,8 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -1293,6 +1293,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     assertStats("block", "gossip", 2);
   }
 
+  // TODO: tests on DataColumnSidecarELRecoveryManagerImpl
   @Test
   public void onNewBlock_shouldIgnoreFuluBlocks() {
     final Spec specFulu = TestSpecFactory.createMainnetFulu();

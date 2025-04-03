@@ -15,7 +15,8 @@ package tech.pegasys.teku.statetransition.datacolumns.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getRootCauseMessage;
-import static tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin.LOCAL_PROPOSAL;
+import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.LOCAL_PROPOSAL;
+import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.RECOVERED;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
@@ -55,7 +56,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELRecoveryManager;
 import tech.pegasys.teku.statetransition.util.AbstractIgnoringFutureHistoricalSlot;
@@ -95,7 +96,6 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.executionLayer = executionLayer;
-    // TODO: 10?
     this.maxTrackers = maxTrackers;
     this.kzg = kzg;
     this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
@@ -104,7 +104,6 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
         () -> MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
   }
 
-  // TODO: subscribe here
   @Override
   public void onNewDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
@@ -198,7 +197,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
         "Publishing {} data column sidecars for {}",
         myCustodySidecars.size(),
         recoveryTask.getSlotAndBlockRoot());
-    dataColumnSidecarPublisher.accept(dataColumnSidecars);
+    dataColumnSidecarPublisher.accept(myCustodySidecars);
   }
 
   @Override
@@ -277,9 +276,9 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
 
   private void onFirstSeen(
       final SlotAndBlockRoot slotAndBlockRoot, final Optional<RemoteOrigin> remoteOrigin) {
-    final boolean isLocalBlockProduction =
-        remoteOrigin.map(ro -> ro.equals(LOCAL_PROPOSAL)).orElse(false);
-    if (isLocalBlockProduction) {
+    final boolean isLocalBlockProductionOrRecovered =
+        remoteOrigin.map(ro -> Set.of(LOCAL_PROPOSAL, RECOVERED).contains(ro)).orElse(false);
+    if (isLocalBlockProductionOrRecovered) {
       return;
     }
 

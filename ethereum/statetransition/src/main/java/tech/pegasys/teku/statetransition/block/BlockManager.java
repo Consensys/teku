@@ -33,9 +33,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
@@ -395,7 +394,6 @@ public class BlockManager extends Service
   }
 
   public interface PreImportBlockListener {
-    void onNewBlock(
-        SignedBeaconBlock block, Optional<BlobSidecarManager.RemoteOrigin> remoteOrigin);
+    void onNewBlock(SignedBeaconBlock block, Optional<RemoteOrigin> remoteOrigin);
   }
 }

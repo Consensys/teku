@@ -48,6 +48,7 @@ public class PoolFactory {
   private static final UInt64 DEFAULT_HISTORICAL_SLOT_TOLERANCE = UInt64.valueOf(320);
 
   private static final int DEFAULT_MAX_BLOCKS = 5000;
+  private static final int EL_RECOVERY_TASKS_LIMIT = 10;
 
   private final SettableLabelledGauge pendingPoolsSizeGauge;
   private final SettableLabelledGauge blockBlobSidecarsTrackersPoolSizeGauge;
@@ -142,7 +143,6 @@ public class PoolFactory {
         DEFAULT_MAX_BLOCKS);
   }
 
-  // TODO: Do we need it here, in pool factory???
   public DataColumnSidecarELRecoveryManager createDataColumnSidecarELRecoveryManager(
       final Spec spec,
       final AsyncRunner asyncRunner,
@@ -158,8 +158,7 @@ public class PoolFactory {
         executionLayer,
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
-        // TODO: constant
-        10,
+        EL_RECOVERY_TASKS_LIMIT,
         kzg,
         dataColumnSidecarPublisher,
         custodyGroupCountManager);

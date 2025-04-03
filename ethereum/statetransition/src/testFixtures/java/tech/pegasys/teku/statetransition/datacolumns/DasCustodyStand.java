@@ -251,7 +251,8 @@ public class DasCustodyStand {
     }
   }
 
-  private CustodyGroupCountManager createCustodyGroupCountManager(final int custodyGroupCount) {
+  public static CustodyGroupCountManager createCustodyGroupCountManager(
+      final int custodyGroupCount) {
     return new CustodyGroupCountManager() {
       @Override
       public int getCustodyGroupCount() {

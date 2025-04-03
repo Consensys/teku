@@ -139,7 +139,8 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     eventChannels.subscribe(BlockGossipChannel.class, gossipForkManager::publishBlock);
     eventChannels.subscribe(BlobSidecarGossipChannel.class, gossipForkManager::publishBlobSidecar);
     eventChannels.subscribe(
-        DataColumnSidecarGossipChannel.class, gossipForkManager::publishDataColumnSidecar);
+        DataColumnSidecarGossipChannel.class,
+        (sidecar, __) -> gossipForkManager.publishDataColumnSidecar(sidecar));
     if (recentChainData.isCloseToInSync()) {
       startGossip();
     }

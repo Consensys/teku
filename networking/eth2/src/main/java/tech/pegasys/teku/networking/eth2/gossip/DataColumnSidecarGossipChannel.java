@@ -16,14 +16,17 @@ package tech.pegasys.teku.networking.eth2.gossip;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 public interface DataColumnSidecarGossipChannel extends VoidReturningChannelInterface {
 
-  DataColumnSidecarGossipChannel NOOP = dataColumnSidecar -> {};
+  DataColumnSidecarGossipChannel NOOP = (dataColumnSidecar, origin) -> {};
 
-  default void publishDataColumnSidecars(final List<DataColumnSidecar> dataColumnSidecars) {
-    dataColumnSidecars.forEach(this::publishDataColumnSidecar);
+  default void publishDataColumnSidecars(
+      final List<DataColumnSidecar> dataColumnSidecars, final RemoteOrigin origin) {
+    dataColumnSidecars.forEach(
+        dataColumnSidecar -> publishDataColumnSidecar(dataColumnSidecar, origin));
   }
 
-  void publishDataColumnSidecar(DataColumnSidecar dataColumnSidecar);
+  void publishDataColumnSidecar(DataColumnSidecar dataColumnSidecar, RemoteOrigin remoteOrigin);
 }

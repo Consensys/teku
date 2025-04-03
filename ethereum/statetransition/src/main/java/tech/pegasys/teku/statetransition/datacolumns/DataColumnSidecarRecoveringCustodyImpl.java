@@ -42,7 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecarRecoveringCustody {
   private static final Logger LOG = LogManager.getLogger("das-nyota");
@@ -125,15 +125,14 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   }
 
   @Override
-  public void onNewBlock(
-      final SignedBeaconBlock block, final Optional<BlobSidecarManager.RemoteOrigin> remoteOrigin) {
+  public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
     if (!isActiveSuperNode(block.getSlot())) {
       return;
     }
 
     if (remoteOrigin.isPresent()
-        && (remoteOrigin.get().equals(BlobSidecarManager.RemoteOrigin.LOCAL_EL)
-            || remoteOrigin.get().equals(BlobSidecarManager.RemoteOrigin.LOCAL_PROPOSAL))) {
+        && (remoteOrigin.get().equals(RemoteOrigin.LOCAL_EL)
+            || remoteOrigin.get().equals(RemoteOrigin.LOCAL_PROPOSAL))) {
       // skip locally produced blocks, we will get everything for it in custody w/o reconstruction
       return;
     }
@@ -236,9 +235,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                   .forEach(
                       dataColumnSidecar -> {
                         validDataColumnSidecarsSubscribers.forEach(
-                            l ->
-                                l.onNewValidSidecar(
-                                    dataColumnSidecar, BlobSidecarManager.RemoteOrigin.RECOVERED));
+                            l -> l.onNewValidSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED));
                         delegate
                             .onNewValidatedDataColumnSidecar(dataColumnSidecar)
                             .ifExceptionGetsHereRaiseABug();
