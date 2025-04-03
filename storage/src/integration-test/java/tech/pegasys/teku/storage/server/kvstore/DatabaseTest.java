@@ -82,7 +82,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
-import tech.pegasys.teku.storage.archive.fsarchive.FileSystemArchive;
+import tech.pegasys.teku.storage.archive.filesystem.FileSystemBlobSidecarsArchiver;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseContext;
@@ -122,7 +122,7 @@ public class DatabaseTest {
   private StateStorageMode storageMode;
   private StorageSystem storageSystem;
   private Database database;
-  private FileSystemArchive fileSystemDataArchive;
+  private FileSystemBlobSidecarsArchiver blobSidecarsArchiver;
   private RecentChainData recentChainData;
   private UpdatableStore store;
   private final List<StorageSystem> storageSystems = new ArrayList<>();
@@ -139,7 +139,7 @@ public class DatabaseTest {
     this.chainProperties = new ChainProperties(spec);
     final Path blobsArchive = Files.createTempDirectory("blobs");
     tmpDirectories.add(blobsArchive.toFile());
-    this.fileSystemDataArchive = new FileSystemArchive(blobsArchive);
+    this.blobSidecarsArchiver = new FileSystemBlobSidecarsArchiver(spec, blobsArchive);
     genesisBlockAndState = chainBuilder.generateGenesis(genesisTime, true);
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
     genesisAnchor = AnchorPoint.fromGenesisState(spec, genesisBlockAndState.getState());
@@ -300,9 +300,7 @@ public class DatabaseTest {
             List.of(blobSidecar5_0)));
 
     // let's prune with limit to 1
-    assertThat(
-            database.pruneOldestBlobSidecars(
-                UInt64.MAX_VALUE, 1, fileSystemDataArchive.getBlobSidecarWriter()))
+    assertThat(database.pruneOldestBlobSidecars(UInt64.MAX_VALUE, 1, blobSidecarsArchiver))
         .isTrue();
     assertBlobSidecarKeys(
         blobSidecar2_0.getSlot(),
@@ -324,9 +322,7 @@ public class DatabaseTest {
     assertThat(getSlotBlobsArchiveFile(blobSidecar2_0)).doesNotExist();
 
     // let's prune up to slot 1 (nothing will be pruned)
-    assertThat(
-            database.pruneOldestBlobSidecars(ONE, 10, fileSystemDataArchive.getBlobSidecarWriter()))
-        .isFalse();
+    assertThat(database.pruneOldestBlobSidecars(ONE, 10, blobSidecarsArchiver)).isFalse();
     assertBlobSidecarKeys(
         blobSidecar2_0.getSlot(),
         blobSidecar5_0.getSlot(),
@@ -343,9 +339,7 @@ public class DatabaseTest {
     assertThat(database.getBlobSidecarColumnCount()).isEqualTo(4L);
 
     // let's prune all from slot 4 excluded
-    assertThat(
-            database.pruneOldestBlobSidecars(
-                UInt64.valueOf(3), 10, fileSystemDataArchive.getBlobSidecarWriter()))
+    assertThat(database.pruneOldestBlobSidecars(UInt64.valueOf(3), 10, blobSidecarsArchiver))
         .isFalse();
     assertBlobSidecarKeys(
         blobSidecar1_0.getSlot(), blobSidecar5_0.getSlot(), blobSidecarToKey(blobSidecar5_0));
@@ -359,9 +353,7 @@ public class DatabaseTest {
     assertThat(getSlotBlobsArchiveFile(blobSidecar5_0)).doesNotExist();
 
     // let's prune all
-    assertThat(
-            database.pruneOldestBlobSidecars(
-                UInt64.valueOf(5), 1, fileSystemDataArchive.getBlobSidecarWriter()))
+    assertThat(database.pruneOldestBlobSidecars(UInt64.valueOf(5), 1, blobSidecarsArchiver))
         .isTrue();
     // all empty now
     assertBlobSidecarKeys(ZERO, UInt64.valueOf(10));
@@ -372,8 +364,8 @@ public class DatabaseTest {
     assertThat(getSlotBlobsArchiveFile(blobSidecar5_0)).exists();
   }
 
-  private File getSlotBlobsArchiveFile(final BlobSidecar blobSidecar) {
-    return fileSystemDataArchive.resolve(blobSidecar.getSlotAndBlockRoot());
+  private Path getSlotBlobsArchiveFile(final BlobSidecar blobSidecar) {
+    return blobSidecarsArchiver.resolve(blobSidecar.getSlotAndBlockRoot());
   }
 
   @TestTemplate
@@ -473,8 +465,7 @@ public class DatabaseTest {
 
     // Pruning with a prune limit set to 1: Only blobSidecar1 will be pruned
     assertThat(
-            database.pruneOldestNonCanonicalBlobSidecars(
-                UInt64.MAX_VALUE, 1, fileSystemDataArchive.getBlobSidecarWriter()))
+            database.pruneOldestNonCanonicalBlobSidecars(UInt64.MAX_VALUE, 1, blobSidecarsArchiver))
         .isTrue();
     assertNonCanonicalBlobSidecarKeys(
         blobSidecar2_0.getSlot(),
@@ -495,9 +486,7 @@ public class DatabaseTest {
     assertThat(getSlotBlobsArchiveFile(blobSidecar2_0)).doesNotExist();
 
     // Pruning up to slot 1: No blobs pruned
-    assertThat(
-            database.pruneOldestNonCanonicalBlobSidecars(
-                ONE, 10, fileSystemDataArchive.getBlobSidecarWriter()))
+    assertThat(database.pruneOldestNonCanonicalBlobSidecars(ONE, 10, blobSidecarsArchiver))
         .isFalse();
     assertNonCanonicalBlobSidecarKeys(
         blobSidecar2_0.getSlot(),
@@ -520,7 +509,7 @@ public class DatabaseTest {
     // Prune blobs up to slot 3
     assertThat(
             database.pruneOldestNonCanonicalBlobSidecars(
-                UInt64.valueOf(3), 10, fileSystemDataArchive.getBlobSidecarWriter()))
+                UInt64.valueOf(3), 10, blobSidecarsArchiver))
         .isFalse();
     assertNonCanonicalBlobSidecarKeys(
         blobSidecar1_0.getSlot(), blobSidecar5_0.getSlot(), blobSidecarToKey(blobSidecar5_0));
@@ -535,7 +524,7 @@ public class DatabaseTest {
     // Pruning all blobs
     assertThat(
             database.pruneOldestNonCanonicalBlobSidecars(
-                UInt64.valueOf(5), 1, fileSystemDataArchive.getBlobSidecarWriter()))
+                UInt64.valueOf(5), 1, blobSidecarsArchiver))
         .isTrue();
     // No blobs should be left
     assertNonCanonicalBlobSidecarKeys(ZERO, UInt64.valueOf(10));

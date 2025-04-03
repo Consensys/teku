@@ -11,18 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.archive.nooparchive;
+package tech.pegasys.teku.storage.archive;
 
-import java.io.IOException;
-import tech.pegasys.teku.storage.archive.DataArchiveWriter;
+import java.util.List;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
-public class DataArchiveNoopWriter<T> implements DataArchiveWriter<T> {
+public interface BlobSidecarsArchiver {
 
-  @Override
-  public boolean archive(final T data) {
-    return true;
-  }
+  BlobSidecarsArchiver NOOP = (slotAndBlockRoot, blobSidecars) -> true;
 
-  @Override
-  public void close() throws IOException {}
+  boolean archive(SlotAndBlockRoot slotAndBlockRoot, List<BlobSidecar> blobSidecars);
 }

@@ -11,38 +11,40 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.archive.fsarchive;
+package tech.pegasys.teku.storage.archive.filesystem;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableListTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.storage.archive.DataArchiveWriter;
 
-public class FileSystemArchiveTest {
+public class FileSystemBlobSidecarsArchiverTest {
+
   private static final Spec SPEC = TestSpecFactory.createMinimalDeneb();
   private final Predicates predicates = new Predicates(SPEC.getGenesisSpecConfig());
   private final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
@@ -55,12 +57,12 @@ public class FileSystemArchiveTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(SPEC);
 
   static Path testTempDir;
-  static FileSystemArchive dataArchive;
+  static FileSystemBlobSidecarsArchiver blobSidecarsArchiver;
 
   @BeforeAll
   static void beforeEach() throws IOException {
     testTempDir = Files.createTempDirectory("blobs");
-    dataArchive = new FileSystemArchive(testTempDir);
+    blobSidecarsArchiver = new FileSystemBlobSidecarsArchiver(SPEC, testTempDir);
   }
 
   @AfterEach
@@ -79,75 +81,76 @@ public class FileSystemArchiveTest {
     }
   }
 
-  BlobSidecar createBlobSidecar() {
-    final SignedBeaconBlock signedBeaconBlock =
-        dataStructureUtil.randomSignedBeaconBlockWithCommitments(1);
-    final Blob blob = dataStructureUtil.randomBlob();
-    final SszKZGProof proof = dataStructureUtil.randomSszKZGProof();
-
-    return miscHelpersDeneb.constructBlobSidecar(signedBeaconBlock, UInt64.ZERO, blob, proof);
-  }
-
   @Test
   void testResolve() {
-    SlotAndBlockRootAndBlobIndex slotAndBlockRootAndBlobIndex =
+    final SlotAndBlockRootAndBlobIndex slotAndBlockRootAndBlobIndex =
         new SlotAndBlockRootAndBlobIndex(
             UInt64.ONE, dataStructureUtil.randomBytes32(), UInt64.ZERO);
-    File file = dataArchive.resolve(slotAndBlockRootAndBlobIndex.getSlotAndBlockRoot());
+    final Path path =
+        blobSidecarsArchiver.resolve(slotAndBlockRootAndBlobIndex.getSlotAndBlockRoot());
 
     // Check if the file path is correct. Doesn't check the intermediate directories.
-    assertTrue(file.toString().startsWith(testTempDir.toString()));
+    assertTrue(path.toString().startsWith(testTempDir.toString()));
     assertTrue(
-        file.toString()
+        path.toString()
             .endsWith(slotAndBlockRootAndBlobIndex.getBlockRoot().toUnprefixedHexString()));
   }
 
   @Test
-  void testArchiveWithEmptyList() throws IOException {
-    DataArchiveWriter<List<BlobSidecar>> blobWriter = dataArchive.getBlobSidecarWriter();
-    ArrayList<BlobSidecar> list = new ArrayList<>();
-    assertTrue(blobWriter.archive(list));
-    blobWriter.close();
+  void testArchiveWithEmptyList() {
+    assertTrue(blobSidecarsArchiver.archive(dataStructureUtil.randomSlotAndBlockRoot(), List.of()));
   }
 
   @Test
-  void testArchiveWithNullList() throws IOException {
-    DataArchiveWriter<List<BlobSidecar>> blobWriter = dataArchive.getBlobSidecarWriter();
-    assertTrue(blobWriter.archive(null));
-    blobWriter.close();
+  void testArchiveWithNullList() {
+    assertTrue(blobSidecarsArchiver.archive(dataStructureUtil.randomSlotAndBlockRoot(), null));
   }
 
   @Test
   void testWriteBlobSidecar() throws IOException {
-    DataArchiveWriter<List<BlobSidecar>> blobWriter = dataArchive.getBlobSidecarWriter();
-    ArrayList<BlobSidecar> list = new ArrayList<>();
-    BlobSidecar blobSidecar = createBlobSidecar();
-    list.add(blobSidecar);
-    assertTrue(blobWriter.archive(list));
-    blobWriter.close();
+    final SlotAndBlockRoot slotAndBlockRoot = dataStructureUtil.randomSlotAndBlockRoot();
+    final List<BlobSidecar> blobSidecars = List.of(createBlobSidecar());
+    assertTrue(blobSidecarsArchiver.archive(slotAndBlockRoot, blobSidecars));
 
     // Check if the file was written
-    try (FileInputStream fis =
-        new FileInputStream(testTempDir.resolve(FileSystemArchive.INDEX_FILE).toFile())) {
-      String content = new String(fis.readAllBytes(), StandardCharsets.UTF_8);
-      String expected =
-          blobSidecar.getSlot().toString()
+    try (final FileInputStream indexFile =
+            new FileInputStream(
+                testTempDir.resolve(FileSystemBlobSidecarsArchiver.INDEX_FILE).toFile());
+        final FileInputStream blobSidecarsFile =
+            new FileInputStream(blobSidecarsArchiver.resolve(slotAndBlockRoot).toFile())) {
+      final String indexFileContent = new String(indexFile.readAllBytes(), StandardCharsets.UTF_8);
+      final String expectedIndexFileContent =
+          slotAndBlockRoot.getSlot().toString()
               + " "
-              + blobSidecar.getSlotAndBlockRoot().getBlockRoot().toUnprefixedHexString();
-
+              + slotAndBlockRoot.getBlockRoot().toUnprefixedHexString();
       // Windows new lines are different, so don't include new lines in the comparison.
-      assertTrue(content.contains(expected));
+      assertTrue(indexFileContent.contains(expectedIndexFileContent));
+
+      final String blobSidecarsJson =
+          new String(blobSidecarsFile.readAllBytes(), StandardCharsets.UTF_8);
+
+      final DeserializableListTypeDefinition<BlobSidecar> blobSidecarsType =
+          new DeserializableListTypeDefinition<>(
+              schemaDefinitionsDeneb.getBlobSidecarSchema().getJsonTypeDefinition());
+
+      assertThat(JsonUtil.parse(blobSidecarsJson, blobSidecarsType)).isEqualTo(blobSidecars);
     }
   }
 
   @Test
-  void testFileAlreadyExists() throws IOException {
-    DataArchiveWriter<List<BlobSidecar>> blobWriter = dataArchive.getBlobSidecarWriter();
-    ArrayList<BlobSidecar> list = new ArrayList<>();
-    list.add(createBlobSidecar());
-    assertTrue(blobWriter.archive(list));
+  void testFileAlreadyExists() {
+    final SlotAndBlockRoot slotAndBlockRoot = dataStructureUtil.randomSlotAndBlockRoot();
+    final List<BlobSidecar> blobSidecars = List.of(createBlobSidecar());
+    assertTrue(blobSidecarsArchiver.archive(slotAndBlockRoot, blobSidecars));
     // Try to write the same file again
-    assertFalse(blobWriter.archive(list));
-    blobWriter.close();
+    assertFalse(blobSidecarsArchiver.archive(slotAndBlockRoot, blobSidecars));
+  }
+
+  private BlobSidecar createBlobSidecar() {
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(1);
+    final Blob blob = dataStructureUtil.randomBlob();
+    final SszKZGProof proof = dataStructureUtil.randomSszKZGProof();
+    return miscHelpersDeneb.constructBlobSidecar(signedBeaconBlock, UInt64.ZERO, blob, proof);
   }
 }
