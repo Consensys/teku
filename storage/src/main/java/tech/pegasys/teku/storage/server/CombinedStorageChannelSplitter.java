@@ -269,6 +269,12 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
+  public SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalSidecar(
+      final DataColumnSlotAndIdentifier identifier) {
+    return asyncRunner.runAsync(() -> queryDelegate.getNonCanonicalSidecar(identifier));
+  }
+
+  @Override
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
     return asyncRunner.runAsync(() -> queryDelegate.getDataColumnIdentifiers(slot));
   }
