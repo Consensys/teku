@@ -63,6 +63,9 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
                       fuluBuilder
                           .numberOfColumns(128)
                           .numberOfCustodyGroups(128)
+                          .custodyRequirement(4)
+                          .validatorCustodyRequirement(8)
+                          .balancePerAdditionalCustodyGroup(UInt64.valueOf(32000000000L))
                           .samplesPerSlot(16)));
   private final PredicatesElectra predicates = new PredicatesElectra(spec.getGenesisSpecConfig());
   private final SchemaDefinitionsElectra schemaDefinitionsElectra =
@@ -235,6 +238,34 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
                         "0x9535c3eb42aaf182b13b18aacbcbc1df6593ecafd0bf7d5e94fb727b2dc1f265")));
     assertThat(miscHelpersFuluMainnet.verifyDataColumnSidecarInclusionProof(dataColumnSidecar))
         .isFalse();
+  }
+
+  @Test
+  public void testCalculateCustodyGroupCount() {
+    int defaultCustodyGroupCount = 4;
+    assertEquals(
+        defaultCustodyGroupCount,
+        miscHelpersFulu.calculateCustodyGroupCount(defaultCustodyGroupCount, UInt64.valueOf(0L)));
+    assertEquals(
+        8,
+        miscHelpersFulu.calculateCustodyGroupCount(
+            defaultCustodyGroupCount, UInt64.valueOf(31000000000L)));
+    assertEquals(
+        8,
+        miscHelpersFulu.calculateCustodyGroupCount(
+            defaultCustodyGroupCount, UInt64.valueOf(32000000000L).times(6)));
+    assertEquals(
+        15,
+        miscHelpersFulu.calculateCustodyGroupCount(
+            defaultCustodyGroupCount, UInt64.valueOf(32000000000L).times(15)));
+    assertEquals(
+        9,
+        miscHelpersFulu.calculateCustodyGroupCount(
+            defaultCustodyGroupCount, UInt64.valueOf(48000000000L).times(6)));
+    assertEquals(
+        8,
+        miscHelpersFulu.calculateCustodyGroupCount(
+            defaultCustodyGroupCount, UInt64.valueOf(48000000000L).times(5)));
   }
 
   static Stream<Arguments> getExtendedSampleCountFixtures() throws IOException {

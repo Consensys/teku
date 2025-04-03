@@ -80,24 +80,23 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       return;
     }
 
-    final UInt64 baseBalance = specConfigFulu.getMinActivationBalance();
     combinedChainDataClient
         .getStateAtSlotExact(slot.safeDecrement())
         .thenAccept(
             maybeState -> {
               if (maybeState.isPresent()) {
-                final long activeBases =
+                final UInt64 totalNodeBalance =
                     preparedProposerInfo.keySet().stream()
                         .map(
                             proposerIndex -> {
                               final Validator validator =
                                   maybeState.get().getValidators().get(proposerIndex.intValue());
-                              return validator.getEffectiveBalance().dividedBy(baseBalance);
+                              return validator.getEffectiveBalance();
                             })
-                        .mapToLong(UInt64::intValue)
-                        .sum();
-                final UInt64 custodyGroupCountUpdated =
-                    miscHelpersFulu.calculateCustodyGroupCount(initCustodyGroupCount, activeBases);
+                        .reduce(UInt64.ZERO, UInt64::plus);
+                final int custodyGroupCountUpdated =
+                    miscHelpersFulu.calculateCustodyGroupCount(
+                        initCustodyGroupCount, totalNodeBalance);
                 updateCustodyGroupCount(custodyGroupCountUpdated);
               }
             })
@@ -133,14 +132,12 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     return false;
   }
 
-  private synchronized void updateCustodyGroupCount(final UInt64 newCustodyGroupCount) {
-    final int oldCustodyGroupCount = custodyGroupCount.getAndSet(newCustodyGroupCount.intValue());
-    if (oldCustodyGroupCount != newCustodyGroupCount.intValue()) {
+  private synchronized void updateCustodyGroupCount(final int newCustodyGroupCount) {
+    final int oldCustodyGroupCount = custodyGroupCount.getAndSet(newCustodyGroupCount);
+    if (oldCustodyGroupCount != newCustodyGroupCount) {
       LOG.info(
-          "Custody group count updated from {} to {}.",
-          oldCustodyGroupCount,
-          newCustodyGroupCount.intValue());
-      custodyGroupCountChannel.onCustodyGroupCountUpdate(newCustodyGroupCount.intValue());
+          "Custody group count updated from {} to {}.", oldCustodyGroupCount, newCustodyGroupCount);
+      custodyGroupCountChannel.onCustodyGroupCountUpdate(newCustodyGroupCount);
     }
   }
 }

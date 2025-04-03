@@ -162,13 +162,17 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .toList();
   }
 
-  public UInt64 calculateCustodyGroupCount(
-      final int defaultCustodyGroupCount, final long baseValidatorsNumber) {
-    final UInt64 validatorCustodyGroupCount =
-        UInt64.valueOf(baseValidatorsNumber).times(specConfigFulu.getValidatorCustodyRequirement());
-    return validatorCustodyGroupCount
-        .max(defaultCustodyGroupCount)
-        .min(specConfigFulu.getNumberOfCustodyGroups());
+  public int calculateCustodyGroupCount(
+      final int defaultCustodyGroupCount, final UInt64 totalNodeBalance) {
+    if (totalNodeBalance.isZero()) {
+      return defaultCustodyGroupCount;
+    }
+    final UInt64 count =
+        totalNodeBalance.dividedBy(specConfigFulu.getBalancePerAdditionalCustodyGroup());
+    return count
+        .max(specConfigFulu.getValidatorCustodyRequirement())
+        .min(specConfigFulu.getNumberOfCustodyGroups())
+        .intValue();
   }
 
   public boolean verifyDataColumnSidecarKzgProof(
