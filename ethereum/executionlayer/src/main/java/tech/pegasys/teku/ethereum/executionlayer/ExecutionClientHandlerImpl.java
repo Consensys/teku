@@ -25,6 +25,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.UpdatePayloadWithInclusionListV1Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
+import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
@@ -120,7 +121,12 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
             .addOptional(newPayloadRequest.getVersionedHashes())
             .addOptional(newPayloadRequest.getParentBeaconBlockRoot())
             .addOptional(newPayloadRequest.getExecutionRequests())
-            .addOptional(newPayloadRequest.getInclusionList());
+            .addOptional(
+                newPayloadRequest
+                    .getInclusionList()
+                    .map(
+                        transactions ->
+                            transactions.stream().map(SszByteListImpl::getBytes).toList()));
 
     return engineMethodsResolver
         .getMethod(

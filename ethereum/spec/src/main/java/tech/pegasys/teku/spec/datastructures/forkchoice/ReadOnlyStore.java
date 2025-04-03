@@ -147,6 +147,8 @@ public interface ReadOnlyStore extends TimeProvider {
   Optional<List<InclusionList>> getInclusionLists(
       SlotAndInclusionListCommitteeRoot slotAndBlockRoot);
 
+  Optional<List<InclusionList>> getInclusionLists(UInt64 slot);
+
   Optional<Bytes32> getInclusionListAttesterHead(Bytes32 headRoot);
 
   boolean isInclusionListEquivocator(
