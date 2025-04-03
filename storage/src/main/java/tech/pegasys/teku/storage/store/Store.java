@@ -688,6 +688,21 @@ class Store extends CacheableStore {
   }
 
   @Override
+  public Optional<List<InclusionList>> getInclusionLists(final UInt64 slot) {
+    readLock.lock();
+    try {
+      final List<InclusionList> ils =
+          inclusionLists.entrySet().stream()
+              .filter(entry -> entry.getKey().slot().equals(slot))
+              .flatMap(entry -> entry.getValue().stream())
+              .toList();
+      return Optional.of(ils);
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
   public Optional<Bytes32> getInclusionListAttesterHead(final Bytes32 headRoot) {
     if (!satisfiesInclusionList(headRoot)) {
       return getBlockIfAvailable(headRoot).map(SignedBeaconBlock::getParentRoot);
