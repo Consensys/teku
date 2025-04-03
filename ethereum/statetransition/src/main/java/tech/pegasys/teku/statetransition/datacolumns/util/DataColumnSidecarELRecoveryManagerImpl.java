@@ -346,9 +346,8 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
               }
 
               LOG.info(
-                  "Collected all blobSidecar from EL for {}, recovering data column sidecars",
+                  "Collected all blobSidecars from EL for slot {}, recovering data column sidecars",
                   slotAndBlockRoot.getSlot());
-              // TODO: should be put in custody too, or maybe we already subscribed onPublish??
               publishRecoveredDataColumnSidecars(
                   recoveryTask,
                   blobAndProofs.stream()
