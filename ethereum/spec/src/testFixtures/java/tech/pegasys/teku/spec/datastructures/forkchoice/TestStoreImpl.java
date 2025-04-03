@@ -281,6 +281,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public Optional<List<InclusionList>> getInclusionLists(final UInt64 slot) {
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<Bytes32> getInclusionListAttesterHead(final Bytes32 headRoot) {
     return Optional.empty();
   }

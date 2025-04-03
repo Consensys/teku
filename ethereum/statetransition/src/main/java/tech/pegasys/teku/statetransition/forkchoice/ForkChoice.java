@@ -528,15 +528,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
 
-    final Optional<List<InclusionList>> inclusionLists;
-    if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7805)) {
-      // TODO EIP7805 this shouldn't be block.hashTreeRoot() but rather the IL committee root
-      inclusionLists =
-          store.getInclusionLists(
-              new SlotAndInclusionListCommitteeRoot(block.getSlot(), block.hashTreeRoot()));
-    } else {
-      inclusionLists = Optional.empty();
-    }
+    final Optional<List<InclusionList>> inclusionLists =
+        spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP7805)
+            ? store.getInclusionLists(block.getSlot().minusMinZero(UInt64.ONE))
+            : Optional.empty();
 
     final BeaconState postState;
     try {

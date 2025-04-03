@@ -211,6 +211,8 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         blobVersionedHashes.stream().map(VersionedHash::toHexString).toList();
     final List<String> executionRequestsHexList =
         executionRequests.stream().map(Bytes::toHexString).toList();
+    final List<String> transactionsHexList =
+        inclusionList.stream().map(Bytes::toHexString).toList();
     final Request<?, PayloadStatusV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_newPayloadV5",
@@ -218,8 +220,8 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
                 executionPayload,
                 expectedBlobVersionedHashes,
                 parentBeaconBlockRoot.toHexString(),
-                inclusionList,
-                executionRequestsHexList),
+                executionRequestsHexList,
+                transactionsHexList),
             web3JClient.getWeb3jService(),
             PayloadStatusV1Web3jResponse.class);
     return web3JClient.doRequest(web3jRequest, EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);

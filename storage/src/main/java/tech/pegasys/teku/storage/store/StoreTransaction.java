@@ -504,6 +504,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public Optional<List<InclusionList>> getInclusionLists(final UInt64 slot) {
+    return store.getInclusionLists(slot);
+  }
+
+  @Override
   public Optional<Bytes32> getInclusionListAttesterHead(final Bytes32 headRoot) {
     return store.getInclusionListAttesterHead(headRoot);
   }
