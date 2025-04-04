@@ -755,7 +755,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
         .inc(versionedHashes.size());
 
     return executionLayer
-        .engineGetBlobs(versionedHashes, slotAndBlockRoot.getSlot())
+        .engineGetBlobAndProofs(versionedHashes, slotAndBlockRoot.getSlot())
         .thenAccept(
             blobAndProofs -> {
               checkArgument(

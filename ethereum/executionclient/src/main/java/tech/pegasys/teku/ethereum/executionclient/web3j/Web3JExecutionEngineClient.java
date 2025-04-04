@@ -28,6 +28,7 @@ import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV5Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
@@ -130,6 +132,17 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             Collections.singletonList(payloadId.toHexString()),
             web3JClient.getWeb3jService(),
             GetPayloadV4Web3jResponse.class);
+    return web3JClient.doRequest(web3jRequest, EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
+  }
+
+  @Override
+  public SafeFuture<Response<GetPayloadV5Response>> getPayloadV5(final Bytes8 payloadId) {
+    final Request<?, GetPayloadV5Web3jResponse> web3jRequest =
+        new Request<>(
+            "engine_getPayloadV5",
+            Collections.singletonList(payloadId.toHexString()),
+            web3JClient.getWeb3jService(),
+            GetPayloadV5Web3jResponse.class);
     return web3JClient.doRequest(web3jRequest, EL_ENGINE_NON_BLOCK_EXECUTION_TIMEOUT);
   }
 
@@ -273,6 +286,20 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     return web3JClient.doRequest(web3jRequest, GET_BLOBS_TIMEOUT);
   }
 
+  @Override
+  public SafeFuture<Response<List<BlobAndProofV2>>> getBlobsV2(
+      final List<VersionedHash> blobVersionedHashes) {
+    final List<String> expectedBlobVersionedHashes =
+        blobVersionedHashes.stream().map(VersionedHash::toHexString).toList();
+    final Request<?, GetBlobsVersionV2Web3jResponse> web3jRequest =
+        new Request<>(
+            "engine_getBlobsV2",
+            list(expectedBlobVersionedHashes),
+            web3JClient.getWeb3jService(),
+            GetBlobsVersionV2Web3jResponse.class);
+    return web3JClient.doRequest(web3jRequest, GET_BLOBS_TIMEOUT);
+  }
+
   static class ExecutionPayloadV1Web3jResponse
       extends org.web3j.protocol.core.Response<ExecutionPayloadV1> {}
 
@@ -284,6 +311,9 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   static class GetPayloadV4Web3jResponse
       extends org.web3j.protocol.core.Response<GetPayloadV4Response> {}
+
+  static class GetPayloadV5Web3jResponse
+      extends org.web3j.protocol.core.Response<GetPayloadV5Response> {}
 
   static class PayloadStatusV1Web3jResponse
       extends org.web3j.protocol.core.Response<PayloadStatusV1> {}
@@ -299,6 +329,9 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   static class GetBlobsVersionV1Web3jResponse
       extends org.web3j.protocol.core.Response<List<BlobAndProofV1>> {}
+
+  static class GetBlobsVersionV2Web3jResponse
+      extends org.web3j.protocol.core.Response<List<BlobAndProofV2>> {}
 
   /**
    * Returns a list that supports null items.

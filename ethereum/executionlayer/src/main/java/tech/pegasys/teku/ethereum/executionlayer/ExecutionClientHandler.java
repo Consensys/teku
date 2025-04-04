@@ -18,6 +18,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -47,6 +48,9 @@ public interface ExecutionClientHandler {
 
   SafeFuture<List<ClientVersion>> engineGetClientVersion(ClientVersion clientVersion);
 
-  SafeFuture<List<BlobAndProof>> engineGetBlobs(
+  SafeFuture<List<BlobAndProof>> engineGetBlobsV1(
+      List<VersionedHash> blobVersionedHashes, UInt64 slot);
+
+  SafeFuture<List<BlobAndCellProofs>> engineGetBlobsV2(
       List<VersionedHash> blobVersionedHashes, UInt64 slot);
 }

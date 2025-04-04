@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
@@ -79,10 +80,17 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobs(
+        public SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobAndProofs(
             final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
           return SafeFuture.completedFuture(
               blobVersionedHashes.stream().map(e -> Optional.<BlobAndProof>empty()).toList());
+        }
+
+        @Override
+        public SafeFuture<List<Optional<BlobAndCellProofs>>> engineGetBlobAndCellProofsList(
+            final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
+          return SafeFuture.completedFuture(
+              blobVersionedHashes.stream().map(e -> Optional.<BlobAndCellProofs>empty()).toList());
         }
 
         @Override
@@ -124,7 +132,10 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
   SafeFuture<List<ClientVersion>> engineGetClientVersion(ClientVersion clientVersion);
 
-  SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobs(
+  SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobAndProofs(
+      List<VersionedHash> blobVersionedHashes, UInt64 slot);
+
+  SafeFuture<List<Optional<BlobAndCellProofs>>> engineGetBlobAndCellProofsList(
       List<VersionedHash> blobVersionedHashes, UInt64 slot);
 
   /**

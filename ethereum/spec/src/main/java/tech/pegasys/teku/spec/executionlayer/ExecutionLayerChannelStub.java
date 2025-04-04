@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
@@ -362,10 +363,17 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobs(
+  public SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobAndProofs(
       final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
     return SafeFuture.completedFuture(
         blobVersionedHashes.stream().map(e -> Optional.<BlobAndProof>empty()).toList());
+  }
+
+  @Override
+  public SafeFuture<List<Optional<BlobAndCellProofs>>> engineGetBlobAndCellProofsList(
+      final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
+    return SafeFuture.completedFuture(
+        blobVersionedHashes.stream().map(e -> Optional.<BlobAndCellProofs>empty()).toList());
   }
 
   @Override

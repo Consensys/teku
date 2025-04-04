@@ -113,7 +113,7 @@ public class BlockBlobSidecarsTrackersPoolImplFuluTest {
 
   @BeforeEach
   public void setup() {
-    when(executionLayer.engineGetBlobs(any(), eq(currentSlot)))
+    when(executionLayer.engineGetBlobAndProofs(any(), eq(currentSlot)))
         .thenReturn(SafeFuture.completedFuture(List.of()));
     when(blobSidecarPublisher.apply(any())).thenReturn(SafeFuture.COMPLETE);
     when(kzg.computeCellsAndProofs(any())).thenReturn(kzgCellAndProofs);
@@ -250,7 +250,7 @@ public class BlockBlobSidecarsTrackersPoolImplFuluTest {
     blockBlobSidecarsTrackersPoolCustom.onSlot(currentSlot);
 
     // prepare failure from EL
-    when(executionLayer.engineGetBlobs(any(), any()))
+    when(executionLayer.engineGetBlobAndProofs(any(), any()))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("oops")));
 
     blockBlobSidecarsTrackersPoolCustom.onNewBlock(block, Optional.empty());
@@ -259,7 +259,7 @@ public class BlockBlobSidecarsTrackersPoolImplFuluTest {
 
     asyncRunner.executeQueuedActions();
 
-    verify(executionLayer).engineGetBlobs(any(), any());
+    verify(executionLayer).engineGetBlobAndProofs(any(), any());
     assertThat(requiredBlobSidecarEvents).isEmpty();
   }
 }
