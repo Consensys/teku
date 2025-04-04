@@ -801,7 +801,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
               isFuluSuperNode(),
               specConfigFulu.getNumberOfColumns(),
               specConfigFulu.getNumberOfCustodyGroups(),
-              slot -> Duration.ofMillis(spec.getMillisPerSlot(slot).dividedBy(3).longValue()));
+              slot -> Duration.ofMillis(spec.getMillisPerSlot(slot).dividedBy(3).longValue()),
+              metricsSystem,
+              timeProvider);
       eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarRecoveringCustody);
 
       // TODO fix this dirty hack
@@ -850,9 +852,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dbAccessor,
             operationPoolAsyncRunner,
             Duration.ofMinutes(5),
-            specConfigFulu.getNumberOfColumns(),
-            metricsSystem,
-            timeProvider);
+            specConfigFulu.getNumberOfColumns());
     dataColumnSidecarCustody.subscribeToValidDataColumnSidecars(
         recoveringSidecarRetriever::onNewValidatedSidecar);
 
