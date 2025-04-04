@@ -182,6 +182,8 @@ class AggregatingAttestationPoolTest {
   void getAttestationsForBlock_shouldNotThrowExceptionWhenShufflingSeedIsUnknown() {
     final Attestation attestation =
         createAttestation(dataStructureUtil.randomAttestationData(ONE), 1, 2, 3, 4);
+
+    when(mockRecentChainData.getCurrentSlot()).thenReturn(Optional.of(ONE));
     // Receive the attestation from a block, prior to receiving it via gossip
     aggregatingPool.onAttestationsIncludedInBlock(ONE, List.of(attestation));
     // Attestation isn't added because it's already redundant
@@ -401,6 +403,8 @@ class AggregatingAttestationPoolTest {
   @TestTemplate
   public void getSize_shouldDecreaseWhenAttestationsRemoved() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
+
+    when(mockRecentChainData.getCurrentSlot()).thenReturn(Optional.of(ONE));
     addAttestationFromValidators(attestationData, 1, 2, 3, 4);
     final Attestation attestationToRemove = addAttestationFromValidators(attestationData, 2, 5);
 
@@ -421,6 +425,8 @@ class AggregatingAttestationPoolTest {
   @TestTemplate
   public void getSize_shouldDecrementForAllRemovedAttestations() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
+
+    when(mockRecentChainData.getCurrentSlot()).thenReturn(Optional.of(ONE));
     addAttestationFromValidators(attestationData, 1, 2, 3);
     addAttestationFromValidators(attestationData, 4, 5);
     assertThat(aggregatingPool.getSize()).isEqualTo(2);
@@ -456,6 +462,7 @@ class AggregatingAttestationPoolTest {
         addAttestationFromValidators(attestationData, 1, 2, 3, 4, 5);
     assertThat(aggregatingPool.getSize()).isEqualTo(5);
 
+    when(mockRecentChainData.getCurrentSlot()).thenReturn(Optional.of(ONE));
     when(mockRecentChainData.getCurrentEpoch()).thenReturn(Optional.of(ONE));
     aggregatingPool.onAttestationsIncludedInBlock(ZERO, List.of(attestationToRemove));
     assertThat(aggregatingPool.getSize()).isEqualTo(2);
@@ -498,7 +505,7 @@ class AggregatingAttestationPoolTest {
     addAttestationFromValidators(attestationData, 5, 6);
 
     assertThat(aggregatingPool.getSize()).isEqualTo(5);
-
+    when(mockRecentChainData.getCurrentSlot()).thenReturn(Optional.of(ONE));
     final BeaconState slot1State = dataStructureUtil.randomBeaconState(ONE);
     assertThat(aggregatingPool.getAttestationsForBlock(slot1State, forkChecker)).isNotEmpty();
 
@@ -633,6 +640,7 @@ class AggregatingAttestationPoolTest {
   void onAttestationsIncludedInBlock_shouldNotAddAttestationsAlreadySeenInABlock() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
     when(mockRecentChainData.getCurrentEpoch()).thenReturn(Optional.of(ZERO));
+    when(mockRecentChainData.getCurrentSlot()).thenReturn(Optional.of(ONE));
     // Included in block before we see any attestations with this data
     aggregatingPool.onAttestationsIncludedInBlock(
         ONE, List.of(createAttestation(attestationData, 1, 2, 3, 4)));
@@ -648,6 +656,7 @@ class AggregatingAttestationPoolTest {
     when(mockRecentChainData.getCurrentEpoch()).thenReturn(Optional.of(ZERO));
     addAttestationFromValidators(attestationData, 2, 3);
 
+    when(mockRecentChainData.getCurrentSlot()).thenReturn(Optional.of(ONE));
     aggregatingPool.onAttestationsIncludedInBlock(
         ONE, List.of(createAttestation(attestationData, 1, 2, 3, 4)));
 
@@ -657,6 +666,8 @@ class AggregatingAttestationPoolTest {
   @TestTemplate
   void onReorg_shouldBeAbleToReadAttestations() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
+
+    when(mockRecentChainData.getCurrentSlot()).thenReturn(Optional.of(ONE));
     // Included in block before we see any attestations with this data
     aggregatingPool.onAttestationsIncludedInBlock(
         ONE, List.of(createAttestation(attestationData, 1, 2, 3, 4)));
