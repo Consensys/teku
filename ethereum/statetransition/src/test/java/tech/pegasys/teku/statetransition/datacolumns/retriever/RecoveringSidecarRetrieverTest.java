@@ -90,7 +90,6 @@ public class RecoveringSidecarRetrieverTest {
             stubAsyncRunner,
             Duration.ofSeconds(1),
             128);
-
     List<Blob> blobs =
         Stream.generate(dataStructureUtil::randomValidBlob).limit(blobCount).toList();
     BeaconBlock block = blockResolver.addBlock(10, blobCount);

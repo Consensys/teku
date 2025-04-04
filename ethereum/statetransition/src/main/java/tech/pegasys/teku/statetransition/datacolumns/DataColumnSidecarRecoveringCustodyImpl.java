@@ -259,7 +259,8 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                       .collect(Collectors.toUnmodifiableSet());
               final List<DataColumnSidecar> recoveredSidecars =
                   miscHelpers.reconstructAllDataColumnSidecars(block, sidecars, kzg);
-              totalDataAvailabilityReconstructedColumns.inc(recoveredSidecars.size());
+              totalDataAvailabilityReconstructedColumns.inc(
+                  recoveredSidecars.size() - sidecars.size());
               recoveredSidecars.stream()
                   .filter(sidecar -> !existingSidecarsIndices.contains(sidecar.getIndex()))
                   .forEach(
