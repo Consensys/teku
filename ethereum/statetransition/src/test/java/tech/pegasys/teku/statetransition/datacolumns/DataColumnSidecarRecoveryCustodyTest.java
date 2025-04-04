@@ -23,6 +23,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand.createCustodyGroupCountManager;
 
 import java.time.Duration;
 import java.util.Map;
@@ -91,8 +92,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
           miscHelpersFulu,
           KZG.NOOP,
           dataColumnSidecarPublisher,
-          CustodyGroupCountManager.NOOP,
-          true,
+          createCustodyGroupCountManager(config.getNumberOfCustodyGroups()),
           config.getNumberOfColumns(),
           config.getNumberOfCustodyGroups(),
           __ -> Duration.ofSeconds(2));
@@ -114,8 +114,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
             miscHelpersFulu,
             KZG.NOOP,
             dataColumnSidecarPublisher,
-            CustodyGroupCountManager.NOOP,
-            true,
+            createCustodyGroupCountManager(config.getNumberOfCustodyGroups()),
             config.getNumberOfColumns(),
             config.getNumberOfCustodyGroups(),
             __ -> Duration.ofSeconds(2));
@@ -135,7 +134,6 @@ public class DataColumnSidecarRecoveryCustodyTest {
             KZG.NOOP,
             dataColumnSidecarPublisher,
             CustodyGroupCountManager.NOOP,
-            false,
             config.getNumberOfColumns(),
             config.getNumberOfCustodyGroups(),
             __ -> Duration.ofSeconds(2));

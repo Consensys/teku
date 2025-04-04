@@ -800,7 +800,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
                       .getPublisher(DataColumnSidecarGossipChannel.class)
                       .publishDataColumnSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED),
               custodyGroupCountManager,
-              isFuluSuperNode(),
               specConfigFulu.getNumberOfColumns(),
               specConfigFulu.getNumberOfCustodyGroups(),
               slot -> Duration.ofMillis(spec.getMillisPerSlot(slot).dividedBy(3).longValue()));
@@ -920,18 +919,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     pendingBlocks = poolFactory.createPendingPoolForBlocks(spec);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
     invalidBlockRoots = LimitedMap.createSynchronizedLRU(500);
-  }
-
-  private boolean isFuluSuperNode() {
-    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      final int maxGroups =
-          SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
-              .getNumberOfCustodyGroups();
-      final int totalMyCustodyGroups =
-          beaconConfig.p2pConfig().getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU));
-      return maxGroups == totalMyCustodyGroups;
-    }
-    return false;
   }
 
   protected void initBlockBlobSidecarsTrackersPool() {
