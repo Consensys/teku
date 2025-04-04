@@ -35,6 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
@@ -68,6 +69,8 @@ public class DataColumnSidecarRecoveryCustodyTest {
   private final DataColumnSidecarManager.ValidDataColumnSidecarsListener listener =
       mock(DataColumnSidecarManager.ValidDataColumnSidecarsListener.class);
 
+  private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
+
   @SuppressWarnings("unchecked")
   private final Consumer<DataColumnSidecar> dataColumnSidecarPublisher = mock(Consumer.class);
 
@@ -95,7 +98,9 @@ public class DataColumnSidecarRecoveryCustodyTest {
           true,
           config.getNumberOfColumns(),
           config.getNumberOfCustodyGroups(),
-          __ -> Duration.ofSeconds(2));
+          __ -> Duration.ofSeconds(2),
+          stubMetricsSystem,
+          stubTimeProvider);
 
   @BeforeEach
   public void setup() {
@@ -118,7 +123,9 @@ public class DataColumnSidecarRecoveryCustodyTest {
             true,
             config.getNumberOfColumns(),
             config.getNumberOfCustodyGroups(),
-            __ -> Duration.ofSeconds(2));
+            __ -> Duration.ofSeconds(2),
+            stubMetricsSystem,
+            stubTimeProvider);
 
     custody.onSlot(slot);
     assertThat(stubAsyncRunner.hasDelayedActions()).isFalse();
@@ -138,7 +145,9 @@ public class DataColumnSidecarRecoveryCustodyTest {
             false,
             config.getNumberOfColumns(),
             config.getNumberOfCustodyGroups(),
-            __ -> Duration.ofSeconds(2));
+            __ -> Duration.ofSeconds(2),
+            stubMetricsSystem,
+            stubTimeProvider);
 
     custody.onSlot(slot);
     assertThat(stubAsyncRunner.hasDelayedActions()).isFalse();
