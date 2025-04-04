@@ -124,10 +124,13 @@ public class SimpleSidecarRetriever
   public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {
     final DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier =
         DataColumnSlotAndIdentifier.fromDataColumn(sidecar);
-    pendingRequests.entrySet().stream()
-        .filter(request -> request.getKey().equals(dataColumnSlotAndIdentifier))
-        .filter(request -> !request.getValue().result.isDone())
-        .forEach(requestEntry -> reqRespCompleted(requestEntry.getValue(), sidecar, null));
+    final List<Map.Entry<DataColumnSlotAndIdentifier, RetrieveRequest>> filteredRequests =
+        pendingRequests.entrySet().stream()
+            .filter(request -> request.getKey().equals(dataColumnSlotAndIdentifier))
+            .filter(request -> !request.getValue().result.isDone())
+            .toList();
+    filteredRequests.forEach(
+        requestEntry -> reqRespCompleted(requestEntry.getValue(), sidecar, null));
   }
 
   private synchronized List<RequestMatch> matchRequestsAndPeers() {
