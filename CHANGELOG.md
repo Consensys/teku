@@ -9,6 +9,6 @@
 ### Breaking Changes
 
 ### Additions and Improvements
-- Updated teku bootnode ENR on sepolia
+- Updated teku bootnode ENR on sepolia and mainnet
 
 ### Bug Fixes
