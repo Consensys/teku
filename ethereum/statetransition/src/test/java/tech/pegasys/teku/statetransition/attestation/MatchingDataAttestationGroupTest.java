@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
-import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggregateAttestations;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
@@ -28,7 +27,6 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -36,8 +34,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(milestone = {PHASE0, ELECTRA})
-class MatchingDataAttestationGroupTest {
+abstract class MatchingDataAttestationGroupTest {
   private static final UInt64 SLOT = UInt64.valueOf(1234);
 
   private Spec spec;
@@ -49,6 +46,11 @@ class MatchingDataAttestationGroupTest {
   private MatchingDataAttestationGroup group;
   private Int2IntMap committeeSizes;
 
+  abstract MatchingDataAttestationGroup instantiateGroup(
+      final Spec spec,
+      final AttestationData attestationData,
+      final Optional<Int2IntMap> committeeSizes);
+
   @BeforeEach
   public void setUp(final SpecContext specContext) {
     spec = specContext.getSpec();
@@ -58,7 +60,7 @@ class MatchingDataAttestationGroupTest {
     committeeSizes = new Int2IntOpenHashMap();
     committeeSizes.put(0, 10);
     committeeSizes.put(1, 10);
-    group = new MatchingDataAttestationGroup(spec, attestationData, Optional.of(committeeSizes));
+    group = instantiateGroup(spec, attestationData, Optional.of(committeeSizes));
   }
 
   @TestTemplate
