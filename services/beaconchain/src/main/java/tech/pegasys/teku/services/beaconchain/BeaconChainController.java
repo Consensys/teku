@@ -48,6 +48,7 @@ import tech.pegasys.teku.beacon.sync.DefaultSyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.events.CoalescingChainHeadChannel;
+import tech.pegasys.teku.beacon.sync.forward.multipeer.SyncReorgManager;
 import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarsFetcher;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetcher;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
@@ -1304,6 +1305,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         pendingBlocks,
         pendingAttestations,
         blockBlobSidecarsTrackersPool,
+        new SyncReorgManager(recentChainData, forkChoiceTrigger),
         beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),
         signatureVerificationService,
         Duration.ofSeconds(beaconConfig.eth2NetworkConfig().getStartupTimeoutSeconds()),

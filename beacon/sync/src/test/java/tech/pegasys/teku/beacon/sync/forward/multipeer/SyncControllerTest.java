@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChainTestUtil.chainWith;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -48,17 +50,24 @@ class SyncControllerTest {
   private final SyncTargetSelector syncTargetSelector = mock(SyncTargetSelector.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final Executor subscriberExecutor = mock(Executor.class);
+  private final SyncReorgManager syncReorgManager = mock(SyncReorgManager.class);
 
   private final TargetChain targetChain = chainWith(dataStructureUtil.randomSlotAndBlockRoot());
 
   private final SyncController syncController =
       new SyncController(
-          eventThread, subscriberExecutor, recentChainData, syncTargetSelector, sync);
+          eventThread,
+          subscriberExecutor,
+          recentChainData,
+          syncTargetSelector,
+          syncReorgManager,
+          sync);
   private static final UInt64 HEAD_SLOT = UInt64.valueOf(2338);
 
   @BeforeEach
   void setUp() {
     when(recentChainData.getHeadSlot()).thenReturn(HEAD_SLOT);
+    verify(sync).subscribeToBlocksImportedEvent(any());
   }
 
   @Test
@@ -240,6 +249,36 @@ class SyncControllerTest {
     syncResult.complete(SyncResult.COMPLETE);
 
     verify(subscriberExecutor, never()).execute(any());
+  }
+
+  @Test
+  void shouldForwardOnBlocksImportedWhenNonSpeculativeSync() {
+    final SafeFuture<SyncResult> syncResult = new SafeFuture<>();
+    when(syncTargetSelector.selectSyncTarget(any()))
+        .thenReturn(Optional.of(SyncTarget.speculativeTarget(targetChain)));
+    when(sync.syncToChain(targetChain)).thenReturn(syncResult);
+
+    onTargetChainsUpdated();
+
+    syncController.onBlocksImported(dataStructureUtil.randomSignedBeaconBlock());
+
+    verifyNoInteractions(syncReorgManager);
+  }
+
+  @Test
+  void shouldForwardOnBlocksImported() {
+    when(syncTargetSelector.selectSyncTarget(Optional.empty()))
+        .thenReturn(Optional.of(SyncTarget.nonfinalizedTarget(targetChain)));
+
+    when(sync.syncToChain(targetChain)).thenReturn(new SafeFuture<>());
+
+    onTargetChainsUpdated();
+
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
+
+    syncController.onBlocksImported(block);
+
+    verify(syncReorgManager).onBlocksImported(block);
   }
 
   private void assertSyncSubscriberNotified(
