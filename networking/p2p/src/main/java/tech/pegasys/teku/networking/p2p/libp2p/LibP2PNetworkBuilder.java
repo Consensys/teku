@@ -97,7 +97,6 @@ public class LibP2PNetworkBuilder {
 
   @SuppressWarnings("AddressSelection")
   public P2PNetwork<Peer> build() {
-
     gossipNetwork = createGossipNetwork();
     // Setup rpc methods
     rpcHandlers = createRpcHandlers();
@@ -148,7 +147,8 @@ public class LibP2PNetworkBuilder {
         peerManager,
         advertisedAddresses,
         gossipNetwork,
-        listenPorts);
+        listenPorts,
+        asyncRunner);
   }
 
   protected List<? extends RpcHandler<?, ?, ?>> createRpcHandlers() {
@@ -165,6 +165,7 @@ public class LibP2PNetworkBuilder {
         .logWireGossip(config.getWireLogsConfig().isLogWireGossip())
         .timeProvider(timeProvider)
         .recordArrivalTime(recordMessageArrival)
+        .asyncRunner(asyncRunner)
         .build();
   }
 
