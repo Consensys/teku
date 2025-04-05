@@ -26,13 +26,17 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import kotlin.jvm.functions.Function0;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.LabelledSuppliedMetric;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
@@ -52,16 +56,94 @@ public class LibP2PGossipNetwork implements GossipNetwork {
   private final Gossip gossip;
   private final PubsubPublisherApi publisher;
   private final GossipTopicHandlers topicHandlers;
+  private final GossipMeshInfo gossipMeshInfo;
+  private final LabelledSuppliedMetric meshSizeGauge;
+  private final LabelledSuppliedMetric meshPeersJoinedGauge;
+  private final LabelledSuppliedMetric meshPeersLeftGauge;
+
+  @SuppressWarnings("UnusedVariable") // Сохранено для будущего использования
+  private final AsyncRunner asyncRunner;
+
+  // Track gauges by topic to allow cleanup
+  private final Map<String, AtomicReference<Double>> meshSizeGaugeValues = new HashMap<>();
+  private final Map<String, AtomicReference<Double>> meshPeersJoinedGaugeValues = new HashMap<>();
+  private final Map<String, AtomicReference<Double>> meshPeersLeftGaugeValues = new HashMap<>();
 
   public LibP2PGossipNetwork(
       final MetricsSystem metricsSystem,
       final Gossip gossip,
       final PubsubPublisherApi publisher,
-      final GossipTopicHandlers topicHandlers) {
+      final GossipTopicHandlers topicHandlers,
+      final AsyncRunner asyncRunner) {
     this.metricsSystem = metricsSystem;
     this.gossip = gossip;
     this.publisher = publisher;
     this.topicHandlers = topicHandlers;
+    this.asyncRunner = asyncRunner;
+    this.gossipMeshInfo = new GossipMeshInfo(gossip);
+
+    // Create gauges for mesh metrics
+    this.meshSizeGauge =
+        metricsSystem.createLabelledSuppliedGauge(
+            TekuMetricCategory.LIBP2P,
+            "gossip_mesh_peers_current",
+            "Current number of peers in mesh for each topic",
+            "topic");
+
+    this.meshPeersJoinedGauge =
+        metricsSystem.createLabelledSuppliedGauge(
+            TekuMetricCategory.LIBP2P,
+            "gossip_mesh_peers_joined",
+            "Number of peers that have joined the mesh since the last sampling period",
+            "topic");
+
+    this.meshPeersLeftGauge =
+        metricsSystem.createLabelledSuppliedGauge(
+            TekuMetricCategory.LIBP2P,
+            "gossip_mesh_peers_left",
+            "Number of peers that have left the mesh since the last sampling period",
+            "topic");
+  }
+
+  /** Updates mesh metrics by fetching the latest mesh information. */
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public void updateMeshMetrics() {
+    gossipMeshInfo
+        .getMeshMetrics()
+        .thenAccept(
+            meshMetricsByTopic -> {
+              // Update metrics for all topics
+              meshMetricsByTopic.forEach(
+                  (topic, metrics) -> {
+                    // Update mesh size gauge
+                    final AtomicReference<Double> meshSizeValue =
+                        meshSizeGaugeValues.computeIfAbsent(topic, t -> new AtomicReference<>(0.0));
+                    meshSizeValue.set((double) metrics.getMeshSize());
+                    meshSizeGauge.labels(() -> meshSizeValue.get(), topic);
+
+                    // Update peers joined gauge
+                    final AtomicReference<Double> peersJoinedValue =
+                        meshPeersJoinedGaugeValues.computeIfAbsent(
+                            topic, t -> new AtomicReference<>(0.0));
+                    peersJoinedValue.set((double) metrics.getPeersJoined());
+                    meshPeersJoinedGauge.labels(() -> peersJoinedValue.get(), topic);
+
+                    // Update peers left gauge
+                    final AtomicReference<Double> peersLeftValue =
+                        meshPeersLeftGaugeValues.computeIfAbsent(
+                            topic, t -> new AtomicReference<>(0.0));
+                    peersLeftValue.set((double) metrics.getPeersLeft());
+                    meshPeersLeftGauge.labels(() -> peersLeftValue.get(), topic);
+                  });
+
+              // Check for topics that no longer exist and remove their gauges
+              // (This would require more complex logic to properly implement in Prometheus)
+            })
+        .exceptionally(
+            error -> {
+              LOG.debug("Failed to update mesh metrics", error);
+              return null;
+            });
   }
 
   @Override
@@ -78,6 +160,10 @@ public class LibP2PGossipNetwork implements GossipNetwork {
     final GossipHandler gossipHandler =
         new GossipHandler(metricsSystem, libP2PTopic, publisher, topicHandler);
     PubsubSubscription subscription = gossip.subscribe(gossipHandler, libP2PTopic);
+
+    // Update metrics when a new topic is subscribed
+    updateMeshMetrics();
+
     return new LibP2PTopicChannel(gossipHandler, subscription);
   }
 
@@ -112,5 +198,9 @@ public class LibP2PGossipNetwork implements GossipNetwork {
 
   public Gossip getGossip() {
     return gossip;
+  }
+
+  public GossipMeshInfo getGossipMeshInfo() {
+    return gossipMeshInfo;
   }
 }
