@@ -42,6 +42,7 @@ import io.netty.handler.logging.LoggingHandler;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
@@ -71,6 +72,7 @@ public class LibP2PGossipNetworkBuilder {
   protected boolean logWireGossip;
   protected TimeProvider timeProvider;
   protected boolean recordArrivalTime = DEFAULT_RECORD_MESSAGE_ARRIVAL;
+  protected AsyncRunner asyncRunner;
 
   protected ChannelHandler debugGossipHandler = null;
 
@@ -84,7 +86,7 @@ public class LibP2PGossipNetworkBuilder {
             gossipConfig, networkingSpecConfig, logWireGossip, gossipTopicFilter, topicHandlers);
     final PubsubPublisherApi publisher = gossip.createPublisher(null, NULL_SEQNO_GENERATOR);
 
-    return new LibP2PGossipNetwork(metricsSystem, gossip, publisher, topicHandlers);
+    return new LibP2PGossipNetwork(metricsSystem, gossip, publisher, topicHandlers, asyncRunner);
   }
 
   private void validate() {
@@ -94,6 +96,7 @@ public class LibP2PGossipNetworkBuilder {
     assertNotNull("defaultMessageFactory", defaultMessageFactory);
     assertNotNull("gossipTopicFilter", gossipTopicFilter);
     assertNotNull("timeProvider", timeProvider);
+    assertNotNull("asyncRunner", asyncRunner);
   }
 
   private void assertNotNull(final String fieldName, final Object fieldValue) {
@@ -222,6 +225,11 @@ public class LibP2PGossipNetworkBuilder {
 
   public LibP2PGossipNetworkBuilder recordArrivalTime(final boolean recordArrivalTime) {
     this.recordArrivalTime = recordArrivalTime;
+    return this;
+  }
+
+  public LibP2PGossipNetworkBuilder asyncRunner(final AsyncRunner asyncRunner) {
+    this.asyncRunner = asyncRunner;
     return this;
   }
 }
