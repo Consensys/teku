@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -110,8 +111,8 @@ class SpecConfigBuilderTest {
   }
 
   @Test
+  @Disabled("There is no non-active config at the moment, revisit this when we add FULU")
   public void shouldCreateSpecExposingNonActiveConfig() {
-    // we will need to update this when we schedule ELECTRA on mainnet
     final Spec spec = getSpec(__ -> {});
     assertThat(spec.getForkSchedule().getHighestSupportedMilestone()).isNotEqualTo(ELECTRA);
     assertThat(spec.getSpecConfigAndParent().specConfig().getMilestone()).isEqualTo(ELECTRA);
