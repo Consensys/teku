@@ -10,6 +10,6 @@
 
 ### Additions and Improvements
 - Updated Teku bootnode ENR on Sepolia and Mainnet
-- Scheduled Electra for Mainnet at epoch 364032 (May 7, 2025, 10:05:11pm UTC)
+- Scheduled Electra for Mainnet at epoch 364032 (May 7, 2025, 10:05:11am UTC)
 
 ### Bug Fixes
