@@ -43,7 +43,7 @@ class SpecConfigBuilderTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
   private static final Set<Class<?>> BUILDERS =
-      Set.of(
+      Set.<Class<?>>of(
           SpecConfigBuilder.class,
           AltairBuilder.class,
           BellatrixBuilder.class,
@@ -111,9 +111,9 @@ class SpecConfigBuilderTest {
 
   @Test
   public void shouldCreateSpecExposingNonActiveConfig() {
-    // we will need to update this when we schedule ELECTRA on mainnet
+    // Update the test since ELECTRA is now scheduled on mainnet
     final Spec spec = getSpec(__ -> {});
-    assertThat(spec.getForkSchedule().getHighestSupportedMilestone()).isNotEqualTo(ELECTRA);
+    // The ELECTRA milestone should be part of the spec config regardless of whether it's active
     assertThat(spec.getSpecConfigAndParent().specConfig().getMilestone()).isEqualTo(ELECTRA);
   }
 
