@@ -1293,7 +1293,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     assertStats("block", "gossip", 2);
   }
 
-  // TODO: tests on DataColumnSidecarELRecoveryManagerImpl
   @Test
   public void onNewBlock_shouldIgnoreFuluBlocks() {
     final Spec specFulu = TestSpecFactory.createMainnetFulu();

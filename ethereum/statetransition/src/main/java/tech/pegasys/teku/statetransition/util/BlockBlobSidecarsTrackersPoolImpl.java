@@ -79,10 +79,12 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   static final String COUNTER_LOCAL_EL_SUBTYPE = "local_el";
   static final String COUNTER_LOCAL_PROPOSAL_SUBTYPE = "local_proposal";
   static final String COUNTER_RPC_SUBTYPE = "rpc";
+  static final String COUNTER_RECOVERED_SUBTYPE = "recovered";
   static final String COUNTER_GOSSIP_DUPLICATE_SUBTYPE = "gossip_duplicate";
   static final String COUNTER_RPC_DUPLICATE_SUBTYPE = "rpc_duplicate";
   static final String COUNTER_LOCAL_EL_DUPLICATE_SUBTYPE = "local_el_duplicate";
   static final String COUNTER_LOCAL_PROPOSAL_DUPLICATE_SUBTYPE = "local_proposal_duplicate";
+  static final String COUNTER_RECOVERED_DUPLICATE_SUBTYPE = "recovered_duplicate";
 
   static final String COUNTER_RPC_FETCH_SUBTYPE = "rpc_fetch";
   static final String COUNTER_LOCAL_EL_FETCH_SUBTYPE = "local_el_fetch";
@@ -268,9 +270,10 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       case GOSSIP -> poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_GOSSIP_SUBTYPE).inc();
       case LOCAL_EL ->
           poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_LOCAL_EL_SUBTYPE).inc();
-      // FIXME: I stink
-      case LOCAL_PROPOSAL, RECOVERED ->
+      case LOCAL_PROPOSAL ->
           poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_LOCAL_PROPOSAL_SUBTYPE).inc();
+      case RECOVERED ->
+          poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_RECOVERED_SUBTYPE).inc();
     }
   }
 
@@ -282,11 +285,12 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
           poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_GOSSIP_DUPLICATE_SUBTYPE).inc();
       case LOCAL_EL ->
           poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_LOCAL_EL_DUPLICATE_SUBTYPE).inc();
-      // FIXME: I stink
-      case LOCAL_PROPOSAL, RECOVERED ->
+      case LOCAL_PROPOSAL ->
           poolStatsCounters
               .labels(COUNTER_SIDECAR_TYPE, COUNTER_LOCAL_PROPOSAL_DUPLICATE_SUBTYPE)
               .inc();
+      case RECOVERED ->
+          poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_RECOVERED_DUPLICATE_SUBTYPE).inc();
     }
   }
 
@@ -545,9 +549,10 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             case GOSSIP ->
                 poolStatsCounters.labels(COUNTER_BLOCK_TYPE, COUNTER_GOSSIP_SUBTYPE).inc();
             case LOCAL_EL -> {} // only possible for blobs
-            // FIXME: I stink
-            case LOCAL_PROPOSAL, RECOVERED ->
+            case LOCAL_PROPOSAL ->
                 poolStatsCounters.labels(COUNTER_BLOCK_TYPE, COUNTER_LOCAL_PROPOSAL_SUBTYPE).inc();
+            case RECOVERED ->
+                poolStatsCounters.labels(COUNTER_BLOCK_TYPE, COUNTER_RECOVERED_SUBTYPE).inc();
           }
         });
   }
@@ -562,10 +567,13 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                 poolStatsCounters
                     .labels(COUNTER_BLOCK_TYPE, COUNTER_GOSSIP_DUPLICATE_SUBTYPE)
                     .inc();
-            // FIXME: I stink
-            case LOCAL_PROPOSAL, RECOVERED ->
+            case LOCAL_PROPOSAL ->
                 poolStatsCounters
                     .labels(COUNTER_BLOCK_TYPE, COUNTER_LOCAL_PROPOSAL_DUPLICATE_SUBTYPE)
+                    .inc();
+            case RECOVERED ->
+                poolStatsCounters
+                    .labels(COUNTER_BLOCK_TYPE, COUNTER_RECOVERED_DUPLICATE_SUBTYPE)
                     .inc();
             case LOCAL_EL -> {} // only possible for blobs
           }

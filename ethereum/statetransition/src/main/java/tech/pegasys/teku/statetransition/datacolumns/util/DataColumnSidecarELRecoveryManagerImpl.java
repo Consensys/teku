@@ -19,15 +19,12 @@ import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.LOCAL_PROPOSA
 import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.RECOVERED;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
@@ -66,8 +63,8 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     implements DataColumnSidecarELRecoveryManager {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Map<Bytes32, RecoveryTask> recoveryTasks = new HashMap<>();
-  private final NavigableSet<SlotAndBlockRoot> orderedRecoveryTasks = new TreeSet<>();
+  private final ConcurrentSkipListMap<SlotAndBlockRoot, RecoveryTask> recoveryTasks =
+      new ConcurrentSkipListMap<>();
   private final Spec spec;
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
@@ -107,15 +104,24 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   @Override
   public void onNewDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
-    if (!spec.atSlot(dataColumnSidecar.getSlot())
-        .getMilestone()
-        .isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+    LOG.debug(
+        "Received data column sidecar {} from {}", dataColumnSidecar.toLogString(), remoteOrigin);
+    if (spec.atSlot(dataColumnSidecar.getSlot()).getMilestone().isLessThan(SpecMilestone.FULU)) {
+      LOG.debug(
+          "Received data column sidecar {} before FULU. Ignoring.",
+          dataColumnSidecar.toLogString());
       return;
     }
     if (recentChainData.containsBlock(dataColumnSidecar.getBlockRoot())) {
+      LOG.debug(
+          "Data column sidecar {} is from already imported block. Ignoring.",
+          dataColumnSidecar.toLogString());
       return;
     }
     if (shouldIgnoreItemAtSlot(dataColumnSidecar.getSlot())) {
+      LOG.debug(
+          "Data column sidecar {} is too old or from the future. Ignoring.",
+          dataColumnSidecar.toLogString());
       return;
     }
 
@@ -123,30 +129,29 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
 
     if (createRecoveryTaskFromDataColumnSidecar(dataColumnSidecar)) {
       onFirstSeen(slotAndBlockRoot, Optional.of(remoteOrigin));
-      orderedRecoveryTasks.add(slotAndBlockRoot);
     }
   }
 
-  private synchronized boolean createRecoveryTaskFromDataColumnSidecar(
+  private boolean createRecoveryTaskFromDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar) {
-    if (recoveryTasks.containsKey(dataColumnSidecar.getBlockRoot())) {
+    if (recoveryTasks.containsKey(dataColumnSidecar.getSlotAndBlockRoot())) {
       return false;
     }
     if (!dataColumnSidecar.getSlot().equals(getCurrentSlot())) {
       return false;
     }
     makeRoomForNewTracker();
-    recoveryTasks.put(
-        dataColumnSidecar.getBlockRoot(),
-        new RecoveryTask(
-            dataColumnSidecar.getSignedBeaconBlockHeader(),
-            dataColumnSidecar.getSszKZGCommitments(),
-            dataColumnSidecar.getKzgCommitmentsInclusionProof().asListUnboxed()));
-    return true;
+    return recoveryTasks.putIfAbsent(
+            dataColumnSidecar.getSlotAndBlockRoot(),
+            new RecoveryTask(
+                dataColumnSidecar.getSignedBeaconBlockHeader(),
+                dataColumnSidecar.getSszKZGCommitments(),
+                dataColumnSidecar.getKzgCommitmentsInclusionProof().asListUnboxed()))
+        == null;
   }
 
-  private synchronized boolean createRecoveryTaskFromBlock(final SignedBeaconBlock block) {
-    if (recoveryTasks.containsKey(block.getRoot())) {
+  private boolean createRecoveryTaskFromBlock(final SignedBeaconBlock block) {
+    if (recoveryTasks.containsKey(block.getSlotAndBlockRoot())) {
       return false;
     }
     if (!block.getSlot().equals(getCurrentSlot())) {
@@ -155,15 +160,15 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     makeRoomForNewTracker();
     final BeaconBlockBodyDeneb blockBodyDeneb =
         BeaconBlockBodyDeneb.required(block.getMessage().getBody());
-    recoveryTasks.put(
-        block.getRoot(),
-        new RecoveryTask(
-            block.asHeader(),
-            blockBodyDeneb.getBlobKzgCommitments(),
-            miscHelpersFuluSupplier
-                .get()
-                .computeDataColumnKzgCommitmentsInclusionProof(blockBodyDeneb)));
-    return true;
+    return recoveryTasks.putIfAbsent(
+            block.getSlotAndBlockRoot(),
+            new RecoveryTask(
+                block.asHeader(),
+                blockBodyDeneb.getBlobKzgCommitments(),
+                miscHelpersFuluSupplier
+                    .get()
+                    .computeDataColumnKzgCommitmentsInclusionProof(blockBodyDeneb)))
+        == null;
   }
 
   private void publishRecoveredDataColumnSidecars(
@@ -201,37 +206,32 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   }
 
   @Override
-  public synchronized void onNewBlock(
-      final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
-    if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
-      return;
-    }
-    if (!spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+  public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
+    LOG.debug("Received block {} from {}", block.getSlotAndBlockRoot(), remoteOrigin);
+    if (spec.atSlot(block.getSlot()).getMilestone().isLessThan(SpecMilestone.FULU)) {
+      LOG.debug("Received block {} before FULU. Ignoring.", block.getSlotAndBlockRoot());
       return;
     }
     if (recentChainData.containsBlock(block.getRoot())) {
+      LOG.debug("Block {} is already imported. Ignoring.", block.getSlotAndBlockRoot());
       return;
     }
     if (shouldIgnoreItemAtSlot(block.getSlot())) {
+      LOG.debug("Block {} is too old or from the future. Ignoring.", block.getSlotAndBlockRoot());
       return;
     }
     if (createRecoveryTaskFromBlock(block)) {
       onFirstSeen(block.getSlotAndBlockRoot(), remoteOrigin);
-      orderedRecoveryTasks.add(block.getSlotAndBlockRoot());
     }
   }
 
-  private synchronized void removeAllForBlock(final Bytes32 blockRoot) {
-    final RecoveryTask recoveryTask = recoveryTasks.remove(blockRoot);
-
-    if (recoveryTask != null) {
-      orderedRecoveryTasks.remove(recoveryTask.getSlotAndBlockRoot());
-    }
+  private void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {
+    recoveryTasks.remove(slotAndBlockRoot);
   }
 
   @VisibleForTesting
   RecoveryTask getRecoveryTask(final SlotAndBlockRoot slotAndBlockRoot) {
-    return recoveryTasks.get(slotAndBlockRoot.getBlockRoot());
+    return recoveryTasks.get(slotAndBlockRoot);
   }
 
   @Override
@@ -240,45 +240,44 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     LOG.trace(
         "Recovery tasks: {}",
         () -> {
-          synchronized (this) {
-            return recoveryTasks.toString();
-          }
+          final HashMap<SlotAndBlockRoot, RecoveryTask> recoveryTasksCopy =
+              new HashMap<>(recoveryTasks);
+          return recoveryTasksCopy.toString();
         });
   }
 
   @VisibleForTesting
   @Override
-  protected synchronized void prune(final UInt64 slotLimit) {
-    final List<SlotAndBlockRoot> toRemove = new ArrayList<>();
-    for (SlotAndBlockRoot slotAndBlockRoot : orderedRecoveryTasks) {
-      if (slotAndBlockRoot.getSlot().isGreaterThan(slotLimit)) {
-        break;
-      }
-      toRemove.add(slotAndBlockRoot);
+  protected void prune(final UInt64 slotLimit) {
+    SlotAndBlockRoot toRemove = recoveryTasks.keySet().pollFirst();
+    while (toRemove != null && toRemove.getSlot().isLessThanOrEqualTo(slotLimit)) {
+      removeAllForBlock(toRemove);
+      toRemove = recoveryTasks.keySet().pollFirst();
     }
-
-    toRemove.stream().map(SlotAndBlockRoot::getBlockRoot).forEach(this::removeAllForBlock);
-  }
-
-  public synchronized int getTotalRecoveryTasks() {
-    return recoveryTasks.size();
   }
 
   private void makeRoomForNewTracker() {
     while (recoveryTasks.size() > maxTrackers - 1) {
-      final SlotAndBlockRoot toRemove = orderedRecoveryTasks.pollFirst();
+      final SlotAndBlockRoot toRemove = recoveryTasks.keySet().pollFirst();
       if (toRemove == null) {
         break;
       }
-      removeAllForBlock(toRemove.getBlockRoot());
+      removeAllForBlock(toRemove);
     }
   }
 
   private void onFirstSeen(
       final SlotAndBlockRoot slotAndBlockRoot, final Optional<RemoteOrigin> remoteOrigin) {
+    LOG.debug(
+        "Data from {} is first seen, checking if recovery is needed",
+        slotAndBlockRoot.getBlockRoot());
     final boolean isLocalBlockProductionOrRecovered =
         remoteOrigin.map(ro -> Set.of(LOCAL_PROPOSAL, RECOVERED).contains(ro)).orElse(false);
     if (isLocalBlockProductionOrRecovered) {
+      LOG.debug(
+          "Data from {} is produced by {}. Recovery is not needed.",
+          slotAndBlockRoot.getBlockRoot(),
+          remoteOrigin);
       return;
     }
 
@@ -291,9 +290,8 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
         .ifExceptionGetsHereRaiseABug();
   }
 
-  private synchronized SafeFuture<Void> fetchMissingBlobsFromLocalEL(
-      final SlotAndBlockRoot slotAndBlockRoot) {
-    final RecoveryTask recoveryTask = recoveryTasks.get(slotAndBlockRoot.getBlockRoot());
+  private SafeFuture<Void> fetchMissingBlobsFromLocalEL(final SlotAndBlockRoot slotAndBlockRoot) {
+    final RecoveryTask recoveryTask = recoveryTasks.get(slotAndBlockRoot);
 
     if (recoveryTask == null) {
       return SafeFuture.COMPLETE;

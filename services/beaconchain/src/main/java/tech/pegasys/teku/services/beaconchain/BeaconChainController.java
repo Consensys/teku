@@ -802,7 +802,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
               custodyGroupCountManager,
               specConfigFulu.getNumberOfColumns(),
               specConfigFulu.getNumberOfCustodyGroups(),
-              slot -> Duration.ofMillis(spec.getMillisPerSlot(slot).dividedBy(3).longValue()));
+              slot -> Duration.ofMillis(spec.getMillisPerSlot(slot).dividedBy(3).longValue()),
+              metricsSystem,
+              timeProvider);
       eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarRecoveringCustody);
 
       // TODO fix this dirty hack
