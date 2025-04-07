@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -70,14 +71,15 @@ public class DataColumnSidecarManagerImpl implements DataColumnSidecarManager {
           dasGossipLogger.onReceive(dataColumnSidecar, res);
           if (res.isAccept()) {
             validDataColumnSidecarsSubscribers.forEach(
-                listener -> listener.onNewValidSidecar(dataColumnSidecar));
+                listener -> listener.onNewValidSidecar(dataColumnSidecar, RemoteOrigin.GOSSIP));
           }
         });
   }
 
   @Override
-  public void onDataColumnSidecarPublish(final DataColumnSidecar sidecar) {
-    validDataColumnSidecarsSubscribers.forEach(l -> l.onNewValidSidecar(sidecar));
+  public void onDataColumnSidecarPublish(
+      final DataColumnSidecar sidecar, final RemoteOrigin origin) {
+    validDataColumnSidecarsSubscribers.forEach(l -> l.onNewValidSidecar(sidecar, origin));
   }
 
   @Override

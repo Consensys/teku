@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.metrics;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Histogram;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
@@ -43,6 +44,22 @@ public class MetricsHistogram {
     this.timeProvider = timeProvider;
   }
 
+  public MetricsHistogram(
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider,
+      final MetricCategory category,
+      final String name,
+      final String help,
+      final double[] buckets,
+      final String... labels) {
+    this.histogram =
+        metricsSystem
+            .createLabelledHistogram(
+                category, name, help, buckets.length > 0 ? buckets : DEFAULT_BUCKETS)
+            .labels(labels.length > 0 ? labels : new String[0]);
+    this.timeProvider = timeProvider;
+  }
+
   public static class Timer implements Closeable {
     private final Histogram histogram;
     private final TimeProvider timeProvider;
@@ -57,6 +74,16 @@ public class MetricsHistogram {
     @Override
     public void close() throws IOException {
       histogram.observe(timeProvider.getTimeInMillis().minus(start).doubleValue() / 1000);
+    }
+
+    public Runnable closeUnchecked() {
+      return () -> {
+        try {
+          close();
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+      };
     }
   }
 

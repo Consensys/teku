@@ -23,6 +23,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand.createCustodyGroupCountManager;
 
 import java.time.Duration;
 import java.util.Map;
@@ -35,6 +36,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
@@ -49,7 +51,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class DataColumnSidecarRecoveryCustodyTest {
@@ -67,6 +69,8 @@ public class DataColumnSidecarRecoveryCustodyTest {
   private final MiscHelpersFulu miscHelpersFulu = mock(MiscHelpersFulu.class);
   private final DataColumnSidecarManager.ValidDataColumnSidecarsListener listener =
       mock(DataColumnSidecarManager.ValidDataColumnSidecarsListener.class);
+
+  private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
 
   @SuppressWarnings("unchecked")
   private final Consumer<DataColumnSidecar> dataColumnSidecarPublisher = mock(Consumer.class);
@@ -91,11 +95,12 @@ public class DataColumnSidecarRecoveryCustodyTest {
           miscHelpersFulu,
           KZG.NOOP,
           dataColumnSidecarPublisher,
-          CustodyGroupCountManager.NOOP,
-          true,
+          createCustodyGroupCountManager(config.getNumberOfCustodyGroups()),
           config.getNumberOfColumns(),
           config.getNumberOfCustodyGroups(),
-          __ -> Duration.ofSeconds(2));
+          __ -> Duration.ofSeconds(2),
+          stubMetricsSystem,
+          stubTimeProvider);
 
   @BeforeEach
   public void setup() {
@@ -114,11 +119,12 @@ public class DataColumnSidecarRecoveryCustodyTest {
             miscHelpersFulu,
             KZG.NOOP,
             dataColumnSidecarPublisher,
-            CustodyGroupCountManager.NOOP,
-            true,
+            createCustodyGroupCountManager(config.getNumberOfCustodyGroups()),
             config.getNumberOfColumns(),
             config.getNumberOfCustodyGroups(),
-            __ -> Duration.ofSeconds(2));
+            __ -> Duration.ofSeconds(2),
+            stubMetricsSystem,
+            stubTimeProvider);
 
     custody.onSlot(slot);
     assertThat(stubAsyncRunner.hasDelayedActions()).isFalse();
@@ -135,10 +141,11 @@ public class DataColumnSidecarRecoveryCustodyTest {
             KZG.NOOP,
             dataColumnSidecarPublisher,
             CustodyGroupCountManager.NOOP,
-            false,
             config.getNumberOfColumns(),
             config.getNumberOfCustodyGroups(),
-            __ -> Duration.ofSeconds(2));
+            __ -> Duration.ofSeconds(2),
+            stubMetricsSystem,
+            stubTimeProvider);
 
     custody.onSlot(slot);
     assertThat(stubAsyncRunner.hasDelayedActions()).isFalse();
@@ -164,7 +171,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
               return SafeFuture.completedFuture(
                   Optional.ofNullable(sidecars.get(id.columnIndex())));
             });
-    when(miscHelpersFulu.reconstructAllDataColumnSidecars(any(), anyCollection(), any()))
+    when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
         .thenReturn(sidecars.values().stream().toList());
     stubAsyncRunner.executeQueuedActions();
     stubAsyncRunner.executeQueuedActions();
@@ -175,7 +182,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
         .forEach(
             i -> {
               verify(delegate).onNewValidatedDataColumnSidecar(eq(sidecars.get(i)));
-              verify(listener).onNewValidSidecar(eq(sidecars.get(i)));
+              verify(listener).onNewValidSidecar(eq(sidecars.get(i)), eq(RemoteOrigin.RECOVERED));
               verify(dataColumnSidecarPublisher).accept(eq(sidecars.get(i)));
             });
     columnIndexes
@@ -184,7 +191,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
         .forEach(
             i -> {
               verify(delegate).onNewValidatedDataColumnSidecar(eq(sidecars.get(i)));
-              verify(listener).onNewValidSidecar(eq(sidecars.get(i)));
+              verify(listener).onNewValidSidecar(eq(sidecars.get(i)), eq(RemoteOrigin.RECOVERED));
               verify(dataColumnSidecarPublisher).accept(eq(sidecars.get(i)));
             });
   }
@@ -194,8 +201,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
     custody.onSlot(slot);
     assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
 
-    custody.onNewBlock(
-        signedBeaconBlock, Optional.of(BlobSidecarManager.RemoteOrigin.LOCAL_PROPOSAL));
+    custody.onNewBlock(signedBeaconBlock, Optional.of(RemoteOrigin.LOCAL_PROPOSAL));
     final Map<UInt64, DataColumnSidecar> sidecars =
         columnIndexes
             .get()
@@ -214,7 +220,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
     custody.onSlot(slot);
     assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
 
-    custody.onNewBlock(signedBeaconBlock, Optional.of(BlobSidecarManager.RemoteOrigin.LOCAL_EL));
+    custody.onNewBlock(signedBeaconBlock, Optional.of(RemoteOrigin.LOCAL_EL));
     final Map<UInt64, DataColumnSidecar> sidecars =
         columnIndexes
             .get()
@@ -248,7 +254,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
               return SafeFuture.completedFuture(
                   Optional.ofNullable(sidecars.get(id.columnIndex())));
             });
-    when(miscHelpersFulu.reconstructAllDataColumnSidecars(any(), anyCollection(), any()))
+    when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
         .thenReturn(sidecars.values().stream().toList());
     stubAsyncRunner.executeDueActionsRepeatedly();
     stubTimeProvider.advanceTimeBySeconds(1);
@@ -264,7 +270,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
 
     // post reconstructed
     verify(delegate, times(config.getNumberOfColumns())).onNewValidatedDataColumnSidecar(any());
-    verify(listener, times(58)).onNewValidSidecar(any());
+    verify(listener, times(58)).onNewValidSidecar(any(), eq(RemoteOrigin.RECOVERED));
     verify(dataColumnSidecarPublisher, times(58)).accept(any());
   }
 
@@ -288,7 +294,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
               return SafeFuture.completedFuture(
                   Optional.ofNullable(sidecars.get(id.columnIndex())));
             });
-    when(miscHelpersFulu.reconstructAllDataColumnSidecars(any(), anyCollection(), any()))
+    when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
         .thenReturn(sidecars.values().stream().toList());
     stubAsyncRunner.executeDueActionsRepeatedly();
     stubTimeProvider.advanceTimeBySeconds(1);
@@ -309,7 +315,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
 
     // post reconstructed
     verify(delegate, times(config.getNumberOfColumns())).onNewValidatedDataColumnSidecar(any());
-    verify(listener, times(64)).onNewValidSidecar(any());
+    verify(listener, times(64)).onNewValidSidecar(any(), eq(RemoteOrigin.RECOVERED));
     verify(dataColumnSidecarPublisher, times(64)).accept(any());
   }
 }

@@ -48,10 +48,10 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -64,8 +64,8 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -118,10 +118,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
                 historicalTolerance,
                 futureTolerance,
                 maxItems,
-                this::trackerFactory,
-                false,
-                KZG.NOOP,
-                __ -> {});
+                this::trackerFactory);
     // Set up slot
     blockBlobSidecarsTrackersPool.subscribeRequiredBlockRoot(requiredBlockRootEvents::add);
     blockBlobSidecarsTrackersPool.subscribeRequiredBlockRootDropped(
@@ -1294,6 +1291,65 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     blockBlobSidecarsTrackersPool.onNewBlock(block4, Optional.of(RemoteOrigin.GOSSIP));
 
     assertStats("block", "gossip", 2);
+  }
+
+  @Test
+  public void onNewBlock_shouldIgnoreFuluBlocks() {
+    final Spec specFulu = TestSpecFactory.createMainnetFulu();
+    final BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPoolCustom =
+        new PoolFactory(new StubMetricsSystem())
+            .createPoolForBlockBlobSidecarsTrackers(
+                blockImportChannel,
+                specFulu,
+                timeProvider,
+                asyncRunner,
+                recentChainData,
+                executionLayer,
+                () -> blobSidecarGossipValidator,
+                blobSidecarPublisher,
+                historicalTolerance,
+                futureTolerance,
+                maxItems,
+                BlockBlobSidecarsTracker::new);
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    blockBlobSidecarsTrackersPoolCustom.onSlot(currentSlot);
+    blockBlobSidecarsTrackersPoolCustom.onNewBlock(block, Optional.empty());
+
+    assertThat(blockBlobSidecarsTrackersPoolCustom.containsBlock(block.getRoot())).isFalse();
+    assertThat(blockBlobSidecarsTrackersPoolCustom.getTotalBlobSidecarsTrackers()).isEqualTo(0);
+  }
+
+  @Test
+  public void onNewBlobSidecar_shouldIgnoreFuluBlobSidecars() {
+    final Spec specFulu = TestSpecFactory.createMainnetFulu();
+    final BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPoolCustom =
+        new PoolFactory(new StubMetricsSystem())
+            .createPoolForBlockBlobSidecarsTrackers(
+                blockImportChannel,
+                specFulu,
+                timeProvider,
+                asyncRunner,
+                recentChainData,
+                executionLayer,
+                () -> blobSidecarGossipValidator,
+                blobSidecarPublisher,
+                historicalTolerance,
+                futureTolerance,
+                maxItems,
+                BlockBlobSidecarsTracker::new);
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+    final BlobSidecar blobSidecar = blobSidecars.getFirst();
+    blockBlobSidecarsTrackersPoolCustom.onSlot(currentSlot);
+    blockBlobSidecarsTrackersPoolCustom.onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP);
+
+    assertThat(
+            blockBlobSidecarsTrackersPoolCustom.containsBlobSidecar(
+                new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex())))
+        .isFalse();
+    assertThat(blockBlobSidecarsTrackersPoolCustom.getTotalBlobSidecarsTrackers()).isEqualTo(0);
   }
 
   private Checkpoint finalizedCheckpoint(final SignedBeaconBlock block) {

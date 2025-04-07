@@ -22,15 +22,14 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 public interface DataColumnSidecarRecoveringCustody
     extends DataColumnSidecarByRootCustody, DataColumnSidecarCustody, SlotEventsChannel {
   DataColumnSidecarRecoveringCustody NOOP =
       new DataColumnSidecarRecoveringCustody() {
         @Override
-        public void onNewBlock(
-            SignedBeaconBlock block, Optional<BlobSidecarManager.RemoteOrigin> remoteOrigin) {}
+        public void onNewBlock(SignedBeaconBlock block, Optional<RemoteOrigin> remoteOrigin) {}
 
         @Override
         public void subscribeToValidDataColumnSidecars(
@@ -69,7 +68,7 @@ public interface DataColumnSidecarRecoveringCustody
         }
       };
 
-  void onNewBlock(SignedBeaconBlock block, Optional<BlobSidecarManager.RemoteOrigin> remoteOrigin);
+  void onNewBlock(SignedBeaconBlock block, Optional<RemoteOrigin> remoteOrigin);
 
   void subscribeToValidDataColumnSidecars(
       DataColumnSidecarManager.ValidDataColumnSidecarsListener sidecarsListener);

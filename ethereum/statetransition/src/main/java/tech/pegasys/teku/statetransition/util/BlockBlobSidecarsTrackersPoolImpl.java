@@ -16,8 +16,8 @@ package tech.pegasys.teku.statetransition.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getRootCauseMessage;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
-import static tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin.LOCAL_EL;
-import static tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin.LOCAL_PROPOSAL;
+import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.LOCAL_EL;
+import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.LOCAL_PROPOSAL;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
@@ -29,7 +29,6 @@ import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -47,12 +46,10 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -63,11 +60,10 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -83,10 +79,12 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   static final String COUNTER_LOCAL_EL_SUBTYPE = "local_el";
   static final String COUNTER_LOCAL_PROPOSAL_SUBTYPE = "local_proposal";
   static final String COUNTER_RPC_SUBTYPE = "rpc";
+  static final String COUNTER_RECOVERED_SUBTYPE = "recovered";
   static final String COUNTER_GOSSIP_DUPLICATE_SUBTYPE = "gossip_duplicate";
   static final String COUNTER_RPC_DUPLICATE_SUBTYPE = "rpc_duplicate";
   static final String COUNTER_LOCAL_EL_DUPLICATE_SUBTYPE = "local_el_duplicate";
   static final String COUNTER_LOCAL_PROPOSAL_DUPLICATE_SUBTYPE = "local_proposal_duplicate";
+  static final String COUNTER_RECOVERED_DUPLICATE_SUBTYPE = "recovered_duplicate";
 
   static final String COUNTER_RPC_FETCH_SUBTYPE = "rpc_fetch";
   static final String COUNTER_LOCAL_EL_FETCH_SUBTYPE = "local_el_fetch";
@@ -114,10 +112,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
   private final BlockBlobSidecarsTrackerFactory trackerFactory;
 
-  private final boolean isSuperNode;
-  private final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher;
-  private final KZG kzg;
-
   private final Subscribers<RequiredBlockRootSubscriber> requiredBlockRootSubscribers =
       Subscribers.create(true);
   private final Subscribers<RequiredBlockRootDroppedSubscriber>
@@ -135,8 +129,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
   private final BlockImportChannel blockImportChannel;
 
-  private final AtomicBoolean isActiveSuperNode = new AtomicBoolean(false);
-
   BlockBlobSidecarsTrackersPoolImpl(
       final BlockImportChannel blockImportChannel,
       final SettableLabelledGauge sizeGauge,
@@ -150,10 +142,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       final Function<BlobSidecar, SafeFuture<Void>> blobSidecarGossipPublisher,
       final UInt64 historicalSlotTolerance,
       final UInt64 futureSlotTolerance,
-      final int maxTrackers,
-      final boolean isSuperNode,
-      final KZG kzg,
-      final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher) {
+      final int maxTrackers) {
     super(spec, futureSlotTolerance, historicalSlotTolerance);
     this.blockImportChannel = blockImportChannel;
     this.spec = spec;
@@ -167,9 +156,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     this.sizeGauge = sizeGauge;
     this.poolStatsCounters = poolStatsCounters;
     this.trackerFactory = BlockBlobSidecarsTracker::new;
-    this.isSuperNode = isSuperNode;
-    this.kzg = kzg;
-    this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
 
     initMetrics(sizeGauge, poolStatsCounters);
   }
@@ -189,10 +175,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       final UInt64 historicalSlotTolerance,
       final UInt64 futureSlotTolerance,
       final int maxTrackers,
-      final BlockBlobSidecarsTrackerFactory trackerFactory,
-      final boolean isSuperNode,
-      final KZG kzg,
-      final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher) {
+      final BlockBlobSidecarsTrackerFactory trackerFactory) {
     super(spec, futureSlotTolerance, historicalSlotTolerance);
     this.blockImportChannel = blockImportChannel;
     this.spec = spec;
@@ -206,9 +189,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     this.sizeGauge = sizeGauge;
     this.poolStatsCounters = poolStatsCounters;
     this.trackerFactory = trackerFactory;
-    this.isSuperNode = isSuperNode;
-    this.kzg = kzg;
-    this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
 
     initMetrics(sizeGauge, poolStatsCounters);
   }
@@ -233,8 +213,9 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   @Override
   public synchronized void onNewBlobSidecar(
       final BlobSidecar blobSidecar, final RemoteOrigin remoteOrigin) {
-    if (spec.atSlot(blobSidecar.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)
-        && !isActiveSuperNode.get()) {
+    if (spec.atSlot(blobSidecar.getSlot())
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
       return;
     }
     if (recentChainData.containsBlock(blobSidecar.getBlockRoot())) {
@@ -270,18 +251,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       countBlobSidecar(remoteOrigin);
       newBlobSidecarSubscribers.deliver(NewBlobSidecarSubscriber::onNewBlobSidecar, blobSidecar);
       if (remoteOrigin.equals(LOCAL_EL) && slotAndBlockRoot.getSlot().equals(getCurrentSlot())) {
-        if (isActiveSuperNode.get()) {
-          if (blobSidecarsTracker.isComplete()) {
-            LOG.info(
-                "Collected all blobSidecar from EL for {}, recovering data column sidecars",
-                slotAndBlockRoot.getSlot());
-            publishRecoveredDataColumnSidecars(blobSidecarsTracker);
-          } else {
-            LOG.debug("Collected blobSidecar from EL: {}", blobSidecar.toLogString());
-          }
-        } else {
-          publishRecoveredBlobSidecar(blobSidecar);
-        }
+        publishRecoveredBlobSidecar(blobSidecar);
       }
     } else {
       countDuplicateBlobSidecar(remoteOrigin);
@@ -294,25 +264,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     blobSidecarGossipPublisher.apply(blobSidecar).ifExceptionGetsHereRaiseABug();
   }
 
-  private void publishRecoveredDataColumnSidecars(
-      final BlockBlobSidecarsTracker blockBlobSidecarsTracker) {
-    final SignedBeaconBlock signedBeaconBlock = blockBlobSidecarsTracker.getBlock().orElseThrow();
-    final MiscHelpersFulu miscHelpersFulu =
-        MiscHelpersFulu.required(spec.atSlot(signedBeaconBlock.getSlot()).miscHelpers());
-    final List<DataColumnSidecar> dataColumnSidecars =
-        miscHelpersFulu.constructDataColumnSidecars(
-            signedBeaconBlock,
-            blockBlobSidecarsTracker.getBlobSidecars().values().stream()
-                .map(BlobSidecar::getBlob)
-                .toList(),
-            kzg);
-    LOG.info(
-        "Publishing {} data column sidecars for {}",
-        dataColumnSidecars.size(),
-        blockBlobSidecarsTracker.getSlotAndBlockRoot());
-    dataColumnSidecarPublisher.accept(dataColumnSidecars);
-  }
-
   private void countBlobSidecar(final RemoteOrigin origin) {
     switch (origin) {
       case RPC -> poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_RPC_SUBTYPE).inc();
@@ -321,6 +272,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
           poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_LOCAL_EL_SUBTYPE).inc();
       case LOCAL_PROPOSAL ->
           poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_LOCAL_PROPOSAL_SUBTYPE).inc();
+      case RECOVERED ->
+          poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_RECOVERED_SUBTYPE).inc();
     }
   }
 
@@ -336,6 +289,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
           poolStatsCounters
               .labels(COUNTER_SIDECAR_TYPE, COUNTER_LOCAL_PROPOSAL_DUPLICATE_SUBTYPE)
               .inc();
+      case RECOVERED ->
+          poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_RECOVERED_DUPLICATE_SUBTYPE).inc();
     }
   }
 
@@ -345,8 +300,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
       return;
     }
-    if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)
-        && !isActiveSuperNode.get()) {
+    if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
       return;
     }
     if (recentChainData.containsBlock(block.getRoot())) {
@@ -433,12 +387,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   @Override
   public void onSlot(final UInt64 slot) {
     super.onSlot(slot);
-    if (isSuperNode
-        && spec.isMilestoneSupported(SpecMilestone.FULU)
-        && spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)
-        && isActiveSuperNode.compareAndSet(false, true)) {
-      LOG.info("Activated super-node data column sidecars recovery");
-    }
 
     LOG.trace(
         "Trackers: {}",
@@ -451,7 +399,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
   @VisibleForTesting
   @Override
-  synchronized void prune(final UInt64 slotLimit) {
+  protected synchronized void prune(final UInt64 slotLimit) {
     final List<SlotAndBlockRoot> toRemove = new ArrayList<>();
     for (SlotAndBlockRoot slotAndBlockRoot : orderedBlobSidecarsTrackers) {
       if (slotAndBlockRoot.getSlot().isGreaterThan(slotLimit)) {
@@ -603,6 +551,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             case LOCAL_EL -> {} // only possible for blobs
             case LOCAL_PROPOSAL ->
                 poolStatsCounters.labels(COUNTER_BLOCK_TYPE, COUNTER_LOCAL_PROPOSAL_SUBTYPE).inc();
+            case RECOVERED ->
+                poolStatsCounters.labels(COUNTER_BLOCK_TYPE, COUNTER_RECOVERED_SUBTYPE).inc();
           }
         });
   }
@@ -620,6 +570,10 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             case LOCAL_PROPOSAL ->
                 poolStatsCounters
                     .labels(COUNTER_BLOCK_TYPE, COUNTER_LOCAL_PROPOSAL_DUPLICATE_SUBTYPE)
+                    .inc();
+            case RECOVERED ->
+                poolStatsCounters
+                    .labels(COUNTER_BLOCK_TYPE, COUNTER_RECOVERED_DUPLICATE_SUBTYPE)
                     .inc();
             case LOCAL_EL -> {} // only possible for blobs
           }

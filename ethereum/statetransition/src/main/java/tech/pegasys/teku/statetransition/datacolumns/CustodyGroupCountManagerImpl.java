@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -41,6 +43,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   private final ProposersDataManager proposersDataManager;
   private final CustodyGroupCountChannel custodyGroupCountChannel;
   private final CombinedChainDataClient combinedChainDataClient;
+  private final UInt256 nodeId;
 
   private UInt64 lastEpoch = UInt64.MAX_VALUE;
 
@@ -50,7 +53,8 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       final ProposersDataManager proposersDataManager,
       final CustodyGroupCountChannel custodyGroupCountChannel,
       final CombinedChainDataClient combinedChainDataClient,
-      final int initCustodyGroupCount) {
+      final int initCustodyGroupCount,
+      final UInt256 nodeId) {
     this.spec = spec;
     this.specConfigFulu = specConfigFulu;
     this.miscHelpersFulu =
@@ -61,6 +65,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     this.initCustodyGroupCount = initCustodyGroupCount;
     this.custodyGroupCount = new AtomicInteger(initCustodyGroupCount);
     this.custodyGroupSyncedCount = new AtomicInteger(0);
+    this.nodeId = nodeId;
   }
 
   @Override
@@ -107,6 +112,11 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   @Override
   public int getCustodyGroupCount() {
     return custodyGroupCount.get();
+  }
+
+  @Override
+  public List<UInt64> getCustodyColumnIndices() {
+    return miscHelpersFulu.computeCustodyColumnIndexes(nodeId, getCustodyGroupCount());
   }
 
   @Override

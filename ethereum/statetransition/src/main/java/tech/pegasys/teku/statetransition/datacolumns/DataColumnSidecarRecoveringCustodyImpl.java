@@ -26,11 +26,16 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
@@ -42,7 +47,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecarRecoveringCustody {
   private static final Logger LOG = LogManager.getLogger("das-nyota");
@@ -66,6 +71,9 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   private final Subscribers<DataColumnSidecarManager.ValidDataColumnSidecarsListener>
       validDataColumnSidecarsSubscribers = Subscribers.create(true);
 
+  private final Counter totalDataAvailabilityReconstructedColumns;
+  private final MetricsHistogram dataAvailabilityReconstructionTimeSeconds;
+
   public DataColumnSidecarRecoveringCustodyImpl(
       final DataColumnSidecarByRootCustody delegate,
       final AsyncRunner asyncRunner,
@@ -74,10 +82,11 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       final KZG kzg,
       final Consumer<DataColumnSidecar> dataColumnSidecarPublisher,
       final CustodyGroupCountManager custodyGroupCountManager,
-      final boolean isSuperNode,
       final int columnCount,
       final int groupCount,
-      final Function<UInt64, Duration> slotToRecoveryDelay) {
+      final Function<UInt64, Duration> slotToRecoveryDelay,
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider) {
     this.delegate = delegate;
     this.asyncRunner = asyncRunner;
     this.miscHelpers = miscHelpers;
@@ -87,11 +96,28 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     this.custodyGroupCountManager = custodyGroupCountManager;
     this.recoveryTasks =
         LimitedMap.createSynchronizedNatural(spec.getGenesisSpec().getSlotsPerEpoch());
-    this.isSuperNode = new AtomicBoolean(isSuperNode);
+    this.isSuperNode =
+        new AtomicBoolean(custodyGroupCountManager.getCustodyGroupCount() == groupCount);
     this.slotToRecoveryDelay = slotToRecoveryDelay;
     this.columnCount = columnCount;
     this.groupCount = groupCount;
     this.recoverColumnCount = columnCount / 2;
+    this.totalDataAvailabilityReconstructedColumns =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "data_availability_reconstructed_columns_total",
+            "Total count of reconstructed columns");
+    this.dataAvailabilityReconstructionTimeSeconds =
+        new MetricsHistogram(
+            metricsSystem,
+            timeProvider,
+            TekuMetricCategory.BEACON,
+            "data_availability_reconstruction_time_seconds",
+            "Time taken to reconstruct columns",
+            new double[] {
+              0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 5.0,
+              7.5, 10.0
+            });
   }
 
   @Override
@@ -125,15 +151,14 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   }
 
   @Override
-  public void onNewBlock(
-      final SignedBeaconBlock block, final Optional<BlobSidecarManager.RemoteOrigin> remoteOrigin) {
+  public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
     if (!isActiveSuperNode(block.getSlot())) {
       return;
     }
 
     if (remoteOrigin.isPresent()
-        && (remoteOrigin.get().equals(BlobSidecarManager.RemoteOrigin.LOCAL_EL)
-            || remoteOrigin.get().equals(BlobSidecarManager.RemoteOrigin.LOCAL_PROPOSAL))) {
+        && (remoteOrigin.get().equals(RemoteOrigin.LOCAL_EL)
+            || remoteOrigin.get().equals(RemoteOrigin.LOCAL_PROPOSAL))) {
       // skip locally produced blocks, we will get everything for it in custody w/o reconstruction
       return;
     }
@@ -219,6 +244,8 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       final BeaconBlock block, final SafeFuture<List<DataColumnSidecar>> list) {
     LOG.info("Starting data columns sidecars recovery for block: {}", block.getSlotAndBlockRoot());
 
+    final MetricsHistogram.Timer timer = dataAvailabilityReconstructionTimeSeconds.startTimer();
+
     list.thenAccept(
             sidecars -> {
               LOG.debug(
@@ -230,13 +257,15 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                       .map(DataColumnSidecar::getIndex)
                       .collect(Collectors.toUnmodifiableSet());
               final List<DataColumnSidecar> recoveredSidecars =
-                  miscHelpers.reconstructAllDataColumnSidecars(block, sidecars, kzg);
+                  miscHelpers.reconstructAllDataColumnSidecars(sidecars, kzg);
+              totalDataAvailabilityReconstructedColumns.inc(
+                  recoveredSidecars.size() - sidecars.size());
               recoveredSidecars.stream()
                   .filter(sidecar -> !existingSidecarsIndices.contains(sidecar.getIndex()))
                   .forEach(
                       dataColumnSidecar -> {
                         validDataColumnSidecarsSubscribers.forEach(
-                            l -> l.onNewValidSidecar(dataColumnSidecar));
+                            l -> l.onNewValidSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED));
                         delegate
                             .onNewValidatedDataColumnSidecar(dataColumnSidecar)
                             .ifExceptionGetsHereRaiseABug();
@@ -246,6 +275,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                   "Data column sidecars recovery finished for block: {}",
                   block.getSlotAndBlockRoot());
             })
+        .alwaysRun(timer.closeUnchecked())
         .ifExceptionGetsHereRaiseABug();
   }
 

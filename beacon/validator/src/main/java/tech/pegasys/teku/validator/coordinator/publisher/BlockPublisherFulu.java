@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
@@ -56,6 +57,7 @@ public class BlockPublisherFulu extends BlockPublisherPhase0 {
     List<Blob> blobs = blobSidecars.stream().map(BlobSidecar::getBlob).toList();
     final List<DataColumnSidecar> dataColumnSidecars =
         blockFactory.createDataColumnSidecars(block, blobs);
-    dataColumnSidecarGossipChannel.publishDataColumnSidecars(dataColumnSidecars);
+    dataColumnSidecarGossipChannel.publishDataColumnSidecars(
+        dataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
   }
 }

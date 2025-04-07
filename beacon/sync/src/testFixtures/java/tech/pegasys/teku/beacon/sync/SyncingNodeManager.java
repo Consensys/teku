@@ -62,7 +62,6 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustody;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
@@ -163,7 +162,6 @@ public class SyncingNodeManager {
             recentChainData,
             blockImporter,
             BlockBlobSidecarsTrackersPool.NOOP,
-            DataColumnSidecarRecoveringCustody.NOOP,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,

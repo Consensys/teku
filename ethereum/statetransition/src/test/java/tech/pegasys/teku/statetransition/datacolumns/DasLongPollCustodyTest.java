@@ -16,10 +16,12 @@ package tech.pegasys.teku.statetransition.datacolumns;
 import static java.time.Duration.ofMillis;
 import static java.time.Duration.ofSeconds;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
-import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -50,8 +52,7 @@ public class DasLongPollCustodyTest {
   final DataColumnSidecarDbAccessor dbAccessor =
       DataColumnSidecarDbAccessor.builder(delayedDb).spec(spec).build();
   final CanonicalBlockResolverStub blockResolver = new CanonicalBlockResolverStub(spec);
-  final UInt256 myNodeId = UInt256.ONE;
-
+  final CustodyGroupCountManager custodyGroupCountManager = mock(CustodyGroupCountManager.class);
   final SpecConfigFulu config =
       SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
   final int groupCount = config.getNumberOfCustodyGroups();
@@ -62,8 +63,7 @@ public class DasLongPollCustodyTest {
           blockResolver,
           dbAccessor,
           MinCustodyPeriodSlotCalculator.createFromSpec(spec),
-          CustodyGroupCountManager.NOOP,
-          myNodeId,
+          custodyGroupCountManager,
           groupCount);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
@@ -153,6 +153,9 @@ public class DasLongPollCustodyTest {
   void testPendingRequestIsExecutedWhenLongWriteQuickRead() throws Exception {
     // long DB write
     delayedDb.setDelay(ofMillis(10));
+    when(custodyGroupCountManager.getCustodyColumnIndices())
+        .thenReturn(
+            List.of(UInt64.valueOf(0), UInt64.valueOf(2), UInt64.valueOf(3), UInt64.valueOf(4)));
     custody.onNewValidatedDataColumnSidecar(sidecar10_0);
 
     advanceTimeGradually(ofMillis(1));
