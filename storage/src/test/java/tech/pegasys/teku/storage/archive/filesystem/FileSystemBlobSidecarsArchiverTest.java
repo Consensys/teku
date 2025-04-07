@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -57,14 +56,12 @@ public class FileSystemBlobSidecarsArchiverTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(SPEC);
 
   static Path testTempDir;
-  static StubAsyncRunner stubAsyncRunner;
   static FileSystemBlobSidecarsArchiver blobSidecarsArchiver;
 
   @BeforeAll
   static void beforeEach() throws IOException {
     testTempDir = Files.createTempDirectory("blobs");
-    stubAsyncRunner = new StubAsyncRunner();
-    blobSidecarsArchiver = new FileSystemBlobSidecarsArchiver(SPEC, testTempDir, stubAsyncRunner);
+    blobSidecarsArchiver = new FileSystemBlobSidecarsArchiver(SPEC, testTempDir);
   }
 
   @AfterEach

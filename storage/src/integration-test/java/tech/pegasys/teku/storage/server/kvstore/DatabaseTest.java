@@ -60,7 +60,6 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -127,7 +126,6 @@ public class DatabaseTest {
   private RecentChainData recentChainData;
   private UpdatableStore store;
   private final List<StorageSystem> storageSystems = new ArrayList<>();
-  private final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner();
 
   @BeforeEach
   public void setup() throws IOException {
@@ -141,8 +139,7 @@ public class DatabaseTest {
     this.chainProperties = new ChainProperties(spec);
     final Path blobsArchive = Files.createTempDirectory("blobs");
     tmpDirectories.add(blobsArchive.toFile());
-    this.blobSidecarsArchiver =
-        new FileSystemBlobSidecarsArchiver(spec, blobsArchive, stubAsyncRunner);
+    this.blobSidecarsArchiver = new FileSystemBlobSidecarsArchiver(spec, blobsArchive);
     genesisBlockAndState = chainBuilder.generateGenesis(genesisTime, true);
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
     genesisAnchor = AnchorPoint.fromGenesisState(spec, genesisBlockAndState.getState());

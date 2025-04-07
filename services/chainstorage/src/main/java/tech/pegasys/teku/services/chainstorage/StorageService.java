@@ -163,8 +163,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                       .getBlobsArchivePath()
                       .<BlobSidecarsArchiver>map(
                           path ->
-                              new FileSystemBlobSidecarsArchiver(
-                                  config.getSpec(), Path.of(path), storagePrunerAsyncRunner))
+                              new FileSystemBlobSidecarsArchiver(config.getSpec(), Path.of(path)))
                       .orElse(BlobSidecarsArchiver.NOOP);
 
               if (config.getSpec().isMilestoneSupported(SpecMilestone.DENEB)) {

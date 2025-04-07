@@ -34,7 +34,6 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -53,13 +52,10 @@ public class FileSystemBlobSidecarsArchiver implements BlobSidecarsArchiver {
 
   private final Spec spec;
   private final Path baseDirectory;
-  private final AsyncRunner asyncRunner;
 
-  public FileSystemBlobSidecarsArchiver(
-      final Spec spec, final Path baseDirectory, final AsyncRunner asyncRunner) {
+  public FileSystemBlobSidecarsArchiver(final Spec spec, final Path baseDirectory) {
     this.spec = spec;
     this.baseDirectory = baseDirectory;
-    this.asyncRunner = asyncRunner;
   }
 
   @Override
