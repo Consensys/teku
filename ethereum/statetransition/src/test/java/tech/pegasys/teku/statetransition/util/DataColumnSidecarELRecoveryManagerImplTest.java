@@ -91,7 +91,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
 
   @BeforeEach
   public void setup() {
-    when(executionLayer.engineGetBlobs(any(), eq(currentSlot)))
+    when(executionLayer.engineGetBlobAndProofs(any(), eq(currentSlot)))
         .thenReturn(SafeFuture.completedFuture(List.of()));
     when(kzg.computeCellsAndProofs(any())).thenReturn(kzgCellAndProofs);
     setSlot(currentSlot);
@@ -129,7 +129,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
     dataColumnSidecarELRecoveryManagerCustom.onNewBlock(block2, Optional.empty());
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
-    verify(executionLayer).engineGetBlobs(any(), any());
+    verify(executionLayer).engineGetBlobAndProofs(any(), any());
   }
 
   @Test
@@ -168,7 +168,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
         dataColumnSidecar, RemoteOrigin.GOSSIP);
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
-    verify(executionLayer).engineGetBlobs(any(), any());
+    verify(executionLayer).engineGetBlobAndProofs(any(), any());
   }
 
   @Test
@@ -195,13 +195,13 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
                     new BlobAndProof(blobSidecar.getBlob(), dataStructureUtil.randomKZGProof()))
             .map(Optional::of)
             .toList();
-    when(executionLayer.engineGetBlobs(any(), any()))
+    when(executionLayer.engineGetBlobAndProofs(any(), any()))
         .thenReturn(SafeFuture.completedFuture(blobAndProofs));
     dataColumnSidecarELRecoveryManager.onNewBlock(block, Optional.empty());
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
-    verify(executionLayer).engineGetBlobs(any(), any());
+    verify(executionLayer).engineGetBlobAndProofs(any(), any());
     verifyNoInteractions(dataColumnSidecarPublisher);
   }
 
@@ -219,7 +219,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
                     new BlobAndProof(blobSidecar.getBlob(), dataStructureUtil.randomKZGProof()))
             .map(Optional::of)
             .toList();
-    when(executionLayer.engineGetBlobs(any(), any()))
+    when(executionLayer.engineGetBlobAndProofs(any(), any()))
         .thenReturn(SafeFuture.completedFuture(blobAndProofs));
     dataColumnSidecarELRecoveryManager.onNewBlock(block, Optional.empty());
 
