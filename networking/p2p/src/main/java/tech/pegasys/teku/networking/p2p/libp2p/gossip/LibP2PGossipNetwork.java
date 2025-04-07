@@ -61,7 +61,7 @@ public class LibP2PGossipNetwork implements GossipNetwork {
   private final LabelledSuppliedMetric meshPeersJoinedGauge;
   private final LabelledSuppliedMetric meshPeersLeftGauge;
 
-  @SuppressWarnings("UnusedVariable") // Сохранено для будущего использования
+  @SuppressWarnings("UnusedVariable") // Saved for future use
   private final AsyncRunner asyncRunner;
 
   // Track gauges by topic to allow cleanup
