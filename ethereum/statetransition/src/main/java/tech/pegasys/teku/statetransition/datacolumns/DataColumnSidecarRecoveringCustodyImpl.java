@@ -82,7 +82,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       final KZG kzg,
       final Consumer<DataColumnSidecar> dataColumnSidecarPublisher,
       final CustodyGroupCountManager custodyGroupCountManager,
-      final boolean isSuperNode,
       final int columnCount,
       final int groupCount,
       final Function<UInt64, Duration> slotToRecoveryDelay,
@@ -97,7 +96,8 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     this.custodyGroupCountManager = custodyGroupCountManager;
     this.recoveryTasks =
         LimitedMap.createSynchronizedNatural(spec.getGenesisSpec().getSlotsPerEpoch());
-    this.isSuperNode = new AtomicBoolean(isSuperNode);
+    this.isSuperNode =
+        new AtomicBoolean(custodyGroupCountManager.getCustodyGroupCount() == groupCount);
     this.slotToRecoveryDelay = slotToRecoveryDelay;
     this.columnCount = columnCount;
     this.groupCount = groupCount;
