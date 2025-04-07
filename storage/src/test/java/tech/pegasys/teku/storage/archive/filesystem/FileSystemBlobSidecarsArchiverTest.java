@@ -14,21 +14,23 @@
 package tech.pegasys.teku.storage.archive.filesystem;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableListTypeDefinition;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -57,12 +59,14 @@ public class FileSystemBlobSidecarsArchiverTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(SPEC);
 
   static Path testTempDir;
+  static StubAsyncRunner stubAsyncRunner;
   static FileSystemBlobSidecarsArchiver blobSidecarsArchiver;
 
   @BeforeAll
   static void beforeEach() throws IOException {
     testTempDir = Files.createTempDirectory("blobs");
-    blobSidecarsArchiver = new FileSystemBlobSidecarsArchiver(SPEC, testTempDir);
+    stubAsyncRunner = new StubAsyncRunner();
+    blobSidecarsArchiver = new FileSystemBlobSidecarsArchiver(SPEC, testTempDir, stubAsyncRunner);
   }
 
   @AfterEach
@@ -82,12 +86,13 @@ public class FileSystemBlobSidecarsArchiverTest {
   }
 
   @Test
-  void testResolve() {
+  void testResolveArchivePath() {
     final SlotAndBlockRootAndBlobIndex slotAndBlockRootAndBlobIndex =
         new SlotAndBlockRootAndBlobIndex(
             UInt64.ONE, dataStructureUtil.randomBytes32(), UInt64.ZERO);
     final Path path =
-        blobSidecarsArchiver.resolve(slotAndBlockRootAndBlobIndex.getSlotAndBlockRoot());
+        blobSidecarsArchiver.resolveArchivePath(
+            slotAndBlockRootAndBlobIndex.getSlotAndBlockRoot().getBlockRoot());
 
     // Check if the file path is correct. Doesn't check the intermediate directories.
     assertTrue(path.toString().startsWith(testTempDir.toString()));
@@ -96,61 +101,79 @@ public class FileSystemBlobSidecarsArchiverTest {
             .endsWith(slotAndBlockRootAndBlobIndex.getBlockRoot().toUnprefixedHexString()));
   }
 
+  @ParameterizedTest
+  @MethodSource("testResolveIndexPathArguments")
+  void testResolveIndexPath(final UInt64 slot, final String expectedIndexFileName) {
+    final Path actualIndexFile = blobSidecarsArchiver.resolveIndexFile(slot);
+    assertThat(actualIndexFile).hasFileName(expectedIndexFileName);
+  }
+
   @Test
   void testArchiveWithEmptyList() {
-    assertTrue(blobSidecarsArchiver.archive(dataStructureUtil.randomSlotAndBlockRoot(), List.of()));
-  }
-
-  @Test
-  void testArchiveWithNullList() {
-    assertTrue(blobSidecarsArchiver.archive(dataStructureUtil.randomSlotAndBlockRoot(), null));
-  }
-
-  @Test
-  void testWriteBlobSidecar() throws IOException {
     final SlotAndBlockRoot slotAndBlockRoot = dataStructureUtil.randomSlotAndBlockRoot();
-    final List<BlobSidecar> blobSidecars = List.of(createBlobSidecar());
-    assertTrue(blobSidecarsArchiver.archive(slotAndBlockRoot, blobSidecars));
+    // archiving
+    blobSidecarsArchiver.archive(slotAndBlockRoot, List.of());
 
-    // Check if the file was written
-    try (final FileInputStream indexFile =
-            new FileInputStream(
-                testTempDir.resolve(FileSystemBlobSidecarsArchiver.INDEX_FILE).toFile());
-        final FileInputStream blobSidecarsFile =
-            new FileInputStream(blobSidecarsArchiver.resolve(slotAndBlockRoot).toFile())) {
-      final String indexFileContent = new String(indexFile.readAllBytes(), StandardCharsets.UTF_8);
-      final String expectedIndexFileContent =
-          slotAndBlockRoot.getSlot().toString()
-              + " "
-              + slotAndBlockRoot.getBlockRoot().toUnprefixedHexString();
-      // Windows new lines are different, so don't include new lines in the comparison.
-      assertTrue(indexFileContent.contains(expectedIndexFileContent));
-
-      final String blobSidecarsJson =
-          new String(blobSidecarsFile.readAllBytes(), StandardCharsets.UTF_8);
-
-      final DeserializableListTypeDefinition<BlobSidecar> blobSidecarsType =
-          new DeserializableListTypeDefinition<>(
-              schemaDefinitionsDeneb.getBlobSidecarSchema().getJsonTypeDefinition());
-
-      assertThat(JsonUtil.parse(blobSidecarsJson, blobSidecarsType)).isEqualTo(blobSidecars);
-    }
+    // retrieving
+    final SafeFuture<Optional<List<BlobSidecar>>> blobSidecars =
+        blobSidecarsArchiver.retrieve(slotAndBlockRoot);
+    stubAsyncRunner.executeDueActions();
+    // empty list
+    assertThat(SafeFutureAssert.safeJoin(blobSidecars)).hasValue(List.of());
   }
 
   @Test
-  void testFileAlreadyExists() {
-    final SlotAndBlockRoot slotAndBlockRoot = dataStructureUtil.randomSlotAndBlockRoot();
-    final List<BlobSidecar> blobSidecars = List.of(createBlobSidecar());
-    assertTrue(blobSidecarsArchiver.archive(slotAndBlockRoot, blobSidecars));
-    // Try to write the same file again
-    assertFalse(blobSidecarsArchiver.archive(slotAndBlockRoot, blobSidecars));
+  void testArchiveAndRetrieveBlobSidecars() {
+    final UInt64 slot = UInt64.valueOf(42);
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(slot, dataStructureUtil.randomBytes32());
+    final List<BlobSidecar> blobSidecars =
+        List.of(createBlobSidecar(slot), createBlobSidecar(slot));
+
+    // archiving
+    blobSidecarsArchiver.archive(slotAndBlockRoot, blobSidecars);
+
+    // test index file exists
+    assertThat(testTempDir.resolve("0-99999_index.dat")).exists();
+
+    // retrieving by root
+    final SafeFuture<Optional<List<BlobSidecar>>> retrievedBlobSidecarsByRoot =
+        blobSidecarsArchiver.retrieve(slotAndBlockRoot.getBlockRoot());
+    stubAsyncRunner.executeDueActions();
+
+    assertThat(SafeFutureAssert.safeJoin(retrievedBlobSidecarsByRoot)).hasValue(blobSidecars);
+
+    // retrieving by slot (using index file)
+    final SafeFuture<Optional<List<BlobSidecar>>> retrievedBlobSidecarsBySlot =
+        blobSidecarsArchiver.retrieve(slotAndBlockRoot.getSlot());
+    stubAsyncRunner.executeDueActions();
+
+    assertThat(SafeFutureAssert.safeJoin(retrievedBlobSidecarsBySlot)).hasValue(blobSidecars);
   }
 
-  private BlobSidecar createBlobSidecar() {
+  private BlobSidecar createBlobSidecar(final UInt64 slot) {
     final SignedBeaconBlock signedBeaconBlock =
-        dataStructureUtil.randomSignedBeaconBlockWithCommitments(1);
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(slot, 1);
     final Blob blob = dataStructureUtil.randomBlob();
     final SszKZGProof proof = dataStructureUtil.randomSszKZGProof();
     return miscHelpersDeneb.constructBlobSidecar(signedBeaconBlock, UInt64.ZERO, blob, proof);
+  }
+
+  private static Stream<Arguments> testResolveIndexPathArguments() {
+    return Stream.of(
+        Arguments.of(UInt64.valueOf(0L), "0-99999_index.dat"),
+        Arguments.of(UInt64.valueOf(42L), "0-99999_index.dat"),
+        Arguments.of(UInt64.valueOf(99999L), "0-99999_index.dat"),
+        Arguments.of(UInt64.valueOf(100000L), "100000-199999_index.dat"),
+        Arguments.of(UInt64.valueOf(100001L), "100000-199999_index.dat"),
+        Arguments.of(UInt64.valueOf(199999L), "100000-199999_index.dat"),
+        Arguments.of(UInt64.valueOf(200000L), "200000-299999_index.dat"),
+        Arguments.of(UInt64.valueOf(999999999L), "999900000-999999999_index.dat"),
+        Arguments.of(UInt64.valueOf(1000000000L), "1000000000-1000099999_index.dat"),
+        Arguments.of(UInt64.valueOf(1L), "0-99999_index.dat"),
+        Arguments.of(UInt64.valueOf(99998L), "0-99999_index.dat"),
+        Arguments.of(UInt64.valueOf(99999L), "0-99999_index.dat"),
+        Arguments.of(UInt64.valueOf(100000L), "100000-199999_index.dat"),
+        Arguments.of(UInt64.valueOf(123456789L), "123400000-123499999_index.dat"));
   }
 }

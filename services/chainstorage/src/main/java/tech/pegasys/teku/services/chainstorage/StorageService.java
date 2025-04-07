@@ -34,6 +34,7 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.storage.api.BlobSidecarsArchiveChannel;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
@@ -163,8 +164,13 @@ public class StorageService extends Service implements StorageServiceFacade {
                       .getBlobsArchivePath()
                       .<BlobSidecarsArchiver>map(
                           path ->
-                              new FileSystemBlobSidecarsArchiver(config.getSpec(), Path.of(path)))
+                              new FileSystemBlobSidecarsArchiver(
+                                  config.getSpec(), Path.of(path), storagePrunerAsyncRunner))
                       .orElse(BlobSidecarsArchiver.NOOP);
+
+              final EventChannels eventChannels = serviceConfig.getEventChannels();
+
+              eventChannels.subscribe(BlobSidecarsArchiveChannel.class, blobSidecarsArchiver);
 
               if (config.getSpec().isMilestoneSupported(SpecMilestone.DENEB)) {
                 blobsPruner =
@@ -184,7 +190,6 @@ public class StorageService extends Service implements StorageServiceFacade {
                             pruningActiveLabelledGauge,
                             config.isStoreNonCanonicalBlocksEnabled()));
               }
-              final EventChannels eventChannels = serviceConfig.getEventChannels();
               chainStorage =
                   ChainStorage.create(
                       database,

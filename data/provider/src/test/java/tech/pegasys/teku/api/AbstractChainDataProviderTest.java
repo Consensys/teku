@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.BeaconStateBuilderAltair;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.api.BlobSidecarsArchiveChannel;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -64,6 +65,8 @@ public abstract class AbstractChainDataProviderTest {
   protected RewardCalculator rewardCalculatorMock = mock(RewardCalculator.class);
   protected final CombinedChainDataClient mockCombinedChainDataClient =
       mock(CombinedChainDataClient.class);
+  protected final BlobSidecarsArchiveChannel blobSidecarsArchiveChannel =
+      mock(BlobSidecarsArchiveChannel.class);
 
   protected abstract Spec getSpec();
 
@@ -104,7 +107,9 @@ public abstract class AbstractChainDataProviderTest {
     this.blockSelectorFactory = spy(new BlockSelectorFactory(spec, mockCombinedChainDataClient));
     this.stateSelectorFactory = spy(new StateSelectorFactory(spec, mockCombinedChainDataClient));
     this.blobSidecarSelectorFactory =
-        spy(new BlobSidecarSelectorFactory(spec, mockCombinedChainDataClient));
+        spy(
+            new BlobSidecarSelectorFactory(
+                spec, mockCombinedChainDataClient, blobSidecarsArchiveChannel));
     final ChainDataProvider provider =
         new ChainDataProvider(
             spec,

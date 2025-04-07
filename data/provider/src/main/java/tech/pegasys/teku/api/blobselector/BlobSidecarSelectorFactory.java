@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.metadata.BlobSidecarsAndMetaData;
+import tech.pegasys.teku.storage.api.BlobSidecarsArchiveChannel;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -35,8 +36,15 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
 
   private final Spec spec;
 
-  public BlobSidecarSelectorFactory(final Spec spec, final CombinedChainDataClient client) {
+  @SuppressWarnings("unused")
+  private final BlobSidecarsArchiveChannel blobSidecarsArchiveChannel;
+
+  public BlobSidecarSelectorFactory(
+      final Spec spec,
+      final CombinedChainDataClient client,
+      final BlobSidecarsArchiveChannel blobSidecarsArchiveChannel) {
     super(client);
+    this.blobSidecarsArchiveChannel = blobSidecarsArchiveChannel;
     this.spec = spec;
   }
 

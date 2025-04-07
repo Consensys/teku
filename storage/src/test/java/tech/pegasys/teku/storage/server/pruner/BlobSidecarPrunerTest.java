@@ -55,7 +55,7 @@ public class BlobSidecarPrunerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final Database database = mock(Database.class);
   private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
-  private final BlobSidecarsArchiver blobSidecarsArchiver = BlobSidecarsArchiver.NOOP;
+  private final BlobSidecarsArchiver blobSidecarsArchiver = mock(BlobSidecarsArchiver.class);
 
   private final BlobSidecarPruner blobsPruner =
       new BlobSidecarPruner(

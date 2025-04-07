@@ -177,15 +177,15 @@ public class CombinedChainDataClient {
 
   public SafeFuture<List<BlobSidecar>> getBlobSidecars(
       final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> indices) {
-    final Optional<List<BlobSidecar>> maybeBlobSidecars =
-        recentChainData.getBlobSidecars(slotAndBlockRoot);
-    if (maybeBlobSidecars.isPresent()) {
-      return SafeFuture.completedFuture(filterBlobSidecars(maybeBlobSidecars.get(), indices));
-    }
-    return historicalChainData
-        .getBlobSidecarKeys(slotAndBlockRoot)
-        .thenApply(keys -> filterBlobSidecarKeys(keys, indices))
-        .thenCompose(this::getBlobSidecars);
+    return recentChainData
+        .getBlobSidecars(slotAndBlockRoot)
+        .map(blobSidecars -> SafeFuture.completedFuture(filterBlobSidecars(blobSidecars, indices)))
+        .orElseGet(
+            () ->
+                historicalChainData
+                    .getBlobSidecarKeys(slotAndBlockRoot)
+                    .thenApply(keys -> filterBlobSidecarKeys(keys, indices))
+                    .thenCompose(this::getBlobSidecars));
   }
 
   public SafeFuture<List<BlobSidecar>> getAllBlobSidecars(
@@ -516,13 +516,14 @@ public class CombinedChainDataClient {
       final SlotAndBlockRootAndBlobIndex key) {
     final Optional<List<BlobSidecar>> maybeBlobSidecars =
         recentChainData.getBlobSidecars(key.getSlotAndBlockRoot());
-    if (maybeBlobSidecars.isPresent()) {
-      return key.getBlobIndex().isLessThan(maybeBlobSidecars.get().size())
-          ? SafeFuture.completedFuture(
-              Optional.of(maybeBlobSidecars.get().get(key.getBlobIndex().intValue())))
-          : SafeFuture.completedFuture(Optional.empty());
-    }
-    return historicalChainData.getBlobSidecar(key);
+    return maybeBlobSidecars
+        .<SafeFuture<Optional<BlobSidecar>>>map(
+            blobSidecars ->
+                key.getBlobIndex().isLessThan(blobSidecars.size())
+                    ? SafeFuture.completedFuture(
+                        Optional.of(blobSidecars.get(key.getBlobIndex().intValue())))
+                    : SafeFuture.completedFuture(Optional.empty()))
+        .orElseGet(() -> historicalChainData.getBlobSidecar(key));
   }
 
   public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(

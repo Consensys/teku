@@ -11,37 +11,31 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.archive;
+package tech.pegasys.teku.storage.api;
 
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.storage.api.BlobSidecarsArchiveChannel;
 
-public interface BlobSidecarsArchiver extends BlobSidecarsArchiveChannel {
+public interface BlobSidecarsArchiveChannel extends ChannelInterface {
 
-  SafeFuture<Optional<List<BlobSidecar>>> EMPTY_FUTURE =
-      SafeFuture.completedFuture(Optional.empty());
+  void archive(SlotAndBlockRoot slotAndBlockRoot, List<BlobSidecar> blobSidecars);
 
-  BlobSidecarsArchiver NOOP =
-      new BlobSidecarsArchiver() {
-        @Override
-        public void archive(
-            final SlotAndBlockRoot slotAndBlockRoot, final List<BlobSidecar> blobSidecars) {}
+  SafeFuture<Optional<List<BlobSidecar>>> retrieve(Bytes32 blockRoot, Optional<UInt64> maybeSlot);
 
-        @Override
-        public SafeFuture<Optional<List<BlobSidecar>>> retrieve(
-            final Bytes32 blockRoot, final Optional<UInt64> maybeSlot) {
-          return EMPTY_FUTURE;
-        }
+  SafeFuture<Optional<List<BlobSidecar>>> retrieve(UInt64 slot);
 
-        @Override
-        public SafeFuture<Optional<List<BlobSidecar>>> retrieve(final UInt64 slot) {
-          return EMPTY_FUTURE;
-        }
-      };
+  default SafeFuture<Optional<List<BlobSidecar>>> retrieve(final Bytes32 blockRoot) {
+    return retrieve(blockRoot, Optional.empty());
+  }
+
+  default SafeFuture<Optional<List<BlobSidecar>>> retrieve(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return retrieve(slotAndBlockRoot.getBlockRoot(), Optional.of(slotAndBlockRoot.getSlot()));
+  }
 }

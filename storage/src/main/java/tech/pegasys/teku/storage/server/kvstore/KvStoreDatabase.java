@@ -1010,14 +1010,8 @@ public class KvStoreDatabase implements Database {
         }
 
         if (!keys.isEmpty()) {
-          // Attempt to archive the BlobSidecars.
           final SlotAndBlockRoot slotAndBlockRoot = keys.getFirst().getSlotAndBlockRoot();
-          final boolean blobSidecarArchived =
-              blobSidecarsArchiver.archive(slotAndBlockRoot, blobSidecars);
-          if (!blobSidecarArchived) {
-            LOG.error("Failed to archive and prune BlobSidecars. Stopping pruning");
-            break;
-          }
+          blobSidecarsArchiver.archive(slotAndBlockRoot, blobSidecars);
         }
 
         // Remove the BlobSidecars from the database.
