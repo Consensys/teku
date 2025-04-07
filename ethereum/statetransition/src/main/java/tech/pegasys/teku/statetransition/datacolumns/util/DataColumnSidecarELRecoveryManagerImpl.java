@@ -107,15 +107,24 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   @Override
   public void onNewDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
-    if (!spec.atSlot(dataColumnSidecar.getSlot())
-        .getMilestone()
-        .isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+    LOG.debug(
+        "Received data column sidecar {} from {}", dataColumnSidecar.toLogString(), remoteOrigin);
+    if (spec.atSlot(dataColumnSidecar.getSlot()).getMilestone().isLessThan(SpecMilestone.FULU)) {
+      LOG.debug(
+          "Received data column sidecar {} before FULU. Ignoring.",
+          dataColumnSidecar.toLogString());
       return;
     }
     if (recentChainData.containsBlock(dataColumnSidecar.getBlockRoot())) {
+      LOG.debug(
+          "Data column sidecar {} is from already imported block. Ignoring.",
+          dataColumnSidecar.toLogString());
       return;
     }
     if (shouldIgnoreItemAtSlot(dataColumnSidecar.getSlot())) {
+      LOG.debug(
+          "Data column sidecar {} is too old or from the future. Ignoring.",
+          dataColumnSidecar.toLogString());
       return;
     }
 
@@ -203,16 +212,17 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   @Override
   public synchronized void onNewBlock(
       final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
-    if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
-      return;
-    }
-    if (!spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+    LOG.debug("Received block {} from {}", block.getSlotAndBlockRoot(), remoteOrigin);
+    if (spec.atSlot(block.getSlot()).getMilestone().isLessThan(SpecMilestone.FULU)) {
+      LOG.debug("Received block {} before FULU. Ignoring.", block.getSlotAndBlockRoot());
       return;
     }
     if (recentChainData.containsBlock(block.getRoot())) {
+      LOG.debug("Block {} is already imported. Ignoring.", block.getSlotAndBlockRoot());
       return;
     }
     if (shouldIgnoreItemAtSlot(block.getSlot())) {
+      LOG.debug("Block {} is too old or from the future. Ignoring.", block.getSlotAndBlockRoot());
       return;
     }
     if (createRecoveryTaskFromBlock(block)) {
@@ -276,9 +286,16 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
 
   private void onFirstSeen(
       final SlotAndBlockRoot slotAndBlockRoot, final Optional<RemoteOrigin> remoteOrigin) {
+    LOG.debug(
+        "Data from {} is first seen, checking if recovery is needed",
+        slotAndBlockRoot.getBlockRoot());
     final boolean isLocalBlockProductionOrRecovered =
         remoteOrigin.map(ro -> Set.of(LOCAL_PROPOSAL, RECOVERED).contains(ro)).orElse(false);
     if (isLocalBlockProductionOrRecovered) {
+      LOG.debug(
+          "Data from {} is produced by {}. Recovery is not needed.",
+          slotAndBlockRoot.getBlockRoot(),
+          remoteOrigin);
       return;
     }
 
