@@ -90,7 +90,7 @@ public class FileSystemBlobSidecarsArchiver implements BlobSidecarsArchiver {
                 StandardOpenOption.APPEND)) {
       if (blobSidecars.isEmpty()) {
         // empty list
-        output.write("[]".getBytes());
+        output.write("[]".getBytes(StandardCharsets.UTF_8));
       } else {
         writeBlobSidecars(output, slotAndBlockRoot.getSlot(), blobSidecars);
       }
