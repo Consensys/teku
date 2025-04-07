@@ -95,7 +95,9 @@ public class EthereumTypes {
 
   public static final StringValueTypeDefinition<SpecMilestone> MILESTONE_TYPE =
       new EnumTypeDefinition<>(
-          SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT), Set.of());
+          SpecMilestone.class,
+          milestone -> milestone.name().toLowerCase(Locale.ROOT),
+          Set.of(SpecMilestone.FULU)); // TODO-fulu eventually we remove this ignore
 
   public static final EnumHeaderTypeDefinition<SpecMilestone> ETH_CONSENSUS_HEADER_TYPE =
       new EnumHeaderTypeDefinition.EnumTypeHeaderDefinitionBuilder<>(
@@ -105,6 +107,8 @@ public class EthereumTypes {
           .description(
               "Required in response so client can deserialize returned json or ssz data more effectively.")
           .example("phase0")
+          .excludedEnumerations(
+              Set.of(SpecMilestone.FULU)) // TODO-fulu eventually we remove this ignore
           .build();
 
   public static final BooleanHeaderTypeDefinition ETH_HEADER_EXECUTION_PAYLOAD_BLINDED_TYPE =

@@ -44,6 +44,7 @@ public class TestSpecFactory {
       case CAPELLA -> createMinimalCapella();
       case DENEB -> createMinimalDeneb();
       case ELECTRA -> createMinimalElectra();
+      case FULU -> createMinimalFulu();
     };
   }
 
@@ -55,6 +56,7 @@ public class TestSpecFactory {
       case CAPELLA -> createMainnetCapella();
       case DENEB -> createMainnetDeneb();
       case ELECTRA -> createMainnetElectra();
+      case FULU -> createMainnetFulu();
     };
   }
 
@@ -118,6 +120,12 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.ELECTRA);
   }
 
+  public static Spec createMinimalFulu() {
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
+        getFuluSpecConfig(Eth2Network.MINIMAL);
+    return create(specConfig, SpecMilestone.FULU);
+  }
+
   /**
    * Create a spec that forks to altair at the provided slot
    *
@@ -179,6 +187,19 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.ELECTRA);
   }
 
+  /**
+   * Create a spec that forks to Fulu at the provided epoch
+   *
+   * @param fuluForkEpoch The Fulu fork epoch
+   * @return A spec with Fulu enabled, forking to Fulu at the given epoch
+   */
+  public static Spec createMinimalWithFuluForkEpoch(final UInt64 fuluForkEpoch) {
+    final SpecConfigAndParent<? extends SpecConfig> config =
+        getFuluSpecConfig(
+            Eth2Network.MINIMAL, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, fuluForkEpoch);
+    return create(config, SpecMilestone.FULU);
+  }
+
   public static Spec createMinimalPhase0() {
     final SpecConfigAndParent<? extends SpecConfig> configAndParent =
         SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
@@ -221,6 +242,12 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.ELECTRA);
   }
 
+  public static Spec createMainnetFulu() {
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
+        getFuluSpecConfig(Eth2Network.MAINNET);
+    return create(specConfig, SpecMilestone.FULU);
+  }
+
   public static Spec createPhase0(final SpecConfigAndParent<? extends SpecConfig> config) {
     return create(config, SpecMilestone.PHASE0);
   }
@@ -241,37 +268,39 @@ public class TestSpecFactory {
       final SpecMilestone specMilestone,
       final Eth2Network network,
       final Consumer<SpecConfigBuilder> configModifier) {
-    final Consumer<SpecConfigBuilder> defaultModifier =
-        switch (specMilestone) {
-          case PHASE0 -> __ -> {};
-          case ALTAIR -> builder -> builder.altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO));
-          case BELLATRIX ->
-              builder ->
-                  builder
-                      .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                      .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO));
-          case CAPELLA ->
-              builder ->
-                  builder
-                      .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                      .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
-                      .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO));
-          case DENEB ->
-              builder ->
-                  builder
-                      .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                      .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
-                      .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                      .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO));
-          case ELECTRA ->
-              builder ->
-                  builder
-                      .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                      .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
-                      .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                      .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
-                      .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO));
-        };
+
+    Consumer<SpecConfigBuilder> defaultModifier = __ -> {};
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
+      defaultModifier =
+          defaultModifier.andThen(
+              builder -> builder.altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO)));
+    }
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
+      defaultModifier =
+          defaultModifier.andThen(
+              builder -> builder.bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO)));
+    }
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      defaultModifier =
+          defaultModifier.andThen(
+              builder -> builder.capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO)));
+    }
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+      defaultModifier =
+          defaultModifier.andThen(
+              builder -> builder.denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO)));
+    }
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      defaultModifier =
+          defaultModifier.andThen(
+              builder -> builder.electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO)));
+    }
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      defaultModifier =
+          defaultModifier.andThen(
+              builder -> builder.fuluBuilder(f -> f.fuluForkEpoch(UInt64.ZERO)));
+    }
+
     return create(
         SpecConfigLoader.loadConfig(network.configName(), defaultModifier.andThen(configModifier)),
         specMilestone);
@@ -423,6 +452,46 @@ public class TestSpecFactory {
             }));
   }
 
+  private static SpecConfigAndParent<? extends SpecConfig> getFuluSpecConfig(
+      final Eth2Network network) {
+    return getFuluSpecConfig(network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO);
+  }
+
+  private static SpecConfigAndParent<? extends SpecConfig> getFuluSpecConfig(
+      final Eth2Network network,
+      final UInt64 capellaForkEpoch,
+      final UInt64 denebForkEpoch,
+      final UInt64 electraForkEpoch,
+      final UInt64 fuluForkEpoch) {
+    return getFuluSpecConfig(
+        network,
+        builder ->
+            builder
+                .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
+                .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch))
+                .electraBuilder(e -> e.electraForkEpoch(electraForkEpoch))
+                .fuluBuilder(f -> f.fuluForkEpoch(fuluForkEpoch)));
+  }
+
+  private static SpecConfigAndParent<? extends SpecConfig> getFuluSpecConfig(
+      final Eth2Network network, final Consumer<SpecConfigBuilder> configAdapter) {
+    return requireFulu(
+        SpecConfigLoader.loadConfig(
+            network.configName(),
+            builder -> {
+              builder
+                  .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                  .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                  .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                  .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
+                  .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO))
+                  .fuluBuilder(f -> f.fuluForkEpoch(UInt64.ZERO));
+              configAdapter.accept(builder);
+            }));
+  }
+
   public static Spec createMinimalWithCapellaDenebAndElectraForkEpoch(
       final UInt64 capellaForkEpoch, final UInt64 denebForkEpoch, final UInt64 electraForkEpoch) {
     final SpecConfigAndParent<? extends SpecConfig> config =
@@ -463,6 +532,12 @@ public class TestSpecFactory {
   private static SpecConfigAndParent<? extends SpecConfig> requireElectra(
       final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
     checkArgument(specConfigAndParent.specConfig().toVersionElectra().isPresent());
+    return specConfigAndParent;
+  }
+
+  private static SpecConfigAndParent<? extends SpecConfig> requireFulu(
+      final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
+    checkArgument(specConfigAndParent.specConfig().toVersionFulu().isPresent());
     return specConfigAndParent;
   }
 }

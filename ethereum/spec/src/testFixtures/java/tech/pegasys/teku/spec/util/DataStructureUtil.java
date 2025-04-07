@@ -1924,7 +1924,7 @@ public final class DataStructureUtil {
       case BELLATRIX -> stateBuilderBellatrix(validatorCount, numItemsInSszLists);
       case CAPELLA -> stateBuilderCapella(validatorCount, numItemsInSszLists);
       case DENEB -> stateBuilderDeneb(validatorCount, numItemsInSszLists);
-      case ELECTRA -> stateBuilderElectra(validatorCount, numItemsInSszLists);
+      case ELECTRA, FULU -> stateBuilderElectra(validatorCount, numItemsInSszLists);
     };
   }
 
