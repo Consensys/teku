@@ -42,7 +42,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.metadata.BlobSidecarsAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.storage.api.BlobSidecarsArchiveChannel;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -50,8 +49,6 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 public class BlobSidecarSelectorFactoryTest {
 
   private final CombinedChainDataClient client = mock(CombinedChainDataClient.class);
-  private final BlobSidecarsArchiveChannel blobSidecarsArchiveChannel =
-      mock(BlobSidecarsArchiveChannel.class);
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil data = new DataStructureUtil(spec);
   private final List<UInt64> indices = List.of(UInt64.ZERO, UInt64.ONE);
@@ -59,7 +56,7 @@ public class BlobSidecarSelectorFactoryTest {
   private final List<BlobSidecar> blobSidecars = data.randomBlobSidecars(3);
 
   private final BlobSidecarSelectorFactory blobSidecarSelectorFactory =
-      new BlobSidecarSelectorFactory(spec, client, blobSidecarsArchiveChannel);
+      new BlobSidecarSelectorFactory(spec, client);
 
   @Test
   public void headSelector_shouldGetHeadBlobSidecars()

@@ -33,7 +33,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -105,12 +104,7 @@ public class FileSystemBlobSidecarsArchiver implements BlobSidecarsArchiver {
   }
 
   @Override
-  public SafeFuture<Optional<List<BlobSidecar>>> retrieve(
-      final Bytes32 blockRoot, final Optional<UInt64> maybeSlot) {
-    return asyncRunner.runAsync(() -> retrieveInternal(blockRoot, maybeSlot));
-  }
-
-  private Optional<List<BlobSidecar>> retrieveInternal(
+  public Optional<List<BlobSidecar>> retrieve(
       final Bytes32 blockRoot, final Optional<UInt64> maybeSlot) {
     try {
       final Path archivePath = resolveArchivePath(blockRoot);
@@ -129,11 +123,7 @@ public class FileSystemBlobSidecarsArchiver implements BlobSidecarsArchiver {
   }
 
   @Override
-  public SafeFuture<Optional<List<BlobSidecar>>> retrieve(final UInt64 slot) {
-    return asyncRunner.runAsync(() -> retrieveInternal(slot));
-  }
-
-  private Optional<List<BlobSidecar>> retrieveInternal(final UInt64 slot) {
+  public Optional<List<BlobSidecar>> retrieve(final UInt64 slot) {
     final Path indexFile = resolveIndexFile(slot);
     if (!Files.exists(indexFile)) {
       return Optional.empty();
@@ -146,7 +136,7 @@ public class FileSystemBlobSidecarsArchiver implements BlobSidecarsArchiver {
               line -> {
                 // lines in the index file are in the format of: "<slot> <block_root>"
                 final Bytes32 blockRoot = Bytes32.fromHexString(line.split(" ")[1]);
-                return retrieveInternal(blockRoot, Optional.of(slot));
+                return retrieve(blockRoot, Optional.of(slot));
               });
     } catch (IOException ex) {
       LOG.error(String.format("Failed to retrieve blob sidecars for slot %s", slot), ex);

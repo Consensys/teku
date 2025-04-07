@@ -28,8 +28,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -115,11 +113,10 @@ public class FileSystemBlobSidecarsArchiverTest {
     blobSidecarsArchiver.archive(slotAndBlockRoot, List.of());
 
     // retrieving
-    final SafeFuture<Optional<List<BlobSidecar>>> blobSidecars =
+    final Optional<List<BlobSidecar>> blobSidecars =
         blobSidecarsArchiver.retrieve(slotAndBlockRoot);
-    stubAsyncRunner.executeDueActions();
     // empty list
-    assertThat(SafeFutureAssert.safeJoin(blobSidecars)).hasValue(List.of());
+    assertThat(blobSidecars).hasValue(List.of());
   }
 
   @Test
@@ -137,18 +134,16 @@ public class FileSystemBlobSidecarsArchiverTest {
     assertThat(testTempDir.resolve("0-99999_index.dat")).exists();
 
     // retrieving by root
-    final SafeFuture<Optional<List<BlobSidecar>>> retrievedBlobSidecarsByRoot =
-        blobSidecarsArchiver.retrieve(slotAndBlockRoot.getBlockRoot());
-    stubAsyncRunner.executeDueActions();
+    final Optional<List<BlobSidecar>> retrievedBlobSidecarsByRoot =
+        blobSidecarsArchiver.retrieve(slotAndBlockRoot.getBlockRoot(), Optional.empty());
 
-    assertThat(SafeFutureAssert.safeJoin(retrievedBlobSidecarsByRoot)).hasValue(blobSidecars);
+    assertThat(retrievedBlobSidecarsByRoot).hasValue(blobSidecars);
 
     // retrieving by slot (using index file)
-    final SafeFuture<Optional<List<BlobSidecar>>> retrievedBlobSidecarsBySlot =
+    final Optional<List<BlobSidecar>> retrievedBlobSidecarsBySlot =
         blobSidecarsArchiver.retrieve(slotAndBlockRoot.getSlot());
-    stubAsyncRunner.executeDueActions();
 
-    assertThat(SafeFutureAssert.safeJoin(retrievedBlobSidecarsBySlot)).hasValue(blobSidecars);
+    assertThat(retrievedBlobSidecarsBySlot).hasValue(blobSidecars);
   }
 
   private BlobSidecar createBlobSidecar(final UInt64 slot) {

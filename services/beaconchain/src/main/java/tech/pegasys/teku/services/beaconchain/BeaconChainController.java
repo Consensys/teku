@@ -172,7 +172,6 @@ import tech.pegasys.teku.statetransition.validation.signatures.AggregatingSignat
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
-import tech.pegasys.teku.storage.api.BlobSidecarsArchiveChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
@@ -180,7 +179,6 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
-import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.EarliestAvailableBlockSlot;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -285,7 +283,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile KZG kzg;
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile BlobSidecarGossipValidator blobSidecarValidator;
-  protected volatile BlobSidecarsArchiver blobSidecarsArchiver;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile ProposersDataManager proposersDataManager;
   protected volatile KeyValueStore<String, Bytes> keyValueStore;
@@ -997,12 +994,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
-            new ChainDataProvider(
-                spec,
-                recentChainData,
-                combinedChainDataClient,
-                eventChannels.getPublisher(BlobSidecarsArchiveChannel.class, beaconAsyncRunner),
-                rewardCalculator),
+            new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculator),
             dataProvider.getNodeDataProvider(),
             dataProvider.getNetworkDataProvider(),
             combinedChainDataClient,

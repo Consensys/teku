@@ -34,7 +34,6 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.storage.api.BlobSidecarsArchiveChannel;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
@@ -168,10 +167,6 @@ public class StorageService extends Service implements StorageServiceFacade {
                                   config.getSpec(), Path.of(path), storagePrunerAsyncRunner))
                       .orElse(BlobSidecarsArchiver.NOOP);
 
-              final EventChannels eventChannels = serviceConfig.getEventChannels();
-
-              eventChannels.subscribe(BlobSidecarsArchiveChannel.class, blobSidecarsArchiver);
-
               if (config.getSpec().isMilestoneSupported(SpecMilestone.DENEB)) {
                 blobsPruner =
                     Optional.of(
@@ -195,7 +190,11 @@ public class StorageService extends Service implements StorageServiceFacade {
                       database,
                       config.getSpec(),
                       config.getDataStorageMode(),
-                      config.getStateRebuildTimeoutSeconds());
+                      config.getStateRebuildTimeoutSeconds(),
+                      blobSidecarsArchiver);
+
+              final EventChannels eventChannels = serviceConfig.getEventChannels();
+
               final DepositStorage depositStorage =
                   DepositStorage.create(
                       eventChannels.getPublisher(Eth1EventsChannel.class),
