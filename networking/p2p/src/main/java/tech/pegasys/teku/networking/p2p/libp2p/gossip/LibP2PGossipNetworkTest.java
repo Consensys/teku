@@ -93,7 +93,7 @@ public class LibP2PGossipNetworkTest {
 
   @Test
   public void shouldUpdateMeshMetricsOnCall() {
-    // Эта часть теста остается отключенной, пока не будет исправлена функциональность
+    // This part of the test remains disabled until the functionality is fixed
     // GossipMeshInfo
     /*
     // Call update metrics
