@@ -14,10 +14,12 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -41,7 +43,7 @@ public class DataColumnSidecarCustodyImplTest {
   final DataColumnSidecarDbAccessor dbAccessor =
       DataColumnSidecarDbAccessor.builder(db).spec(spec).build();
   final CanonicalBlockResolverStub blockResolver = new CanonicalBlockResolverStub(spec);
-  final UInt256 myNodeId = UInt256.ONE;
+  final CustodyGroupCountManager custodyGroupCountManager = mock(CustodyGroupCountManager.class);
 
   final SpecConfigFulu config =
       SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
@@ -65,9 +67,12 @@ public class DataColumnSidecarCustodyImplTest {
             blockResolver,
             dbAccessor,
             MinCustodyPeriodSlotCalculator.createFromSpec(spec),
-            CustodyGroupCountManager.NOOP,
-            myNodeId,
+            custodyGroupCountManager,
             groupCount);
+    when(custodyGroupCountManager.getCustodyColumnIndices())
+        .thenReturn(
+            List.of(UInt64.valueOf(0), UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3)));
+
     BeaconBlock block = blockResolver.addBlock(10, true);
     DataColumnSidecar sidecar0 = createSidecar(block, 0);
     DataColumnSidecar sidecar1 = createSidecar(block, 1);

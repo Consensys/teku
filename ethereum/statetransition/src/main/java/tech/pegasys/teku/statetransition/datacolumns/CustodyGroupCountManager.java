@@ -13,12 +13,20 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import java.util.List;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+
 public interface CustodyGroupCountManager {
   CustodyGroupCountManager NOOP =
       new CustodyGroupCountManager() {
         @Override
         public int getCustodyGroupCount() {
           return 0;
+        }
+
+        @Override
+        public List<UInt64> getCustodyColumnIndices() {
+          return List.of();
         }
 
         @Override
@@ -31,6 +39,8 @@ public interface CustodyGroupCountManager {
       };
 
   int getCustodyGroupCount();
+
+  List<UInt64> getCustodyColumnIndices();
 
   int getCustodyGroupSyncedCount();
 

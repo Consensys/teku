@@ -50,7 +50,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class DataColumnSidecarRecoveryCustodyTest {
@@ -173,7 +173,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
               return SafeFuture.completedFuture(
                   Optional.ofNullable(sidecars.get(id.columnIndex())));
             });
-    when(miscHelpersFulu.reconstructAllDataColumnSidecars(any(), anyCollection(), any()))
+    when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
         .thenReturn(sidecars.values().stream().toList());
     stubAsyncRunner.executeQueuedActions();
     stubAsyncRunner.executeQueuedActions();
@@ -184,7 +184,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
         .forEach(
             i -> {
               verify(delegate).onNewValidatedDataColumnSidecar(eq(sidecars.get(i)));
-              verify(listener).onNewValidSidecar(eq(sidecars.get(i)));
+              verify(listener).onNewValidSidecar(eq(sidecars.get(i)), eq(RemoteOrigin.RECOVERED));
               verify(dataColumnSidecarPublisher).accept(eq(sidecars.get(i)));
             });
     columnIndexes
@@ -193,7 +193,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
         .forEach(
             i -> {
               verify(delegate).onNewValidatedDataColumnSidecar(eq(sidecars.get(i)));
-              verify(listener).onNewValidSidecar(eq(sidecars.get(i)));
+              verify(listener).onNewValidSidecar(eq(sidecars.get(i)), eq(RemoteOrigin.RECOVERED));
               verify(dataColumnSidecarPublisher).accept(eq(sidecars.get(i)));
             });
   }
@@ -203,8 +203,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
     custody.onSlot(slot);
     assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
 
-    custody.onNewBlock(
-        signedBeaconBlock, Optional.of(BlobSidecarManager.RemoteOrigin.LOCAL_PROPOSAL));
+    custody.onNewBlock(signedBeaconBlock, Optional.of(RemoteOrigin.LOCAL_PROPOSAL));
     final Map<UInt64, DataColumnSidecar> sidecars =
         columnIndexes
             .get()
@@ -223,7 +222,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
     custody.onSlot(slot);
     assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
 
-    custody.onNewBlock(signedBeaconBlock, Optional.of(BlobSidecarManager.RemoteOrigin.LOCAL_EL));
+    custody.onNewBlock(signedBeaconBlock, Optional.of(RemoteOrigin.LOCAL_EL));
     final Map<UInt64, DataColumnSidecar> sidecars =
         columnIndexes
             .get()
@@ -257,7 +256,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
               return SafeFuture.completedFuture(
                   Optional.ofNullable(sidecars.get(id.columnIndex())));
             });
-    when(miscHelpersFulu.reconstructAllDataColumnSidecars(any(), anyCollection(), any()))
+    when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
         .thenReturn(sidecars.values().stream().toList());
     stubAsyncRunner.executeDueActionsRepeatedly();
     stubTimeProvider.advanceTimeBySeconds(1);
@@ -273,7 +272,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
 
     // post reconstructed
     verify(delegate, times(config.getNumberOfColumns())).onNewValidatedDataColumnSidecar(any());
-    verify(listener, times(58)).onNewValidSidecar(any());
+    verify(listener, times(58)).onNewValidSidecar(any(), eq(RemoteOrigin.RECOVERED));
     verify(dataColumnSidecarPublisher, times(58)).accept(any());
   }
 
@@ -297,7 +296,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
               return SafeFuture.completedFuture(
                   Optional.ofNullable(sidecars.get(id.columnIndex())));
             });
-    when(miscHelpersFulu.reconstructAllDataColumnSidecars(any(), anyCollection(), any()))
+    when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
         .thenReturn(sidecars.values().stream().toList());
     stubAsyncRunner.executeDueActionsRepeatedly();
     stubTimeProvider.advanceTimeBySeconds(1);
@@ -318,7 +317,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
 
     // post reconstructed
     verify(delegate, times(config.getNumberOfColumns())).onNewValidatedDataColumnSidecar(any());
-    verify(listener, times(64)).onNewValidSidecar(any());
+    verify(listener, times(64)).onNewValidSidecar(any(), eq(RemoteOrigin.RECOVERED));
     verify(dataColumnSidecarPublisher, times(64)).accept(any());
   }
 }

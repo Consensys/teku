@@ -279,8 +279,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
 
     private void recover() {
       final List<DataColumnSidecar> recoveredSidecars =
-          specHelpers.reconstructAllDataColumnSidecars(
-              block, existingSidecarsByColIdx.values(), kzg);
+          specHelpers.reconstructAllDataColumnSidecars(existingSidecarsByColIdx.values(), kzg);
       final Map<UInt64, DataColumnSidecar> recoveredSidecarsAsMap =
           recoveredSidecars.stream()
               .collect(Collectors.toUnmodifiableMap(DataColumnSidecar::getIndex, i -> i));

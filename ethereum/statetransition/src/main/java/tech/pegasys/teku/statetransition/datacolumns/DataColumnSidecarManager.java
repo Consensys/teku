@@ -17,31 +17,33 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public interface DataColumnSidecarManager {
 
   interface ValidDataColumnSidecarsListener {
-    void onNewValidSidecar(DataColumnSidecar sidecar);
+    void onNewValidSidecar(DataColumnSidecar sidecar, RemoteOrigin remoteOrigin);
   }
 
   DataColumnSidecarManager NOOP =
       new DataColumnSidecarManager() {
         @Override
         public SafeFuture<InternalValidationResult> onDataColumnSidecarGossip(
-            DataColumnSidecar sidecar, Optional<UInt64> arrivalTimestamp) {
+            final DataColumnSidecar sidecar, final Optional<UInt64> arrivalTimestamp) {
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
         }
 
         @Override
-        public void onDataColumnSidecarPublish(DataColumnSidecar sidecar) {}
+        public void onDataColumnSidecarPublish(
+            final DataColumnSidecar sidecar, final RemoteOrigin remoteOrigin) {}
 
         @Override
         public void subscribeToValidDataColumnSidecars(
-            ValidDataColumnSidecarsListener sidecarsListener) {}
+            final ValidDataColumnSidecarsListener sidecarsListener) {}
       };
 
-  void onDataColumnSidecarPublish(DataColumnSidecar sidecar);
+  void onDataColumnSidecarPublish(DataColumnSidecar sidecar, RemoteOrigin remoteOrigin);
 
   SafeFuture<InternalValidationResult> onDataColumnSidecarGossip(
       DataColumnSidecar sidecar, Optional<UInt64> arrivalTimestamp);

@@ -21,7 +21,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 public class LateInitDataColumnSidecarCustody implements DataColumnSidecarRecoveringCustody {
   private DataColumnSidecarRecoveringCustody delegate = null;
@@ -54,8 +54,7 @@ public class LateInitDataColumnSidecarCustody implements DataColumnSidecarRecove
   }
 
   @Override
-  public void onNewBlock(
-      final SignedBeaconBlock block, final Optional<BlobSidecarManager.RemoteOrigin> remoteOrigin) {
+  public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
     checkDelegate();
     delegate.onNewBlock(block, remoteOrigin);
   }

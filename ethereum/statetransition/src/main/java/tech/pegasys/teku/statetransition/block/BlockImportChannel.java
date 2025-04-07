@@ -20,7 +20,7 @@ import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult;
 
 public interface BlockImportChannel extends ChannelInterface {
