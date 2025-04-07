@@ -18,6 +18,8 @@ import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefi
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
@@ -135,7 +137,8 @@ public class FileSystemBlobSidecarsArchiver implements BlobSidecarsArchiver {
           .flatMap(
               line -> {
                 // lines in the index file are in the format of: "<slot> <block_root>"
-                final Bytes32 blockRoot = Bytes32.fromHexString(line.split(" ")[1]);
+                final Bytes32 blockRoot =
+                    Bytes32.fromHexString(Iterables.get(Splitter.on(' ').split(line), 1));
                 return retrieve(blockRoot, Optional.of(slot));
               });
     } catch (IOException ex) {
