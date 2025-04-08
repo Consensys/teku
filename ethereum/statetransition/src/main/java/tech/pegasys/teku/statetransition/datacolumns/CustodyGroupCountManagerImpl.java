@@ -22,7 +22,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
@@ -77,6 +76,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     final Map<UInt64, PreparedProposerInfo> preparedProposerInfo =
         proposersDataManager.getPreparedProposerInfo();
     if (preparedProposerInfo.isEmpty()) {
+      updateCustodyGroupCount(initCustodyGroupCount);
       return;
     }
 
@@ -85,18 +85,12 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
         .thenAccept(
             maybeState -> {
               if (maybeState.isPresent()) {
-                final UInt64 totalNodeBalance =
-                    preparedProposerInfo.keySet().stream()
-                        .map(
-                            proposerIndex -> {
-                              final Validator validator =
-                                  maybeState.get().getValidators().get(proposerIndex.intValue());
-                              return validator.getEffectiveBalance();
-                            })
-                        .reduce(UInt64.ZERO, UInt64::plus);
                 final int custodyGroupCountUpdated =
-                    miscHelpersFulu.calculateCustodyGroupCount(
-                        initCustodyGroupCount, totalNodeBalance);
+                    miscHelpersFulu
+                        .getValidatorsCustodyRequirement(
+                            maybeState.get(), preparedProposerInfo.keySet())
+                        .max(initCustodyGroupCount)
+                        .intValue();
                 updateCustodyGroupCount(custodyGroupCountUpdated);
               }
             })

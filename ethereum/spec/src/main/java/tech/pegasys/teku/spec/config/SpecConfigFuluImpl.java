@@ -173,13 +173,16 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
         && Objects.equals(fieldElementsPerCell, that.fieldElementsPerCell)
         && Objects.equals(fieldElementsPerExtBlob, that.fieldElementsPerExtBlob)
         && Objects.equals(kzgCommitmentsInclusionProofDepth, that.kzgCommitmentsInclusionProofDepth)
+        && Objects.equals(balancePerAdditionalCustodyGroup, that.balancePerAdditionalCustodyGroup)
         && numberOfColumns == that.numberOfColumns
         && numberOfCustodyGroups == that.numberOfCustodyGroups
         && dataColumnSidecarSubnetCount == that.dataColumnSidecarSubnetCount
         && custodyRequirement == that.custodyRequirement
         && minEpochsForDataColumnSidecarsRequests == that.minEpochsForDataColumnSidecarsRequests
         && maxRequestDataColumnSidecars == that.maxRequestDataColumnSidecars
-        && maxBlobsPerBlockFulu == that.maxBlobsPerBlockFulu;
+        && maxBlobsPerBlockFulu == that.maxBlobsPerBlockFulu
+        && validatorCustodyRequirement == that.validatorCustodyRequirement
+        && samplesPerSlot == that.samplesPerSlot;
   }
 
   @Override
@@ -197,6 +200,9 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
         kzgCommitmentsInclusionProofDepth,
         minEpochsForDataColumnSidecarsRequests,
         maxRequestDataColumnSidecars,
-        maxBlobsPerBlockFulu);
+        maxBlobsPerBlockFulu,
+        validatorCustodyRequirement,
+        samplesPerSlot,
+        balancePerAdditionalCustodyGroup);
   }
 }

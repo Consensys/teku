@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -53,6 +54,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -162,17 +165,21 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .toList();
   }
 
-  public int calculateCustodyGroupCount(
-      final int defaultCustodyGroupCount, final UInt64 totalNodeBalance) {
-    if (totalNodeBalance.isZero()) {
-      return defaultCustodyGroupCount;
-    }
+  public UInt64 getValidatorsCustodyRequirement(
+      final BeaconState state, final Set<UInt64> validatorIndices) {
+    final UInt64 totalNodeBalance =
+        validatorIndices.stream()
+            .map(
+                proposerIndex -> {
+                  final Validator validator = state.getValidators().get(proposerIndex.intValue());
+                  return validator.getEffectiveBalance();
+                })
+            .reduce(UInt64.ZERO, UInt64::plus);
     final UInt64 count =
         totalNodeBalance.dividedBy(specConfigFulu.getBalancePerAdditionalCustodyGroup());
     return count
         .max(specConfigFulu.getValidatorCustodyRequirement())
-        .min(specConfigFulu.getNumberOfCustodyGroups())
-        .intValue();
+        .min(specConfigFulu.getNumberOfCustodyGroups());
   }
 
   public boolean verifyDataColumnSidecarKzgProof(
