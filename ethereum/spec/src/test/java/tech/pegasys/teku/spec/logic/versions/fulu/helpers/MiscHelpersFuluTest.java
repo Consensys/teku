@@ -249,7 +249,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  @ParameterizedTest(name = "{0} allowed failure(s)")
+  @ParameterizedTest(name = "{0} validator custody groups required")
   @MethodSource("getValidatorCustodyRequirementFixtures")
   public void testGetValidatorCustodyRequirement(
       final int expectedValidatorCustodyCount, final long[] validatorBalancesEth) {
@@ -273,7 +273,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
 
   static Stream<Arguments> getExtendedSampleCountFixtures() throws IOException {
     return Stream.of(
-        Arguments.of(4, 0),
+        Arguments.of(0, 16),
         Arguments.of(1, 20),
         Arguments.of(2, 24),
         Arguments.of(3, 27),
