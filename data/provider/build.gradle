@@ -12,7 +12,6 @@ dependencies {
     implementation project(':infrastructure:serviceutils')
     implementation project(':infrastructure:ssz')
     implementation project(':storage')
-    implementation project(':storage:api')
     implementation project(':beacon:sync')
     implementation project(':validator:api')
 
