@@ -189,8 +189,7 @@ public class SpecLogicEip7805 extends AbstractSpecLogic {
 
     // State upgrade
     final Eip7805StateUpgrade stateUpgrade =
-        new Eip7805StateUpgrade(
-            config, schemaDefinitions, beaconStateAccessors, beaconStateMutators);
+        new Eip7805StateUpgrade(config, schemaDefinitions, beaconStateAccessors);
 
     return new SpecLogicEip7805(
         predicates,
