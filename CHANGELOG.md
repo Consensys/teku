@@ -9,6 +9,7 @@
 ### Breaking Changes
 
 ### Additions and Improvements
-- Increased the attestation queue size limits.
+- Updated Teku bootnode ENR on Sepolia and Mainnet
+- Scheduled Electra for Mainnet at epoch 364032 (May 7, 2025, 10:05:11am UTC)
 
 ### Bug Fixes

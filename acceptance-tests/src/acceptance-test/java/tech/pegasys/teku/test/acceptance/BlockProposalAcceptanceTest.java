@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -100,11 +100,11 @@ public class BlockProposalAcceptanceTest extends AcceptanceTestBase {
                   StandardCharsets.UTF_8);
           // 13 bytes + 1 byte
           assertThat(graffitiMessage).startsWith(userGraffiti + " ");
-          // 18 bytes left, so 12 bytes client footprint: TKxxxxELxxxx. 20 bytes with full commits
+          // 18 bytes left, so 12 bytes client footprint: ELxxxxTKxxxx. 20 bytes with full commits
           // doesn't fit
           assertThat(graffitiMessage).contains("TK");
           // stub execution endpoint.
-          assertThat(graffitiMessage).endsWith("SB0000");
+          assertThat(graffitiMessage).contains("SB0000");
         });
   }
 }

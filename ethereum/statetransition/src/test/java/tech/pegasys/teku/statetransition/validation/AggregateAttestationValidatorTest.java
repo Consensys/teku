@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -379,6 +379,41 @@ class AggregateAttestationValidatorTest {
     validator.addSeenAggregate(largeAttestation);
     assertThat(validator.validate(smallAttestation))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+  }
+
+  @TestTemplate
+  void shouldAcceptAggregateWhenAlreadySeenAllAttestingValidatorsButOnDifferentCommitteeIndex(
+      final SpecContext specContext) {
+    // this test applies only to electra
+    specContext.assumeElectraActive();
+    disableSignatureVerification();
+
+    final StateAndBlockSummary chainHead = storageSystem.getChainHead();
+    final SignedAggregateAndProof validAggregate = generator.validAggregateAndProof(chainHead);
+    final AttestationData attestationData = validAggregate.getMessage().getAggregate().getData();
+    final UInt64 committeeIndex =
+        validAggregate.getMessage().getAggregate().getFirstCommitteeIndex();
+
+    final ValidatableAttestation smallAttestation =
+        createValidAggregate(
+            validAggregate.getMessage().getIndex(),
+            attestationData,
+            committeeIndex,
+            true,
+            false,
+            false);
+    final ValidatableAttestation largeAttestation =
+        createValidAggregate(
+            validAggregate.getMessage().getIndex(),
+            attestationData,
+            committeeIndex.increment(),
+            true,
+            true,
+            true);
+
+    validator.addSeenAggregate(largeAttestation);
+    assertThat(validator.validate(smallAttestation))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
   }
 
   @TestTemplate

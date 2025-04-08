@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -198,12 +198,12 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
-    try (final OperationTimer.TimingContext context =
-        startTimer(dutyTimer, ATTESTATION_PRODUCTION.getName(), SEND.getName())) {
-      SafeFuture<List<SubmitDataError>> request = delegate.sendSignedAttestations(attestations);
-      request.always(context::stopTimer);
-      return countSendRequest(request, BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD);
-    }
+    // we are in an async context, don't follow the AutoClose pattern
+    final OperationTimer.TimingContext context =
+        startTimer(dutyTimer, ATTESTATION_PRODUCTION.getName(), SEND.getName());
+    final SafeFuture<List<SubmitDataError>> request =
+        delegate.sendSignedAttestations(attestations).alwaysRun(context::stopTimer);
+    return countSendRequest(request, BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD);
   }
 
   @Override

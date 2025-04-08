@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,5 +21,5 @@ public enum ClientGraffitiAppendFormat {
   // Appends client name codes if there is a space for it.
   CLIENT_CODES,
   // Clients information is not appended to the graffiti.
-  DISABLED;
+  DISABLED
 }

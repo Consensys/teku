@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -134,6 +134,29 @@ public class BatchSync implements Sync {
     final SafeFuture<SyncResult> result = new SafeFuture<>();
     eventThread.execute(
         exceptionHandlingRunnable(() -> switchSyncTarget(targetChain, result), result));
+    return result;
+  }
+
+  @Override
+  public SafeFuture<Optional<SyncProgress>> getSyncProgress() {
+    if (syncResult.isDone()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+
+    final SafeFuture<Optional<SyncProgress>> result = new SafeFuture<>();
+    eventThread.execute(
+        exceptionHandlingRunnable(
+            () -> {
+              final BatchInfoAccumulator reducedBatchesInfo =
+                  activeBatches.stream()
+                      .map(BatchInfoAccumulator::fromBatch)
+                      .reduce(BatchInfoAccumulator::accumulate)
+                      .orElse(BatchInfoAccumulator.EMPTY);
+
+              result.complete(
+                  Optional.of(reducedBatchesInfo.toSyncProgress(importingBatch, targetChain)));
+            },
+            result));
     return result;
   }
 
@@ -544,5 +567,57 @@ public class BatchSync implements Sync {
         batch.isConfirmed(),
         batch.isComplete(),
         batch.getSource());
+  }
+
+  private record BatchInfoAccumulator(
+      UInt64 fromSlot,
+      UInt64 toSlot,
+      int batches,
+      int downloadingSlots,
+      int downloadingBatches,
+      int readySlots,
+      int readyBatches) {
+
+    static final BatchInfoAccumulator EMPTY =
+        new BatchInfoAccumulator(UInt64.ZERO, UInt64.ZERO, 0, 0, 0, 0, 0);
+
+    static BatchInfoAccumulator fromBatch(final Batch batch) {
+      if (batch.isAwaitingBlocks()) {
+        return new BatchInfoAccumulator(
+            batch.getFirstSlot(), batch.getLastSlot(), 1, batch.getCount().intValue(), 1, 0, 0);
+      }
+      if (batch.isComplete()) {
+        return new BatchInfoAccumulator(
+            batch.getFirstSlot(), batch.getLastSlot(), 1, 0, 0, batch.getCount().intValue(), 1);
+      }
+      return new BatchInfoAccumulator(batch.getFirstSlot(), batch.getLastSlot(), 0, 0, 0, 0, 0);
+    }
+
+    static BatchInfoAccumulator accumulate(
+        final BatchInfoAccumulator a, final BatchInfoAccumulator b) {
+      return new BatchInfoAccumulator(
+          a.fromSlot.min(b.fromSlot),
+          a.toSlot.max(b.toSlot),
+          a.batches + b.batches,
+          a.downloadingSlots + b.downloadingSlots,
+          a.downloadingBatches + b.downloadingBatches,
+          a.readySlots + b.readySlots,
+          a.readyBatches + b.readyBatches);
+    }
+
+    SyncProgress toSyncProgress(
+        final Optional<Batch> importingBatch, final TargetChain targetChain) {
+      return new SyncProgress(
+          fromSlot,
+          toSlot,
+          batches,
+          downloadingSlots,
+          downloadingBatches,
+          readySlots,
+          readyBatches,
+          importingBatch.isPresent(),
+          targetChain.getChainHead(),
+          targetChain.getPeerCount());
+    }
   }
 }

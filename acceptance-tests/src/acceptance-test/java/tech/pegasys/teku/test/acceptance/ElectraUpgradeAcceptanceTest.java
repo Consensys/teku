@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,7 +16,6 @@ package tech.pegasys.teku.test.acceptance;
 import com.google.common.io.Resources;
 import java.net.URL;
 import java.util.Map;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -31,7 +30,6 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
-@Disabled("Won't work until we update Engine API for Electra + EL changes")
 public class ElectraUpgradeAcceptanceTest extends AcceptanceTestBase {
 
   private static final String NETWORK_NAME = "swift";

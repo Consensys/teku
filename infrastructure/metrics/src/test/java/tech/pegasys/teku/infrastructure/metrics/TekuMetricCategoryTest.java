@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -20,7 +20,6 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EVENTB
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EXECUTOR;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.LIBP2P;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.NETWORK;
-import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.REMOTE_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
@@ -46,15 +45,10 @@ class TekuMetricCategoryTest {
             STORAGE,
             STORAGE_HOT_DB,
             STORAGE_FINALIZED_DB,
-            REMOTE_VALIDATOR,
             VALIDATOR,
-            VALIDATOR_PERFORMANCE);
+            VALIDATOR_PERFORMANCE,
+            VALIDATOR_DUTY);
 
     assertThat(TekuMetricCategory.defaultCategories()).containsAll(expectedDefaultCategories);
-  }
-
-  @Test
-  public void validatorDutyCategoryIsNotADefaultCategory() {
-    assertThat(TekuMetricCategory.defaultCategories()).doesNotContain(VALIDATOR_DUTY);
   }
 }
