@@ -13,23 +13,14 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip7805.forktransition;
 
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
-
-import java.util.Comparator;
-import java.util.stream.IntStream;
-import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.BeaconStateAccessorsEip7805;
-import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.MiscHelpersEip7805;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7805;
 
 public class Eip7805StateUpgrade implements StateUpgrade<BeaconStateElectra> {
@@ -37,27 +28,20 @@ public class Eip7805StateUpgrade implements StateUpgrade<BeaconStateElectra> {
   private final SpecConfigEip7805 specConfig;
   private final SchemaDefinitionsEip7805 schemaDefinitions;
   private final BeaconStateAccessorsEip7805 beaconStateAccessors;
-  private final BeaconStateMutatorsElectra beaconStateMutators;
 
   public Eip7805StateUpgrade(
       final SpecConfigEip7805 specConfig,
       final SchemaDefinitionsEip7805 schemaDefinitions,
-      final BeaconStateAccessorsEip7805 beaconStateAccessors,
-      final BeaconStateMutatorsElectra beaconStateMutators) {
+      final BeaconStateAccessorsEip7805 beaconStateAccessors) {
     this.specConfig = specConfig;
     this.schemaDefinitions = schemaDefinitions;
     this.beaconStateAccessors = beaconStateAccessors;
-    this.beaconStateMutators = beaconStateMutators;
   }
 
   @Override
   public BeaconStateElectra upgrade(final BeaconState preState) {
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
     final BeaconStateElectra preStateElectra = BeaconStateElectra.required(preState);
-    final PredicatesElectra predicatesElectra = new PredicatesElectra(specConfig);
-    final MiscHelpersEip7805 miscHelpersEip7805 =
-        new MiscHelpersEip7805(specConfig, predicatesElectra, schemaDefinitions);
-    final UInt64 activationExitEpoch = miscHelpersEip7805.computeActivationExitEpoch(epoch);
     return BeaconStateElectra.required(schemaDefinitions.getBeaconStateSchema().createEmpty())
         .updatedElectra(
             state -> {
@@ -83,48 +67,11 @@ public class Eip7805StateUpgrade implements StateUpgrade<BeaconStateElectra> {
               state.setHistoricalSummaries(preStateElectra.getHistoricalSummaries());
               state.setDepositRequestsStartIndex(preStateElectra.getDepositRequestsStartIndex());
               state.setDepositBalanceToConsume(UInt64.ZERO);
-              state.setExitBalanceToConsume(
-                  beaconStateAccessors.getActivationExitChurnLimit(state));
-              state.setEarliestExitEpoch(findEarliestExitEpoch(state, activationExitEpoch));
+              state.setExitBalanceToConsume(preStateElectra.getExitBalanceToConsume());
+              state.setEarliestExitEpoch(preStateElectra.getEarliestExitEpoch());
               state.setConsolidationBalanceToConsume(
-                  beaconStateAccessors.getConsolidationChurnLimit(state));
-              state.setEarliestConsolidationEpoch(activationExitEpoch);
-
-              final SszMutableList<Validator> validators = state.getValidators();
-
-              // Add validators that are not yet active to pending balance deposits
-              IntStream.range(0, validators.size())
-                  .filter(
-                      index -> validators.get(index).getActivationEpoch().equals(FAR_FUTURE_EPOCH))
-                  .boxed()
-                  .sorted(
-                      Comparator.comparing(
-                              (Integer index) ->
-                                  validators.get(index).getActivationEligibilityEpoch())
-                          .thenComparing(index -> index))
-                  .forEach(
-                      index ->
-                          beaconStateMutators.queueEntireBalanceAndResetValidator(state, index));
-
-              // Ensure early adopters of compounding credentials go through the activation churn
-              IntStream.range(0, validators.size())
-                  .forEach(
-                      index -> {
-                        if (predicatesElectra.hasCompoundingWithdrawalCredential(
-                            validators.get(index))) {
-                          beaconStateMutators.queueExcessActiveBalance(state, index);
-                        }
-                      });
+                  preStateElectra.getConsolidationBalanceToConsume());
+              state.setEarliestConsolidationEpoch(preStateElectra.getEarliestConsolidationEpoch());
             });
-  }
-
-  private UInt64 findEarliestExitEpoch(final BeaconState state, final UInt64 activationExitEpoch) {
-    final UInt64 maxExitEpochFromValidatorSet =
-        state.getValidators().stream()
-            .map(Validator::getExitEpoch)
-            .filter(exitEpoch -> !exitEpoch.equals(FAR_FUTURE_EPOCH))
-            .max(UInt64::compareTo)
-            .orElse(UInt64.ZERO);
-    return maxExitEpochFromValidatorSet.max(activationExitEpoch).increment();
   }
 }
