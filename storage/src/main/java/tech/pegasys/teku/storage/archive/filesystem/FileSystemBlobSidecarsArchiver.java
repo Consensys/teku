@@ -15,8 +15,6 @@ package tech.pegasys.teku.storage.archive.filesystem;
 
 import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
@@ -102,20 +100,22 @@ public class FileSystemBlobSidecarsArchiver implements BlobSidecarsArchiver {
   }
 
   @Override
-  public Optional<List<BlobSidecar>> retrieve(
-      final Bytes32 blockRoot, final Optional<UInt64> maybeSlot) {
+  public Optional<List<BlobSidecar>> retrieve(final SlotAndBlockRoot slotAndBlockRoot) {
     try {
-      final Path archivePath = resolveArchivePath(blockRoot);
+      final Path archivePath = resolveArchivePath(slotAndBlockRoot.getBlockRoot());
       if (!Files.exists(archivePath)) {
         return Optional.empty();
       }
       final String blobSidecarsJson = Files.readString(archivePath);
-      final UInt64 slot = maybeSlot.orElseGet(() -> getSlot(blobSidecarsJson));
       final List<BlobSidecar> blobSidecars =
-          JsonUtil.parse(blobSidecarsJson, getJsonTypeDefinition(slot));
+          JsonUtil.parse(blobSidecarsJson, getJsonTypeDefinition(slotAndBlockRoot.getSlot()));
       return Optional.of(blobSidecars);
     } catch (IOException ex) {
-      LOG.error(String.format("Failed to retrieve blob sidecars for block root %s", blockRoot), ex);
+      LOG.error(
+          String.format(
+              "Failed to retrieve blob sidecars for slot %s and block root %s",
+              slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot()),
+          ex);
       return Optional.empty();
     }
   }
@@ -135,7 +135,7 @@ public class FileSystemBlobSidecarsArchiver implements BlobSidecarsArchiver {
                 // lines in the index file are in the format of: "<slot> <block_root>"
                 final Bytes32 blockRoot =
                     Bytes32.fromHexString(Iterables.get(Splitter.on(' ').split(line), 1));
-                return retrieve(blockRoot, Optional.of(slot));
+                return retrieve(new SlotAndBlockRoot(slot, blockRoot));
               });
     } catch (IOException ex) {
       LOG.error(String.format("Failed to retrieve blob sidecars for slot %s", slot), ex);
@@ -196,21 +196,5 @@ public class FileSystemBlobSidecarsArchiver implements BlobSidecarsArchiver {
     return slotAndBlockRoot.getSlot()
         + " "
         + slotAndBlockRoot.getBlockRoot().toUnprefixedHexString();
-  }
-
-  /** retrieve the slot from the json content */
-  private UInt64 getSlot(final String blobSidecarsJson) {
-    try (JsonParser parser = JsonUtil.FACTORY.createParser(blobSidecarsJson)) {
-      while (parser.nextToken() != null) {
-        if ("slot".equals(parser.currentName()) && parser.nextToken() == JsonToken.VALUE_STRING) {
-          return UInt64.valueOf(parser.getValueAsString());
-        }
-      }
-    } catch (IOException __) {
-      LOG.warn("Couldn't retrieve slot from blob sidecars archive json: {}", blobSidecarsJson);
-      return UInt64.ZERO;
-    }
-    LOG.warn("Couldn't retrieve slot from blob sidecars archive json: {}", blobSidecarsJson);
-    return UInt64.ZERO;
   }
 }

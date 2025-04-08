@@ -15,11 +15,9 @@ package tech.pegasys.teku.storage.archive;
 
 import java.util.List;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 
 public interface BlobSidecarsArchiver {
 
@@ -30,8 +28,7 @@ public interface BlobSidecarsArchiver {
             final SlotAndBlockRoot slotAndBlockRoot, final List<BlobSidecar> blobSidecars) {}
 
         @Override
-        public Optional<List<BlobSidecar>> retrieve(
-            final Bytes32 blockRoot, final Optional<UInt64> maybeSlot) {
+        public Optional<List<BlobSidecar>> retrieve(final SlotAndBlockRoot slotAndBlockRoot) {
           return Optional.empty();
         }
 
@@ -43,27 +40,7 @@ public interface BlobSidecarsArchiver {
 
   void archive(SlotAndBlockRoot slotAndBlockRoot, List<BlobSidecar> blobSidecars);
 
-  Optional<List<BlobSidecar>> retrieve(Bytes32 blockRoot, Optional<UInt64> maybeSlot);
+  Optional<List<BlobSidecar>> retrieve(SlotAndBlockRoot slotAndBlockRoot);
 
   Optional<List<BlobSidecar>> retrieve(UInt64 slot);
-
-  default Optional<List<BlobSidecar>> retrieve(final SlotAndBlockRoot slotAndBlockRoot) {
-    return retrieve(slotAndBlockRoot.getBlockRoot(), Optional.of(slotAndBlockRoot.getSlot()));
-  }
-
-  default Optional<BlobSidecar> retrieve(
-      final SlotAndBlockRootAndBlobIndex slotAndBlockRootAndBlobIndex) {
-    return retrieve(
-            slotAndBlockRootAndBlobIndex.getBlockRoot(),
-            Optional.of(slotAndBlockRootAndBlobIndex.getSlot()))
-        .flatMap(
-            blobSidecars ->
-                blobSidecars.stream()
-                    .filter(
-                        blobSidecar ->
-                            blobSidecar
-                                .getIndex()
-                                .equals(slotAndBlockRootAndBlobIndex.getBlobIndex()))
-                    .findFirst());
-  }
 }

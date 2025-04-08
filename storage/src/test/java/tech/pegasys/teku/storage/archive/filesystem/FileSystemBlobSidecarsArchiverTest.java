@@ -130,9 +130,9 @@ public class FileSystemBlobSidecarsArchiverTest {
     // test index file exists
     assertThat(testTempDir.resolve("0-99999_index.dat")).exists();
 
-    // retrieving by root
+    // retrieving by slot and block root
     final Optional<List<BlobSidecar>> retrievedBlobSidecarsByRoot =
-        blobSidecarsArchiver.retrieve(slotAndBlockRoot.getBlockRoot(), Optional.empty());
+        blobSidecarsArchiver.retrieve(slotAndBlockRoot);
 
     assertThat(retrievedBlobSidecarsByRoot).hasValue(blobSidecars);
 
