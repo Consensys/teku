@@ -20,16 +20,21 @@ import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.stream.Collectors;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.cli.converter.OptionalIntConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
@@ -217,6 +222,14 @@ public class P2POptions {
       split = ",",
       arity = "0..*")
   private List<String> p2pStaticPeers = new ArrayList<>();
+
+  @Option(
+      names = {"--p2p-static-peers-file"},
+      paramLabel = "<FILENAME>",
+      description =
+          "Specifies a file containing a list of 'static' peers (one per line) with which to establish and maintain connections",
+      arity = "1")
+  private String p2pStaticPeersFile;
 
   @Option(
       names = {"--p2p-direct-peers"},
@@ -447,10 +460,33 @@ public class P2POptions {
   }
 
   private OptionalInt getP2pUpperBound() {
-    if (p2pUpperBound.isPresent() && p2pLowerBound.isPresent()) {
-      return p2pLowerBound.getAsInt() > p2pUpperBound.getAsInt() ? p2pLowerBound : p2pUpperBound;
-    }
     return p2pUpperBound;
+  }
+
+  private List<String> getStaticPeersList() {
+    List<String> staticPeers = new ArrayList<>(p2pStaticPeers);
+
+    if (p2pStaticPeersFile != null) {
+      try {
+        Path filePath = Path.of(p2pStaticPeersFile);
+        if (Files.exists(filePath)) {
+          List<String> peersFromFile =
+              Files.readAllLines(filePath).stream()
+                  .map(String::trim)
+                  .filter(line -> !line.isEmpty() && !line.startsWith("#"))
+                  .collect(Collectors.toList());
+          staticPeers.addAll(peersFromFile);
+        } else {
+          throw new InvalidConfigurationException(
+              String.format("Static peers file not found: %s", p2pStaticPeersFile));
+        }
+      } catch (IOException e) {
+        throw new InvalidConfigurationException(
+            String.format("Failed to read static peers from file: %s", p2pStaticPeersFile), e);
+      }
+    }
+
+    return staticPeers;
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
@@ -507,7 +543,7 @@ public class P2POptions {
                 d.advertisedUdpPortIpv6(OptionalInt.of(p2pAdvertisedPortIpv6));
               }
               d.isDiscoveryEnabled(p2pDiscoveryEnabled)
-                  .staticPeers(p2pStaticPeers)
+                  .staticPeers(getStaticPeersList())
                   .siteLocalAddressesEnabled(siteLocalAddressesEnabled);
             })
         .network(
