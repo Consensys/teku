@@ -24,7 +24,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
@@ -82,27 +81,21 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     final Map<UInt64, PreparedProposerInfo> preparedProposerInfo =
         proposersDataManager.getPreparedProposerInfo();
     if (preparedProposerInfo.isEmpty()) {
+      updateCustodyGroupCount(initCustodyGroupCount);
       return;
     }
 
-    final UInt64 baseBalance = specConfigFulu.getMinActivationBalance();
     combinedChainDataClient
         .getStateAtSlotExact(slot.safeDecrement())
         .thenAccept(
             maybeState -> {
               if (maybeState.isPresent()) {
-                final long activeBases =
-                    preparedProposerInfo.keySet().stream()
-                        .map(
-                            proposerIndex -> {
-                              final Validator validator =
-                                  maybeState.get().getValidators().get(proposerIndex.intValue());
-                              return validator.getEffectiveBalance().dividedBy(baseBalance);
-                            })
-                        .mapToLong(UInt64::intValue)
-                        .sum();
-                final UInt64 custodyGroupCountUpdated =
-                    miscHelpersFulu.calculateCustodyGroupCount(initCustodyGroupCount, activeBases);
+                final int custodyGroupCountUpdated =
+                    miscHelpersFulu
+                        .getValidatorsCustodyRequirement(
+                            maybeState.get(), preparedProposerInfo.keySet())
+                        .max(initCustodyGroupCount)
+                        .intValue();
                 updateCustodyGroupCount(custodyGroupCountUpdated);
               }
             })
@@ -143,14 +136,12 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     return false;
   }
 
-  private synchronized void updateCustodyGroupCount(final UInt64 newCustodyGroupCount) {
-    final int oldCustodyGroupCount = custodyGroupCount.getAndSet(newCustodyGroupCount.intValue());
-    if (oldCustodyGroupCount != newCustodyGroupCount.intValue()) {
+  private synchronized void updateCustodyGroupCount(final int newCustodyGroupCount) {
+    final int oldCustodyGroupCount = custodyGroupCount.getAndSet(newCustodyGroupCount);
+    if (oldCustodyGroupCount != newCustodyGroupCount) {
       LOG.info(
-          "Custody group count updated from {} to {}.",
-          oldCustodyGroupCount,
-          newCustodyGroupCount.intValue());
-      custodyGroupCountChannel.onCustodyGroupCountUpdate(newCustodyGroupCount.intValue());
+          "Custody group count updated from {} to {}.", oldCustodyGroupCount, newCustodyGroupCount);
+      custodyGroupCountChannel.onCustodyGroupCountUpdate(newCustodyGroupCount);
     }
   }
 }

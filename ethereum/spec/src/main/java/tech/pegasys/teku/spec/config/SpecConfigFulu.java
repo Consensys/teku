@@ -56,6 +56,8 @@ public interface SpecConfigFulu extends SpecConfigElectra {
 
   int getMaxRequestDataColumnSidecars();
 
+  UInt64 getBalancePerAdditionalCustodyGroup();
+
   @Override
   Optional<SpecConfigFulu> toVersionFulu();
 }
