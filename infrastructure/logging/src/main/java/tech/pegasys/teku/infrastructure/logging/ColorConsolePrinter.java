@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -25,7 +25,8 @@ public class ColorConsolePrinter {
     BLUE,
     PURPLE,
     CYAN,
-    WHITE
+    WHITE,
+    GRAY
   }
 
   public static String print(final String message, final Color color) {
@@ -42,6 +43,7 @@ public class ColorConsolePrinter {
       case PURPLE -> "\u001b[35m";
       case CYAN -> "\u001b[36m";
       case WHITE -> "\u001b[37m";
+      case GRAY -> "\u001b[90m";
     };
   }
 }

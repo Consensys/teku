@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -59,7 +59,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
 
-  protected LibP2PNetwork(
+  public LibP2PNetwork(
       final PrivKey privKey,
       final NodeId nodeId,
       final Host host,

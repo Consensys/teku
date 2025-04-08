@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -101,16 +101,20 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
               formatClientsInfo(clientInfoLength));
         }
         case CLIENT_CODES -> {
-          final int clientInfoLength = Integer.min(Bytes32.SIZE - 1 - userGraffitiLength, 4);
-          // Could drop SPACE's `-1` in a corner case
-          if (clientInfoLength == 3) {
+          final int spaceAvailable = Bytes32.SIZE - userGraffitiLength;
+          if (spaceAvailable == 2 || spaceAvailable == 4) {
             yield joinNonEmpty(
-                "", extractGraffiti(userGraffiti, userGraffitiLength), formatClientsInfo(4));
+                "",
+                extractGraffiti(userGraffiti, userGraffitiLength),
+                formatClientsInfo(spaceAvailable));
+          }
+          if (spaceAvailable < 2) {
+            yield joinNonEmpty(SPACE, extractGraffiti(userGraffiti, userGraffitiLength));
           }
           yield joinNonEmpty(
               SPACE,
               extractGraffiti(userGraffiti, userGraffitiLength),
-              formatClientsInfo(clientInfoLength));
+              formatClientsInfo(Math.min(5, spaceAvailable)));
         }
         case DISABLED -> userGraffiti.orElse(Bytes32.ZERO);
       };
@@ -142,39 +146,36 @@ public class GraffitiBuilder implements ExecutionClientVersionChannel {
   }
 
   @VisibleForTesting
-  protected String formatClientsInfo(final int length) {
+  protected String formatClientsInfo(final int watermarkMaxLength) {
     final String consensusCode = consensusClientVersion.code();
     final String executionCode = getExecutionCodeSafely();
-    // LH1be52536BU0f91a674
-    if (length >= 20) {
+
+    // BU0f91LH1be5
+    if (watermarkMaxLength >= 12) {
       return String.format(
           "%s%s%s%s",
-          consensusCode,
-          getCommit(consensusClientVersion),
           executionCode,
-          executionClientVersion.map(this::getCommit).orElse(""));
+          executionClientVersion.map(clientVersion -> getCommit(clientVersion, 4)).orElse(""),
+          consensusCode,
+          getCommit(consensusClientVersion, 4));
     }
-    // LH1be5BU0f91
-    if (length >= 12) {
+    // BU0fLH1b
+    if (watermarkMaxLength >= 8) {
       return String.format(
           "%s%s%s%s",
-          consensusCode,
-          getCommit(consensusClientVersion, 4),
           executionCode,
-          executionClientVersion.map(clientVersion -> getCommit(clientVersion, 4)).orElse(""));
-    }
-    // LH1bBU0f
-    if (length >= 8) {
-      return String.format(
-          "%s%s%s%s",
+          executionClientVersion.map(clientVersion -> getCommit(clientVersion, 2)).orElse(""),
           consensusCode,
-          getCommit(consensusClientVersion, 2),
-          executionCode,
-          executionClientVersion.map(clientVersion -> getCommit(clientVersion, 2)).orElse(""));
+          getCommit(consensusClientVersion, 2));
     }
-    // LHBU
-    if (length >= 4) {
-      return String.format("%s%s", consensusCode, executionCode);
+    // BULH
+    if (watermarkMaxLength >= 4) {
+      return String.format("%s%s", executionCode, consensusCode);
+    }
+
+    // BU
+    if (watermarkMaxLength >= 2) {
+      return String.format("%s", executionCode.isEmpty() ? consensusCode : executionCode);
     }
 
     return "";

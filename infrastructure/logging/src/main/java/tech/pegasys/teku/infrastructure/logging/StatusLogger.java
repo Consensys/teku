@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -36,6 +36,8 @@ public class StatusLogger {
 
   public static final StatusLogger STATUS_LOG =
       new StatusLogger(LoggingConfigurator.STATUS_LOGGER_NAME);
+
+  private static final int VALIDATOR_KEY_LIMIT = 20;
 
   @SuppressWarnings("PrivateStaticFinalLoggers")
   final Logger log;
@@ -205,9 +207,9 @@ public class StatusLogger {
 
   public void doppelgangerCheck(final UInt64 epoch, final Set<String> publicKeys) {
     log.info(
-        "Performing doppelganger check. Epoch {}, Public keys {}",
+        "Performing doppelganger check at epoch {} for public keys {} ",
         epoch,
-        String.join(", ", publicKeys));
+        formatValidatorKeys(publicKeys));
   }
 
   public void validatorsDoppelgangersDetected(final Map<UInt64, String> doppelgangersInfo) {
@@ -423,18 +425,6 @@ public class StatusLogger {
     }
   }
 
-  public void adjustingP2pLowerBoundToUpperBound(final int p2pUpperBound) {
-    log.info(
-        "Adjusting target number of peers lower bound to equal upper bound, which is {}",
-        p2pUpperBound);
-  }
-
-  public void adjustingP2pUpperBoundToLowerBound(final int p2pLowerBound) {
-    log.warn(
-        "Target number of peers upper bound cannot be set below the peers lower bound.  Increasing target to {}.",
-        p2pLowerBound);
-  }
-
   public void performance(final String performance) {
     log.info(performance);
   }
@@ -524,13 +514,6 @@ public class StatusLogger {
         executionBlockHash);
   }
 
-  public void warnFlagDeprecation(final String oldFlag, final String newFlag) {
-    logWithColorIfLevelGreaterThanInfo(
-        Level.WARN,
-        String.format("Flag `%s` is deprecated, use `%s` instead", oldFlag, newFlag),
-        Color.YELLOW);
-  }
-
   public void warnIgnoringWeakSubjectivityPeriod() {
     log.warn(
         print(
@@ -552,5 +535,13 @@ public class StatusLogger {
       final Level level, final String msg, final ColorConsolePrinter.Color color) {
     final boolean useColor = level.compareTo(Level.INFO) < 0;
     log.log(level, useColor ? print(msg, color) : msg);
+  }
+
+  private String formatValidatorKeys(final Set<String> keys) {
+    if (keys.isEmpty()) {
+      return "";
+    }
+    final String suffix = keys.size() > VALIDATOR_KEY_LIMIT ? "… (" + keys.size() + " total)" : "";
+    return keys.stream().limit(VALIDATOR_KEY_LIMIT).collect(Collectors.joining(", ", "", suffix));
   }
 }
