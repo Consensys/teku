@@ -183,11 +183,12 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
         .thenCompose(
             blobSidecars -> {
               if (blobSidecars.isEmpty()) {
-                // attempt retrieving from archive
+                // attempt retrieving from archive (when enabled)
                 return client.getArchivedBlobSidecars(slotAndBlockRoot, indices);
               }
-              return SafeFuture.completedFuture(Optional.of(blobSidecars));
-            });
+              return SafeFuture.completedFuture(blobSidecars);
+            })
+        .thenApply(Optional::of);
   }
 
   private SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(
@@ -197,11 +198,12 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
         .thenCompose(
             blobSidecars -> {
               if (blobSidecars.isEmpty()) {
-                // attempt retrieving from archive
+                // attempt retrieving from archive (when enabled)
                 return client.getArchivedBlobSidecars(slot, indices);
               }
-              return SafeFuture.completedFuture(Optional.of(blobSidecars));
-            });
+              return SafeFuture.completedFuture(blobSidecars);
+            })
+        .thenApply(Optional::of);
   }
 
   private Optional<BlobSidecarsAndMetaData> addMetaData(

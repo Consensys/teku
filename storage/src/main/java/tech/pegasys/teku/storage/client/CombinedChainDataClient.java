@@ -196,22 +196,18 @@ public class CombinedChainDataClient {
         .thenCompose(this::getBlobSidecars);
   }
 
-  public SafeFuture<Optional<List<BlobSidecar>>> getArchivedBlobSidecars(
+  public SafeFuture<List<BlobSidecar>> getArchivedBlobSidecars(
       final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> indices) {
     return historicalChainData
         .getArchivedBlobSidecars(slotAndBlockRoot)
-        .thenApply(
-            maybeBlobSidecars ->
-                maybeBlobSidecars.map(blobSidecars -> filterBlobSidecars(blobSidecars, indices)));
+        .thenApply(blobSidecars -> filterBlobSidecars(blobSidecars, indices));
   }
 
-  public SafeFuture<Optional<List<BlobSidecar>>> getArchivedBlobSidecars(
+  public SafeFuture<List<BlobSidecar>> getArchivedBlobSidecars(
       final UInt64 slot, final List<UInt64> indices) {
     return historicalChainData
         .getArchivedBlobSidecars(slot)
-        .thenApply(
-            maybeBlobSidecars ->
-                maybeBlobSidecars.map(blobSidecars -> filterBlobSidecars(blobSidecars, indices)));
+        .thenApply(blobSidecars -> filterBlobSidecars(blobSidecars, indices));
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(final UInt64 slot) {

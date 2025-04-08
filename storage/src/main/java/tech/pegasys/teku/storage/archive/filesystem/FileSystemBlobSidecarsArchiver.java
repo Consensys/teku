@@ -26,7 +26,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -36,6 +38,7 @@ import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -50,6 +53,9 @@ public class FileSystemBlobSidecarsArchiver implements BlobSidecarsArchiver {
 
   private final Spec spec;
   private final Path baseDirectory;
+
+  private final Map<SpecMilestone, DeserializableTypeDefinition<List<BlobSidecar>>>
+      milestoneToTypeDefinitionCache = new HashMap<>();
 
   public FileSystemBlobSidecarsArchiver(final Spec spec, final Path baseDirectory) {
     this.spec = spec;
@@ -186,10 +192,13 @@ public class FileSystemBlobSidecarsArchiver implements BlobSidecarsArchiver {
   }
 
   private DeserializableTypeDefinition<List<BlobSidecar>> getJsonTypeDefinition(final UInt64 slot) {
-    return listOf(
-        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-            .getBlobSidecarSchema()
-            .getJsonTypeDefinition());
+    return milestoneToTypeDefinitionCache.computeIfAbsent(
+        spec.atSlot(slot).getMilestone(),
+        milestone ->
+            listOf(
+                SchemaDefinitionsDeneb.required(spec.forMilestone(milestone).getSchemaDefinitions())
+                    .getBlobSidecarSchema()
+                    .getJsonTypeDefinition()));
   }
 
   private String formatIndexFileOutput(final SlotAndBlockRoot slotAndBlockRoot) {

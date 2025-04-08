@@ -110,9 +110,8 @@ public interface StorageQueryChannel extends ChannelInterface {
   SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
       SlotAndBlockRoot slotAndBlockRoot);
 
-  // Methods for retrieving archived blobs
-  SafeFuture<Optional<List<BlobSidecar>>> getArchivedBlobSidecars(
-      SlotAndBlockRoot slotAndBlockRoot);
+  // Methods for retrieving archived blobs (when enabled)
+  SafeFuture<List<BlobSidecar>> getArchivedBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
 
-  SafeFuture<Optional<List<BlobSidecar>>> getArchivedBlobSidecars(UInt64 slot);
+  SafeFuture<List<BlobSidecar>> getArchivedBlobSidecars(UInt64 slot);
 }

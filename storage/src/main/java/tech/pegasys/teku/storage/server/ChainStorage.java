@@ -371,13 +371,13 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Optional<List<BlobSidecar>>> getArchivedBlobSidecars(
+  public SafeFuture<List<BlobSidecar>> getArchivedBlobSidecars(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    return SafeFuture.of(() -> blobSidecarsArchiver.retrieve(slotAndBlockRoot));
+    return SafeFuture.of(() -> blobSidecarsArchiver.retrieve(slotAndBlockRoot).orElse(List.of()));
   }
 
   @Override
-  public SafeFuture<Optional<List<BlobSidecar>>> getArchivedBlobSidecars(final UInt64 slot) {
-    return SafeFuture.of(() -> blobSidecarsArchiver.retrieve(slot));
+  public SafeFuture<List<BlobSidecar>> getArchivedBlobSidecars(final UInt64 slot) {
+    return SafeFuture.of(() -> blobSidecarsArchiver.retrieve(slot).orElse(List.of()));
   }
 }
