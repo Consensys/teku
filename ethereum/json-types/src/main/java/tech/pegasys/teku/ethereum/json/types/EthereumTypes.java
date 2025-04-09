@@ -158,9 +158,15 @@ public class EthereumTypes {
   @NotNull
   private static <T extends SszData> Map<String, String> getSszHeaders(
       final Function<T, SpecMilestone> milestoneSelector, final T value) {
+    // TODO EIP7805 this should be removed once eip7805 data types are supported
+    final SpecMilestone specMilestone = milestoneSelector.apply(value);
+    final SpecMilestone selectedMilestone =
+        specMilestone.isGreaterThanOrEqualTo(SpecMilestone.EIP7805)
+            ? SpecMilestone.FULU
+            : specMilestone;
     return Map.of(
         HEADER_CONSENSUS_VERSION,
-        milestoneSelector.apply(value).lowerCaseName(),
+        selectedMilestone.lowerCaseName(),
         RestApiConstants.HEADER_CONTENT_DISPOSITION,
         getSszFilename(value));
   }
