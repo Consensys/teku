@@ -120,6 +120,31 @@ public class BlobSidecarSelectorFactoryTest {
   }
 
   @Test
+  public void blockRootSelector_shouldAttemptToGetFinalizedBlobSidecarsFromArchive()
+      throws ExecutionException, InterruptedException {
+    final UInt64 finalizedSlot = UInt64.valueOf(42);
+    final SignedBlockAndState blockAndState = data.randomSignedBlockAndState(100);
+    when(client.getChainHead()).thenReturn(Optional.of(ChainHead.create(blockAndState)));
+
+    when(client.getFinalizedSlotByBlockRoot(block.getRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(finalizedSlot)));
+    final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(finalizedSlot, block.getRoot());
+    // not available in DB
+    when(client.getBlobSidecars(slotAndBlockRoot, indices))
+        .thenReturn(SafeFuture.completedFuture(List.of()));
+    // available in archive
+    when(client.getArchivedBlobSidecars(slotAndBlockRoot, indices))
+        .thenReturn(SafeFuture.completedFuture(blobSidecars));
+
+    final Optional<BlobSidecarsAndMetaData> result =
+        blobSidecarSelectorFactory
+            .blockRootSelector(block.getRoot())
+            .getBlobSidecars(indices)
+            .get();
+    assertThat(result.get().getData()).isEqualTo(blobSidecars);
+  }
+
+  @Test
   public void blockRootSelector_shouldGetBlobSidecarsByRetrievingBlock()
       throws ExecutionException, InterruptedException {
     final SignedBlockAndState blockAndState = data.randomSignedBlockAndState(100);
@@ -145,6 +170,23 @@ public class BlobSidecarSelectorFactoryTest {
       throws ExecutionException, InterruptedException {
     when(client.isFinalized(block.getSlot())).thenReturn(true);
     when(client.getBlobSidecars(block.getSlot(), indices))
+        .thenReturn(SafeFuture.completedFuture(blobSidecars));
+    when(client.isChainHeadOptimistic()).thenReturn(false);
+
+    final Optional<BlobSidecarsAndMetaData> result =
+        blobSidecarSelectorFactory.slotSelector(block.getSlot()).getBlobSidecars(indices).get();
+    assertThat(result.get().getData()).isEqualTo(blobSidecars);
+  }
+
+  @Test
+  public void slotSelector_shouldAttemptToGetFinalizedBlobSidecarsFromArchive()
+      throws ExecutionException, InterruptedException {
+    when(client.isFinalized(block.getSlot())).thenReturn(true);
+    // not available in DB
+    when(client.getBlobSidecars(block.getSlot(), indices))
+        .thenReturn(SafeFuture.completedFuture(List.of()));
+    // available in archive
+    when(client.getArchivedBlobSidecars(block.getSlot(), indices))
         .thenReturn(SafeFuture.completedFuture(blobSidecars));
     when(client.isChainHeadOptimistic()).thenReturn(false);
 
@@ -228,6 +270,11 @@ public class BlobSidecarSelectorFactoryTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
     when(client.getBlobSidecars(any(SlotAndBlockRoot.class), anyList()))
         .thenReturn(SafeFuture.completedFuture(List.of()));
+    when(client.getArchivedBlobSidecars(any(SlotAndBlockRoot.class), anyList()))
+        .thenReturn(SafeFuture.completedFuture(List.of()));
+    when(client.getArchivedBlobSidecars(any(UInt64.class), anyList()))
+        .thenReturn(SafeFuture.completedFuture(List.of()));
+
     blobSidecarSelectorFactory.slotSelector(block.getSlot()).getBlobSidecars(indices).get();
     if (ctx.getSpec().isMilestoneSupported(SpecMilestone.DENEB)) {
       verify(client).getBlobSidecars(any(SlotAndBlockRoot.class), anyList());
@@ -273,8 +320,6 @@ public class BlobSidecarSelectorFactoryTest {
     when(client.isFinalized(block.getSlot())).thenReturn(false);
     when(client.getBlockAtSlotExact(block.getSlot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
-    when(client.getBlobSidecars(block.getSlot(), indices))
-        .thenReturn(SafeFuture.completedFuture(blobSidecars));
     when(client.isChainHeadOptimistic()).thenReturn(false);
     when(client.getBlobSidecars(block.getSlotAndBlockRoot(), indices))
         .thenReturn(SafeFuture.completedFuture(blobSidecars));
