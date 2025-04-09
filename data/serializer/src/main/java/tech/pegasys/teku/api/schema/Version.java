@@ -33,8 +33,7 @@ public enum Version {
       case CAPELLA -> capella;
       case DENEB -> deneb;
       case ELECTRA -> electra;
-      // TODO EIP7805 this should be removed once eip7805 data types are supported
-      case EIP7805 -> electra;
+      case EIP7805 -> eip7805;
     };
   }
 }
