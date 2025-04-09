@@ -26,8 +26,4 @@ public class DeserializableListTypeDefinition<T>
       final Optional<Integer> maxItems) {
     super(itemType, Function.identity(), minItems, maxItems);
   }
-
-  public DeserializableListTypeDefinition(final DeserializableTypeDefinition<T> itemType) {
-    super(itemType, Function.identity(), Optional.empty(), Optional.empty());
-  }
 }
