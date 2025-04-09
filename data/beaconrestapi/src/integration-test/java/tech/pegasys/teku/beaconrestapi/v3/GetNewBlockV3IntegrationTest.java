@@ -28,8 +28,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXEC
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
-import static tech.pegasys.teku.spec.SpecMilestone.EIP7805;
-import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
@@ -251,11 +249,8 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
       final UInt256 executionPayloadValue,
       final UInt256 consensusBlockValue) {
     assertThat(response.code()).isEqualTo(SC_OK);
-    // TODO EIP7805 this should be removed once eip7805 data types are supported
-    final SpecMilestone selectedSpecMilestone =
-        specMilestone.isGreaterThanOrEqualTo(EIP7805) ? ELECTRA : specMilestone;
     assertThat(response.header(HEADER_CONSENSUS_VERSION))
-        .isEqualTo(selectedSpecMilestone.name().toLowerCase(Locale.ROOT));
+        .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED))
         .isEqualTo(Boolean.toString(blinded));
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_VALUE))
