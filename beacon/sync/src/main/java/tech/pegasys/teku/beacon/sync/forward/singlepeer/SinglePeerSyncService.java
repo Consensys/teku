@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 
+import java.util.Optional;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
+import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncProgress;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -48,6 +50,11 @@ public class SinglePeerSyncService extends Service implements ForwardSyncService
   @Override
   public SyncingStatus getSyncStatus() {
     return syncManager.getSyncStatus();
+  }
+
+  @Override
+  public SafeFuture<Optional<SyncProgress>> getSyncProgress() {
+    return SafeFuture.completedFuture(Optional.empty());
   }
 
   @Override

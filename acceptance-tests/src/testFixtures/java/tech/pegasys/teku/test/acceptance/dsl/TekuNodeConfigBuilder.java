@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
+import static io.libp2p.crypto.keys.Secp256k1Kt.unmarshalSecp256k1PrivateKey;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.DATA_PATH;
@@ -64,6 +65,7 @@ import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuNodeConfigBuilder {
+
   private static final Logger LOG = LogManager.getLogger();
   public static final String DEFAULT_NETWORK_NAME = "swift";
   protected static final String TRUSTED_SETUP_FILE = "/trusted-setup.txt";
@@ -322,6 +324,31 @@ public class TekuNodeConfigBuilder {
     configMap.put("metrics-interface", "0.0.0.0");
     configMap.put("metrics-host-allowlist", "*");
     return new TekuNodeConfigBuilder(NodeType.VALIDATOR, configMap);
+  }
+
+  public static TekuNodeConfigBuilder createBootnode() throws Exception {
+    final PrivKey privKey = KeyKt.generateKeyPair(KeyType.SECP256K1).component1();
+    return createBootnodeInternal(privKey);
+  }
+
+  public static TekuNodeConfigBuilder createBootnode(final String nodeKeyHex) throws Exception {
+    final PrivKey privKey =
+        unmarshalSecp256k1PrivateKey(Bytes.fromHexString(nodeKeyHex).toArrayUnsafe());
+    return createBootnodeInternal(privKey);
+  }
+
+  private static TekuNodeConfigBuilder createBootnodeInternal(final PrivKey privKey)
+      throws Exception {
+    final Map<String, Object> configMap = new HashMap<>();
+    configMap.put("network", DEFAULT_NETWORK_NAME);
+    configMap.put("p2p-enabled", true);
+    configMap.put("p2p-discovery-enabled", true);
+    configMap.put("p2p-port", P2P_PORT);
+    configMap.put("p2p-advertised-port", P2P_PORT);
+    configMap.put("p2p-interface", "0.0.0.0");
+    configMap.put("p2p-private-key-file", PRIVATE_KEY_FILE_PATH);
+    configMap.put("log-destination", "console");
+    return new TekuNodeConfigBuilder(NodeType.BOOTNODE, configMap).withPrivateKey(privKey);
   }
 
   public TekuNodeConfig build() {
@@ -624,7 +651,7 @@ public class TekuNodeConfigBuilder {
   }
 
   private TekuNodeConfigBuilder withPrivateKey(final PrivKey privKey) throws IOException {
-    mustBe(NodeType.BEACON_NODE);
+    mustBe(NodeType.BEACON_NODE, NodeType.BOOTNODE);
     this.maybePrivKey = Optional.ofNullable(privKey);
     this.maybePeerId = maybePrivKey.map(privateKey -> PeerId.fromPubKey(privateKey.publicKey()));
     final File privateKeyFile = File.createTempFile("private-key", ".txt");
@@ -635,8 +662,8 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
-  private void mustBe(final NodeType expected) {
-    if (!nodeType.equals(expected)) {
+  private void mustBe(final NodeType... expected) {
+    if (Arrays.stream(expected).filter(type -> type == nodeType).findAny().isEmpty()) {
       LOG.error("Function not supported for node type {}", nodeType);
       throw new UnsupportedOperationException();
     }
@@ -669,6 +696,7 @@ public class TekuNodeConfigBuilder {
 
   private enum NodeType {
     VALIDATOR,
-    BEACON_NODE
+    BEACON_NODE,
+    BOOTNODE
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -79,6 +79,10 @@ public class AcceptanceTestBase {
   protected TekuValidatorNode createValidatorNode(
       final TekuDockerVersion version, final TekuNodeConfig configOptions) {
     return addNode(TekuValidatorNode.create(network, version, configOptions));
+  }
+
+  protected TekuBootnodeNode createBootnode(final TekuNodeConfig tekuNodeConfig) {
+    return addNode(TekuBootnodeNode.create(network, TekuDockerVersion.LOCAL_BUILD, tekuNodeConfig));
   }
 
   protected Web3SignerNode createWeb3SignerNode(

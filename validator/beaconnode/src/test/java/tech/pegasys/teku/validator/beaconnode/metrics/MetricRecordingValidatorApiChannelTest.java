@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -107,7 +108,8 @@ class MetricRecordingValidatorApiChannelTest {
   @MethodSource("getSendDataArguments")
   void shouldRecordSuccessfulSendRequest(
       final Function<ValidatorApiChannel, SafeFuture<List<Object>>> method,
-      final String methodLabel) {
+      final String methodLabel,
+      final Optional<String> timerLabel) {
     when(method.apply(delegate)).thenReturn(SafeFuture.completedFuture(emptyList()));
 
     final SafeFuture<List<Object>> result = method.apply(apiChannel);
@@ -117,6 +119,9 @@ class MetricRecordingValidatorApiChannelTest {
     assertThat(getCounterValue(methodLabel, RequestOutcome.SUCCESS)).isEqualTo(1);
     assertThat(getCounterValue(methodLabel, RequestOutcome.ERROR)).isZero();
     assertThat(getCounterValue(methodLabel, RequestOutcome.DATA_UNAVAILABLE)).isZero();
+
+    timerLabel.ifPresent(
+        label -> assertThat(getDutiesOperationTimerDurations(label, "send")).hasSize(1));
   }
 
   @ParameterizedTest(name = "{displayName} - {0}")
@@ -124,6 +129,7 @@ class MetricRecordingValidatorApiChannelTest {
   void shouldRecordFailingSendRequest(
       final Function<ValidatorApiChannel, SafeFuture<List<Object>>> method,
       final String methodLabel,
+      final Optional<String> metricsTimerLabel,
       final List<Object> failures) {
     when(method.apply(delegate)).thenReturn(SafeFuture.completedFuture(failures));
 
@@ -134,6 +140,9 @@ class MetricRecordingValidatorApiChannelTest {
     assertThat(getCounterValue(methodLabel, RequestOutcome.SUCCESS)).isZero();
     assertThat(getCounterValue(methodLabel, RequestOutcome.ERROR)).isEqualTo(1);
     assertThat(getCounterValue(methodLabel, RequestOutcome.DATA_UNAVAILABLE)).isZero();
+
+    metricsTimerLabel.ifPresent(
+        label -> assertThat(getDutiesOperationTimerDurations(label, "send")).hasSize(1));
   }
 
   @ParameterizedTest(name = "{displayName} - {0}")
@@ -237,16 +246,19 @@ class MetricRecordingValidatorApiChannelTest {
             "sendSignedAttestations",
             channel -> channel.sendSignedAttestations(attestations),
             BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD,
+            Optional.of("attestation_production"),
             submissionErrors),
         sendDataTest(
             "sendSyncCommitteeMessages",
             channel -> channel.sendSyncCommitteeMessages(syncCommitteeMessages),
             BeaconNodeRequestLabels.SEND_SYNC_COMMITTEE_MESSAGES_METHOD,
+            Optional.empty(),
             submissionErrors),
         sendDataTest(
             "sendAggregateAndProofs",
             channel -> channel.sendAggregateAndProofs(aggregateAndProofs),
             BeaconNodeRequestLabels.PUBLISH_AGGREGATE_AND_PROOFS_METHOD,
+            Optional.empty(),
             submissionErrors));
   }
 
@@ -262,8 +274,9 @@ class MetricRecordingValidatorApiChannelTest {
       final String name,
       final Function<ValidatorApiChannel, SafeFuture<List<T>>> method,
       final String methodLabel,
+      final Optional<String> timerLabel,
       final List<T> errors) {
-    return Arguments.of(Named.named(name, method), methodLabel, errors);
+    return Arguments.of(Named.named(name, method), methodLabel, timerLabel, errors);
   }
 
   private long getCounterValue(final String methodLabel, final RequestOutcome outcome) {
@@ -272,5 +285,11 @@ class MetricRecordingValidatorApiChannelTest {
         MetricRecordingValidatorApiChannel.BEACON_NODE_REQUESTS_COUNTER_NAME,
         methodLabel,
         outcome.toString());
+  }
+
+  private Set<Long> getDutiesOperationTimerDurations(final String... labels) {
+    return metricsSystem
+        .getLabelledOperationTimer(TekuMetricCategory.VALIDATOR_DUTY, "timer")
+        .getDurations(labels);
   }
 }

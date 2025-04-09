@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -176,6 +176,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @CommandLine.Spec private CommandLine.Model.CommandSpec spec;
 
   private final ValidatorClientCommand validatorClientSubcommand;
+  private final BootnodeCommand bootnodeSubcommand;
 
   public BeaconNodeCommand(
       final PrintWriter outputWriter,
@@ -192,6 +193,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
     metricCategoryConverter.addCategories(TekuMetricCategory.class);
     metricCategoryConverter.addCategories(StandardMetricCategory.class);
     this.validatorClientSubcommand = new ValidatorClientCommand(loggingOptions);
+    this.bootnodeSubcommand = new BootnodeCommand(loggingOptions);
   }
 
   private CommandLine configureCommandLine(final CommandLine commandLine) {
@@ -212,7 +214,10 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   private CommandLine getCommandLine() {
-    return configureCommandLine(new CommandLine(this).addSubcommand(validatorClientSubcommand));
+    return configureCommandLine(
+        new CommandLine(this)
+            .addSubcommand(validatorClientSubcommand)
+            .addSubcommand(bootnodeSubcommand));
   }
 
   public int parse(final String[] args) {
@@ -336,7 +341,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
     try {
       startLogging();
       final TekuConfiguration tekuConfig = tekuConfiguration();
-      startAction.start(tekuConfig, false);
+      startAction.start(tekuConfig, NodeMode.COMBINED);
       return 0;
     } catch (final Throwable t) {
       return handleExceptionAndReturnExitCode(t);
@@ -423,10 +428,5 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   public LoggingConfigurator getLoggingConfigurator() {
     return loggingConfigurator;
-  }
-
-  @FunctionalInterface
-  public interface StartAction {
-    void start(TekuConfiguration config, boolean validatorClient);
   }
 }

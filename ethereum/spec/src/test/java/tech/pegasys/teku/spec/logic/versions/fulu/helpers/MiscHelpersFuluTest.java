@@ -25,7 +25,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -39,6 +42,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGAbstractBenchmark;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
@@ -46,6 +50,8 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntry;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -63,7 +69,11 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
                       fuluBuilder
                           .numberOfColumns(128)
                           .numberOfCustodyGroups(128)
+                          .custodyRequirement(4)
+                          .validatorCustodyRequirement(8)
+                          .balancePerAdditionalCustodyGroup(UInt64.valueOf(32000000000L))
                           .samplesPerSlot(16)));
+  private final SpecConfig specConfig = spec.atSlot(UInt64.ZERO).getConfig();
   private final PredicatesElectra predicates = new PredicatesElectra(spec.getGenesisSpecConfig());
   private final SchemaDefinitionsElectra schemaDefinitionsElectra =
       SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions());
@@ -237,6 +247,30 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
         .isFalse();
   }
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+  @ParameterizedTest(name = "{0} validator custody groups required")
+  @MethodSource("getValidatorCustodyRequirementFixtures")
+  public void testGetValidatorCustodyRequirement(
+      final int expectedValidatorCustodyCount, final long[] validatorBalancesEth) {
+    BeaconStateTestBuilder beaconStateTestBuilder =
+        new BeaconStateTestBuilder(dataStructureUtil)
+            .forkVersion(specConfig.getGenesisForkVersion());
+
+    LongStream.of(validatorBalancesEth)
+        .mapToObj(balance -> UInt64.valueOf(balance).times(1_000_000_000L))
+        .forEach(beaconStateTestBuilder::activeConsolidatingValidator);
+    BeaconState state = beaconStateTestBuilder.build();
+
+    final Set<UInt64> validatorIndicesSet =
+        IntStream.range(0, validatorBalancesEth.length)
+            .mapToObj(UInt64::valueOf)
+            .collect(Collectors.toSet());
+    assertEquals(
+        UInt64.valueOf(expectedValidatorCustodyCount),
+        miscHelpersFulu.getValidatorsCustodyRequirement(state, validatorIndicesSet));
+  }
+
   static Stream<Arguments> getExtendedSampleCountFixtures() throws IOException {
     return Stream.of(
         Arguments.of(0, 16),
@@ -249,5 +283,18 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
         Arguments.of(7, 37),
         Arguments.of(8, 40),
         Arguments.of(64, 128));
+  }
+
+  static Stream<Arguments> getValidatorCustodyRequirementFixtures() throws IOException {
+    return Stream.of(
+        // expectedValidatorCustodyCount, validatorBalancesEth
+        Arguments.of(8, new long[] {31}),
+        Arguments.of(8, new long[] {32}),
+        Arguments.of(8, new long[] {32, 32, 33, 34, 33, 32}),
+        Arguments.of(15, new long[] {32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32}),
+        Arguments.of(9, new long[] {48, 48, 48, 48, 48, 48}),
+        Arguments.of(8, new long[] {48, 48}),
+        Arguments.of(128, new long[] {32, 48, 1024, 2048, 1024}),
+        Arguments.of(128, new long[] {2048, 2048}));
   }
 }
