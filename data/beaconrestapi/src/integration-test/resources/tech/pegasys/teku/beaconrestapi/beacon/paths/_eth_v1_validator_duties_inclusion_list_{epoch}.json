@@ -1,0 +1,77 @@
+{
+  "post" : {
+    "tags" : [ "Validator", "Validator Required Api" ],
+    "operationId" : "getInclusionListCommitteeDuties",
+    "summary" : "Get inclusion list committee duties",
+    "description" : "Requests the beacon node to provide a set of inclusion list committee duties for a particular epoch.\n    Duties should only need to be checked once per epoch,\n    however a chain reorganization (of > MIN_SEED_LOOKAHEAD epochs) could occur,\n    resulting in a change of duties. For full safety, you should monitor head events and confirm the\n    dependent root in this response matches:\n      - event.previous_duty_dependent_root when `compute_epoch_at_slot(event.slot) == epoch`\n      - event.current_duty_dependent_root when `compute_epoch_at_slot(event.slot) + 1 == epoch`\n      - event.block otherwise\n    The dependent_root value is `get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch - 1) - 1)`\n    or the genesis block root in the case of underflow.",
+    "parameters" : [ {
+      "name" : "epoch",
+      "required" : true,
+      "in" : "path",
+      "schema" : {
+        "type" : "string",
+        "description" : "Should only be allowed 1 epoch ahead",
+        "example" : "1",
+        "format" : "uint64"
+      }
+    } ],
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "type" : "array",
+            "minItems" : 1,
+            "items" : {
+              "type" : "string",
+              "description" : "An array of the validator indices for which to obtain the duties.",
+              "example" : "1",
+              "format" : "uint64"
+            }
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Success response",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetInclusionListCommitteeDutiesResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving requests.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

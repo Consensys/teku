@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.ethereum.json.types.validator;
 
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public record InclusionListDuty(UInt64 slot, int validatorIndex, BLSPublicKey publicKey) {}
+public record InclusionListDuty(
+    UInt64 slot, int validatorIndex, BLSPublicKey publicKey, Bytes32 inclusionListCommitteeRoot) {}

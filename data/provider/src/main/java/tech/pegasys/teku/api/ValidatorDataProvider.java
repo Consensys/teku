@@ -24,6 +24,7 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.InclusionListDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSubnetSubscription;
@@ -214,6 +215,11 @@ public class ValidatorDataProvider {
 
   public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
     return SafeFuture.of(() -> validatorApiChannel.getProposerDuties(epoch));
+  }
+
+  public SafeFuture<Optional<InclusionListDuties>> getInclusionListDuties(
+      final UInt64 epoch, final IntList indices) {
+    return SafeFuture.of(() -> validatorApiChannel.getInclusionListDuties(epoch, indices));
   }
 
   public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
