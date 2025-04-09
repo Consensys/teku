@@ -98,6 +98,11 @@ public class DelegatingSpecConfigFulu extends DelegatingSpecConfigElectra
   }
 
   @Override
+  public UInt64 getBalancePerAdditionalCustodyGroup() {
+    return delegate.getBalancePerAdditionalCustodyGroup();
+  }
+
+  @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;

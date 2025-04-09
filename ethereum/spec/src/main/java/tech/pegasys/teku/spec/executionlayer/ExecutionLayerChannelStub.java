@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.SystemTimeProvider.SYSTEM_TIME_PROVIDER;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -370,10 +371,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<List<Optional<BlobAndCellProofs>>> engineGetBlobAndCellProofsList(
+  public SafeFuture<List<BlobAndCellProofs>> engineGetBlobAndCellProofsList(
       final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
-    return SafeFuture.completedFuture(
-        blobVersionedHashes.stream().map(e -> Optional.<BlobAndCellProofs>empty()).toList());
+    return SafeFuture.completedFuture(Collections.emptyList());
   }
 
   @Override

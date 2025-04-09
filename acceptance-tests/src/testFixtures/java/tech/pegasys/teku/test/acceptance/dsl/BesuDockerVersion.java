@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,7 +14,7 @@
 package tech.pegasys.teku.test.acceptance.dsl;
 
 public enum BesuDockerVersion {
-  STABLE("24.9.1"),
+  STABLE("25.3.0"),
   DEVELOP("develop");
 
   private final String version;

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,11 +13,16 @@
 
 package tech.pegasys.teku.beacon.sync.forward;
 
+import java.util.Optional;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
+import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncProgress;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public interface ForwardSync {
 
   SyncingStatus getSyncStatus();
+
+  SafeFuture<Optional<SyncProgress>> getSyncProgress();
 
   boolean isSyncActive();
 

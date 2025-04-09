@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -69,7 +69,7 @@ public class MultipeerCommonAncestorFinder {
     }
 
     return findCommonAncestor(latestFinalizedSlot, targetChain)
-        .thenPeek(ancestor -> LOG.info("Found common ancestor at slot {}", ancestor));
+        .thenPeek(ancestor -> LOG.debug("Found common ancestor at slot {}", ancestor));
   }
 
   private SafeFuture<UInt64> findCommonAncestor(

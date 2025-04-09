@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -86,10 +86,12 @@ public abstract class AbstractNode implements Node {
             .network(network)
             .storageMode(storageMode)
             .hardwareInfo(new SystemInfo().getHardware())
+            .maxHeapSize(Runtime.getRuntime().maxMemory())
             .beaconChainRestApiEnabled(beaconChainRestApiConfig.isRestApiEnabled())
             .beaconChainRestApiInterface(beaconChainRestApiConfig.getRestApiInterface())
             .beaconChainRestApiPort(beaconChainRestApiConfig.getRestApiPort())
             .beaconChainRestApiAllow(beaconChainRestApiConfig.getRestApiHostAllowlist())
+            .validatorRestApiEnabled(validatorRestApiConfig.isRestApiEnabled())
             .validatorRestApiInterface(validatorRestApiConfig.getRestApiInterface())
             .validatorRestApiPort(validatorRestApiConfig.getRestApiPort())
             .validatorRestApiAllow(validatorRestApiConfig.getRestApiHostAllowlist())

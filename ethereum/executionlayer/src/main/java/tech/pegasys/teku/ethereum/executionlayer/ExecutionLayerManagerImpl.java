@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -237,17 +237,13 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   @Override
-  public SafeFuture<List<Optional<BlobAndCellProofs>>> engineGetBlobAndCellProofsList(
+  public SafeFuture<List<BlobAndCellProofs>> engineGetBlobAndCellProofsList(
       final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
     LOG.trace(
         "calling engineGetBlobAndCellProofsList(blobVersionedHashes={}, slot={})",
         blobVersionedHashes,
         slot);
-    return executionClientHandler
-        .engineGetBlobsV2(blobVersionedHashes, slot)
-        .thenApply(
-            blobAndCellProofsList ->
-                blobAndCellProofsList.stream().map(Optional::ofNullable).toList());
+    return executionClientHandler.engineGetBlobsV2(blobVersionedHashes, slot);
   }
 
   @Override

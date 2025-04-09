@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,11 +13,13 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer;
 
+import java.util.Optional;
 import java.util.OptionalInt;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.events.SyncPreImportBlockChannel;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
+import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncProgress;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.BatchFactory;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.PeerScoringConflictResolutionStrategy;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.PeerChainTracker;
@@ -166,6 +168,11 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
   @Override
   public SyncingStatus getSyncStatus() {
     return syncController.getSyncStatus();
+  }
+
+  @Override
+  public SafeFuture<Optional<SyncProgress>> getSyncProgress() {
+    return syncController.getSyncProgress();
   }
 
   @Override

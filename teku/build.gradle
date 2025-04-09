@@ -29,6 +29,7 @@ dependencies {
   implementation project(':networking:eth2')
   implementation project(':networking:nat')
   implementation project(':services:beaconchain')
+  implementation project(':services:bootnode')
   implementation project(':services:chainstorage')
   implementation project(':services:executionlayer')
   implementation project(':services:powchain')

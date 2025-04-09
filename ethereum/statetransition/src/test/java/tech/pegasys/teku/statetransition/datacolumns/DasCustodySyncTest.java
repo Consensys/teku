@@ -53,6 +53,7 @@ public class DasCustodySyncTest {
                           .numberOfCustodyGroups(8)
                           .custodyRequirement(2)
                           .validatorCustodyRequirement(0)
+                          .balancePerAdditionalCustodyGroup(UInt64.valueOf(32000000000L))
                           .minEpochsForDataColumnSidecarsRequests(64)));
 
   final DasCustodyStand custodyStand =
