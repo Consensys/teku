@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.executionlayer;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -87,10 +88,9 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<List<Optional<BlobAndCellProofs>>> engineGetBlobAndCellProofsList(
+        public SafeFuture<List<BlobAndCellProofs>> engineGetBlobAndCellProofsList(
             final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
-          return SafeFuture.completedFuture(
-              blobVersionedHashes.stream().map(e -> Optional.<BlobAndCellProofs>empty()).toList());
+          return SafeFuture.completedFuture(Collections.emptyList());
         }
 
         @Override
@@ -135,7 +135,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
   SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobAndProofs(
       List<VersionedHash> blobVersionedHashes, UInt64 slot);
 
-  SafeFuture<List<Optional<BlobAndCellProofs>>> engineGetBlobAndCellProofsList(
+  SafeFuture<List<BlobAndCellProofs>> engineGetBlobAndCellProofsList(
       List<VersionedHash> blobVersionedHashes, UInt64 slot);
 
   /**
