@@ -595,8 +595,6 @@ workflows:
             - moduleChecks
             - spotless
           filters:
-            tags:
-              <<: *filters-release-tags
             branches:
               ignore:
                 - das
@@ -604,8 +602,6 @@ workflows:
           requires:
             - assemble
           filters:
-            tags:
-              <<: *filters-release-tags
             branches:
               ignore:
                 - das
@@ -620,8 +616,6 @@ workflows:
           requires:
             - assemble
           filters:
-            tags:
-              <<: *filters-release-tags
             branches:
               ignore:
                 - das
@@ -635,8 +629,6 @@ workflows:
           requires:
             - assemble
           filters:
-            tags:
-              <<: *filters-release-tags
             branches:
               ignore:
                 - das
@@ -644,8 +636,6 @@ workflows:
           requires:
             - assemble
           filters:
-            tags:
-              <<: *filters-release-tags
             branches:
               ignore:
                 - das
