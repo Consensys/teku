@@ -84,7 +84,11 @@ public abstract class AbstractRpcMethodIntegrationTest {
         checkState(nextSpecMilestone.equals(SpecMilestone.ELECTRA), "next spec should be electra");
         nextSpec = Optional.of(TestSpecFactory.createMinimalWithElectraForkEpoch(nextSpecEpoch));
       }
-      case ELECTRA -> throw new RuntimeException("Base spec is already latest supported milestone");
+      case ELECTRA -> {
+        checkState(nextSpecMilestone.equals(SpecMilestone.FULU), "next spec should be fulu");
+        nextSpec = Optional.of(TestSpecFactory.createMinimalWithFuluForkEpoch(nextSpecEpoch));
+      }
+      case FULU -> throw new RuntimeException("Base spec is already latest supported milestone");
     }
     nextSpecSlot = nextSpec.orElseThrow().computeStartSlotAtEpoch(nextSpecEpoch);
   }
@@ -209,6 +213,10 @@ public abstract class AbstractRpcMethodIntegrationTest {
 
   protected static Stream<Arguments> generateSpecTransitionWithCombinationParams() {
     return SpecMilestone.getAllMilestonesFrom(SpecMilestone.ALTAIR).stream()
+        .filter(
+            specMilestone ->
+                specMilestone.isLessThan(
+                    SpecMilestone.FULU)) // TODO-fulu eventually we remove this ignore
         .flatMap(
             milestone -> {
               final SpecMilestone prevMilestone = milestone.getPreviousMilestone();
@@ -261,7 +269,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
       case BELLATRIX -> BeaconBlockBodyBellatrix.class;
       case CAPELLA -> BeaconBlockBodyCapella.class;
       case DENEB -> BeaconBlockBodyDeneb.class;
-      case ELECTRA -> BeaconBlockBodyElectra.class;
+      case ELECTRA, FULU -> BeaconBlockBodyElectra.class;
     };
   }
 }

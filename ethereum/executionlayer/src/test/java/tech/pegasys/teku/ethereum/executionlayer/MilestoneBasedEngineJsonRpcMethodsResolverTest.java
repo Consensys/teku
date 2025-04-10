@@ -200,6 +200,28 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
         arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV3.class));
   }
 
+  @ParameterizedTest
+  @MethodSource("fuluMethods")
+  void shouldProvideExpectedMethodsForFulu(
+      final EngineApiMethod method, final Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
+    final Spec electraSpec = TestSpecFactory.createMinimalFulu();
+
+    final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
+        new MilestoneBasedEngineJsonRpcMethodsResolver(electraSpec, executionEngineClient);
+
+    final EngineJsonRpcMethod<Object> providedMethod =
+        engineMethodsResolver.getMethod(method, () -> SpecMilestone.FULU, Object.class);
+
+    assertThat(providedMethod).isExactlyInstanceOf(expectedMethodClass);
+  }
+
+  private static Stream<Arguments> fuluMethods() {
+    return Stream.of(
+        arguments(ENGINE_NEW_PAYLOAD, EngineNewPayloadV4.class),
+        arguments(ENGINE_GET_PAYLOAD, EngineGetPayloadV4.class),
+        arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV3.class));
+  }
+
   @Test
   void getsCapabilities() {
     final Spec spec =
