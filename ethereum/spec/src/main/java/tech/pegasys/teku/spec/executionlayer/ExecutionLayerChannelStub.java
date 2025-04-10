@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.SystemTimeProvider.SYSTEM_TIME_PROVIDER;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +55,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
@@ -362,10 +364,16 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobs(
+  public SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobAndProofs(
       final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
     return SafeFuture.completedFuture(
         blobVersionedHashes.stream().map(e -> Optional.<BlobAndProof>empty()).toList());
+  }
+
+  @Override
+  public SafeFuture<List<BlobAndCellProofs>> engineGetBlobAndCellProofsList(
+      final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
+    return SafeFuture.completedFuture(Collections.emptyList());
   }
 
   @Override

@@ -322,7 +322,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
             .toList();
 
     return executionLayer
-        .engineGetBlobs(versionedHashes, slotAndBlockRoot.getSlot())
+        .engineGetBlobAndProofs(versionedHashes, slotAndBlockRoot.getSlot())
         .thenAccept(
             blobAndProofs -> {
               checkArgument(
