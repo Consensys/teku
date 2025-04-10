@@ -596,13 +596,15 @@ workflows:
             - spotless
           filters:
             branches:
-              ignore: das
+              ignore:
+                - das
       - referenceTestsPrep:
           requires:
             - assemble
           filters:
             branches:
-              ignore: das
+              ignore:
+                - das
       - referenceTests:
           requires:
             - assemble
@@ -615,7 +617,8 @@ workflows:
             - assemble
           filters:
             branches:
-              ignore: das
+              ignore:
+                - das
       - propertyTests:
           requires:
             - assemble
@@ -627,13 +630,15 @@ workflows:
             - assemble
           filters:
             branches:
-              ignore: das
+              ignore:
+                - das
       - acceptanceTests:
           requires:
             - assemble
           filters:
             branches:
-              ignore: das
+              ignore:
+                - das
       - extractAPISpec:
           requires:
             - assemble
@@ -657,7 +662,6 @@ workflows:
             - extractAPISpec
             - moduleChecks
             - spotless
-            - windowsBuild
           context:
             - protocols-cloudsmith
       - publishDockerAmd64:
@@ -677,7 +681,6 @@ workflows:
             - extractAPISpec
             - moduleChecks
             - spotless
-            - windowsBuild
           context:
             - protocols-dockerhub
       - publishDockerArm64:
@@ -697,7 +700,6 @@ workflows:
             - extractAPISpec
             - moduleChecks
             - spotless
-            - windowsBuild
           context:
             - protocols-dockerhub
       - manifestDocker:
@@ -730,7 +732,6 @@ workflows:
             - extractAPISpec
             - moduleChecks
             - spotless
-            - windowsBuild
   nightly:
     triggers:
       - schedule:
