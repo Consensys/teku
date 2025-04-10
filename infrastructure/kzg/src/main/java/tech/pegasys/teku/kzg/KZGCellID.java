@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,8 +13,15 @@
 
 package tech.pegasys.teku.kzg;
 
-public final class CKZG4844Test extends KZGAbstractTest {
-  public CKZG4844Test() {
-    super(CKZG4844.getInstance());
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+
+public record KZGCellID(UInt64 id) {
+
+  public static KZGCellID fromCellColumnIndex(final int idx) {
+    return new KZGCellID(UInt64.valueOf(idx));
+  }
+
+  int getColumnIndex() {
+    return id.intValue();
   }
 }

@@ -560,7 +560,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initKzg() {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      kzg = KZG.getInstance();
+      kzg = KZG.getInstance(beaconConfig.eth2NetworkConfig().isRustKzgEnabled());
       final String trustedSetupFile =
           beaconConfig
               .eth2NetworkConfig()
