@@ -41,7 +41,7 @@ public class BeaconStateTest {
           case BELLATRIX -> new BeaconStateBellatrix(beaconStateInternal);
           case CAPELLA -> new BeaconStateCapella(beaconStateInternal);
           case DENEB -> new BeaconStateDeneb(beaconStateInternal);
-          case ELECTRA -> new BeaconStateElectra(beaconStateInternal);
+          case ELECTRA, FULU -> new BeaconStateElectra(beaconStateInternal);
         };
 
     assertThat(beaconState.asInternalBeaconState(spec)).isEqualTo(beaconStateInternal);

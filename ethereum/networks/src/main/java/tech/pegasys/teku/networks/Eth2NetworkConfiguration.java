@@ -389,6 +389,7 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt64> capellaForkEpoch = Optional.empty();
     private Optional<UInt64> denebForkEpoch = Optional.empty();
     private Optional<UInt64> electraForkEpoch = Optional.empty();
+    private Optional<UInt64> fuluForkEpoch = Optional.empty();
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
     private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
@@ -452,6 +453,8 @@ public class Eth2NetworkConfiguration {
                   builder.electraBuilder(
                       electraBuilder ->
                           electraForkEpoch.ifPresent(electraBuilder::electraForkEpoch));
+                  builder.fuluBuilder(
+                      fuluBuilder -> fuluForkEpoch.ifPresent(fuluBuilder::fuluForkEpoch));
                 });
       }
       if (spec.getForkSchedule().getSupportedMilestones().contains(SpecMilestone.DENEB)
@@ -696,6 +699,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder electraForkEpoch(final UInt64 electraForkEpoch) {
       this.electraForkEpoch = Optional.of(electraForkEpoch);
+      return this;
+    }
+
+    public Builder fuluForkEpoch(final UInt64 fuluForkEpoch) {
+      this.fuluForkEpoch = Optional.of(fuluForkEpoch);
       return this;
     }
 

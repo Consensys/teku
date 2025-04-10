@@ -75,28 +75,22 @@ public class MergedGenesisInteropModeAcceptanceTest extends AcceptanceTestBase {
             .withInteropNumberOfValidators(64)
             .withValidatorProposerDefaultFeeRecipient("0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73");
 
-    switch (specMilestone) {
-      // We do not need to consider PHASE0, ALTAIR or BELLATRIX as they are all pre-Merge
-      // milestones
-      case CAPELLA:
-        tekuNodeConfigBuilder.withCapellaEpoch(UInt64.ZERO);
-        break;
-      case DENEB:
-        tekuNodeConfigBuilder.withCapellaEpoch(UInt64.ZERO);
-        tekuNodeConfigBuilder.withDenebEpoch(UInt64.ZERO);
-        break;
-      case ELECTRA:
-        tekuNodeConfigBuilder.withCapellaEpoch(UInt64.ZERO);
-        tekuNodeConfigBuilder.withDenebEpoch(UInt64.ZERO);
-        tekuNodeConfigBuilder.withElectraEpoch(UInt64.ZERO);
-        break;
-      default:
-        // Test will reach this whenever a new milestone is added and isn't mapped on the switch.
-        // This is a way to force us to always remember to validate that a new milestone can start
-        // from a merged
-        // state.
-        fail("Milestone %s not used on merged genesis interop test", specMilestone);
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      tekuNodeConfigBuilder.withCapellaEpoch(UInt64.ZERO);
     }
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+      tekuNodeConfigBuilder.withDenebEpoch(UInt64.ZERO);
+    }
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      tekuNodeConfigBuilder.withElectraEpoch(UInt64.ZERO);
+    }
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      tekuNodeConfigBuilder.withFuluEpoch(UInt64.ZERO);
+    }
+    if (specMilestone.isGreaterThan(SpecMilestone.FULU)) {
+      fail("Milestone %s not used on merged genesis interop test", specMilestone);
+    }
+
     return tekuNodeConfigBuilder;
   }
 }
