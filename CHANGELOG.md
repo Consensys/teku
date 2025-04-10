@@ -1,4 +1,5 @@
 # Changelog
+foo
 
 ## Upcoming Breaking Changes
 
