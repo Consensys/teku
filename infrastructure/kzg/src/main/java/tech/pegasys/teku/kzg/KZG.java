@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.kzg;
 
+import java.math.BigInteger;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
@@ -22,12 +23,16 @@ import org.apache.tuweni.bytes.Bytes48;
  * entry-point for all KZG operations in Teku.
  */
 public interface KZG {
-
+  BigInteger BLS_MODULUS =
+      new BigInteger(
+          "52435875175126190479447740508185965837690552500527637822603658699938581184513");
   int BYTES_PER_G1 = 48;
   int BYTES_PER_G2 = 96;
+  int CELLS_PER_EXT_BLOB = 128;
+  int FIELD_ELEMENTS_PER_BLOB = 4096;
 
-  static KZG getInstance() {
-    return CKZG4844.getInstance();
+  static KZG getInstance(final boolean rustKzgEnabled) {
+    return rustKzgEnabled ? RustWithCKZG.getInstance() : CKZG4844.getInstance();
   }
 
   KZG NOOP =
@@ -65,6 +70,24 @@ public interface KZG {
             throws KZGException {
           return KZGProof.fromBytesCompressed(Bytes48.ZERO);
         }
+
+        @Override
+        public List<KZGCellAndProof> computeCellsAndProofs(Bytes blob) {
+          throw new RuntimeException("Not implemented");
+        }
+
+        @Override
+        public boolean verifyCellProofBatch(
+            List<KZGCommitment> commitments,
+            List<KZGCellWithColumnId> cellWithIDs,
+            List<KZGProof> proofs) {
+          return false;
+        }
+
+        @Override
+        public List<KZGCellAndProof> recoverCellsAndProofs(List<KZGCellWithColumnId> cells) {
+          throw new RuntimeException("Not implemented");
+        }
       };
 
   void loadTrustedSetup(String trustedSetupFile) throws KZGException;
@@ -81,4 +104,15 @@ public interface KZG {
   KZGCommitment blobToKzgCommitment(Bytes blob) throws KZGException;
 
   KZGProof computeBlobKzgProof(Bytes blob, KZGCommitment kzgCommitment) throws KZGException;
+
+  // Fulu PeerDAS methods
+
+  List<KZGCellAndProof> computeCellsAndProofs(Bytes blob);
+
+  boolean verifyCellProofBatch(
+      List<KZGCommitment> commitments,
+      List<KZGCellWithColumnId> cellWithIDs,
+      List<KZGProof> proofs);
+
+  List<KZGCellAndProof> recoverCellsAndProofs(List<KZGCellWithColumnId> cells);
 }

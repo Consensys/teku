@@ -227,4 +227,16 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .isInstanceOf(AssertionError.class) // thrown because we had an error
         .hasMessageContaining("Goerli support has been removed");
   }
+
+  @Test
+  public void rustKzgFlagShouldBeDisabledByDefault() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.eth2NetworkConfiguration().isRustKzgEnabled()).isFalse();
+  }
+
+  @Test
+  public void rustKzgFlagCanBeUsedToToggleRustKzgOn() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments("--Xrust-kzg-enabled");
+    assertThat(config.eth2NetworkConfiguration().isRustKzgEnabled()).isTrue();
+  }
 }

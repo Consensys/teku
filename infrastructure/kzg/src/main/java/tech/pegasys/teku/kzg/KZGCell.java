@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,8 +13,16 @@
 
 package tech.pegasys.teku.kzg;
 
-public final class CKZG4844Test extends KZGAbstractTest {
-  public CKZG4844Test() {
-    super(CKZG4844.getInstance());
+import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_CELL;
+
+import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
+
+public record KZGCell(Bytes bytes) {
+
+  static final KZGCell ZERO = new KZGCell(Bytes.wrap(new byte[BYTES_PER_CELL]));
+
+  static List<KZGCell> splitBytes(final Bytes bytes) {
+    return CKZG4844Utils.bytesChunked(bytes, BYTES_PER_CELL).stream().map(KZGCell::new).toList();
   }
 }

@@ -25,10 +25,11 @@ public class KzgRetriever {
   private static final Map<String, String> TRUSTED_SETUP_FILES_BY_NETWORK = Maps.newHashMap();
 
   public static KZG getKzgWithLoadedTrustedSetup(final Spec spec, final String network) {
-    if (!spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      return KZG.NOOP;
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)
+        || spec.isMilestoneSupported(SpecMilestone.ELECTRA)) {
+      return getKzgWithLoadedTrustedSetup(network);
     }
-    return getKzgWithLoadedTrustedSetup(network);
+    return KZG.NOOP;
   }
 
   public static KZG getKzgWithLoadedTrustedSetup(final String network) {
@@ -43,7 +44,7 @@ public class KzgRetriever {
                         () ->
                             new IllegalArgumentException(
                                 "No trusted setup configured for " + network)));
-    final KZG kzg = KZG.getInstance();
+    final KZG kzg = KZG.getInstance(false);
     kzg.loadTrustedSetup(trustedSetupFile);
     return kzg;
   }
