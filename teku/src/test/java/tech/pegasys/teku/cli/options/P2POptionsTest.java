@@ -480,30 +480,29 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void staticPeersFile_shouldReadPeersFromFile(@TempDir final Path tempDir)
-      throws Exception {
+  public void staticPeersUrl_shouldReadPeersFromUrl(@TempDir final Path tempDir) throws Exception {
     // Create a test file with peers
-    Path peersFile = tempDir.resolve("static-peers.txt");
+    final Path peersFile = tempDir.resolve("static-peers.txt");
     Files.writeString(peersFile, "peer1\npeer2\n#comment\n\npeer3");
 
-    TekuConfiguration tekuConfiguration =
+    final TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments(
-            "--p2p-static-peers-file", peersFile.toAbsolutePath().toString());
+            "--p2p-static-peers-url", peersFile.toAbsolutePath().toString());
 
     assertThat(tekuConfiguration.discovery().getStaticPeers())
         .containsExactlyInAnyOrder("peer1", "peer2", "peer3");
   }
 
   @Test
-  public void staticPeersFile_shouldCombineWithCommandLinePeers(@TempDir final Path tempDir)
+  public void staticPeersUrl_shouldCombineWithCommandLinePeers(@TempDir final Path tempDir)
       throws Exception {
     // Create a test file with peers
-    Path peersFile = tempDir.resolve("static-peers.txt");
+    final Path peersFile = tempDir.resolve("static-peers.txt");
     Files.writeString(peersFile, "peer1\npeer2");
 
-    TekuConfiguration tekuConfiguration =
+    final TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments(
-            "--p2p-static-peers-file",
+            "--p2p-static-peers-url",
             peersFile.toAbsolutePath().toString(),
             "--p2p-static-peers",
             "peer3,peer4");
@@ -513,18 +512,18 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void staticPeersFile_shouldThrowIfFileDoesNotExist() {
+  public void staticPeersUrl_shouldThrowIfUrlDoesNotExist() {
     // Create a dummy instance of P2POptions
-    P2POptions p2pOptions = new P2POptions();
+    final P2POptions p2pOptions = new P2POptions();
 
     // Use reflection to access a private field and set its value
     try {
-      Field field = P2POptions.class.getDeclaredField("p2pStaticPeersFile");
+      final Field field = P2POptions.class.getDeclaredField("p2pStaticPeersUrl");
       field.setAccessible(true);
       field.set(p2pOptions, "/non/existent/file.txt");
 
       // Use reflection to call a private method getStaticPeersList
-      Method method = P2POptions.class.getDeclaredMethod("getStaticPeersList");
+      final Method method = P2POptions.class.getDeclaredMethod("getStaticPeersList");
       method.setAccessible(true);
 
       assertThatThrownBy(() -> method.invoke(p2pOptions))
