@@ -20,7 +20,11 @@ import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -40,6 +44,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrPeerAddress;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
+import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 
 public class P2POptions {
 
@@ -215,21 +220,21 @@ public class P2POptions {
   private Integer minimumRandomlySelectedPeerCount;
 
   @Option(
+      names = {"--p2p-static-peers-url"},
+      paramLabel = "<URL>",
+      description =
+          "Specifies a URL or file containing a list of 'static' peers (one per line) with which to establish and maintain connections",
+      arity = "1")
+  private String p2pStaticPeersUrl;
+
+  @Option(
       names = {"--p2p-static-peers"},
       paramLabel = "<PEER_ADDRESSES>",
       description =
-          "Specifies a list of 'static' peers with which to establish and maintain connections",
+          "Specifies a comma-separated list of 'static' peers with which to establish and maintain connections",
       split = ",",
-      arity = "0..*")
-  private List<String> p2pStaticPeers = new ArrayList<>();
-
-  @Option(
-      names = {"--p2p-static-peers-file"},
-      paramLabel = "<FILENAME>",
-      description =
-          "Specifies a file containing a list of 'static' peers (one per line) with which to establish and maintain connections",
       arity = "1")
-  private String p2pStaticPeersFile;
+  private final List<String> p2pStaticPeers = new ArrayList<>();
 
   @Option(
       names = {"--p2p-direct-peers"},
@@ -464,25 +469,26 @@ public class P2POptions {
   }
 
   private List<String> getStaticPeersList() {
-    List<String> staticPeers = new ArrayList<>(p2pStaticPeers);
+    final List<String> staticPeers = new ArrayList<>(p2pStaticPeers);
 
-    if (p2pStaticPeersFile != null) {
+    if (p2pStaticPeersUrl != null) {
       try {
-        Path filePath = Path.of(p2pStaticPeersFile);
-        if (Files.exists(filePath)) {
-          List<String> peersFromFile =
-              Files.readAllLines(filePath).stream()
-                  .map(String::trim)
-                  .filter(line -> !line.isEmpty() && !line.startsWith("#"))
-                  .collect(Collectors.toList());
-          staticPeers.addAll(peersFromFile);
+        final Optional<InputStream> maybeStream = ResourceLoader.urlOrFile().load(p2pStaticPeersUrl);
+        if (maybeStream.isPresent()) {
+          try (BufferedReader reader = new BufferedReader(new InputStreamReader(maybeStream.get(), StandardCharsets.UTF_8))) {
+            final List<String> peersFromUrl = reader.lines()
+                .map(String::trim)
+                .filter(line -> !line.isEmpty() && !line.startsWith("#"))
+                .collect(Collectors.toList());
+            staticPeers.addAll(peersFromUrl);
+          }
         } else {
           throw new InvalidConfigurationException(
-              String.format("Static peers file not found: %s", p2pStaticPeersFile));
+              String.format("Static peers URL not found: %s", p2pStaticPeersUrl));
         }
-      } catch (IOException e) {
+      } catch (Exception e) {
         throw new InvalidConfigurationException(
-            String.format("Failed to read static peers from file: %s", p2pStaticPeersFile), e);
+            String.format("Failed to read static peers from URL: %s", p2pStaticPeersUrl), e);
       }
     }
 
