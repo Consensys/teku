@@ -72,6 +72,11 @@ public interface KZG {
         }
 
         @Override
+        public List<KZGCell> computeCells(Bytes blob) {
+          throw new RuntimeException("Not implemented");
+        }
+
+        @Override
         public List<KZGCellAndProof> computeCellsAndProofs(Bytes blob) {
           throw new RuntimeException("Not implemented");
         }
@@ -106,6 +111,8 @@ public interface KZG {
   KZGProof computeBlobKzgProof(Bytes blob, KZGCommitment kzgCommitment) throws KZGException;
 
   // Fulu PeerDAS methods
+
+  List<KZGCell> computeCells(Bytes blob);
 
   List<KZGCellAndProof> computeCellsAndProofs(Bytes blob);
 

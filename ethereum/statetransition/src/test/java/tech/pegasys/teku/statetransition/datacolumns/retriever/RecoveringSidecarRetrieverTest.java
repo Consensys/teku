@@ -94,7 +94,7 @@ public class RecoveringSidecarRetrieverTest {
         Stream.generate(dataStructureUtil::randomValidBlob).limit(blobCount).toList();
     BeaconBlock block = blockResolver.addBlock(10, blobCount);
     List<DataColumnSidecar> sidecars =
-        miscHelpers.constructDataColumnSidecars(createSigned(block), blobs, kzg);
+        miscHelpers.constructDataColumnSidecarsOld(createSigned(block), blobs, kzg);
 
     List<Integer> dbColumnIndexes =
         IntStream.range(10, Integer.MAX_VALUE).limit(columnsInDbCount).boxed().toList();
@@ -148,14 +148,14 @@ public class RecoveringSidecarRetrieverTest {
         Stream.generate(dataStructureUtil::randomValidBlob).limit(blobCount).toList();
     BeaconBlock block_10_0 = blockResolver.addBlock(10, blobCount);
     List<DataColumnSidecar> sidecars_10_0 =
-        miscHelpers.constructDataColumnSidecars(createSigned(block_10_0), blobs_10_0, kzg);
+        miscHelpers.constructDataColumnSidecarsOld(createSigned(block_10_0), blobs_10_0, kzg);
     sidecars_10_0.forEach(db::addSidecar);
 
     List<Blob> blobs_10_1 =
         Stream.generate(dataStructureUtil::randomValidBlob).limit(blobCount).toList();
     BeaconBlock block_10_1 = blockResolver.addBlock(10, blobCount);
     List<DataColumnSidecar> sidecars_10_1 =
-        miscHelpers.constructDataColumnSidecars(createSigned(block_10_1), blobs_10_1, kzg);
+        miscHelpers.constructDataColumnSidecarsOld(createSigned(block_10_1), blobs_10_1, kzg);
     sidecars_10_1.stream().limit(columnsInDbCount).forEach(db::addSidecar);
 
     DataColumnSlotAndIdentifier id0 = createId(block_10_1, 100);
@@ -200,7 +200,7 @@ public class RecoveringSidecarRetrieverTest {
         Stream.generate(dataStructureUtil::randomValidBlob).limit(blobCount).toList();
     BeaconBlock block = blockResolver.addBlock(10, blobCount);
     List<DataColumnSidecar> sidecars =
-        miscHelpers.constructDataColumnSidecars(createSigned(block), blobs, kzg);
+        miscHelpers.constructDataColumnSidecarsOld(createSigned(block), blobs, kzg);
 
     List<Integer> dbColumnIndexes =
         IntStream.range(10, Integer.MAX_VALUE).limit(columnsInDbCount).boxed().toList();

@@ -51,7 +51,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsDeneb;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -163,7 +163,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   @TestTemplate
   void shouldGetUnBlindedBlockContentPostDenebAsJson() throws Exception {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
-    final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
+    final BlockContentsDeneb blockContents = dataStructureUtil.randomBlockContents(ONE);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);
     final BLSSignature signature =
@@ -187,7 +187,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   @TestTemplate
   void shouldGetUnBlindedBlockContentPostDenebAsSsz() throws IOException {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
-    final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
+    final BlockContentsDeneb blockContents = dataStructureUtil.randomBlockContents(ONE);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
@@ -199,8 +199,8 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
         false,
         blockContainerAndMetaData.executionPayloadValue(),
         blockContainerAndMetaData.consensusBlockValue());
-    final BlockContents result =
-        (BlockContents)
+    final BlockContentsDeneb result =
+        (BlockContentsDeneb)
             spec.getGenesisSchemaDefinitions()
                 .getBlockContainerSchema()
                 .sszDeserialize(Bytes.of(response.body().bytes()));

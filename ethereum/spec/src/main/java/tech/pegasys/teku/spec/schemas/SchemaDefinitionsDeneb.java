@@ -33,12 +33,12 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsWithBlobsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContentsWithBlobsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyBuilderDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
@@ -51,8 +51,8 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final BlobSchema blobSchema;
   private final SszListSchema<Blob, ? extends SszList<Blob>> blobsInBlockSchema;
   private final BlobSidecarSchema blobSidecarSchema;
-  private final BlockContentsSchema blockContentsSchema;
-  private final SignedBlockContentsSchema signedBlockContentsSchema;
+  private final BlockContentsWithBlobsSchema<?> blockContentsSchema;
+  private final SignedBlockContentsWithBlobsSchema<?> signedBlockContentsSchema;
   private final BlobsBundleSchema blobsBundleSchema;
   private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
   private final BlobSidecarsByRootRequestMessageSchema blobSidecarsByRootRequestMessageSchema;
@@ -120,11 +120,11 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     return blobSidecarSchema;
   }
 
-  public BlockContentsSchema getBlockContentsSchema() {
+  public BlockContentsWithBlobsSchema<?> getBlockContentsSchema() {
     return blockContentsSchema;
   }
 
-  public SignedBlockContentsSchema getSignedBlockContentsSchema() {
+  public SignedBlockContentsWithBlobsSchema<?> getSignedBlockContentsSchema() {
     return signedBlockContentsSchema;
   }
 

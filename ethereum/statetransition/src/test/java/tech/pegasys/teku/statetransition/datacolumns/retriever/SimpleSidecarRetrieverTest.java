@@ -130,7 +130,7 @@ public class SimpleSidecarRetrieverTest {
     List<Blob> blobs = Stream.generate(dataStructureUtil::randomValidBlob).limit(1).toList();
     BeaconBlock block = blockResolver.addBlock(10, 1);
     List<DataColumnSidecar> sidecars =
-        miscHelpers.constructDataColumnSidecars(createSigned(block), blobs, kzg);
+        miscHelpers.constructDataColumnSidecarsOld(createSigned(block), blobs, kzg);
     DataColumnSidecar sidecar0 = sidecars.get(columnIndex.intValue());
 
     DataColumnSlotAndIdentifier id0 = createId(block, columnIndex.intValue());

@@ -34,15 +34,16 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsWithBlobsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -473,6 +474,40 @@ public class BlockOperationSelectorFactory {
     };
   }
 
+  public Function<BeaconBlock, SafeFuture<BlobsCellBundle>> createBlobsCellBundleSelector() {
+    return block -> {
+      final UInt64 slot = block.getSlot();
+      final ExecutionPayloadResult executionPayloadResult =
+          executionLayerBlockProductionManager
+              .getCachedPayloadResult(slot)
+              .orElseThrow(
+                  () ->
+                      new IllegalStateException(
+                          "ExecutionPayloadResult hasn't been cached for slot " + slot));
+
+      if (executionPayloadResult.isFromLocalFlow()) {
+        // we performed a non-blinded flow, so the bundle must be in
+        // getBlobsBundleFutureFromNonBlindedFlow
+        return executionPayloadResult
+            .getBlobsCellBundleFutureFromLocalFlow()
+            .orElseThrow()
+            .thenApply(Optional::orElseThrow);
+      } else {
+        // we performed a blinded flow, so the bundle must be in the FallbackData in
+        // getBuilderBidOrFallbackDataFuture
+        throw new RuntimeException("Builder flow not yet supported");
+        //        return executionPayloadResult
+        //                .getBuilderBidOrFallbackDataFuture()
+        //                .orElseThrow()
+        //                .thenApply(
+        //                        builderBidOrFallbackData ->
+        //
+        // builderBidOrFallbackData.getFallbackDataRequired().getBlobsBundle())
+        //                .thenApply(Optional::orElseThrow);
+      }
+    };
+  }
+
   public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector() {
     return blockContainer -> {
       final UInt64 slot = blockContainer.getSlot();
@@ -507,7 +542,7 @@ public class BlockOperationSelectorFactory {
           // from the local fallback
           final BlobsBundle blobsBundle =
               builderPayloadOrFallbackData.getFallbackDataRequired().getBlobsBundle().orElseThrow();
-          final BlockContentsSchema blockContentsSchema =
+          final BlockContentsWithBlobsSchema<?> blockContentsSchema =
               SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
                   .getBlockContentsSchema();
           blobs = blockContentsSchema.getBlobsSchema().createFromElements(blobsBundle.getBlobs());

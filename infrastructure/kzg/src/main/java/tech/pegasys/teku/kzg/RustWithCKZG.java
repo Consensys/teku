@@ -28,7 +28,7 @@ final class RustWithCKZG implements KZG {
   private static RustWithCKZG instance;
 
   private final CKZG4844 ckzg4844Delegate;
-  private final RustKZG rustKzgDelegeate;
+  private final RustKZG rustKzgDelegate;
 
   static synchronized RustWithCKZG getInstance() {
     if (instance == null) {
@@ -39,13 +39,13 @@ final class RustWithCKZG implements KZG {
 
   private RustWithCKZG() {
     this.ckzg4844Delegate = CKZG4844.getInstance();
-    this.rustKzgDelegeate = RustKZG.getInstance();
+    this.rustKzgDelegate = RustKZG.getInstance();
   }
 
   @Override
   public synchronized void loadTrustedSetup(final String trustedSetupFile) throws KZGException {
     ckzg4844Delegate.loadTrustedSetup(trustedSetupFile);
-    rustKzgDelegeate.loadTrustedSetup(trustedSetupFile);
+    rustKzgDelegate.loadTrustedSetup(trustedSetupFile);
   }
 
   @Override
@@ -58,7 +58,7 @@ final class RustWithCKZG implements KZG {
     }
     KZGException rustKzgDelegateException = null;
     try {
-      rustKzgDelegeate.freeTrustedSetup();
+      rustKzgDelegate.freeTrustedSetup();
     } catch (final KZGException ex) {
       rustKzgDelegateException = ex;
     }
@@ -103,8 +103,14 @@ final class RustWithCKZG implements KZG {
   }
 
   @Override
+  public List<KZGCell> computeCells(final Bytes blob) {
+    // TODO: replace with RustKZG when available
+    return ckzg4844Delegate.computeCells(blob);
+  }
+
+  @Override
   public List<KZGCellAndProof> computeCellsAndProofs(final Bytes blob) {
-    return rustKzgDelegeate.computeCellsAndProofs(blob);
+    return rustKzgDelegate.computeCellsAndProofs(blob);
   }
 
   @Override
@@ -112,11 +118,11 @@ final class RustWithCKZG implements KZG {
       final List<KZGCommitment> commitments,
       final List<KZGCellWithColumnId> cellWithIds,
       final List<KZGProof> proofs) {
-    return rustKzgDelegeate.verifyCellProofBatch(commitments, cellWithIds, proofs);
+    return rustKzgDelegate.verifyCellProofBatch(commitments, cellWithIds, proofs);
   }
 
   @Override
   public List<KZGCellAndProof> recoverCellsAndProofs(final List<KZGCellWithColumnId> cells) {
-    return rustKzgDelegeate.recoverCellsAndProofs(cells);
+    return rustKzgDelegate.recoverCellsAndProofs(cells);
   }
 }

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.blocks.versions.fulu;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,16 +24,17 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
-public class SignedBlockContents
-    extends Container3<SignedBlockContents, SignedBeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
+public class SignedBlockContentsFulu
+    extends Container3<
+        SignedBlockContentsFulu, SignedBeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
     implements SignedBlockContainer {
 
-  SignedBlockContents(final SignedBlockContentsSchema type, final TreeNode backingNode) {
+  SignedBlockContentsFulu(final SignedBlockContentsSchemaFulu type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public SignedBlockContents(
-      final SignedBlockContentsSchema schema,
+  public SignedBlockContentsFulu(
+      final SignedBlockContentsSchemaFulu schema,
       final SignedBeaconBlock signedBeaconBlock,
       final List<KZGProof> kzgProofs,
       final List<Blob> blobs) {
@@ -46,8 +47,8 @@ public class SignedBlockContents
         schema.getBlobsSchema().createFromElements(blobs));
   }
 
-  public SignedBlockContents(
-      final SignedBlockContentsSchema schema,
+  public SignedBlockContentsFulu(
+      final SignedBlockContentsSchemaFulu schema,
       final SignedBeaconBlock signedBeaconBlock,
       final SszList<SszKZGProof> kzgProofs,
       final SszList<Blob> blobs) {

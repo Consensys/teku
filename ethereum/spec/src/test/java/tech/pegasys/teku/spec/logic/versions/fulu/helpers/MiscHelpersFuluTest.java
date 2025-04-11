@@ -110,7 +110,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
     for (int i = 0; i < numberOfRounds; i++) {
       final long start = System.currentTimeMillis();
       final List<List<MatrixEntry>> extendedMatrix =
-          miscHelpersFulu.computeExtendedMatrix(blobs, getKzg());
+          miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, getKzg());
       assertEquals(6, extendedMatrix.size());
       final long end = System.currentTimeMillis();
       runTimes.add((int) (end - start));
@@ -126,7 +126,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
     final List<Blob> blobs =
         IntStream.range(0, 6).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
     final List<List<MatrixEntry>> extendedMatrix =
-        miscHelpersFulu.computeExtendedMatrix(blobs, getKzg());
+        miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, getKzg());
     final List<SszKZGCommitment> kzgCommitments =
         blobs.stream()
             .map(blob -> getKzg().blobToKzgCommitment(blob.getBytes()))

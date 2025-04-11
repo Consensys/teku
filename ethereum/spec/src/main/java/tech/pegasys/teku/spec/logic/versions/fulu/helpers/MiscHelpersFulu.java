@@ -55,6 +55,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -238,21 +239,34 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         beaconBlockBody.getBackingNode(), getBlockBodyKzgCommitmentsGeneralizedIndex());
   }
 
-  public List<DataColumnSidecar> constructDataColumnSidecars(
+  @VisibleForTesting
+  @Deprecated
+  public List<DataColumnSidecar> constructDataColumnSidecarsOld(
       final SignedBeaconBlock signedBeaconBlock, final List<Blob> blobs, final KZG kzg) {
     return constructDataColumnSidecars(
         signedBeaconBlock.getMessage(),
         signedBeaconBlock.asHeader(),
-        computeExtendedMatrix(blobs, kzg));
+        computeExtendedMatrixAndProofs(blobs, kzg));
+  }
+
+  public List<DataColumnSidecar> constructDataColumnSidecars(
+      final SignedBeaconBlock signedBeaconBlock,
+      final List<BlobAndCellProofs> blobAndCellProofsList,
+      final KZG kzg) {
+    return constructDataColumnSidecars(
+        signedBeaconBlock.getMessage(),
+        signedBeaconBlock.asHeader(),
+        computeExtendedMatrix(blobAndCellProofsList, kzg));
   }
 
   public List<DataColumnSidecar> constructDataColumnSidecars(
       final SignedBeaconBlockHeader signedBeaconBlockHeader,
       final SszList<SszKZGCommitment> sszKZGCommitments,
       final List<Bytes32> kzgCommitmentsInclusionProof,
-      final List<Blob> blobs,
+      final List<BlobAndCellProofs> blobAndCellProofsList,
       final KZG kzg) {
-    final List<List<MatrixEntry>> extendedMatrix = computeExtendedMatrix(blobs, kzg);
+    final List<List<MatrixEntry>> extendedMatrix =
+        computeExtendedMatrix(blobAndCellProofsList, kzg);
     return constructDataColumnSidecars(
         signedBeaconBlockHeader, sszKZGCommitments, kzgCommitmentsInclusionProof, extendedMatrix);
   }
@@ -264,7 +278,8 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
    *
    * <p>>The data structure for storing cells is implementation-dependent.
    */
-  public List<List<MatrixEntry>> computeExtendedMatrix(final List<Blob> blobs, final KZG kzg) {
+  public List<List<MatrixEntry>> computeExtendedMatrixAndProofs(
+      final List<Blob> blobs, final KZG kzg) {
     return IntStream.range(0, blobs.size())
         .parallel()
         .mapToObj(
@@ -279,6 +294,30 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                         .create(
                             kzgCellAndProofs.get(cellIndex).cell(),
                             kzgCellAndProofs.get(cellIndex).proof(),
+                            blobIndex,
+                            cellIndex));
+              }
+              return row;
+            })
+        .toList();
+  }
+
+  public List<List<MatrixEntry>> computeExtendedMatrix(
+      final List<BlobAndCellProofs> blobAndCellProofsList, final KZG kzg) {
+    return IntStream.range(0, blobAndCellProofsList.size())
+        .parallel()
+        .mapToObj(
+            blobIndex -> {
+              final BlobAndCellProofs blobAndCellProofs = blobAndCellProofsList.get(blobIndex);
+              final List<KZGCell> kzgCells = kzg.computeCells(blobAndCellProofs.blob().getBytes());
+              final List<MatrixEntry> row = new ArrayList<>();
+              for (int cellIndex = 0; cellIndex < kzgCells.size(); ++cellIndex) {
+                row.add(
+                    schemaDefinitions
+                        .getMatrixEntrySchema()
+                        .create(
+                            kzgCells.get(cellIndex),
+                            blobAndCellProofs.cellProofs().get(cellIndex),
                             blobIndex,
                             cellIndex));
               }

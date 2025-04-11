@@ -13,15 +13,28 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
+import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchemaDeneb;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
-/**
- * Interface used to represent both {@link SignedBeaconBlockSchema} and {@link
- * SignedBlockContentsSchemaDeneb} and their blinded variants
- */
-public interface SignedBlockContainerSchema<T extends SignedBlockContainer>
+public interface SignedBlockContentsWithBlobsSchema<T extends SignedBlockContainer>
     extends SszContainerSchema<T> {
+  SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
+  SszFieldName FIELD_BLOBS = () -> "blobs";
+
+  T create(SignedBeaconBlock signedBeaconBlock, List<KZGProof> kzgProofs, List<Blob> blobs);
+
+  @Override
+  T createFromBackingNode(TreeNode node);
+
+  SszListSchema<SszKZGProof, ?> getKzgProofsSchema();
+
+  SszListSchema<Blob, ?> getBlobsSchema();
 
   @SuppressWarnings("unchecked")
   default SignedBlockContainerSchema<SignedBlockContainer> castTypeToSignedBlockContainer() {
