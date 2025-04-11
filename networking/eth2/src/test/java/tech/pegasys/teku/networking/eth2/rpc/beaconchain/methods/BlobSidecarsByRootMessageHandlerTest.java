@@ -102,6 +102,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
           case CAPELLA -> throw new IllegalArgumentException("Capella is an unsupported milestone");
           case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(currentForkEpoch);
           case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(currentForkEpoch);
+          case FULU -> TestSpecFactory.createMinimalWithFuluForkEpoch(currentForkEpoch);
         };
     dataStructureUtil = new DataStructureUtil(spec);
     messageSchema =

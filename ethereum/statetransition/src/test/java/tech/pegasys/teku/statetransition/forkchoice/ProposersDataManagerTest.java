@@ -58,6 +58,7 @@ class ProposersDataManagerTest {
           case CAPELLA -> TestSpecFactory.createMinimalWithCapellaForkEpoch(currentForkEpoch);
           case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(currentForkEpoch);
           case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(currentForkEpoch);
+          case FULU -> TestSpecFactory.createMinimalWithFuluForkEpoch(currentForkEpoch);
         };
     dataStructureUtil = specContext.getDataStructureUtil();
     defaultAddress = dataStructureUtil.randomEth1Address();
