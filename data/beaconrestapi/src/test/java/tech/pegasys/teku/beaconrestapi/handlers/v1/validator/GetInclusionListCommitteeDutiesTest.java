@@ -67,6 +67,7 @@ public class GetInclusionListCommitteeDutiesTest extends AbstractMigratedBeaconH
   @Test
   public void shouldGetInclusionListCommitteeDuties() throws Exception {
     request.setPathParameter(EPOCH, "100");
+    request.setRequestBody(List.of(1));
 
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
@@ -101,7 +102,9 @@ public class GetInclusionListCommitteeDutiesTest extends AbstractMigratedBeaconH
     final String data = getResponseStringFromMetadata(handler, SC_OK, duties);
     final String expected =
         Resources.toString(
-            Resources.getResource(GetProposerDutiesTest.class, "getProposerDuties.json"), UTF_8);
+            Resources.getResource(
+                GetInclusionListCommitteeDutiesTest.class, "getInclusionListCommitteeDuties.json"),
+            UTF_8);
     AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
   }
 
