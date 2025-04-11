@@ -15,7 +15,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER;
 import static tech.pegasys.teku.ethereum.json.types.validator.InclusionListDutiesBuilder.INCLUSION_LIST_DUTIES_TYPE;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
@@ -73,7 +72,6 @@ public class GetInclusionListCommitteeDuties extends RestApiEndpoint {
                 DeserializableTypeDefinition.listOf(UINT64_TYPE, Optional.of(1), Optional.empty()))
             .pathParam(EPOCH_PARAMETER)
             .response(SC_OK, "Request successful", INCLUSION_LIST_DUTIES_TYPE)
-            .response(SC_BAD_REQUEST,)
             .response(
                 SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")
             .withServiceUnavailableResponse()
