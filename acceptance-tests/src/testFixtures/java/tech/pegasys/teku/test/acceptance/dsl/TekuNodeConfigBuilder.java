@@ -559,6 +559,20 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withPeersFile(final String peersFilePath) {
+    mustBe(NodeType.BEACON_NODE);
+    LOG.debug("p2p-static-peers-file={}", peersFilePath);
+    configMap.put("p2p-static-peers-file", peersFilePath);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withPeersUrl(final String peersUrl) {
+    mustBe(NodeType.BEACON_NODE);
+    LOG.debug("p2p-static-peers-url={}", peersUrl);
+    configMap.put("p2p-static-peers-url", peersUrl);
+    return this;
+  }
+
   public TekuNodeConfigBuilder withExternalSignerUrl(final String externalSignerUrl) {
     LOG.debug("validators-external-signer-url={}", externalSignerUrl);
     configMap.put("validators-external-signer-url", externalSignerUrl);
