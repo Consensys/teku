@@ -91,7 +91,7 @@ public abstract class AbstractSszMutableComposite<
 
     childrenChanges.put(index, createChangeRecordByValue(immutableValue));
 
-    sizeCache = index >= sizeCache ? index + 1 : sizeCache;
+    sizeCache = calcNewSize(index);
     invalidate();
   }
 
@@ -238,6 +238,15 @@ public abstract class AbstractSszMutableComposite<
    * @throws IndexOutOfBoundsException is index is not valid
    */
   protected abstract void checkIndex(int index, boolean set);
+
+  /**
+   * Determines the new size given the field has been set or updated
+   *
+   * @param index of the field set or updated
+   */
+  protected int calcNewSize(final int index) {
+    return index >= sizeCache ? index + 1 : sizeCache;
+  }
 
   private static final class ChildChangeRecord<
       SszChildT extends SszData, SszMutableChildT extends SszChildT> {

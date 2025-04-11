@@ -11,6 +11,7 @@ dependencies {
   implementation 'io.consensys.tuweni:tuweni-units'
 
   testImplementation testFixtures(project(':infrastructure:collections'))
+  testImplementation testFixtures(project(':infrastructure:json'))
   testImplementation testFixtures(project(':infrastructure:serviceutils'))
 
   testFixturesApi 'io.consensys.tuweni:tuweni-bytes'
