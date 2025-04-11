@@ -18,4 +18,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public record InclusionListDuty(
-    UInt64 slot, int validatorIndex, BLSPublicKey publicKey, Bytes32 inclusionListCommitteeRoot) {}
+    UInt64 slot,
+    UInt64 validatorIndex,
+    BLSPublicKey publicKey,
+    Bytes32 inclusionListCommitteeRoot) {}

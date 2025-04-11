@@ -94,7 +94,10 @@ public class GetInclusionListCommitteeDutiesTest extends AbstractMigratedBeaconH
   private InclusionListDuty getInclusionListCommitteeDuty(
       final int validatorIndex, final UInt64 slot) {
     return new InclusionListDuty(
-        slot, UInt64.valueOf(validatorIndex), BLSTestUtil.randomPublicKey(1), inclusionListCommitteeRoot);
+        slot,
+        UInt64.valueOf(validatorIndex),
+        BLSTestUtil.randomPublicKey(1),
+        inclusionListCommitteeRoot);
   }
 
   @Test

@@ -23,45 +23,46 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
-public class InclusionListDutiesBuilder {
+public class InclusionListCommitteeDutiesBuilder {
   public static final DeserializableTypeDefinition<InclusionListDuties> INCLUSION_LIST_DUTIES_TYPE =
       DeserializableTypeDefinition.object(
-              InclusionListDuties.class, InclusionListDutiesBuilder.class)
-          .name("GetInclusionListDutiesResponse")
-          .initializer(InclusionListDutiesBuilder::new)
-          .finisher(InclusionListDutiesBuilder::build)
+              InclusionListDuties.class, InclusionListCommitteeDutiesBuilder.class)
+          .name("GetInclusionListCommitteeDutiesResponse")
+          .initializer(InclusionListCommitteeDutiesBuilder::new)
+          .finisher(InclusionListCommitteeDutiesBuilder::build)
           .withField(
               "dependent_root",
               BYTES32_TYPE,
               InclusionListDuties::dependentRoot,
-              InclusionListDutiesBuilder::dependentRoot)
+              InclusionListCommitteeDutiesBuilder::dependentRoot)
           .withField(
               EXECUTION_OPTIMISTIC,
               BOOLEAN_TYPE,
               InclusionListDuties::executionOptimistic,
-              InclusionListDutiesBuilder::executionOptimistic)
+              InclusionListCommitteeDutiesBuilder::executionOptimistic)
           .withField(
               "data",
               listOf(INCLUSION_LIST_DUTY_TYPE),
               InclusionListDuties::duties,
-              InclusionListDutiesBuilder::duties)
+              InclusionListCommitteeDutiesBuilder::duties)
           .build();
 
   private Bytes32 dependentRoot;
   private boolean executionOptimistic;
   private List<InclusionListDuty> duties;
 
-  public InclusionListDutiesBuilder dependentRoot(final Bytes32 dependentRoot) {
+  public InclusionListCommitteeDutiesBuilder dependentRoot(final Bytes32 dependentRoot) {
     this.dependentRoot = dependentRoot;
     return this;
   }
 
-  public InclusionListDutiesBuilder executionOptimistic(final boolean executionOptimistic) {
+  public InclusionListCommitteeDutiesBuilder executionOptimistic(
+      final boolean executionOptimistic) {
     this.executionOptimistic = executionOptimistic;
     return this;
   }
 
-  public InclusionListDutiesBuilder duties(final List<InclusionListDuty> duties) {
+  public InclusionListCommitteeDutiesBuilder duties(final List<InclusionListDuty> duties) {
     this.duties = duties;
     return this;
   }

@@ -76,6 +76,7 @@ public class InclusionListDutiesGenerator {
     return spec.getValidatorPubKey(state, UInt64.valueOf(validatorIndex))
         .map(
             publicKey ->
-                new InclusionListDuty(slot, validatorIndex, publicKey, inclusionListCommitteeRoot));
+                new InclusionListDuty(
+                    slot, UInt64.valueOf(validatorIndex), publicKey, inclusionListCommitteeRoot));
   }
 }

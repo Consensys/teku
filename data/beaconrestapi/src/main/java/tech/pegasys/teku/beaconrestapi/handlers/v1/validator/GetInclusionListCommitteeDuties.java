@@ -68,7 +68,11 @@ public class GetInclusionListCommitteeDuties extends RestApiEndpoint {
                     + " or the genesis block root in the case of underflow.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .requestBodyType(
-                DeserializableTypeDefinition.listOf(UINT64_TYPE.withDescription("An array of the validator indices for which to obtain the duties."), Optional.of(1), Optional.empty()))
+                DeserializableTypeDefinition.listOf(
+                    UINT64_TYPE.withDescription(
+                        "An array of the validator indices for which to obtain the duties."),
+                    Optional.of(1),
+                    Optional.empty()))
             .pathParam(EPOCH_PARAMETER.withDescription("Should only be allowed 1 epoch ahead"))
             .response(SC_OK, "Success response", INCLUSION_LIST_DUTIES_TYPE)
             .withServiceUnavailableResponse()

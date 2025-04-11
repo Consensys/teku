@@ -15,7 +15,6 @@ package tech.pegasys.teku.ethereum.json.types.validator;
 
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.PUBLIC_KEY_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import org.apache.tuweni.bytes.Bytes32;
@@ -35,19 +34,25 @@ public class InclusionListDutyBuilder {
               InclusionListDutyBuilder::publicKey)
           .withField(
               "validator_index",
-              INTEGER_TYPE,
+              UINT64_TYPE.withDescription("Index of validator in validator registry."),
               InclusionListDuty::validatorIndex,
               InclusionListDutyBuilder::validatorIndex)
-          .withField("slot", UINT64_TYPE, InclusionListDuty::slot, InclusionListDutyBuilder::slot)
+          .withField(
+              "slot",
+              UINT64_TYPE.withDescription(
+                  "The slot at which the validator must propose an inclusion list."),
+              InclusionListDuty::slot,
+              InclusionListDutyBuilder::slot)
           .withField(
               "inclusion_list_committee_root",
-              BYTES32_TYPE,
+              BYTES32_TYPE.withDescription(
+                  "The root of inclusion list committee that the validator is part of."),
               InclusionListDuty::inclusionListCommitteeRoot,
               InclusionListDutyBuilder::inclusionListCommitteeRoot)
           .build();
 
   private BLSPublicKey publicKey;
-  private int validatorIndex;
+  private UInt64 validatorIndex;
   private UInt64 slot;
   private Bytes32 inclusionListCommitteeRoot;
 
@@ -56,7 +61,7 @@ public class InclusionListDutyBuilder {
     return this;
   }
 
-  public InclusionListDutyBuilder validatorIndex(final int validatorIndex) {
+  public InclusionListDutyBuilder validatorIndex(final UInt64 validatorIndex) {
     this.validatorIndex = validatorIndex;
     return this;
   }
