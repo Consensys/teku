@@ -21,12 +21,9 @@ import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -39,12 +36,12 @@ import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.cli.converter.OptionalIntConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrPeerAddress;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
-import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 
 public class P2POptions {
 
@@ -473,13 +470,18 @@ public class P2POptions {
 
     if (p2pStaticPeersUrl != null) {
       try {
-        final Optional<InputStream> maybeStream = ResourceLoader.urlOrFile().load(p2pStaticPeersUrl);
+        final Optional<InputStream> maybeStream =
+            ResourceLoader.urlOrFile().load(p2pStaticPeersUrl);
         if (maybeStream.isPresent()) {
-          try (BufferedReader reader = new BufferedReader(new InputStreamReader(maybeStream.get(), StandardCharsets.UTF_8))) {
-            final List<String> peersFromUrl = reader.lines()
-                .map(String::trim)
-                .filter(line -> !line.isEmpty() && !line.startsWith("#"))
-                .collect(Collectors.toList());
+          try (BufferedReader reader =
+              new BufferedReader(
+                  new InputStreamReader(maybeStream.get(), StandardCharsets.UTF_8))) {
+            final List<String> peersFromUrl =
+                reader
+                    .lines()
+                    .map(String::trim)
+                    .filter(line -> !line.isEmpty() && !line.startsWith("#"))
+                    .collect(Collectors.toList());
             staticPeers.addAll(peersFromUrl);
           }
         } else {
