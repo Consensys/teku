@@ -10,7 +10,7 @@ all_env_set=true
 require_env() {
   echo -n "Checking environment variable: $1... "
   env_name="$1"
-  if [ -z ${!1+set} ]; then
+  if [ -z "${!1}" ]; then
     echo "FAILED"
     all_env_set=false
   else
