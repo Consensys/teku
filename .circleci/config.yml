@@ -594,11 +594,6 @@ workflows:
           requires:
             - moduleChecks
             - spotless
-          filters:
-            branches:
-              ignore:
-                - das
-                - get-blobs-v2
       - referenceTestsPrep:
           requires:
             - assemble
@@ -615,11 +610,6 @@ workflows:
       - unitTests:
           requires:
             - assemble
-          filters:
-            branches:
-              ignore:
-                - das
-                - get-blobs-v2
       - propertyTests:
           requires:
             - assemble
@@ -629,19 +619,9 @@ workflows:
       - integrationTests:
           requires:
             - assemble
-          filters:
-            branches:
-              ignore:
-                - das
-                - get-blobs-v2
       - acceptanceTests:
           requires:
             - assemble
-          filters:
-            branches:
-              ignore:
-                - das
-                - get-blobs-v2
       - extractAPISpec:
           requires:
             - assemble
