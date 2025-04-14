@@ -146,11 +146,12 @@ class BitvectorImpl {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof BitvectorImpl)) {
+    if (o instanceof final BitvectorImpl bitvector) {
+
+      return getSize() == bitvector.getSize() && Objects.equal(data, bitvector.data);
+    } else {
       return false;
     }
-    BitvectorImpl bitvector = (BitvectorImpl) o;
-    return getSize() == bitvector.getSize() && Objects.equal(data, bitvector.data);
   }
 
   @Override

@@ -227,14 +227,15 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
         new MockResponse()
             .setResponseCode(200)
             .setBody(
-                "{\n"
-                    + "  \"data\": {\n"
-                    + "    \"head_slot\": \"1\",\n"
-                    + "    \"sync_distance\": \"1\",\n"
-                    + "    \"is_syncing\": true,\n"
-                    + "    \"is_optimistic\": true\n"
-                    + "  }\n"
-                    + "}"));
+                """
+                            {
+                              "data": {
+                                "head_slot": "1",
+                                "sync_distance": "1",
+                                "is_syncing": true,
+                                "is_optimistic": true
+                              }
+                            }"""));
 
     final SyncingStatus result = typeDefClient.getSyncingStatus();
 

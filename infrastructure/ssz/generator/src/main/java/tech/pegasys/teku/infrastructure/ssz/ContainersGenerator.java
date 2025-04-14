@@ -133,10 +133,13 @@ public class ContainersGenerator {
                 IntStream.range(0, fieldsCount)
                     .mapToObj(
                         i ->
-                            ("  @SuppressWarnings(\"unchecked\")\n"
-                                    + "  public SszSchema<V$> getFieldSchema$() {\n"
-                                    + "    return (SszSchema<V$>) getChildSchema($);\n"
-                                    + "  }\n")
+                            """
+                                  @SuppressWarnings("unchecked")
+                                  public SszSchema<V$> getFieldSchema$() {
+                                    return (SszSchema<V$>) getChildSchema($);
+                                  }
+
+                                """
                                 .replace("$", "" + i))
                     .collect(Collectors.joining("\n\n"))));
     generateFromTemplate(

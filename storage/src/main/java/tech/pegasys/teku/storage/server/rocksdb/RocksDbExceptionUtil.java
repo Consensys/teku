@@ -28,16 +28,9 @@ public class RocksDbExceptionUtil {
     if (cause.getStatus() == null) {
       return true;
     }
-    switch (cause.getStatus().getCode()) {
-      case TimedOut:
-      case TryAgain:
-      case MergeInProgress:
-      case Incomplete:
-      case Busy:
-      case Expired:
-        return false;
-      default:
-        return true;
-    }
+    return switch (cause.getStatus().getCode()) {
+      case TimedOut, TryAgain, MergeInProgress, Incomplete, Busy, Expired -> false;
+      default -> true;
+    };
   }
 }

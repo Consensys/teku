@@ -32,16 +32,12 @@ class KeystorePasswordOptionsTest {
   private static final String EXPECTED_ENV_VARIABLE = "TEST_ENV";
   private static final String SPACE_ENV_VARIABLE = "SPACE_ENV";
   private static final Function<String, String> ENV_SUPPLIER =
-      envVariable -> {
-        switch (envVariable) {
-          case EXPECTED_ENV_VARIABLE:
-            return PASSWORD;
-          case SPACE_ENV_VARIABLE:
-            return "     ";
-          default:
-            return null;
-        }
-      };
+      envVariable ->
+          switch (envVariable) {
+            case EXPECTED_ENV_VARIABLE -> PASSWORD;
+            case SPACE_ENV_VARIABLE -> "     ";
+            default -> null;
+          };
   private static final String EXPECTED_ENV_ERROR =
       "Error: Password cannot be read from environment variable: %s";
   private static final String EXPECTED_EMPTY_PASSWORD_FILE_ERROR =

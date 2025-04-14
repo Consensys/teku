@@ -67,10 +67,12 @@ public class GetBlobSidecars extends RestApiEndpoint {
         .operationId("getBlobSidecars")
         .summary("Get blob sidecars")
         .description(
-            "Retrieves blob sidecars for a given block id.\n"
-                + "    Depending on `Accept` header it can be returned either as json or as bytes serialized by SSZ.\n"
-                + "    If the `indices` parameter is specified, only the blob sidecars with the specified indices will be returned. There are no guarantees\n"
-                + "    for the returned blob sidecars in terms of ordering.")
+            """
+                Retrieves blob sidecars for a given block id.
+                    Depending on `Accept` header it can be returned either as json or as bytes serialized by SSZ.
+                    If the `indices` parameter is specified, only the blob sidecars with the specified indices will be returned. There are no guarantees
+                    for the returned blob sidecars in terms of ordering.
+                """)
         .tags(TAG_BEACON)
         .pathParam(PARAMETER_BLOCK_ID)
         .queryListParam(BLOB_INDICES_PARAMETER)

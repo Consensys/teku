@@ -39,20 +39,14 @@ public class GIndexUtil {
 
     /** <code>gIdxCompare(idx1, idx2) == gIdxCompare(idx2, idx1).inverse()</code> */
     public NodeRelation inverse() {
-      switch (this) {
-        case LEFT:
-          return RIGHT;
-        case RIGHT:
-          return LEFT;
-        case PREDECESSOR:
-          return SUCCESSOR;
-        case SUCCESSOR:
-          return PREDECESSOR;
-        case SAME:
-          return SAME;
-        default:
-          throw new IllegalArgumentException("Unknown: " + this);
-      }
+      return switch (this) {
+        case LEFT -> RIGHT;
+        case RIGHT -> LEFT;
+        case PREDECESSOR -> SUCCESSOR;
+        case SUCCESSOR -> PREDECESSOR;
+        case SAME -> SAME;
+        default -> throw new IllegalArgumentException("Unknown: " + this);
+      };
     }
   }
 

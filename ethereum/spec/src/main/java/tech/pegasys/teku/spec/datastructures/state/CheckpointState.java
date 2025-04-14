@@ -84,13 +84,13 @@ public class CheckpointState {
     if (o == this) {
       return true;
     }
-    if (!(o instanceof CheckpointState)) {
+    if (o instanceof final CheckpointState that) {
+      return Objects.equals(checkpoint, that.checkpoint)
+          && Objects.equals(block, that.block)
+          && Objects.equals(state, that.state);
+    } else {
       return false;
     }
-    final CheckpointState that = (CheckpointState) o;
-    return Objects.equals(checkpoint, that.checkpoint)
-        && Objects.equals(block, that.block)
-        && Objects.equals(state, that.state);
   }
 
   @Override

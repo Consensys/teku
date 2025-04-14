@@ -61,12 +61,14 @@ public class GetAggregateAttestationV2 extends RestApiEndpoint {
             .operationId("getAggregatedAttestationV2")
             .summary("Get aggregated attestation")
             .description(
-                "Aggregates all attestations matching given attestation data root, slot and committee index.\n"
-                    + "A 503 error must be returned if the block identified by the response\n"
-                    + "`beacon_block_root` is optimistic (i.e. the aggregated attestation attests\n"
-                    + "to a block that has not been fully verified by an execution engine).\n"
-                    + "A 404 error must be returned if no attestation is available for the requested\n"
-                    + "`attestation_data_root`.")
+                """
+                    Aggregates all attestations matching given attestation data root, slot and committee index.
+                    A 503 error must be returned if the block identified by the response
+                    `beacon_block_root` is optimistic (i.e. the aggregated attestation attests
+                    to a block that has not been fully verified by an execution engine).
+                    A 404 error must be returned if no attestation is available for the requested
+                    `attestation_data_root`.
+                    """)
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .queryParamRequired(ATTESTATION_DATA_ROOT_PARAMETER)
             .queryParamRequired(SLOT_PARAMETER)
