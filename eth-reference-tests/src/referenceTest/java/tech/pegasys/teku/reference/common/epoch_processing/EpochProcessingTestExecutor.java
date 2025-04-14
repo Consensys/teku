@@ -150,7 +150,7 @@ public class EpochProcessingTestExecutor implements TestExecutor {
           .toFile()
           .exists()) {
         // ERROR, we should have a post epoch processing state
-        fail("Missing %s file", POST_EPOCH_PROCESSING_STATE_FILENAME);
+        fail("Missing file %s", POST_EPOCH_PROCESSING_STATE_FILENAME);
       }
       final BeaconState expectedFullPostState =
           loadStateFromSsz(testDefinition, POST_EPOCH_PROCESSING_STATE_FILENAME);
