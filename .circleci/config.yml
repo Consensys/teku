@@ -601,8 +601,8 @@ workflows:
           requires:
             - assemble
           filters:
-            branches:
-              ignore: das
+            tags:
+              <<: *filters-release-tags
       - referenceTests:
           requires:
             - assemble
