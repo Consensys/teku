@@ -127,7 +127,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     blockBlobSidecarsTrackersPool.subscribeRequiredBlobSidecarDropped(
         requiredBlobSidecarDroppedEvents::add);
     blockBlobSidecarsTrackersPool.subscribeNewBlobSidecar(newBlobSidecarEvents::add);
-    when(executionLayer.engineGetBlobs(any(), eq(currentSlot)))
+    when(executionLayer.engineGetBlobAndProofs(any(), eq(currentSlot)))
         .thenReturn(SafeFuture.completedFuture(List.of()));
     when(blobSidecarPublisher.apply(any())).thenReturn(SafeFuture.COMPLETE);
     setSlot(currentSlot);
@@ -690,7 +690,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     final SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobsResponse = new SafeFuture<>();
 
-    when(executionLayer.engineGetBlobs(versionedHashes, currentSlot))
+    when(executionLayer.engineGetBlobAndProofs(versionedHashes, currentSlot))
         .thenReturn(engineGetBlobsResponse);
 
     blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
@@ -752,7 +752,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             });
 
     // prepare empty result from EL
-    when(executionLayer.engineGetBlobs(any(), any()))
+    when(executionLayer.engineGetBlobAndProofs(any(), any()))
         .thenReturn(SafeFuture.completedFuture(List.of(Optional.empty(), Optional.empty())));
 
     blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
@@ -761,7 +761,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     asyncRunner.executeQueuedActions();
 
-    verify(executionLayer).engineGetBlobs(any(), any());
+    verify(executionLayer).engineGetBlobAndProofs(any(), any());
 
     assertThat(requiredBlockRootEvents).isEmpty();
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
@@ -788,7 +788,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
             });
 
     // prepare failure from EL
-    when(executionLayer.engineGetBlobs(any(), any()))
+    when(executionLayer.engineGetBlobAndProofs(any(), any()))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("oops")));
 
     blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
@@ -797,7 +797,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     asyncRunner.executeQueuedActions();
 
-    verify(executionLayer).engineGetBlobs(any(), any());
+    verify(executionLayer).engineGetBlobAndProofs(any(), any());
 
     assertThat(requiredBlockRootEvents).isEmpty();
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
@@ -935,7 +935,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     when(tracker.getBlock()).thenReturn(Optional.of(block));
 
     // prepare empty result from EL
-    when(executionLayer.engineGetBlobs(any(), any()))
+    when(executionLayer.engineGetBlobAndProofs(any(), any()))
         .thenReturn(SafeFuture.completedFuture(List.of(Optional.empty(), Optional.empty())));
 
     blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
@@ -944,7 +944,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     asyncRunner.executeQueuedActions();
 
     verify(tracker).setLocalElBlobsFetchTriggered();
-    verify(executionLayer).engineGetBlobs(any(), any());
+    verify(executionLayer).engineGetBlobAndProofs(any(), any());
   }
 
   @Test
