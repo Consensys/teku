@@ -31,7 +31,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -42,15 +42,13 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class InclusionListUtil {
 
-  private static final UInt64 ATTESTATION_DEADLINE = UInt64.valueOf(4);
-
   protected final SchemaDefinitions schemaDefinitions;
   protected final BeaconStateAccessorsEip7805 beaconStateAccessors;
   protected final MiscHelpers miscHelpers;
-  protected final SpecConfig specConfig;
+  protected final SpecConfigEip7805 specConfig;
 
   public InclusionListUtil(
-      final SpecConfig specConfig,
+      final SpecConfigEip7805 specConfig,
       final SchemaDefinitions schemaDefinitions,
       final BeaconStateAccessorsEip7805 beaconStateAccessors,
       final MiscHelpers miscHelpers) {
@@ -75,7 +73,8 @@ public class InclusionListUtil {
         getMillisIntoSlot(genesisTime, currentTimeMillis, inclusionListSlot);
     return inclusionListSlot.equals(currentSlot)
         || (inclusionListSlot.equals(currentSlot.minus(1))
-            && millisToSeconds(millisInCurrentSlot).isLessThanOrEqualTo(ATTESTATION_DEADLINE));
+            && millisToSeconds(millisInCurrentSlot)
+                .isLessThanOrEqualTo(specConfig.getAttestationDeadLine()));
   }
 
   /** Check if ``signed_inclusion_list`` has a valid signature. */

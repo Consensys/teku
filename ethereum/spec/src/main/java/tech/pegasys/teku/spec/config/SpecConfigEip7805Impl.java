@@ -27,6 +27,8 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigElectra
   private final int inclusionListCommitteeSize;
   private final int maxRequestInclusionList;
   private final int maxBytesPerInclusionList;
+  private final int attestationDeadline;
+  private final int proposerInclusionListCutOff;
   private final int viewFreezeDeadline;
 
   public SpecConfigEip7805Impl(
@@ -36,6 +38,8 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigElectra
       final int inclusionListCommitteeSize,
       final int maxRequestInclusionList,
       final int maxBytesPerInclusionList,
+      final int attestationDeadline,
+      final int proposerInclusionListCutOff,
       final int viewFreezeDeadline) {
     super(specConfig);
     this.eip7805ForkVersion = eip7805ForkVersion;
@@ -43,6 +47,8 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigElectra
     this.inclusionListCommitteeSize = inclusionListCommitteeSize;
     this.maxRequestInclusionList = maxRequestInclusionList;
     this.maxBytesPerInclusionList = maxBytesPerInclusionList;
+    this.attestationDeadline = attestationDeadline;
+    this.proposerInclusionListCutOff = proposerInclusionListCutOff;
     this.viewFreezeDeadline = viewFreezeDeadline;
   }
 
@@ -69,6 +75,16 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigElectra
   @Override
   public int getMaxBytesPerInclusionList() {
     return maxBytesPerInclusionList;
+  }
+
+  @Override
+  public int getAttestationDeadLine() {
+    return attestationDeadline;
+  }
+
+  @Override
+  public int getProposerInclusionListCutOff() {
+    return proposerInclusionListCutOff;
   }
 
   @Override
@@ -101,6 +117,8 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigElectra
         && inclusionListCommitteeSize == that.inclusionListCommitteeSize
         && maxRequestInclusionList == that.maxRequestInclusionList
         && maxBytesPerInclusionList == that.maxBytesPerInclusionList
+        && attestationDeadline == that.attestationDeadline
+        && proposerInclusionListCutOff == that.proposerInclusionListCutOff
         && viewFreezeDeadline == that.viewFreezeDeadline;
   }
 
@@ -113,6 +131,8 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigElectra
         inclusionListCommitteeSize,
         maxRequestInclusionList,
         maxBytesPerInclusionList,
+        attestationDeadline,
+        proposerInclusionListCutOff,
         viewFreezeDeadline);
   }
 }

@@ -35,6 +35,8 @@ public class Eip7805Builder implements ForkConfigBuilder<SpecConfigElectra, Spec
   private Integer inclusionListCommitteeSize;
   private Integer maxRequestInclusionList;
   private Integer maxBytesPerInclusionList;
+  private Integer attestationDeadline;
+  private Integer proposerInclusionListCutOff;
   private Integer viewFreezeDeadline;
 
   Eip7805Builder() {}
@@ -50,6 +52,8 @@ public class Eip7805Builder implements ForkConfigBuilder<SpecConfigElectra, Spec
             inclusionListCommitteeSize,
             maxRequestInclusionList,
             maxBytesPerInclusionList,
+            attestationDeadline,
+            proposerInclusionListCutOff,
             viewFreezeDeadline),
         specConfigAndParent);
   }
@@ -84,6 +88,18 @@ public class Eip7805Builder implements ForkConfigBuilder<SpecConfigElectra, Spec
     return this;
   }
 
+  public Eip7805Builder attestationDeadline(final Integer attestationDeadline) {
+    checkNotNull(attestationDeadline);
+    this.attestationDeadline = attestationDeadline;
+    return this;
+  }
+
+  public Eip7805Builder proposerInclusionListCutOff(final Integer proposerInclusionListCutOff) {
+    checkNotNull(proposerInclusionListCutOff);
+    this.proposerInclusionListCutOff = proposerInclusionListCutOff;
+    return this;
+  }
+
   public Eip7805Builder viewFreezeDeadline(final Integer viewFreezeDeadline) {
     checkNotNull(viewFreezeDeadline);
     this.viewFreezeDeadline = viewFreezeDeadline;
@@ -114,6 +130,8 @@ public class Eip7805Builder implements ForkConfigBuilder<SpecConfigElectra, Spec
     constants.put("inclusionListCommitteeSize", inclusionListCommitteeSize);
     constants.put("maxRequestInclusionList", maxRequestInclusionList);
     constants.put("maxBytesPerInclusionList", maxBytesPerInclusionList);
+    constants.put("attestationDeadline", attestationDeadline);
+    constants.put("proposerInclusionListCutOff", proposerInclusionListCutOff);
     constants.put("viewFreezeDeadline", viewFreezeDeadline);
 
     return constants;
