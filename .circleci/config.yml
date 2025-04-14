@@ -187,9 +187,6 @@ parameters:
   include_commit_hash_in_docker_tag:
     type: boolean
     default: false
-  temporary_das_disabled:
-    type: boolean
-    default: true
 
 jobs:
   assemble:
@@ -597,9 +594,10 @@ workflows:
           requires:
             - moduleChecks
             - spotless
-          when:
-            not:
-              condition: << pipeline.parameters.temporary_das_disabled >>
+          filters:
+            branches:
+              ignore:
+                - das
       - referenceTestsPrep:
           requires:
             - assemble
@@ -616,9 +614,10 @@ workflows:
       - unitTests:
           requires:
             - assemble
-          when:
-            not:
-              condition: << pipeline.parameters.temporary_das_disabled >>
+          filters:
+            branches:
+              ignore:
+                - das
       - propertyTests:
           requires:
             - assemble
@@ -628,15 +627,17 @@ workflows:
       - integrationTests:
           requires:
             - assemble
-          when:
-            not:
-              condition: << pipeline.parameters.temporary_das_disabled >>
+          filters:
+            branches:
+              ignore:
+                - das
       - acceptanceTests:
           requires:
             - assemble
-          when:
-            not:
-              condition: << pipeline.parameters.temporary_das_disabled >>
+          filters:
+            branches:
+              ignore:
+                - das
       - extractAPISpec:
           requires:
             - assemble
