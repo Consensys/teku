@@ -187,6 +187,9 @@ parameters:
   include_commit_hash_in_docker_tag:
     type: boolean
     default: false
+  disabled_das_step:
+    type: boolean
+    default: false
 
 jobs:
   assemble:
@@ -594,10 +597,7 @@ workflows:
           requires:
             - moduleChecks
             - spotless
-          filters:
-            branches:
-              ignore:
-                - das
+          filters: disabled_das_step
       - referenceTestsPrep:
           requires:
             - assemble
@@ -614,10 +614,7 @@ workflows:
       - unitTests:
           requires:
             - assemble
-          filters:
-            branches:
-              ignore:
-                - das
+          filters: disabled_das_step
       - propertyTests:
           requires:
             - assemble
@@ -627,17 +624,11 @@ workflows:
       - integrationTests:
           requires:
             - assemble
-          filters:
-            branches:
-              ignore:
-                - das
+          filters: disabled_das_step
       - acceptanceTests:
           requires:
             - assemble
-          filters:
-            branches:
-              ignore:
-                - das
+          filters: disabled_das_step
       - extractAPISpec:
           requires:
             - assemble
