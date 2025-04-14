@@ -130,19 +130,12 @@ public class LoadingUtil {
   private static boolean isZeroBranchUseful(final long rootGIndex, final long lastUsefulGIndex) {
     final NodeRelation relationRootToLastUseful =
         GIndexUtil.gIdxCompare(rootGIndex, lastUsefulGIndex);
-    switch (relationRootToLastUseful) {
-      case LEFT:
-      case PREDECESSOR:
-        return true;
-
-      case SAME:
-      case RIGHT:
-      case SUCCESSOR:
-        return false;
-
-      default:
-        throw new IllegalStateException("Unknown relation type: " + relationRootToLastUseful);
-    }
+    return switch (relationRootToLastUseful) {
+      case LEFT, PREDECESSOR -> true;
+      case SAME, RIGHT, SUCCESSOR -> false;
+      default ->
+          throw new IllegalStateException("Unknown relation type: " + relationRootToLastUseful);
+    };
   }
 
   private static BranchNode createUsefulEmptyBranch(

@@ -87,14 +87,16 @@ public class GetNewBlockV3 extends RestApiEndpoint {
         .operationId("produceBlockV3")
         .summary("Produce a new block, without signature.")
         .description(
-            "Requests a beacon node to produce a valid block, which can then be signed by a validator. The\n"
-                + "returned block may be blinded or unblinded, depending on the current state of the network as\n"
-                + "decided by the execution and beacon nodes.\n"
-                + "The beacon node must return an unblinded block if it obtains the execution payload from its\n"
-                + "paired execution node. It must only return a blinded block if it obtains the execution payload\n"
-                + "header from an MEV relay.\n"
-                + "Metadata in the response indicates the type of block produced, and the supported types of block\n"
-                + "will be added to as forks progress.")
+            """
+              Requests a beacon node to produce a valid block, which can then be signed by a validator. The
+              returned block may be blinded or unblinded, depending on the current state of the network as
+              decided by the execution and beacon nodes.
+              The beacon node must return an unblinded block if it obtains the execution payload from its
+              paired execution node. It must only return a blinded block if it obtains the execution payload
+              header from an MEV relay.
+              Metadata in the response indicates the type of block produced, and the supported types of block
+              will be added to as forks progress.
+              """)
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
         .pathParam(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION))
         .queryParamRequired(RANDAO_PARAMETER)

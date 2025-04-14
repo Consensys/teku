@@ -402,6 +402,7 @@ public class ValidatorDataProviderTest {
   }
 
   @TestTemplate
+  @SuppressWarnings("EnumOrdinal")
   void registerValidators_shouldIgnoreExitedAndUnknownValidators() {
     final int numOfValidatorRegistrationsAttempted = ValidatorStatus.values().length + 2;
 
@@ -425,7 +426,6 @@ public class ValidatorDataProviderTest {
                             e.getValue(),
                             dataStructureUtil.randomValidator())));
 
-    @SuppressWarnings("EnumOrdinal")
     final List<BLSPublicKey> exitedOrUnknownKeys =
         IntStream.range(
                 ValidatorStatus.exited_unslashed.ordinal(), numOfValidatorRegistrationsAttempted)
