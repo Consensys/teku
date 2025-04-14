@@ -39,6 +39,10 @@ public interface SpecConfigEip7805 extends SpecConfigFulu {
 
   int getMaxBytesPerInclusionList();
 
+  int getAttestationDeadLine();
+
+  int getProposerInclusionListCutOff();
+
   int getViewFreezeDeadline();
 
   @Override
