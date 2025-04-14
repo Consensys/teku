@@ -112,16 +112,12 @@ public class SystemMetricData extends BaseMetricData {
   }
 
   private long getNodeBootSeconds() {
-    switch (miscOs) {
-      case "lin":
-        return new LinuxOperatingSystem().getSystemBootTime();
-      case "win":
-        return new WindowsOperatingSystem().getSystemBootTime();
-      case "mac":
-        return new MacOperatingSystem().getSystemBootTime();
-      default:
-        return 0L;
-    }
+    return switch (miscOs) {
+      case "lin" -> new LinuxOperatingSystem().getSystemBootTime();
+      case "win" -> new WindowsOperatingSystem().getSystemBootTime();
+      case "mac" -> new MacOperatingSystem().getSystemBootTime();
+      default -> 0L;
+    };
   }
 
   private long[] calculateProcessLoadTicks(final long[][] processorCpuLoadTicks) {

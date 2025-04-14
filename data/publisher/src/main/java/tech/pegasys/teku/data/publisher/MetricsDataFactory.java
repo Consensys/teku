@@ -53,11 +53,11 @@ class MetricsDataFactory {
   }
 
   public List<BaseMetricData> getMetricData() {
-    if (!(metricsSystem instanceof PrometheusMetricsSystem)) {
+    if (metricsSystem instanceof final PrometheusMetricsSystem prometheusMetricsSystem) {
+      return getMetricData(new PrometheusMetricsPublisherSource(prometheusMetricsSystem));
+    } else {
       LOG.error("Prometheus metric system not found, cannot export metrics data.");
       return new ArrayList<>();
     }
-    return getMetricData(
-        new PrometheusMetricsPublisherSource((PrometheusMetricsSystem) metricsSystem));
   }
 }

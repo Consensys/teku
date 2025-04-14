@@ -82,12 +82,12 @@ public class BeaconStateInvariants {
       return true;
     }
 
-    if (!(obj instanceof BeaconState)) {
+    if (obj instanceof final BeaconState other) {
+
+      return state.hashTreeRoot().equals(other.hashTreeRoot());
+    } else {
       return false;
     }
-
-    BeaconState other = (BeaconState) obj;
-    return state.hashTreeRoot().equals(other.hashTreeRoot());
   }
 
   static int hashCode(final BeaconState state) {

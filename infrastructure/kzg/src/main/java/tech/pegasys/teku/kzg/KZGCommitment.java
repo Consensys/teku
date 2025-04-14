@@ -93,12 +93,11 @@ public final class KZGCommitment {
       return true;
     }
 
-    if (!(obj instanceof KZGCommitment)) {
+    if (obj instanceof final KZGCommitment other) {
+      return Objects.equals(this.getBytesCompressed(), other.getBytesCompressed());
+    } else {
       return false;
     }
-
-    final KZGCommitment other = (KZGCommitment) obj;
-    return Objects.equals(this.getBytesCompressed(), other.getBytesCompressed());
   }
 
   @Override

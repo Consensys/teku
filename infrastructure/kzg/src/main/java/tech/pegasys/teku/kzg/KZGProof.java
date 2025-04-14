@@ -91,12 +91,11 @@ public final class KZGProof {
       return true;
     }
 
-    if (!(obj instanceof KZGProof)) {
+    if (obj instanceof final KZGProof other) {
+      return Objects.equals(this.getBytesCompressed(), other.getBytesCompressed());
+    } else {
       return false;
     }
-
-    final KZGProof other = (KZGProof) obj;
-    return Objects.equals(this.getBytesCompressed(), other.getBytesCompressed());
   }
 
   @Override
