@@ -598,6 +598,7 @@ workflows:
             branches:
               ignore:
                 - das
+                - get-blobs-v2
       - referenceTestsPrep:
           requires:
             - assemble
@@ -618,6 +619,7 @@ workflows:
             branches:
               ignore:
                 - das
+                - get-blobs-v2
       - propertyTests:
           requires:
             - assemble
@@ -631,6 +633,7 @@ workflows:
             branches:
               ignore:
                 - das
+                - get-blobs-v2
       - acceptanceTests:
           requires:
             - assemble
@@ -638,6 +641,7 @@ workflows:
             branches:
               ignore:
                 - das
+                - get-blobs-v2
       - extractAPISpec:
           requires:
             - assemble
