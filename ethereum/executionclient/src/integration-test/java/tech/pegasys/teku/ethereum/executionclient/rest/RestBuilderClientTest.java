@@ -29,6 +29,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.UncheckedIOException;
 import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
@@ -36,7 +37,7 @@ import java.time.Duration;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import okhttp3.OkHttpClient;
@@ -332,18 +333,23 @@ class RestBuilderClientTest {
 
   @TestTemplate
   void registerValidators_shouldNotFallbackWhenTimingOut() {
-    // Creates a RestBuilderClient that always timeout
+    // Creates a RestBuilderClient that has a very tiny timeout
     restBuilderClient =
         new RestBuilderClient(
-            forcedTimeoutRestBuilderClientOptions(), okHttpRestClient, timeProvider, spec, true);
+            tinyTimeoutRestBuilderClientOptions(), okHttpRestClient, timeProvider, spec, true);
 
     final SszList<SignedValidatorRegistration> signedValidatorRegistrations =
         createSignedValidatorRegistrations();
 
+    // set up delayed 200 response
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(200).setHeadersDelay(1, TimeUnit.SECONDS));
+
     assertThat(restBuilderClient.registerValidators(SLOT, signedValidatorRegistrations))
         .failsWithin(WAIT_FOR_CALL_COMPLETION)
         .withThrowableThat()
-        .withCauseInstanceOf(TimeoutException.class);
+        .withCauseInstanceOf(InterruptedIOException.class)
+        .withMessageContaining("timeout");
 
     verifyPostRequestSsz("/eth/v1/builder/validators", signedValidatorRegistrations);
     // Check that we do not fallback into JSON (only 1 request)
@@ -356,7 +362,7 @@ class RestBuilderClientTest {
     // Mock asyncPost with ssz to fail
     doReturn(SafeFuture.failedFuture(new ConnectException()))
         .when(okHttpRestClient)
-        .postAsync(eq(BuilderApiMethod.REGISTER_VALIDATOR.getPath()), any(), eq(true));
+        .postAsync(eq(BuilderApiMethod.REGISTER_VALIDATOR.getPath()), any(), eq(true), any());
     restBuilderClient =
         new RestBuilderClient(restBuilderClientOptions, okHttpRestClient, timeProvider, spec, true);
 
@@ -846,8 +852,11 @@ class RestBuilderClientTest {
         "(?<=version\":\\s?\")\\w+", newVersion.toString().toLowerCase(Locale.ROOT));
   }
 
-  private RestBuilderClientOptions forcedTimeoutRestBuilderClientOptions() {
+  private RestBuilderClientOptions tinyTimeoutRestBuilderClientOptions() {
     return new RestBuilderClientOptions(
-        Duration.ofSeconds(0), Duration.ofSeconds(0), Duration.ofSeconds(0), Duration.ofSeconds(0));
+        Duration.ofMillis(100),
+        Duration.ofMillis(100),
+        Duration.ofMillis(100),
+        Duration.ofMillis(100));
   }
 }
