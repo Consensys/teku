@@ -187,9 +187,6 @@ parameters:
   include_commit_hash_in_docker_tag:
     type: boolean
     default: false
-  disabled_das_step:
-    type: boolean
-    default: false
 
 jobs:
   assemble:
@@ -597,7 +594,8 @@ workflows:
           requires:
             - moduleChecks
             - spotless
-          filters: disabled_das_step
+          # TODO: remove, temporary disabled
+          filters: pipeline.git.branch == "master"
       - referenceTestsPrep:
           requires:
             - assemble
@@ -614,7 +612,8 @@ workflows:
       - unitTests:
           requires:
             - assemble
-          filters: disabled_das_step
+          # TODO: remove, temporary disabled
+          filters: pipeline.git.branch == "master"
       - propertyTests:
           requires:
             - assemble
@@ -624,11 +623,13 @@ workflows:
       - integrationTests:
           requires:
             - assemble
-          filters: disabled_das_step
+          # TODO: remove, temporary disabled
+          filters: pipeline.git.branch == "master"
       - acceptanceTests:
           requires:
             - assemble
-          filters: disabled_das_step
+          # TODO: remove, temporary disabled
+          filters: pipeline.git.branch == "master"
       - extractAPISpec:
           requires:
             - assemble
