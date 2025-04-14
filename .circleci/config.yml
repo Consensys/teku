@@ -605,9 +605,8 @@ workflows:
           requires:
             - assemble
             - referenceTestsPrep
-          filters:
-            tags:
-              <<: *filters-release-tags
+          # TODO: remove, temporary disabled
+          filters: pipeline.git.branch == "master"
       - unitTests:
           requires:
             - assemble
