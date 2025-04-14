@@ -596,7 +596,8 @@ workflows:
             - spotless
           filters:
             branches:
-              ignore: das
+              ignore:
+                - das
       - referenceTestsPrep:
           requires:
             - assemble
@@ -615,7 +616,8 @@ workflows:
             - assemble
           filters:
             branches:
-              ignore: das
+              ignore:
+                - das
       - propertyTests:
           requires:
             - assemble
@@ -627,13 +629,15 @@ workflows:
             - assemble
           filters:
             branches:
-              ignore: das
+              ignore:
+                - das
       - acceptanceTests:
           requires:
             - assemble
           filters:
             branches:
-              ignore: das
+              ignore:
+                - das
       - extractAPISpec:
           requires:
             - assemble
