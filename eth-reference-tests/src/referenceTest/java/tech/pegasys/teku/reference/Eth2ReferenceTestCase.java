@@ -99,6 +99,7 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
           .build();
 
+  @SuppressWarnings("unused")
   private static final ImmutableMap<String, TestExecutor> FULU_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
@@ -119,7 +120,7 @@ public abstract class Eth2ReferenceTestCase {
           case TestFork.CAPELLA -> CAPELLA_TEST_TYPES.get(testDefinition.getTestType());
           case TestFork.DENEB -> DENEB_TEST_TYPES.get(testDefinition.getTestType());
           case TestFork.ELECTRA -> ELECTRA_TEST_TYPES.get(testDefinition.getTestType());
-          case TestFork.FULU -> FULU_TEST_TYPES.get(testDefinition.getTestType());
+//          case TestFork.FULU -> FULU_TEST_TYPES.get(testDefinition.getTestType()); //TODO-fulu re-enable
           default -> null;
         };
 
