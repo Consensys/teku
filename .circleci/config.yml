@@ -595,8 +595,9 @@ workflows:
             - moduleChecks
             - spotless
           filters:
-            tags:
-              <<: *filters-release-tags
+            branches:
+              ignore:
+                - das
       - referenceTestsPrep:
           requires:
             - assemble
@@ -614,8 +615,9 @@ workflows:
           requires:
             - assemble
           filters:
-            tags:
-              <<: *filters-release-tags
+            branches:
+              ignore:
+                - das
       - propertyTests:
           requires:
             - assemble
@@ -626,14 +628,16 @@ workflows:
           requires:
             - assemble
           filters:
-            tags:
-              <<: *filters-release-tags
+            branches:
+              ignore:
+                - das
       - acceptanceTests:
           requires:
             - assemble
           filters:
-            tags:
-              <<: *filters-release-tags
+            branches:
+              ignore:
+                - das
       - extractAPISpec:
           requires:
             - assemble

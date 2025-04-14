@@ -99,14 +99,6 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
           .build();
 
-  private static final ImmutableMap<String, TestExecutor> ELECTRA_TEST_TYPES =
-      ImmutableMap.<String, TestExecutor>builder()
-          .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
-          .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
-          .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
-          .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
-          .build();
-
   private static final ImmutableMap<String, TestExecutor> FULU_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
