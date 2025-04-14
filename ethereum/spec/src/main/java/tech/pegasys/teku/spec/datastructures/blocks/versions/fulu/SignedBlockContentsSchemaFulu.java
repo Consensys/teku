@@ -64,6 +64,7 @@ public class SignedBlockContentsSchemaFulu
     return new SignedBlockContentsFulu(this, signedBeaconBlock, kzgProofs, blobs);
   }
 
+  @Override
   public SignedBlockContentsFulu create(
       final SignedBeaconBlock signedBeaconBlock,
       final SszList<SszKZGProof> kzgProofs,

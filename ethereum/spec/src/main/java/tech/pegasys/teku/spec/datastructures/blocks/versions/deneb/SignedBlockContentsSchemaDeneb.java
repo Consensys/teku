@@ -60,6 +60,7 @@ public class SignedBlockContentsSchemaDeneb
     return new SignedBlockContentsDeneb(this, signedBeaconBlock, kzgProofs, blobs);
   }
 
+  @Override
   public SignedBlockContentsDeneb create(
       final SignedBeaconBlock signedBeaconBlock,
       final SszList<SszKZGProof> kzgProofs,

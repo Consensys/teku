@@ -114,6 +114,7 @@ public interface KZG {
 
   List<KZGCell> computeCells(Bytes blob);
 
+  @Deprecated(since = "Use computeCells instead, computeCellsAndProof is not for production")
   List<KZGCellAndProof> computeCellsAndProofs(Bytes blob);
 
   boolean verifyCellProofBatch(

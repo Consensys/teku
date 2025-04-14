@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.blocks;
 
 import java.util.List;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -23,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
 public interface BlockContentsWithBlobsSchema<T extends BlockContainer>
-    extends SszContainerSchema<T> {
+    extends BlockContainerSchema<T> {
   SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
   SszFieldName FIELD_BLOBS = () -> "blobs";
 
@@ -35,9 +34,4 @@ public interface BlockContentsWithBlobsSchema<T extends BlockContainer>
   SszListSchema<SszKZGProof, ?> getKzgProofsSchema();
 
   SszListSchema<Blob, ?> getBlobsSchema();
-
-  @SuppressWarnings("unchecked")
-  default BlockContainerSchema<BlockContainer> castTypeToBlockContainer() {
-    return (BlockContainerSchema<BlockContainer>) this;
-  }
 }

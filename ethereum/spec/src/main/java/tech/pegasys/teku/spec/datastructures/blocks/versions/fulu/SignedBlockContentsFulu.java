@@ -69,4 +69,9 @@ public class SignedBlockContentsFulu
   public Optional<SszList<Blob>> getBlobs() {
     return Optional.of(getField2());
   }
+
+  @Override
+  public boolean supportsCellProofs() {
+    return true;
+  }
 }

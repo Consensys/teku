@@ -51,4 +51,8 @@ public interface SignedBlockContainer extends SszData, SszContainer {
   default boolean isBlinded() {
     return getSignedBlock().isBlinded();
   }
+
+  default boolean supportsCellProofs() {
+    return false;
+  }
 }

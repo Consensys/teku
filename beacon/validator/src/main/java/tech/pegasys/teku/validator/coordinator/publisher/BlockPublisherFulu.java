@@ -53,7 +53,15 @@ public class BlockPublisherFulu extends BlockPublisherPhase0 {
       final List<BlobSidecar> blobSidecars,
       final SignedBeaconBlock block,
       final BlockPublishingPerformance blockPublishingPerformance) {
-    final List<DataColumnSidecar> dataColumnSidecars = blockFactory.createDataColumnSidecars(block);
+    throw new RuntimeException("Unexpected call in FULU, block " + block.getSlotAndBlockRoot());
+  }
+
+  @Override
+  void publishDataColumnSidecars(
+      final List<DataColumnSidecar> dataColumnSidecars,
+      final SignedBeaconBlock block,
+      final BlockPublishingPerformance blockPublishingPerformance) {
+    // TODO blockPublishingPerformance
     dataColumnSidecarGossipChannel.publishDataColumnSidecars(
         dataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
   }
