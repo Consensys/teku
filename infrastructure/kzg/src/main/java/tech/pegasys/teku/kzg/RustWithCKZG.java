@@ -104,8 +104,7 @@ final class RustWithCKZG implements KZG {
 
   @Override
   public List<KZGCell> computeCells(final Bytes blob) {
-    // TODO: replace with RustKZG when available
-    return ckzg4844Delegate.computeCells(blob);
+    return rustKzgDelegate.computeCells(blob);
   }
 
   @Override
