@@ -325,6 +325,11 @@ public class Eth2NetworkOptions {
               + ".io/get-started/connect).");
     }
 
+    if (initialState != null && checkpointSyncUrl != null) {
+      throw new InvalidConfigurationException(
+          "Both --initial-state and --checkpoint-sync-url are provided. Please specify only one.");
+    }
+
     builder.applyNetworkDefaults(network);
     if (startupTargetPeerCount != null) {
       builder.startupTargetPeerCount(startupTargetPeerCount);

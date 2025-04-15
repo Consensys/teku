@@ -21,7 +21,7 @@ buildscript {
 }
 
 plugins {
-  id 'com.diffplug.spotless' version '7.0.2'
+  id 'com.diffplug.spotless' version '7.0.3'
   id 'com.github.ben-manes.versions' version '0.52.0'
   id 'com.github.jk1.dependency-license-report' version '2.9'
   id 'io.spring.dependency-management' version '1.1.7'
@@ -248,6 +248,9 @@ allprojects {
       // These checks are imported from errorprone-checks dependency but not required in Teku
       check('BannedMethod', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('ExperimentalCliOptionMustBeCorrectlyDisplayed', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+
+      // ignore PatternMatchingInstanceof for now
+      check("PatternMatchingInstanceof", net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
       // These are experimental checks that we want enabled
       check('ClassName', net.ltgt.gradle.errorprone.CheckSeverity.WARN)

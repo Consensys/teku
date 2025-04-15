@@ -147,16 +147,13 @@ public class EpochAttestationRewardsCalculator {
 
   private UInt64 getPrevEpochTotalParticipatingBalance(final int flagIndex) {
     final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
-    switch (flagIndex) {
-      case TIMELY_HEAD_FLAG_INDEX:
-        return totalBalances.getPreviousEpochHeadAttesters();
-      case TIMELY_TARGET_FLAG_INDEX:
-        return totalBalances.getPreviousEpochTargetAttesters();
-      case TIMELY_SOURCE_FLAG_INDEX:
-        return totalBalances.getPreviousEpochSourceAttesters();
-      default:
-        throw new IllegalArgumentException("Unable to process unknown flag index:" + flagIndex);
-    }
+    return switch (flagIndex) {
+      case TIMELY_HEAD_FLAG_INDEX -> totalBalances.getPreviousEpochHeadAttesters();
+      case TIMELY_TARGET_FLAG_INDEX -> totalBalances.getPreviousEpochTargetAttesters();
+      case TIMELY_SOURCE_FLAG_INDEX -> totalBalances.getPreviousEpochSourceAttesters();
+      default ->
+          throw new IllegalArgumentException("Unable to process unknown flag index:" + flagIndex);
+    };
   }
 
   @VisibleForTesting

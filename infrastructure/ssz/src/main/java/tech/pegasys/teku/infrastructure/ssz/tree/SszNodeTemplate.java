@@ -182,8 +182,8 @@ public class SszNodeTemplate {
 
   private static <T> T binaryTraverse(
       final long gIndex, final TreeNode node, final BinaryVisitor<T> visitor) {
-    if (node instanceof LeafNode) {
-      return visitor.visitLeaf(gIndex, (LeafNode) node);
+    if (node instanceof final LeafNode leafnode) {
+      return visitor.visitLeaf(gIndex, leafnode);
     } else if (node instanceof BranchNode branchNode) {
       return visitor.visitBranch(
           gIndex,

@@ -77,14 +77,15 @@ public class NewPayloadRequest {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof NewPayloadRequest)) {
+    if (o instanceof final NewPayloadRequest that) {
+
+      return Objects.equals(executionPayload, that.executionPayload)
+          && Objects.equals(versionedHashes, that.versionedHashes)
+          && Objects.equals(parentBeaconBlockRoot, that.parentBeaconBlockRoot)
+          && Objects.equals(executionRequests, that.executionRequests);
+    } else {
       return false;
     }
-    final NewPayloadRequest that = (NewPayloadRequest) o;
-    return Objects.equals(executionPayload, that.executionPayload)
-        && Objects.equals(versionedHashes, that.versionedHashes)
-        && Objects.equals(parentBeaconBlockRoot, that.parentBeaconBlockRoot)
-        && Objects.equals(executionRequests, that.executionRequests);
   }
 
   @Override

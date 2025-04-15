@@ -206,6 +206,16 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(Optional.of(genesisState));
   }
 
+  @Test
+  void shouldFailIfBothCheckpointSyncUrlAndInitialStateSet() {
+    assertThatThrownBy(
+            () ->
+                getTekuConfigurationFromArguments(
+                    "--checkpoint-sync-url", "http://foo:9000", "--initial-state", "genesis.ssz"))
+        .isInstanceOf(AssertionError.class)
+        .hasMessageContaining("Both --initial-state and --checkpoint-sync-url are provided");
+  }
+
   @ParameterizedTest
   @ValueSource(strings = {"http://foo:9000", "http://foo:9000/"})
   public void checkpointSyncUrlOptionShouldSetInitialAndGenesisStateOptions(
