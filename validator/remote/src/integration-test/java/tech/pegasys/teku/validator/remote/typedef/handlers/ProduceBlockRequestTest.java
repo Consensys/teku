@@ -42,7 +42,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsDeneb;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
@@ -214,7 +214,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
   @TestTemplate
   public void shouldGetUnblindedBlockContentsPostDenebAsJson() {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
-    final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
+    final BlockContentsDeneb blockContents = dataStructureUtil.randomBlockContents(ONE);
     final ProduceBlockRequest.ProduceBlockResponse blockResponse =
         new ProduceBlockRequest.ProduceBlockResponse(blockContents);
 
@@ -240,7 +240,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
   @TestTemplate
   public void shouldGetUnblindedBlockContentsPostDenebAsSsz() {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
-    final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
+    final BlockContentsDeneb blockContents = dataStructureUtil.randomBlockContents(ONE);
     final ProduceBlockRequest.ProduceBlockResponse blockResponse =
         new ProduceBlockRequest.ProduceBlockResponse(blockContents);
 

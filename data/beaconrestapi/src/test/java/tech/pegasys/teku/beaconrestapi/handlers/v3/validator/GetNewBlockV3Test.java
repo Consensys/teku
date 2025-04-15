@@ -46,7 +46,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsDeneb;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -117,7 +117,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
   @TestTemplate
   void shouldHandleUnBlindedBlockContentsPostDeneb() throws Exception {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
-    final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
+    final BlockContentsDeneb blockContents = dataStructureUtil.randomBlockContents(ONE);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);
     doReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)))

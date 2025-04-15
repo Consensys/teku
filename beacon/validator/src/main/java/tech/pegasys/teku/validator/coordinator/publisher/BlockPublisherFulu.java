@@ -18,7 +18,6 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformanc
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -54,9 +53,15 @@ public class BlockPublisherFulu extends BlockPublisherPhase0 {
       final List<BlobSidecar> blobSidecars,
       final SignedBeaconBlock block,
       final BlockPublishingPerformance blockPublishingPerformance) {
-    List<Blob> blobs = blobSidecars.stream().map(BlobSidecar::getBlob).toList();
-    final List<DataColumnSidecar> dataColumnSidecars =
-        blockFactory.createDataColumnSidecars(block, blobs);
+    throw new RuntimeException("Unexpected call in FULU, block " + block.getSlotAndBlockRoot());
+  }
+
+  @Override
+  void publishDataColumnSidecars(
+      final List<DataColumnSidecar> dataColumnSidecars,
+      final SignedBeaconBlock block,
+      final BlockPublishingPerformance blockPublishingPerformance) {
+    // TODO blockPublishingPerformance
     dataColumnSidecarGossipChannel.publishDataColumnSidecars(
         dataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
   }

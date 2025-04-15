@@ -32,13 +32,13 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchem
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntrySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsWithBlobsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContentsWithBlobsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrix;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
@@ -154,9 +154,9 @@ public class SchemaTypes {
   public static final SchemaId<BlobSidecarsByRootRequestMessageSchema>
       BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA =
           create("BLOB_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA");
-  public static final SchemaId<BlockContentsSchema> BLOCK_CONTENTS_SCHEMA =
+  public static final SchemaId<BlockContentsWithBlobsSchema<?>> BLOCK_CONTENTS_SCHEMA =
       create("BLOCK_CONTENTS_SCHEMA");
-  public static final SchemaId<SignedBlockContentsSchema> SIGNED_BLOCK_CONTENTS_SCHEMA =
+  public static final SchemaId<SignedBlockContentsWithBlobsSchema<?>> SIGNED_BLOCK_CONTENTS_SCHEMA =
       create("SIGNED_BLOCK_CONTENTS_SCHEMA");
   public static final SchemaId<BlobsBundleSchema> BLOBS_BUNDLE_SCHEMA =
       create("BLOBS_BUNDLE_SCHEMA");

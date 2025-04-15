@@ -33,8 +33,9 @@ import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsDeneb;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -65,7 +66,8 @@ public class AbstractBlockPublisherTest {
               dutyMetrics,
               false));
 
-  final SignedBlockContents signedBlockContents = dataStructureUtil.randomSignedBlockContents();
+  final SignedBlockContentsDeneb signedBlockContents =
+      dataStructureUtil.randomSignedBlockContents();
   final SignedBeaconBlock signedBlock = signedBlockContents.getSignedBlock();
   final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(signedBlock);
 
@@ -307,6 +309,12 @@ public class AbstractBlockPublisherTest {
     @Override
     void publishBlobSidecars(
         final List<BlobSidecar> blobSidecars,
+        final SignedBeaconBlock block,
+        final BlockPublishingPerformance blockPublishingPerformance) {}
+
+    @Override
+    void publishDataColumnSidecars(
+        final List<DataColumnSidecar> dataColumnSidecars,
         final SignedBeaconBlock block,
         final BlockPublishingPerformance blockPublishingPerformance) {}
   }

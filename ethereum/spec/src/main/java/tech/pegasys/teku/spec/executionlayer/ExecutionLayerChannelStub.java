@@ -58,6 +58,7 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
@@ -303,25 +304,56 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
     final Optional<ExecutionRequests> maybeExecutionRequests = getExecutionRequests(slot);
 
-    final GetPayloadResponse getPayloadResponse =
-        headAndAttrs
-            .currentBlobsBundle
-            .map(
-                blobsBundle -> {
-                  LOG.info("getPayload: blobsBundle: {}", blobsBundle.toBriefString());
-                  if (maybeExecutionRequests.isPresent()) {
-                    return new GetPayloadResponse(
-                        executionPayload,
-                        UInt256.valueOf(424242424242424242L),
-                        blobsBundle,
-                        false,
-                        maybeExecutionRequests.get());
-                  } else {
-                    return new GetPayloadResponse(
-                        executionPayload, UInt256.valueOf(424242424242424242L), blobsBundle, false);
-                  }
-                })
-            .orElse(new GetPayloadResponse(executionPayload, UInt256.valueOf(434242424242424242L)));
+    final GetPayloadResponse getPayloadResponse;
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      getPayloadResponse =
+          headAndAttrs
+              .currentBlobsCellBundle
+              .map(
+                  blobsCellBundle -> {
+                    LOG.info("getPayload: blobsCellBundle: {}", blobsCellBundle.toBriefString());
+                    if (maybeExecutionRequests.isPresent()) {
+                      return new GetPayloadResponse(
+                          executionPayload,
+                          UInt256.valueOf(424242424242424242L),
+                          blobsCellBundle,
+                          false,
+                          maybeExecutionRequests.get());
+                    } else {
+                      return new GetPayloadResponse(
+                          executionPayload,
+                          UInt256.valueOf(424242424242424242L),
+                          blobsCellBundle,
+                          false);
+                    }
+                  })
+              .orElse(
+                  new GetPayloadResponse(executionPayload, UInt256.valueOf(434242424242424242L)));
+    } else {
+      getPayloadResponse =
+          headAndAttrs
+              .currentBlobsBundle
+              .map(
+                  blobsBundle -> {
+                    LOG.info("getPayload: blobsBundle: {}", blobsBundle.toBriefString());
+                    if (maybeExecutionRequests.isPresent()) {
+                      return new GetPayloadResponse(
+                          executionPayload,
+                          UInt256.valueOf(424242424242424242L),
+                          blobsBundle,
+                          false,
+                          maybeExecutionRequests.get());
+                    } else {
+                      return new GetPayloadResponse(
+                          executionPayload,
+                          UInt256.valueOf(424242424242424242L),
+                          blobsBundle,
+                          false);
+                    }
+                  })
+              .orElse(
+                  new GetPayloadResponse(executionPayload, UInt256.valueOf(434242424242424242L)));
+    }
 
     return SafeFuture.completedFuture(getPayloadResponse);
   }
@@ -544,6 +576,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     private final PayloadBuildingAttributes attributes;
     private Optional<ExecutionPayload> currentExecutionPayload = Optional.empty();
     private Optional<BlobsBundle> currentBlobsBundle = Optional.empty();
+    private Optional<BlobsCellBundle> currentBlobsCellBundle = Optional.empty();
 
     private HeadAndAttributes(final Bytes32 head, final PayloadBuildingAttributes attributes) {
       this.head = head;
@@ -598,7 +631,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final List<Bytes> transactions = new ArrayList<>();
     transactions.add(Bytes.fromHexString("0x0edf"));
 
-    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      transactions.add(generateBlobCellsAndTransaction(slot, headAndAttrs));
+    } else if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
       transactions.add(generateBlobsAndTransaction(slot, headAndAttrs));
     }
 
@@ -624,6 +659,29 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final BlobsBundle blobsBundle = new BlobsBundle(commitments, proofs, blobs);
 
     headAndAttrs.currentBlobsBundle = Optional.of(blobsBundle);
+
+    return blobsUtil.generateRawBlobTransactionFromKzgCommitments(commitments);
+  }
+
+  private Bytes generateBlobCellsAndTransaction(
+      final UInt64 slot, final HeadAndAttributes headAndAttrs) {
+
+    final List<Blob> blobs =
+        blobsUtil.generateBlobs(
+            slot,
+            blobsToGenerate.orElseGet(
+                () ->
+                    random.nextInt(
+                        SpecConfigDeneb.required(spec.atSlot(slot).getConfig())
+                                .getMaxBlobsPerBlock()
+                            + 1)));
+    final List<KZGCommitment> commitments = blobsUtil.blobsToKzgCommitments(blobs);
+    final List<KZGProof> proofs =
+        blobs.stream().flatMap(blob -> blobsUtil.computeKzgCellProofs(blob).stream()).toList();
+
+    final BlobsCellBundle blobsCellBundle = new BlobsCellBundle(commitments, proofs, blobs);
+
+    headAndAttrs.currentBlobsCellBundle = Optional.of(blobsCellBundle);
 
     return blobsUtil.generateRawBlobTransactionFromKzgCommitments(commitments);
   }

@@ -20,34 +20,43 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
-public class BlockContents
-    extends Container3<BlockContents, BeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
-    implements BlockContainer {
+public class SignedBlockContentsDeneb
+    extends Container3<
+        SignedBlockContentsDeneb, SignedBeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
+    implements SignedBlockContainer {
 
-  BlockContents(final BlockContentsSchema type, final TreeNode backingNode) {
+  SignedBlockContentsDeneb(final SignedBlockContentsSchemaDeneb type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public BlockContents(
-      final BlockContentsSchema schema,
-      final BeaconBlock beaconBlock,
+  public SignedBlockContentsDeneb(
+      final SignedBlockContentsSchemaDeneb schema,
+      final SignedBeaconBlock signedBeaconBlock,
       final List<KZGProof> kzgProofs,
       final List<Blob> blobs) {
-    super(
+    this(
         schema,
-        beaconBlock,
+        signedBeaconBlock,
         schema
             .getKzgProofsSchema()
             .createFromElements(kzgProofs.stream().map(SszKZGProof::new).toList()),
         schema.getBlobsSchema().createFromElements(blobs));
   }
 
+  public SignedBlockContentsDeneb(
+      final SignedBlockContentsSchemaDeneb schema,
+      final SignedBeaconBlock signedBeaconBlock,
+      final SszList<SszKZGProof> kzgProofs,
+      final SszList<Blob> blobs) {
+    super(schema, signedBeaconBlock, kzgProofs, blobs);
+  }
+
   @Override
-  public BeaconBlock getBlock() {
+  public SignedBeaconBlock getSignedBlock() {
     return getField0();
   }
 

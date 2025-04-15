@@ -72,6 +72,11 @@ public interface KZG {
         }
 
         @Override
+        public List<KZGCell> computeCells(Bytes blob) {
+          throw new RuntimeException("Not implemented");
+        }
+
+        @Override
         public List<KZGCellAndProof> computeCellsAndProofs(Bytes blob) {
           throw new RuntimeException("Not implemented");
         }
@@ -107,6 +112,9 @@ public interface KZG {
 
   // Fulu PeerDAS methods
 
+  List<KZGCell> computeCells(Bytes blob);
+
+  @Deprecated(since = "Use computeCells instead, computeCellsAndProof is not for production")
   List<KZGCellAndProof> computeCellsAndProofs(Bytes blob);
 
   boolean verifyCellProofBatch(

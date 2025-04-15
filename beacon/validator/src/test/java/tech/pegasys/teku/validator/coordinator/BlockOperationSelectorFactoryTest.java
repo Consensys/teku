@@ -55,7 +55,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsDeneb;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
@@ -803,7 +803,8 @@ class BlockOperationSelectorFactoryTest {
 
   @Test
   void shouldCreateBlobSidecarsForBlockContents() {
-    final SignedBlockContents signedBlockContents = dataStructureUtil.randomSignedBlockContents();
+    final SignedBlockContentsDeneb signedBlockContents =
+        dataStructureUtil.randomSignedBlockContents();
 
     final MiscHelpersDeneb miscHelpersDeneb =
         MiscHelpersDeneb.required(spec.atSlot(signedBlockContents.getSlot()).miscHelpers());

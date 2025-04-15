@@ -13,40 +13,34 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
 
 import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsWithBlobsSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
-public class SignedBlockContentsSchema
-    extends ContainerSchema3<
-        SignedBlockContents, SignedBeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
-    implements SignedBlockContainerSchema<SignedBlockContents> {
+public class BlockContentsSchemaDeneb
+    extends ContainerSchema3<BlockContentsDeneb, BeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
+    implements BlockContentsWithBlobsSchema<BlockContentsDeneb> {
 
-  static final SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
-  static final SszFieldName FIELD_BLOBS = () -> "blobs";
-
-  public SignedBlockContentsSchema(
+  public BlockContentsSchemaDeneb(
       final String containerName,
       final SpecConfigDeneb specConfig,
       final SchemaRegistry schemaRegistry) {
     super(
         containerName,
-        namedSchema("signed_block", schemaRegistry.get(SIGNED_BEACON_BLOCK_SCHEMA)),
+        namedSchema("block", schemaRegistry.get(BEACON_BLOCK_SCHEMA)),
         namedSchema(
             FIELD_KZG_PROOFS,
             SszListSchema.create(SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())),
@@ -56,35 +50,25 @@ public class SignedBlockContentsSchema
                 schemaRegistry.get(BLOB_SCHEMA), specConfig.getMaxBlobsPerBlock())));
   }
 
-  public SignedBlockContents create(
-      final SignedBeaconBlock signedBeaconBlock,
-      final List<KZGProof> kzgProofs,
-      final List<Blob> blobs) {
-    return new SignedBlockContents(this, signedBeaconBlock, kzgProofs, blobs);
-  }
-
-  public SignedBlockContents create(
-      final SignedBeaconBlock signedBeaconBlock,
-      final SszList<SszKZGProof> kzgProofs,
-      final SszList<Blob> blobs) {
-    return new SignedBlockContents(this, signedBeaconBlock, kzgProofs, blobs);
+  @Override
+  public BlockContentsDeneb create(
+      final BeaconBlock beaconBlock, final List<KZGProof> kzgProofs, final List<Blob> blobs) {
+    return new BlockContentsDeneb(this, beaconBlock, kzgProofs, blobs);
   }
 
   @Override
-  public SignedBlockContents createFromBackingNode(final TreeNode node) {
-    return new SignedBlockContents(this, node);
-  }
-
-  public SignedBeaconBlockSchema getSignedBeaconBlockSchema() {
-    return (SignedBeaconBlockSchema) getFieldSchema0();
+  public BlockContentsDeneb createFromBackingNode(final TreeNode node) {
+    return new BlockContentsDeneb(this, node);
   }
 
   @SuppressWarnings("unchecked")
+  @Override
   public SszListSchema<SszKZGProof, ?> getKzgProofsSchema() {
     return (SszListSchema<SszKZGProof, ?>) getChildSchema(getFieldIndex(FIELD_KZG_PROOFS));
   }
 
   @SuppressWarnings("unchecked")
+  @Override
   public SszListSchema<Blob, ?> getBlobsSchema() {
     return (SszListSchema<Blob, ?>) getChildSchema(getFieldIndex(FIELD_BLOBS));
   }

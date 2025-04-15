@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.blocks.versions.fulu;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,42 +20,34 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
-public class SignedBlockContents
-    extends Container3<SignedBlockContents, SignedBeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
-    implements SignedBlockContainer {
+public class BlockContentsFulu
+    extends Container3<BlockContentsFulu, BeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
+    implements BlockContainer {
 
-  SignedBlockContents(final SignedBlockContentsSchema type, final TreeNode backingNode) {
+  BlockContentsFulu(final BlockContentsSchemaFulu type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public SignedBlockContents(
-      final SignedBlockContentsSchema schema,
-      final SignedBeaconBlock signedBeaconBlock,
+  public BlockContentsFulu(
+      final BlockContentsSchemaFulu schema,
+      final BeaconBlock beaconBlock,
       final List<KZGProof> kzgProofs,
       final List<Blob> blobs) {
-    this(
+    super(
         schema,
-        signedBeaconBlock,
+        beaconBlock,
         schema
             .getKzgProofsSchema()
             .createFromElements(kzgProofs.stream().map(SszKZGProof::new).toList()),
         schema.getBlobsSchema().createFromElements(blobs));
   }
 
-  public SignedBlockContents(
-      final SignedBlockContentsSchema schema,
-      final SignedBeaconBlock signedBeaconBlock,
-      final SszList<SszKZGProof> kzgProofs,
-      final SszList<Blob> blobs) {
-    super(schema, signedBeaconBlock, kzgProofs, blobs);
-  }
-
   @Override
-  public SignedBeaconBlock getSignedBlock() {
+  public BeaconBlock getBlock() {
     return getField0();
   }
 

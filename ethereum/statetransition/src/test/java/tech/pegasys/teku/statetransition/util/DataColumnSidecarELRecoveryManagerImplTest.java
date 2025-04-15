@@ -27,7 +27,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes48;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,14 +37,12 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCell;
-import tech.pegasys.teku.kzg.KZGCellAndProof;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
@@ -63,13 +60,8 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
   private final ExecutionLayerChannel executionLayer = mock(ExecutionLayerChannel.class);
   private final KZG kzg = mock(KZG.class);
 
-  private final List<KZGCellAndProof> kzgCellAndProofs =
-      IntStream.range(0, 128)
-          .mapToObj(
-              __ ->
-                  new KZGCellAndProof(
-                      new KZGCell(Bytes.random(2048)), KZGProof.fromBytesCompressed(Bytes48.ZERO)))
-          .toList();
+  private final List<KZGCell> kzgCells =
+      IntStream.range(0, 128).mapToObj(__ -> new KZGCell(Bytes.random(2048))).toList();
 
   @SuppressWarnings("unchecked")
   final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher = mock(Consumer.class);
@@ -93,7 +85,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
   public void setup() {
     when(executionLayer.engineGetBlobAndProofs(any(), eq(currentSlot)))
         .thenReturn(SafeFuture.completedFuture(List.of()));
-    when(kzg.computeCellsAndProofs(any())).thenReturn(kzgCellAndProofs);
+    when(kzg.computeCells(any())).thenReturn(kzgCells);
     setSlot(currentSlot);
   }
 
@@ -129,7 +121,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
     dataColumnSidecarELRecoveryManagerCustom.onNewBlock(block2, Optional.empty());
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
-    verify(executionLayer).engineGetBlobAndProofs(any(), any());
+    verify(executionLayer).engineGetBlobAndCellProofsList(any(), any());
   }
 
   @Test
@@ -168,7 +160,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
         dataColumnSidecar, RemoteOrigin.GOSSIP);
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
-    verify(executionLayer).engineGetBlobAndProofs(any(), any());
+    verify(executionLayer).engineGetBlobAndCellProofsList(any(), any());
   }
 
   @Test
@@ -188,20 +180,23 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
     dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
     final List<BlobSidecar> blobSidecars =
         dataStructureUtil.randomBlobSidecarsForBlock(block).subList(0, 1);
-    final List<Optional<BlobAndProof>> blobAndProofs =
+    final List<BlobAndCellProofs> blobAndCellProofs =
         blobSidecars.stream()
             .map(
                 blobSidecar ->
-                    new BlobAndProof(blobSidecar.getBlob(), dataStructureUtil.randomKZGProof()))
-            .map(Optional::of)
+                    new BlobAndCellProofs(
+                        blobSidecar.getBlob(),
+                        IntStream.range(0, 128)
+                            .mapToObj(__ -> dataStructureUtil.randomKZGProof())
+                            .toList()))
             .toList();
-    when(executionLayer.engineGetBlobAndProofs(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(blobAndProofs));
+    when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(blobAndCellProofs));
     dataColumnSidecarELRecoveryManager.onNewBlock(block, Optional.empty());
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
-    verify(executionLayer).engineGetBlobAndProofs(any(), any());
+    verify(executionLayer).engineGetBlobAndCellProofsList(any(), any());
     verifyNoInteractions(dataColumnSidecarPublisher);
   }
 
@@ -212,15 +207,18 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
-    final List<Optional<BlobAndProof>> blobAndProofs =
+    final List<BlobAndCellProofs> blobAndCellProofs =
         blobSidecars.stream()
             .map(
                 blobSidecar ->
-                    new BlobAndProof(blobSidecar.getBlob(), dataStructureUtil.randomKZGProof()))
-            .map(Optional::of)
+                    new BlobAndCellProofs(
+                        blobSidecar.getBlob(),
+                        IntStream.range(0, 128)
+                            .mapToObj(__ -> dataStructureUtil.randomKZGProof())
+                            .toList()))
             .toList();
-    when(executionLayer.engineGetBlobAndProofs(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(blobAndProofs));
+    when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(blobAndCellProofs));
     dataColumnSidecarELRecoveryManager.onNewBlock(block, Optional.empty());
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();

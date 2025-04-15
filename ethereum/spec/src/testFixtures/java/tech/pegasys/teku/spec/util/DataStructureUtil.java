@@ -114,8 +114,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsDeneb;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidBuilder;
@@ -1184,7 +1184,7 @@ public final class DataStructureUtil {
   }
 
   public BlockContainerAndMetaData randomBlockContainerAndMetaData(
-      final BlockContents blockContents, final UInt64 slotNum) {
+      final BlockContentsDeneb blockContents, final UInt64 slotNum) {
     return new BlockContainerAndMetaData(
         blockContents, spec.atSlot(slotNum).getMilestone(), randomUInt256(), randomUInt256());
   }
@@ -2435,11 +2435,11 @@ public final class DataStructureUtil {
             .collect(toList()));
   }
 
-  public SignedBlockContents randomSignedBlockContents() {
+  public SignedBlockContentsDeneb randomSignedBlockContents() {
     return randomSignedBlockContents(randomSlot());
   }
 
-  public SignedBlockContents randomSignedBlockContents(final UInt64 slot) {
+  public SignedBlockContentsDeneb randomSignedBlockContents(final UInt64 slot) {
     final SignedBeaconBlock signedBeaconBlock = randomSignedBeaconBlock(slot);
     final int numberOfBlobs =
         signedBeaconBlock
@@ -2450,12 +2450,13 @@ public final class DataStructureUtil {
             .size();
     final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
     final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
-    return getDenebSchemaDefinitions(slot)
-        .getSignedBlockContentsSchema()
-        .create(signedBeaconBlock, kzgProofs, blobs);
+    return (SignedBlockContentsDeneb)
+        getDenebSchemaDefinitions(slot)
+            .getSignedBlockContentsSchema()
+            .create(signedBeaconBlock, kzgProofs, blobs);
   }
 
-  public SignedBlockContents randomSignedBlockContents(final BlobsBundle blobsBundle) {
+  public SignedBlockContentsDeneb randomSignedBlockContents(final BlobsBundle blobsBundle) {
     final UInt64 slot = randomUInt64();
     final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
         SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
@@ -2463,24 +2464,26 @@ public final class DataStructureUtil {
     final SignedBeaconBlock signedBeaconBlock =
         randomSignedBeaconBlockWithCommitments(
             blobKzgCommitmentsSchema.createFromBlobsBundle(blobsBundle));
-    return getDenebSchemaDefinitions(slot)
-        .getSignedBlockContentsSchema()
-        .create(signedBeaconBlock, blobsBundle.getProofs(), blobsBundle.getBlobs());
+    return (SignedBlockContentsDeneb)
+        getDenebSchemaDefinitions(slot)
+            .getSignedBlockContentsSchema()
+            .create(signedBeaconBlock, blobsBundle.getProofs(), blobsBundle.getBlobs());
   }
 
-  public BlockContents randomBlockContents() {
+  public BlockContentsDeneb randomBlockContents() {
     return randomBlockContents(randomSlot());
   }
 
-  public BlockContents randomBlockContents(final UInt64 slot) {
+  public BlockContentsDeneb randomBlockContents(final UInt64 slot) {
     final BeaconBlock beaconBlock = randomBeaconBlock(slot);
     final int numberOfBlobs =
         beaconBlock.getBody().getOptionalBlobKzgCommitments().orElseThrow().size();
     final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
     final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
-    return getDenebSchemaDefinitions(slot)
-        .getBlockContentsSchema()
-        .create(beaconBlock, kzgProofs, blobs);
+    return (BlockContentsDeneb)
+        getDenebSchemaDefinitions(slot)
+            .getBlockContentsSchema()
+            .create(beaconBlock, kzgProofs, blobs);
   }
 
   public RandomBlobSidecarBuilder createRandomBlobSidecarBuilder() {

@@ -40,13 +40,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -172,7 +171,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   }
 
   private void publishRecoveredDataColumnSidecars(
-      final RecoveryTask recoveryTask, final List<Blob> blobs) {
+      final RecoveryTask recoveryTask, final List<BlobAndCellProofs> blobAndCellProofs) {
     final List<DataColumnSidecar> dataColumnSidecars =
         miscHelpersFuluSupplier
             .get()
@@ -180,7 +179,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
                 recoveryTask.signedBeaconBlockHeader(),
                 recoveryTask.sszKZGCommitments(),
                 recoveryTask.kzgCommitmentsInclusionProof(),
-                blobs,
+                blobAndCellProofs,
                 kzg);
     final int custodyCount = custodyGroupCountManager.getCustodyGroupCount();
     final int maxCustodyGroups =
@@ -322,35 +321,26 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
             .toList();
 
     return executionLayer
-        .engineGetBlobAndProofs(versionedHashes, slotAndBlockRoot.getSlot())
+        .engineGetBlobAndCellProofsList(versionedHashes, slotAndBlockRoot.getSlot())
         .thenAccept(
-            blobAndProofs -> {
+            blobAndCellProofsList -> {
+              if (blobAndCellProofsList.isEmpty()) {
+                LOG.debug(
+                    "Blobs for {} are not found on local EL, reconstruction is not possible",
+                    slotAndBlockRoot);
+                return;
+              }
+
               checkArgument(
-                  blobAndProofs.size() == versionedHashes.size(),
+                  blobAndCellProofsList.size() == versionedHashes.size(),
                   "Queried %s versionedHashed but got %s blobAndProofs",
                   versionedHashes.size(),
-                  blobAndProofs.size());
-
-              for (int index = 0; index < blobAndProofs.size(); index++) {
-                final Optional<BlobAndProof> blobAndProof = blobAndProofs.get(index);
-                final BlobIdentifier blobIdentifier = missingBlobsIdentifiers.get(index);
-                if (blobAndProof.isEmpty()) {
-                  LOG.debug(
-                      "Blob not found on local EL: {}, reconstruction not possible",
-                      blobIdentifier);
-                  return;
-                }
-              }
+                  blobAndCellProofsList.size());
 
               LOG.info(
                   "Collected all blobSidecars from EL for slot {}, recovering data column sidecars",
                   slotAndBlockRoot.getSlot());
-              publishRecoveredDataColumnSidecars(
-                  recoveryTask,
-                  blobAndProofs.stream()
-                      .filter(Optional::isPresent)
-                      .map(blobAndProof -> blobAndProof.get().blob())
-                      .toList());
+              publishRecoveredDataColumnSidecars(recoveryTask, blobAndCellProofsList);
             });
   }
 

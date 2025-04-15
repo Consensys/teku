@@ -28,7 +28,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -107,9 +106,9 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
 
   @Override
   public List<DataColumnSidecar> createDataColumnSidecars(
-      final SignedBlockContainer blockContainer, final List<Blob> blobs) {
+      final SignedBlockContainer blockContainer) {
     final SpecMilestone milestone = getMilestone(blockContainer.getSlot());
-    return registeredFactories.get(milestone).createDataColumnSidecars(blockContainer, blobs);
+    return registeredFactories.get(milestone).createDataColumnSidecars(blockContainer);
   }
 
   private SpecMilestone getMilestone(final UInt64 slot) {
