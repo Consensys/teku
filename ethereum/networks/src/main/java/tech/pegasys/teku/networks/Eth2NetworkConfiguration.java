@@ -325,6 +325,7 @@ public class Eth2NetworkConfiguration {
         && forkChoiceLateBlockReorgEnabled == that.forkChoiceLateBlockReorgEnabled
         && forkChoiceUpdatedAlwaysSendPayloadAttributes
             == that.forkChoiceUpdatedAlwaysSendPayloadAttributes
+        && rustKzgEnabled == that.rustKzgEnabled
         && Objects.equals(spec, that.spec)
         && Objects.equals(constants, that.constants)
         && Objects.equals(stateBoostrapConfig, that.stateBoostrapConfig)
@@ -371,7 +372,8 @@ public class Eth2NetworkConfiguration {
         asyncBeaconChainMaxQueue,
         asyncP2pMaxQueue,
         forkChoiceLateBlockReorgEnabled,
-        forkChoiceUpdatedAlwaysSendPayloadAttributes);
+        forkChoiceUpdatedAlwaysSendPayloadAttributes,
+        rustKzgEnabled);
   }
 
   public static class Builder {
