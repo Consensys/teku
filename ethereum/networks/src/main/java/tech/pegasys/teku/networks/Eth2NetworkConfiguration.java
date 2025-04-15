@@ -71,6 +71,8 @@ public class Eth2NetworkConfiguration {
 
   public static final int DEFAULT_ASYNC_P2P_MAX_QUEUE = DEFAULT_MAX_QUEUE_SIZE;
 
+  public static final boolean DEFAULT_RUST_KZG_ENABLED = false;
+
   // at least 5, but happily up to 12
   public static final int DEFAULT_VALIDATOR_EXECUTOR_THREADS =
       Math.max(5, Math.min(Runtime.getRuntime().availableProcessors(), 12));
@@ -114,6 +116,7 @@ public class Eth2NetworkConfiguration {
   private final boolean forkChoiceLateBlockReorgEnabled;
   private final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes;
   private final int pendingAttestationsMaxQueue;
+  private final boolean rustKzgEnabled;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -141,7 +144,8 @@ public class Eth2NetworkConfiguration {
       final int asyncBeaconChainMaxQueue,
       final boolean forkChoiceLateBlockReorgEnabled,
       final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes,
-      final int pendingAttestationsMaxQueue) {
+      final int pendingAttestationsMaxQueue,
+      final boolean rustKzgEnabled) {
     this.spec = spec;
     this.constants = constants;
     this.stateBoostrapConfig = stateBoostrapConfig;
@@ -172,6 +176,7 @@ public class Eth2NetworkConfiguration {
     this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
         forkChoiceUpdatedAlwaysSendPayloadAttributes;
     this.pendingAttestationsMaxQueue = pendingAttestationsMaxQueue;
+    this.rustKzgEnabled = rustKzgEnabled;
 
     LOG.debug(
         "P2P async queue - {} threads, max queue size {} ", asyncP2pMaxThreads, asyncP2pMaxQueue);
@@ -293,6 +298,10 @@ public class Eth2NetworkConfiguration {
     return forkChoiceUpdatedAlwaysSendPayloadAttributes;
   }
 
+  public boolean isRustKzgEnabled() {
+    return rustKzgEnabled;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -316,6 +325,7 @@ public class Eth2NetworkConfiguration {
         && forkChoiceLateBlockReorgEnabled == that.forkChoiceLateBlockReorgEnabled
         && forkChoiceUpdatedAlwaysSendPayloadAttributes
             == that.forkChoiceUpdatedAlwaysSendPayloadAttributes
+        && rustKzgEnabled == that.rustKzgEnabled
         && Objects.equals(spec, that.spec)
         && Objects.equals(constants, that.constants)
         && Objects.equals(stateBoostrapConfig, that.stateBoostrapConfig)
@@ -362,7 +372,8 @@ public class Eth2NetworkConfiguration {
         asyncBeaconChainMaxQueue,
         asyncP2pMaxQueue,
         forkChoiceLateBlockReorgEnabled,
-        forkChoiceUpdatedAlwaysSendPayloadAttributes);
+        forkChoiceUpdatedAlwaysSendPayloadAttributes,
+        rustKzgEnabled);
   }
 
   public static class Builder {
@@ -400,6 +411,7 @@ public class Eth2NetworkConfiguration {
     private boolean forkChoiceUpdatedAlwaysSendPayloadAttributes =
         DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
     private OptionalInt pendingAttestationsMaxQueue = OptionalInt.empty();
+    private boolean rustKzgEnabled = DEFAULT_RUST_KZG_ENABLED;
 
     public void spec(final Spec spec) {
       this.spec = spec;
@@ -498,7 +510,8 @@ public class Eth2NetworkConfiguration {
           asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE),
           forkChoiceLateBlockReorgEnabled,
           forkChoiceUpdatedAlwaysSendPayloadAttributes,
-          pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS));
+          pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS),
+          rustKzgEnabled);
     }
 
     private void validateCommandLineParameters() {
@@ -734,6 +747,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder epochsStoreBlobs(final String epochsStoreBlobs) {
       this.epochsStoreBlobs = epochsStoreBlobs;
+      return this;
+    }
+
+    public Builder rustKzgEnabled(final boolean rustKzgEnabled) {
+      this.rustKzgEnabled = rustKzgEnabled;
       return this;
     }
 

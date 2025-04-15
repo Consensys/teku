@@ -124,7 +124,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final KZG kzg;
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       // trusted setup loading will be handled by the BeaconChainController
-      kzg = KZG.getInstance();
+      kzg = KZG.getInstance(false);
     } else {
       kzg = KZG.NOOP;
     }
