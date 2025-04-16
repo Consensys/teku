@@ -295,7 +295,7 @@ class AggregationDutyTest {
 
   @TestTemplate
   public void
-      shouldProduceAllAggregateAndProofsWhenValidatorsAggregateSameCommitteeAndUsingUngroupedAggregators() {
+      shouldProduceAllAggregatesForSameCommitteeUsingUngroupedAggregators() {
     duty =
         new AggregationDuty(
             spec,
