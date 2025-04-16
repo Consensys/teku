@@ -61,7 +61,9 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.duties.attestations.AggregationDuty;
+import tech.pegasys.teku.validator.client.duties.attestations.AggregatorsGroupedByCommittee;
 import tech.pegasys.teku.validator.client.duties.attestations.BatchAttestationSendingStrategy;
+import tech.pegasys.teku.validator.client.duties.attestations.UngroupedAggregators;
 
 @TestSpecContext(milestone = {PHASE0, ELECTRA})
 class AggregationDutyTest {
@@ -108,6 +110,7 @@ class AggregationDutyTest {
             spec,
             SLOT,
             validatorApiChannel,
+            new AggregatorsGroupedByCommittee(),
             forkProvider,
             validatorLogger,
             new BatchAttestationSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs),
@@ -287,6 +290,83 @@ class AggregationDutyTest {
     verify(validatorDutyMetrics)
         .record(any(), any(AggregationDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
     verify(validatorDutyMetrics)
+        .record(any(), any(AggregationDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
+  }
+
+  @TestTemplate
+  public void
+      shouldProduceAllAggregateAndProofsWhenValidatorsAggregateSameCommitteeAndUsingUngroupedAggregators() {
+    duty =
+        new AggregationDuty(
+            spec,
+            SLOT,
+            validatorApiChannel,
+            new UngroupedAggregators(),
+            forkProvider,
+            validatorLogger,
+            new BatchAttestationSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs),
+            validatorDutyMetrics);
+
+    final int committeeIndex = 2;
+
+    final int validator1Index = 1;
+    final BLSSignature validator1Proof = dataStructureUtil.randomSignature();
+
+    final int validator2Index = 6;
+    final BLSSignature validator2Proof = dataStructureUtil.randomSignature();
+
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    final Attestation aggregate = dataStructureUtil.randomAttestation();
+    duty.addValidator(
+        validator1,
+        validator1Index,
+        validator1Proof,
+        committeeIndex,
+        completedFuture(Optional.of(attestationData)));
+    duty.addValidator(
+        validator2,
+        validator2Index,
+        validator2Proof,
+        committeeIndex,
+        completedFuture(Optional.of(attestationData)));
+
+    when(validatorApiChannel.createAggregate(
+            SLOT, attestationData.hashTreeRoot(), Optional.of(UInt64.valueOf(committeeIndex))))
+        .thenReturn(completedFuture(Optional.of(aggregate)));
+    when(validatorApiChannel.sendAggregateAndProofs(anyList()))
+        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
+
+    final AggregateAndProof aggregateAndProof1 =
+        aggregateAndProofSchema.create(UInt64.valueOf(validator1Index), aggregate, validator1Proof);
+    final AggregateAndProof aggregateAndProof2 =
+        aggregateAndProofSchema.create(UInt64.valueOf(validator2Index), aggregate, validator2Proof);
+    final BLSSignature aggregateSignature1 = dataStructureUtil.randomSignature();
+    final BLSSignature aggregateSignature2 = dataStructureUtil.randomSignature();
+    when(signer1.signAggregateAndProof(aggregateAndProof1, forkInfo))
+        .thenReturn(SafeFuture.completedFuture(aggregateSignature1));
+    when(signer2.signAggregateAndProof(aggregateAndProof2, forkInfo))
+        .thenReturn(SafeFuture.completedFuture(aggregateSignature2));
+
+    performAndReportDuty();
+
+    // Two proofs should be sent. Both proofs are sent together so there is only one call to
+    // sendAggregateAndProofs.
+    verify(validatorApiChannel)
+        .sendAggregateAndProofs(
+            List.of(
+                signedAggregateAndProofSchema.create(aggregateAndProof1, aggregateSignature1),
+                signedAggregateAndProofSchema.create(aggregateAndProof2, aggregateSignature2)));
+    // Duty is completed with two aggregates (for the same slot/committee). So we check success
+    // count is 2
+    verify(validatorLogger)
+        .dutyCompleted(
+            TYPE, SLOT, 2, Set.of(aggregate.getData().getBeaconBlockRoot()), Optional.empty());
+    verifyNoMoreInteractions(validatorLogger);
+
+    // Two aggregation were created, so we capture the time for both individually
+    verify(validatorDutyMetrics, times(2))
+        .record(any(), any(AggregationDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics, times(2))
         .record(any(), any(AggregationDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
   }
 
