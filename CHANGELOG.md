@@ -17,3 +17,5 @@
 
 ### Bug Fixes
  - It is no longer possible to set both `--checkpoint-sync-url` and `--initial-state`.
+- Aggregating attestations using DVT does not cause missed aggregations when multiple validators are
+  scheduled for the same slot [#9347](https://github.com/Consensys/teku/issues/9347).
