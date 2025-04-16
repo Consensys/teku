@@ -90,8 +90,8 @@ public class GetInclusionListCommitteeDuties extends RestApiEndpoint {
     }
 
     final UInt64 epoch = request.getPathParameter(EPOCH_PARAMETER);
-    final List<Integer> requestBody = request.getRequestBody();
-    final IntList indices = IntArrayList.toList(requestBody.stream().mapToInt(Integer::intValue));
+    final List<UInt64> requestBody = request.getRequestBody();
+    final IntList indices = IntArrayList.toList(requestBody.stream().mapToInt(UInt64::intValue));
 
     SafeFuture<Optional<InclusionListDuties>> future =
         validatorDataProvider.getInclusionListDuties(epoch, indices);
