@@ -14,13 +14,22 @@
 package tech.pegasys.teku.spec.datastructures.execution;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import java.util.List;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
@@ -61,6 +70,71 @@ class ExpectedWithdrawalsTest {
   }
 
   @Test
+  void getPartiallyWithdrawnBalance_returnsZeroIfNotSet() {
+    spec = TestSpecFactory.createMinimalElectra();
+    final List<Withdrawal> withdrawalList = List.of();
+    assertThat(ExpectedWithdrawals.getPartiallyWithdrawnBalance(withdrawalList, ZERO))
+        .isEqualTo(ZERO);
+  }
+
+  @Test
+  void getPartiallyWithdrawnBalance_returnsCurrentValue() {
+    spec = TestSpecFactory.createMinimalElectra();
+    dataStructureUtil = new DataStructureUtil(spec);
+    final UInt64 oneEth = UInt64.valueOf(1_000_000_000L);
+    final Bytes20 b = dataStructureUtil.randomBytes20();
+    final WithdrawalSchema schema = dataStructureUtil.randomWithdrawal().getSchema();
+    final List<Withdrawal> withdrawalList =
+        List.of(schema.create(ZERO, ZERO, b, oneEth), schema.create(ONE, ZERO, b, oneEth));
+    assertThat(ExpectedWithdrawals.getPartiallyWithdrawnBalance(withdrawalList, ZERO))
+        .isEqualTo(oneEth.times(2));
+  }
+
+  @Test
+  void getPartiallyWithdrawnBalance_returnsCurrentValueSpecificToValidator() {
+    spec = TestSpecFactory.createMinimalElectra();
+    dataStructureUtil = new DataStructureUtil(spec);
+    final UInt64 oneEth = UInt64.valueOf(1_000_000_000L);
+    final Bytes20 b = dataStructureUtil.randomBytes20();
+    final WithdrawalSchema schema = dataStructureUtil.randomWithdrawal().getSchema();
+    final List<Withdrawal> withdrawalList =
+        List.of(schema.create(ZERO, ZERO, b, oneEth), schema.create(ONE, ONE, b, oneEth));
+    assertThat(ExpectedWithdrawals.getPartiallyWithdrawnBalance(withdrawalList, ZERO))
+        .isEqualTo(oneEth);
+  }
+
+  @Test
+  void getEthAddressFromWithdrawalCredentials_extracts_address() {
+    spec = TestSpecFactory.createMinimalElectra();
+    dataStructureUtil = new DataStructureUtil(spec);
+    final Eth1Address address = dataStructureUtil.randomEth1Address();
+    final Validator validator =
+        dataStructureUtil
+            .validatorBuilder()
+            .withdrawalCredentials(
+                Bytes32.fromHexString("0x01000000000000" + address.toUnprefixedHexString()))
+            .build();
+    assertThat(
+            ExpectedWithdrawals.getEthAddressFromWithdrawalCredentials(validator)
+                .toUnprefixedHexString())
+        .isEqualToIgnoringCase(address.toUnprefixedHexString());
+  }
+
+  @Test
+  void createFromInvalidStateReturnsNoop() {
+    spec = TestSpecFactory.createMinimalBellatrix();
+    dataStructureUtil = new DataStructureUtil(spec);
+    assertThat(
+            ExpectedWithdrawals.create(
+                dataStructureUtil.randomBeaconState(),
+                spec.getGenesisSchemaDefinitions(),
+                spec.getGenesisSpec().miscHelpers(),
+                spec.getGenesisSpecConfig(),
+                spec.getGenesisSpec().predicates()))
+        .isEqualTo(ExpectedWithdrawals.NOOP);
+  }
+
+  @Test
   void electraExpectedWithdrawals() {
     spec = TestSpecFactory.createMinimalElectra();
     dataStructureUtil = new DataStructureUtil(spec);
@@ -98,6 +172,84 @@ class ExpectedWithdrawalsTest {
 
     assertThat(mutableBeaconStateElectra.getNextWithdrawalIndex()).isEqualTo(UInt64.valueOf(2));
     assertThat(mutableBeaconStateElectra.getValidators().size()).isEqualTo(2);
+  }
+
+  @Test
+  void electraPendingPartialWithdrawals_SingleExceedingMinimumBalance() {
+    spec = TestSpecFactory.createMinimalElectra();
+    dataStructureUtil = new DataStructureUtil(spec);
+    final SpecConfigElectra specConfigElectra =
+        SpecConfigElectra.required(spec.getGenesisSpec().getConfig());
+    final UInt64 minActivationBalance = specConfigElectra.getMaxEffectiveBalance();
+    final UInt64 partialWithdrawalBalance = UInt64.valueOf(10_000L);
+    final BeaconStateElectra preState =
+        BeaconStateElectra.required(
+            new BeaconStateTestBuilder(dataStructureUtil)
+                .activeConsolidatingValidator(minActivationBalance.plus(partialWithdrawalBalance))
+                .pendingPartialWithdrawal(0, partialWithdrawalBalance.times(2))
+                .build());
+
+    final ExpectedWithdrawals withdrawals =
+        spec.getBlockProcessor(preState.getSlot()).getExpectedWithdrawals(preState);
+    assertThat(withdrawals.getPartialWithdrawalCount()).isEqualTo(1);
+    // although the withdrawal was for 2x the available, we could only satisfy half of it
+    assertThat(withdrawals.getWithdrawalList().get(0).getAmount())
+        .isEqualTo(partialWithdrawalBalance);
+  }
+
+  @Test
+  void electraPendingPartialWithdrawals_MultipleExceedingMinimumBalance() {
+    spec = TestSpecFactory.createMinimalElectra();
+    dataStructureUtil = new DataStructureUtil(spec);
+    final SpecConfigElectra specConfigElectra =
+        SpecConfigElectra.required(spec.getGenesisSpec().getConfig());
+    final UInt64 minActivationBalance = specConfigElectra.getMaxEffectiveBalance();
+    final UInt64 partialWithdrawalBalance = UInt64.valueOf(10_000L);
+    final BeaconStateElectra preState =
+        BeaconStateElectra.required(
+            new BeaconStateTestBuilder(dataStructureUtil)
+                .activeConsolidatingValidator(minActivationBalance.plus(15_000))
+                .pendingPartialWithdrawal(0, partialWithdrawalBalance)
+                .pendingPartialWithdrawal(0, partialWithdrawalBalance)
+                .build());
+
+    final ExpectedWithdrawals withdrawals =
+        spec.getBlockProcessor(preState.getSlot()).getExpectedWithdrawals(preState);
+    assertThat(withdrawals.getPartialWithdrawalCount()).isEqualTo(2);
+    // the first withdrawal could be fully satisfied
+    assertThat(withdrawals.getWithdrawalList().get(0).getAmount())
+        .isEqualTo(partialWithdrawalBalance);
+    // the second withdrawal could only be partially satisfied
+    assertThat(withdrawals.getWithdrawalList().get(1).getAmount())
+        .isEqualTo(UInt64.valueOf(5_000L));
+  }
+
+  @Test
+  void electraPendingPartialWithdrawals_MultipleExceedingMinimumBalanceOneSkipped() {
+    spec = TestSpecFactory.createMinimalElectra();
+    dataStructureUtil = new DataStructureUtil(spec);
+    final SpecConfigElectra specConfigElectra =
+        SpecConfigElectra.required(spec.getGenesisSpec().getConfig());
+    final UInt64 minActivationBalance = specConfigElectra.getMaxEffectiveBalance();
+    final UInt64 partialWithdrawalBalance = UInt64.valueOf(10_000L);
+    final BeaconStateElectra preState =
+        BeaconStateElectra.required(
+            new BeaconStateTestBuilder(dataStructureUtil)
+                .activeConsolidatingValidator(minActivationBalance.plus(partialWithdrawalBalance))
+                .pendingPartialWithdrawal(0, partialWithdrawalBalance)
+                // this second pending partial will end up ignored because of insufficient balance
+                .pendingPartialWithdrawal(0, partialWithdrawalBalance)
+                .build());
+
+    final ExpectedWithdrawals withdrawals =
+        spec.getBlockProcessor(preState.getSlot()).getExpectedWithdrawals(preState);
+    // 2 partials came out of the state queue
+    assertThat(withdrawals.getPartialWithdrawalCount()).isEqualTo(2);
+    // only 1 withdrawal added because we had insufficient balance to allow the second
+    assertThat(withdrawals.getWithdrawalList().size()).isEqualTo(1);
+    // the first withdrawal was allowed at the requested amount
+    assertThat(withdrawals.getWithdrawalList().get(0).getAmount())
+        .isEqualTo(UInt64.valueOf(10_000L));
   }
 
   @Test
