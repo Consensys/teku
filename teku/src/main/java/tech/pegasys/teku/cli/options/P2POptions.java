@@ -473,7 +473,7 @@ public class P2POptions {
         final Optional<InputStream> maybeStream =
             ResourceLoader.urlOrFile().load(p2pStaticPeersUrl);
         if (maybeStream.isPresent()) {
-          try (BufferedReader reader =
+          try (final BufferedReader reader =
               new BufferedReader(
                   new InputStreamReader(maybeStream.get(), StandardCharsets.UTF_8))) {
             final List<String> peersFromUrl =
