@@ -297,7 +297,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new PostContributionAndProofs(dataProvider, schemaCache))
             .endpoint(new PostPrepareBeaconProposer(dataProvider))
             .endpoint(new PostRegisterValidator(dataProvider))
-                .endpoint(new PostInclusionList(dataProvider))
+                .endpoint(new PostInclusionList(dataProvider, schemaCache))
             // Obol DVT Methods
             .endpoint(new PostBeaconCommitteeSelections())
             .endpoint(new PostSyncCommitteeSelections())

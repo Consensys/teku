@@ -21,7 +21,7 @@ class PostInclusionListTest extends AbstractMigratedBeaconHandlerTest {
 
     @BeforeEach
     void setup() {
-        setHandler(new PostInclusionList(syncDataProvider, validatorDataProvider));
+        setHandler(new PostInclusionList(validatorDataProvider, schemaDefinitionCache));
         request.setRequestBody(inclusionList);
     }
 
