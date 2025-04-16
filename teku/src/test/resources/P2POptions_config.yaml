@@ -7,6 +7,7 @@ p2p-advertised-port: 9999
 p2p-private-key-file: "/the/file"
 p2p-advertised-ip: "127.200.0.1"
 p2p-static-peers: "127.1.0.1,127.1.1.1"
+p2p-static-peers-url: "file:///path/to/peers.txt"
 p2p-peer-lower-bound: 70
 p2p-peer-upper-bound: 85
 Xp2p-target-subnet-subscriber-count: 5
