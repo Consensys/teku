@@ -57,6 +57,7 @@ public class GetInclusionList extends RestApiEndpoint {
                 SLOT_PARAMETER.withDescription(
                     "The slot for which an inclusion list should be created."))
             .response(SC_OK, "Request successful", ETH_EXECUTION_TRANSACTION_TYPE)
+            .withChainDataResponses()
             .build());
     this.syncDataProvider = syncDataProvider;
     this.validatorDataProvider = validatorDataProvider;
