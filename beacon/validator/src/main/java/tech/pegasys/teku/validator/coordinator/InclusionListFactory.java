@@ -13,11 +13,13 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.InclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
@@ -74,4 +76,33 @@ public class InclusionListFactory {
                   .thenApply(Optional::ofNullable);
             });
   }
+
+    @SuppressWarnings("FutureReturnValueIgnored")
+    public SafeFuture<Optional<List<Transaction>>> getInclusionList(
+            final UInt64 slot) {
+        final InclusionListSchema inclusionListSchema =
+                spec.atSlot(slot)
+                        .getSchemaDefinitions()
+                        .toVersionEip7805()
+                        .orElseThrow()
+                        .getInclusionListSchema();
+        final InclusionListUtil inclusionListUtil =
+                spec.atSlot(slot).getInclusionListUtil().orElseThrow();
+        return combinedChainDataClient
+                .getBestState()
+                .orElseGet(
+                        () ->
+                                SafeFuture.failedFuture(
+                                        new IllegalStateException("Head state is not yet available")))
+                .thenCompose(
+                        state -> {
+                            final Bytes32 parentHash =
+                                    BeaconStateElectra.required(state)
+                                            .getLatestExecutionPayloadHeader()
+                                            .getParentHash();
+                            return executionLayerChannel
+                                    .engineGetInclusionList(parentHash, slot)
+                                    .thenApply(Optional::ofNullable);
+                        });
+    }
 }
