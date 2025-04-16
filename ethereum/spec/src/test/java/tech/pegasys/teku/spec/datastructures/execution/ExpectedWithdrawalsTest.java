@@ -21,13 +21,11 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -40,6 +38,8 @@ class ExpectedWithdrawalsTest {
 
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
+
+  private static final UInt64 ONE_ETH = UInt64.valueOf(1_000_000_000L);
 
   @Test
   void bellatrixExpectedWithdrawals() {
@@ -81,26 +81,24 @@ class ExpectedWithdrawalsTest {
   void getPartiallyWithdrawnBalance_returnsCurrentValue() {
     spec = TestSpecFactory.createMinimalElectra();
     dataStructureUtil = new DataStructureUtil(spec);
-    final UInt64 oneEth = UInt64.valueOf(1_000_000_000L);
-    final Bytes20 b = dataStructureUtil.randomBytes20();
-    final WithdrawalSchema schema = dataStructureUtil.randomWithdrawal().getSchema();
     final List<Withdrawal> withdrawalList =
-        List.of(schema.create(ZERO, ZERO, b, oneEth), schema.create(ONE, ZERO, b, oneEth));
+        List.of(
+            dataStructureUtil.randomWithdrawal(ZERO, ONE_ETH),
+            dataStructureUtil.randomWithdrawal(ZERO, ONE_ETH));
     assertThat(ExpectedWithdrawals.getPartiallyWithdrawnBalance(withdrawalList, ZERO))
-        .isEqualTo(oneEth.times(2));
+        .isEqualTo(ONE_ETH.times(2));
   }
 
   @Test
   void getPartiallyWithdrawnBalance_returnsCurrentValueSpecificToValidator() {
     spec = TestSpecFactory.createMinimalElectra();
     dataStructureUtil = new DataStructureUtil(spec);
-    final UInt64 oneEth = UInt64.valueOf(1_000_000_000L);
-    final Bytes20 b = dataStructureUtil.randomBytes20();
-    final WithdrawalSchema schema = dataStructureUtil.randomWithdrawal().getSchema();
     final List<Withdrawal> withdrawalList =
-        List.of(schema.create(ZERO, ZERO, b, oneEth), schema.create(ONE, ONE, b, oneEth));
+        List.of(
+            dataStructureUtil.randomWithdrawal(ZERO, ONE_ETH),
+            dataStructureUtil.randomWithdrawal(ONE, ONE_ETH));
     assertThat(ExpectedWithdrawals.getPartiallyWithdrawnBalance(withdrawalList, ZERO))
-        .isEqualTo(oneEth);
+        .isEqualTo(ONE_ETH);
   }
 
   @Test
