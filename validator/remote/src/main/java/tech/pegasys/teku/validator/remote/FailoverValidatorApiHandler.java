@@ -233,12 +233,11 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-    public SafeFuture<Optional<List<Transaction>>> getInclusionList(
-        final UInt64 slot) {
-        return tryRequestUntilSuccess(
-            apiChannel -> apiChannel.getInclusionList(slot),
-            BeaconNodeRequestLabels.GET_INCLUSION_LIST_METHOD);
-    }
+  public SafeFuture<Optional<List<Transaction>>> getInclusionList(final UInt64 slot) {
+    return tryRequestUntilSuccess(
+        apiChannel -> apiChannel.getInclusionList(slot),
+        BeaconNodeRequestLabels.GET_INCLUSION_LIST_METHOD);
+  }
 
   @Override
   public SafeFuture<Void> subscribeToBeaconCommittee(

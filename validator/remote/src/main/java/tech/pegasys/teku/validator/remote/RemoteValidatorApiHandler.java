@@ -302,8 +302,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<Transaction>>> getInclusionList(
-          final UInt64 slot) {
+  public SafeFuture<Optional<List<Transaction>>> getInclusionList(final UInt64 slot) {
     return sendRequest(() -> typeDefClient.getInclusionList(slot));
   }
 

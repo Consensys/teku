@@ -589,8 +589,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<Transaction>>> getInclusionList(
-          final UInt64 slot) {
+  public SafeFuture<Optional<List<Transaction>>> getInclusionList(final UInt64 slot) {
     return inclusionListFactory.getInclusionList(slot);
   }
 

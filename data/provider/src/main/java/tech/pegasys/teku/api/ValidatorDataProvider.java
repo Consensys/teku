@@ -227,7 +227,7 @@ public class ValidatorDataProvider {
     return SafeFuture.of(() -> validatorApiChannel.getSyncCommitteeDuties(epoch, indices));
   }
 
-  public SafeFuture<Optional<List<Transaction>>> getInclusionList(final UInt64 slot){
+  public SafeFuture<Optional<List<Transaction>>> getInclusionList(final UInt64 slot) {
     return SafeFuture.of(() -> validatorApiChannel.getInclusionList(slot));
   }
 

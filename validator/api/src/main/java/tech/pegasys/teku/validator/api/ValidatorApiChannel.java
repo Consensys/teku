@@ -137,8 +137,8 @@ public interface ValidatorApiChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<Optional<List<Transaction>>> getInclusionList(UInt64 slot){
-            return SafeFuture.completedFuture(Optional.empty());
+        public SafeFuture<Optional<List<Transaction>>> getInclusionList(UInt64 slot) {
+          return SafeFuture.completedFuture(Optional.empty());
         }
 
         @Override
@@ -265,7 +265,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<InclusionList>> createInclusionList(UInt64 slot, UInt64 validatorIndex);
 
-    SafeFuture<Optional<List<Transaction>>> getInclusionList(UInt64 slot);
+  SafeFuture<Optional<List<Transaction>>> getInclusionList(UInt64 slot);
 
   SafeFuture<Void> subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 

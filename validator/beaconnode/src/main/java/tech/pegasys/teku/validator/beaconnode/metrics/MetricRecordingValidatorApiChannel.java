@@ -193,8 +193,8 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<List<Transaction>>> getInclusionList(final UInt64 slot) {
-      return countOptionalDataRequest(
-          delegate.getInclusionList(slot), BeaconNodeRequestLabels.GET_INCLUSION_LIST_METHOD);
+    return countOptionalDataRequest(
+        delegate.getInclusionList(slot), BeaconNodeRequestLabels.GET_INCLUSION_LIST_METHOD);
   }
 
   @Override

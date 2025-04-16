@@ -17,7 +17,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONS
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_VALUE;
-import static tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas.BYTE_SCHEMA;
 
 import java.math.BigInteger;
 import java.util.Locale;
@@ -27,7 +26,6 @@ import java.util.Set;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.bouncycastle.util.encoders.Hex;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -38,14 +36,12 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.EnumHeaderTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.EnumTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringBasedHeaderTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.StringBasedPrimitiveTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
@@ -102,13 +98,14 @@ public class EthereumTypes {
           SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT), Set.of());
 
   public static final StringValueTypeDefinition<UInt256> ETH_EXECUTION_TRANSACTION_TYPE =
-          DeserializableTypeDefinition.string(UInt256.class)
-                  .formatter(UInt256::toHexString)
-                  .parser(UInt256::fromHexString)
-                  .example("0x02f878831469668303f51d843b9ac9f9843b9aca0082520894c93269b73096998db66be0441e836d873535cb9c8894a19041886f000080c001a031cc29234036afbf9a1fb9476b463367cb1f957ac0b919b69bbc798436e604aaa018c4e9c3914eb27aadd0b91e10b18655739fcf8c1fc398763a9f1beecb8ddc86")
-                  .description("A transaction on the execution (Ethereum 1) network.")
-                  .format("hex")
-                  .build();
+      DeserializableTypeDefinition.string(UInt256.class)
+          .formatter(UInt256::toHexString)
+          .parser(UInt256::fromHexString)
+          .example(
+              "0x02f878831469668303f51d843b9ac9f9843b9aca0082520894c93269b73096998db66be0441e836d873535cb9c8894a19041886f000080c001a031cc29234036afbf9a1fb9476b463367cb1f957ac0b919b69bbc798436e604aaa018c4e9c3914eb27aadd0b91e10b18655739fcf8c1fc398763a9f1beecb8ddc86")
+          .description("A transaction on the execution (Ethereum 1) network.")
+          .format("hex")
+          .build();
 
   public static final EnumHeaderTypeDefinition<SpecMilestone> ETH_CONSENSUS_HEADER_TYPE =
       new EnumHeaderTypeDefinition.EnumTypeHeaderDefinitionBuilder<>(
@@ -149,8 +146,6 @@ public class EthereumTypes {
               .example("1")
               .required(true)
               .build();
-
-
 
   public static <X extends SszData, T extends ObjectAndMetaData<X>>
       ResponseContentTypeDefinition<? extends T> sszResponseType() {

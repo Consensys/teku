@@ -77,32 +77,31 @@ public class InclusionListFactory {
             });
   }
 
-    @SuppressWarnings("FutureReturnValueIgnored")
-    public SafeFuture<Optional<List<Transaction>>> getInclusionList(
-            final UInt64 slot) {
-        final InclusionListSchema inclusionListSchema =
-                spec.atSlot(slot)
-                        .getSchemaDefinitions()
-                        .toVersionEip7805()
-                        .orElseThrow()
-                        .getInclusionListSchema();
-        final InclusionListUtil inclusionListUtil =
-                spec.atSlot(slot).getInclusionListUtil().orElseThrow();
-        return combinedChainDataClient
-                .getBestState()
-                .orElseGet(
-                        () ->
-                                SafeFuture.failedFuture(
-                                        new IllegalStateException("Head state is not yet available")))
-                .thenCompose(
-                        state -> {
-                            final Bytes32 parentHash =
-                                    BeaconStateElectra.required(state)
-                                            .getLatestExecutionPayloadHeader()
-                                            .getParentHash();
-                            return executionLayerChannel
-                                    .engineGetInclusionList(parentHash, slot)
-                                    .thenApply(Optional::ofNullable);
-                        });
-    }
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public SafeFuture<Optional<List<Transaction>>> getInclusionList(final UInt64 slot) {
+    final InclusionListSchema inclusionListSchema =
+        spec.atSlot(slot)
+            .getSchemaDefinitions()
+            .toVersionEip7805()
+            .orElseThrow()
+            .getInclusionListSchema();
+    final InclusionListUtil inclusionListUtil =
+        spec.atSlot(slot).getInclusionListUtil().orElseThrow();
+    return combinedChainDataClient
+        .getBestState()
+        .orElseGet(
+            () ->
+                SafeFuture.failedFuture(
+                    new IllegalStateException("Head state is not yet available")))
+        .thenCompose(
+            state -> {
+              final Bytes32 parentHash =
+                  BeaconStateElectra.required(state)
+                      .getLatestExecutionPayloadHeader()
+                      .getParentHash();
+              return executionLayerChannel
+                  .engineGetInclusionList(parentHash, slot)
+                  .thenApply(Optional::ofNullable);
+            });
+  }
 }

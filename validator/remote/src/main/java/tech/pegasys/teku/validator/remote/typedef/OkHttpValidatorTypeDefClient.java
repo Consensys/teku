@@ -195,10 +195,9 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     return syncCommitteeSelectionsRequest.submit(validatorsPartialProofs);
   }
 
-  public Optional<List<Transaction>> getInclusionList(
-      final UInt64 slot) {
+  public Optional<List<Transaction>> getInclusionList(final UInt64 slot) {
     final GetInclusionListRequest inclusionListRequest =
-        new GetInclusionListRequest(spec ,getBaseEndpoint(), getOkHttpClient());
+        new GetInclusionListRequest(spec, getBaseEndpoint(), getOkHttpClient());
     return inclusionListRequest.submit(slot);
   }
 
@@ -296,6 +295,4 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
             getBaseEndpoint(), getOkHttpClient(), attestationsV2ApisEnabled, spec);
     return sendSignedAttestationsRequest.submit(attestations);
   }
-
-
 }

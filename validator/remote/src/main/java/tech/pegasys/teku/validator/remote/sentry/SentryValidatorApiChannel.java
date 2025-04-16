@@ -161,12 +161,9 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<Transaction>>> getInclusionList(
-          final UInt64 slot) {
+  public SafeFuture<Optional<List<Transaction>>> getInclusionList(final UInt64 slot) {
     // TODO EIP7805 add a separate sentry node channel for ILs
-    return attestationPublisherChannel
-            .orElse(dutiesProviderChannel)
-            .getInclusionList(slot);
+    return attestationPublisherChannel.orElse(dutiesProviderChannel).getInclusionList(slot);
   }
 
   @Override
