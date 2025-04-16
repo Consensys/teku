@@ -96,6 +96,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAggregateAndPro
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostBeaconCommitteeSelections;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostContributionAndProofs;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostInclusionList;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostPrepareBeaconProposer;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostRegisterValidator;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeaconCommitteeSubnet;
@@ -296,6 +297,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new PostContributionAndProofs(dataProvider, schemaCache))
             .endpoint(new PostPrepareBeaconProposer(dataProvider))
             .endpoint(new PostRegisterValidator(dataProvider))
+                .endpoint(new PostInclusionList(dataProvider))
             // Obol DVT Methods
             .endpoint(new PostBeaconCommitteeSelections())
             .endpoint(new PostSyncCommitteeSelections())
