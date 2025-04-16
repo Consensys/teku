@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -58,6 +59,7 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.BeaconCommitteeSelect
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAggregateAttestationRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationDataRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateSyncCommitteeContributionRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.GetInclusionListRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetPeerCountRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetStateValidatorsRequest;
@@ -193,6 +195,13 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     return syncCommitteeSelectionsRequest.submit(validatorsPartialProofs);
   }
 
+  public Optional<List<Transaction>> getInclusionList(
+      final UInt64 slot) {
+    final GetInclusionListRequest inclusionListRequest =
+        new GetInclusionListRequest(spec ,getBaseEndpoint(), getOkHttpClient());
+    return inclusionListRequest.submit(slot);
+  }
+
   public void subscribeToSyncCommitteeSubnets(
       final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
     LOG.debug("Subscribing to sync committee subnets {}", subscriptions);
@@ -287,4 +296,6 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
             getBaseEndpoint(), getOkHttpClient(), attestationsV2ApisEnabled, spec);
     return sendSignedAttestationsRequest.submit(attestations);
   }
+
+
 }

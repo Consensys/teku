@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -133,6 +134,11 @@ public interface ValidatorApiChannel extends ChannelInterface {
         public SafeFuture<Optional<InclusionList>> createInclusionList(
             final UInt64 slot, final UInt64 validatorIndex) {
           return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
+        public SafeFuture<Optional<List<Transaction>>> getInclusionList(UInt64 slot){
+            return SafeFuture.completedFuture(Optional.empty());
         }
 
         @Override
@@ -258,6 +264,8 @@ public interface ValidatorApiChannel extends ChannelInterface {
       UInt64 slot, int subcommitteeIndex, Bytes32 beaconBlockRoot);
 
   SafeFuture<Optional<InclusionList>> createInclusionList(UInt64 slot, UInt64 validatorIndex);
+
+    SafeFuture<Optional<List<Transaction>>> getInclusionList(UInt64 slot);
 
   SafeFuture<Void> subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 
