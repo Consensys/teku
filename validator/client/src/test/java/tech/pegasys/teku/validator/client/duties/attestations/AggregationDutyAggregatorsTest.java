@@ -30,8 +30,8 @@ import tech.pegasys.teku.validator.client.duties.attestations.AggregationDutyAgg
 
 abstract class AggregationDutyAggregatorsTest {
 
-  private Spec spec = TestSpecFactory.createMinimalElectra();
-  private DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final Spec spec = TestSpecFactory.createMinimalElectra();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   protected AggregationDutyAggregators aggregationDutyAggregators;
 

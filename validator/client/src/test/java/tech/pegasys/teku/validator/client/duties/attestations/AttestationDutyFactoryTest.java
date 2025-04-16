@@ -42,7 +42,7 @@ class AttestationDutyFactoryTest {
   @ParameterizedTest
   @MethodSource("aggregatorTypeArgs")
   public void shouldUseCorrectAggregatorTypeWhenCreatingAggregationDuty(
-      boolean dvtEnabled, Class<?> expectedAggregatorClass) {
+      final boolean dvtEnabled, final Class<?> expectedAggregatorClass) {
     final AttestationDutyFactory attestationDutyFactory =
         new AttestationDutyFactory(
             spec, forkProvider, validatorApiChannel, validatorDutyMetrics, dvtEnabled);
