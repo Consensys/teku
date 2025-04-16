@@ -182,13 +182,10 @@ public class UpnpClient {
   }
 
   private PortMapping.Protocol toJupnpProtocol(final NetworkProtocol protocol) {
-    switch (protocol) {
-      case UDP:
-        return PortMapping.Protocol.UDP;
-      case TCP:
-        return PortMapping.Protocol.TCP;
-    }
-    return null;
+    return switch (protocol) {
+      case UDP -> PortMapping.Protocol.UDP;
+      case TCP -> PortMapping.Protocol.TCP;
+    };
   }
 
   private PortMapping toJupnpPortMapping(final NatPortMapping natPortMapping) {

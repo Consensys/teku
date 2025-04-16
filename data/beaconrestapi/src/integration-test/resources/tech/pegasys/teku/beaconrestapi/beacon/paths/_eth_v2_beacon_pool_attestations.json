@@ -78,7 +78,7 @@
     "tags" : [ "Beacon", "Validator Required Api", "Experimental" ],
     "operationId" : "submitPoolAttestationsV2",
     "summary" : "Submit Attestation objects to node",
-    "description" : "Submits Attestation objects to the node. Each attestation in the request body is processed individually.\nIf an attestation is validated successfully, the node MUST publish that attestation on the appropriate subnet.\nIf one or more attestations fail validation, the node MUST return a 400 error with details of which attestations have failed, and why.",
+    "description" : "Submits Attestation objects to the node. Each attestation in the request body is processed individually.\nIf an attestation is validated successfully, the node MUST publish that attestation on the appropriate subnet.\nIf one or more attestations fail validation, the node MUST return a 400 error with details of which attestations have failed, and why.\n",
     "parameters" : [ {
       "name" : "Eth-Consensus-Version",
       "required" : true,

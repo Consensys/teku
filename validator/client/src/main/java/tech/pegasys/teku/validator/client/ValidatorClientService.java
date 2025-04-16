@@ -472,12 +472,17 @@ public class ValidatorClientService extends Service {
     final BlockDutyFactory blockDutyFactory =
         new BlockDutyFactory(
             forkProvider, validatorApiChannel, blockContainerSigner, spec, validatorDutyMetrics);
-    final AttestationDutyFactory attestationDutyFactory =
-        new AttestationDutyFactory(spec, forkProvider, validatorApiChannel, validatorDutyMetrics);
-    final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
-        new BeaconCommitteeSubscriptions(validatorApiChannel);
     final boolean dvtSelectionsEndpointEnabled =
         config.getValidatorConfig().isDvtSelectionsEndpointEnabled();
+    final AttestationDutyFactory attestationDutyFactory =
+        new AttestationDutyFactory(
+            spec,
+            forkProvider,
+            validatorApiChannel,
+            validatorDutyMetrics,
+            dvtSelectionsEndpointEnabled);
+    final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
+        new BeaconCommitteeSubscriptions(validatorApiChannel);
     final DutyLoader<?> attestationDutyLoader =
         new RetryingDutyLoader<>(
             asyncRunner,
