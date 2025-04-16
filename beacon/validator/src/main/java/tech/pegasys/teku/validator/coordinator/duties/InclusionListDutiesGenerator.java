@@ -59,9 +59,9 @@ public class InclusionListDutiesGenerator {
         final Optional<Bytes32> inclusionListCommitteeRoot =
             spec.getInclusionListCommitteeRoot(state, slot);
         inclusionListCommitteeRoot.ifPresent(
-            iLCommitteeRoot ->
+            ilCommitteeRoot ->
                 inclusionListDutyFromCommitteeAssignment(
-                        slot, validatorIndex, state, iLCommitteeRoot)
+                        slot, validatorIndex, state, ilCommitteeRoot)
                     .ifPresent(inclusionListDutyList::add));
       }
     }
