@@ -42,7 +42,7 @@ public class PostInclusionList extends RestApiEndpoint {
   private final ValidatorDataProvider validatorDataProvider;
 
   public PostInclusionList(
-      DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
+      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
     this(dataProvider.getValidatorDataProvider(), schemaDefinitionCache);
   }
 
