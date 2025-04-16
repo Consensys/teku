@@ -79,14 +79,7 @@ public class InclusionListFactory {
 
   @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<Optional<List<Transaction>>> getInclusionList(final UInt64 slot) {
-    final InclusionListSchema inclusionListSchema =
-        spec.atSlot(slot)
-            .getSchemaDefinitions()
-            .toVersionEip7805()
-            .orElseThrow()
-            .getInclusionListSchema();
-    final InclusionListUtil inclusionListUtil =
-        spec.atSlot(slot).getInclusionListUtil().orElseThrow();
+
     return combinedChainDataClient
         .getBestState()
         .orElseGet(

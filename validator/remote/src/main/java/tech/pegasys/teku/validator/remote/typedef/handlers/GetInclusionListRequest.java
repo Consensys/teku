@@ -42,7 +42,7 @@ public class GetInclusionListRequest extends AbstractTypeDefRequest {
     this.spec = spec;
   }
 
-  public Optional<List<Transaction>> submit(UInt64 slot) {
+  public Optional<List<Transaction>> submit(final UInt64 slot) {
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
     final SpecConfigEip7805 specConfig = spec.getSpecConfig(epoch).toVersionEip7805().orElseThrow();
     return get(
