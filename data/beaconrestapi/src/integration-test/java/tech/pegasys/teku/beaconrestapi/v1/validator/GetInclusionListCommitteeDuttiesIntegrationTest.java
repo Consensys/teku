@@ -13,29 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.v1.validator;
 
-import okhttp3.Response;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-import tech.pegasys.teku.beacon.sync.events.SyncState;
-import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetInclusionListCommitteeDuties;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostPrepareBeaconProposer;
-import tech.pegasys.teku.ethereum.json.types.validator.InclusionListDuties;
-import tech.pegasys.teku.ethereum.json.types.validator.InclusionListDuty;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -45,7 +22,25 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
-public class GetInclusionListCommitteeDuttiesIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+import okhttp3.Response;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.beacon.sync.events.SyncState;
+import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetInclusionListCommitteeDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.InclusionListDuties;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
+
+public class GetInclusionListCommitteeDuttiesIntegrationTest
+    extends AbstractDataBackedRestAPIIntegrationTest {
   private DataStructureUtil dataStructureUtil;
 
   @BeforeEach
@@ -57,15 +52,15 @@ public class GetInclusionListCommitteeDuttiesIntegrationTest extends AbstractDat
   @Test
   void shouldReturnOk() throws IOException {
     final InclusionListDuties inclusionListDuties = dataStructureUtil.randomInclusionListDuties();
-    when(validatorApiChannel.getInclusionListDuties(any(),any())).thenReturn(SafeFuture.completedFuture(Optional.of(inclusionListDuties)));
+    when(validatorApiChannel.getInclusionListDuties(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(inclusionListDuties)));
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     final List<UInt64> request = List.of(dataStructureUtil.randomValidatorIndex());
 
     try (Response response =
         post(
             GetInclusionListCommitteeDuties.ROUTE.replace("{epoch}", "1"),
-            JsonUtil.serialize(
-                request, DeserializableTypeDefinition.listOf(UINT64_TYPE)))) {
+            JsonUtil.serialize(request, DeserializableTypeDefinition.listOf(UINT64_TYPE)))) {
 
       assertThat(response.code()).isEqualTo(SC_OK);
     }
@@ -76,10 +71,9 @@ public class GetInclusionListCommitteeDuttiesIntegrationTest extends AbstractDat
     final List<UInt64> request = List.of(dataStructureUtil.randomValidatorIndex());
 
     try (Response response =
-                 post(
-                         GetInclusionListCommitteeDuties.ROUTE,
-                         JsonUtil.serialize(
-                                 request, DeserializableTypeDefinition.listOf(UINT64_TYPE)))) {
+        post(
+            GetInclusionListCommitteeDuties.ROUTE,
+            JsonUtil.serialize(request, DeserializableTypeDefinition.listOf(UINT64_TYPE)))) {
 
       assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     }
@@ -90,9 +84,11 @@ public class GetInclusionListCommitteeDuttiesIntegrationTest extends AbstractDat
   @Test
   void shouldReturnBadRequestWhenRequestBodyIsEmpty() throws IOException {
     final InclusionListDuties inclusionListDuties = dataStructureUtil.randomInclusionListDuties();
-    when(validatorApiChannel.getInclusionListDuties(any(),any())).thenReturn(SafeFuture.completedFuture(Optional.of(inclusionListDuties)));
+    when(validatorApiChannel.getInclusionListDuties(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(inclusionListDuties)));
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    try (Response response = post(GetInclusionListCommitteeDuties.ROUTE.replace("{epoch}", "1"), "[]")) {
+    try (Response response =
+        post(GetInclusionListCommitteeDuties.ROUTE.replace("{epoch}", "1"), "[]")) {
       assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
     }
   }
