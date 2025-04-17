@@ -104,7 +104,6 @@ public class RewardsTestExecutorPhase0 implements TestExecutor {
     return () -> calculator.getDeltas(step);
   }
 
-  @SuppressWarnings("deprecation")
   private void assertDeltas(
       final TestDefinition testDefinition,
       final String expectedResultsFileName,

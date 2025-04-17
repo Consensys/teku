@@ -502,6 +502,7 @@ public class Eth2P2PNetworkFactory {
           .build();
     }
 
+    @SuppressWarnings("deprecation")
     private void setDefaults() {
       if (eventChannels == null) {
         eventChannels =
